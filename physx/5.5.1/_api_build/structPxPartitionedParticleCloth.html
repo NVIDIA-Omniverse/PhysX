@@ -1,0 +1,765 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxPartitionedParticleCloth &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxPartitionedParticleCloth';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxPhysics" href="classPxPhysics.html" />
+    <link rel="prev" title="PxParticleVolume" href="structPxParticleVolume.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxPartitione...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxpartitionedparticlecloth">
+<h1>PxPartitionedParticleCloth<a class="headerlink" href="#pxpartitionedparticlecloth" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxParticleBuffer.h.html#pxparticlebuffer-8h"><span class="std std-ref">include/PxParticleBuffer.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv426PxPartitionedParticleCloth">
+<span id="_CPPv326PxPartitionedParticleCloth"></span><span id="_CPPv226PxPartitionedParticleCloth"></span><span id="PxPartitionedParticleCloth"></span><span class="target" id="structpxpartitionedparticlecloth"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPartitionedParticleCloth</span></span></span><a class="headerlink" href="#_CPPv426PxPartitionedParticleCloth" title="Link to this definition">#</a><br /></dt>
+<dd><p>Structure to describe the output of the particle cloth preprocessing. </p>
+<p>Used as an input to specify cloth data for a <a class="reference internal" href="classPxParticleClothBuffer.html#classpxparticleclothbuffer"><span class="std std-ref">PxParticleClothBuffer</span></a>. All the pointers point to pinned host memory.</p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000058"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p>See <a class="reference internal" href="classPxParticleClothPreProcessor.html#classpxparticleclothpreprocessor"><span class="std std-ref">PxParticleClothPreProcessor</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth26PxPartitionedParticleClothEv">
+<span id="_CPPv3N26PxPartitionedParticleCloth26PxPartitionedParticleClothEv"></span><span id="_CPPv2N26PxPartitionedParticleCloth26PxPartitionedParticleClothEv"></span><span id="PxPartitionedParticleCloth::PxPartitionedParticleCloth"></span><span class="target" id="structpxpartitionedparticlecloth_1ad4fd2ed0a9705326e0aacbec442cbc59"></span><span class="sig-name descname"><span class="n"><span class="pre">PxPartitionedParticleCloth</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth26PxPartitionedParticleClothEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleClothD0Ev">
+<span id="_CPPv3N26PxPartitionedParticleClothD0Ev"></span><span id="_CPPv2N26PxPartitionedParticleClothD0Ev"></span><span id="PxPartitionedParticleCloth::~PxPartitionedParticleCloth"></span><span class="target" id="structpxpartitionedparticlecloth_1a5a6ce90528032e49609ee354150972ab"></span><span class="sig-name descname"><span class="n"><span class="pre">~PxPartitionedParticleCloth</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleClothD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth15allocateBuffersE5PxU32P20PxCudaContextManager">
+<span id="_CPPv3N26PxPartitionedParticleCloth15allocateBuffersE5PxU32P20PxCudaContextManager"></span><span id="_CPPv2N26PxPartitionedParticleCloth15allocateBuffersE5PxU32P20PxCudaContextManager"></span><span id="PxPartitionedParticleCloth::allocateBuffers__PxU32.PxCudaContextManagerP"></span><span class="target" id="structpxpartitionedparticlecloth_1a6bf8aad3420f7dda63935302c0d39fba"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">allocateBuffers</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbParticles</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaManager</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth15allocateBuffersE5PxU32P20PxCudaContextManager" title="Link to this definition">#</a><br /></dt>
+<dd><p>allocate all the buffers for this <a class="reference internal" href="#structpxpartitionedparticlecloth"><span class="std std-ref">PxPartitionedParticleCloth</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbParticles</strong> – <strong>[in]</strong> the number of particles this <a class="reference internal" href="#structpxpartitionedparticlecloth"><span class="std std-ref">PxPartitionedParticleCloth</span></a> will be generated for. </p></li>
+<li><p><strong>cudaManager</strong> – <strong>[in]</strong> a cuda context manager. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth31accumulatedSpringsPerPartitionsE">
+<span id="_CPPv3N26PxPartitionedParticleCloth31accumulatedSpringsPerPartitionsE"></span><span id="_CPPv2N26PxPartitionedParticleCloth31accumulatedSpringsPerPartitionsE"></span><span id="PxPartitionedParticleCloth::accumulatedSpringsPerPartitions__PxU32P"></span><span class="target" id="structpxpartitionedparticlecloth_1a0627b15c7ccd8025229671724a1ddce3"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">accumulatedSpringsPerPartitions</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth31accumulatedSpringsPerPartitionsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of springs in each partition. Size: numPartitions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth29accumulatedCopiesPerParticlesE">
+<span id="_CPPv3N26PxPartitionedParticleCloth29accumulatedCopiesPerParticlesE"></span><span id="_CPPv2N26PxPartitionedParticleCloth29accumulatedCopiesPerParticlesE"></span><span id="PxPartitionedParticleCloth::accumulatedCopiesPerParticles__PxU32P"></span><span class="target" id="structpxpartitionedparticlecloth_1ad6c0956bc2d5788f4563d56468b12c30"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">accumulatedCopiesPerParticles</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth29accumulatedCopiesPerParticlesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Start index for each particle in the accumulation buffer. Size: numParticles. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth11remapOutputE">
+<span id="_CPPv3N26PxPartitionedParticleCloth11remapOutputE"></span><span id="_CPPv2N26PxPartitionedParticleCloth11remapOutputE"></span><span id="PxPartitionedParticleCloth::remapOutput__PxU32P"></span><span class="target" id="structpxpartitionedparticlecloth_1a2eea5fa21ab68e1a59c03240d8c5512a"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">remapOutput</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth11remapOutputE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Index of the next copy of this particle in the next partition, or in the accumulation buffer. Size: numSprings * 2. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth14orderedSpringsE">
+<span id="_CPPv3N26PxPartitionedParticleCloth14orderedSpringsE"></span><span id="_CPPv2N26PxPartitionedParticleCloth14orderedSpringsE"></span><span id="PxPartitionedParticleCloth::orderedSprings__PxParticleSpringP"></span><span class="target" id="structpxpartitionedparticlecloth_1acf9cabafbba175b23f4622c4727e54ba"></span><a class="reference internal" href="structPxParticleSpring.html#_CPPv416PxParticleSpring" title="PxParticleSpring"><span class="n"><span class="pre">PxParticleSpring</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">orderedSprings</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth14orderedSpringsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Springs ordered by partition. Size: numSprings. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth23sortedClothStartIndicesE">
+<span id="_CPPv3N26PxPartitionedParticleCloth23sortedClothStartIndicesE"></span><span id="_CPPv2N26PxPartitionedParticleCloth23sortedClothStartIndicesE"></span><span id="PxPartitionedParticleCloth::sortedClothStartIndices__PxU32P"></span><span class="target" id="structpxpartitionedparticlecloth_1a4de4a3e7bbd5106f752a825e9e3e9352"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">sortedClothStartIndices</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth23sortedClothStartIndicesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The first particle index into the position buffer of the <a class="reference internal" href="classPxParticleClothBuffer.html#classpxparticleclothbuffer"><span class="std std-ref">PxParticleClothBuffer</span></a> for each cloth. Cloths are sorted by start particle index. Size: numCloths. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth6clothsE">
+<span id="_CPPv3N26PxPartitionedParticleCloth6clothsE"></span><span id="_CPPv2N26PxPartitionedParticleCloth6clothsE"></span><span id="PxPartitionedParticleCloth::cloths__PxParticleClothP"></span><span class="target" id="structpxpartitionedparticlecloth_1a626ac670450d7b8d76b4abf17c021b70"></span><a class="reference internal" href="structPxParticleCloth.html#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">cloths</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth6clothsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The <a class="reference internal" href="structPxParticleCloth.html#structpxparticlecloth"><span class="std std-ref">PxParticleCloth</span></a> s sorted by start particle index. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth15remapOutputSizeE">
+<span id="_CPPv3N26PxPartitionedParticleCloth15remapOutputSizeE"></span><span id="_CPPv2N26PxPartitionedParticleCloth15remapOutputSizeE"></span><span id="PxPartitionedParticleCloth::remapOutputSize__PxU32"></span><span class="target" id="structpxpartitionedparticlecloth_1ae094403e0d0d95cbe4afc803b2eba898"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remapOutputSize</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth15remapOutputSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Size of remapOutput. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth12nbPartitionsE">
+<span id="_CPPv3N26PxPartitionedParticleCloth12nbPartitionsE"></span><span id="_CPPv2N26PxPartitionedParticleCloth12nbPartitionsE"></span><span id="PxPartitionedParticleCloth::nbPartitions__PxU32"></span><span class="target" id="structpxpartitionedparticlecloth_1a0164164d463910c7e492902036cadc4a"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbPartitions</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth12nbPartitionsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of partitions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth9nbSpringsE">
+<span id="_CPPv3N26PxPartitionedParticleCloth9nbSpringsE"></span><span id="_CPPv2N26PxPartitionedParticleCloth9nbSpringsE"></span><span id="PxPartitionedParticleCloth::nbSprings__PxU32"></span><span class="target" id="structpxpartitionedparticlecloth_1a798aa3757ccd75924daf5036576dbdde"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbSprings</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth9nbSpringsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of springs. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth8nbClothsE">
+<span id="_CPPv3N26PxPartitionedParticleCloth8nbClothsE"></span><span id="_CPPv2N26PxPartitionedParticleCloth8nbClothsE"></span><span id="PxPartitionedParticleCloth::nbCloths__PxU32"></span><span class="target" id="structpxpartitionedparticlecloth_1a335b5e8db1a7ba2aaea3211f60ab4382"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbCloths</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth8nbClothsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of cloths. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth22maxSpringsPerPartitionE">
+<span id="_CPPv3N26PxPartitionedParticleCloth22maxSpringsPerPartitionE"></span><span id="_CPPv2N26PxPartitionedParticleCloth22maxSpringsPerPartitionE"></span><span id="PxPartitionedParticleCloth::maxSpringsPerPartition__PxU32"></span><span class="target" id="structpxpartitionedparticlecloth_1a7279d9ac213f2996d64613b0c2786f84"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxSpringsPerPartition</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth22maxSpringsPerPartitionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The maximum number of springs in a partition. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxPartitionedParticleCloth12mCudaManagerE">
+<span id="_CPPv3N26PxPartitionedParticleCloth12mCudaManagerE"></span><span id="_CPPv2N26PxPartitionedParticleCloth12mCudaManagerE"></span><span id="PxPartitionedParticleCloth::mCudaManager__PxCudaContextManagerP"></span><span class="target" id="structpxpartitionedparticlecloth_1a862925dcfdbcd65f6dec972d572a9ac2"></span><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mCudaManager</span></span></span><a class="headerlink" href="#_CPPv4N26PxPartitionedParticleCloth12mCudaManagerE" title="Link to this definition">#</a><br /></dt>
+<dd><p>A cuda context manager. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxParticleVolume.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxParticleVolume</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxPhysics.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxPhysics</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv426PxPartitionedParticleCloth"><code class="docutils literal notranslate"><span class="pre">PxPartitionedParticleCloth</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth26PxPartitionedParticleClothEv"><code class="docutils literal notranslate"><span class="pre">PxPartitionedParticleCloth()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleClothD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxPartitionedParticleCloth()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth15allocateBuffersE5PxU32P20PxCudaContextManager"><code class="docutils literal notranslate"><span class="pre">allocateBuffers()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth31accumulatedSpringsPerPartitionsE"><code class="docutils literal notranslate"><span class="pre">accumulatedSpringsPerPartitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth29accumulatedCopiesPerParticlesE"><code class="docutils literal notranslate"><span class="pre">accumulatedCopiesPerParticles</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth11remapOutputE"><code class="docutils literal notranslate"><span class="pre">remapOutput</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth14orderedSpringsE"><code class="docutils literal notranslate"><span class="pre">orderedSprings</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth23sortedClothStartIndicesE"><code class="docutils literal notranslate"><span class="pre">sortedClothStartIndices</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth6clothsE"><code class="docutils literal notranslate"><span class="pre">cloths</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth15remapOutputSizeE"><code class="docutils literal notranslate"><span class="pre">remapOutputSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth12nbPartitionsE"><code class="docutils literal notranslate"><span class="pre">nbPartitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth9nbSpringsE"><code class="docutils literal notranslate"><span class="pre">nbSprings</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth8nbClothsE"><code class="docutils literal notranslate"><span class="pre">nbCloths</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth22maxSpringsPerPartitionE"><code class="docutils literal notranslate"><span class="pre">maxSpringsPerPartition</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxPartitionedParticleCloth12mCudaManagerE"><code class="docutils literal notranslate"><span class="pre">mCudaManager</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

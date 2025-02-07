@@ -1,0 +1,871 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxTGSSolverContactDesc &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxTGSSolverContactDesc';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxTask" href="classPxTask.html" />
+    <link rel="prev" title="PxTGSSolverConstraintPrepDescBase" href="structPxTGSSolverConstraintPrepDescBase.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxTGSSolverC...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxtgssolvercontactdesc">
+<h1>PxTGSSolverContactDesc<a class="headerlink" href="#pxtgssolvercontactdesc" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#pxsolverdefs-8h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv422PxTGSSolverContactDesc">
+<span id="_CPPv322PxTGSSolverContactDesc"></span><span id="_CPPv222PxTGSSolverContactDesc"></span><span id="PxTGSSolverContactDesc"></span><span class="target" id="structpxtgssolvercontactdesc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTGSSolverContactDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverConstraintPrepDescBase.html#_CPPv433PxTGSSolverConstraintPrepDescBase" title="PxTGSSolverConstraintPrepDescBase"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDescBase</span></span></a><a class="headerlink" href="#_CPPv422PxTGSSolverContactDesc" title="Link to this definition">#</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc11frictionPtrE">
+<span id="_CPPv3N22PxTGSSolverContactDesc11frictionPtrE"></span><span id="_CPPv2N22PxTGSSolverContactDesc11frictionPtrE"></span><span id="PxTGSSolverContactDesc::frictionPtr__PxU8P"></span><span class="target" id="structpxtgssolvercontactdesc_1a4b1fadcb0c18263f2f7e31a1a8e9fcc1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">frictionPtr</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc11frictionPtrE" title="Link to this definition">#</a><br /></dt>
+<dd><p>InOut: Friction patch correlation data. Set each frame by solver. Can be retained for improved behavior or discarded each frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc8contactsE">
+<span id="_CPPv3N22PxTGSSolverContactDesc8contactsE"></span><span id="_CPPv2N22PxTGSSolverContactDesc8contactsE"></span><span id="PxTGSSolverContactDesc::contacts__PxContactPointCP"></span><span class="target" id="structpxtgssolvercontactdesc_1ac601b30fe787a7a09643142ab9146c02"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxContactPoint.html#_CPPv414PxContactPoint" title="PxContactPoint"><span class="n"><span class="pre">PxContactPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contacts</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc8contactsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The start of the contacts for this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc11numContactsE">
+<span id="_CPPv3N22PxTGSSolverContactDesc11numContactsE"></span><span id="_CPPv2N22PxTGSSolverContactDesc11numContactsE"></span><span id="PxTGSSolverContactDesc::numContacts__PxU32"></span><span class="target" id="structpxtgssolvercontactdesc_1a71566924a2d0ebc51d688318309e0e7e"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numContacts</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc11numContactsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The total number of contacts this pair references. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13frictionCountE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13frictionCountE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13frictionCountE"></span><span id="PxTGSSolverContactDesc::frictionCount__PxU8"></span><span class="target" id="structpxtgssolvercontactdesc_1a11c978927580e83557522429a291b1e0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionCount</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13frictionCountE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The total number of friction patches in this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13hasMaxImpulseE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13hasMaxImpulseE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13hasMaxImpulseE"></span><span id="PxTGSSolverContactDesc::hasMaxImpulse__b"></span><span class="target" id="structpxtgssolvercontactdesc_1a31b779c60e6f523d3367b109a55b8498"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasMaxImpulse</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13hasMaxImpulseE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Defines whether this pairs has maxImpulses clamping enabled. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc21disableStrongFrictionE">
+<span id="_CPPv3N22PxTGSSolverContactDesc21disableStrongFrictionE"></span><span id="_CPPv2N22PxTGSSolverContactDesc21disableStrongFrictionE"></span><span id="PxTGSSolverContactDesc::disableStrongFriction__b"></span><span class="target" id="structpxtgssolvercontactdesc_1ae94706f6d8851b7cfb9cfc054afe7fd2"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">disableStrongFriction</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc21disableStrongFrictionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Defines whether this pair disables strong friction (sticky friction correlation) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc18hasForceThresholdsE">
+<span id="_CPPv3N22PxTGSSolverContactDesc18hasForceThresholdsE"></span><span id="_CPPv2N22PxTGSSolverContactDesc18hasForceThresholdsE"></span><span id="PxTGSSolverContactDesc::hasForceThresholds__b"></span><span class="target" id="structpxtgssolvercontactdesc_1a42cdafb4a9c8ef0daaa1dd584b2f2bd4"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasForceThresholds</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc18hasForceThresholdsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Defines whether this pair requires force thresholds. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc12restDistanceE">
+<span id="_CPPv3N22PxTGSSolverContactDesc12restDistanceE"></span><span id="_CPPv2N22PxTGSSolverContactDesc12restDistanceE"></span><span id="PxTGSSolverContactDesc::restDistance__PxReal"></span><span class="target" id="structpxtgssolvercontactdesc_1a264877eb201cfe904fbe832b94ebfccc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restDistance</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc12restDistanceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>A distance at which the solver should aim to hold the bodies separated. Default is 0. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc16maxCCDSeparationE">
+<span id="_CPPv3N22PxTGSSolverContactDesc16maxCCDSeparationE"></span><span id="_CPPv2N22PxTGSSolverContactDesc16maxCCDSeparationE"></span><span id="PxTGSSolverContactDesc::maxCCDSeparation__PxReal"></span><span class="target" id="structpxtgssolvercontactdesc_1a32c32515e655df204dc97163c0d8f503"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxCCDSeparation</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc16maxCCDSeparationE" title="Link to this definition">#</a><br /></dt>
+<dd><p>A distance used to configure speculative CCD behavior. Default is PX_MAX_F32. Set internally in PhysX for bodies with eENABLE_SPECULATIVE_CCD on. Do not set directly! </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13contactForcesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13contactForcesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13contactForcesE"></span><span id="PxTGSSolverContactDesc::contactForces__PxRealP"></span><span class="target" id="structpxtgssolvercontactdesc_1a2528245373f86eb6475151cff7f517c5"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contactForces</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13contactForcesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Out: A buffer for the solver to write applied contact forces to. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc23startFrictionPatchIndexE">
+<span id="_CPPv3N22PxTGSSolverContactDesc23startFrictionPatchIndexE"></span><span id="_CPPv2N22PxTGSSolverContactDesc23startFrictionPatchIndexE"></span><span id="PxTGSSolverContactDesc::startFrictionPatchIndex__PxU32"></span><span class="target" id="structpxtgssolvercontactdesc_1ad20755f12b4cc3e302af7353a923ae4f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startFrictionPatchIndex</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc23startFrictionPatchIndexE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Start index of friction patch in the correlation buffer. Set by friction correlation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc18numFrictionPatchesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc18numFrictionPatchesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc18numFrictionPatchesE"></span><span id="PxTGSSolverContactDesc::numFrictionPatches__PxU32"></span><span class="target" id="structpxtgssolvercontactdesc_1a52c82757413cf7a74fd33543be21f9bc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numFrictionPatches</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc18numFrictionPatchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Total number of friction patches in this pair. Set by friction correlation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc22startContactPatchIndexE">
+<span id="_CPPv3N22PxTGSSolverContactDesc22startContactPatchIndexE"></span><span id="_CPPv2N22PxTGSSolverContactDesc22startContactPatchIndexE"></span><span id="PxTGSSolverContactDesc::startContactPatchIndex__PxU32"></span><span class="target" id="structpxtgssolvercontactdesc_1aed207eb98917eeda2b19bdb2fe65f14e"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startContactPatchIndex</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc22startContactPatchIndexE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The start index of this pair’s contact patches in the correlation buffer. For internal use only. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc17numContactPatchesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc17numContactPatchesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc17numContactPatchesE"></span><span id="PxTGSSolverContactDesc::numContactPatches__PxU16"></span><span class="target" id="structpxtgssolvercontactdesc_1ad451864f355f80ff88b943b9f3ec6079"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numContactPatches</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc17numContactPatchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Total number of contact patches. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc19axisConstraintCountE">
+<span id="_CPPv3N22PxTGSSolverContactDesc19axisConstraintCountE"></span><span id="_CPPv2N22PxTGSSolverContactDesc19axisConstraintCountE"></span><span id="PxTGSSolverContactDesc::axisConstraintCount__PxU16"></span><span class="target" id="structpxtgssolvercontactdesc_1ac846e96c932f98fe0ade48f813c464c6"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">axisConstraintCount</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc19axisConstraintCountE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Axis constraint count. Defines how many constraint rows this pair has produced. Useful for statistical purposes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10maxImpulseE">
+<span id="_CPPv3N22PxTGSSolverContactDesc10maxImpulseE"></span><span id="_CPPv2N22PxTGSSolverContactDesc10maxImpulseE"></span><span id="PxTGSSolverContactDesc::maxImpulse__PxReal"></span><span class="target" id="structpxtgssolvercontactdesc_1a0ff123ce07992aa9ba795366f347aed1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxImpulse</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10maxImpulseE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The maximum impulse the solver is allowed to introduce for this pair of bodies. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc20torsionalPatchRadiusE">
+<span id="_CPPv3N22PxTGSSolverContactDesc20torsionalPatchRadiusE"></span><span id="_CPPv2N22PxTGSSolverContactDesc20torsionalPatchRadiusE"></span><span id="PxTGSSolverContactDesc::torsionalPatchRadius__PxReal"></span><span class="target" id="structpxtgssolvercontactdesc_1a9925f638d123b5636e4b3ab9d58966ff"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">torsionalPatchRadius</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc20torsionalPatchRadiusE" title="Link to this definition">#</a><br /></dt>
+<dd><p>This defines the radius of the contact patch used to apply torsional friction. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE">
+<span id="_CPPv3N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE"></span><span id="_CPPv2N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE"></span><span id="PxTGSSolverContactDesc::minTorsionalPatchRadius__PxReal"></span><span class="target" id="structpxtgssolvercontactdesc_1a009c28b94dbb4e2bf77ee50f187924be"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minTorsionalPatchRadius</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE" title="Link to this definition">#</a><br /></dt>
+<dd><p>This defines the minimum radius of the contact patch used to apply torsional friction. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10offsetSlopE">
+<span id="_CPPv3N22PxTGSSolverContactDesc10offsetSlopE"></span><span id="_CPPv2N22PxTGSSolverContactDesc10offsetSlopE"></span><span id="PxTGSSolverContactDesc::offsetSlop__PxReal"></span><span class="target" id="structpxtgssolvercontactdesc_1a28cf786b988432f341c733df59a8361b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">offsetSlop</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10offsetSlopE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Slop value used to snap contact line of action back in-line with the COM. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13invMassScalesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13invMassScalesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13invMassScalesE"></span><span id="PxTGSSolverContactDesc::invMassScales__PxConstraintInvMassScale"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1aae266269124532f1dee273c75209d9fb"></span><a class="reference internal" href="structPxConstraintInvMassScale.html#_CPPv424PxConstraintInvMassScale" title="PxConstraintInvMassScale"><span class="n"><span class="pre">PxConstraintInvMassScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invMassScales</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13invMassScalesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The local mass scaling for this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc4descE">
+<span id="_CPPv3N22PxTGSSolverContactDesc4descE"></span><span id="_CPPv2N22PxTGSSolverContactDesc4descE"></span><span id="PxTGSSolverContactDesc::desc__PxSolverConstraintDescP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a6a53ca0ea9f69a6581f2b44ed1ea8aa4"></span><a class="reference internal" href="structPxSolverConstraintDesc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">desc</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc4descE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Output: The <a class="reference internal" href="structPxSolverConstraintDesc.html#structpxsolverconstraintdesc"><span class="std std-ref">PxSolverConstraintDesc</span></a> filled in by contact prep. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc5body0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc5body0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc5body0E"></span><span id="PxTGSSolverContactDesc::body0__PxTGSSolverBodyVelCP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a1b333a2fea69f88f1c11c9f812052e0f"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverBodyVel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc5body0E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The first body. Stores velocity information. Unused unless contact involves articulations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc5body1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc5body1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc5body1E"></span><span id="PxTGSSolverContactDesc::body1__PxTGSSolverBodyVelCP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1ac428634b273386f0edf5e17ea3fd0049"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverBodyVel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc5body1E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The second body. Stores velocity information. Unused unless contact involves articulations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc8body0TxIE">
+<span id="_CPPv3N22PxTGSSolverContactDesc8body0TxIE"></span><span id="_CPPv2N22PxTGSSolverContactDesc8body0TxIE"></span><span id="PxTGSSolverContactDesc::body0TxI__PxTGSSolverBodyTxInertiaCP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a51d8370090983c269966739e14979e4a"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverBodyTxInertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body0TxI</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc8body0TxIE" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The first <a class="reference internal" href="structPxTGSSolverBodyTxInertia.html#structpxtgssolverbodytxinertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a>. Stores the delta body to world transform and sqrtInvInertia for first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc8body1TxIE">
+<span id="_CPPv3N22PxTGSSolverContactDesc8body1TxIE"></span><span id="_CPPv2N22PxTGSSolverContactDesc8body1TxIE"></span><span id="PxTGSSolverContactDesc::body1TxI__PxTGSSolverBodyTxInertiaCP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1abf87509917d688f2296b3e4ca1883bc2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverBodyTxInertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body1TxI</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc8body1TxIE" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The second <a class="reference internal" href="structPxTGSSolverBodyTxInertia.html#structpxtgssolverbodytxinertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a>. Stores the delta body to world transform and sqrtInvInertia for second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc9bodyData0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc9bodyData0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc9bodyData0E"></span><span id="PxTGSSolverContactDesc::bodyData0__PxTGSSolverBodyDataCP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a1bf247709055aaa9e9c702d76de6c866"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverBodyData.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyData0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc9bodyData0E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The first <a class="reference internal" href="structPxTGSSolverBodyData.html#structpxtgssolverbodydata"><span class="std std-ref">PxTGSSolverBodyData</span></a>. Stores mass and miscellaneous information for the first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc9bodyData1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc9bodyData1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc9bodyData1E"></span><span id="PxTGSSolverContactDesc::bodyData1__PxTGSSolverBodyDataCP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a93cdc318c9c74323988c5204870b6733"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverBodyData.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyData1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc9bodyData1E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The second <a class="reference internal" href="structPxTGSSolverBodyData.html#structpxtgssolverbodydata"><span class="std std-ref">PxTGSSolverBodyData</span></a>. Stores mass and miscellaneous information for the second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyFrame0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyFrame0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyFrame0E"></span><span id="PxTGSSolverContactDesc::bodyFrame0__PxTransform"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1aeba37ba193902e0141dc9cd4d6cacaf2"></span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyFrame0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyFrame0E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The world-space transform of the first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyFrame1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyFrame1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyFrame1E"></span><span id="PxTGSSolverContactDesc::bodyFrame1__PxTransform"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a6a22f7cd3293b9877ec97560b1862e8c"></span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyFrame1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyFrame1E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: The world-space transform of the second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyState0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyState0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyState0E"></span><span id="PxTGSSolverContactDesc::bodyState0__PxSolverContactDesc::BodyState"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a661a0d94ab747d3f6e71deb44179f74a"></span><a class="reference internal" href="structPxSolverContactDesc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxSolverContactDesc.html#_CPPv4N19PxSolverContactDesc9BodyStateE" title="PxSolverContactDesc::BodyState"><span class="n"><span class="pre">BodyState</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyState0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyState0E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: Defines what kind of actor the first body is. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyState1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyState1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyState1E"></span><span id="PxTGSSolverContactDesc::bodyState1__PxSolverContactDesc::BodyState"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a00e4ad46100575375c9fcddd86a166b3"></span><a class="reference internal" href="structPxSolverContactDesc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxSolverContactDesc.html#_CPPv4N19PxSolverContactDesc9BodyStateE" title="PxSolverContactDesc::BodyState"><span class="n"><span class="pre">BodyState</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyState1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyState1E" title="Link to this definition">#</a><br /></dt>
+<dd><p>In: Defines what kind of actor the second body is. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc9writebackE">
+<span id="_CPPv3N22PxTGSSolverContactDesc9writebackE"></span><span id="_CPPv2N22PxTGSSolverContactDesc9writebackE"></span><span id="PxTGSSolverContactDesc::writeback__voidP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a5856ca3afc7a733f8795a44560eca426"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">writeback</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc9writebackE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to constraint writeback structure. Reports back joint breaking. If not required, set to NULL. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc16shapeInteractionE">
+<span id="_CPPv3N22PxTGSSolverContactDesc16shapeInteractionE"></span><span id="_CPPv2N22PxTGSSolverContactDesc16shapeInteractionE"></span><span id="PxTGSSolverContactDesc::shapeInteraction__voidP"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1adf13b21b082d6fe545266bb697d62a26"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">shapeInteraction</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc16shapeInteractionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to shape interaction. Used for force threshold reports in solver. Set to NULL if using immediate mode. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDescUt2_51E">
+<span id="_CPPv3N22PxTGSSolverContactDescUt2_51E"></span><span class="target" id="structpxtgssolverconstraintprepdescbase_1a1faaf375b10a4ea06db5102447dd00c2"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><a class="reference internal" href="structPxTGSSolverConstraintPrepDescBase.html#_CPPv433PxTGSSolverConstraintPrepDescBase" title="PxTGSSolverConstraintPrepDescBase"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDescBase</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">[anonymous]</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDescUt2_51E" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxTGSSolverConstraintPrepDescBase.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxTGSSolverConstraintPrepDescBase</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxTask.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxTask</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv422PxTGSSolverContactDesc"><code class="docutils literal notranslate"><span class="pre">PxTGSSolverContactDesc</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc11frictionPtrE"><code class="docutils literal notranslate"><span class="pre">frictionPtr</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc8contactsE"><code class="docutils literal notranslate"><span class="pre">contacts</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc11numContactsE"><code class="docutils literal notranslate"><span class="pre">numContacts</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc13frictionCountE"><code class="docutils literal notranslate"><span class="pre">frictionCount</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc13hasMaxImpulseE"><code class="docutils literal notranslate"><span class="pre">hasMaxImpulse</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc21disableStrongFrictionE"><code class="docutils literal notranslate"><span class="pre">disableStrongFriction</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc18hasForceThresholdsE"><code class="docutils literal notranslate"><span class="pre">hasForceThresholds</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc12restDistanceE"><code class="docutils literal notranslate"><span class="pre">restDistance</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc16maxCCDSeparationE"><code class="docutils literal notranslate"><span class="pre">maxCCDSeparation</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc13contactForcesE"><code class="docutils literal notranslate"><span class="pre">contactForces</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc23startFrictionPatchIndexE"><code class="docutils literal notranslate"><span class="pre">startFrictionPatchIndex</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc18numFrictionPatchesE"><code class="docutils literal notranslate"><span class="pre">numFrictionPatches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc22startContactPatchIndexE"><code class="docutils literal notranslate"><span class="pre">startContactPatchIndex</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc17numContactPatchesE"><code class="docutils literal notranslate"><span class="pre">numContactPatches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc19axisConstraintCountE"><code class="docutils literal notranslate"><span class="pre">axisConstraintCount</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc10maxImpulseE"><code class="docutils literal notranslate"><span class="pre">maxImpulse</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc20torsionalPatchRadiusE"><code class="docutils literal notranslate"><span class="pre">torsionalPatchRadius</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE"><code class="docutils literal notranslate"><span class="pre">minTorsionalPatchRadius</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc10offsetSlopE"><code class="docutils literal notranslate"><span class="pre">offsetSlop</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc13invMassScalesE"><code class="docutils literal notranslate"><span class="pre">invMassScales</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc4descE"><code class="docutils literal notranslate"><span class="pre">desc</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc5body0E"><code class="docutils literal notranslate"><span class="pre">body0</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc5body1E"><code class="docutils literal notranslate"><span class="pre">body1</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc8body0TxIE"><code class="docutils literal notranslate"><span class="pre">body0TxI</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc8body1TxIE"><code class="docutils literal notranslate"><span class="pre">body1TxI</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc9bodyData0E"><code class="docutils literal notranslate"><span class="pre">bodyData0</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc9bodyData1E"><code class="docutils literal notranslate"><span class="pre">bodyData1</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc10bodyFrame0E"><code class="docutils literal notranslate"><span class="pre">bodyFrame0</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc10bodyFrame1E"><code class="docutils literal notranslate"><span class="pre">bodyFrame1</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc10bodyState0E"><code class="docutils literal notranslate"><span class="pre">bodyState0</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc10bodyState1E"><code class="docutils literal notranslate"><span class="pre">bodyState1</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc9writebackE"><code class="docutils literal notranslate"><span class="pre">writeback</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDesc16shapeInteractionE"><code class="docutils literal notranslate"><span class="pre">shapeInteraction</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxTGSSolverContactDescUt2_51E"><code class="docutils literal notranslate"><span class="pre">@51</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

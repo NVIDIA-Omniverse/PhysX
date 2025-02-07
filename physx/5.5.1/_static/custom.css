@@ -1,0 +1,75 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+/* header-like rubrics */
+p.rubric.rubric-h1,
+p.rubric.rubric-h2,
+p.rubric.rubric-h3,
+p.rubric.rubric-h4,
+p.rubric.rubric-h5,
+p.rubric.rubric-h6 {
+    font-family: var(--pst-font-family-heading);
+    font-weight: var(--pst-font-weight-heading);
+    color: var(--pst-color-heading);
+    line-height: 1.15;
+    margin: 2.75rem 0 1.05rem;
+    border-bottom: none;
+}
+
+p.rubric.rubric-h1 {
+    font-size: var(--pst-font-size-h1);
+}
+
+p.rubric.rubric-h2 {
+    font-size: var(--pst-font-size-h2);
+}
+
+p.rubric.rubric-h3 {
+    font-size: var(--pst-font-size-h3);
+}
+
+p.rubric.rubric-h4 {
+    font-size: var(--pst-font-size-h4);
+}
+
+p.rubric.rubric-h5 {
+    font-size: var(--pst-font-size-h5);
+}
+
+p.rubric.rubric-h6 {
+    font-size: var(--pst-font-size-h6);
+}
+
+/* optional table with no stripes */
+.table-no-stripes tbody tr:nth-child(odd) {
+    background-color: var(--pst-color-table-row-zebra-high-bg);
+}
+
+/* optional table right align first column */
+.table-right-align-first-column tr td:first-child {
+    text-align: right;
+}
+
+/* provide a compact table style */
+.table-compact {
+    font-size: 0.75em;
+}
+
+/* text transformations */
+.text-rotate-90 {
+    writing-mode: vertical-rl;
+}
+
+.text-rotate-270 {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+}

@@ -1,0 +1,860 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxContactPair &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxContactPair';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxContactPairExtraDataItem" href="structPxContactPairExtraDataItem.html" />
+    <link rel="prev" title="PxContactModifyPair" href="classPxContactModifyPair.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxContactPair</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxcontactpair">
+<h1>PxContactPair<a class="headerlink" href="#pxcontactpair" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#pxsimulationeventcallback-8h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv413PxContactPair">
+<span id="_CPPv313PxContactPair"></span><span id="_CPPv213PxContactPair"></span><span id="PxContactPair"></span><span class="target" id="structpxcontactpair"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPair</span></span></span><a class="headerlink" href="#_CPPv413PxContactPair" title="Link to this definition">#</a><br /></dt>
+<dd><p>Contact report pair information. </p>
+<p>Instances of this class are passed to <a class="reference internal" href="classPxSimulationEventCallback.html#classpxsimulationeventcallback_1a4dc1da28643ccf9f77c8432b5eb2fd32"><span class="std std-ref">PxSimulationEventCallback.onContact()</span></a>. If contact reports have been requested for a pair of shapes (see <a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a>), then the corresponding contact information will be provided through this structure.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSimulationEventCallback.html#classpxsimulationeventcallback_1a4dc1da28643ccf9f77c8432b5eb2fd32"><span class="std std-ref">PxSimulationEventCallback.onContact()</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair13PxContactPairEv">
+<span id="_CPPv3N13PxContactPair13PxContactPairEv"></span><span id="_CPPv2N13PxContactPair13PxContactPairEv"></span><span id="PxContactPair::PxContactPair"></span><span class="target" id="structpxcontactpair_1a23f8ad6f12b15919ebc56db341c001e8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPair</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxContactPair13PxContactPairEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxContactPair15extractContactsEP18PxContactPairPoint5PxU32">
+<span id="_CPPv3NK13PxContactPair15extractContactsEP18PxContactPairPoint5PxU32"></span><span id="_CPPv2NK13PxContactPair15extractContactsEP18PxContactPairPoint5PxU32"></span><span id="PxContactPair::extractContacts__PxContactPairPointP.PxU32C"></span><span class="target" id="structpxcontactpair_1a218e4ada46620cfe0fcb4498e102775c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">extractContacts</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="structPxContactPairPoint.html#_CPPv418PxContactPairPoint" title="PxContactPairPoint"><span class="n"><span class="pre">PxContactPairPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxContactPair15extractContactsEP18PxContactPairPoint5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Extracts the contact points from the stream and stores them in a convenient format. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxContactPairPoint.html#structpxcontactpairpoint"><span class="std std-ref">PxContactPairPoint</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> Array of <a class="reference internal" href="structPxContactPairPoint.html#structpxcontactpairpoint"><span class="std std-ref">PxContactPairPoint</span></a> structures to extract the contact points to. The number of contacts for a pair is defined by <a class="reference internal" href="#structpxcontactpair_1afd3b2178f7005d3563f41b4925e60a39"><span class="std std-ref">contactCount</span></a></p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Number of <a class="reference internal" href="structPxContactPairPoint.html#structpxcontactpairpoint"><span class="std std-ref">PxContactPairPoint</span></a> structures the provided buffer can store. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of contact points written to the buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxContactPair22extractFrictionAnchorsEP27PxContactPairFrictionAnchor5PxU32">
+<span id="_CPPv3NK13PxContactPair22extractFrictionAnchorsEP27PxContactPairFrictionAnchor5PxU32"></span><span id="_CPPv2NK13PxContactPair22extractFrictionAnchorsEP27PxContactPairFrictionAnchor5PxU32"></span><span id="PxContactPair::extractFrictionAnchors__PxContactPairFrictionAnchorP.PxU32C"></span><span class="target" id="structpxcontactpair_1af30ac0fbbd90cd5a24e0d4e90f813c12"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">extractFrictionAnchors</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="structPxContactPairFrictionAnchor.html#_CPPv427PxContactPairFrictionAnchor" title="PxContactPairFrictionAnchor"><span class="n"><span class="pre">PxContactPairFrictionAnchor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxContactPair22extractFrictionAnchorsEP27PxContactPairFrictionAnchor5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Extracts the friction anchors from the stream and stores them in a convenient format. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxContactPairFrictionAnchor.html#structpxcontactpairfrictionanchor"><span class="std std-ref">PxContactPairFrictionAnchor</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> Array of <a class="reference internal" href="structPxContactPairFrictionAnchor.html#structpxcontactpairfrictionanchor"><span class="std std-ref">PxContactPairFrictionAnchor</span></a> structures to extract the friction anchors to. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Number of <a class="reference internal" href="structPxContactPairFrictionAnchor.html#structpxcontactpairfrictionanchor"><span class="std std-ref">PxContactPairFrictionAnchor</span></a> structures the provided buffer can store. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of friction anchors written to the buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxContactPair14bufferContactsEP13PxContactPairP4PxU8">
+<span id="_CPPv3NK13PxContactPair14bufferContactsEP13PxContactPairP4PxU8"></span><span id="_CPPv2NK13PxContactPair14bufferContactsEP13PxContactPairP4PxU8"></span><span id="PxContactPair::bufferContacts__PxContactPairP.PxU8PC"></span><span class="target" id="structpxcontactpair_1a1549cea50d1c0790f91bfba76eb3af5d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bufferContacts</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="#_CPPv413PxContactPair" title="PxContactPair"><span class="n"><span class="pre">PxContactPair</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">newPair</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">bufferMemory</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxContactPair14bufferContactsEP13PxContactPairP4PxU8" title="Link to this definition">#</a><br /></dt>
+<dd><p>Helper method to clone the contact pair and copy the contact data stream into a user buffer. </p>
+<p>The contact data stream is only accessible during the contact report callback. This helper function provides copy functionality to buffer the contact stream information such that it can get accessed at a later stage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>newPair</strong> – <strong>[out]</strong> The contact pair info will get copied to this instance. The contact data stream pointer of the copy will be redirected to the provided user buffer. Use NULL to skip the contact pair copy operation. </p></li>
+<li><p><strong>bufferMemory</strong> – <strong>[out]</strong> Memory block to store the contact data stream to. At most <a class="reference internal" href="#structpxcontactpair_1a8bee18db2d05286fc1e1b14bac54184f"><span class="std std-ref">requiredBufferSize</span></a> bytes will get written to the buffer. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxContactPair22getInternalFaceIndicesEv">
+<span id="_CPPv3NK13PxContactPair22getInternalFaceIndicesEv"></span><span id="_CPPv2NK13PxContactPair22getInternalFaceIndicesEv"></span><span id="PxContactPair::getInternalFaceIndicesC"></span><span class="target" id="structpxcontactpair_1a2e058b438c60653e8bb5b6814b009a12"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getInternalFaceIndices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxContactPair22getInternalFaceIndicesEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair6shapesE">
+<span id="_CPPv3N13PxContactPair6shapesE"></span><span id="_CPPv2N13PxContactPair6shapesE"></span><span id="PxContactPair::shapes__PxShapePA"></span><span class="target" id="structpxcontactpair_1ad4482d0d718415fbbd0c5852994f139f"></span><a class="reference internal" href="classPxShape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">shapes</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxContactPair6shapesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The two shapes that make up the pair. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The shape pointers might reference deleted shapes. This will be the case if <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fa201281be698379417370bf7b0aeeb78e"><span class="std std-ref">PxPairFlag::eNOTIFY_TOUCH_LOST</span></a> or <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fa517ae07b413b27ad008f766170051ae6"><span class="std std-ref">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST</span></a> events were requested for the pair and one of the involved shapes gets deleted. Check the <a class="reference internal" href="#structpxcontactpair_1a649a2da93fe6f6227631c42733648ca7"><span class="std std-ref">flags</span></a> member to see whether that is the case. Do not dereference a pointer to a deleted shape. The pointer to a deleted shape is only provided such that user data structures which might depend on the pointer value can be updated.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair14contactPatchesE">
+<span id="_CPPv3N13PxContactPair14contactPatchesE"></span><span id="_CPPv2N13PxContactPair14contactPatchesE"></span><span id="PxContactPair::contactPatches__PxU8CP"></span><span class="target" id="structpxcontactpair_1a48af2df819d277ca1329da1630ac4a47"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contactPatches</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair14contactPatchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to first patch header in contact stream containing contact patch data. </p>
+<p>This pointer is only valid if contact point information has been requested for the contact report pair (see <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fadb30cb0c2d2859560b34c684ac076137"><span class="std std-ref">PxPairFlag::eNOTIFY_CONTACT_POINTS</span></a>). Use <a class="reference internal" href="#structpxcontactpair_1a218e4ada46620cfe0fcb4498e102775c"><span class="std std-ref">extractContacts()</span></a> as a reference for the data layout of the stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair13contactPointsE">
+<span id="_CPPv3N13PxContactPair13contactPointsE"></span><span id="_CPPv2N13PxContactPair13contactPointsE"></span><span id="PxContactPair::contactPoints__PxU8CP"></span><span class="target" id="structpxcontactpair_1a73d11caa7df479aa964761a376968abb"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contactPoints</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair13contactPointsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to first contact point in contact stream containing contact data. </p>
+<p>This pointer is only valid if contact point information has been requested for the contact report pair (see <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fadb30cb0c2d2859560b34c684ac076137"><span class="std std-ref">PxPairFlag::eNOTIFY_CONTACT_POINTS</span></a>). Use <a class="reference internal" href="#structpxcontactpair_1a218e4ada46620cfe0fcb4498e102775c"><span class="std std-ref">extractContacts()</span></a> as a reference for the data layout of the stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair15contactImpulsesE">
+<span id="_CPPv3N13PxContactPair15contactImpulsesE"></span><span id="_CPPv2N13PxContactPair15contactImpulsesE"></span><span id="PxContactPair::contactImpulses__PxRealCP"></span><span class="target" id="structpxcontactpair_1a0468bb8f49c3eeaf0ec18ce5b828f0ca"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contactImpulses</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair15contactImpulsesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Buffer containing applied impulse data. </p>
+<p>This pointer is only valid if contact point information has been requested for the contact report pair (see <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fadb30cb0c2d2859560b34c684ac076137"><span class="std std-ref">PxPairFlag::eNOTIFY_CONTACT_POINTS</span></a>). Use <a class="reference internal" href="#structpxcontactpair_1a218e4ada46620cfe0fcb4498e102775c"><span class="std std-ref">extractContacts()</span></a> as a reference for the data layout of the stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair15frictionPatchesE">
+<span id="_CPPv3N13PxContactPair15frictionPatchesE"></span><span id="_CPPv2N13PxContactPair15frictionPatchesE"></span><span id="PxContactPair::frictionPatches__PxU8CP"></span><span class="target" id="structpxcontactpair_1a99858e300c90baab518b8ec2db520307"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">frictionPatches</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair15frictionPatchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Buffer containing contact patches friction information. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair18requiredBufferSizeE">
+<span id="_CPPv3N13PxContactPair18requiredBufferSizeE"></span><span id="_CPPv2N13PxContactPair18requiredBufferSizeE"></span><span id="PxContactPair::requiredBufferSize__PxU32"></span><span class="target" id="structpxcontactpair_1a8bee18db2d05286fc1e1b14bac54184f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">requiredBufferSize</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair18requiredBufferSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Size of the contact stream [bytes] including force buffer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair12contactCountE">
+<span id="_CPPv3N13PxContactPair12contactCountE"></span><span id="_CPPv2N13PxContactPair12contactCountE"></span><span id="PxContactPair::contactCount__PxU8"></span><span class="target" id="structpxcontactpair_1afd3b2178f7005d3563f41b4925e60a39"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactCount</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair12contactCountE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of contact points stored in the contact stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair10patchCountE">
+<span id="_CPPv3N13PxContactPair10patchCountE"></span><span id="_CPPv2N13PxContactPair10patchCountE"></span><span id="PxContactPair::patchCount__PxU8"></span><span class="target" id="structpxcontactpair_1aac2821a1e5d8d8cc969b24f2a861a1a0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">patchCount</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair10patchCountE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of contact patches stored in the contact stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair17contactStreamSizeE">
+<span id="_CPPv3N13PxContactPair17contactStreamSizeE"></span><span id="_CPPv2N13PxContactPair17contactStreamSizeE"></span><span id="PxContactPair::contactStreamSize__PxU16"></span><span class="target" id="structpxcontactpair_1abf78ac4dcef249601f486b939c08d589"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactStreamSize</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair17contactStreamSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Size of the contact stream [bytes] not including force buffer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair5flagsE">
+<span id="_CPPv3N13PxContactPair5flagsE"></span><span id="_CPPv2N13PxContactPair5flagsE"></span><span id="PxContactPair::flags__PxContactPairFlags"></span><span class="target" id="structpxcontactpair_1a649a2da93fe6f6227631c42733648ca7"></span><a class="reference internal" href="typedef_PxSimulationEventCallback_8h_1ae73039b8bd7e7f4a606acfba4811291c.html#_CPPv418PxContactPairFlags" title="PxContactPairFlags"><span class="n"><span class="pre">PxContactPairFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair5flagsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Additional information on the contact report pair. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxContactPairFlag.html#structpxcontactpairflag"><span class="std std-ref">PxContactPairFlag</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair6eventsE">
+<span id="_CPPv3N13PxContactPair6eventsE"></span><span id="_CPPv2N13PxContactPair6eventsE"></span><span id="PxContactPair::events__PxPairFlags"></span><span class="target" id="structpxcontactpair_1acba0b9958ac5d3884c515f94234b9c20"></span><a class="reference internal" href="typedef_PxFiltering_8h_1acacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">events</span></span></span><a class="headerlink" href="#_CPPv4N13PxContactPair6eventsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Flags raised due to the contact. </p>
+<p>The events field is a combination of:</p>
+<p><ul class="simple">
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fabd8650de69997eaa7c5717e347ca74ac"><span class="std std-ref">PxPairFlag::eNOTIFY_TOUCH_FOUND</span></a>, </p></li>
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fa69f6e6373fe2f024618f752c388ef6b1"><span class="std std-ref">PxPairFlag::eNOTIFY_TOUCH_PERSISTS</span></a>, </p></li>
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fa201281be698379417370bf7b0aeeb78e"><span class="std std-ref">PxPairFlag::eNOTIFY_TOUCH_LOST</span></a>, </p></li>
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac3bd4a1e1a9cb6fbc00dd7df5770f4ac"><span class="std std-ref">PxPairFlag::eNOTIFY_TOUCH_CCD</span></a>, </p></li>
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fab35919229480fcf006fe1dd5a3fe38ab"><span class="std std-ref">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND</span></a>, </p></li>
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac74556f995b40456ab3dfcf1ea9de2dd"><span class="std std-ref">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_PERSISTS</span></a>, </p></li>
+<li><p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fa517ae07b413b27ad008f766170051ae6"><span class="std std-ref">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST</span></a></p></li>
+</ul>
+</p>
+<p>See the documentation of <a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a> for an explanation of each.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eNOTIFY_TOUCH_CCD can get raised even if the pair did not request this event. However, in such a case it will only get raised in combination with one of the other flags to point out that the other event occured during a CCD pass.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxContactPair12internalDataE">
+<span id="_CPPv3N13PxContactPair12internalDataE"></span><span id="_CPPv2N13PxContactPair12internalDataE"></span><span id="PxContactPair::internalData__PxU32A"></span><span class="target" id="structpxcontactpair_1a7335f614a8f1aaec63340f28cc4d1f5f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">internalData</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxContactPair12internalDataE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxContactModifyPair.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxContactModifyPair</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxContactPairExtraDataItem.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxContactPairExtraDataItem</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv413PxContactPair"><code class="docutils literal notranslate"><span class="pre">PxContactPair</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair13PxContactPairEv"><code class="docutils literal notranslate"><span class="pre">PxContactPair()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxContactPair15extractContactsEP18PxContactPairPoint5PxU32"><code class="docutils literal notranslate"><span class="pre">extractContacts()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxContactPair22extractFrictionAnchorsEP27PxContactPairFrictionAnchor5PxU32"><code class="docutils literal notranslate"><span class="pre">extractFrictionAnchors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxContactPair14bufferContactsEP13PxContactPairP4PxU8"><code class="docutils literal notranslate"><span class="pre">bufferContacts()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxContactPair22getInternalFaceIndicesEv"><code class="docutils literal notranslate"><span class="pre">getInternalFaceIndices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair6shapesE"><code class="docutils literal notranslate"><span class="pre">shapes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair14contactPatchesE"><code class="docutils literal notranslate"><span class="pre">contactPatches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair13contactPointsE"><code class="docutils literal notranslate"><span class="pre">contactPoints</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair15contactImpulsesE"><code class="docutils literal notranslate"><span class="pre">contactImpulses</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair15frictionPatchesE"><code class="docutils literal notranslate"><span class="pre">frictionPatches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair18requiredBufferSizeE"><code class="docutils literal notranslate"><span class="pre">requiredBufferSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair12contactCountE"><code class="docutils literal notranslate"><span class="pre">contactCount</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair10patchCountE"><code class="docutils literal notranslate"><span class="pre">patchCount</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair17contactStreamSizeE"><code class="docutils literal notranslate"><span class="pre">contactStreamSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair5flagsE"><code class="docutils literal notranslate"><span class="pre">flags</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair6eventsE"><code class="docutils literal notranslate"><span class="pre">events</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxContactPair12internalDataE"><code class="docutils literal notranslate"><span class="pre">internalData</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

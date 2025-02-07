@@ -1,0 +1,740 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Startup and Shutdown &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/Startup';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Threading" href="Threading.html" />
+    <link rel="prev" title="PhysX API Basics" href="API.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Startup and Shutdown</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="startup-and-shutdown">
+<span id="startup"></span><h1>Startup and Shutdown<a class="headerlink" href="#startup-and-shutdown" title="Link to this heading">#</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<p>The first step in using the PhysX SDK in a program is the initialization of some global objects.  These objects can be released when PhysX is no longer needed to free resources.  This chapter describes how to do this.</p>
+</section>
+<section id="foundation-and-physics">
+<h2>Foundation and Physics<a class="headerlink" href="#foundation-and-physics" title="Link to this heading">#</a></h2>
+<p>First, in some startup code, create a <a class="reference internal" href="../_api_build/classPxFoundation.html#_CPPv412PxFoundation" title="PxFoundation"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFoundation</span></code></a> object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="n">PxDefaultErrorCallback</span><span class="w"> </span><span class="n">gDefaultErrorCallback</span><span class="p">;</span>
+<span class="k">static</span><span class="w"> </span><span class="n">PxDefaultAllocator</span><span class="w"> </span><span class="n">gDefaultAllocatorCallback</span><span class="p">;</span>
+
+<span class="n">mFoundation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateFoundation</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="n">gDefaultAllocatorCallback</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gDefaultErrorCallback</span><span class="p">);</span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">mFoundation</span><span class="p">)</span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxCreateFoundation failed!&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Every PhysX module requires a <a class="reference internal" href="../_api_build/classPxFoundation.html#_CPPv412PxFoundation" title="PxFoundation"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFoundation</span></code></a> instance to be available. The required parameters are a version ID, an allocator callback and an error callback. PX_PHYSICS_VERSION, is a macro predefined in our headers to enable PhysX to check for a version mismatch between the headers and the corresponding SDK DLLs.</p>
+<p>Usually, the allocator callback and error callback are specific to the application, but PhysX provides default implementations that make it easy to get started. See <a class="reference internal" href="API.html#memorymanagement"><span class="std std-ref">Memory Management</span></a> and <a class="reference internal" href="API.html#errorreporting"><span class="std std-ref">Error Reporting</span></a> for more details of these callbacks. (The actual sample code supports an advanced memory allocator that tracks allocations instead of the default, but we have omitted that detail here.)</p>
+<p>Now create the top-level <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="n">recordMemoryAllocations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+
+<span class="n">mPvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePvd</span><span class="p">(</span><span class="o">*</span><span class="n">gFoundation</span><span class="p">);</span>
+<span class="n">PxPvdTransport</span><span class="o">*</span><span class="w"> </span><span class="n">transport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxDefaultPvdSocketTransportCreate</span><span class="p">(</span><span class="n">PVD_HOST</span><span class="p">,</span><span class="w"> </span><span class="mi">5425</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">);</span>
+<span class="n">mPvd</span><span class="o">-&gt;</span><span class="n">connect</span><span class="p">(</span><span class="o">*</span><span class="n">transport</span><span class="p">,</span><span class="n">PxPvdInstrumentationFlag</span><span class="o">::</span><span class="n">eALL</span><span class="p">);</span>
+
+
+<span class="n">mPhysics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">mFoundation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">PxTolerancesScale</span><span class="p">(),</span><span class="w"> </span><span class="n">recordMemoryAllocations</span><span class="p">,</span><span class="w"> </span><span class="n">mPvd</span><span class="p">);</span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">mPhysics</span><span class="p">)</span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxCreatePhysics failed!&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Again, the version ID has to be passed in. The <a class="reference internal" href="../_api_build/classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a> parameter makes it easier to author content at different scales and still have PhysX work as expected, but to get started simply pass a default object of this type. The recordMemoryAllocations parameter specifies whether to perform memory profiling. The optional PVD instance enables the debugging and profiling with the PhysX Visual Debugger.</p>
+</section>
+<section id="cooking">
+<h2>Cooking<a class="headerlink" href="#cooking" title="Link to this heading">#</a></h2>
+<p>The PhysX cooking library provides functions for creating, converting, and serializing bulk data. Depending on your application, you may wish to link to the cooking library in order to process such data at runtime. Alternatively you may be able to process all such data in advance and just load it into memory as required. The <a class="reference internal" href="../_api_build/structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><code class="xref cpp cpp-struct docutils literal notranslate"><span class="pre">PxCookingParams</span></code></a> struct captures all the cooking parameters, used by cooking functions. It is important to use consistent <a class="reference internal" href="../_api_build/classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a> values everywhere in your application (see <a class="reference internal" href="API.html#pxtolerancescale"><span class="std std-ref">Using Different Units</span></a> for more details).</p>
+<p>The cooking functions typically generate data through a streaming interface. See <a class="reference internal" href="../_api_build/file_include_extensions_PxDefaultStreams.h.html"><span class="doc">PxDefaultStreams.h</span></a> for example implementations of streams to read and write from files and memory buffers. Alternatively some objects like heightfield or triangle meshes can be directly inserted into <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> without serialization using the <code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxPhysicsInsertionCallback</span></code>. The default callback must be used and can be obtained using the <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv4N9PxPhysics27getPhysicsInsertionCallbackEv" title="PxPhysics::getPhysicsInsertionCallback"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::getPhysicsInsertionCallback()</span></code></a>.</p>
+</section>
+<section id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Link to this heading">#</a></h2>
+<p>The extensions library  contains many functions that may be useful to a large class of users, but which some users may prefer to omit from their application either for code size reasons or to avoid use of certain subsystems, such as those pertaining to networking. Initializing the extensions library requires the <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">PxInitExtensions</span><span class="p">(</span><span class="o">*</span><span class="n">mPhysics</span><span class="p">,</span><span class="w"> </span><span class="n">mPvd</span><span class="p">))</span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxInitExtensions failed!&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="delay-loading-dlls">
+<span id="optionalsdkcomponents"></span><h2>Delay-Loading DLLs<a class="headerlink" href="#delay-loading-dlls" title="Link to this heading">#</a></h2>
+<p>The PhysXCommon DLL and PhysXFoundation DLL are marked as delay-loaded inside of the PhysX, PhysXCooking and PhysXCommon projects. So it is possible to have delay-loaded PhysXFoundation, PhysXCommon, PhysX and PhysXCooking DLLs.</p>
+<section id="physxcommon-dll-and-physxfoundation-dll-load">
+<h3>PhysXCommon DLL and PhysXFoundation DLL load<a class="headerlink" href="#physxcommon-dll-and-physxfoundation-dll-load" title="Link to this heading">#</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>If delay load hook is specified the PhysXCommon name or PhysXFoundation name provided by user is used</p></li>
+<li><p>If delay load hook is not specified, the corresponding PhysXCommon DLL or PhysXFoundation DLL is used</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="pxdelayloadhook">
+<h3>PxDelayLoadHook<a class="headerlink" href="#pxdelayloadhook" title="Link to this heading">#</a></h3>
+<p>The <a class="reference internal" href="../_api_build/classPxDelayLoadHook.html#_CPPv415PxDelayLoadHook" title="PxDelayLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDelayLoadHook</span></code></a> class supports loading of the PhysXCommon, PhysXFoundation DLLs with different names and paths. This can be achieved by providing different DLL paths to the PhysX SDK through a custom subclass of <a class="reference internal" href="../_api_build/classPxDelayLoadHook.html#_CPPv415PxDelayLoadHook" title="PxDelayLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDelayLoadHook</span></code></a>, see the following example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SnippetDelayLoadHook</span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxDelayLoadHook</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="nf">getPhysXCommonDllName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;customPath</span><span class="se">\\</span><span class="s">PhysXCommon_x64_Renamed.dll&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="nf">getPhysXFoundationDllName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;customPath</span><span class="se">\\</span><span class="s">PhysXFoundation_x64_Renamed.dll&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span><span class="w"> </span><span class="n">gDelayLoadHook</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Now the hook must be set for PhysX, PhysXCooking, PhysXCommon:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSetPhysXDelayLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gDelayLoadHook</span><span class="p">);</span>
+<span class="n">PxSetPhysXCookingDelayLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gDelayLoadHook</span><span class="p">);</span>
+<span class="n">PxSetPhysXCommonDelayLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gDelayLoadHook</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For more information please see the SnippetDelayLoadHook.</p>
+</section>
+<section id="pxgpuloadhook">
+<h3>PxGpuLoadHook<a class="headerlink" href="#pxgpuloadhook" title="Link to this heading">#</a></h3>
+<p>The <a class="reference internal" href="../_api_build/classPxGpuLoadHook.html#_CPPv413PxGpuLoadHook" title="PxGpuLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGpuLoadHook</span></code></a> class supports loading of the PhysXGpu DLL with a different name or path. This can be achieved by providing a different DLL path to the PhysX SDK through a custom subclass of <a class="reference internal" href="../_api_build/classPxGpuLoadHook.html#_CPPv413PxGpuLoadHook" title="PxGpuLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGpuLoadHook</span></code></a>, see the following example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SnippetGpuLoadHook</span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxGpuLoadHook</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="nf">getPhysXGpuDllName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;customPath</span><span class="se">\\</span><span class="s">PhysXGpu_x64_Renamed.dll&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span><span class="w"> </span><span class="n">gGpuLoadHook</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Now the hook must be set for PhysX:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSetPhysXGpuLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gGpuLoadHook</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For more information please see the SnippetDelayLoadHook.</p>
+</section>
+<section id="physxcommon-secure-load">
+<h3>PhysXCommon Secure Load<a class="headerlink" href="#physxcommon-secure-load" title="Link to this heading">#</a></h3>
+<p>All PhysX DLLs distributed by NVIDIA are signed. The PhysXCommon DLL signature is checked, when it is loaded by PhysX or PhysXCooking. If signature test fails the application is terminated.</p>
+</section>
+</section>
+<section id="shutting-down">
+<h2>Shutting Down<a class="headerlink" href="#shutting-down" title="Link to this heading">#</a></h2>
+<p>To dispose of any PhysX object, call its release() method.  This will destroy the object, and all contained objects.  The precise behavior depends on the object type being released, so refer to the reference guide for details.  To shut down the extensions library, call the function <a class="reference internal" href="../_api_build/function_PxExtensionsAPI_8h_1a96cac5e32f05a4294677712ae4831f1e.html#_CPPv417PxCloseExtensionsv" title="PxCloseExtensions"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCloseExtensions()</span></code></a>. To shut down physics, call release() on the <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> object, and this will clean up all of the physics objects:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Do not forget to release the foundation object as well, but only after all other PhysX modules have been released:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mFoundation</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="API.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PhysX API Basics</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Threading.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Threading</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#foundation-and-physics">Foundation and Physics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cooking">Cooking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#extensions">Extensions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#delay-loading-dlls">Delay-Loading DLLs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#physxcommon-dll-and-physxfoundation-dll-load">PhysXCommon DLL and PhysXFoundation DLL load</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pxdelayloadhook">PxDelayLoadHook</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pxgpuloadhook">PxGpuLoadHook</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#physxcommon-secure-load">PhysXCommon Secure Load</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shutting-down">Shutting Down</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

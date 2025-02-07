@@ -1,0 +1,1117 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxGjkQueryExt &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxGjkQueryExt';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxGpuActorPair" href="structPxGpuActorPair.html" />
+    <link rel="prev" title="PxGjkQuery" href="classPxGjkQuery.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxGjkQueryExt</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxgjkqueryext">
+<h1>PxGjkQueryExt<a class="headerlink" href="#pxgjkqueryext" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxGjkQueryExt.h.html#pxgjkqueryext-8h"><span class="std std-ref">include/extensions/PxGjkQueryExt.h</span></a></p>
+<section id="structs">
+<h2>Structs<a class="headerlink" href="#structs" title="Link to this heading">#</a></h2>
+<div class="docutils container">
+<dl class="simple">
+<dt><a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a></dt><dd><p>Pre-made support mapping for a box.</p>
+</dd>
+<dt><a class="reference internal" href="#structpxgjkqueryext_1_1capsulesupport"><span class="std std-ref">CapsuleSupport</span></a></dt><dd><p>Pre-made support mapping for a capsule.</p>
+</dd>
+<dt><a class="reference internal" href="#structpxgjkqueryext_1_1convexgeomsupport"><span class="std std-ref">ConvexGeomSupport</span></a></dt><dd><p>Pre-made support mapping for any PhysX's convex geometry (sphere, capsule, box, convex mesh)</p>
+</dd>
+<dt><a class="reference internal" href="#structpxgjkqueryext_1_1convexmeshsupport"><span class="std std-ref">ConvexMeshSupport</span></a></dt><dd><p>Pre-made support mapping for a convex mesh.</p>
+</dd>
+<dt><a class="reference internal" href="#structpxgjkqueryext_1_1spheresupport"><span class="std std-ref">SphereSupport</span></a></dt><dd><p>Pre-made support mapping for a sphere.</p>
+</dd>
+</dl>
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxGjkQueryExt">
+<span id="_CPPv313PxGjkQueryExt"></span><span id="_CPPv213PxGjkQueryExt"></span><span id="PxGjkQueryExt"></span><span class="target" id="classpxgjkqueryext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGjkQueryExt</span></span></span><a class="headerlink" href="#_CPPv413PxGjkQueryExt" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made support mapping for built-in convex geometry types. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer">
+<span id="_CPPv3N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer"></span><span id="_CPPv2N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer"></span><span id="PxGjkQueryExt::generateContacts__PxGjkQuery::SupportCR.PxGjkQuery::SupportCR.PxTransformCR.PxTransformCR.PxReal.PxReal.PxContactBufferR"></span><span class="target" id="classpxgjkqueryext_1aab6247227c2317418146ba9026816e20"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">generateContacts</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseA</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseB</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactDistance</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">toleranceLength</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxContactBuffer.html#_CPPv415PxContactBuffer" title="PxContactBuffer"><span class="n"><span class="pre">PxContactBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">contactBuffer</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer" title="Link to this definition">#</a><br /></dt>
+<dd><p>Generates a contact point between two shapes using GJK-EPA algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – <strong>[in]</strong> Shape A support mapping </p></li>
+<li><p><strong>b</strong> – <strong>[in]</strong> Shape B support mapping </p></li>
+<li><p><strong>poseA</strong> – <strong>[in]</strong> Shape A transformation </p></li>
+<li><p><strong>poseB</strong> – <strong>[in]</strong> Shape B transformation </p></li>
+<li><p><strong>contactDistance</strong> – <strong>[in]</strong> The distance at which contacts begin to be generated between the shapes </p></li>
+<li><p><strong>toleranceLength</strong> – <strong>[in]</strong> The toleranceLength. Used for scaling distance-based thresholds internally to produce appropriate results given simulations in different units </p></li>
+<li><p><strong>contactBuffer</strong> – <strong>[out]</strong> A buffer to store the contact</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if there is a contact. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupportE">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupportE"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupportE"></span><span id="PxGjkQueryExt::BoxSupport"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupportE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made support mapping for a box. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport10BoxSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport10BoxSupportEv"></span><span id="PxGjkQueryExt::BoxSupport::BoxSupport"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a27d065c6226a813884a17622e7e266fc"></span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal"></span><span id="PxGjkQueryExt::BoxSupport::BoxSupport__PxVec3CR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1ae3407104bf1d29a25d9f26c873ef1d69"></span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">halfExtents</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a> for a box halfExtents with optional margin. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal"></span><span id="PxGjkQueryExt::BoxSupport::BoxSupport__PxBoxGeometryCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1adb1da6f5b3bc79b3ce68f8ffec7ed57b"></span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxBoxGeometry.html#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><span class="n"><span class="pre">PxBoxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">box</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a> for a <a class="reference internal" href="classPxBoxGeometry.html#classpxboxgeometry"><span class="std std-ref">PxBoxGeometry</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt10BoxSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt10BoxSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt10BoxSupport9getMarginEv"></span><span id="PxGjkQueryExt::BoxSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a52c73187802c8a384e355f0784d7e193"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt10BoxSupport9getMarginEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::BoxSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a710f702d98b7db5a9dad5a42ed8c42e7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport11halfExtentsE">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport11halfExtentsE"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport11halfExtentsE"></span><span id="PxGjkQueryExt::BoxSupport::halfExtents__PxVec3"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a8f79ccb4c49424e67a9d3dc4a5e0c04b"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">halfExtents</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport11halfExtentsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport6marginE">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport6marginE"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport6marginE"></span><span id="PxGjkQueryExt::BoxSupport::margin__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1aa3d851ee901c35438f5837604f3f8c82"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">margin</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport6marginE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupportE">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupportE"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupportE"></span><span id="PxGjkQueryExt::CapsuleSupport"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupportE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made support mapping for a capsule. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv"></span><span id="PxGjkQueryExt::CapsuleSupport::CapsuleSupport"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a0bb634f3d5611c9f3e7d7bfd80da7e72"></span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal"></span><span id="PxGjkQueryExt::CapsuleSupport::CapsuleSupport__PxReal.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a359636b62101fc96f8962db6d356d6b8"></span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfHeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1capsulesupport"><span class="std std-ref">CapsuleSupport</span></a> for capsule radius and halfHeight. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry"></span><span id="PxGjkQueryExt::CapsuleSupport::CapsuleSupport__PxCapsuleGeometryCR"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1af9a5bc62dd2c9090030ff48abb8ccc16"></span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxCapsuleGeometry.html#_CPPv417PxCapsuleGeometry" title="PxCapsuleGeometry"><span class="n"><span class="pre">PxCapsuleGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1capsulesupport"><span class="std std-ref">CapsuleSupport</span></a> for a <a class="reference internal" href="classPxCapsuleGeometry.html#classpxcapsulegeometry"><span class="std std-ref">PxCapsuleGeometry</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt14CapsuleSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt14CapsuleSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt14CapsuleSupport9getMarginEv"></span><span id="PxGjkQueryExt::CapsuleSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1af86a0352afc99e221e16b3884273bd85"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt14CapsuleSupport9getMarginEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::CapsuleSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a97a7ed8c03ae327ea80a50c0c8334f6c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport6radiusE">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport6radiusE"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport6radiusE"></span><span id="PxGjkQueryExt::CapsuleSupport::radius__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a475b03e30504de7738aa49b7c717d98c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radius</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport6radiusE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport10halfHeightE">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport10halfHeightE"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport10halfHeightE"></span><span id="PxGjkQueryExt::CapsuleSupport::halfHeight__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1ad3b2b8921414c0103c11394f6a39cfa4"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">halfHeight</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport10halfHeightE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupportE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupportE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupportE"></span><span id="PxGjkQueryExt::ConvexGeomSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ConvexGeomSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made support mapping for any PhysX’s convex geometry (sphere, capsule, box, convex mesh) </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv"></span><span id="PxGjkQueryExt::ConvexGeomSupport::ConvexGeomSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a6fe981b5faa1eede91761f9b3f657b6e"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexGeomSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal"></span><span id="PxGjkQueryExt::ConvexGeomSupport::ConvexGeomSupport__PxGeometryCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a7eb36bcf4689f9b35436cc6a0cc3c316"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexGeomSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxGeometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a> for a <a class="reference internal" href="classPxGeometry.html#classpxgeometry"><span class="std std-ref">PxGeometry</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupportD0Ev">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupportD0Ev"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupportD0Ev"></span><span id="PxGjkQueryExt::ConvexGeomSupport::~ConvexGeomSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1adff5439384aec7be73e95b944489876c"></span><span class="sig-name descname"><span class="n"><span class="pre">~ConvexGeomSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Destructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv"></span><span id="PxGjkQueryExt::ConvexGeomSupport::isValidC"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1ab1289a702a7e79fa031c471244a70551"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns false if <a class="reference internal" href="#structpxgjkqueryext_1_1convexgeomsupport"><span class="std std-ref">ConvexGeomSupport</span></a> was constructed from non-convex geometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv"></span><span id="PxGjkQueryExt::ConvexGeomSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a09d6efa8bf9b8f61fd29ce687d505363"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::ConvexGeomSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a57edb76db0a8295b557aaac286180d76"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport9alignmentE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport9alignmentE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport9alignmentE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::alignment__voidP"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a6ab38786fefcfba677298da9ac63730b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">alignment</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport9alignmentE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport6sphereE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport6sphereE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport6sphereE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::sphere__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a33dbc3fa307a8fa966f5bc65cc63ecc0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sphere</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt13SphereSupportE" title="PxGjkQueryExt::SphereSupport"><span class="n"><span class="pre">SphereSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport6sphereE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport7capsuleE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport7capsuleE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport7capsuleE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::capsule__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a60e4e7ad6e7180d97eccc4301fc187a0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capsule</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupportE" title="PxGjkQueryExt::CapsuleSupport"><span class="n"><span class="pre">CapsuleSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport7capsuleE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport3boxE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport3boxE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport3boxE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::box__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1aaff3f67932181003af8be2210648c93c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">box</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt10BoxSupportE" title="PxGjkQueryExt::BoxSupport"><span class="n"><span class="pre">BoxSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport3boxE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::convexMesh__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1ad4a92ea58864935649b5c39b81d04295"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convexMesh</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE" title="PxGjkQueryExt::ConvexMeshSupport"><span class="n"><span class="pre">ConvexMeshSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupportE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupportE"></span><span id="PxGjkQueryExt::ConvexMeshSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made support mapping for a convex mesh. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv"></span><span id="PxGjkQueryExt::ConvexMeshSupport::ConvexMeshSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a038032c176d7b6087555b74855f799c4"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal"></span><span id="PxGjkQueryExt::ConvexMeshSupport::ConvexMeshSupport__PxConvexMeshCR.PxVec3CR.PxQuatCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a00deb91760dc356c5543504750a67b21"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">convexMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="p"><span class="pre">(</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scaleRotation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">PxIdentity</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a> for a <a class="reference internal" href="classPxConvexMesh.html#classpxconvexmesh"><span class="std std-ref">PxConvexMesh</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal"></span><span id="PxGjkQueryExt::ConvexMeshSupport::ConvexMeshSupport__PxConvexMeshGeometryCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1ae54c6f08230fbc5354ff9f6760801162"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxConvexMeshGeometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">convexMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a> for a <a class="reference internal" href="classPxConvexMeshGeometry.html#classpxconvexmeshgeometry"><span class="std std-ref">PxConvexMeshGeometry</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv"></span><span id="PxGjkQueryExt::ConvexMeshSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a63bf0784651c31cf551c8aaee0287166"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::ConvexMeshSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a75123e34a1a086b8477f860e2d915371"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::convexMesh__PxConvexMeshCP"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a756901c126c68b89a78d49e4f74abe18"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">convexMesh</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport5scaleE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport5scaleE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport5scaleE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::scale__PxVec3"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1abac35cb9df1f1b6900512f96dfbced38"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport5scaleE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::scaleRotation__PxQuat"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a8c898840fc5a6c4b9aa8055ade0892ce"></span><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scaleRotation</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport6marginE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport6marginE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport6marginE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::margin__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a4ff8d3e968946b4008b611acbca2088c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">margin</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport6marginE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupportE">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupportE"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupportE"></span><span id="PxGjkQueryExt::SphereSupport"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupportE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made support mapping for a sphere. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport13SphereSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport13SphereSupportEv"></span><span id="PxGjkQueryExt::SphereSupport::SphereSupport"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1a44b21125d449d4c0b58be5302411466a"></span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal"></span><span id="PxGjkQueryExt::SphereSupport::SphereSupport__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1a1f9c2f25a15897690c0269fd23a345ad"></span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1spheresupport"><span class="std std-ref">SphereSupport</span></a> for a sphere radius. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry"></span><span id="PxGjkQueryExt::SphereSupport::SphereSupport__PxSphereGeometryCR"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1aa850d928e0306bf71a12e6a611459408"></span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxSphereGeometry.html#_CPPv416PxSphereGeometry" title="PxSphereGeometry"><span class="n"><span class="pre">PxSphereGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#structpxgjkqueryext_1_1spheresupport"><span class="std std-ref">SphereSupport</span></a> for a <a class="reference internal" href="classPxSphereGeometry.html#classpxspheregeometry"><span class="std std-ref">PxSphereGeometry</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt13SphereSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt13SphereSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt13SphereSupport9getMarginEv"></span><span id="PxGjkQueryExt::SphereSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1aa4cec0d0af28e304b3aabc3e9ac749d2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt13SphereSupport9getMarginEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::SphereSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1ae353f2a7bacabb45ddaaa05c6db8ab3d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport6radiusE">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport6radiusE"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport6radiusE"></span><span id="PxGjkQueryExt::SphereSupport::radius__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1a009b71a7824afcf5d0b5a8ad003f27ab"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radius</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport6radiusE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxGjkQuery.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxGjkQuery</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxGpuActorPair.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxGpuActorPair</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structs">Structs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv413PxGjkQueryExt"><code class="docutils literal notranslate"><span class="pre">PxGjkQueryExt</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer"><code class="docutils literal notranslate"><span class="pre">generateContacts()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt10BoxSupportE"><code class="docutils literal notranslate"><span class="pre">BoxSupport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportEv"><code class="docutils literal notranslate"><span class="pre">BoxSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal"><code class="docutils literal notranslate"><span class="pre">BoxSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal"><code class="docutils literal notranslate"><span class="pre">BoxSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt10BoxSupport9getMarginEv"><code class="docutils literal notranslate"><span class="pre">getMargin()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3"><code class="docutils literal notranslate"><span class="pre">supportLocal()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt10BoxSupport11halfExtentsE"><code class="docutils literal notranslate"><span class="pre">halfExtents</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt10BoxSupport6marginE"><code class="docutils literal notranslate"><span class="pre">margin</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupportE"><code class="docutils literal notranslate"><span class="pre">CapsuleSupport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv"><code class="docutils literal notranslate"><span class="pre">CapsuleSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal"><code class="docutils literal notranslate"><span class="pre">CapsuleSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry"><code class="docutils literal notranslate"><span class="pre">CapsuleSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt14CapsuleSupport9getMarginEv"><code class="docutils literal notranslate"><span class="pre">getMargin()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3"><code class="docutils literal notranslate"><span class="pre">supportLocal()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport6radiusE"><code class="docutils literal notranslate"><span class="pre">radius</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport10halfHeightE"><code class="docutils literal notranslate"><span class="pre">halfHeight</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportE"><code class="docutils literal notranslate"><span class="pre">ConvexGeomSupport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv"><code class="docutils literal notranslate"><span class="pre">ConvexGeomSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal"><code class="docutils literal notranslate"><span class="pre">ConvexGeomSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportD0Ev"><code class="docutils literal notranslate"><span class="pre">~ConvexGeomSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv"><code class="docutils literal notranslate"><span class="pre">isValid()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv"><code class="docutils literal notranslate"><span class="pre">getMargin()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3"><code class="docutils literal notranslate"><span class="pre">supportLocal()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport9alignmentE"><code class="docutils literal notranslate"><span class="pre">alignment</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport6sphereE"><code class="docutils literal notranslate"><span class="pre">sphere</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport7capsuleE"><code class="docutils literal notranslate"><span class="pre">capsule</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport3boxE"><code class="docutils literal notranslate"><span class="pre">box</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE"><code class="docutils literal notranslate"><span class="pre">convexMesh</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE"><code class="docutils literal notranslate"><span class="pre">ConvexMeshSupport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv"><code class="docutils literal notranslate"><span class="pre">ConvexMeshSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal"><code class="docutils literal notranslate"><span class="pre">ConvexMeshSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal"><code class="docutils literal notranslate"><span class="pre">ConvexMeshSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv"><code class="docutils literal notranslate"><span class="pre">getMargin()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3"><code class="docutils literal notranslate"><span class="pre">supportLocal()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE"><code class="docutils literal notranslate"><span class="pre">convexMesh</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport5scaleE"><code class="docutils literal notranslate"><span class="pre">scale</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE"><code class="docutils literal notranslate"><span class="pre">scaleRotation</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport6marginE"><code class="docutils literal notranslate"><span class="pre">margin</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt13SphereSupportE"><code class="docutils literal notranslate"><span class="pre">SphereSupport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportEv"><code class="docutils literal notranslate"><span class="pre">SphereSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal"><code class="docutils literal notranslate"><span class="pre">SphereSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry"><code class="docutils literal notranslate"><span class="pre">SphereSupport()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt13SphereSupport9getMarginEv"><code class="docutils literal notranslate"><span class="pre">getMargin()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3"><code class="docutils literal notranslate"><span class="pre">supportLocal()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxGjkQueryExt13SphereSupport6radiusE"><code class="docutils literal notranslate"><span class="pre">radius</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

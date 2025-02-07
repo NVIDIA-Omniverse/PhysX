@@ -1,0 +1,975 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>OmniPvdReader &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classOmniPvdReader';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="OmniPvdWriteStream" href="classOmniPvdWriteStream.html" />
+    <link rel="prev" title="OmniPvdReadStream" href="classOmniPvdReadStream.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">OmniPvdReader</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="omnipvdreader">
+<h1>OmniPvdReader<a class="headerlink" href="#omnipvdreader" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdReader.h.html#omnipvdreader-8h"><span class="std std-ref">pvdruntime/include/OmniPvdReader.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413OmniPvdReader">
+<span id="_CPPv313OmniPvdReader"></span><span id="_CPPv213OmniPvdReader"></span><span id="OmniPvdReader"></span><span class="target" id="classomnipvdreader"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdReader</span></span></span><a class="headerlink" href="#_CPPv413OmniPvdReader" title="Link to this definition">#</a><br /></dt>
+<dd><p>Used to read debug information from an <a class="reference internal" href="classOmniPvdReadStream.html#classomnipvdreadstream"><span class="std std-ref">OmniPvdReadStream</span></a>. </p>
+<p>Using the getNextCommand function in a while loop for example one can traverse the stream one command after another. Given the command, different functions below will be available.</p>
+<p>Using the OmniPvdCommand::Enum one can determine the type of command and like that use the appropriate get functions to extract the payload from the command. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReaderD0Ev">
+<span id="_CPPv3N13OmniPvdReaderD0Ev"></span><span id="_CPPv2N13OmniPvdReaderD0Ev"></span><span id="OmniPvdReader::~OmniPvdReader"></span><span class="target" id="classomnipvdreader_1a0589be8c253e41d517ff898beb3273c2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~OmniPvdReader</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdReaderD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction">
+<span id="_CPPv3N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction"></span><span id="_CPPv2N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction"></span><span id="OmniPvdReader::setLogFunction__OmniPvdLogFunction"></span><span class="target" id="classomnipvdreader_1abc8eebf5cc4ad2010dad3dfdb5aaeb10"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLogFunction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html#_CPPv418OmniPvdLogFunction" title="OmniPvdLogFunction"><span class="n"><span class="pre">OmniPvdLogFunction</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">logFunction</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the log function to print the internal debug messages of the OmniPVD Reader instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logFunction</strong> – The function pointer to receive the log messages </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader13setReadStreamER17OmniPvdReadStream">
+<span id="_CPPv3N13OmniPvdReader13setReadStreamER17OmniPvdReadStream"></span><span id="_CPPv2N13OmniPvdReader13setReadStreamER17OmniPvdReadStream"></span><span id="OmniPvdReader::setReadStream__OmniPvdReadStreamR"></span><span class="target" id="classomnipvdreader_1ad60469de6e9510091eef6e923ef40802"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setReadStream</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="classOmniPvdReadStream.html#_CPPv417OmniPvdReadStream" title="OmniPvdReadStream"><span class="n"><span class="pre">OmniPvdReadStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader13setReadStreamER17OmniPvdReadStream" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the read stream that contains the OmniPVD API command stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stream</strong> – The <a class="reference internal" href="classOmniPvdReadStream.html#classomnipvdreadstream"><span class="std std-ref">OmniPvdReadStream</span></a> that holds the stream of API calls/notifications </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType">
+<span id="_CPPv3N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType"></span><span id="_CPPv2N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType"></span><span id="OmniPvdReader::startReading__OmniPvdVersionTypeR.OmniPvdVersionTypeR.OmniPvdVersionTypeR"></span><span class="target" id="classomnipvdreader_1a100b5c5205de3d6dddd83c8554ce5411"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startReading</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">majorVersion</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">minorVersion</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">patch</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType" title="Link to this definition">#</a><br /></dt>
+<dd><p>Extracts the versions from the binary file to read and tests if the file is older or equal to that of the reader. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>majorVersion</strong> – The major versions of the stream </p></li>
+<li><p><strong>minorVersion</strong> – The minor versions of the stream </p></li>
+<li><p><strong>patch</strong> – The patch number of the stream </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>If the reading was possible to start or not </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14getNextCommandEv">
+<span id="_CPPv3N13OmniPvdReader14getNextCommandEv"></span><span id="_CPPv2N13OmniPvdReader14getNextCommandEv"></span><span id="OmniPvdReader::getNextCommand"></span><span class="target" id="classomnipvdreader_1a3cf1d39e4b1f6a667aec9259c58dcaf0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structOmniPvdCommand.html#_CPPv414OmniPvdCommand" title="OmniPvdCommand"><span class="n"><span class="pre">OmniPvdCommand</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structOmniPvdCommand.html#_CPPv4N14OmniPvdCommand4EnumE" title="OmniPvdCommand::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNextCommand</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14getNextCommandEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>The heartbeat function of the reader class. </p>
+<p>As long as the command that is returned is not equal to OmniPvdCommand::eINVALID, then one can safely extract the data fields from the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The command enum type </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader15getMajorVersionEv">
+<span id="_CPPv3N13OmniPvdReader15getMajorVersionEv"></span><span id="_CPPv2N13OmniPvdReader15getMajorVersionEv"></span><span id="OmniPvdReader::getMajorVersion"></span><span class="target" id="classomnipvdreader_1abdf2743b1c28ebb2a5f58bad5a975e50"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMajorVersion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader15getMajorVersionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the major version of the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The major version </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader15getMinorVersionEv">
+<span id="_CPPv3N13OmniPvdReader15getMinorVersionEv"></span><span id="_CPPv2N13OmniPvdReader15getMinorVersionEv"></span><span id="OmniPvdReader::getMinorVersion"></span><span class="target" id="classomnipvdreader_1a23a894f1a484552a856dbd4ca722fd49"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMinorVersion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader15getMinorVersionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the minor version of the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The minor version </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader8getPatchEv">
+<span id="_CPPv3N13OmniPvdReader8getPatchEv"></span><span id="_CPPv2N13OmniPvdReader8getPatchEv"></span><span id="OmniPvdReader::getPatch"></span><span class="target" id="classomnipvdreader_1a41c4d95f0b0caaa1d47114f923fb388e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader8getPatchEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the patch number of the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The patch value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader16getContextHandleEv">
+<span id="_CPPv3N13OmniPvdReader16getContextHandleEv"></span><span id="_CPPv2N13OmniPvdReader16getContextHandleEv"></span><span id="OmniPvdReader::getContextHandle"></span><span class="target" id="classomnipvdreader_1a2786bc9a9d3e4f37f4d725839be21bec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContextHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader16getContextHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the context handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The context handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader15getObjectHandleEv">
+<span id="_CPPv3N13OmniPvdReader15getObjectHandleEv"></span><span id="_CPPv2N13OmniPvdReader15getObjectHandleEv"></span><span id="OmniPvdReader::getObjectHandle"></span><span class="target" id="classomnipvdreader_1aea3feac01dc052ba37347b5c00697bd1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getObjectHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader15getObjectHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the object handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The object handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14getClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader14getClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader14getClassHandleEv"></span><span id="OmniPvdReader::getClassHandle"></span><span class="target" id="classomnipvdreader_1a0889843b7861a35866b1c4023042af81"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14getClassHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the class handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The class handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader18getBaseClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader18getBaseClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader18getBaseClassHandleEv"></span><span id="OmniPvdReader::getBaseClassHandle"></span><span class="target" id="classomnipvdreader_1ac4b4e25b5629952022011f32e85e3b99"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader18getBaseClassHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the base class handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The base class handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader18getAttributeHandleEv">
+<span id="_CPPv3N13OmniPvdReader18getAttributeHandleEv"></span><span id="_CPPv2N13OmniPvdReader18getAttributeHandleEv"></span><span id="OmniPvdReader::getAttributeHandle"></span><span class="target" id="classomnipvdreader_1a0cca77be5e2de11d6137305423362b3e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader18getAttributeHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the attribute handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The attribute handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader12getClassNameEv">
+<span id="_CPPv3N13OmniPvdReader12getClassNameEv"></span><span id="_CPPv2N13OmniPvdReader12getClassNameEv"></span><span id="OmniPvdReader::getClassName"></span><span class="target" id="classomnipvdreader_1a2e568efce6613cddebef4cf33ab53a4a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getClassName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader12getClassNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the class name of the latest command, if it had one, else a null terminated string of length 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The string containing the class name </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader16getAttributeNameEv">
+<span id="_CPPv3N13OmniPvdReader16getAttributeNameEv"></span><span id="_CPPv2N13OmniPvdReader16getAttributeNameEv"></span><span id="OmniPvdReader::getAttributeName"></span><span class="target" id="classomnipvdreader_1ab8ce3798816d3b7dc9a33580620ec403"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader16getAttributeNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the attribute name of the latest command, if it had one, else a null terminated string of length 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The string containing the attribute name </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader13getObjectNameEv">
+<span id="_CPPv3N13OmniPvdReader13getObjectNameEv"></span><span id="_CPPv2N13OmniPvdReader13getObjectNameEv"></span><span id="OmniPvdReader::getObjectName"></span><span class="target" id="classomnipvdreader_1afa4e63f524038596a33a8032b54abade"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getObjectName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader13getObjectNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the object name of the latest command, if it had one, else a null terminated string of length 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The string containing the object name </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader23getAttributeDataPointerEv">
+<span id="_CPPv3N13OmniPvdReader23getAttributeDataPointerEv"></span><span id="_CPPv2N13OmniPvdReader23getAttributeDataPointerEv"></span><span id="OmniPvdReader::getAttributeDataPointer"></span><span class="target" id="classomnipvdreader_1a239dfd0666f0920d3b51ca876d0de36a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeDataPointer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader23getAttributeDataPointerEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the attribute data pointer, if it had one, else returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The array containing the attribute data </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader20getAttributeDataTypeEv">
+<span id="_CPPv3N13OmniPvdReader20getAttributeDataTypeEv"></span><span id="_CPPv2N13OmniPvdReader20getAttributeDataTypeEv"></span><span id="OmniPvdReader::getAttributeDataType"></span><span class="target" id="classomnipvdreader_1acb229154c831f975e3b666b6fccf5fcb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structOmniPvdDataType.html#_CPPv415OmniPvdDataType" title="OmniPvdDataType"><span class="n"><span class="pre">OmniPvdDataType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structOmniPvdDataType.html#_CPPv4N15OmniPvdDataType4EnumE" title="OmniPvdDataType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeDataType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader20getAttributeDataTypeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the attribute data type, the data type is undefined if the last command did not contain attribute data. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The attribute data type </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader22getAttributeDataLengthEv">
+<span id="_CPPv3N13OmniPvdReader22getAttributeDataLengthEv"></span><span id="_CPPv2N13OmniPvdReader22getAttributeDataLengthEv"></span><span id="OmniPvdReader::getAttributeDataLength"></span><span class="target" id="classomnipvdreader_1a0ecd864fde0ced7ceae5de38330f5bee"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeDataLength</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader22getAttributeDataLengthEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the attribute data length, the data length of the last command if it was defined, otherwise returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The attribute data length </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader26getAttributeNumberElementsEv">
+<span id="_CPPv3N13OmniPvdReader26getAttributeNumberElementsEv"></span><span id="_CPPv2N13OmniPvdReader26getAttributeNumberElementsEv"></span><span id="OmniPvdReader::getAttributeNumberElements"></span><span class="target" id="classomnipvdreader_1a2823d06429968288d2010c955f9bf94e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeNumberElements</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader26getAttributeNumberElementsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of elements contained in the last set operation, if they were defined, otherwise returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of elements </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader23getAttributeClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader23getAttributeClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader23getAttributeClassHandleEv"></span><span id="OmniPvdReader::getAttributeClassHandle"></span><span class="target" id="classomnipvdreader_1adc207b9791e4aba79e39596e7a700c19"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader23getAttributeClassHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the numberclass handle of the attribute class, if it was defined, else returns OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The attibute class handle </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader17getFrameTimeStartEv">
+<span id="_CPPv3N13OmniPvdReader17getFrameTimeStartEv"></span><span id="_CPPv2N13OmniPvdReader17getFrameTimeStartEv"></span><span id="OmniPvdReader::getFrameTimeStart"></span><span class="target" id="classomnipvdreader_1a69f84027b2f732a91a519da942363c1b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFrameTimeStart</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader17getFrameTimeStartEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the frame start value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The frame ID value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader16getFrameTimeStopEv">
+<span id="_CPPv3N13OmniPvdReader16getFrameTimeStopEv"></span><span id="_CPPv2N13OmniPvdReader16getFrameTimeStopEv"></span><span id="OmniPvdReader::getFrameTimeStop"></span><span class="target" id="classomnipvdreader_1aee0d9767d37792abe6f6c3ccd548318e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFrameTimeStop</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader16getFrameTimeStopEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the frame stop value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The frame ID value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14getMessageDataERPKcRPKcR8uint32_tR8uint32_tR18OmniPvdClassHandle">
+<span id="_CPPv3N13OmniPvdReader14getMessageDataERPKcRPKcR8uint32_tR8uint32_tR18OmniPvdClassHandle"></span><span id="_CPPv2N13OmniPvdReader14getMessageDataERPKcRPKcR8uint32_tR8uint32_tR18OmniPvdClassHandle"></span><span id="OmniPvdReader::getMessageData__cCPR.cCPR.uint32_tR.uint32_tR.OmniPvdClassHandleR"></span><span class="target" id="classomnipvdreader_1aef8bb57e160963a6e09318bcda87bf51"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMessageData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">message</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">file</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">line</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">type</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">handle</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14getMessageDataERPKcRPKcR8uint32_tR8uint32_tR18OmniPvdClassHandle" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns data for the last message received. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> – A handle to the message string is returned. </p></li>
+<li><p><strong>file</strong> – A handle to the string containing the file name the message originated from is returned. </p></li>
+<li><p><strong>line</strong> – A handle to the line number in the file where the message originated from is returned. </p></li>
+<li><p><strong>type</strong> – A handle to the message type is returned. </p></li>
+<li><p><strong>handle</strong> – A handle to the Omni PVD class handle is returned. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader18getEnumClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader18getEnumClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader18getEnumClassHandleEv"></span><span id="OmniPvdReader::getEnumClassHandle"></span><span class="target" id="classomnipvdreader_1a065c9005042bc89137446cc3d91dbefa"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getEnumClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader18getEnumClassHandleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the class handle containing the enum values, if it was defined, else returns OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The enum class handle </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader12getEnumValueEv">
+<span id="_CPPv3N13OmniPvdReader12getEnumValueEv"></span><span id="_CPPv2N13OmniPvdReader12getEnumValueEv"></span><span id="OmniPvdReader::getEnumValue"></span><span class="target" id="classomnipvdreader_1a11b0fb6fb492f6789033cc5cb383afa7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html#_CPPv420OmniPvdEnumValueType" title="OmniPvdEnumValueType"><span class="n"><span class="pre">OmniPvdEnumValueType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getEnumValue</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader12getEnumValueEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the enum value for a specific flag, if it was defined, else returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The enum value </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classOmniPvdReadStream.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">OmniPvdReadStream</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classOmniPvdWriteStream.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">OmniPvdWriteStream</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv413OmniPvdReader"><code class="docutils literal notranslate"><span class="pre">OmniPvdReader</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReaderD0Ev"><code class="docutils literal notranslate"><span class="pre">~OmniPvdReader()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction"><code class="docutils literal notranslate"><span class="pre">setLogFunction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader13setReadStreamER17OmniPvdReadStream"><code class="docutils literal notranslate"><span class="pre">setReadStream()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType"><code class="docutils literal notranslate"><span class="pre">startReading()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader14getNextCommandEv"><code class="docutils literal notranslate"><span class="pre">getNextCommand()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader15getMajorVersionEv"><code class="docutils literal notranslate"><span class="pre">getMajorVersion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader15getMinorVersionEv"><code class="docutils literal notranslate"><span class="pre">getMinorVersion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader8getPatchEv"><code class="docutils literal notranslate"><span class="pre">getPatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader16getContextHandleEv"><code class="docutils literal notranslate"><span class="pre">getContextHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader15getObjectHandleEv"><code class="docutils literal notranslate"><span class="pre">getObjectHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader14getClassHandleEv"><code class="docutils literal notranslate"><span class="pre">getClassHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader18getBaseClassHandleEv"><code class="docutils literal notranslate"><span class="pre">getBaseClassHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader18getAttributeHandleEv"><code class="docutils literal notranslate"><span class="pre">getAttributeHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader12getClassNameEv"><code class="docutils literal notranslate"><span class="pre">getClassName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader16getAttributeNameEv"><code class="docutils literal notranslate"><span class="pre">getAttributeName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader13getObjectNameEv"><code class="docutils literal notranslate"><span class="pre">getObjectName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader23getAttributeDataPointerEv"><code class="docutils literal notranslate"><span class="pre">getAttributeDataPointer()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader20getAttributeDataTypeEv"><code class="docutils literal notranslate"><span class="pre">getAttributeDataType()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader22getAttributeDataLengthEv"><code class="docutils literal notranslate"><span class="pre">getAttributeDataLength()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader26getAttributeNumberElementsEv"><code class="docutils literal notranslate"><span class="pre">getAttributeNumberElements()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader23getAttributeClassHandleEv"><code class="docutils literal notranslate"><span class="pre">getAttributeClassHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader17getFrameTimeStartEv"><code class="docutils literal notranslate"><span class="pre">getFrameTimeStart()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader16getFrameTimeStopEv"><code class="docutils literal notranslate"><span class="pre">getFrameTimeStop()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader14getMessageDataERPKcRPKcR8uint32_tR8uint32_tR18OmniPvdClassHandle"><code class="docutils literal notranslate"><span class="pre">getMessageData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader18getEnumClassHandleEv"><code class="docutils literal notranslate"><span class="pre">getEnumClassHandle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdReader12getEnumValueEv"><code class="docutils literal notranslate"><span class="pre">getEnumValue()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

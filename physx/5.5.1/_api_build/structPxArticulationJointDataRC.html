@@ -1,0 +1,721 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxArticulationJointDataRC &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxArticulationJointDataRC';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxArticulationJointReducedCoordinate" href="classPxArticulationJointReducedCoordinate.html" />
+    <link rel="prev" title="PxArticulationGpuDataType" href="classPxArticulationGpuDataType.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxArticulati...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxarticulationjointdatarc">
+<h1>PxArticulationJointDataRC<a class="headerlink" href="#pxarticulationjointdatarc" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxImmediateMode.h.html#pximmediatemode-8h"><span class="std std-ref">include/PxImmediateMode.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv425PxArticulationJointDataRC">
+<span id="_CPPv325PxArticulationJointDataRC"></span><span id="_CPPv225PxArticulationJointDataRC"></span><span id="PxArticulationJointDataRC"></span><span class="target" id="structpxarticulationjointdatarc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationJointDataRC</span></span></span><a class="headerlink" href="#_CPPv425PxArticulationJointDataRC" title="Link to this definition">#</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8initDataEv">
+<span id="_CPPv3N25PxArticulationJointDataRC8initDataEv"></span><span id="_CPPv2N25PxArticulationJointDataRC8initDataEv"></span><span id="PxArticulationJointDataRC::initData"></span><span class="target" id="structpxarticulationjointdatarc_1ac3955b2118c5a5ee10ffadf4bacd3139"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">initData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8initDataEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC10parentPoseE">
+<span id="_CPPv3N25PxArticulationJointDataRC10parentPoseE"></span><span id="_CPPv2N25PxArticulationJointDataRC10parentPoseE"></span><span id="PxArticulationJointDataRC::parentPose__PxTransform"></span><span class="target" id="structpxarticulationjointdatarc_1a9dd437f5ea603a2cfcae94664b1c8ddc"></span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parentPose</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC10parentPoseE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC9childPoseE">
+<span id="_CPPv3N25PxArticulationJointDataRC9childPoseE"></span><span id="_CPPv2N25PxArticulationJointDataRC9childPoseE"></span><span id="PxArticulationJointDataRC::childPose__PxTransform"></span><span class="target" id="structpxarticulationjointdatarc_1abe849bca196fde056d809f586473e0b1"></span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">childPose</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC9childPoseE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC6motionE">
+<span id="_CPPv3N25PxArticulationJointDataRC6motionE"></span><span id="_CPPv2N25PxArticulationJointDataRC6motionE"></span><span id="PxArticulationJointDataRC::motion__PxArticulationMotion::EnumA"></span><span class="target" id="structpxarticulationjointdatarc_1a96b02bf4c96dca988a60e93a9bfdb6b6"></span><a class="reference internal" href="structPxArticulationMotion.html#_CPPv420PxArticulationMotion" title="PxArticulationMotion"><span class="n"><span class="pre">PxArticulationMotion</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationMotion.html#_CPPv4N20PxArticulationMotion4EnumE" title="PxArticulationMotion::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">motion</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC6motionE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC6limitsE">
+<span id="_CPPv3N25PxArticulationJointDataRC6limitsE"></span><span id="_CPPv2N25PxArticulationJointDataRC6limitsE"></span><span id="PxArticulationJointDataRC::limits__PxArticulationLimitA"></span><span class="target" id="structpxarticulationjointdatarc_1a4ccdfdf509d4ade6dd04b850ea4f2593"></span><a class="reference internal" href="structPxArticulationLimit.html#_CPPv419PxArticulationLimit" title="PxArticulationLimit"><span class="n"><span class="pre">PxArticulationLimit</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">limits</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC6limitsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC6drivesE">
+<span id="_CPPv3N25PxArticulationJointDataRC6drivesE"></span><span id="_CPPv2N25PxArticulationJointDataRC6drivesE"></span><span id="PxArticulationJointDataRC::drives__PxArticulationDriveA"></span><span class="target" id="structpxarticulationjointdatarc_1a4558ef78f2b0b69e22afa7eff395c271"></span><a class="reference internal" href="structPxArticulationDrive.html#_CPPv419PxArticulationDrive" title="PxArticulationDrive"><span class="n"><span class="pre">PxArticulationDrive</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">drives</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC6drivesE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC9targetPosE">
+<span id="_CPPv3N25PxArticulationJointDataRC9targetPosE"></span><span id="_CPPv2N25PxArticulationJointDataRC9targetPosE"></span><span id="PxArticulationJointDataRC::targetPos__PxRealA"></span><span class="target" id="structpxarticulationjointdatarc_1a8fa7c1925d385bf21359af7a3de00fdf"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">targetPos</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC9targetPosE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC9targetVelE">
+<span id="_CPPv3N25PxArticulationJointDataRC9targetVelE"></span><span id="_CPPv2N25PxArticulationJointDataRC9targetVelE"></span><span id="PxArticulationJointDataRC::targetVel__PxRealA"></span><span class="target" id="structpxarticulationjointdatarc_1ac0880f71176ff60b2e6aebf2bf216237"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">targetVel</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC9targetVelE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8armatureE">
+<span id="_CPPv3N25PxArticulationJointDataRC8armatureE"></span><span id="_CPPv2N25PxArticulationJointDataRC8armatureE"></span><span id="PxArticulationJointDataRC::armature__PxRealA"></span><span class="target" id="structpxarticulationjointdatarc_1acff7d90499025e04cc0c0fab399118b5"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">armature</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8armatureE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8jointPosE">
+<span id="_CPPv3N25PxArticulationJointDataRC8jointPosE"></span><span id="_CPPv2N25PxArticulationJointDataRC8jointPosE"></span><span id="PxArticulationJointDataRC::jointPos__PxRealA"></span><span class="target" id="structpxarticulationjointdatarc_1a4291bc9a4181faea1277fe9246b86fec"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">jointPos</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8jointPosE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8jointVelE">
+<span id="_CPPv3N25PxArticulationJointDataRC8jointVelE"></span><span id="_CPPv2N25PxArticulationJointDataRC8jointVelE"></span><span id="PxArticulationJointDataRC::jointVel__PxRealA"></span><span class="target" id="structpxarticulationjointdatarc_1aeb2b246a656d0dd63b7e442084a77d99"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">jointVel</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationAxis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8jointVelE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC19frictionCoefficientE">
+<span id="_CPPv3N25PxArticulationJointDataRC19frictionCoefficientE"></span><span id="_CPPv2N25PxArticulationJointDataRC19frictionCoefficientE"></span><span id="PxArticulationJointDataRC::frictionCoefficient__PxReal"></span><span class="target" id="structpxarticulationjointdatarc_1a7e5c8d8c1b678999327c06074bdb3319"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionCoefficient</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC19frictionCoefficientE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC16maxJointVelocityE">
+<span id="_CPPv3N25PxArticulationJointDataRC16maxJointVelocityE"></span><span id="_CPPv2N25PxArticulationJointDataRC16maxJointVelocityE"></span><span id="PxArticulationJointDataRC::maxJointVelocity__PxReal"></span><span class="target" id="structpxarticulationjointdatarc_1a306d91bcf6e917fe2c321aacbf640d7b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxJointVelocity</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC16maxJointVelocityE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC4typeE">
+<span id="_CPPv3N25PxArticulationJointDataRC4typeE"></span><span id="_CPPv2N25PxArticulationJointDataRC4typeE"></span><span id="PxArticulationJointDataRC::type__PxArticulationJointType::Enum"></span><span class="target" id="structpxarticulationjointdatarc_1a2c9e37d76f4d6742136e985902eb72fa"></span><a class="reference internal" href="structPxArticulationJointType.html#_CPPv423PxArticulationJointType" title="PxArticulationJointType"><span class="n"><span class="pre">PxArticulationJointType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxArticulationJointType.html#_CPPv4N23PxArticulationJointType4EnumE" title="PxArticulationJointType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC4typeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxArticulationGpuDataType.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxArticulationGpuDataType</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxArticulationJointReducedCoordinate.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxArticulationJointReducedCoordinate</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv425PxArticulationJointDataRC"><code class="docutils literal notranslate"><span class="pre">PxArticulationJointDataRC</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC8initDataEv"><code class="docutils literal notranslate"><span class="pre">initData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC10parentPoseE"><code class="docutils literal notranslate"><span class="pre">parentPose</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC9childPoseE"><code class="docutils literal notranslate"><span class="pre">childPose</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC6motionE"><code class="docutils literal notranslate"><span class="pre">motion</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC6limitsE"><code class="docutils literal notranslate"><span class="pre">limits</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC6drivesE"><code class="docutils literal notranslate"><span class="pre">drives</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC9targetPosE"><code class="docutils literal notranslate"><span class="pre">targetPos</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC9targetVelE"><code class="docutils literal notranslate"><span class="pre">targetVel</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC8armatureE"><code class="docutils literal notranslate"><span class="pre">armature</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC8jointPosE"><code class="docutils literal notranslate"><span class="pre">jointPos</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC8jointVelE"><code class="docutils literal notranslate"><span class="pre">jointVel</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC19frictionCoefficientE"><code class="docutils literal notranslate"><span class="pre">frictionCoefficient</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC16maxJointVelocityE"><code class="docutils literal notranslate"><span class="pre">maxJointVelocity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N25PxArticulationJointDataRC4typeE"><code class="docutils literal notranslate"><span class="pre">type</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

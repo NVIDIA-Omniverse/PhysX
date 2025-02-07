@@ -1,0 +1,1089 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxMathUtils.h &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/program_listing_file_include_foundation_PxMathUtils.h';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxBiLerp" href="function_PxMathUtils_8h_1a2cce2732f902ae96028bae27bcf878c8.html" />
+    <link rel="prev" title="PxMathUtils.h" href="file_include_foundation_PxMathUtils.h.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="file_include_foundation_PxMathUtils.h.html" class="nav-link">PxMathUtils.h</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxMathUtils.h</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxmathutils-h">
+<h1>PxMathUtils.h<a class="headerlink" href="#pxmathutils-h" title="Link to this heading">#</a></h1>
+<p>Fully qualified name: <code class="docutils literal notranslate"><span class="pre">include/foundation/PxMathUtils.h</span></code></p>
+<p>File members: <a class="reference internal" href="file_include_foundation_PxMathUtils.h.html#pxmathutils-8h"><span class="std std-ref">include/foundation/PxMathUtils.h</span></a></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_MATH_UTILS_H</span>
+<span class="cp">#define PX_MATH_UTILS_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxFoundationConfig.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxSimpleTypes.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxVec4.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxAssert.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxPlane.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxMat33.h&quot;</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span>
+<span class="p">{</span>
+<span class="cp">#endif</span>
+
+<span class="n">PX_FOUNDATION_API</span><span class="w"> </span><span class="n">PxQuat</span><span class="w"> </span><span class="n">PxShortestRotation</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">target</span><span class="p">);</span>
+
+<span class="cm">/* \brief diagonalizes a 3x3 symmetric matrix y</span>
+
+<span class="cm">The returned matrix satisfies M = R * D * R&#39;, where R is the rotation matrix for the output quaternion, R&#39; its</span>
+<span class="cm">transpose, and D the diagonal matrix</span>
+
+<span class="cm">If the matrix is not symmetric, the result is undefined.</span>
+
+<span class="cm">\param[in] m the matrix to diagonalize</span>
+<span class="cm">\param[out] axes a quaternion rotation which diagonalizes the matrix</span>
+<span class="cm">\return the vector diagonal of the diagonalized matrix.</span>
+<span class="cm">*/</span>
+<span class="n">PX_FOUNDATION_API</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">PxDiagonalize</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxMat33</span><span class="o">&amp;</span><span class="w"> </span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">axes</span><span class="p">);</span>
+
+<span class="n">PX_FOUNDATION_API</span><span class="w"> </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">PxTransformFromSegment</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">halfHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+
+<span class="n">PX_FOUNDATION_API</span><span class="w"> </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">PxTransformFromPlaneEquation</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxPlane</span><span class="o">&amp;</span><span class="w"> </span><span class="n">plane</span><span class="p">);</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PxPlane</span><span class="w"> </span><span class="n">PxPlaneEquationFromTransform</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxPlane</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">).</span><span class="n">transform</span><span class="p">(</span><span class="n">pose</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PxQuat</span><span class="w"> </span><span class="n">PxSlerp</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">left</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">right</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">quatEpsilon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">PxReal</span><span class="p">(</span><span class="mf">1.0e-8f</span><span class="p">));</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">cosine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">left</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">right</span><span class="p">);</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">sign</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cosine</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">cosine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">cosine</span><span class="p">;</span>
+<span class="w">        </span><span class="n">sign</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="mi">-1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">sine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">cosine</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cosine</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sine</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">quatEpsilon</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">quatEpsilon</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSqrt</span><span class="p">(</span><span class="n">sine</span><span class="p">);</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxAtan2</span><span class="p">(</span><span class="n">sine</span><span class="p">,</span><span class="w"> </span><span class="n">cosine</span><span class="p">);</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">i_sin_angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">sine</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">leftw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSin</span><span class="p">(</span><span class="n">angle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">PxReal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">i_sin_angle</span><span class="p">;</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">rightw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSin</span><span class="p">(</span><span class="n">angle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">i_sin_angle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sign</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">left</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">leftw</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">right</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rightw</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">left</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_FOUNDATION_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxIntegrateTransform</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">curTrans</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">linvel</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">angvel</span><span class="p">,</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">timeStep</span><span class="p">,</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">result</span><span class="p">);</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxQuat</span><span class="w"> </span><span class="n">PxExp</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">v</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">magnitudeSquared</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1e-24f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">PxQuat</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxQuat</span><span class="p">(</span><span class="n">PxSqrt</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">PxRecipSqrt</span><span class="p">(</span><span class="n">m</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="n">PX_FOUNDATION_API</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">PxOptimizeBoundingBox</span><span class="p">(</span><span class="n">PxMat33</span><span class="o">&amp;</span><span class="w"> </span><span class="n">basis</span><span class="p">);</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">PxLog</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">q</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">getImaginaryPart</span><span class="p">().</span><span class="n">magnitude</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1e-12f</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// force the half-angle to have magnitude &lt;= pi/2</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">halfAngle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">PxAtan2</span><span class="p">(</span><span class="o">-</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxAtan2</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="p">);</span>
+<span class="w">    </span><span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">halfAngle</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="o">-</span><span class="n">PxPi</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">halfAngle</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">PxPi</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">getImaginaryPart</span><span class="p">().</span><span class="n">getNormalized</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">halfAngle</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxLargestAxis</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">v</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU32</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">v</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">m</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxTanHalf</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">sin</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">cos</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// PT: avoids divide by zero for singularity. We return sqrt(FLT_MAX) instead of FLT_MAX</span>
+<span class="w">    </span><span class="c1">// to make sure the calling code doesn&#39;t generate INF values when manipulating the returned value</span>
+<span class="w">    </span><span class="c1">// (some joints multiply it by 4, etc).</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cos</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">-1.0f</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">sin</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.0f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="o">-</span><span class="n">sqrtf</span><span class="p">(</span><span class="n">FLT_MAX</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">sqrtf</span><span class="p">(</span><span class="n">FLT_MAX</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// PT: half-angle formula: tan(a/2) = sin(a)/(1+cos(a))</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">sin</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0f</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cos</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">PxEllipseClamp</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">point</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">radii</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// lagrange multiplier method with Newton/Halley hybrid root-finder.</span>
+<span class="w">    </span><span class="c1">// see http://www.geometrictools.com/Documentation/DistancePointToEllipse2.pdf</span>
+<span class="w">    </span><span class="c1">// for proof of Newton step robustness and initial estimate.</span>
+<span class="w">    </span><span class="c1">// Halley converges much faster but sometimes overshoots - when that happens we take</span>
+<span class="w">    </span><span class="c1">// a newton step instead</span>
+
+<span class="w">    </span><span class="c1">// converges in 1-2 iterations where D&amp;C works well, and it&#39;s good with 4 iterations</span>
+<span class="w">    </span><span class="c1">// with any ellipse that isn&#39;t completely crazy</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">MAX_ITERATIONS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">convergenceThreshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1e-4f</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// iteration requires first quadrant but we recover generality later</span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="nf">q</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">PxAbs</span><span class="p">(</span><span class="n">point</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">PxAbs</span><span class="p">(</span><span class="n">point</span><span class="p">.</span><span class="n">z</span><span class="p">));</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tinyEps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1e-6f</span><span class="p">;</span><span class="w"> </span><span class="c1">// very close to minor axis is numerically problematic but trivial</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">radii</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">z</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">q</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">tinyEps</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">point</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="n">radii</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">q</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">tinyEps</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">point</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="n">radii</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">denom</span><span class="p">,</span><span class="w"> </span><span class="n">e2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span><span class="w"> </span><span class="n">eq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">q</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// we can use any initial guess which is &gt; maximum(-e.y^2,-e.z^2) and for which f(t) is &gt; 0.</span>
+<span class="w">    </span><span class="c1">// this guess works well near the axes, but is weak along the diagonals.</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMax</span><span class="p">(</span><span class="n">eq</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">e2</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">eq</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">e2</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">MAX_ITERATIONS</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">denom</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e2</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e2</span><span class="p">.</span><span class="n">z</span><span class="p">));</span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">denom2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eq</span><span class="p">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">denom</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">fv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">denom2</span><span class="p">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">denom2</span><span class="p">);</span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fv</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fv</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// although in exact arithmetic we are guaranteed f&gt;0, we can get here</span>
+<span class="w">        </span><span class="c1">// on the first iteration via catastrophic cancellation if the point is</span>
+<span class="w">        </span><span class="c1">// very close to the origin. In that case we just behave as if f=0</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">convergenceThreshold</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">e2</span><span class="p">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">point</span><span class="p">).</span><span class="n">multiply</span><span class="p">(</span><span class="n">denom</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fv</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">denom</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">-2.0f</span><span class="p">;</span>
+<span class="w">        </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">df</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// we didn&#39;t converge, so clamp what we have</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">e2</span><span class="p">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">point</span><span class="p">).</span><span class="n">multiply</span><span class="p">(</span><span class="n">denom</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">PxRecipSqrt</span><span class="p">(</span><span class="n">PxSqr</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">PxSqr</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">radii</span><span class="p">.</span><span class="n">z</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxSeparateSwingTwist</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">swing</span><span class="p">,</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">twist</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">twist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mf">0.0f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">PxQuat</span><span class="p">(</span><span class="n">q</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="p">).</span><span class="n">getNormalized</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxQuat</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">);</span>
+<span class="w">    </span><span class="n">swing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">twist</span><span class="p">.</span><span class="n">getConjugate</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxF32</span><span class="w"> </span><span class="n">PxComputeAngle</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">v0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">v1</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxF32</span><span class="w"> </span><span class="n">cos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v0</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v1</span><span class="p">);</span><span class="w">                 </span><span class="c1">// |v0|*|v1|*Cos(Angle)</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxF32</span><span class="w"> </span><span class="n">sin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">v0</span><span class="p">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v1</span><span class="p">)).</span><span class="n">magnitude</span><span class="p">();</span><span class="w"> </span><span class="c1">// |v0|*|v1|*Sin(Angle)</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxAtan2</span><span class="p">(</span><span class="n">sin</span><span class="p">,</span><span class="w"> </span><span class="n">cos</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxComputeBasisVectors</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dir</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">right</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">up</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// Derive two remaining vectors</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">PxAbs</span><span class="p">(</span><span class="n">dir</span><span class="p">.</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">0.9999f</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">dir</span><span class="p">.</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">dir</span><span class="p">.</span><span class="n">x</span><span class="p">);</span>
+<span class="w">        </span><span class="n">right</span><span class="p">.</span><span class="n">normalize</span><span class="p">();</span>
+
+<span class="w">        </span><span class="c1">// PT: normalize not needed for &#39;up&#39; because dir &amp; right are unit vectors,</span>
+<span class="w">        </span><span class="c1">// and by construction the angle between them is 90 degrees (i.e. sin(angle)=1)</span>
+<span class="w">        </span><span class="n">up</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">dir</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">right</span><span class="p">.</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="n">dir</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">right</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dir</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">right</span><span class="p">.</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">dir</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">right</span><span class="p">.</span><span class="n">x</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">up</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">dir</span><span class="p">.</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">dir</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+<span class="w">        </span><span class="n">up</span><span class="p">.</span><span class="n">normalize</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxComputeBasisVectors</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dir</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">right</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">up</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// Compute the new direction vector</span>
+<span class="w">    </span><span class="n">dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">dir</span><span class="p">.</span><span class="n">normalize</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Derive two remaining vectors</span>
+<span class="w">    </span><span class="n">PxComputeBasisVectors</span><span class="p">(</span><span class="n">dir</span><span class="p">,</span><span class="w"> </span><span class="n">right</span><span class="p">,</span><span class="w"> </span><span class="n">up</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxGetNextIndex3</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxComputeBarycentric</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bary</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">ba</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">ca</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">da</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">pa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">detBcd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ba</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">cross</span><span class="p">(</span><span class="n">da</span><span class="p">));</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">detPcd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pa</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">cross</span><span class="p">(</span><span class="n">da</span><span class="p">));</span>
+
+<span class="w">    </span><span class="n">bary</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">detPcd</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">detBcd</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">detBpd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ba</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pa</span><span class="p">.</span><span class="n">cross</span><span class="p">(</span><span class="n">da</span><span class="p">));</span>
+<span class="w">    </span><span class="n">bary</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">detBpd</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">detBcd</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">detBcp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ba</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">cross</span><span class="p">(</span><span class="n">pa</span><span class="p">));</span>
+
+<span class="w">    </span><span class="n">bary</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">detBcp</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">detBcd</span><span class="p">;</span>
+<span class="w">    </span><span class="n">bary</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">bary</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">bary</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">bary</span><span class="p">.</span><span class="n">w</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxComputeBarycentric</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bary</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">v0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">v1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">v2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">d00</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v0</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v0</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">d01</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v0</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v1</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">d11</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v1</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v1</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">d20</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v2</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v0</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">d21</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v2</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">denom</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d00</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d11</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">d01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d01</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">d11</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d20</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">d01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d21</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">denom</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">d00</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d21</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">d01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d20</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">denom</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">w</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">bary</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u</span><span class="p">;</span><span class="w"> </span><span class="n">bary</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">;</span><span class="w"> </span><span class="n">bary</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="p">;</span>
+<span class="w">    </span><span class="n">bary</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">computeBarycentric</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bary</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxComputeBarycentric</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">bary</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">computeBarycentric</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bary</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxComputeBarycentric</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">bary</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">PxLerp</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">b</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxBiLerp</span><span class="p">(</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f00</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f10</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f01</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f11</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">ty</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxLerp</span><span class="p">(</span>
+<span class="w">        </span><span class="n">PxLerp</span><span class="p">(</span><span class="n">f00</span><span class="p">,</span><span class="w"> </span><span class="n">f10</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">),</span>
+<span class="w">        </span><span class="n">PxLerp</span><span class="p">(</span><span class="n">f01</span><span class="p">,</span><span class="w"> </span><span class="n">f11</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">),</span>
+<span class="w">        </span><span class="n">ty</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxTriLerp</span><span class="p">(</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f000</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f100</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f010</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f110</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f001</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f101</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f011</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f111</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">ty</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tz</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxLerp</span><span class="p">(</span>
+<span class="w">        </span><span class="n">PxBiLerp</span><span class="p">(</span><span class="n">f000</span><span class="p">,</span><span class="w"> </span><span class="n">f100</span><span class="p">,</span><span class="w"> </span><span class="n">f010</span><span class="p">,</span><span class="w"> </span><span class="n">f110</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">ty</span><span class="p">),</span>
+<span class="w">        </span><span class="n">PxBiLerp</span><span class="p">(</span><span class="n">f001</span><span class="p">,</span><span class="w"> </span><span class="n">f101</span><span class="p">,</span><span class="w"> </span><span class="n">f011</span><span class="p">,</span><span class="w"> </span><span class="n">f111</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">ty</span><span class="p">),</span>
+<span class="w">        </span><span class="n">tz</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbX</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbY</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nbX</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nbX</span><span class="o">*</span><span class="n">nbY</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">PX_RESTRICT</span><span class="w"> </span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">localPos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tolerance</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">clampedGridPt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">localPos</span><span class="p">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sdfBoxLower</span><span class="p">).</span><span class="n">minimum</span><span class="p">(</span><span class="n">sdfBoxHigher</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">diff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">localPos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">clampedGridPt</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">diff</span><span class="p">.</span><span class="n">magnitudeSquared</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">tolerance</span><span class="o">*</span><span class="n">tolerance</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PX_MAX_F32</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">clampedGridPt</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU32</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="n">x</span><span class="p">);</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU32</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU32</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">f</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">PxReal</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="n">j</span><span class="p">),</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="n">k</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">(</span><span class="n">dimX</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dimX</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">        </span><span class="n">clampedGridPt</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">;</span>
+<span class="w">        </span><span class="n">f</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">(</span><span class="n">dimY</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dimY</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">        </span><span class="n">clampedGridPt</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">;</span>
+<span class="w">        </span><span class="n">f</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">k</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">(</span><span class="n">dimZ</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dimZ</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">        </span><span class="n">clampedGridPt</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">;</span>
+<span class="w">        </span><span class="n">f</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s000</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s100</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s010</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s110</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s001</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s101</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s011</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">s111</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdf</span><span class="p">[</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">)];</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxTriLerp</span><span class="p">(</span>
+<span class="w">        </span><span class="n">s000</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s100</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s010</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s110</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s001</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s101</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s011</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s111</span><span class="p">,</span>
+<span class="w">        </span><span class="n">f</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">dist</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">diff</span><span class="p">.</span><span class="n">magnitude</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">dist</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cp">#if !PX_DOXYGEN </span><span class="c1">// remove due to failing references</span>
+
+<span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Interpolation</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">PxLerp</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">::</span><span class="n">physx</span><span class="o">::</span><span class="n">PxLerp</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxBiLerp</span><span class="p">(</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f00</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f10</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f01</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f11</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">ty</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">::</span><span class="n">physx</span><span class="o">::</span><span class="n">PxBiLerp</span><span class="p">(</span><span class="n">f00</span><span class="p">,</span><span class="w"> </span><span class="n">f10</span><span class="p">,</span><span class="w"> </span><span class="n">f01</span><span class="p">,</span><span class="w"> </span><span class="n">f11</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">ty</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxTriLerp</span><span class="p">(</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f000</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f100</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f010</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f110</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f001</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f101</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f011</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">f111</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">ty</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tz</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">::</span><span class="n">physx</span><span class="o">::</span><span class="n">PxTriLerp</span><span class="p">(</span><span class="n">f000</span><span class="p">,</span><span class="w"> </span><span class="n">f100</span><span class="p">,</span><span class="w"> </span><span class="n">f010</span><span class="p">,</span><span class="w"> </span><span class="n">f110</span><span class="p">,</span><span class="w"> </span><span class="n">f001</span><span class="p">,</span><span class="w"> </span><span class="n">f101</span><span class="p">,</span><span class="w"> </span><span class="n">f011</span><span class="p">,</span><span class="w"> </span><span class="n">f111</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">ty</span><span class="p">,</span><span class="w"> </span><span class="n">tz</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbX</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbY</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">::</span><span class="n">physx</span><span class="o">::</span><span class="n">PxSDFIdx</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">nbX</span><span class="p">,</span><span class="w"> </span><span class="n">nbY</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxSDFSampleImpl</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">PX_RESTRICT</span><span class="w"> </span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">localPos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tolerance</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">::</span><span class="n">physx</span><span class="o">::</span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+<span class="cp">#endif </span><span class="c1">// !PX_DOXYGEN // remove due to failing references</span>
+
+<span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">PxSdfSample</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">PX_RESTRICT</span><span class="w"> </span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">localPos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gradient</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tolerance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PX_MAX_F32</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">dist</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">tolerance</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">grad</span><span class="p">;</span>
+<span class="w">        </span><span class="n">grad</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">)</span><span class="w"> </span><span class="o">-</span>
+<span class="w">            </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">);</span>
+<span class="w">        </span><span class="n">grad</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">)</span><span class="w"> </span><span class="o">-</span>
+<span class="w">            </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">);</span>
+<span class="w">        </span><span class="n">grad</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">),</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">)</span><span class="w"> </span><span class="o">-</span>
+<span class="w">            </span><span class="n">PxSDFSample</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span><span class="w"> </span><span class="n">localPos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">),</span><span class="w"> </span><span class="n">sdfBoxLower</span><span class="p">,</span><span class="w"> </span><span class="n">sdfBoxHigher</span><span class="p">,</span><span class="w"> </span><span class="n">sdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">invSdfDx</span><span class="p">,</span><span class="w"> </span><span class="n">dimX</span><span class="p">,</span><span class="w"> </span><span class="n">dimY</span><span class="p">,</span><span class="w"> </span><span class="n">dimZ</span><span class="p">,</span><span class="w"> </span><span class="n">tolerance</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">gradient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grad</span><span class="p">;</span>
+
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">dist</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace physx</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="file_include_foundation_PxMathUtils.h.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxMathUtils.h</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="function_PxMathUtils_8h_1a2cce2732f902ae96028bae27bcf878c8.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxBiLerp</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

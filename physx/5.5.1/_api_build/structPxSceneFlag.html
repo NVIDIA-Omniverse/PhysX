@@ -1,0 +1,900 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxSceneFlag &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxSceneFlag';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSceneLimits" href="classPxSceneLimits.html" />
+    <link rel="prev" title="PxSceneDesc" href="classPxSceneDesc.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxSceneFlag</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxsceneflag">
+<h1>PxSceneFlag<a class="headerlink" href="#pxsceneflag" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSceneDesc.h.html#pxscenedesc-8h"><span class="std std-ref">include/PxSceneDesc.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv411PxSceneFlag">
+<span id="_CPPv311PxSceneFlag"></span><span id="_CPPv211PxSceneFlag"></span><span id="PxSceneFlag"></span><span class="target" id="structpxsceneflag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneFlag</span></span></span><a class="headerlink" href="#_CPPv411PxSceneFlag" title="Link to this definition">#</a><br /></dt>
+<dd><p>flags for configuring properties of the scene </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4EnumE">
+<span id="_CPPv3N11PxSceneFlag4EnumE"></span><span id="_CPPv2N11PxSceneFlag4EnumE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4EnumE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum21eENABLE_ACTIVE_ACTORSE">
+<span id="_CPPv3N11PxSceneFlag4Enum21eENABLE_ACTIVE_ACTORSE"></span><span id="_CPPv2N11PxSceneFlag4Enum21eENABLE_ACTIVE_ACTORSE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53ab864a8d54af8c7baaedba117977a523f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_ACTIVE_ACTORS</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum21eENABLE_ACTIVE_ACTORSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enable Active Actors Notification. </p>
+<p>This flag enables the Active Actor Notification feature for a scene. This feature defaults to disabled. When disabled, the function <a class="reference internal" href="classPxScene.html#classpxscene_1a629461190d914fdf019d64ef4b2fc51d"><span class="std std-ref">PxScene::getActiveActors()</span></a> will always return a NULL list.</p>
+<p><strong>Default:</strong> False </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There may be a performance penalty for enabling the Active Actor Notification, hence this flag should only be enabled if the application intends to use the feature.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum11eENABLE_CCDE">
+<span id="_CPPv3N11PxSceneFlag4Enum11eENABLE_CCDE"></span><span id="_CPPv2N11PxSceneFlag4Enum11eENABLE_CCDE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a05d1e69880f10fb3de7d26c2e2e7eca3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_CCD</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum11eENABLE_CCDE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables a second broad phase check after integration that makes it possible to prevent objects from tunneling through eachother. </p>
+<p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac41a9f8b9326480403c023ad20cdc2f1"><span class="std std-ref">PxPairFlag::eDETECT_CCD_CONTACT</span></a> requires this flag to be specified.</p>
+<p><strong>Default:</strong> False</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxRigidBodyFlag.html#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a686cdd889652a435c19d8c663d809d9e"><span class="std std-ref">PxRigidBodyFlag::eENABLE_CCD</span></a>, <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac41a9f8b9326480403c023ad20cdc2f1"><span class="std std-ref">PxPairFlag::eDETECT_CCD_CONTACT</span></a>, <a class="reference internal" href="#structpxsceneflag_1ab4c347372b4433d34d983da780916c53ae5e231832542525c2c1faedcc4a49d11"><span class="std std-ref">eDISABLE_CCD_RESWEEP</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For this feature to be effective for bodies that can move at a significant velocity, the user should raise the flag <a class="reference internal" href="structPxRigidBodyFlag.html#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a686cdd889652a435c19d8c663d809d9e"><span class="std std-ref">PxRigidBodyFlag::eENABLE_CCD</span></a> for them. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable, and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum20eDISABLE_CCD_RESWEEPE">
+<span id="_CPPv3N11PxSceneFlag4Enum20eDISABLE_CCD_RESWEEPE"></span><span id="_CPPv2N11PxSceneFlag4Enum20eDISABLE_CCD_RESWEEPE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53ae5e231832542525c2c1faedcc4a49d11"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISABLE_CCD_RESWEEP</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum20eDISABLE_CCD_RESWEEPE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables a simplified swept integration strategy, which sacrifices some accuracy for improved performance. </p>
+<p>This simplified swept integration approach makes certain assumptions about the motion of objects that are not made when using a full swept integration. These assumptions usually hold but there are cases where they could result in incorrect behavior between a set of fast-moving rigid bodies. A key issue is that fast-moving dynamic objects may tunnel through each-other after a rebound. This will not happen if this mode is disabled. However, this approach will be potentially faster than a full swept integration because it will perform significantly fewer sweeps in non-trivial scenes involving many fast-moving objects. This approach should successfully resist objects passing through the static environment.</p>
+<p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac41a9f8b9326480403c023ad20cdc2f1"><span class="std std-ref">PxPairFlag::eDETECT_CCD_CONTACT</span></a> requires this flag to be specified.</p>
+<p><strong>Default:</strong> False</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxRigidBodyFlag.html#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a686cdd889652a435c19d8c663d809d9e"><span class="std std-ref">PxRigidBodyFlag::eENABLE_CCD</span></a>, <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac41a9f8b9326480403c023ad20cdc2f1"><span class="std std-ref">PxPairFlag::eDETECT_CCD_CONTACT</span></a>, <a class="reference internal" href="#structpxsceneflag_1ab4c347372b4433d34d983da780916c53a05d1e69880f10fb3de7d26c2e2e7eca3"><span class="std std-ref">eENABLE_CCD</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This scene flag requires eENABLE_CCD to be enabled as well. If it is not, this scene flag will do nothing. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For this feature to be effective for bodies that can move at a significant velocity, the user should raise the flag <a class="reference internal" href="structPxRigidBodyFlag.html#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a686cdd889652a435c19d8c663d809d9e"><span class="std std-ref">PxRigidBodyFlag::eENABLE_CCD</span></a> for them. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable, and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum11eENABLE_PCME">
+<span id="_CPPv3N11PxSceneFlag4Enum11eENABLE_PCME"></span><span id="_CPPv2N11PxSceneFlag4Enum11eENABLE_PCME"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a29717fa631812cc31261d73055762e03"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_PCM</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum11eENABLE_PCME" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enable GJK-based distance collision detection system. </p>
+<p><strong>Default:</strong> true </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable, and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum37eDISABLE_CONTACT_REPORT_BUFFER_RESIZEE">
+<span id="_CPPv3N11PxSceneFlag4Enum37eDISABLE_CONTACT_REPORT_BUFFER_RESIZEE"></span><span id="_CPPv2N11PxSceneFlag4Enum37eDISABLE_CONTACT_REPORT_BUFFER_RESIZEE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a8644817a9a2916453433702614672565"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISABLE_CONTACT_REPORT_BUFFER_RESIZE</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum37eDISABLE_CONTACT_REPORT_BUFFER_RESIZEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Disable contact report buffer resize. </p>
+<p>Once the contact buffer is full, the rest of the contact reports will not be buffered and sent.</p>
+<p><strong>Default:</strong> false </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable, and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum22eDISABLE_CONTACT_CACHEE">
+<span id="_CPPv3N11PxSceneFlag4Enum22eDISABLE_CONTACT_CACHEE"></span><span id="_CPPv2N11PxSceneFlag4Enum22eDISABLE_CONTACT_CACHEE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a9f72bafbe1387992429615ab5842b07a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISABLE_CONTACT_CACHE</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum22eDISABLE_CONTACT_CACHEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Disable contact cache. </p>
+<p>Contact caches are used internally to provide faster contact generation. You can disable all contact caches if memory usage for this feature becomes too high.</p>
+<p><strong>Default:</strong> false </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable, and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum16eREQUIRE_RW_LOCKE">
+<span id="_CPPv3N11PxSceneFlag4Enum16eREQUIRE_RW_LOCKE"></span><span id="_CPPv2N11PxSceneFlag4Enum16eREQUIRE_RW_LOCKE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a97a4bafb1db3bba4b8ff373e16d67c5b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREQUIRE_RW_LOCK</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum16eREQUIRE_RW_LOCKE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Require scene-level locking. </p>
+<p>When set to true this requires that threads accessing the <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a> use the multi-threaded lock methods.</p>
+<p><strong>Default:</strong> false <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene_1a088a9978be5b160b79665d4fb471ec81"><span class="std std-ref">PxScene::lockRead</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene_1aca7f8e7bc71ad39645b787bc41ab8c13"><span class="std std-ref">PxScene::unlockRead</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene_1a89d45878685fa31bb2684c096d2c6918"><span class="std std-ref">PxScene::lockWrite</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene_1af2fa25d740641e78ae934c0488f17a4d"><span class="std std-ref">PxScene::unlockWrite</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable, and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum21eENABLE_STABILIZATIONE">
+<span id="_CPPv3N11PxSceneFlag4Enum21eENABLE_STABILIZATIONE"></span><span id="_CPPv2N11PxSceneFlag4Enum21eENABLE_STABILIZATIONE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a909e1cb63ea9c0394e2c2b3a526f47fe"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_STABILIZATION</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum21eENABLE_STABILIZATIONE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables additional stabilization pass in solver. </p>
+<p>When set to true, this enables additional stabilization processing to improve that stability of complex interactions between large numbers of bodies.</p>
+<p>Note that this flag is not mutable and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation. Also, this is an experimental feature which does result in some loss of momentum. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum21eENABLE_AVERAGE_POINTE">
+<span id="_CPPv3N11PxSceneFlag4Enum21eENABLE_AVERAGE_POINTE"></span><span id="_CPPv2N11PxSceneFlag4Enum21eENABLE_AVERAGE_POINTE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a641b016fe61d501e8cb5cdadd1b412ed"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_AVERAGE_POINT</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum21eENABLE_AVERAGE_POINTE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables average points in contact manifolds. </p>
+<p>When set to true, this enables additional contacts to be generated per manifold to represent the average point in a manifold. This can stabilize stacking when only a small number of solver iterations is used.</p>
+<p>Note that this flag is not mutable and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum38eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORSE">
+<span id="_CPPv3N11PxSceneFlag4Enum38eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORSE"></span><span id="_CPPv2N11PxSceneFlag4Enum38eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORSE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53aa645ccb938b901ce501b50ce55c15886"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum38eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Do not report kinematics in list of active actors. </p>
+<p>Since the target pose for kinematics is set by the user, an application can track the activity state directly and use this flag to avoid that kinematics get added to the list of active actors.</p>
+<p><strong>Default:</strong> false <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#structpxsceneflag_1ab4c347372b4433d34d983da780916c53ab864a8d54af8c7baaedba117977a523f"><span class="std std-ref">eENABLE_ACTIVE_ACTORS</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag has only an effect in combination with eENABLE_ACTIVE_ACTORS.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE">
+<span id="_CPPv3N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE"></span><span id="_CPPv2N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53afb55a7dd55b07e2ae234072e88d0b607"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_GPU_DYNAMICS</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME">
+<span id="_CPPv3N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME"></span><span id="_CPPv2N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53afc106b84674b04718dd78ea4640daf86"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_ENHANCED_DETERMINISM</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME" title="Link to this definition">#</a><br /></dt>
+<dd><p>Provides improved determinism at the expense of performance. </p>
+<p>By default, PhysX provides limited determinism guarantees. Specifically, PhysX guarantees that the exact scene (same actors created in the same order) and simulated using the same time-stepping scheme should provide the exact same behaviour.</p>
+<p>However, if additional actors are added to the simulation, this can affect the behaviour of the existing actors in the simulation, even if the set of new actors do not interact with the existing actors.</p>
+<p>This flag provides an additional level of determinism that guarantees that the simulation will not change if additional actors are added to the simulation, provided those actors do not interfere with the existing actors in the scene. Determinism is only guaranteed if the actors are inserted in a consistent order each run in a newly-created scene and simulated using a consistent time-stepping scheme.</p>
+<p>Note that this flag is not mutable and must be set at scene creation.</p>
+<p>Note that enabling this flag can have a negative impact on performance.</p>
+<p>Note that this feature is not currently supported on GPU.</p>
+<p><strong>Default</strong> false </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum32eENABLE_FRICTION_EVERY_ITERATIONE">
+<span id="_CPPv3N11PxSceneFlag4Enum32eENABLE_FRICTION_EVERY_ITERATIONE"></span><span id="_CPPv2N11PxSceneFlag4Enum32eENABLE_FRICTION_EVERY_ITERATIONE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a0f33dd0881c63e1f82f9b7eb333c81b0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_FRICTION_EVERY_ITERATION</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum32eENABLE_FRICTION_EVERY_ITERATIONE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Controls processing friction in all solver iterations. </p>
+<p>By default, PhysX processes friction only in the final 3 position iterations, and all velocity iterations. This flag enables friction processing in all position and velocity iterations.</p>
+<p>The default behaviour provides a good trade-off between performance and stability and is aimed primarily at game development.</p>
+<p>When simulating more complex frictional behaviour, such as grasping of complex geometries with a robotic manipulator, better results can be achieved by enabling friction in all solver iterations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag only has effect with the default solver. The TGS solver always performs friction per-iteration. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum43eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGSE">
+<span id="_CPPv3N11PxSceneFlag4Enum43eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGSE"></span><span id="_CPPv2N11PxSceneFlag4Enum43eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGSE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a8cf2a19e7d37e77f4b5fa00d5dbee26c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum43eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Controls application of gravity and other external forces per TGS solver position iterations. </p>
+<p>By default, external forces such as gravity are applied just once at the beginning of each simulate() call. With this flag enabled the same forces are applied in each sub time step (position iteration) of the TGS solver, leading to greater stability and better solver convergence. One consequence is that a body in freefall will move a shorter distance over the entire simulation step if the flag is raised.</p>
+<p>Note that raising this flag makes the distance traveled under freefall dependent on the number of solver iterations. Since solver iterations are determined per-island, bodies assigned to an island with fewer solver iterations will travel a larger distance than bodies assigned to an island with more iterations.</p>
+<p><strong>Default</strong> false </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature is only supported for the TGS solver.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum22eENABLE_DIRECT_GPU_APIE">
+<span id="_CPPv3N11PxSceneFlag4Enum22eENABLE_DIRECT_GPU_APIE"></span><span id="_CPPv2N11PxSceneFlag4Enum22eENABLE_DIRECT_GPU_APIE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53aa883fa04a2466964f365a4eecdf0f3c5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_DIRECT_GPU_API</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum22eENABLE_DIRECT_GPU_APIE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum26eENABLE_BODY_ACCELERATIONSE">
+<span id="_CPPv3N11PxSceneFlag4Enum26eENABLE_BODY_ACCELERATIONSE"></span><span id="_CPPv2N11PxSceneFlag4Enum26eENABLE_BODY_ACCELERATIONSE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53aba941abeca53bf3c62f093cfc3effe63"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_BODY_ACCELERATIONS</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum26eENABLE_BODY_ACCELERATIONSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables the computation of body accelerations for <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> actors. </p>
+<p>By default PhysX does not compute per-body accelerations for <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> actors (only for articulation links). This flag tells the system to compute them.</p>
+<p>Retrieve the accelerations using <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1ab82f63b8cc7a0a305d92e90cc4a2a17c"><span class="std std-ref">PxRigidBody::getLinearAcceleration()</span></a> and <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1a3f9295e8ced6cd4e8fc01c6871ba2b8e"><span class="std std-ref">PxRigidBody::getAngularAcceleration()</span></a>.</p>
+<p>If the flag is not enabled these functions will return valid accelerations for <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink"><span class="std std-ref">PxArticulationLink</span></a> objects, but it will return zero for <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> actors.</p>
+<p>If the flag is enabled, these functions will return valid accelerations for both <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink"><span class="std std-ref">PxArticulationLink</span></a> and <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> objects.</p>
+<p>This flag also enables <a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#classpxrigiddynamicgpuapireadtype_1adb773fd348beaec486685ffb24dd437fa1ea42181cc5f63f4866dbb1b4c9ab62a"><span class="std std-ref">PxRigidDynamicGPUAPIReadType::eLINEAR_ACCELERATION</span></a> and <a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#classpxrigiddynamicgpuapireadtype_1adb773fd348beaec486685ffb24dd437fa5c95a4463fb2f513547a7eb1c192b91f"><span class="std std-ref">PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION</span></a> in the direct GPU API.</p>
+<p><strong>Default</strong> false <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1ab82f63b8cc7a0a305d92e90cc4a2a17c"><span class="std std-ref">PxRigidBody::getLinearAcceleration()</span></a> <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1a3f9295e8ced6cd4e8fc01c6871ba2b8e"><span class="std std-ref">PxRigidBody::getAngularAcceleration()</span></a> <a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#classpxrigiddynamicgpuapireadtype"><span class="std std-ref">PxRigidDynamicGPUAPIReadType</span></a> <a class="reference internal" href="classPxDirectGPUAPI.html#classpxdirectgpuapi"><span class="std std-ref">PxDirectGPUAPI</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is not mutable and must be set in <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc"><span class="std std-ref">PxSceneDesc</span></a> at scene creation. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum33eENABLE_SOLVER_RESIDUAL_REPORTINGE">
+<span id="_CPPv3N11PxSceneFlag4Enum33eENABLE_SOLVER_RESIDUAL_REPORTINGE"></span><span id="_CPPv2N11PxSceneFlag4Enum33eENABLE_SOLVER_RESIDUAL_REPORTINGE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53abafd5047dc2329ae9855f3f6d197105d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_SOLVER_RESIDUAL_REPORTING</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum33eENABLE_SOLVER_RESIDUAL_REPORTINGE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneFlag4Enum14eMUTABLE_FLAGSE">
+<span id="_CPPv3N11PxSceneFlag4Enum14eMUTABLE_FLAGSE"></span><span id="_CPPv2N11PxSceneFlag4Enum14eMUTABLE_FLAGSE"></span><span class="target" id="structpxsceneflag_1ab4c347372b4433d34d983da780916c53a44d457656c5ac42d8318bfa2df7aee82"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMUTABLE_FLAGS</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneFlag4Enum14eMUTABLE_FLAGSE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxSceneDesc.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxSceneDesc</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxSceneLimits.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxSceneLimits</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv411PxSceneFlag"><code class="docutils literal notranslate"><span class="pre">PxSceneFlag</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4EnumE"><code class="docutils literal notranslate"><span class="pre">Enum</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum21eENABLE_ACTIVE_ACTORSE"><code class="docutils literal notranslate"><span class="pre">eENABLE_ACTIVE_ACTORS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum11eENABLE_CCDE"><code class="docutils literal notranslate"><span class="pre">eENABLE_CCD</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum20eDISABLE_CCD_RESWEEPE"><code class="docutils literal notranslate"><span class="pre">eDISABLE_CCD_RESWEEP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum11eENABLE_PCME"><code class="docutils literal notranslate"><span class="pre">eENABLE_PCM</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum37eDISABLE_CONTACT_REPORT_BUFFER_RESIZEE"><code class="docutils literal notranslate"><span class="pre">eDISABLE_CONTACT_REPORT_BUFFER_RESIZE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum22eDISABLE_CONTACT_CACHEE"><code class="docutils literal notranslate"><span class="pre">eDISABLE_CONTACT_CACHE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum16eREQUIRE_RW_LOCKE"><code class="docutils literal notranslate"><span class="pre">eREQUIRE_RW_LOCK</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum21eENABLE_STABILIZATIONE"><code class="docutils literal notranslate"><span class="pre">eENABLE_STABILIZATION</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum21eENABLE_AVERAGE_POINTE"><code class="docutils literal notranslate"><span class="pre">eENABLE_AVERAGE_POINT</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum38eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORSE"><code class="docutils literal notranslate"><span class="pre">eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE"><code class="docutils literal notranslate"><span class="pre">eENABLE_GPU_DYNAMICS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME"><code class="docutils literal notranslate"><span class="pre">eENABLE_ENHANCED_DETERMINISM</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum32eENABLE_FRICTION_EVERY_ITERATIONE"><code class="docutils literal notranslate"><span class="pre">eENABLE_FRICTION_EVERY_ITERATION</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum43eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGSE"><code class="docutils literal notranslate"><span class="pre">eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum22eENABLE_DIRECT_GPU_APIE"><code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum26eENABLE_BODY_ACCELERATIONSE"><code class="docutils literal notranslate"><span class="pre">eENABLE_BODY_ACCELERATIONS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum33eENABLE_SOLVER_RESIDUAL_REPORTINGE"><code class="docutils literal notranslate"><span class="pre">eENABLE_SOLVER_RESIDUAL_REPORTING</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N11PxSceneFlag4Enum14eMUTABLE_FLAGSE"><code class="docutils literal notranslate"><span class="pre">eMUTABLE_FLAGS</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

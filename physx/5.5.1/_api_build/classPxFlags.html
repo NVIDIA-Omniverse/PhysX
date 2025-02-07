@@ -1,0 +1,917 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxFlags &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxFlags';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxForceMode" href="structPxForceMode.html" />
+    <link rel="prev" title="PxFixedSizeLookupTable" href="classPxFixedSizeLookupTable.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxFlags</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxflags">
+<h1>PxFlags<a class="headerlink" href="#pxflags" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxFlags.h.html#pxflags-8h"><span class="std std-ref">include/foundation/PxFlags.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I00E7PxFlags">
+<span id="_CPPv3I00E7PxFlags"></span><span id="_CPPv2I00E7PxFlags"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">enumtype</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">storagetype</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxflags"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFlags</span></span></span><a class="headerlink" href="#_CPPv4I00E7PxFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Container for bitfield flag variables associated with a specific enum type. </p>
+<p>This allows for type safe manipulation for bitfields.</p>
+<p><em>Example</em></p>
+<p>enum that defines each bit… struct MyEnum { enum Enum { eMAN = 1, eBEAR = 2, ePIG = 4, }; };</p>
+<p>implements some convenient global operators. PX_FLAGS_OPERATORS(MyEnum::Enum, PxU8);</p>
+<p>PxFlags&lt;MyEnum::Enum, PxU8&gt; myFlags; myFlags |= MyEnum::eMAN; myFlags |= MyEnum::eBEAR | MyEnum::ePIG; if(myFlags &amp; MyEnum::eBEAR) { doSomething(); } </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags12InternalTypeE">
+<span id="_CPPv3N7PxFlags12InternalTypeE"></span><span id="_CPPv2N7PxFlags12InternalTypeE"></span><span id="PxFlags::InternalType"></span><span class="target" id="classpxflags_1ab25f3aefb7bfaf3513b737a438c684fe"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InternalType</span></span></span><a class="headerlink" href="#_CPPv4N7PxFlags12InternalTypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags7PxFlagsEK7PxEMPTY">
+<span id="_CPPv3N7PxFlags7PxFlagsEK7PxEMPTY"></span><span id="_CPPv2N7PxFlags7PxFlagsEK7PxEMPTY"></span><span id="PxFlags::PxFlags__PxEMPTYC"></span><span class="target" id="classpxflags_1a5318b0ecbf050ef0cdf9c5ec0e964d2d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxEMPTY</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags7PxFlagsEK7PxEMPTY" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags7PxFlagsEv">
+<span id="_CPPv3N7PxFlags7PxFlagsEv"></span><span id="_CPPv2N7PxFlags7PxFlagsEv"></span><span id="PxFlags::PxFlags"></span><span class="target" id="classpxflags_1a9f80f9a66bc6029db4bed7f00fc3ff33"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags7PxFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags7PxFlagsE8enumtype">
+<span id="_CPPv3N7PxFlags7PxFlagsE8enumtype"></span><span id="_CPPv2N7PxFlags7PxFlagsE8enumtype"></span><span id="PxFlags::PxFlags__enumtype"></span><span class="target" id="classpxflags_1afe0967c88e89d5f20eb954541b3dfceb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags7PxFlagsE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags7PxFlagsERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3N7PxFlags7PxFlagsERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2N7PxFlags7PxFlagsERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::PxFlags__PxFlags:enumtype.storagetype:CR"></span><span class="target" id="classpxflags_1a5fb1ec557179a04355bd3ad02c990054"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxFlags7PxFlagsERK7PxFlagsI8enumtype11storagetypeE" title="PxFlags::PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags7PxFlagsERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags7PxFlagsE11storagetype">
+<span id="_CPPv3N7PxFlags7PxFlagsE11storagetype"></span><span id="_CPPv2N7PxFlags7PxFlagsE11storagetype"></span><span id="PxFlags::PxFlags__storagetype"></span><span class="target" id="classpxflags_1adade7cb4337f8ccf953dae6b610c0091"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags7PxFlagsE11storagetype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagseqE8enumtype">
+<span id="_CPPv3NK7PxFlagseqE8enumtype"></span><span id="_CPPv2NK7PxFlagseqE8enumtype"></span><span id="PxFlags::eq-operator__enumtypeC"></span><span class="target" id="classpxflags_1ad94c6506d0bfc8389317f9cba056f66e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagseqE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagseqERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3NK7PxFlagseqERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2NK7PxFlagseqERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::eq-operator__PxFlags:enumtype.storagetype:CRC"></span><span class="target" id="classpxflags_1ac207fcff46c94b5d4e58da9fab8a2edc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagseqERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagseqEb">
+<span id="_CPPv3NK7PxFlagseqEb"></span><span id="_CPPv2NK7PxFlagseqEb"></span><span id="PxFlags::eq-operator__bC"></span><span class="target" id="classpxflags_1abaf52e12c223065f33364952a51ea6a0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagseqEb" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagsneE8enumtype">
+<span id="_CPPv3NK7PxFlagsneE8enumtype"></span><span id="_CPPv2NK7PxFlagsneE8enumtype"></span><span id="PxFlags::neq-operator__enumtypeC"></span><span class="target" id="classpxflags_1aa77d4c972ae3b6ee7cb5dc8ecc7ae561"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">!=</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagsneE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagsneERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3NK7PxFlagsneERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2NK7PxFlagsneERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::neq-operator__PxFlags:enumtype.storagetype:CRC"></span><span class="target" id="classpxflags_1a512f61686bbdb6643f991d641b2c8c91"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">!=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagsneERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsaSERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3N7PxFlagsaSERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2N7PxFlagsaSERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::assign-operator__PxFlags:enumtype.storagetype:CR"></span><span class="target" id="classpxflags_1a2b01d65ee593a9031d84ea93f4212aa5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsaSERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsaSE8enumtype">
+<span id="_CPPv3N7PxFlagsaSE8enumtype"></span><span id="_CPPv2N7PxFlagsaSE8enumtype"></span><span id="PxFlags::assign-operator__enumtype"></span><span class="target" id="classpxflags_1a447a361edf44dba721926f0b3edf0aec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsaSE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsoRE8enumtype">
+<span id="_CPPv3N7PxFlagsoRE8enumtype"></span><span id="_CPPv2N7PxFlagsoRE8enumtype"></span><span id="PxFlags::or-assign-operator__enumtype"></span><span class="target" id="classpxflags_1a41dcb70744bd9230ebfaf9791db6941b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">|=</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsoRE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsoRERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3N7PxFlagsoRERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2N7PxFlagsoRERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::or-assign-operator__PxFlags:enumtype.storagetype:CR"></span><span class="target" id="classpxflags_1abe6435dd21b9759070b5a48888b9b029"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">|=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsoRERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagsorE8enumtype">
+<span id="_CPPv3NK7PxFlagsorE8enumtype"></span><span id="_CPPv2NK7PxFlagsorE8enumtype"></span><span id="PxFlags::or-operator__enumtypeC"></span><span class="target" id="classpxflags_1af4e5f283db09e7b8f87e0368626ae6be"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">|</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagsorE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagsorERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3NK7PxFlagsorERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2NK7PxFlagsorERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::or-operator__PxFlags:enumtype.storagetype:CRC"></span><span class="target" id="classpxflags_1a20c383727a983052b7e0900e282f4736"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">|</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagsorERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsaNE8enumtype">
+<span id="_CPPv3N7PxFlagsaNE8enumtype"></span><span id="_CPPv2N7PxFlagsaNE8enumtype"></span><span id="PxFlags::and-assign-operator__enumtype"></span><span class="target" id="classpxflags_1a86ec20cfc05deef17d89b37c96558f34"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&amp;=</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsaNE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsaNERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3N7PxFlagsaNERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2N7PxFlagsaNERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::and-assign-operator__PxFlags:enumtype.storagetype:CR"></span><span class="target" id="classpxflags_1ab5948c63986ba8e50815432a4596ca18"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&amp;=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsaNERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagsanE8enumtype">
+<span id="_CPPv3NK7PxFlagsanE8enumtype"></span><span id="_CPPv2NK7PxFlagsanE8enumtype"></span><span id="PxFlags::and-operator__enumtypeC"></span><span class="target" id="classpxflags_1a377678a095ac27c7d4b334b8f53ab0c5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&amp;</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagsanE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagsanERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3NK7PxFlagsanERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2NK7PxFlagsanERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::and-operator__PxFlags:enumtype.storagetype:CRC"></span><span class="target" id="classpxflags_1a5b8acf4679862ed673c058926f3bd49d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&amp;</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagsanERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagseOE8enumtype">
+<span id="_CPPv3N7PxFlagseOE8enumtype"></span><span id="_CPPv2N7PxFlagseOE8enumtype"></span><span id="PxFlags::xor-assign-operator__enumtype"></span><span class="target" id="classpxflags_1aa18d8683a6ebb7d953887870d2790604"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">^=</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagseOE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagseOERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3N7PxFlagseOERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2N7PxFlagseOERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::xor-assign-operator__PxFlags:enumtype.storagetype:CR"></span><span class="target" id="classpxflags_1ad4bf8c3f83adfd9dee99fc122d011d35"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">^=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagseOERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagseoE8enumtype">
+<span id="_CPPv3NK7PxFlagseoE8enumtype"></span><span id="_CPPv2NK7PxFlagseoE8enumtype"></span><span id="PxFlags::xor-operator__enumtypeC"></span><span class="target" id="classpxflags_1a5432b06faef0786ebb53d882f1e8336d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">^</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagseoE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagseoERK7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3NK7PxFlagseoERK7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2NK7PxFlagseoERK7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::xor-operator__PxFlags:enumtype.storagetype:CRC"></span><span class="target" id="classpxflags_1ad331284f7545bdd16dca53fd1c82239c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">^</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagseoERK7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagscoEv">
+<span id="_CPPv3NK7PxFlagscoEv"></span><span id="_CPPv2NK7PxFlagscoEv"></span><span id="PxFlags::inv-operatorC"></span><span class="target" id="classpxflags_1ab0d03d9f326d4c6c7acf7864a7600738"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">~</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagscoEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagscvbEv">
+<span id="_CPPv3NK7PxFlagscvbEv"></span><span id="_CPPv2NK7PxFlagscvbEv"></span><span id="PxFlags::castto-b-operatorC"></span><span class="target" id="classpxflags_1a7ebcb34033dafcf14b368ef776b02cc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagscvbEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagscv4PxU8Ev">
+<span id="_CPPv3NK7PxFlagscv4PxU8Ev"></span><span id="_CPPv2NK7PxFlagscv4PxU8Ev"></span><span id="PxFlags::castto-PxU8-operatorC"></span><span class="target" id="classpxflags_1a695dcefe0770ff241b2262434829341a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagscv4PxU8Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagscv5PxU16Ev">
+<span id="_CPPv3NK7PxFlagscv5PxU16Ev"></span><span id="_CPPv2NK7PxFlagscv5PxU16Ev"></span><span id="PxFlags::castto-PxU16-operatorC"></span><span class="target" id="classpxflags_1a2be692a21f6e4403e415a5b580fe1b90"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagscv5PxU16Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlagscv5PxU32Ev">
+<span id="_CPPv3NK7PxFlagscv5PxU32Ev"></span><span id="_CPPv2NK7PxFlagscv5PxU32Ev"></span><span id="PxFlags::castto-PxU32-operatorC"></span><span class="target" id="classpxflags_1af700209436e6d433a23e8a901f2d65d6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlagscv5PxU32Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags5clearE8enumtype">
+<span id="_CPPv3N7PxFlags5clearE8enumtype"></span><span id="_CPPv2N7PxFlags5clearE8enumtype"></span><span id="PxFlags::clear__enumtype"></span><span class="target" id="classpxflags_1a34481366fc34ebcd5212f5b6a7b084a0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags5clearE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags5raiseE8enumtype">
+<span id="_CPPv3N7PxFlags5raiseE8enumtype"></span><span id="_CPPv2N7PxFlags5raiseE8enumtype"></span><span id="PxFlags::raise__enumtype"></span><span class="target" id="classpxflags_1a77a8f39f5289653a8cc11c8cacf1fbc8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raise</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags5raiseE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxFlags5isSetE8enumtype">
+<span id="_CPPv3NK7PxFlags5isSetE8enumtype"></span><span id="_CPPv2NK7PxFlags5isSetE8enumtype"></span><span id="PxFlags::isSet__enumtypeC"></span><span class="target" id="classpxflags_1a4ee8081c03772f083e7ecaf51d512295"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSet</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxFlags5isSetE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlags6setAllE8enumtype">
+<span id="_CPPv3N7PxFlags6setAllE8enumtype"></span><span id="_CPPv2N7PxFlags6setAllE8enumtype"></span><span id="PxFlags::setAll__enumtype"></span><span class="target" id="classpxflags_1a345b6b4e3e57a8a5ed423b30d0a75c95"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">setAll</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlags6setAllE8enumtype" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxFlagsanE8enumtypeR7PxFlagsI8enumtype11storagetypeE">
+<span id="_CPPv3N7PxFlagsanE8enumtypeR7PxFlagsI8enumtype11storagetypeE"></span><span id="_CPPv2N7PxFlagsanE8enumtypeR7PxFlagsI8enumtype11storagetypeE"></span><span id="PxFlags::and-operator__enumtype.PxFlags:enumtype.storagetype:R"></span><span class="target" id="classpxflags_1afbb35a87ccc8a5adcde712a7934d4650"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&amp;</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::enumtype"><span class="n"><span class="pre">enumtype</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxFlags" title="PxFlags::storagetype"><span class="n"><span class="pre">storagetype</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxFlagsanE8enumtypeR7PxFlagsI8enumtype11storagetypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxFixedSizeLookupTable.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxFixedSizeLookupTable</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxForceMode.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxForceMode</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I00E7PxFlags"><code class="docutils literal notranslate"><span class="pre">PxFlags</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags12InternalTypeE"><code class="docutils literal notranslate"><span class="pre">InternalType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags7PxFlagsEK7PxEMPTY"><code class="docutils literal notranslate"><span class="pre">PxFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags7PxFlagsEv"><code class="docutils literal notranslate"><span class="pre">PxFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags7PxFlagsE8enumtype"><code class="docutils literal notranslate"><span class="pre">PxFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags7PxFlagsERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">PxFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags7PxFlagsE11storagetype"><code class="docutils literal notranslate"><span class="pre">PxFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagseqE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator==()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagseqERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator==()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagseqEb"><code class="docutils literal notranslate"><span class="pre">operator==()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagsneE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator!=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagsneERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator!=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsaSERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsaSE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsoRE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator|=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsoRERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator|=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagsorE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator|()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagsorERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator|()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsaNE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator&amp;=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsaNERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator&amp;=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagsanE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator&amp;()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagsanERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator&amp;()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagseOE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator^=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagseOERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator^=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagseoE8enumtype"><code class="docutils literal notranslate"><span class="pre">operator^()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagseoERK7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator^()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagscoEv"><code class="docutils literal notranslate"><span class="pre">operator~()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagscvbEv"><code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">bool()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagscv4PxU8Ev"><code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">PxU8()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagscv5PxU16Ev"><code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">PxU16()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlagscv5PxU32Ev"><code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">PxU32()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags5clearE8enumtype"><code class="docutils literal notranslate"><span class="pre">clear()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags5raiseE8enumtype"><code class="docutils literal notranslate"><span class="pre">raise()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxFlags5isSetE8enumtype"><code class="docutils literal notranslate"><span class="pre">isSet()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlags6setAllE8enumtype"><code class="docutils literal notranslate"><span class="pre">setAll()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxFlagsanE8enumtypeR7PxFlagsI8enumtype11storagetypeE"><code class="docutils literal notranslate"><span class="pre">operator&amp;()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

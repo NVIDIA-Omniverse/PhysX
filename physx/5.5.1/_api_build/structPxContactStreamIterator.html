@@ -1,0 +1,1091 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxContactStreamIterator &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxContactStreamIterator';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxController" href="classPxController.html" />
+    <link rel="prev" title="PxContactSet" href="classPxContactSet.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxContactStr...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxcontactstreamiterator">
+<h1>PxContactStreamIterator<a class="headerlink" href="#pxcontactstreamiterator" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxContact.h.html#pxcontact-8h"><span class="std std-ref">include/PxContact.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv423PxContactStreamIterator">
+<span id="_CPPv323PxContactStreamIterator"></span><span id="_CPPv223PxContactStreamIterator"></span><span id="PxContactStreamIterator"></span><span class="target" id="structpxcontactstreamiterator"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactStreamIterator</span></span></span><a class="headerlink" href="#_CPPv423PxContactStreamIterator" title="Link to this definition">#</a><br /></dt>
+<dd><p>A class to iterate over a compressed contact stream. </p>
+<p>This supports read-only access to the various contact formats. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator12StreamFormatE">
+<span id="_CPPv3N23PxContactStreamIterator12StreamFormatE"></span><span id="_CPPv2N23PxContactStreamIterator12StreamFormatE"></span><span class="target" id="structpxcontactstreamiterator_1adf2db58b9de095857db9cfd74a1b594b"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StreamFormat</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator12StreamFormatE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator12StreamFormat14eSIMPLE_STREAME">
+<span id="_CPPv3N23PxContactStreamIterator12StreamFormat14eSIMPLE_STREAME"></span><span id="_CPPv2N23PxContactStreamIterator12StreamFormat14eSIMPLE_STREAME"></span><span class="target" id="structpxcontactstreamiterator_1adf2db58b9de095857db9cfd74a1b594ba70b81a23a22b8267cd467f6eb4424d54"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIMPLE_STREAM</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator12StreamFormat14eSIMPLE_STREAME" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator12StreamFormat18eMODIFIABLE_STREAME">
+<span id="_CPPv3N23PxContactStreamIterator12StreamFormat18eMODIFIABLE_STREAME"></span><span id="_CPPv2N23PxContactStreamIterator12StreamFormat18eMODIFIABLE_STREAME"></span><span class="target" id="structpxcontactstreamiterator_1adf2db58b9de095857db9cfd74a1b594ba7b18ea433243e4f37a2c2c8658d35ac2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMODIFIABLE_STREAM</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator12StreamFormat18eMODIFIABLE_STREAME" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator12StreamFormat29eCOMPRESSED_MODIFIABLE_STREAME">
+<span id="_CPPv3N23PxContactStreamIterator12StreamFormat29eCOMPRESSED_MODIFIABLE_STREAME"></span><span id="_CPPv2N23PxContactStreamIterator12StreamFormat29eCOMPRESSED_MODIFIABLE_STREAME"></span><span class="target" id="structpxcontactstreamiterator_1adf2db58b9de095857db9cfd74a1b594bab6971b07b959b081f8f4c302c2b2b399"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOMPRESSED_MODIFIABLE_STREAM</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator12StreamFormat29eCOMPRESSED_MODIFIABLE_STREAME" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator23PxContactStreamIteratorEPK4PxU8PK4PxU8PK5PxU325PxU325PxU32">
+<span id="_CPPv3N23PxContactStreamIterator23PxContactStreamIteratorEPK4PxU8PK4PxU8PK5PxU325PxU325PxU32"></span><span id="_CPPv2N23PxContactStreamIterator23PxContactStreamIteratorEPK4PxU8PK4PxU8PK5PxU325PxU325PxU32"></span><span id="PxContactStreamIterator::PxContactStreamIterator__PxU8CP.PxU8CP.PxU32CP.PxU32.PxU32"></span><span class="target" id="structpxcontactstreamiterator_1ad63e97b06efa67474caacf7ddc8183bb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactStreamIterator</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">contactPatches</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">contactPoints</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">contactFaceIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPatches</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbContacts</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator23PxContactStreamIteratorEPK4PxU8PK4PxU8PK5PxU325PxU325PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator12hasNextPatchEv">
+<span id="_CPPv3NK23PxContactStreamIterator12hasNextPatchEv"></span><span id="_CPPv2NK23PxContactStreamIterator12hasNextPatchEv"></span><span id="PxContactStreamIterator::hasNextPatchC"></span><span class="target" id="structpxcontactstreamiterator_1a64a59cb667f5cff43c502f24deb3194e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasNextPatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator12hasNextPatchEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether there are more patches in this stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether there are more patches in this stream. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator20getTotalContactCountEv">
+<span id="_CPPv3NK23PxContactStreamIterator20getTotalContactCountEv"></span><span id="_CPPv2NK23PxContactStreamIterator20getTotalContactCountEv"></span><span id="PxContactStreamIterator::getTotalContactCountC"></span><span class="target" id="structpxcontactstreamiterator_1a1b7f55bebf0dde6888b21a6dae370d19"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTotalContactCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator20getTotalContactCountEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the total contact count. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Total contact count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator18getTotalPatchCountEv">
+<span id="_CPPv3NK23PxContactStreamIterator18getTotalPatchCountEv"></span><span id="_CPPv2NK23PxContactStreamIterator18getTotalPatchCountEv"></span><span id="PxContactStreamIterator::getTotalPatchCountC"></span><span class="target" id="structpxcontactstreamiterator_1a6efd2b06b5d9c9ac0b67d7f3c231c426"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTotalPatchCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator18getTotalPatchCountEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the total patch count. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Total patch count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator9nextPatchEv">
+<span id="_CPPv3N23PxContactStreamIterator9nextPatchEv"></span><span id="_CPPv2N23PxContactStreamIterator9nextPatchEv"></span><span id="PxContactStreamIterator::nextPatch"></span><span class="target" id="structpxcontactstreamiterator_1ad9b97466f1f5d4ebb01083537068e330"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nextPatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator9nextPatchEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Advances iterator to next contact patch. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator14hasNextContactEv">
+<span id="_CPPv3NK23PxContactStreamIterator14hasNextContactEv"></span><span id="_CPPv2NK23PxContactStreamIterator14hasNextContactEv"></span><span id="PxContactStreamIterator::hasNextContactC"></span><span class="target" id="structpxcontactstreamiterator_1a563bd95dc6eff8eeeb8e28d2cfcf9507"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasNextContact</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator14hasNextContactEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns if the current patch has more contacts. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If there are more contacts in the current patch. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator11nextContactEv">
+<span id="_CPPv3N23PxContactStreamIterator11nextContactEv"></span><span id="_CPPv2N23PxContactStreamIterator11nextContactEv"></span><span id="PxContactStreamIterator::nextContact"></span><span class="target" id="structpxcontactstreamiterator_1a19c232093e7adcbedfd15b0ee182ace5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nextContact</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator11nextContactEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Advances to the next contact in the patch. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator16getContactNormalEv">
+<span id="_CPPv3NK23PxContactStreamIterator16getContactNormalEv"></span><span id="_CPPv2NK23PxContactStreamIterator16getContactNormalEv"></span><span id="PxContactStreamIterator::getContactNormalC"></span><span class="target" id="structpxcontactstreamiterator_1aadc06d3d1049fd448b76a828e25a9e95"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getContactNormal</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator16getContactNormalEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the current contact’s normal. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The current contact’s normal. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator16getInvMassScale0Ev">
+<span id="_CPPv3NK23PxContactStreamIterator16getInvMassScale0Ev"></span><span id="_CPPv2NK23PxContactStreamIterator16getInvMassScale0Ev"></span><span id="PxContactStreamIterator::getInvMassScale0C"></span><span class="target" id="structpxcontactstreamiterator_1a6720f6d3f01df6966b5ce9210bde2eb7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator16getInvMassScale0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the inverse mass scale for body 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The inverse mass scale for body 0. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator16getInvMassScale1Ev">
+<span id="_CPPv3NK23PxContactStreamIterator16getInvMassScale1Ev"></span><span id="_CPPv2NK23PxContactStreamIterator16getInvMassScale1Ev"></span><span id="PxContactStreamIterator::getInvMassScale1C"></span><span class="target" id="structpxcontactstreamiterator_1a538328a437faf2d6411a02904262f4f4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator16getInvMassScale1Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the inverse mass scale for body 1. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The inverse mass scale for body 1. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator19getInvInertiaScale0Ev">
+<span id="_CPPv3NK23PxContactStreamIterator19getInvInertiaScale0Ev"></span><span id="_CPPv2NK23PxContactStreamIterator19getInvInertiaScale0Ev"></span><span id="PxContactStreamIterator::getInvInertiaScale0C"></span><span class="target" id="structpxcontactstreamiterator_1affcbabb99dbd79d067828cc823658206"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator19getInvInertiaScale0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the inverse inertia scale for body 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The inverse inertia scale for body 0. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator19getInvInertiaScale1Ev">
+<span id="_CPPv3NK23PxContactStreamIterator19getInvInertiaScale1Ev"></span><span id="_CPPv2NK23PxContactStreamIterator19getInvInertiaScale1Ev"></span><span id="PxContactStreamIterator::getInvInertiaScale1C"></span><span class="target" id="structpxcontactstreamiterator_1a1a255d8f2c8a753703a24ee98984d84b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator19getInvInertiaScale1Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the inverse inertia scale for body 1. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The inverse inertia scale for body 1. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator13getMaxImpulseEv">
+<span id="_CPPv3NK23PxContactStreamIterator13getMaxImpulseEv"></span><span id="_CPPv2NK23PxContactStreamIterator13getMaxImpulseEv"></span><span id="PxContactStreamIterator::getMaxImpulseC"></span><span class="target" id="structpxcontactstreamiterator_1ac72ee22f87c863251d12ab0a6aa9e455"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxImpulse</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator13getMaxImpulseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s max impulse. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s max impulse. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator12getTargetVelEv">
+<span id="_CPPv3NK23PxContactStreamIterator12getTargetVelEv"></span><span id="_CPPv2NK23PxContactStreamIterator12getTargetVelEv"></span><span id="PxContactStreamIterator::getTargetVelC"></span><span class="target" id="structpxcontactstreamiterator_1a2cc5348237aeb9c3b104f8ea7e0d8df6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTargetVel</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator12getTargetVelEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s target velocity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s target velocity. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator15getContactPointEv">
+<span id="_CPPv3NK23PxContactStreamIterator15getContactPointEv"></span><span id="_CPPv2NK23PxContactStreamIterator15getContactPointEv"></span><span id="PxContactStreamIterator::getContactPointC"></span><span class="target" id="structpxcontactstreamiterator_1a12e9852c3fa84bdb6651430ee61c172b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getContactPoint</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator15getContactPointEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s contact point. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s contact point. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator13getSeparationEv">
+<span id="_CPPv3NK23PxContactStreamIterator13getSeparationEv"></span><span id="_CPPv2NK23PxContactStreamIterator13getSeparationEv"></span><span id="PxContactStreamIterator::getSeparationC"></span><span class="target" id="structpxcontactstreamiterator_1a04ff624cf65421dd42865e816a0934ae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSeparation</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator13getSeparationEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s separation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s separation. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator13getFaceIndex0Ev">
+<span id="_CPPv3NK23PxContactStreamIterator13getFaceIndex0Ev"></span><span id="_CPPv2NK23PxContactStreamIterator13getFaceIndex0Ev"></span><span id="PxContactStreamIterator::getFaceIndex0C"></span><span class="target" id="structpxcontactstreamiterator_1a01ce2ee288d1a40fffdf0b0468438302"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFaceIndex0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator13getFaceIndex0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s face index for shape 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s face index for shape 0. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator13getFaceIndex1Ev">
+<span id="_CPPv3NK23PxContactStreamIterator13getFaceIndex1Ev"></span><span id="_CPPv2NK23PxContactStreamIterator13getFaceIndex1Ev"></span><span id="PxContactStreamIterator::getFaceIndex1C"></span><span class="target" id="structpxcontactstreamiterator_1a884258e233c7e039a285af3bf48e04da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFaceIndex1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator13getFaceIndex1Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s face index for shape 1. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s face index for shape 1. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator17getStaticFrictionEv">
+<span id="_CPPv3NK23PxContactStreamIterator17getStaticFrictionEv"></span><span id="_CPPv2NK23PxContactStreamIterator17getStaticFrictionEv"></span><span id="PxContactStreamIterator::getStaticFrictionC"></span><span class="target" id="structpxcontactstreamiterator_1a4a5bf2f6092a10385050b3ff9aebbaae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStaticFriction</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator17getStaticFrictionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s static friction coefficient. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s static friction coefficient. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator18getDynamicFrictionEv">
+<span id="_CPPv3NK23PxContactStreamIterator18getDynamicFrictionEv"></span><span id="_CPPv2NK23PxContactStreamIterator18getDynamicFrictionEv"></span><span id="PxContactStreamIterator::getDynamicFrictionC"></span><span class="target" id="structpxcontactstreamiterator_1a5025666d154cc6e9e490d91061a2d58b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDynamicFriction</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator18getDynamicFrictionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s dynamic friction coefficient. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s dynamic friction coefficient. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator14getRestitutionEv">
+<span id="_CPPv3NK23PxContactStreamIterator14getRestitutionEv"></span><span id="_CPPv2NK23PxContactStreamIterator14getRestitutionEv"></span><span id="PxContactStreamIterator::getRestitutionC"></span><span class="target" id="structpxcontactstreamiterator_1a7c80542d0da4e89fc9e34152f8b98ace"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRestitution</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator14getRestitutionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s restitution coefficient. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s restitution coefficient. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator10getDampingEv">
+<span id="_CPPv3NK23PxContactStreamIterator10getDampingEv"></span><span id="_CPPv2NK23PxContactStreamIterator10getDampingEv"></span><span id="PxContactStreamIterator::getDampingC"></span><span class="target" id="structpxcontactstreamiterator_1adfef851716ccb03845aa304bed1101c6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator10getDampingEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s damping value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s damping value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator16getMaterialFlagsEv">
+<span id="_CPPv3NK23PxContactStreamIterator16getMaterialFlagsEv"></span><span id="_CPPv2NK23PxContactStreamIterator16getMaterialFlagsEv"></span><span id="PxContactStreamIterator::getMaterialFlagsC"></span><span class="target" id="structpxcontactstreamiterator_1acf50da4a3022c53d24d65782f2a5253f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaterialFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator16getMaterialFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s material flags. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s material flags. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator17getMaterialIndex0Ev">
+<span id="_CPPv3NK23PxContactStreamIterator17getMaterialIndex0Ev"></span><span id="_CPPv2NK23PxContactStreamIterator17getMaterialIndex0Ev"></span><span id="PxContactStreamIterator::getMaterialIndex0C"></span><span class="target" id="structpxcontactstreamiterator_1adac813f3c9d379a75fd5c09cf04ac4e6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaterialIndex0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator17getMaterialIndex0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s material index for shape 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s material index for shape 0. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxContactStreamIterator17getMaterialIndex1Ev">
+<span id="_CPPv3NK23PxContactStreamIterator17getMaterialIndex1Ev"></span><span id="_CPPv2NK23PxContactStreamIterator17getMaterialIndex1Ev"></span><span id="PxContactStreamIterator::getMaterialIndex1C"></span><span class="target" id="structpxcontactstreamiterator_1a40eef1ce1d55986e078b6188bdac022b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaterialIndex1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxContactStreamIterator17getMaterialIndex1Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the contact’s material index for shape 1. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contact’s material index for shape 1. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator14advanceToIndexEK5PxU32">
+<span id="_CPPv3N23PxContactStreamIterator14advanceToIndexEK5PxU32"></span><span id="_CPPv2N23PxContactStreamIterator14advanceToIndexEK5PxU32"></span><span id="PxContactStreamIterator::advanceToIndex__PxU32C"></span><span class="target" id="structpxcontactstreamiterator_1acc41337cff1ad0108e92e09675acd506"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">advanceToIndex</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">initialIndex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator14advanceToIndexEK5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Advances the contact stream iterator to a specific contact index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if advancing was possible </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator4zeroE">
+<span id="_CPPv3N23PxContactStreamIterator4zeroE"></span><span id="_CPPv2N23PxContactStreamIterator4zeroE"></span><span id="PxContactStreamIterator::zero__PxVec3"></span><span class="target" id="structpxcontactstreamiterator_1a5f4f20d3a47738764ada33ba0a82abb8"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">zero</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator4zeroE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Utility zero vector to optimize functions returning zero vectors when a certain flag isn’t set. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This allows us to return by reference instead of having to return by value. Returning by value will go via memory (registers -&gt; stack -&gt; registers), which can cause performance issues on certain platforms. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator5patchE">
+<span id="_CPPv3N23PxContactStreamIterator5patchE"></span><span id="_CPPv2N23PxContactStreamIterator5patchE"></span><span id="PxContactStreamIterator::patch__PxContactPatchCP"></span><span class="target" id="structpxcontactstreamiterator_1ad789824d77c0eb542c0990f83d9470ce"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxContactPatch.html#_CPPv414PxContactPatch" title="PxContactPatch"><span class="n"><span class="pre">PxContactPatch</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">patch</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator5patchE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The patch headers. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator7contactE">
+<span id="_CPPv3N23PxContactStreamIterator7contactE"></span><span id="_CPPv2N23PxContactStreamIterator7contactE"></span><span id="PxContactStreamIterator::contact__PxContactCP"></span><span class="target" id="structpxcontactstreamiterator_1a7ff5ef6abc1aa4b52ce8d20906669634"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxContact.html#_CPPv49PxContact" title="PxContact"><span class="n"><span class="pre">PxContact</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contact</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator7contactE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The contacts. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator10faceIndiceE">
+<span id="_CPPv3N23PxContactStreamIterator10faceIndiceE"></span><span id="_CPPv2N23PxContactStreamIterator10faceIndiceE"></span><span id="PxContactStreamIterator::faceIndice__PxU32CP"></span><span class="target" id="structpxcontactstreamiterator_1a93d9ba431d7ebd5cfe281af13ec61c06"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">faceIndice</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator10faceIndiceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The contact triangle face index. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator12totalPatchesE">
+<span id="_CPPv3N23PxContactStreamIterator12totalPatchesE"></span><span id="_CPPv2N23PxContactStreamIterator12totalPatchesE"></span><span id="PxContactStreamIterator::totalPatches__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a4545778a99dad1fdc84ba545866f1ea1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">totalPatches</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator12totalPatchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The total number of patches in this contact stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator13totalContactsE">
+<span id="_CPPv3N23PxContactStreamIterator13totalContactsE"></span><span id="_CPPv2N23PxContactStreamIterator13totalContactsE"></span><span id="PxContactStreamIterator::totalContacts__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a6c42c3dc1df41933cc6fe03155d1915f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">totalContacts</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator13totalContactsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The total number of contact points in this stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator16nextContactIndexE">
+<span id="_CPPv3N23PxContactStreamIterator16nextContactIndexE"></span><span id="_CPPv2N23PxContactStreamIterator16nextContactIndexE"></span><span id="PxContactStreamIterator::nextContactIndex__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a9be505b3ff688521967f7b37feb2f898"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nextContactIndex</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator16nextContactIndexE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The current contact index. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator14nextPatchIndexE">
+<span id="_CPPv3N23PxContactStreamIterator14nextPatchIndexE"></span><span id="_CPPv2N23PxContactStreamIterator14nextPatchIndexE"></span><span id="PxContactStreamIterator::nextPatchIndex__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a54397b4d83a700d42ded55dfd6f220ac"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nextPatchIndex</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator14nextPatchIndexE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The current patch Index. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator22contactPatchHeaderSizeE">
+<span id="_CPPv3N23PxContactStreamIterator22contactPatchHeaderSizeE"></span><span id="_CPPv2N23PxContactStreamIterator22contactPatchHeaderSizeE"></span><span id="PxContactStreamIterator::contactPatchHeaderSize__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a66b9776f7d6518ba9ab87c04beff871c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactPatchHeaderSize</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator22contactPatchHeaderSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Size of contact patch header. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This varies whether the patch is modifiable or not. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator16contactPointSizeE">
+<span id="_CPPv3N23PxContactStreamIterator16contactPointSizeE"></span><span id="_CPPv2N23PxContactStreamIterator16contactPointSizeE"></span><span id="PxContactStreamIterator::contactPointSize__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a5110a83f7649e12f3a8af5002a8d7e8b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactPointSize</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator16contactPointSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Contact point size. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This varies whether the patch has feature indices or is modifiable. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator13mStreamFormatE">
+<span id="_CPPv3N23PxContactStreamIterator13mStreamFormatE"></span><span id="_CPPv2N23PxContactStreamIterator13mStreamFormatE"></span><span id="PxContactStreamIterator::mStreamFormat__StreamFormat"></span><span class="target" id="structpxcontactstreamiterator_1a902439f8d3cfc7472038e52aecbc0d4c"></span><a class="reference internal" href="#_CPPv4N23PxContactStreamIterator12StreamFormatE" title="PxContactStreamIterator::StreamFormat"><span class="n"><span class="pre">StreamFormat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mStreamFormat</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator13mStreamFormatE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The stream format. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator15forceNoResponseE">
+<span id="_CPPv3N23PxContactStreamIterator15forceNoResponseE"></span><span id="_CPPv2N23PxContactStreamIterator15forceNoResponseE"></span><span id="PxContactStreamIterator::forceNoResponse__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a9de08a5556ad12f740d0ce40e8611d13"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">forceNoResponse</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator15forceNoResponseE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Indicates whether this stream is notify-only or not. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator12pointSteppedE">
+<span id="_CPPv3N23PxContactStreamIterator12pointSteppedE"></span><span id="_CPPv2N23PxContactStreamIterator12pointSteppedE"></span><span id="PxContactStreamIterator::pointStepped__b"></span><span class="target" id="structpxcontactstreamiterator_1a85021fbdc138b7dc5af6a81f0bd45a5d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pointStepped</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator12pointSteppedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Internal helper for stepping the contact stream iterator. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxContactStreamIterator14hasFaceIndicesE">
+<span id="_CPPv3N23PxContactStreamIterator14hasFaceIndicesE"></span><span id="_CPPv2N23PxContactStreamIterator14hasFaceIndicesE"></span><span id="PxContactStreamIterator::hasFaceIndices__PxU32"></span><span class="target" id="structpxcontactstreamiterator_1a0579a7c96e99c4ea9e25ea5c472f87bc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasFaceIndices</span></span></span><a class="headerlink" href="#_CPPv4N23PxContactStreamIterator14hasFaceIndicesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Specifies if this contactPatch has face indices (handled as bool) </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#structpxcontactstreamiterator_1a93d9ba431d7ebd5cfe281af13ec61c06"><span class="std std-ref">faceIndice</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxContactSet.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxContactSet</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxController.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxController</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv423PxContactStreamIterator"><code class="docutils literal notranslate"><span class="pre">PxContactStreamIterator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator12StreamFormatE"><code class="docutils literal notranslate"><span class="pre">StreamFormat</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator12StreamFormat14eSIMPLE_STREAME"><code class="docutils literal notranslate"><span class="pre">eSIMPLE_STREAM</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator12StreamFormat18eMODIFIABLE_STREAME"><code class="docutils literal notranslate"><span class="pre">eMODIFIABLE_STREAM</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator12StreamFormat29eCOMPRESSED_MODIFIABLE_STREAME"><code class="docutils literal notranslate"><span class="pre">eCOMPRESSED_MODIFIABLE_STREAM</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator23PxContactStreamIteratorEPK4PxU8PK4PxU8PK5PxU325PxU325PxU32"><code class="docutils literal notranslate"><span class="pre">PxContactStreamIterator()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator12hasNextPatchEv"><code class="docutils literal notranslate"><span class="pre">hasNextPatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator20getTotalContactCountEv"><code class="docutils literal notranslate"><span class="pre">getTotalContactCount()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator18getTotalPatchCountEv"><code class="docutils literal notranslate"><span class="pre">getTotalPatchCount()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator9nextPatchEv"><code class="docutils literal notranslate"><span class="pre">nextPatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator14hasNextContactEv"><code class="docutils literal notranslate"><span class="pre">hasNextContact()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator11nextContactEv"><code class="docutils literal notranslate"><span class="pre">nextContact()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator16getContactNormalEv"><code class="docutils literal notranslate"><span class="pre">getContactNormal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator16getInvMassScale0Ev"><code class="docutils literal notranslate"><span class="pre">getInvMassScale0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator16getInvMassScale1Ev"><code class="docutils literal notranslate"><span class="pre">getInvMassScale1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator19getInvInertiaScale0Ev"><code class="docutils literal notranslate"><span class="pre">getInvInertiaScale0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator19getInvInertiaScale1Ev"><code class="docutils literal notranslate"><span class="pre">getInvInertiaScale1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator13getMaxImpulseEv"><code class="docutils literal notranslate"><span class="pre">getMaxImpulse()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator12getTargetVelEv"><code class="docutils literal notranslate"><span class="pre">getTargetVel()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator15getContactPointEv"><code class="docutils literal notranslate"><span class="pre">getContactPoint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator13getSeparationEv"><code class="docutils literal notranslate"><span class="pre">getSeparation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator13getFaceIndex0Ev"><code class="docutils literal notranslate"><span class="pre">getFaceIndex0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator13getFaceIndex1Ev"><code class="docutils literal notranslate"><span class="pre">getFaceIndex1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator17getStaticFrictionEv"><code class="docutils literal notranslate"><span class="pre">getStaticFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator18getDynamicFrictionEv"><code class="docutils literal notranslate"><span class="pre">getDynamicFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator14getRestitutionEv"><code class="docutils literal notranslate"><span class="pre">getRestitution()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator10getDampingEv"><code class="docutils literal notranslate"><span class="pre">getDamping()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator16getMaterialFlagsEv"><code class="docutils literal notranslate"><span class="pre">getMaterialFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator17getMaterialIndex0Ev"><code class="docutils literal notranslate"><span class="pre">getMaterialIndex0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK23PxContactStreamIterator17getMaterialIndex1Ev"><code class="docutils literal notranslate"><span class="pre">getMaterialIndex1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator14advanceToIndexEK5PxU32"><code class="docutils literal notranslate"><span class="pre">advanceToIndex()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator4zeroE"><code class="docutils literal notranslate"><span class="pre">zero</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator5patchE"><code class="docutils literal notranslate"><span class="pre">patch</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator7contactE"><code class="docutils literal notranslate"><span class="pre">contact</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator10faceIndiceE"><code class="docutils literal notranslate"><span class="pre">faceIndice</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator12totalPatchesE"><code class="docutils literal notranslate"><span class="pre">totalPatches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator13totalContactsE"><code class="docutils literal notranslate"><span class="pre">totalContacts</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator16nextContactIndexE"><code class="docutils literal notranslate"><span class="pre">nextContactIndex</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator14nextPatchIndexE"><code class="docutils literal notranslate"><span class="pre">nextPatchIndex</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator22contactPatchHeaderSizeE"><code class="docutils literal notranslate"><span class="pre">contactPatchHeaderSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator16contactPointSizeE"><code class="docutils literal notranslate"><span class="pre">contactPointSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator13mStreamFormatE"><code class="docutils literal notranslate"><span class="pre">mStreamFormat</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator15forceNoResponseE"><code class="docutils literal notranslate"><span class="pre">forceNoResponse</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator12pointSteppedE"><code class="docutils literal notranslate"><span class="pre">pointStepped</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N23PxContactStreamIterator14hasFaceIndicesE"><code class="docutils literal notranslate"><span class="pre">hasFaceIndices</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

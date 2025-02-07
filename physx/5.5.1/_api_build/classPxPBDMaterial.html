@@ -1,0 +1,1361 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxPBDMaterial &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxPBDMaterial';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxPBDParticleSystem" href="classPxPBDParticleSystem.html" />
+    <link rel="prev" title="PxOverlapHit" href="structPxOverlapHit.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxPBDMaterial</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxpbdmaterial">
+<h1>PxPBDMaterial<a class="headerlink" href="#pxpbdmaterial" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxPBDMaterial.h.html#pxpbdmaterial-8h"><span class="std std-ref">include/PxPBDMaterial.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxPBDMaterial">
+<span id="_CPPv313PxPBDMaterial"></span><span id="_CPPv213PxPBDMaterial"></span><span id="PxPBDMaterial"></span><span class="target" id="classpxpbdmaterial"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPBDMaterial</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxBaseMaterial.html#_CPPv414PxBaseMaterial" title="PxBaseMaterial"><span class="n"><span class="pre">PxBaseMaterial</span></span></a><a class="headerlink" href="#_CPPv413PxPBDMaterial" title="Link to this definition">#</a><br /></dt>
+<dd><p>Material class to represent a set of PBD particle material properties. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxPhysics.html#classpxphysics_1af16609efb0f5fd00df2292f5c063568f"><span class="std std-ref">PxPhysics.createPBDMaterial</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial11setFrictionE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial11setFrictionE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial11setFrictionE6PxReal"></span><span id="PxPBDMaterial::setFriction__PxReal"></span><span class="target" id="classpxpbdmaterial_1a3a0a74a31e6b9eac06a61ac5a5969d56"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFriction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">friction</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial11setFrictionE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets friction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a94d5e7ef7d3144b861b7e1a4db032c65"><span class="std std-ref">getFriction()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>friction</strong> – <strong>[in]</strong> Friction. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial11getFrictionEv">
+<span id="_CPPv3NK13PxPBDMaterial11getFrictionEv"></span><span id="_CPPv2NK13PxPBDMaterial11getFrictionEv"></span><span id="PxPBDMaterial::getFrictionC"></span><span class="target" id="classpxpbdmaterial_1a94d5e7ef7d3144b861b7e1a4db032c65"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFriction</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial11getFrictionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the friction value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a3a0a74a31e6b9eac06a61ac5a5969d56"><span class="std std-ref">setFriction()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The friction value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial10setDampingE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial10setDampingE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial10setDampingE6PxReal"></span><span id="PxPBDMaterial::setDamping__PxReal"></span><span class="target" id="classpxpbdmaterial_1ae57c84ed5ed59ec1052c099ab1ee5044"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDamping</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">damping</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial10setDampingE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets velocity damping term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a5056365f7f0df292151ea0196d955c08"><span class="std std-ref">getDamping</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>damping</strong> – <strong>[in]</strong> Velocity damping term. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial10getDampingEv">
+<span id="_CPPv3NK13PxPBDMaterial10getDampingEv"></span><span id="_CPPv2NK13PxPBDMaterial10getDampingEv"></span><span id="PxPBDMaterial::getDampingC"></span><span class="target" id="classpxpbdmaterial_1a5056365f7f0df292151ea0196d955c08"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial10getDampingEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the velocity damping term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1ae57c84ed5ed59ec1052c099ab1ee5044"><span class="std std-ref">setDamping()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The velocity damping term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial11setAdhesionE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial11setAdhesionE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial11setAdhesionE6PxReal"></span><span id="PxPBDMaterial::setAdhesion__PxReal"></span><span class="target" id="classpxpbdmaterial_1ae385e569622efb5914d9bbf6feac238b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAdhesion</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">adhesion</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial11setAdhesionE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets adhesion term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a828e0900f65605f755abc491a1bef8ff"><span class="std std-ref">getAdhesion</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>adhesion</strong> – <strong>[in]</strong> adhesion coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial11getAdhesionEv">
+<span id="_CPPv3NK13PxPBDMaterial11getAdhesionEv"></span><span id="_CPPv2NK13PxPBDMaterial11getAdhesionEv"></span><span id="PxPBDMaterial::getAdhesionC"></span><span class="target" id="classpxpbdmaterial_1a828e0900f65605f755abc491a1bef8ff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAdhesion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial11getAdhesionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the adhesion term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1ae385e569622efb5914d9bbf6feac238b"><span class="std std-ref">setAdhesion()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The adhesion term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial15setGravityScaleE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial15setGravityScaleE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial15setGravityScaleE6PxReal"></span><span id="PxPBDMaterial::setGravityScale__PxReal"></span><span class="target" id="classpxpbdmaterial_1a916d7207e7ccbd9bb1298d9c74af4719"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setGravityScale</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial15setGravityScaleE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets gravity scale term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a828e0900f65605f755abc491a1bef8ff"><span class="std std-ref">getAdhesion</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> gravity scale coefficient. <strong>Range:</strong> (-PX_MAX_F32, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial15getGravityScaleEv">
+<span id="_CPPv3NK13PxPBDMaterial15getGravityScaleEv"></span><span id="_CPPv2NK13PxPBDMaterial15getGravityScaleEv"></span><span id="PxPBDMaterial::getGravityScaleC"></span><span class="target" id="classpxpbdmaterial_1aae2f54c0fea725870784af56194777ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGravityScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial15getGravityScaleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the gravity scale term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1ae385e569622efb5914d9bbf6feac238b"><span class="std std-ref">setAdhesion()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The gravity scale term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial22setAdhesionRadiusScaleE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial22setAdhesionRadiusScaleE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial22setAdhesionRadiusScaleE6PxReal"></span><span id="PxPBDMaterial::setAdhesionRadiusScale__PxReal"></span><span class="target" id="classpxpbdmaterial_1a27e2de7695ab8bfd38d91d7acd60f8eb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAdhesionRadiusScale</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial22setAdhesionRadiusScaleE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material adhesion radius scale. </p>
+<p>This is multiplied by the particle rest offset to compute the fall-off distance at which point adhesion ceases to operate.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a62123dfb2ad0be4586330d096874a432"><span class="std std-ref">getAdhesionRadiusScale</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> Material adhesion radius scale. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial22getAdhesionRadiusScaleEv">
+<span id="_CPPv3NK13PxPBDMaterial22getAdhesionRadiusScaleEv"></span><span id="_CPPv2NK13PxPBDMaterial22getAdhesionRadiusScaleEv"></span><span id="PxPBDMaterial::getAdhesionRadiusScaleC"></span><span class="target" id="classpxpbdmaterial_1a62123dfb2ad0be4586330d096874a432"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAdhesionRadiusScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial22getAdhesionRadiusScaleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the adhesion radius scale. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a27e2de7695ab8bfd38d91d7acd60f8eb"><span class="std std-ref">setAdhesionRadiusScale()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The adhesion radius scale.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial12setViscosityE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial12setViscosityE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial12setViscosityE6PxReal"></span><span id="PxPBDMaterial::setViscosity__PxReal"></span><span class="target" id="classpxpbdmaterial_1a14d6b8ae97301bdd1f2954ffc6c6a1c0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setViscosity</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">viscosity</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial12setViscosityE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets viscosity. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a300fb4da984cd658ad976caa59b83bfc"><span class="std std-ref">getViscosity()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>viscosity</strong> – <strong>[in]</strong> Viscosity. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial12getViscosityEv">
+<span id="_CPPv3NK13PxPBDMaterial12getViscosityEv"></span><span id="_CPPv2NK13PxPBDMaterial12getViscosityEv"></span><span id="PxPBDMaterial::getViscosityC"></span><span class="target" id="classpxpbdmaterial_1a300fb4da984cd658ad976caa59b83bfc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getViscosity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial12getViscosityEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the viscosity value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a14d6b8ae97301bdd1f2954ffc6c6a1c0"><span class="std std-ref">setViscosity()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The viscosity value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial23setVorticityConfinementE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial23setVorticityConfinementE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial23setVorticityConfinementE6PxReal"></span><span id="PxPBDMaterial::setVorticityConfinement__PxReal"></span><span class="target" id="classpxpbdmaterial_1a78921146449ae90905bddaf5c7cd947b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setVorticityConfinement</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">vorticityConfinement</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial23setVorticityConfinementE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material vorticity confinement coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a553008f74c4ff33e3d86f1bf5a7dc1ee"><span class="std std-ref">getVorticityConfinement()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vorticityConfinement</strong> – <strong>[in]</strong> Material vorticity confinement coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial23getVorticityConfinementEv">
+<span id="_CPPv3NK13PxPBDMaterial23getVorticityConfinementEv"></span><span id="_CPPv2NK13PxPBDMaterial23getVorticityConfinementEv"></span><span id="PxPBDMaterial::getVorticityConfinementC"></span><span class="target" id="classpxpbdmaterial_1a553008f74c4ff33e3d86f1bf5a7dc1ee"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getVorticityConfinement</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial23getVorticityConfinementEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the vorticity confinement coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a78921146449ae90905bddaf5c7cd947b"><span class="std std-ref">setVorticityConfinement()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The vorticity confinement coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial17setSurfaceTensionE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial17setSurfaceTensionE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial17setSurfaceTensionE6PxReal"></span><span id="PxPBDMaterial::setSurfaceTension__PxReal"></span><span class="target" id="classpxpbdmaterial_1a92b5b5cc685e64a60aeaf9b3a9340b19"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSurfaceTension</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">surfaceTension</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial17setSurfaceTensionE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material surface tension coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a1ac5196388e0bf06a6da3872ea9136f0"><span class="std std-ref">getSurfaceTension()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>surfaceTension</strong> – <strong>[in]</strong> Material surface tension coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial17getSurfaceTensionEv">
+<span id="_CPPv3NK13PxPBDMaterial17getSurfaceTensionEv"></span><span id="_CPPv2NK13PxPBDMaterial17getSurfaceTensionEv"></span><span id="PxPBDMaterial::getSurfaceTensionC"></span><span class="target" id="classpxpbdmaterial_1a1ac5196388e0bf06a6da3872ea9136f0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSurfaceTension</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial17getSurfaceTensionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the surface tension coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a92b5b5cc685e64a60aeaf9b3a9340b19"><span class="std std-ref">setSurfaceTension()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The surface tension coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial11setCohesionE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial11setCohesionE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial11setCohesionE6PxReal"></span><span id="PxPBDMaterial::setCohesion__PxReal"></span><span class="target" id="classpxpbdmaterial_1acc549ea8d4aa7a2e9849c34fe5e30570"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCohesion</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">cohesion</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial11setCohesionE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material cohesion coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a54c8a7bd2e515214f8794eafb4032fbf"><span class="std std-ref">getCohesion()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cohesion</strong> – <strong>[in]</strong> Material cohesion coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial11getCohesionEv">
+<span id="_CPPv3NK13PxPBDMaterial11getCohesionEv"></span><span id="_CPPv2NK13PxPBDMaterial11getCohesionEv"></span><span id="PxPBDMaterial::getCohesionC"></span><span class="target" id="classpxpbdmaterial_1a54c8a7bd2e515214f8794eafb4032fbf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCohesion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial11getCohesionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the cohesion coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1acc549ea8d4aa7a2e9849c34fe5e30570"><span class="std std-ref">setCohesion()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cohesion coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial7setLiftE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial7setLiftE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial7setLiftE6PxReal"></span><span id="PxPBDMaterial::setLift__PxReal"></span><span class="target" id="classpxpbdmaterial_1a501d08af03d6c667bac4f2a3ac956496"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLift</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lift</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial7setLiftE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material lift coefficient. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000151"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a4b86a0714397d17063619df01b6e19da"><span class="std std-ref">getLift()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lift</strong> – <strong>[in]</strong> Material lift coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial7getLiftEv">
+<span id="_CPPv3NK13PxPBDMaterial7getLiftEv"></span><span id="_CPPv2NK13PxPBDMaterial7getLiftEv"></span><span id="PxPBDMaterial::getLiftC"></span><span class="target" id="classpxpbdmaterial_1a4b86a0714397d17063619df01b6e19da"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLift</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial7getLiftEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the lift coefficient. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000152"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a501d08af03d6c667bac4f2a3ac956496"><span class="std std-ref">setLift()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The lift coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial7setDragE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial7setDragE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial7setDragE6PxReal"></span><span id="PxPBDMaterial::setDrag__PxReal"></span><span class="target" id="classpxpbdmaterial_1a16a7684ed917569bb652a940e59a275d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDrag</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">drag</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial7setDragE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material drag coefficient. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000153"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1aa34cb87cf268dba20b4c2e5f03a7e6ff"><span class="std std-ref">getDrag()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>drag</strong> – <strong>[in]</strong> Material drag coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial7getDragEv">
+<span id="_CPPv3NK13PxPBDMaterial7getDragEv"></span><span id="_CPPv2NK13PxPBDMaterial7getDragEv"></span><span id="PxPBDMaterial::getDragC"></span><span class="target" id="classpxpbdmaterial_1aa34cb87cf268dba20b4c2e5f03a7e6ff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDrag</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial7getDragEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the drag coefficient. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000154"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a16a7684ed917569bb652a940e59a275d"><span class="std std-ref">setDrag()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The drag coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial17setCFLCoefficientE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial17setCFLCoefficientE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial17setCFLCoefficientE6PxReal"></span><span id="PxPBDMaterial::setCFLCoefficient__PxReal"></span><span class="target" id="classpxpbdmaterial_1adf389ff8f01c9ac3d24a95c807702799"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCFLCoefficient</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">coefficient</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial17setCFLCoefficientE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the CFL coefficient. </p>
+<p>Limits the relative motion between two approaching fluid particles.</p>
+<p>The distance to which the motion is clamped is defined by CFLcoefficient*particleContactOffset*2. A value of 0.5 will thus limit the appoaching motion to a distance of particleContactOffset. A value much larger than one will typically not limit the motion of the particles.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a2b8e4bd22f7dae62538d866cbaa9896e"><span class="std std-ref">getCFLCoefficient()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coefficient</strong> – <strong>[in]</strong> CFL coefficient. <strong>Range:</strong> [0, PX_MAX_F32), <strong>Default:</strong> 1.0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial17getCFLCoefficientEv">
+<span id="_CPPv3NK13PxPBDMaterial17getCFLCoefficientEv"></span><span id="_CPPv2NK13PxPBDMaterial17getCFLCoefficientEv"></span><span id="PxPBDMaterial::getCFLCoefficientC"></span><span class="target" id="classpxpbdmaterial_1a2b8e4bd22f7dae62538d866cbaa9896e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCFLCoefficient</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial17getCFLCoefficientEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the CFL coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1adf389ff8f01c9ac3d24a95c807702799"><span class="std std-ref">setCFLCoefficient()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The CFL coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial24setParticleFrictionScaleE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial24setParticleFrictionScaleE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial24setParticleFrictionScaleE6PxReal"></span><span id="PxPBDMaterial::setParticleFrictionScale__PxReal"></span><span class="target" id="classpxpbdmaterial_1a7655534edf45eee94bb11eb18c314de3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleFrictionScale</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial24setParticleFrictionScaleE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material particle friction scale. </p>
+<p>This allows the application to scale up/down the frictional effect between particles independent of the friction coefficient, which also defines frictional behavior between the particle and rigid bodies/soft bodies/cloth etc.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a0243d50d68b5f2bc3969b181ea33daa4"><span class="std std-ref">getParticleFrictionScale()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> particle friction scale. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial24getParticleFrictionScaleEv">
+<span id="_CPPv3NK13PxPBDMaterial24getParticleFrictionScaleEv"></span><span id="_CPPv2NK13PxPBDMaterial24getParticleFrictionScaleEv"></span><span id="PxPBDMaterial::getParticleFrictionScaleC"></span><span class="target" id="classpxpbdmaterial_1a0243d50d68b5f2bc3969b181ea33daa4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleFrictionScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial24getParticleFrictionScaleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the particle friction scale. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a7655534edf45eee94bb11eb18c314de3"><span class="std std-ref">setParticleFrictionScale()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The particle friction scale.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial24setParticleAdhesionScaleE6PxReal">
+<span id="_CPPv3N13PxPBDMaterial24setParticleAdhesionScaleE6PxReal"></span><span id="_CPPv2N13PxPBDMaterial24setParticleAdhesionScaleE6PxReal"></span><span id="PxPBDMaterial::setParticleAdhesionScale__PxReal"></span><span class="target" id="classpxpbdmaterial_1a9bd5cbff3f4cdf4fc51ca05b279e9cf7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleAdhesionScale</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">adhesion</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial24setParticleAdhesionScaleE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets material particle adhesion scale value. </p>
+<p>This is the adhesive value between particles defined as a scaled multiple of the adhesion parameter.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a44800c0b78027203819e1eb74e812a15"><span class="std std-ref">getParticleAdhesionScale()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>adhesion</strong> – <strong>[in]</strong> particle adhesion scale value. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial24getParticleAdhesionScaleEv">
+<span id="_CPPv3NK13PxPBDMaterial24getParticleAdhesionScaleEv"></span><span id="_CPPv2NK13PxPBDMaterial24getParticleAdhesionScaleEv"></span><span id="PxPBDMaterial::getParticleAdhesionScaleC"></span><span class="target" id="classpxpbdmaterial_1a44800c0b78027203819e1eb74e812a15"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleAdhesionScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial24getParticleAdhesionScaleEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the particle adhesion scale value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxpbdmaterial_1a9bd5cbff3f4cdf4fc51ca05b279e9cf7"><span class="std std-ref">setParticleAdhesionScale()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The particle adhesion scale value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial19getConcreteTypeNameEv">
+<span id="_CPPv3NK13PxPBDMaterial19getConcreteTypeNameEv"></span><span id="_CPPv2NK13PxPBDMaterial19getConcreteTypeNameEv"></span><span id="PxPBDMaterial::getConcreteTypeNameC"></span><span class="target" id="classpxpbdmaterial_1aa88e5433110e7ee399854f4cb384d477"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">final</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial19getConcreteTypeNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial7releaseEv">
+<span id="_CPPv3N13PxPBDMaterial7releaseEv"></span><span id="_CPPv2N13PxPBDMaterial7releaseEv"></span><span id="PxPBDMaterial::release"></span><span class="target" id="classpxrefcounted_1aaea81b277759ec01b5e0fc608c8b21dc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Decrements the reference count of the object and releases it if the new reference count is zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial17getReferenceCountEv">
+<span id="_CPPv3NK13PxPBDMaterial17getReferenceCountEv"></span><span id="_CPPv2NK13PxPBDMaterial17getReferenceCountEv"></span><span id="PxPBDMaterial::getReferenceCountC"></span><span class="target" id="classpxrefcounted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial17getReferenceCountEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial16acquireReferenceEv">
+<span id="_CPPv3N13PxPBDMaterial16acquireReferenceEv"></span><span id="_CPPv2N13PxPBDMaterial16acquireReferenceEv"></span><span id="PxPBDMaterial::acquireReference"></span><span class="target" id="classpxrefcounted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial16acquireReferenceEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="classPxShape.html#classpxrefcounted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a></p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN13PxPBDMaterial2isEP1Tv">
+<span id="_CPPv3I0EN13PxPBDMaterial2isEv"></span><span id="_CPPv2I0EN13PxPBDMaterial2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN13PxPBDMaterial2isEP1Tv" title="PxPBDMaterial::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN13PxPBDMaterial2isEP1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK13PxPBDMaterial2isEPK1Tv">
+<span id="_CPPv3I0ENK13PxPBDMaterial2isEv"></span><span id="_CPPv2I0ENK13PxPBDMaterial2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK13PxPBDMaterial2isEPK1Tv" title="PxPBDMaterial::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK13PxPBDMaterial2isEPK1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial15getConcreteTypeEv">
+<span id="_CPPv3NK13PxPBDMaterial15getConcreteTypeEv"></span><span id="_CPPv2NK13PxPBDMaterial15getConcreteTypeEv"></span><span id="PxPBDMaterial::getConcreteTypeC"></span><span class="target" id="classpxbase_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial15getConcreteTypeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype"><span class="std std-ref">PxConcreteType</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8"><span class="std std-ref">PxConcreteType::Enum</span></a> of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N13PxPBDMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N13PxPBDMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxPBDMaterial::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="classpxbase_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="structPxBaseFlag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxBaseFlag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial11setBaseFlagEN10PxBaseFlag4EnumEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set <a class="reference internal" href="structPxBaseFlag.html#structpxbaseflag"><span class="std std-ref">PxBaseFlag</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N13PxPBDMaterial12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N13PxPBDMaterial12setBaseFlagsE11PxBaseFlags"></span><span id="PxPBDMaterial::setBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial12setBaseFlagsE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial12getBaseFlagsEv">
+<span id="_CPPv3NK13PxPBDMaterial12getBaseFlagsEv"></span><span id="_CPPv2NK13PxPBDMaterial12getBaseFlagsEv"></span><span id="PxPBDMaterial::getBaseFlagsC"></span><span class="target" id="classpxbase_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial12getBaseFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial12isReleasableEv">
+<span id="_CPPv3NK13PxPBDMaterial12isReleasableEv"></span><span id="_CPPv2NK13PxPBDMaterial12isReleasableEv"></span><span id="PxPBDMaterial::isReleasableC"></span><span class="target" id="classpxbase_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial12isReleasableEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSerialization.html#classpxserialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial8userDataE">
+<span id="_CPPv3N13PxPBDMaterial8userDataE"></span><span id="_CPPv2N13PxPBDMaterial8userDataE"></span><span id="PxPBDMaterial::userData__voidP"></span><span class="target" id="classpxbasematerial_1a3c1e944e2b05981f594c91cdd4ec9041"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial8userDataE" title="Link to this definition">#</a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial13PxPBDMaterialE6PxType11PxBaseFlags">
+<span id="_CPPv3N13PxPBDMaterial13PxPBDMaterialE6PxType11PxBaseFlags"></span><span id="_CPPv2N13PxPBDMaterial13PxPBDMaterialE6PxType11PxBaseFlags"></span><span id="PxPBDMaterial::PxPBDMaterial__PxType.PxBaseFlags"></span><span class="target" id="classpxpbdmaterial_1a6affb4dea3cfa29e11cb5821833b8725"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPBDMaterial</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial13PxPBDMaterialE6PxType11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial13PxPBDMaterialE11PxBaseFlags">
+<span id="_CPPv3N13PxPBDMaterial13PxPBDMaterialE11PxBaseFlags"></span><span id="_CPPv2N13PxPBDMaterial13PxPBDMaterialE11PxBaseFlags"></span><span id="PxPBDMaterial::PxPBDMaterial__PxBaseFlags"></span><span class="target" id="classpxpbdmaterial_1a84abd499ed0d91d6cd477d0df904fc45"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPBDMaterial</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial13PxPBDMaterialE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterialD0Ev">
+<span id="_CPPv3N13PxPBDMaterialD0Ev"></span><span id="_CPPv2N13PxPBDMaterialD0Ev"></span><span id="PxPBDMaterial::~PxPBDMaterial"></span><span class="target" id="classpxpbdmaterial_1a04b2d023fc3890a55ea70777874a27bc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxPBDMaterial</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxPBDMaterialD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxPBDMaterial8isKindOfEPKc">
+<span id="_CPPv3NK13PxPBDMaterial8isKindOfEPKc"></span><span id="_CPPv2NK13PxPBDMaterial8isKindOfEPKc"></span><span id="PxPBDMaterial::isKindOf__cCPC"></span><span class="target" id="classpxpbdmaterial_1ab4646895153d8774f4c090a248213286"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxPBDMaterial8isKindOfEPKc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial14onRefCountZeroEv">
+<span id="_CPPv3N13PxPBDMaterial14onRefCountZeroEv"></span><span id="_CPPv2N13PxPBDMaterial14onRefCountZeroEv"></span><span id="PxPBDMaterial::onRefCountZero"></span><span class="target" id="classpxrefcounted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial14onRefCountZeroEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK13PxPBDMaterial9typeMatchEbv">
+<span id="_CPPv3I0ENK13PxPBDMaterial9typeMatchEv"></span><span id="_CPPv2I0ENK13PxPBDMaterial9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK13PxPBDMaterial9typeMatchEbv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial13mConcreteTypeE">
+<span id="_CPPv3N13PxPBDMaterial13mConcreteTypeE"></span><span id="_CPPv2N13PxPBDMaterial13mConcreteTypeE"></span><span id="PxPBDMaterial::mConcreteType__PxType"></span><span class="target" id="classpxbase_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial13mConcreteTypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial10mBaseFlagsE">
+<span id="_CPPv3N13PxPBDMaterial10mBaseFlagsE"></span><span id="_CPPv2N13PxPBDMaterial10mBaseFlagsE"></span><span id="PxPBDMaterial::mBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial10mBaseFlagsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxPBDMaterial16mBuiltInRefCountE">
+<span id="_CPPv3N13PxPBDMaterial16mBuiltInRefCountE"></span><span id="_CPPv2N13PxPBDMaterial16mBuiltInRefCountE"></span><span id="PxPBDMaterial::mBuiltInRefCount__PxU32"></span><span class="target" id="classpxbase_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N13PxPBDMaterial16mBuiltInRefCountE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxOverlapHit.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxOverlapHit</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxPBDParticleSystem.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxPBDParticleSystem</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv413PxPBDMaterial"><code class="docutils literal notranslate"><span class="pre">PxPBDMaterial</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial11setFrictionE6PxReal"><code class="docutils literal notranslate"><span class="pre">setFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial11getFrictionEv"><code class="docutils literal notranslate"><span class="pre">getFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial10setDampingE6PxReal"><code class="docutils literal notranslate"><span class="pre">setDamping()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial10getDampingEv"><code class="docutils literal notranslate"><span class="pre">getDamping()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial11setAdhesionE6PxReal"><code class="docutils literal notranslate"><span class="pre">setAdhesion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial11getAdhesionEv"><code class="docutils literal notranslate"><span class="pre">getAdhesion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial15setGravityScaleE6PxReal"><code class="docutils literal notranslate"><span class="pre">setGravityScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial15getGravityScaleEv"><code class="docutils literal notranslate"><span class="pre">getGravityScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial22setAdhesionRadiusScaleE6PxReal"><code class="docutils literal notranslate"><span class="pre">setAdhesionRadiusScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial22getAdhesionRadiusScaleEv"><code class="docutils literal notranslate"><span class="pre">getAdhesionRadiusScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial12setViscosityE6PxReal"><code class="docutils literal notranslate"><span class="pre">setViscosity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial12getViscosityEv"><code class="docutils literal notranslate"><span class="pre">getViscosity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial23setVorticityConfinementE6PxReal"><code class="docutils literal notranslate"><span class="pre">setVorticityConfinement()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial23getVorticityConfinementEv"><code class="docutils literal notranslate"><span class="pre">getVorticityConfinement()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial17setSurfaceTensionE6PxReal"><code class="docutils literal notranslate"><span class="pre">setSurfaceTension()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial17getSurfaceTensionEv"><code class="docutils literal notranslate"><span class="pre">getSurfaceTension()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial11setCohesionE6PxReal"><code class="docutils literal notranslate"><span class="pre">setCohesion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial11getCohesionEv"><code class="docutils literal notranslate"><span class="pre">getCohesion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial7setLiftE6PxReal"><code class="docutils literal notranslate"><span class="pre">setLift()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial7getLiftEv"><code class="docutils literal notranslate"><span class="pre">getLift()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial7setDragE6PxReal"><code class="docutils literal notranslate"><span class="pre">setDrag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial7getDragEv"><code class="docutils literal notranslate"><span class="pre">getDrag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial17setCFLCoefficientE6PxReal"><code class="docutils literal notranslate"><span class="pre">setCFLCoefficient()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial17getCFLCoefficientEv"><code class="docutils literal notranslate"><span class="pre">getCFLCoefficient()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial24setParticleFrictionScaleE6PxReal"><code class="docutils literal notranslate"><span class="pre">setParticleFrictionScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial24getParticleFrictionScaleEv"><code class="docutils literal notranslate"><span class="pre">getParticleFrictionScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial24setParticleAdhesionScaleE6PxReal"><code class="docutils literal notranslate"><span class="pre">setParticleAdhesionScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial24getParticleAdhesionScaleEv"><code class="docutils literal notranslate"><span class="pre">getParticleAdhesionScale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial19getConcreteTypeNameEv"><code class="docutils literal notranslate"><span class="pre">getConcreteTypeName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial17getReferenceCountEv"><code class="docutils literal notranslate"><span class="pre">getReferenceCount()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial16acquireReferenceEv"><code class="docutils literal notranslate"><span class="pre">acquireReference()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN13PxPBDMaterial2isEP1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK13PxPBDMaterial2isEPK1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial15getConcreteTypeEv"><code class="docutils literal notranslate"><span class="pre">getConcreteType()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"><code class="docutils literal notranslate"><span class="pre">setBaseFlag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial12setBaseFlagsE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">setBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial12getBaseFlagsEv"><code class="docutils literal notranslate"><span class="pre">getBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial12isReleasableEv"><code class="docutils literal notranslate"><span class="pre">isReleasable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial8userDataE"><code class="docutils literal notranslate"><span class="pre">userData</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial13PxPBDMaterialE6PxType11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxPBDMaterial()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial13PxPBDMaterialE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxPBDMaterial()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterialD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxPBDMaterial()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxPBDMaterial8isKindOfEPKc"><code class="docutils literal notranslate"><span class="pre">isKindOf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial14onRefCountZeroEv"><code class="docutils literal notranslate"><span class="pre">onRefCountZero()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK13PxPBDMaterial9typeMatchEbv"><code class="docutils literal notranslate"><span class="pre">typeMatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial13mConcreteTypeE"><code class="docutils literal notranslate"><span class="pre">mConcreteType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial10mBaseFlagsE"><code class="docutils literal notranslate"><span class="pre">mBaseFlags</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxPBDMaterial16mBuiltInRefCountE"><code class="docutils literal notranslate"><span class="pre">mBuiltInRefCount</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1128 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxHeightField &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxHeightField';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxHeightFieldDesc" href="classPxHeightFieldDesc.html" />
+    <link rel="prev" title="PxHashSetBase" href="classPxHashSetBase.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxHeightField</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxheightfield">
+<h1>PxHeightField<a class="headerlink" href="#pxheightfield" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxHeightField.h.html#pxheightfield-8h"><span class="std std-ref">include/geometry/PxHeightField.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxHeightField">
+<span id="_CPPv313PxHeightField"></span><span id="_CPPv213PxHeightField"></span><span id="PxHeightField"></span><span class="target" id="classpxheightfield"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHeightField</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxRefCounted.html#_CPPv412PxRefCounted" title="PxRefCounted"><span class="n"><span class="pre">PxRefCounted</span></span></a><a class="headerlink" href="#_CPPv413PxHeightField" title="Link to this definition">#</a><br /></dt>
+<dd><p>A height field class. </p>
+<p>Height fields work in a similar way as triangle meshes specified to act as height fields, with some important differences:</p>
+<p>Triangle meshes can be made of nonuniform geometry, while height fields are regular, rectangular grids. This means that with <a class="reference internal" href="#classpxheightfield"><span class="std std-ref">PxHeightField</span></a>, you sacrifice flexibility in return for improved performance and decreased memory consumption.</p>
+<p>In local space rows extend in X direction, columns in Z direction and height in Y direction.</p>
+<p>Like Convexes and TriangleMeshes, HeightFields are referenced by shape instances (see <a class="reference internal" href="classPxHeightFieldGeometry.html#classpxheightfieldgeometry"><span class="std std-ref">PxHeightFieldGeometry</span></a>, <a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a>).</p>
+<p>To avoid duplicating data when you have several instances of a particular height field differently, you do not use this class to represent a height field object directly. Instead, you create an instance of this height field via the <a class="reference internal" href="classPxHeightFieldGeometry.html#classpxheightfieldgeometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> and <a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a> classes.</p>
+<p><em>Creation</em></p>
+<p>To create an instance of this class call <a class="reference internal" href="classPxPhysics.html#classpxphysics_1ab678bcb22bae55d1838da2c52a30e1a7"><span class="std std-ref">PxPhysics::createHeightField()</span></a> or PxCooking::createHeightField(const PxHeightFieldDesc&amp;, PxInsertionCallback&amp;). To delete it call <a class="reference internal" href="#classpxheightfield_1a5cfbb51e352f1367d650ccd1041cf826"><span class="std std-ref">release()</span></a>. This is only possible once you have released all of its PxHeightFiedShape instances.</p>
+<p><em>Visualizations:</em></p>
+<p><ul class="simple">
+<li><p><a class="reference internal" href="structPxVisualizationParameter.html#structpxvisualizationparameter_1adce8e8a77c144356b0968d2b9f79eb10a714f24bab39d1bbe8b131bd10ef5552b"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AABBS</span></a></p></li>
+<li><p><a class="reference internal" href="structPxVisualizationParameter.html#structpxvisualizationparameter_1adce8e8a77c144356b0968d2b9f79eb10a515f4c3c72ee88d7507b52d6ccd14eab"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_SHAPES</span></a></p></li>
+<li><p><a class="reference internal" href="structPxVisualizationParameter.html#structpxvisualizationparameter_1adce8e8a77c144356b0968d2b9f79eb10a0ad9dcb10f5f3d6ded3baecfc1e387d3"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AXES</span></a></p></li>
+<li><p><a class="reference internal" href="structPxVisualizationParameter.html#structpxvisualizationparameter_1adce8e8a77c144356b0968d2b9f79eb10afd900f30ba421d555e7f7b087126cd92"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_FNORMALS</span></a></p></li>
+<li><p><a class="reference internal" href="structPxVisualizationParameter.html#structpxvisualizationparameter_1adce8e8a77c144356b0968d2b9f79eb10aa0e06ca7fa1a0445abe0f4d293feb961"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_EDGES</span></a></p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc"><span class="std std-ref">PxHeightFieldDesc</span></a> <a class="reference internal" href="classPxHeightFieldGeometry.html#classpxheightfieldgeometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> <a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a> <a class="reference internal" href="classPxPhysics.html#classpxphysics_1ab678bcb22bae55d1838da2c52a30e1a7"><span class="std std-ref">PxPhysics.createHeightField()</span></a> PxCooking.createHeightField() </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField7releaseEv">
+<span id="_CPPv3N13PxHeightField7releaseEv"></span><span id="_CPPv2N13PxHeightField7releaseEv"></span><span id="PxHeightField::release"></span><span class="target" id="classpxheightfield_1a5cfbb51e352f1367d650ccd1041cf826"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxHeightField7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Decrements the reference count of a height field and releases it if the new reference count is zero. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxPhysics.html#classpxphysics_1ab678bcb22bae55d1838da2c52a30e1a7"><span class="std std-ref">PxPhysics.createHeightField()</span></a> <a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc"><span class="std std-ref">PxHeightFieldDesc</span></a> <a class="reference internal" href="classPxHeightFieldGeometry.html#classpxheightfieldgeometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> <a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField9saveCellsEPv5PxU32">
+<span id="_CPPv3NK13PxHeightField9saveCellsEPv5PxU32"></span><span id="_CPPv2NK13PxHeightField9saveCellsEPv5PxU32"></span><span id="PxHeightField::saveCells__voidP.PxU32C"></span><span class="target" id="classpxheightfield_1a133fd37ec6afee29d52a72199eda8b6c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">saveCells</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">destBuffer</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">destBufferSize</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField9saveCellsEPv5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Writes out the sample data array. </p>
+<p>The user provides destBufferSize bytes storage at destBuffer. The data is formatted and arranged as <a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1affbec0b3ed43d041b12152648d13821b"><span class="std std-ref">PxHeightFieldDesc.samples</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1affbec0b3ed43d041b12152648d13821b"><span class="std std-ref">PxHeightFieldDesc.samples</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>destBuffer</strong> – <strong>[out]</strong> The destination buffer for the sample data. </p></li>
+<li><p><strong>destBufferSize</strong> – <strong>[in]</strong> The size of the destination buffer. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of bytes written.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField13modifySamplesE5PxI325PxI32RK17PxHeightFieldDescb">
+<span id="_CPPv3N13PxHeightField13modifySamplesE5PxI325PxI32RK17PxHeightFieldDescb"></span><span id="_CPPv2N13PxHeightField13modifySamplesE5PxI325PxI32RK17PxHeightFieldDescb"></span><span id="PxHeightField::modifySamples__PxI32.PxI32.PxHeightFieldDescCR.b"></span><span class="target" id="classpxheightfield_1a549467534c2b183461c8429b18d271c1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">modifySamples</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startCol</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startRow</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxHeightFieldDesc.html#_CPPv417PxHeightFieldDesc" title="PxHeightFieldDesc"><span class="n"><span class="pre">PxHeightFieldDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">subfieldDesc</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">shrinkBounds</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxHeightField13modifySamplesE5PxI325PxI32RK17PxHeightFieldDescb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Replaces a rectangular subfield in the sample data array. </p>
+<p>The user provides the description of a rectangular subfield in subfieldDesc. The data is formatted and arranged as <a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1affbec0b3ed43d041b12152648d13821b"><span class="std std-ref">PxHeightFieldDesc.samples</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1affbec0b3ed43d041b12152648d13821b"><span class="std std-ref">PxHeightFieldDesc.samples</span></a> <a class="reference internal" href="classPxShape.html#classpxshape_1ac6112e8c0ee9803eb3436bbaf673d98a"><span class="std std-ref">PxShape.setGeometry</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Modified samples are constrained to the same height quantization range as the original heightfield. Source samples that are out of range of target heightfield will be clipped with no error. PhysX does not keep a mapping from the heightfield to heightfield shapes that reference it. Call <a class="reference internal" href="classPxShape.html#classpxshape_1ac6112e8c0ee9803eb3436bbaf673d98a"><span class="std std-ref">PxShape::setGeometry</span></a> on each shape which references the height field, to ensure that internal data structures are updated to reflect the new geometry. Please note that <a class="reference internal" href="classPxShape.html#classpxshape_1ac6112e8c0ee9803eb3436bbaf673d98a"><span class="std std-ref">PxShape::setGeometry</span></a> does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>startCol</strong> – <strong>[in]</strong> First cell in the destination heightfield to be modified. Can be negative. </p></li>
+<li><p><strong>startRow</strong> – <strong>[in]</strong> First row in the destination heightfield to be modified. Can be negative. </p></li>
+<li><p><strong>subfieldDesc</strong> – <strong>[in]</strong> Description of the source subfield to read the samples from. </p></li>
+<li><p><strong>shrinkBounds</strong> – <strong>[in]</strong> If left as false, the bounds will never shrink but only grow. If set to true the bounds will be recomputed from all HF samples at O(nbColums*nbRows) perf cost. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True on success, false on failure. Failure can occur due to format mismatch.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField9getNbRowsEv">
+<span id="_CPPv3NK13PxHeightField9getNbRowsEv"></span><span id="_CPPv2NK13PxHeightField9getNbRowsEv"></span><span id="PxHeightField::getNbRowsC"></span><span class="target" id="classpxheightfield_1aec89ebb608fbcecc7ce526235d9e6fef"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbRows</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField9getNbRowsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the number of sample rows in the samples array. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1ac701700af3c4597a4a39a76e3331dd08"><span class="std std-ref">PxHeightFieldDesc.nbRows</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of sample rows in the samples array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField12getNbColumnsEv">
+<span id="_CPPv3NK13PxHeightField12getNbColumnsEv"></span><span id="_CPPv2NK13PxHeightField12getNbColumnsEv"></span><span id="PxHeightField::getNbColumnsC"></span><span class="target" id="classpxheightfield_1a3f94eb046f2de7362a86a3c2ba0b91bd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbColumns</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField12getNbColumnsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the number of sample columns in the samples array. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1a8426b15eb6ad44c11fcb84bb9e3350c0"><span class="std std-ref">PxHeightFieldDesc.nbColumns</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of sample columns in the samples array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField9getFormatEv">
+<span id="_CPPv3NK13PxHeightField9getFormatEv"></span><span id="_CPPv2NK13PxHeightField9getFormatEv"></span><span id="PxHeightField::getFormatC"></span><span class="target" id="classpxheightfield_1a492ef0ee77c3d60a33a474caf8220399"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxHeightFieldFormat.html#_CPPv419PxHeightFieldFormat" title="PxHeightFieldFormat"><span class="n"><span class="pre">PxHeightFieldFormat</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxHeightFieldFormat.html#_CPPv4N19PxHeightFieldFormat4EnumE" title="PxHeightFieldFormat::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFormat</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField9getFormatEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the format of the sample data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1a8743d198a4db234d353c1f4d2734d43d"><span class="std std-ref">PxHeightFieldDesc.format</span></a> <a class="reference internal" href="structPxHeightFieldFormat.html#structpxheightfieldformat"><span class="std std-ref">PxHeightFieldFormat</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The format of the sample data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField15getSampleStrideEv">
+<span id="_CPPv3NK13PxHeightField15getSampleStrideEv"></span><span id="_CPPv2NK13PxHeightField15getSampleStrideEv"></span><span id="PxHeightField::getSampleStrideC"></span><span class="target" id="classpxheightfield_1aef6ffa2dc3307ea57fed72ad9e7c8440"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSampleStride</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField15getSampleStrideEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the offset in bytes between consecutive samples in the array. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxHeightFieldDesc.sampleStride </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The offset in bytes between consecutive samples in the array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField22getConvexEdgeThresholdEv">
+<span id="_CPPv3NK13PxHeightField22getConvexEdgeThresholdEv"></span><span id="_CPPv2NK13PxHeightField22getConvexEdgeThresholdEv"></span><span id="PxHeightField::getConvexEdgeThresholdC"></span><span class="target" id="classpxheightfield_1a31b462d78280a5912d734d4fa2439e20"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConvexEdgeThreshold</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField22getConvexEdgeThresholdEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the convex edge threshold. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1a2c40081aa73ec042021785dbe52f75fb"><span class="std std-ref">PxHeightFieldDesc.convexEdgeThreshold</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The convex edge threshold.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField8getFlagsEv">
+<span id="_CPPv3NK13PxHeightField8getFlagsEv"></span><span id="_CPPv2NK13PxHeightField8getFlagsEv"></span><span id="PxHeightField::getFlagsC"></span><span class="target" id="classpxheightfield_1a40c88e9615c7714468d65e3ab5b24f19"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxHeightFieldFlag_8h_1a93b547b1968a59b2d23c91aab533e2c8.html#_CPPv418PxHeightFieldFlags" title="PxHeightFieldFlags"><span class="n"><span class="pre">PxHeightFieldFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField8getFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the flags bits, combined from values of the enum <a class="reference internal" href="structPxHeightFieldFlag.html#structpxheightfieldflag"><span class="std std-ref">PxHeightFieldFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxHeightFieldDesc.html#classpxheightfielddesc_1aec8940d776191d6ca950025836481360"><span class="std std-ref">PxHeightFieldDesc.flags</span></a> <a class="reference internal" href="structPxHeightFieldFlag.html#structpxheightfieldflag"><span class="std std-ref">PxHeightFieldFlag</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The flags bits, combined from values of the enum <a class="reference internal" href="structPxHeightFieldFlag.html#structpxheightfieldflag"><span class="std std-ref">PxHeightFieldFlag</span></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField9getHeightE6PxReal6PxReal">
+<span id="_CPPv3NK13PxHeightField9getHeightE6PxReal6PxReal"></span><span id="_CPPv2NK13PxHeightField9getHeightE6PxReal6PxReal"></span><span id="PxHeightField::getHeight__PxReal.PxRealC"></span><span class="target" id="classpxheightfield_1a11a5c93e0ebea95e45eea9024e2ae6cd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHeight</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">x</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">z</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField9getHeightE6PxReal6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the height at the given coordinates in grid space. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The height at the given coordinates or 0 if the coordinates are out of range. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField24getTriangleMaterialIndexE12PxTriangleID">
+<span id="_CPPv3NK13PxHeightField24getTriangleMaterialIndexE12PxTriangleID"></span><span id="_CPPv2NK13PxHeightField24getTriangleMaterialIndexE12PxTriangleID"></span><span id="PxHeightField::getTriangleMaterialIndex__PxTriangleIDC"></span><span class="target" id="classpxheightfield_1aaceffe2d458ade5fc7d6e308fa60e1e7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1ac816bc62a68a52f01bf21f963295e822.html#_CPPv420PxMaterialTableIndex" title="PxMaterialTableIndex"><span class="n"><span class="pre">PxMaterialTableIndex</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleMaterialIndex</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1a19403877bf7ce42d7240e4e4c758c016.html#_CPPv412PxTriangleID" title="PxTriangleID"><span class="n"><span class="pre">PxTriangleID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleIndex</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField24getTriangleMaterialIndexE12PxTriangleID" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns material table index of given triangle. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function takes a post cooking triangle index.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>triangleIndex</strong> – <strong>[in]</strong> (internal) index of desired triangle </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Material table index, or 0xffff if no per-triangle materials are used </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField17getTriangleNormalE12PxTriangleID">
+<span id="_CPPv3NK13PxHeightField17getTriangleNormalE12PxTriangleID"></span><span id="_CPPv2NK13PxHeightField17getTriangleNormalE12PxTriangleID"></span><span id="PxHeightField::getTriangleNormal__PxTriangleIDC"></span><span class="target" id="classpxheightfield_1af1ca7236afe21450cb389989f7e7516d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleNormal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1a19403877bf7ce42d7240e4e4c758c016.html#_CPPv412PxTriangleID" title="PxTriangleID"><span class="n"><span class="pre">PxTriangleID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleIndex</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField17getTriangleNormalE12PxTriangleID" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns a triangle face normal for a given triangle index. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function takes a post cooking triangle index.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>triangleIndex</strong> – <strong>[in]</strong> (internal) index of desired triangle </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Triangle normal for a given triangle index </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField9getSampleE5PxU325PxU32">
+<span id="_CPPv3NK13PxHeightField9getSampleE5PxU325PxU32"></span><span id="_CPPv2NK13PxHeightField9getSampleE5PxU325PxU32"></span><span id="PxHeightField::getSample__PxU32.PxU32C"></span><span class="target" id="classpxheightfield_1ad17df434b17e1b66afbbd045086d5050"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxHeightFieldSample.html#_CPPv419PxHeightFieldSample" title="PxHeightFieldSample"><span class="n"><span class="pre">PxHeightFieldSample</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getSample</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">row</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">column</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField9getSampleE5PxU325PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns heightfield sample of given row and column </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> – <strong>[in]</strong> Given heightfield row </p></li>
+<li><p><strong>column</strong> – <strong>[in]</strong> Given heightfield column </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Heightfield sample </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField12getTimestampEv">
+<span id="_CPPv3NK13PxHeightField12getTimestampEv"></span><span id="_CPPv2NK13PxHeightField12getTimestampEv"></span><span id="PxHeightField::getTimestampC"></span><span class="target" id="classpxheightfield_1a29358fc4e8ab485cc2f9ebb63fbf546d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTimestamp</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField12getTimestampEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of times the heightfield data has been modified. </p>
+<p>This method returns the number of times modifySamples has been called on this heightfield, so that code that has retained state that depends on the heightfield can efficiently determine whether it has been modified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the number of times the heightfield sample data has been modified. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField19getConcreteTypeNameEv">
+<span id="_CPPv3NK13PxHeightField19getConcreteTypeNameEv"></span><span id="_CPPv2NK13PxHeightField19getConcreteTypeNameEv"></span><span id="PxHeightField::getConcreteTypeNameC"></span><span class="target" id="classpxheightfield_1a84247b2cf36ad9f4df38cd813dc427cc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">final</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField19getConcreteTypeNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField17getReferenceCountEv">
+<span id="_CPPv3NK13PxHeightField17getReferenceCountEv"></span><span id="_CPPv2NK13PxHeightField17getReferenceCountEv"></span><span id="PxHeightField::getReferenceCountC"></span><span class="target" id="classpxrefcounted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField17getReferenceCountEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField16acquireReferenceEv">
+<span id="_CPPv3N13PxHeightField16acquireReferenceEv"></span><span id="_CPPv2N13PxHeightField16acquireReferenceEv"></span><span id="PxHeightField::acquireReference"></span><span class="target" id="classpxrefcounted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxHeightField16acquireReferenceEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="classPxShape.html#classpxrefcounted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a></p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN13PxHeightField2isEP1Tv">
+<span id="_CPPv3I0EN13PxHeightField2isEv"></span><span id="_CPPv2I0EN13PxHeightField2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN13PxHeightField2isEP1Tv" title="PxHeightField::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN13PxHeightField2isEP1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK13PxHeightField2isEPK1Tv">
+<span id="_CPPv3I0ENK13PxHeightField2isEv"></span><span id="_CPPv2I0ENK13PxHeightField2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK13PxHeightField2isEPK1Tv" title="PxHeightField::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK13PxHeightField2isEPK1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField15getConcreteTypeEv">
+<span id="_CPPv3NK13PxHeightField15getConcreteTypeEv"></span><span id="_CPPv2NK13PxHeightField15getConcreteTypeEv"></span><span id="PxHeightField::getConcreteTypeC"></span><span class="target" id="classpxbase_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField15getConcreteTypeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype"><span class="std std-ref">PxConcreteType</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8"><span class="std std-ref">PxConcreteType::Enum</span></a> of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N13PxHeightField11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N13PxHeightField11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxHeightField::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="classpxbase_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="structPxBaseFlag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxBaseFlag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHeightField11setBaseFlagEN10PxBaseFlag4EnumEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set <a class="reference internal" href="structPxBaseFlag.html#structpxbaseflag"><span class="std std-ref">PxBaseFlag</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N13PxHeightField12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N13PxHeightField12setBaseFlagsE11PxBaseFlags"></span><span id="PxHeightField::setBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHeightField12setBaseFlagsE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField12getBaseFlagsEv">
+<span id="_CPPv3NK13PxHeightField12getBaseFlagsEv"></span><span id="_CPPv2NK13PxHeightField12getBaseFlagsEv"></span><span id="PxHeightField::getBaseFlagsC"></span><span class="target" id="classpxbase_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField12getBaseFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField12isReleasableEv">
+<span id="_CPPv3NK13PxHeightField12isReleasableEv"></span><span id="_CPPv2NK13PxHeightField12isReleasableEv"></span><span id="PxHeightField::isReleasableC"></span><span class="target" id="classpxbase_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField12isReleasableEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSerialization.html#classpxserialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField13PxHeightFieldE6PxType11PxBaseFlags">
+<span id="_CPPv3N13PxHeightField13PxHeightFieldE6PxType11PxBaseFlags"></span><span id="_CPPv2N13PxHeightField13PxHeightFieldE6PxType11PxBaseFlags"></span><span id="PxHeightField::PxHeightField__PxType.PxBaseFlags"></span><span class="target" id="classpxheightfield_1a1c5c57cbbf75de89ac0e2df86537cb11"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHeightField</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHeightField13PxHeightFieldE6PxType11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField13PxHeightFieldE11PxBaseFlags">
+<span id="_CPPv3N13PxHeightField13PxHeightFieldE11PxBaseFlags"></span><span id="_CPPv2N13PxHeightField13PxHeightFieldE11PxBaseFlags"></span><span id="PxHeightField::PxHeightField__PxBaseFlags"></span><span class="target" id="classpxheightfield_1a98326363673de70dc5dbb088da061b87"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHeightField</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHeightField13PxHeightFieldE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightFieldD0Ev">
+<span id="_CPPv3N13PxHeightFieldD0Ev"></span><span id="_CPPv2N13PxHeightFieldD0Ev"></span><span id="PxHeightField::~PxHeightField"></span><span class="target" id="classpxheightfield_1ae5054e549b53833b4a99b8fe94b81ea2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxHeightField</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHeightFieldD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHeightField8isKindOfEPKc">
+<span id="_CPPv3NK13PxHeightField8isKindOfEPKc"></span><span id="_CPPv2NK13PxHeightField8isKindOfEPKc"></span><span id="PxHeightField::isKindOf__cCPC"></span><span class="target" id="classpxheightfield_1a2bfba1b5ed41bb0fd34083ac1ffdd965"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHeightField8isKindOfEPKc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField14onRefCountZeroEv">
+<span id="_CPPv3N13PxHeightField14onRefCountZeroEv"></span><span id="_CPPv2N13PxHeightField14onRefCountZeroEv"></span><span id="PxHeightField::onRefCountZero"></span><span class="target" id="classpxrefcounted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHeightField14onRefCountZeroEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK13PxHeightField9typeMatchEbv">
+<span id="_CPPv3I0ENK13PxHeightField9typeMatchEv"></span><span id="_CPPv2I0ENK13PxHeightField9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK13PxHeightField9typeMatchEbv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField13mConcreteTypeE">
+<span id="_CPPv3N13PxHeightField13mConcreteTypeE"></span><span id="_CPPv2N13PxHeightField13mConcreteTypeE"></span><span id="PxHeightField::mConcreteType__PxType"></span><span class="target" id="classpxbase_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N13PxHeightField13mConcreteTypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField10mBaseFlagsE">
+<span id="_CPPv3N13PxHeightField10mBaseFlagsE"></span><span id="_CPPv2N13PxHeightField10mBaseFlagsE"></span><span id="PxHeightField::mBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N13PxHeightField10mBaseFlagsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHeightField16mBuiltInRefCountE">
+<span id="_CPPv3N13PxHeightField16mBuiltInRefCountE"></span><span id="_CPPv2N13PxHeightField16mBuiltInRefCountE"></span><span id="PxHeightField::mBuiltInRefCount__PxU32"></span><span class="target" id="classpxbase_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N13PxHeightField16mBuiltInRefCountE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxHashSetBase.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxHashSetBase</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxHeightFieldDesc.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxHeightFieldDesc</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv413PxHeightField"><code class="docutils literal notranslate"><span class="pre">PxHeightField</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField9saveCellsEPv5PxU32"><code class="docutils literal notranslate"><span class="pre">saveCells()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField13modifySamplesE5PxI325PxI32RK17PxHeightFieldDescb"><code class="docutils literal notranslate"><span class="pre">modifySamples()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField9getNbRowsEv"><code class="docutils literal notranslate"><span class="pre">getNbRows()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField12getNbColumnsEv"><code class="docutils literal notranslate"><span class="pre">getNbColumns()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField9getFormatEv"><code class="docutils literal notranslate"><span class="pre">getFormat()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField15getSampleStrideEv"><code class="docutils literal notranslate"><span class="pre">getSampleStride()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField22getConvexEdgeThresholdEv"><code class="docutils literal notranslate"><span class="pre">getConvexEdgeThreshold()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField8getFlagsEv"><code class="docutils literal notranslate"><span class="pre">getFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField9getHeightE6PxReal6PxReal"><code class="docutils literal notranslate"><span class="pre">getHeight()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField24getTriangleMaterialIndexE12PxTriangleID"><code class="docutils literal notranslate"><span class="pre">getTriangleMaterialIndex()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField17getTriangleNormalE12PxTriangleID"><code class="docutils literal notranslate"><span class="pre">getTriangleNormal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField9getSampleE5PxU325PxU32"><code class="docutils literal notranslate"><span class="pre">getSample()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField12getTimestampEv"><code class="docutils literal notranslate"><span class="pre">getTimestamp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField19getConcreteTypeNameEv"><code class="docutils literal notranslate"><span class="pre">getConcreteTypeName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField17getReferenceCountEv"><code class="docutils literal notranslate"><span class="pre">getReferenceCount()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField16acquireReferenceEv"><code class="docutils literal notranslate"><span class="pre">acquireReference()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN13PxHeightField2isEP1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK13PxHeightField2isEPK1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField15getConcreteTypeEv"><code class="docutils literal notranslate"><span class="pre">getConcreteType()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField11setBaseFlagEN10PxBaseFlag4EnumEb"><code class="docutils literal notranslate"><span class="pre">setBaseFlag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField12setBaseFlagsE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">setBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField12getBaseFlagsEv"><code class="docutils literal notranslate"><span class="pre">getBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField12isReleasableEv"><code class="docutils literal notranslate"><span class="pre">isReleasable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField13PxHeightFieldE6PxType11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxHeightField()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField13PxHeightFieldE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxHeightField()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightFieldD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxHeightField()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHeightField8isKindOfEPKc"><code class="docutils literal notranslate"><span class="pre">isKindOf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField14onRefCountZeroEv"><code class="docutils literal notranslate"><span class="pre">onRefCountZero()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK13PxHeightField9typeMatchEbv"><code class="docutils literal notranslate"><span class="pre">typeMatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField13mConcreteTypeE"><code class="docutils literal notranslate"><span class="pre">mConcreteType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField10mBaseFlagsE"><code class="docutils literal notranslate"><span class="pre">mBaseFlags</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHeightField16mBuiltInRefCountE"><code class="docutils literal notranslate"><span class="pre">mBuiltInRefCount</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

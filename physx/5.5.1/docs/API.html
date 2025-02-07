@@ -1,0 +1,803 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PhysX API Basics &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/API';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Startup and Shutdown" href="Startup.html" />
+    <link rel="prev" title="Snippets" href="Snippets.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">PhysX API Basics</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="physx-api-basics">
+<span id="api"></span><h1>PhysX API Basics<a class="headerlink" href="#physx-api-basics" title="Link to this heading">#</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<p>This chapter covers the basic patterns common to the PhysX application programming interface (API). We are committed to keeping this API stable and backwards-compatible from one minor release to the next, to protect the investment you make in your integration code.</p>
+<p>The PhysX API is composed primarily of abstract interface classes. Classes, enumerations and functions defined by the API have the prefix Px.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There is currently one section of the public API which does not have the Px prefix: the PhysX Visual Debugger connection library which has the prefix Pvd.</p>
+</div>
+<p>The PhysX libraries also expose some classes and functions that are not yet an official part of the public API. These can be recognized because they do not have the Px prefix, but they are required to build the PhysX libraries. Even though they are in principle accessible to users, they can be undocumented and we do not guarantee compatibility of these specific classes and functions between PhysX versions.</p>
+<hr class="docutils" />
+</section>
+<section id="memory-management">
+<span id="memorymanagement"></span><h2>Memory Management<a class="headerlink" href="#memory-management" title="Link to this heading">#</a></h2>
+<p>PhysX performs all allocations via the <a class="reference internal" href="../_api_build/classPxAllocatorCallback.html#_CPPv419PxAllocatorCallback" title="PxAllocatorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAllocatorCallback</span></code></a> interface. You must implement this interface in order to initialize PhysX:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PxAllocatorCallback</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxAllocatorCallback</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">allocate</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">typeName</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">line</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">deallocate</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">ptr</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>The size of the request is specified in bytes, and PhysX requires that the memory that is returned be 16-byte aligned. On many platforms <em>malloc()</em> returns memory that is 16-byte aligned, and on Windows the system function <em>_aligned_malloc()</em> provides this capability. The other parameters to <em>allocate()</em> are a string which identifies the type of allocation, and the __FILE__ and __LINE__ location inside PhysX code where the allocation was made. Refer to <a class="reference internal" href="../_api_build/classPxAllocatorCallback.html#_CPPv4N19PxAllocatorCallback8allocateE6size_tPKcPKci" title="PxAllocatorCallback::allocate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxAllocatorCallback::allocate()</span></code></a> to find out more about them.</p>
+<p>A simple implementation of the allocator callback class can be found in the PhysX Extensions library, see class <a class="reference internal" href="../_api_build/classPxDefaultAllocator.html#_CPPv418PxDefaultAllocator" title="PxDefaultAllocator"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDefaultAllocator</span></code></a>. This library also contains <em>physx::platformAlignedAlloc()</em> and <em>physx::platformAlignedFree()</em> wrappers for convenient 16-byte aligned memory allocations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On some platforms PhysX uses system library calls to determine the correct type name, and the system function that returns the type name may call the system memory allocator. If you are instrumenting system memory allocations, you may observe this behavior. To prevent PhysX requesting type names, disable allocation names using the method <a class="reference internal" href="../_api_build/classPxFoundation.html#_CPPv4N12PxFoundation24setReportAllocationNamesEb" title="PxFoundation::setReportAllocationNames"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxFoundation::setReportAllocationNames()</span></code></a>.</p>
+</div>
+<p>You can place PhysX objects in memory owned by the application using PhysX’ binary deserialization mechanism. See <a class="reference internal" href="Serialization.html#serialization"><span class="std std-ref">Serialization</span></a> for details.</p>
+<hr class="docutils" />
+</section>
+<section id="error-reporting">
+<span id="errorreporting"></span><h2>Error Reporting<a class="headerlink" href="#error-reporting" title="Link to this heading">#</a></h2>
+<p>PhysX logs all error messages through the <a class="reference internal" href="../_api_build/classPxErrorCallback.html#_CPPv415PxErrorCallback" title="PxErrorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxErrorCallback</span></code></a> interface. You must implement this interface in order to initialize PhysX:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">UserErrorCallback</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxErrorCallback</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">reportError</span><span class="p">(</span><span class="n">PxErrorCode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">line</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// error processing implementation</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>There is only a single function to implement, <a class="reference internal" href="../_api_build/classPxErrorCallback.html#_CPPv4N15PxErrorCallback11reportErrorEN11PxErrorCode4EnumEPKcPKci" title="PxErrorCallback::reportError"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxErrorCallback::reportError()</span></code></a>. This function should log the passed message, or print it on the application’s output console. For the more serious error codes <a class="reference internal" href="../_api_build/structPxErrorCode.html#_CPPv4N11PxErrorCode4Enum6eABORTE" title="PxErrorCode::eABORT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eABORT</span></code></a>, <a class="reference internal" href="../_api_build/structPxErrorCode.html#_CPPv4N11PxErrorCode4Enum18eINVALID_PARAMETERE" title="PxErrorCode::eINVALID_PARAMETER"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eINVALID_PARAMETER</span></code></a>, <a class="reference internal" href="../_api_build/structPxErrorCode.html#_CPPv4N11PxErrorCode4Enum18eINVALID_OPERATIONE" title="PxErrorCode::eINVALID_OPERATION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eINVALID_OPERATION</span></code></a>, <a class="reference internal" href="../_api_build/structPxErrorCode.html#_CPPv4N11PxErrorCode4Enum15eINTERNAL_ERRORE" title="PxErrorCode::eINTERNAL_ERROR"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eINTERNAL_ERROR</span></code></a> and <a class="reference internal" href="../_api_build/structPxErrorCode.html#_CPPv4N11PxErrorCode4Enum14eOUT_OF_MEMORYE" title="PxErrorCode::eOUT_OF_MEMORY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eOUT_OF_MEMORY</span></code></a>, breaking into the debugger may be a more appropriate choice. Whatever you do, do not just ignore the messages.</p>
+<p>A simple implementation of the error callback class can be found in the PhysX Extensions library, see class <a class="reference internal" href="../_api_build/classPxDefaultErrorCallback.html#_CPPv422PxDefaultErrorCallback" title="PxDefaultErrorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDefaultErrorCallback</span></code></a>.</p>
+<hr class="docutils" />
+</section>
+<section id="math-classes">
+<span id="mathtypes"></span><h2>Math Classes<a class="headerlink" href="#math-classes" title="Link to this heading">#</a></h2>
+<p>The common math classes used in PhysX are <a class="reference internal" href="../_api_build/typedef_PxVec2_8h_1a93b3bd57c939e655e5612b0fbe4c020d.html#_CPPv46PxVec2" title="PxVec2"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxVec2</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxVec3</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxVec4</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxMat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxMat33</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxMat44_8h_1a95751c2e7256308fbd285e798495f8ee.html#_CPPv47PxMat44" title="PxMat44"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxMat44</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxTransform</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxQuat</span></code></a> and <a class="reference internal" href="../_api_build/classPxPlane.html#_CPPv47PxPlane" title="PxPlane"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPlane</span></code></a>, which are are defined in their respective header files, e.g. (SDKRoot)/include/foundation/PxVec3.h. Most of these classes exist for floats and doubles via a typedef. The types support standard operator overloads and typical math operations. Zero and identity objects where appropriate can be constructed by passing the arguments <em>PxZero</em> and <em>PxIdentity</em> respectively.</p>
+<p>Some points to note are:</p>
+<ul class="simple">
+<li><p><em>PxTransform</em> is a representation of a rigid body transform as a rotation quaternion and a position vector, and PhysX functions which take transforms all use this type.</p></li>
+<li><p><em>PxPlane</em> is a homogeneous plane equation: that is, the constructor PxPlane(n, d) represents the equation n.x + d = 0.</p></li>
+</ul>
+<p><em>PxMat33</em> and <em>PxMat44</em> matrices represent transformations with basis vectors in the columns (pre-multiply with matrix on the left hand side) and are stored in column-major order. This format is layout compatible with popular graphics APIs such as OpenGL and Direct3D. For example, to set the model transformation for a rigid body in OpenGL:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// retrieve world space transform of rigid body</span>
+<span class="n">PxTransform</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rigidActor</span><span class="p">.</span><span class="n">getGlobalPose</span><span class="p">();</span>
+
+<span class="c1">// convert to matrix form</span>
+<span class="n">PxMat44</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMat44</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
+
+<span class="c1">// set to OpenGL</span>
+<span class="n">glMatrixMode</span><span class="p">(</span><span class="n">GL_MODELVIEW</span><span class="p">);</span>
+<span class="n">glPushMatrix</span><span class="p">();</span>
+
+<span class="c1">// PxMat44::front() returns a pointer to the first matrix element</span>
+<span class="n">glMultMatrixf</span><span class="p">(</span><span class="n">m</span><span class="p">.</span><span class="n">front</span><span class="p">());</span>
+
+<span class="c1">// draw model</span>
+
+<span class="n">glPopMatrix</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>DirectX uses row-major storage for matrices by default (D3DMATRIX), but also stores basis vectors in rows (post-multiply on the right), so <em>PxMat44</em> may be used in place of D3DXMATRIX types directly.</p>
+<hr class="docutils" />
+</section>
+<section id="connecting-physx-objects-with-user-application-objects">
+<span id="userdata"></span><h2>Connecting PhysX Objects with User Application Objects<a class="headerlink" href="#connecting-physx-objects-with-user-application-objects" title="Link to this heading">#</a></h2>
+<p>Often an application needs to associate PhysX objects with application objects for application logic or rendering purposes. An easy way to connect a single user application object with a PhysX object is to use the <em>userData</em> member provided by the most important PhysX classes (e.g. <a class="reference internal" href="../_api_build/classPxActor.html#_CPPv4N7PxActor8userDataE" title="PxActor::userData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxActor::userData</span></code></a>, <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv4N7PxShape8userDataE" title="PxShape::userData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxShape::userData</span></code></a>, <a class="reference internal" href="../_api_build/classPxMaterial.html#_CPPv4N10PxMaterial8userDataE" title="PxMaterial::userData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxMaterial::userData</span></code></a>, etc). The <em>userData</em> member is a <em>void*</em> pointer which is reserved for application use. Each class only has one <em>userData</em> field, so to manage multiple associations another mechanism must be used.</p>
+</section>
+<hr class="docutils" />
+<section id="type-casting">
+<h2>Type Casting<a class="headerlink" href="#type-casting" title="Link to this heading">#</a></h2>
+<p>PhysX API interface classes inherit from a top-level interface called PxBase, which provides mechanisms for type-safe down-casting between interface types. For example, to cast from a <a class="reference internal" href="../_api_build/classPxActor.html#_CPPv47PxActor" title="PxActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxActor</span></code></a> to a <a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidDynamic</span></code></a>, use the following idiom:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="p">...</span><span class="o">&gt;</span>
+<span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">myActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">actor</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">();</span>
+
+<span class="k">const</span><span class="w"> </span><span class="n">PxActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="p">...</span><span class="o">&gt;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">myActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">actor</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>This pattern can be used to cast to intermediate types in the hierarchy such as <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a>, but this is somewhat slower than casting to concrete types. In addition, <a class="reference internal" href="../_api_build/classPxBase.html#_CPPv46PxBase" title="PxBase"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBase</span></code></a> provides the following capabilities:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxBase.html#_CPPv4NK6PxBase15getConcreteTypeEv" title="PxBase::getConcreteType"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBase::getConcreteType()</span></code></a> provides an integer value which corresponds to the concrete type of an object</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxBase.html#_CPPv4NK6PxBase19getConcreteTypeNameEv" title="PxBase::getConcreteTypeName"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBase::getConcreteTypeName()</span></code></a> provides a string name of the concrete type</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxBase.html#_CPPv4NK6PxBase8isKindOfEPKc" title="PxBase::isKindOf"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBase::isKindOf()</span></code></a> provides string-based testing of inheritance</p></li>
+</ul>
+<p>This can be used to cast types in a more cumbersome but faster way, like for example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBase</span><span class="o">&amp;</span><span class="w"> </span><span class="n">base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mSceneCollection</span><span class="o">-&gt;</span><span class="n">getObject</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+<span class="k">if</span><span class="p">(</span><span class="n">base</span><span class="p">.</span><span class="n">getConcreteType</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">PxConcreteType</span><span class="o">::</span><span class="n">eRIGID_DYNAMIC</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">        </span><span class="n">PxRigidDynamic</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&amp;&gt;</span><span class="p">(</span><span class="n">base</span><span class="p">);</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+</section>
+<section id="reference-counting">
+<span id="basicreferencecounting"></span><h2>Reference Counting<a class="headerlink" href="#reference-counting" title="Link to this heading">#</a></h2>
+<p>Some PhysX objects are designed to be shared and referenced multiple times in a PhysX scene graph. For example, a <a class="reference internal" href="../_api_build/classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> may be referenced by multiple <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> objects, each sharing the same geometry but associated with different actors. The ref-counted types inherit from <a class="reference internal" href="../_api_build/classPxRefCounted.html#_CPPv412PxRefCounted" title="PxRefCounted"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRefCounted</span></code></a>, which is an interface that manages a reference count. The rules for reference counting are as follows:</p>
+<ul class="simple">
+<li><p>when an object is created from <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a>, it has a reference count of 1.</p></li>
+<li><p>when an object’s reference count reaches 0, the object is destroyed.</p></li>
+<li><p>when a new counted reference is created, the reference count is incremented. Counted references are for example:</p>
+<ul>
+<li><p>when a <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> references a <a class="reference internal" href="../_api_build/classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a>, <a class="reference internal" href="../_api_build/classPxHeightField.html#_CPPv413PxHeightField" title="PxHeightField"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightField</span></code></a>, or <a class="reference internal" href="../_api_build/classPxTriangleMesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMesh</span></code></a>.</p></li>
+<li><p>when a <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> references a PxMaterial.</p></li>
+<li><p>when a <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a> references a <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a>.</p></li>
+<li><p>etc</p></li>
+</ul>
+</li>
+<li><p>when a counted reference is destroyed, or the object’s release() method is called, the reference count is decremented.</p></li>
+<li><p>when an object is created through deserialization, its reference count is 1, plus the number of counted references that exist to the object.</p></li>
+</ul>
+<p>The initial reference count of 1 ensures the object is not destroyed until the application allows it by calling <em>release()</em> - thereafter it will be destroyed when no remaining counted references to it exist.</p>
+<p>For example, if you create a shape using <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv4N9PxPhysics11createShapeERK10PxGeometryRK10PxMaterialb12PxShapeFlags" title="PxPhysics::createShape"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::createShape()</span></code></a> and attach it to an actor with <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv4N12PxRigidActor11attachShapeER7PxShape" title="PxRigidActor::attachShape"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActor::attachShape()</span></code></a>, it has a reference count of 2. If you then call the shape’s <em>release()</em> method, it has a reference count of 1. When the actor is destroyed, or the shape is detached from the actor, the reference count is decremented, and since it is now 0, the shape is destroyed.</p>
+<p>The <a class="reference internal" href="../_api_build/classPxRefCounted.html#_CPPv4N12PxRefCounted16acquireReferenceEv" title="PxRefCounted::acquireReference"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRefCounted::acquireReference()</span></code></a> method increments the reference count of an object. For example, when a spatial query returns a reference to a mesh shape, and you want to pass that result to another thread for deferred processing, incrementing the reference count will ensure that even if the shape referencing the mesh is released, the mesh continues to exist.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>subtypes of <a class="reference internal" href="../_api_build/classPxGeometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> do not have counted references to the meshes to which they point, e.g. when <a class="reference internal" href="../_api_build/classPxConvexMeshGeometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMeshGeometry</span></code></a> points to a <a class="reference internal" href="../_api_build/classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a>. A counted reference exists only when the geometry is within a <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>shapes are often created using the utility method <a class="reference internal" href="../_api_build/classPxRigidActorExt.html#_CPPv4N15PxRigidActorExt20createExclusiveShapeER12PxRigidActorRK10PxGeometryPPC10PxMaterial5PxU1612PxShapeFlags" title="PxRigidActorExt::createExclusiveShape"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActorExt::createExclusiveShape()</span></code></a>. Take special care when deserializing such actors (see <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollisionshapes"><span class="std std-ref">Shapes</span></a> and <a class="reference internal" href="Serialization.html#deserializereferencecounting"><span class="std std-ref">Reference Counting of Deserialized Objects</span></a>)</p>
+</div>
+<hr class="docutils" />
+</section>
+<section id="using-different-units">
+<span id="pxtolerancescale"></span><h2>Using Different Units<a class="headerlink" href="#using-different-units" title="Link to this heading">#</a></h2>
+<p>PhysX is designed to produce correct results regardless of the units of length or mass, so long as inputs use those units consistently. However, there are certain tolerances values whose defaults need to be adjusted depending on the units. In order to ensure that these tolerances default to reasonable values, adjust the values in <a class="reference internal" href="../_api_build/classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a> when creating the <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> and <a class="reference internal" href="../_api_build/structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCookingParams</span></code></a> interfaces. Tolerances for objects are set at creation time, and may then be overridden by the application.</p>
+<p>You should set tolerances based on the typical size of objects in your simulation. For example, if you are working with objects of size approximately one meter, but in units of centimeters, you should set the scale as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxFoundation</span><span class="o">*</span><span class="w"> </span><span class="n">foundation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span>
+<span class="n">PxTolerancesScale</span><span class="w"> </span><span class="n">scale</span><span class="p">;</span>
+<span class="n">scale</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span><span class="w">        </span><span class="c1">// typical length of an object</span>
+<span class="n">scale</span><span class="p">.</span><span class="n">speed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">981</span><span class="p">;</span><span class="w">         </span><span class="c1">// typical speed of an object, gravity*1s is a reasonable choice</span>
+<span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">foundation</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
+</pre></div>
+</div>
+<p>This will result in the defaults for values like <em>PxShape::contactDistance</em> being scaled appropriately for your objects.</p>
+<p>You can also set the typical object mass in <a class="reference internal" href="../_api_build/classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a>.</p>
+<p>It is important to use the same <a class="reference internal" href="../_api_build/classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a> value for initialization of <a class="reference internal" href="../_api_build/structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCookingParams</span></code></a> and <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a>, and also when creating <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv411PxSceneDesc" title="PxSceneDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneDesc</span></code></a> objects.</p>
+</section>
+<hr class="docutils" />
+<section id="determinism">
+<h2>Determinism<a class="headerlink" href="#determinism" title="Link to this heading">#</a></h2>
+<p>Given a specific platform and PhysX build, PhysX will produce identical simulation results for scenes with rigid bodies and articulations.
+In order to achieve this determinism, the application must create a new <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> instance and recreate the scene with the exact same sequence of API calls.
+Note that removing all the objects from a scene is generally not sufficient to reinitialize it for this purpose.
+For determinism the application must also use a consistent time-stepping scheme and ensure the same responses from simulation callbacks that modify data.</p>
+<p>Simulation results can vary between platforms due to differences in hardware floating point precision and differences in how the compiler reorders instructions during optimization.
+This means that behavior can be different between different platforms, different compilers operating on the same platform or between optimized and unoptimized builds using the same compiler on the same platform.</p>
+<p>In addition, the PhysX simulation can produce divergent behavior if any conditions or settings in the simulation were changed, although behavior and determinism is not sensitive to the number of CPU worker threads used.</p>
+<p>PhysX does currently not guarantee determinism for any scene that contains non-rigid actors such as <a class="reference internal" href="../_api_build/classPxPBDParticleSystem.html#_CPPv419PxPBDParticleSystem" title="PxPBDParticleSystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPBDParticleSystem</span></code></a>, <a class="reference internal" href="../_api_build/classPxDeformableSurface.html#_CPPv419PxDeformableSurface" title="PxDeformableSurface"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDeformableSurface</span></code></a> or <a class="reference internal" href="../_api_build/classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDeformableVolume</span></code></a>.</p>
+<section id="enhanced-determinism">
+<h3>Enhanced Determinism<a class="headerlink" href="#enhanced-determinism" title="Link to this heading">#</a></h3>
+<p>Even the addition or removal of a single actor that is <em>not</em> interacting with the existing set of actors in the scene can produce divergent results because it may change the order in which constraints are processed.
+PhysX provides a mechanism to overcome the issue of divergent behavior in such cases where additional actors being added or actors being removed from the scene do not interact with the other actors in the scene.
+This mechanism can be enabled by raising <a class="reference internal" href="../_api_build/structPxSceneFlag.html#_CPPv4N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME" title="PxSceneFlag::eENABLE_ENHANCED_DETERMINISM"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_ENHANCED_DETERMINISM</span></code></a> on <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc5flagsE" title="PxSceneDesc::flags"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::flags</span></code></a> prior to creating the scene.
+Enabling this mode makes some performance concessions to be able to offer an improved level of determinism.
+The application must still follow all the requirements to achieve deterministic behavior described previously in order for this mechanism to produce consistent results.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Snippets.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Snippets</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Startup.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Startup and Shutdown</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#memory-management">Memory Management</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#error-reporting">Error Reporting</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#math-classes">Math Classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#connecting-physx-objects-with-user-application-objects">Connecting PhysX Objects with User Application Objects</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#type-casting">Type Casting</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-counting">Reference Counting</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-different-units">Using Different Units</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#determinism">Determinism</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#enhanced-determinism">Enhanced Determinism</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,713 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxVehiclePvdEngineDrivetrainWrite &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/function_PxVehiclePvdFunctions_8h_1a27ba970b215da66f4406b301d6848dcc';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxVehiclePvdPhysXRigidActorRegister" href="function_PxVehiclePvdFunctions_8h_1a78192939f556ce428d7fadc84c666445.html" />
+    <link rel="prev" title="PxVehiclePvdEngineDrivetrainRegister" href="function_PxVehiclePvdFunctions_8h_1a96fe700d46ea775838f1b7e61f5731d7.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="file_include_vehicle2_pvd_PxVehiclePvdFunctions.h.html" class="nav-link">PxVehiclePvdFunctions.h</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxVehiclePvd...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxvehiclepvdenginedrivetrainwrite">
+<h1>PxVehiclePvdEngineDrivetrainWrite<a class="headerlink" href="#pxvehiclepvdenginedrivetrainwrite" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_pvd_PxVehiclePvdFunctions.h.html#pxvehiclepvdfunctions-8h"><span class="std std-ref">include/vehicle2/pvd/PxVehiclePvdFunctions.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv433PxVehiclePvdEngineDrivetrainWritePK21PxVehicleCommandStatePK44PxVehicleEngineDriveTransmissionCommandStatePK42PxVehicleTankDriveTransmissionCommandStatePK36PxVehicleClutchCommandResponseParamsPK21PxVehicleClutchParamsPK21PxVehicleEngineParamsPK22PxVehicleGearboxParamsPK22PxVehicleAutoboxParamsPK42PxVehicleMultiWheelDriveDifferentialParamsPK41PxVehicleFourWheelDriveDifferentialParamsPK36PxVehicleTankDriveDifferentialParamsPK35PxVehicleClutchCommandResponseStatePK48PxVehicleEngineDriveThrottleCommandResponseStatePK20PxVehicleEngineStatePK21PxVehicleGearboxStatePK21PxVehicleAutoboxStatePK26PxVehicleDifferentialStatePK24PxVehicleClutchSlipStateRK28PxVehiclePvdAttributeHandlesRK25PxVehiclePvdObjectHandlesR13OmniPvdWriter">
+<span id="_CPPv333PxVehiclePvdEngineDrivetrainWritePK21PxVehicleCommandStatePK44PxVehicleEngineDriveTransmissionCommandStatePK42PxVehicleTankDriveTransmissionCommandStatePK36PxVehicleClutchCommandResponseParamsPK21PxVehicleClutchParamsPK21PxVehicleEngineParamsPK22PxVehicleGearboxParamsPK22PxVehicleAutoboxParamsPK42PxVehicleMultiWheelDriveDifferentialParamsPK41PxVehicleFourWheelDriveDifferentialParamsPK36PxVehicleTankDriveDifferentialParamsPK35PxVehicleClutchCommandResponseStatePK48PxVehicleEngineDriveThrottleCommandResponseStatePK20PxVehicleEngineStatePK21PxVehicleGearboxStatePK21PxVehicleAutoboxStatePK26PxVehicleDifferentialStatePK24PxVehicleClutchSlipStateRK28PxVehiclePvdAttributeHandlesRK25PxVehiclePvdObjectHandlesR13OmniPvdWriter"></span><span id="_CPPv233PxVehiclePvdEngineDrivetrainWritePK21PxVehicleCommandStatePK44PxVehicleEngineDriveTransmissionCommandStatePK42PxVehicleTankDriveTransmissionCommandStatePK36PxVehicleClutchCommandResponseParamsPK21PxVehicleClutchParamsPK21PxVehicleEngineParamsPK22PxVehicleGearboxParamsPK22PxVehicleAutoboxParamsPK42PxVehicleMultiWheelDriveDifferentialParamsPK41PxVehicleFourWheelDriveDifferentialParamsPK36PxVehicleTankDriveDifferentialParamsPK35PxVehicleClutchCommandResponseStatePK48PxVehicleEngineDriveThrottleCommandResponseStatePK20PxVehicleEngineStatePK21PxVehicleGearboxStatePK21PxVehicleAutoboxStatePK26PxVehicleDifferentialStatePK24PxVehicleClutchSlipStateRK28PxVehiclePvdAttributeHandlesRK25PxVehiclePvdObjectHandlesR13OmniPvdWriter"></span><span id="PxVehiclePvdEngineDrivetrainWrite__PxVehicleCommandStateCP.PxVehicleEngineDriveTransmissionCommandStateCP.PxVehicleTankDriveTransmissionCommandStateCP.PxVehicleClutchCommandResponseParamsCP.PxVehicleClutchParamsCP.PxVehicleEngineParamsCP.PxVehicleGearboxParamsCP.PxVehicleAutoboxParamsCP.PxVehicleMultiWheelDriveDifferentialParamsCP.PxVehicleFourWheelDriveDifferentialParamsCP.PxVehicleTankDriveDifferentialParamsCP.PxVehicleClutchCommandResponseStateCP.PxVehicleEngineDriveThrottleCommandResponseStateCP.PxVehicleEngineStateCP.PxVehicleGearboxStateCP.PxVehicleAutoboxStateCP.PxVehicleDifferentialStateCP.PxVehicleClutchSlipStateCP.PxVehiclePvdAttributeHandlesCR.PxVehiclePvdObjectHandlesCR.OmniPvdWriterR"></span><span class="target" id="pxvehiclepvdfunctions_8h_1a27ba970b215da66f4406b301d6848dcc"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePvdEngineDrivetrainWrite</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleCommandState.html#_CPPv421PxVehicleCommandState" title="PxVehicleCommandState"><span class="n"><span class="pre">PxVehicleCommandState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">commandState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleEngineDriveTransmissionCommandState.html#_CPPv444PxVehicleEngineDriveTransmissionCommandState" title="PxVehicleEngineDriveTransmissionCommandState"><span class="n"><span class="pre">PxVehicleEngineDriveTransmissionCommandState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">engineDriveTransmissionCommandState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTankDriveTransmissionCommandState.html#_CPPv442PxVehicleTankDriveTransmissionCommandState" title="PxVehicleTankDriveTransmissionCommandState"><span class="n"><span class="pre">PxVehicleTankDriveTransmissionCommandState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">tankDriveTransmissionCommandState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleClutchCommandResponseParams.html#_CPPv436PxVehicleClutchCommandResponseParams" title="PxVehicleClutchCommandResponseParams"><span class="n"><span class="pre">PxVehicleClutchCommandResponseParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">clutchResponseParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleClutchParams.html#_CPPv421PxVehicleClutchParams" title="PxVehicleClutchParams"><span class="n"><span class="pre">PxVehicleClutchParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">clutchParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleEngineParams.html#_CPPv421PxVehicleEngineParams" title="PxVehicleEngineParams"><span class="n"><span class="pre">PxVehicleEngineParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">engineParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleGearboxParams.html#_CPPv422PxVehicleGearboxParams" title="PxVehicleGearboxParams"><span class="n"><span class="pre">PxVehicleGearboxParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gearboxParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleAutoboxParams.html#_CPPv422PxVehicleAutoboxParams" title="PxVehicleAutoboxParams"><span class="n"><span class="pre">PxVehicleAutoboxParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">autoboxParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleMultiWheelDriveDifferentialParams.html#_CPPv442PxVehicleMultiWheelDriveDifferentialParams" title="PxVehicleMultiWheelDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleMultiWheelDriveDifferentialParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">multiWheelDiffParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleFourWheelDriveDifferentialParams.html#_CPPv441PxVehicleFourWheelDriveDifferentialParams" title="PxVehicleFourWheelDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleFourWheelDriveDifferentialParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fourWheelDiffParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTankDriveDifferentialParams.html#_CPPv436PxVehicleTankDriveDifferentialParams" title="PxVehicleTankDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleTankDriveDifferentialParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">tankDiffParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleClutchCommandResponseState.html#_CPPv435PxVehicleClutchCommandResponseState" title="PxVehicleClutchCommandResponseState"><span class="n"><span class="pre">PxVehicleClutchCommandResponseState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">clutchResponseState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleEngineDriveThrottleCommandResponseState.html#_CPPv448PxVehicleEngineDriveThrottleCommandResponseState" title="PxVehicleEngineDriveThrottleCommandResponseState"><span class="n"><span class="pre">PxVehicleEngineDriveThrottleCommandResponseState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">throttleResponseState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleEngineState.html#_CPPv420PxVehicleEngineState" title="PxVehicleEngineState"><span class="n"><span class="pre">PxVehicleEngineState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">engineState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleGearboxState.html#_CPPv421PxVehicleGearboxState" title="PxVehicleGearboxState"><span class="n"><span class="pre">PxVehicleGearboxState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gearboxState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleAutoboxState.html#_CPPv421PxVehicleAutoboxState" title="PxVehicleAutoboxState"><span class="n"><span class="pre">PxVehicleAutoboxState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">autoboxState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleDifferentialState.html#_CPPv426PxVehicleDifferentialState" title="PxVehicleDifferentialState"><span class="n"><span class="pre">PxVehicleDifferentialState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">diffState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleClutchSlipState.html#_CPPv424PxVehicleClutchSlipState" title="PxVehicleClutchSlipState"><span class="n"><span class="pre">PxVehicleClutchSlipState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">clutchSlipState</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxVehiclePvdAttributeHandles</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">attributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxVehiclePvdObjectHandles</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">objectHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classOmniPvdWriter.html#_CPPv413OmniPvdWriter" title="OmniPvdWriter"><span class="n"><span class="pre">OmniPvdWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">omniWriter</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433PxVehiclePvdEngineDrivetrainWritePK21PxVehicleCommandStatePK44PxVehicleEngineDriveTransmissionCommandStatePK42PxVehicleTankDriveTransmissionCommandStatePK36PxVehicleClutchCommandResponseParamsPK21PxVehicleClutchParamsPK21PxVehicleEngineParamsPK22PxVehicleGearboxParamsPK22PxVehicleAutoboxParamsPK42PxVehicleMultiWheelDriveDifferentialParamsPK41PxVehicleFourWheelDriveDifferentialParamsPK36PxVehicleTankDriveDifferentialParamsPK35PxVehicleClutchCommandResponseStatePK48PxVehicleEngineDriveThrottleCommandResponseStatePK20PxVehicleEngineStatePK21PxVehicleGearboxStatePK21PxVehicleAutoboxStatePK26PxVehicleDifferentialStatePK24PxVehicleClutchSlipStateRK28PxVehiclePvdAttributeHandlesRK25PxVehiclePvdObjectHandlesR13OmniPvdWriter" title="Link to this definition">#</a><br /></dt>
+<dd><p>Write engine drivetrain data of a vehicle instance to omnipvd. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehiclePvdAttributesCreate </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehiclePvdObjectCreate </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehiclePvdEngineDrivetrainRegister </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If any pointer is NULL and the corresponding argument in PxVehiclePvdEngineDrivetrainRegister() was not NULL, the corresponding data will not be reflected in omnipvd. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At most one of engineDriveTransmissionCommandState and tankDriveTransmissionCommandState is expected to be non-NULL. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At most one of multiWheelDiffParams, fourWheelDiffParams and tankDiffParams is expected to be non-NULL. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>commandState</strong> – <strong>[in]</strong> describes the control values applied to the vehicle. </p></li>
+<li><p><strong>engineDriveTransmissionCommandState</strong> – <strong>[in]</strong> describes the state of the engine drive transmission. </p></li>
+<li><p><strong>tankDriveTransmissionCommandState</strong> – <strong>[in]</strong> describes the state of the tank drive transmission. </p></li>
+<li><p><strong>clutchResponseParams</strong> – <strong>[in]</strong> describes the vehicle’s response to a clutch command. </p></li>
+<li><p><strong>clutchParams</strong> – <strong>[in]</strong> describes the vehicle’s clutch. </p></li>
+<li><p><strong>engineParams</strong> – <strong>[in]</strong> describes the engine. </p></li>
+<li><p><strong>gearboxParams</strong> – <strong>[in]</strong> describes the gearbox. </p></li>
+<li><p><strong>autoboxParams</strong> – <strong>[in]</strong> describes the automatic gearbox. </p></li>
+<li><p><strong>multiWheelDiffParams</strong> – <strong>[in]</strong> describes a multiwheel differential without limited slip compensation. </p></li>
+<li><p><strong>fourWheelDiffParams</strong> – <strong>[in]</strong> describes a differential that delivers torque to four drive wheels with limited slip compensation. </p></li>
+<li><p><strong>tankDiffParams</strong> – <strong>[in]</strong> describes the operation of the tank differential. </p></li>
+<li><p><strong>clutchResponseState</strong> – <strong>[in]</strong> is the instantaneous reponse of the clutch to a clutch command. </p></li>
+<li><p><strong>throttleResponseState</strong> – <strong>[in]</strong> is the instantaneous response to a throttle command. </p></li>
+<li><p><strong>engineState</strong> – <strong>[in]</strong> is the instantaneous state of the engine. </p></li>
+<li><p><strong>gearboxState</strong> – <strong>[in]</strong> is the instantaneous state of the gearbox. </p></li>
+<li><p><strong>autoboxState</strong> – <strong>[in]</strong> is the instantaneous state of the automatic gearbox. </p></li>
+<li><p><strong>diffState</strong> – <strong>[in]</strong> is the instantaneous state of the differential. </p></li>
+<li><p><strong>clutchSlipState</strong> – <strong>[in]</strong> is the instantaneous slip recorded at the clutch. </p></li>
+<li><p><strong>attributeHandles</strong> – <strong>[in]</strong> contains a general description of vehicle parameters and states that will be reflected in omnipvd. </p></li>
+<li><p><strong>objectHandles</strong> – <strong>[in]</strong> contains unique handles for the parameters and states of each vehicle instance. </p></li>
+<li><p><strong>omniWriter</strong> – <strong>[in]</strong> is an <a class="reference internal" href="classOmniPvdWriter.html#classomnipvdwriter"><span class="std std-ref">OmniPvdWriter</span></a> instance used to communicate state and parameter data to omnipvd. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="function_PxVehiclePvdFunctions_8h_1a96fe700d46ea775838f1b7e61f5731d7.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxVehiclePvdEngineDrivetrainRegister</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="function_PxVehiclePvdFunctions_8h_1a78192939f556ce428d7fadc84c666445.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxVehiclePvdPhysXRigidActorRegister</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv433PxVehiclePvdEngineDrivetrainWritePK21PxVehicleCommandStatePK44PxVehicleEngineDriveTransmissionCommandStatePK42PxVehicleTankDriveTransmissionCommandStatePK36PxVehicleClutchCommandResponseParamsPK21PxVehicleClutchParamsPK21PxVehicleEngineParamsPK22PxVehicleGearboxParamsPK22PxVehicleAutoboxParamsPK42PxVehicleMultiWheelDriveDifferentialParamsPK41PxVehicleFourWheelDriveDifferentialParamsPK36PxVehicleTankDriveDifferentialParamsPK35PxVehicleClutchCommandResponseStatePK48PxVehicleEngineDriveThrottleCommandResponseStatePK20PxVehicleEngineStatePK21PxVehicleGearboxStatePK21PxVehicleAutoboxStatePK26PxVehicleDifferentialStatePK24PxVehicleClutchSlipStateRK28PxVehiclePvdAttributeHandlesRK25PxVehiclePvdObjectHandlesR13OmniPvdWriter"><code class="docutils literal notranslate"><span class="pre">PxVehiclePvdEngineDrivetrainWrite()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

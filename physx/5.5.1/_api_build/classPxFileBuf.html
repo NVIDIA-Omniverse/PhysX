@@ -1,0 +1,1002 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxFileBuf &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxFileBuf';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxFilterData" href="structPxFilterData.html" />
+    <link rel="prev" title="PxFPUGuard" href="classPxFPUGuard.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxFileBuf</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxfilebuf">
+<h1>PxFileBuf<a class="headerlink" href="#pxfilebuf" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_filebuf_PxFileBuf.h.html#pxfilebuf-8h"><span class="std std-ref">include/filebuf/PxFileBuf.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv49PxFileBuf">
+<span id="_CPPv39PxFileBuf"></span><span id="_CPPv29PxFileBuf"></span><span id="PxFileBuf"></span><span class="target" id="classpxfilebuf"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFileBuf</span></span></span><a class="headerlink" href="#_CPPv49PxFileBuf" title="Link to this definition">#</a><br /></dt>
+<dd><p>Callback class for data serialization. </p>
+<p>The user needs to supply an <a class="reference internal" href="#classpxfilebuf"><span class="std std-ref">PxFileBuf</span></a> implementation to a number of methods to allow the SDK to read or write chunks of binary data. This allows flexibility for the source/destination of the data. For example the <a class="reference internal" href="#classpxfilebuf"><span class="std std-ref">PxFileBuf</span></a> could store data in a file, memory buffer or custom file format.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is the users responsibility to ensure that the data is written to the appropriate offset. </p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10EndianModeE">
+<span id="_CPPv3N9PxFileBuf10EndianModeE"></span><span id="_CPPv2N9PxFileBuf10EndianModeE"></span><span class="target" id="classpxfilebuf_1a17a9f8dcf7aeed5221f78ad2c785d122"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EndianMode</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf10EndianModeE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10EndianMode11ENDIAN_NONEE">
+<span id="_CPPv3N9PxFileBuf10EndianMode11ENDIAN_NONEE"></span><span id="_CPPv2N9PxFileBuf10EndianMode11ENDIAN_NONEE"></span><span class="target" id="classpxfilebuf_1a17a9f8dcf7aeed5221f78ad2c785d122ae9ca3a0e3b5d5a01c8526820e7c0ad29"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ENDIAN_NONE</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf10EndianMode11ENDIAN_NONEE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10EndianMode10ENDIAN_BIGE">
+<span id="_CPPv3N9PxFileBuf10EndianMode10ENDIAN_BIGE"></span><span id="_CPPv2N9PxFileBuf10EndianMode10ENDIAN_BIGE"></span><span class="target" id="classpxfilebuf_1a17a9f8dcf7aeed5221f78ad2c785d122a250430fabf897a0a7215e927d90e804b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ENDIAN_BIG</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf10EndianMode10ENDIAN_BIGE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10EndianMode13ENDIAN_LITTLEE">
+<span id="_CPPv3N9PxFileBuf10EndianMode13ENDIAN_LITTLEE"></span><span id="_CPPv2N9PxFileBuf10EndianMode13ENDIAN_LITTLEE"></span><span class="target" id="classpxfilebuf_1a17a9f8dcf7aeed5221f78ad2c785d122a2ee31c8801eca6be180984790a83e29d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ENDIAN_LITTLE</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf10EndianMode13ENDIAN_LITTLEE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8OpenModeE">
+<span id="_CPPv3N9PxFileBuf8OpenModeE"></span><span id="_CPPv2N9PxFileBuf8OpenModeE"></span><span class="target" id="classpxfilebuf_1ad90517c9062bd9c4f76c4f4b30cb8979"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OpenMode</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8OpenModeE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8OpenMode19OPEN_FILE_NOT_FOUNDE">
+<span id="_CPPv3N9PxFileBuf8OpenMode19OPEN_FILE_NOT_FOUNDE"></span><span id="_CPPv2N9PxFileBuf8OpenMode19OPEN_FILE_NOT_FOUNDE"></span><span class="target" id="classpxfilebuf_1ad90517c9062bd9c4f76c4f4b30cb8979a19f34fe662c01159bfc09b648b5b16cb"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OPEN_FILE_NOT_FOUND</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8OpenMode19OPEN_FILE_NOT_FOUNDE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8OpenMode14OPEN_READ_ONLYE">
+<span id="_CPPv3N9PxFileBuf8OpenMode14OPEN_READ_ONLYE"></span><span id="_CPPv2N9PxFileBuf8OpenMode14OPEN_READ_ONLYE"></span><span class="target" id="classpxfilebuf_1ad90517c9062bd9c4f76c4f4b30cb8979a8f05c34eecefaa76501a85ec4b0452a7"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OPEN_READ_ONLY</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8OpenMode14OPEN_READ_ONLYE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8OpenMode15OPEN_WRITE_ONLYE">
+<span id="_CPPv3N9PxFileBuf8OpenMode15OPEN_WRITE_ONLYE"></span><span id="_CPPv2N9PxFileBuf8OpenMode15OPEN_WRITE_ONLYE"></span><span class="target" id="classpxfilebuf_1ad90517c9062bd9c4f76c4f4b30cb8979ab61521c34c90359331a05fb41ec8d481"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OPEN_WRITE_ONLY</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8OpenMode15OPEN_WRITE_ONLYE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8OpenMode19OPEN_READ_WRITE_NEWE">
+<span id="_CPPv3N9PxFileBuf8OpenMode19OPEN_READ_WRITE_NEWE"></span><span id="_CPPv2N9PxFileBuf8OpenMode19OPEN_READ_WRITE_NEWE"></span><span class="target" id="classpxfilebuf_1ad90517c9062bd9c4f76c4f4b30cb8979adea409bf3c24a9986d810b638652e759"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OPEN_READ_WRITE_NEW</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8OpenMode19OPEN_READ_WRITE_NEWE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8OpenMode24OPEN_READ_WRITE_EXISTINGE">
+<span id="_CPPv3N9PxFileBuf8OpenMode24OPEN_READ_WRITE_EXISTINGE"></span><span id="_CPPv2N9PxFileBuf8OpenMode24OPEN_READ_WRITE_EXISTINGE"></span><span class="target" id="classpxfilebuf_1ad90517c9062bd9c4f76c4f4b30cb8979addd857cb3d835234fd152a63f8501bcd"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OPEN_READ_WRITE_EXISTING</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8OpenMode24OPEN_READ_WRITE_EXISTINGE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8SeekTypeE">
+<span id="_CPPv3N9PxFileBuf8SeekTypeE"></span><span id="_CPPv2N9PxFileBuf8SeekTypeE"></span><span class="target" id="classpxfilebuf_1a2442abc9fb9f4ff32fd191176a68dd7e"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SeekType</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8SeekTypeE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8SeekType11SEEKABLE_NOE">
+<span id="_CPPv3N9PxFileBuf8SeekType11SEEKABLE_NOE"></span><span id="_CPPv2N9PxFileBuf8SeekType11SEEKABLE_NOE"></span><span class="target" id="classpxfilebuf_1a2442abc9fb9f4ff32fd191176a68dd7ea9a8656c41bea2287273ac71836425843"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SEEKABLE_NO</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8SeekType11SEEKABLE_NOE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8SeekType13SEEKABLE_READE">
+<span id="_CPPv3N9PxFileBuf8SeekType13SEEKABLE_READE"></span><span id="_CPPv2N9PxFileBuf8SeekType13SEEKABLE_READE"></span><span class="target" id="classpxfilebuf_1a2442abc9fb9f4ff32fd191176a68dd7eabecbf374e20587df095cb58179d586ea"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SEEKABLE_READ</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8SeekType13SEEKABLE_READE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8SeekType14SEEKABLE_WRITEE">
+<span id="_CPPv3N9PxFileBuf8SeekType14SEEKABLE_WRITEE"></span><span id="_CPPv2N9PxFileBuf8SeekType14SEEKABLE_WRITEE"></span><span class="target" id="classpxfilebuf_1a2442abc9fb9f4ff32fd191176a68dd7ea73a929448a6bb5382f36ef56227d38c6"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SEEKABLE_WRITE</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8SeekType14SEEKABLE_WRITEE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8SeekType18SEEKABLE_READWRITEE">
+<span id="_CPPv3N9PxFileBuf8SeekType18SEEKABLE_READWRITEE"></span><span id="_CPPv2N9PxFileBuf8SeekType18SEEKABLE_READWRITEE"></span><span class="target" id="classpxfilebuf_1a2442abc9fb9f4ff32fd191176a68dd7ea44122534caabc00563b8ecf22b5dfb8b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SEEKABLE_READWRITE</span></span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8SeekType18SEEKABLE_READWRITEE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf9PxFileBufE10EndianMode">
+<span id="_CPPv3N9PxFileBuf9PxFileBufE10EndianMode"></span><span id="_CPPv2N9PxFileBuf9PxFileBufE10EndianMode"></span><span id="PxFileBuf::PxFileBuf__EndianMode"></span><span class="target" id="classpxfilebuf_1ae46af0c1492c02d53ed1488361b5c7d6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFileBuf</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4N9PxFileBuf10EndianModeE" title="PxFileBuf::EndianMode"><span class="n"><span class="pre">EndianMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N9PxFileBuf10EndianMode13ENDIAN_LITTLEE" title="PxFileBuf::ENDIAN_LITTLE"><span class="n"><span class="pre">ENDIAN_LITTLE</span></span></a></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf9PxFileBufE10EndianMode" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBufD0Ev">
+<span id="_CPPv3N9PxFileBufD0Ev"></span><span id="_CPPv2N9PxFileBufD0Ev"></span><span id="PxFileBuf::~PxFileBuf"></span><span class="target" id="classpxfilebuf_1ac66b8280b9a7970f1b88e29d64157fe2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxFileBuf</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBufD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf11getOpenModeEv">
+<span id="_CPPv3NK9PxFileBuf11getOpenModeEv"></span><span id="_CPPv2NK9PxFileBuf11getOpenModeEv"></span><span id="PxFileBuf::getOpenModeC"></span><span class="target" id="classpxfilebuf_1a5c2e4d38438f23ba4734caa075ef958f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N9PxFileBuf8OpenModeE" title="PxFileBuf::OpenMode"><span class="n"><span class="pre">OpenMode</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getOpenMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf11getOpenModeEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf6isOpenEv">
+<span id="_CPPv3NK9PxFileBuf6isOpenEv"></span><span id="_CPPv2NK9PxFileBuf6isOpenEv"></span><span id="PxFileBuf::isOpenC"></span><span class="target" id="classpxfilebuf_1a348d70b9bdaa35b5f5d58a3cbf30145b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isOpen</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf6isOpenEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf10isSeekableEv">
+<span id="_CPPv3NK9PxFileBuf10isSeekableEv"></span><span id="_CPPv2NK9PxFileBuf10isSeekableEv"></span><span id="PxFileBuf::isSeekableC"></span><span class="target" id="classpxfilebuf_1a4ecb50db4b26f4888e2d6eeff0c128a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N9PxFileBuf8SeekTypeE" title="PxFileBuf::SeekType"><span class="n"><span class="pre">SeekType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSeekable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf10isSeekableEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf13setEndianModeE10EndianMode">
+<span id="_CPPv3N9PxFileBuf13setEndianModeE10EndianMode"></span><span id="_CPPv2N9PxFileBuf13setEndianModeE10EndianMode"></span><span id="PxFileBuf::setEndianMode__EndianMode"></span><span class="target" id="classpxfilebuf_1af72ea9fc1222848db164855a3d8f8b70"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setEndianMode</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4N9PxFileBuf10EndianModeE" title="PxFileBuf::EndianMode"><span class="n"><span class="pre">EndianMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf13setEndianModeE10EndianMode" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf13getEndianModeEv">
+<span id="_CPPv3NK9PxFileBuf13getEndianModeEv"></span><span id="_CPPv2NK9PxFileBuf13getEndianModeEv"></span><span id="PxFileBuf::getEndianModeC"></span><span class="target" id="classpxfilebuf_1abf161e346f23a02ecfe30936ed23b4f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N9PxFileBuf10EndianModeE" title="PxFileBuf::EndianMode"><span class="n"><span class="pre">EndianMode</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getEndianMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf13getEndianModeEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf13getFileLengthEv">
+<span id="_CPPv3NK9PxFileBuf13getFileLengthEv"></span><span id="_CPPv2NK9PxFileBuf13getFileLengthEv"></span><span id="PxFileBuf::getFileLengthC"></span><span class="target" id="classpxfilebuf_1a87bccc029a2b3936c8159c7aebe77d87"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFileLength</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf13getFileLengthEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8seekReadE8uint32_t">
+<span id="_CPPv3N9PxFileBuf8seekReadE8uint32_t"></span><span id="_CPPv2N9PxFileBuf8seekReadE8uint32_t"></span><span id="PxFileBuf::seekRead__uint32_t"></span><span class="target" id="classpxfilebuf_1ae706ac6909e4fe16db22cbe1ca2dc53d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">seekRead</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">loc</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf8seekReadE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Seeks the stream to a particular location for reading. </p>
+<p>If the location passed exceeds the length of the stream, then it will seek to the end. Returns the location it ended up at (useful if you seek to the end) to get the file position </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf9seekWriteE8uint32_t">
+<span id="_CPPv3N9PxFileBuf9seekWriteE8uint32_t"></span><span id="_CPPv2N9PxFileBuf9seekWriteE8uint32_t"></span><span id="PxFileBuf::seekWrite__uint32_t"></span><span class="target" id="classpxfilebuf_1a7fab04894cb6b2c4440e87ca33d66340"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">seekWrite</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">loc</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf9seekWriteE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Seeks the stream to a particular location for writing. </p>
+<p>If the location passed exceeds the length of the stream, then it will seek to the end. Returns the location it ended up at (useful if you seek to the end) to get the file position </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf4readEPv8uint32_t">
+<span id="_CPPv3N9PxFileBuf4readEPv8uint32_t"></span><span id="_CPPv2N9PxFileBuf4readEPv8uint32_t"></span><span id="PxFileBuf::read__voidP.uint32_t"></span><span class="target" id="classpxfilebuf_1ae95878d923a94bcaf3181164bcfc8a3f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">len</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf4readEPv8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Reads from the stream into a buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mem</strong> – <strong>[out]</strong> The buffer to read the stream into. </p></li>
+<li><p><strong>len</strong> – <strong>[in]</strong> The number of bytes to stream into the buffer</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns the actual number of bytes read. If not equal to the length requested, then reached end of stream. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf4peekEPv8uint32_t">
+<span id="_CPPv3N9PxFileBuf4peekEPv8uint32_t"></span><span id="_CPPv2N9PxFileBuf4peekEPv8uint32_t"></span><span id="PxFileBuf::peek__voidP.uint32_t"></span><span class="target" id="classpxfilebuf_1a63e0abac3fa4cf71760142dd7088ef36"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">peek</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">len</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf4peekEPv8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Reads from the stream into a buffer but does not advance the read location. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mem</strong> – <strong>[out]</strong> The buffer to read the stream into. </p></li>
+<li><p><strong>len</strong> – <strong>[in]</strong> The number of bytes to stream into the buffer</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns the actual number of bytes read. If not equal to the length requested, then reached end of stream. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf5writeEPKv8uint32_t">
+<span id="_CPPv3N9PxFileBuf5writeEPKv8uint32_t"></span><span id="_CPPv2N9PxFileBuf5writeEPKv8uint32_t"></span><span id="PxFileBuf::write__voidCP.uint32_t"></span><span class="target" id="classpxfilebuf_1a28cf8048c35fbad96bd0ddf07daebbb6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">len</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf5writeEPKv8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Writes a buffer of memory to the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mem</strong> – <strong>[in]</strong> The address of a buffer of memory to send to the stream. </p></li>
+<li><p><strong>len</strong> – <strong>[in]</strong> The number of bytes to send to the stream.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns the actual number of bytes sent to the stream. If not equal to the length specific, then the stream is full or unable to write for some reason. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf8tellReadEv">
+<span id="_CPPv3NK9PxFileBuf8tellReadEv"></span><span id="_CPPv2NK9PxFileBuf8tellReadEv"></span><span id="PxFileBuf::tellReadC"></span><span class="target" id="classpxfilebuf_1af61bb7f8a9fbf47a114773467cd3cd59"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tellRead</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf8tellReadEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Reports the current stream location read aqccess. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Returns the current stream read location. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf9tellWriteEv">
+<span id="_CPPv3NK9PxFileBuf9tellWriteEv"></span><span id="_CPPv2NK9PxFileBuf9tellWriteEv"></span><span id="PxFileBuf::tellWriteC"></span><span class="target" id="classpxfilebuf_1a71a651cab3f93d9c13ad33c7162684a0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tellWrite</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf9tellWriteEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Reports the current stream location for write access. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Returns the current stream write location. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf5flushEv">
+<span id="_CPPv3N9PxFileBuf5flushEv"></span><span id="_CPPv2N9PxFileBuf5flushEv"></span><span id="PxFileBuf::flush"></span><span class="target" id="classpxfilebuf_1a284388a21ebfe1ecb36d05d9ecb0fcdc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flush</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf5flushEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Causes any temporarily cached data to be flushed to the stream. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf5closeEv">
+<span id="_CPPv3N9PxFileBuf5closeEv"></span><span id="_CPPv2N9PxFileBuf5closeEv"></span><span id="PxFileBuf::close"></span><span class="target" id="classpxfilebuf_1a61b4a242f127db27f6d99a21cc79c288"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">close</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf5closeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Close the stream. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf7releaseEv">
+<span id="_CPPv3N9PxFileBuf7releaseEv"></span><span id="_CPPv2N9PxFileBuf7releaseEv"></span><span id="PxFileBuf::release"></span><span class="target" id="classpxfilebuf_1ab86971d53863c3ed8e062261aa92ce79"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf10swap2BytesEPv">
+<span id="_CPPv3NK9PxFileBuf10swap2BytesEPv"></span><span id="_CPPv2NK9PxFileBuf10swap2BytesEPv"></span><span id="PxFileBuf::swap2Bytes__voidPC"></span><span class="target" id="classpxfilebuf_1ab20c8b0f65aca8e9095cdf4e8a84ffac"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">swap2Bytes</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">_data</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf10swap2BytesEPv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf10swap4BytesEPv">
+<span id="_CPPv3NK9PxFileBuf10swap4BytesEPv"></span><span id="_CPPv2NK9PxFileBuf10swap4BytesEPv"></span><span id="PxFileBuf::swap4Bytes__voidPC"></span><span class="target" id="classpxfilebuf_1abb8f51eb58d14377d9ad75fcdad5c274"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">swap4Bytes</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">_data</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf10swap4BytesEPv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxFileBuf10swap8BytesEPv">
+<span id="_CPPv3NK9PxFileBuf10swap8BytesEPv"></span><span id="_CPPv2NK9PxFileBuf10swap8BytesEPv"></span><span id="PxFileBuf::swap8Bytes__voidPC"></span><span class="target" id="classpxfilebuf_1a0bb18fcec524af91c140600e87774818"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">swap8Bytes</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">_data</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxFileBuf10swap8BytesEPv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10storeDwordE8uint32_t">
+<span id="_CPPv3N9PxFileBuf10storeDwordE8uint32_t"></span><span id="_CPPv2N9PxFileBuf10storeDwordE8uint32_t"></span><span id="PxFileBuf::storeDword__uint32_t"></span><span class="target" id="classpxfilebuf_1a47aa52a0b8b18f03097621aa241ac651"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">storeDword</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf10storeDwordE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10storeFloatEf">
+<span id="_CPPv3N9PxFileBuf10storeFloatEf"></span><span id="_CPPv2N9PxFileBuf10storeFloatEf"></span><span id="PxFileBuf::storeFloat__float"></span><span class="target" id="classpxfilebuf_1a08ffb0e6470f4927efbb6c8fa1fc7059"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">storeFloat</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf10storeFloatEf" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf11storeDoubleEd">
+<span id="_CPPv3N9PxFileBuf11storeDoubleEd"></span><span id="_CPPv2N9PxFileBuf11storeDoubleEd"></span><span id="PxFileBuf::storeDouble__double"></span><span class="target" id="classpxfilebuf_1a1e539791dcb45b402fdd1d7d90b4e50e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">storeDouble</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf11storeDoubleEd" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf9storeByteE7uint8_t">
+<span id="_CPPv3N9PxFileBuf9storeByteE7uint8_t"></span><span id="_CPPv2N9PxFileBuf9storeByteE7uint8_t"></span><span id="PxFileBuf::storeByte__uint8_t"></span><span class="target" id="classpxfilebuf_1ab09abd7d56755cab549be0c301d67d44"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">storeByte</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf9storeByteE7uint8_t" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf9storeWordE8uint16_t">
+<span id="_CPPv3N9PxFileBuf9storeWordE8uint16_t"></span><span id="_CPPv2N9PxFileBuf9storeWordE8uint16_t"></span><span id="PxFileBuf::storeWord__uint16_t"></span><span class="target" id="classpxfilebuf_1a7e339e7dbb4bdaabe4b0ca0283025952"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">storeWord</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint16_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf9storeWordE8uint16_t" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8readByteEv">
+<span id="_CPPv3N9PxFileBuf8readByteEv"></span><span id="_CPPv2N9PxFileBuf8readByteEv"></span><span id="PxFileBuf::readByte"></span><span class="target" id="classpxfilebuf_1ac27efac3dc8c536c48410ececcdf6e49"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">readByte</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf8readByteEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf8readWordEv">
+<span id="_CPPv3N9PxFileBuf8readWordEv"></span><span id="_CPPv2N9PxFileBuf8readWordEv"></span><span id="PxFileBuf::readWord"></span><span class="target" id="classpxfilebuf_1a93afa57717e88e92d457acffd04a2f5e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint16_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">readWord</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf8readWordEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf9readDwordEv">
+<span id="_CPPv3N9PxFileBuf9readDwordEv"></span><span id="_CPPv2N9PxFileBuf9readDwordEv"></span><span id="PxFileBuf::readDword"></span><span class="target" id="classpxfilebuf_1a46b80e5e2bb5f6281ace0aa8d2185b23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">readDword</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf9readDwordEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf9readFloatEv">
+<span id="_CPPv3N9PxFileBuf9readFloatEv"></span><span id="_CPPv2N9PxFileBuf9readFloatEv"></span><span id="PxFileBuf::readFloat"></span><span class="target" id="classpxfilebuf_1aafb4cb002688dc99afa944f0761043e8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">readFloat</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf9readFloatEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf10readDoubleEv">
+<span id="_CPPv3N9PxFileBuf10readDoubleEv"></span><span id="_CPPv2N9PxFileBuf10readDoubleEv"></span><span id="PxFileBuf::readDouble"></span><span class="target" id="classpxfilebuf_1ad018fe9eb34296158d35733b223cc3ba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">readDouble</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf10readDoubleEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf11isBigEndianEv">
+<span id="_CPPv3N9PxFileBuf11isBigEndianEv"></span><span id="_CPPv2N9PxFileBuf11isBigEndianEv"></span><span id="PxFileBuf::isBigEndian"></span><span class="target" id="classpxfilebuf_1a2dec90dda5bcef1934c9b8079a013889"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isBigEndian</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxFileBuf11isBigEndianEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxFileBuf15STREAM_SEEK_ENDE">
+<span id="_CPPv3N9PxFileBuf15STREAM_SEEK_ENDE"></span><span id="_CPPv2N9PxFileBuf15STREAM_SEEK_ENDE"></span><span id="PxFileBuf::STREAM_SEEK_END__uint32_tC"></span><span class="target" id="classpxfilebuf_1a47cf6bed5f9dca3628f4b61fc6ec6eb8"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">STREAM_SEEK_END</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0xFFFFFFFF</span></span><a class="headerlink" href="#_CPPv4N9PxFileBuf15STREAM_SEEK_ENDE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Declares a constant to seek to the end of the stream. </p>
+<p>Does not support streams longer than 32 bits </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxFPUGuard.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxFPUGuard</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxFilterData.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxFilterData</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv49PxFileBuf"><code class="docutils literal notranslate"><span class="pre">PxFileBuf</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10EndianModeE"><code class="docutils literal notranslate"><span class="pre">EndianMode</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10EndianMode11ENDIAN_NONEE"><code class="docutils literal notranslate"><span class="pre">ENDIAN_NONE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10EndianMode10ENDIAN_BIGE"><code class="docutils literal notranslate"><span class="pre">ENDIAN_BIG</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10EndianMode13ENDIAN_LITTLEE"><code class="docutils literal notranslate"><span class="pre">ENDIAN_LITTLE</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8OpenModeE"><code class="docutils literal notranslate"><span class="pre">OpenMode</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8OpenMode19OPEN_FILE_NOT_FOUNDE"><code class="docutils literal notranslate"><span class="pre">OPEN_FILE_NOT_FOUND</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8OpenMode14OPEN_READ_ONLYE"><code class="docutils literal notranslate"><span class="pre">OPEN_READ_ONLY</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8OpenMode15OPEN_WRITE_ONLYE"><code class="docutils literal notranslate"><span class="pre">OPEN_WRITE_ONLY</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8OpenMode19OPEN_READ_WRITE_NEWE"><code class="docutils literal notranslate"><span class="pre">OPEN_READ_WRITE_NEW</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8OpenMode24OPEN_READ_WRITE_EXISTINGE"><code class="docutils literal notranslate"><span class="pre">OPEN_READ_WRITE_EXISTING</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8SeekTypeE"><code class="docutils literal notranslate"><span class="pre">SeekType</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8SeekType11SEEKABLE_NOE"><code class="docutils literal notranslate"><span class="pre">SEEKABLE_NO</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8SeekType13SEEKABLE_READE"><code class="docutils literal notranslate"><span class="pre">SEEKABLE_READ</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8SeekType14SEEKABLE_WRITEE"><code class="docutils literal notranslate"><span class="pre">SEEKABLE_WRITE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8SeekType18SEEKABLE_READWRITEE"><code class="docutils literal notranslate"><span class="pre">SEEKABLE_READWRITE</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf9PxFileBufE10EndianMode"><code class="docutils literal notranslate"><span class="pre">PxFileBuf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBufD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxFileBuf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf11getOpenModeEv"><code class="docutils literal notranslate"><span class="pre">getOpenMode()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf6isOpenEv"><code class="docutils literal notranslate"><span class="pre">isOpen()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf10isSeekableEv"><code class="docutils literal notranslate"><span class="pre">isSeekable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf13setEndianModeE10EndianMode"><code class="docutils literal notranslate"><span class="pre">setEndianMode()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf13getEndianModeEv"><code class="docutils literal notranslate"><span class="pre">getEndianMode()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf13getFileLengthEv"><code class="docutils literal notranslate"><span class="pre">getFileLength()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8seekReadE8uint32_t"><code class="docutils literal notranslate"><span class="pre">seekRead()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf9seekWriteE8uint32_t"><code class="docutils literal notranslate"><span class="pre">seekWrite()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf4readEPv8uint32_t"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf4peekEPv8uint32_t"><code class="docutils literal notranslate"><span class="pre">peek()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf5writeEPKv8uint32_t"><code class="docutils literal notranslate"><span class="pre">write()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf8tellReadEv"><code class="docutils literal notranslate"><span class="pre">tellRead()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf9tellWriteEv"><code class="docutils literal notranslate"><span class="pre">tellWrite()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf5flushEv"><code class="docutils literal notranslate"><span class="pre">flush()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf5closeEv"><code class="docutils literal notranslate"><span class="pre">close()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf10swap2BytesEPv"><code class="docutils literal notranslate"><span class="pre">swap2Bytes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf10swap4BytesEPv"><code class="docutils literal notranslate"><span class="pre">swap4Bytes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxFileBuf10swap8BytesEPv"><code class="docutils literal notranslate"><span class="pre">swap8Bytes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10storeDwordE8uint32_t"><code class="docutils literal notranslate"><span class="pre">storeDword()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10storeFloatEf"><code class="docutils literal notranslate"><span class="pre">storeFloat()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf11storeDoubleEd"><code class="docutils literal notranslate"><span class="pre">storeDouble()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf9storeByteE7uint8_t"><code class="docutils literal notranslate"><span class="pre">storeByte()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf9storeWordE8uint16_t"><code class="docutils literal notranslate"><span class="pre">storeWord()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8readByteEv"><code class="docutils literal notranslate"><span class="pre">readByte()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf8readWordEv"><code class="docutils literal notranslate"><span class="pre">readWord()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf9readDwordEv"><code class="docutils literal notranslate"><span class="pre">readDword()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf9readFloatEv"><code class="docutils literal notranslate"><span class="pre">readFloat()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf10readDoubleEv"><code class="docutils literal notranslate"><span class="pre">readDouble()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf11isBigEndianEv"><code class="docutils literal notranslate"><span class="pre">isBigEndian()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxFileBuf15STREAM_SEEK_ENDE"><code class="docutils literal notranslate"><span class="pre">STREAM_SEEK_END</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

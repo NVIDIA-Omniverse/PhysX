@@ -1,0 +1,1139 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxSimulationStatistics &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxSimulationStatistics';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSimulationTetrahedronMeshData" href="classPxSimulationTetrahedronMeshData.html" />
+    <link rel="prev" title="PxSimulationFilterCallback" href="classPxSimulationFilterCallback.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxSimulation...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxsimulationstatistics">
+<h1>PxSimulationStatistics<a class="headerlink" href="#pxsimulationstatistics" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationStatistics.h.html#pxsimulationstatistics-8h"><span class="std std-ref">include/PxSimulationStatistics.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv422PxSimulationStatistics">
+<span id="_CPPv322PxSimulationStatistics"></span><span id="_CPPv222PxSimulationStatistics"></span><span id="PxSimulationStatistics"></span><span class="target" id="classpxsimulationstatistics"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationStatistics</span></span></span><a class="headerlink" href="#_CPPv422PxSimulationStatistics" title="Link to this definition">#</a><br /></dt>
+<dd><p>Class used to retrieve statistics for a simulation step. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene_1a7abb1e1354ae3258b91fc097e9d682b8"><span class="std std-ref">PxScene::getSimulationStatistics()</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15RbPairStatsTypeE">
+<span id="_CPPv3N22PxSimulationStatistics15RbPairStatsTypeE"></span><span id="_CPPv2N22PxSimulationStatistics15RbPairStatsTypeE"></span><span class="target" id="classpxsimulationstatistics_1a56865c878c5d74dd30a7ab81e2728c36"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RbPairStatsType</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsTypeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Different types of rigid body collision pair statistics. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxsimulationstatistics_1a4412ac46b492100c5a8446ba3ba35164"><span class="std std-ref">getRbPairStats</span></a></p>
+</div>
+</p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15RbPairStatsType23eDISCRETE_CONTACT_PAIRSE">
+<span id="_CPPv3N22PxSimulationStatistics15RbPairStatsType23eDISCRETE_CONTACT_PAIRSE"></span><span id="_CPPv2N22PxSimulationStatistics15RbPairStatsType23eDISCRETE_CONTACT_PAIRSE"></span><span class="target" id="classpxsimulationstatistics_1a56865c878c5d74dd30a7ab81e2728c36a366eae507d69961741d28c3b6c04d576"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISCRETE_CONTACT_PAIRS</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType23eDISCRETE_CONTACT_PAIRSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Shape pairs processed as discrete contact pairs for the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15RbPairStatsType10eCCD_PAIRSE">
+<span id="_CPPv3N22PxSimulationStatistics15RbPairStatsType10eCCD_PAIRSE"></span><span id="_CPPv2N22PxSimulationStatistics15RbPairStatsType10eCCD_PAIRSE"></span><span class="target" id="classpxsimulationstatistics_1a56865c878c5d74dd30a7ab81e2728c36a13b4e0a4ca71ad756078820ab928c1b3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCCD_PAIRS</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType10eCCD_PAIRSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Shape pairs processed as swept integration pairs for the current simulation step. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac41a9f8b9326480403c023ad20cdc2f1"><span class="std std-ref">PxPairFlag::eDETECT_CCD_CONTACT</span></a>, </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Counts the pairs for which special CCD (continuous collision detection) work was actually done and NOT the number of pairs which were configured for CCD. Furthermore, there can be multiple CCD passes and all processed pairs of all passes are summed up, hence the number can be larger than the amount of pairs which have been configured for CCD.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15RbPairStatsType23eMODIFIED_CONTACT_PAIRSE">
+<span id="_CPPv3N22PxSimulationStatistics15RbPairStatsType23eMODIFIED_CONTACT_PAIRSE"></span><span id="_CPPv2N22PxSimulationStatistics15RbPairStatsType23eMODIFIED_CONTACT_PAIRSE"></span><span class="target" id="classpxsimulationstatistics_1a56865c878c5d74dd30a7ab81e2728c36ae1d23646a3bd6d7cfef7986a92afe270"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMODIFIED_CONTACT_PAIRS</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType23eMODIFIED_CONTACT_PAIRSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Shape pairs processed with user contact modification enabled for the current simulation step. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxContactModifyCallback.html#classpxcontactmodifycallback"><span class="std std-ref">PxContactModifyCallback</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15RbPairStatsType14eTRIGGER_PAIRSE">
+<span id="_CPPv3N22PxSimulationStatistics15RbPairStatsType14eTRIGGER_PAIRSE"></span><span id="_CPPv2N22PxSimulationStatistics15RbPairStatsType14eTRIGGER_PAIRSE"></span><span class="target" id="classpxsimulationstatistics_1a56865c878c5d74dd30a7ab81e2728c36a9b0bca86a9a15f66d11b191efbcfb65b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTRIGGER_PAIRS</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType14eTRIGGER_PAIRSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Trigger shape pairs processed for the current simulation step. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxShapeFlag.html#structpxshapeflag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSimulationStatistics19getNbBroadPhaseAddsEv">
+<span id="_CPPv3NK22PxSimulationStatistics19getNbBroadPhaseAddsEv"></span><span id="_CPPv2NK22PxSimulationStatistics19getNbBroadPhaseAddsEv"></span><span id="PxSimulationStatistics::getNbBroadPhaseAddsC"></span><span class="target" id="classpxsimulationstatistics_1abe8405a41276691b9bc20f355e1384bd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbBroadPhaseAdds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK22PxSimulationStatistics19getNbBroadPhaseAddsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get number of broadphase volumes added for the current simulation step. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of broadphase volumes added. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSimulationStatistics22getNbBroadPhaseRemovesEv">
+<span id="_CPPv3NK22PxSimulationStatistics22getNbBroadPhaseRemovesEv"></span><span id="_CPPv2NK22PxSimulationStatistics22getNbBroadPhaseRemovesEv"></span><span id="PxSimulationStatistics::getNbBroadPhaseRemovesC"></span><span class="target" id="classpxsimulationstatistics_1a274314a50da7f8a190a96a36a7415393"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbBroadPhaseRemoves</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK22PxSimulationStatistics22getNbBroadPhaseRemovesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get number of broadphase volumes removed for the current simulation step. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of broadphase volumes removed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSimulationStatistics14getRbPairStatsE15RbPairStatsTypeN14PxGeometryType4EnumEN14PxGeometryType4EnumE">
+<span id="_CPPv3NK22PxSimulationStatistics14getRbPairStatsE15RbPairStatsTypeN14PxGeometryType4EnumEN14PxGeometryType4EnumE"></span><span id="_CPPv2NK22PxSimulationStatistics14getRbPairStatsE15RbPairStatsTypeN14PxGeometryType4EnumEN14PxGeometryType4EnumE"></span><span id="PxSimulationStatistics::getRbPairStats__RbPairStatsType.PxGeometryType::Enum.PxGeometryType::EnumC"></span><span class="target" id="classpxsimulationstatistics_1a4412ac46b492100c5a8446ba3ba35164"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRbPairStats</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsTypeE" title="PxSimulationStatistics::RbPairStatsType"><span class="n"><span class="pre">RbPairStatsType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pairType</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">g0</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">g1</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK22PxSimulationStatistics14getRbPairStatsE15RbPairStatsTypeN14PxGeometryType4EnumEN14PxGeometryType4EnumE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get number of shape collision pairs of a certain type processed for the current simulation step. </p>
+<p>There is an entry for each geometry pair type.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>entry[i][j] = entry[j][i], hence, if you want the sum of all pair types, you need to discard the symmetric entries</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairType</strong> – <strong>[in]</strong> The type of pair for which to get information </p></li>
+<li><p><strong>g0</strong> – <strong>[in]</strong> The geometry type of one pair object </p></li>
+<li><p><strong>g1</strong> – <strong>[in]</strong> The geometry type of the other pair object </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of processed pairs of the specified geometry types. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics22PxSimulationStatisticsEv">
+<span id="_CPPv3N22PxSimulationStatistics22PxSimulationStatisticsEv"></span><span id="_CPPv2N22PxSimulationStatistics22PxSimulationStatisticsEv"></span><span id="PxSimulationStatistics::PxSimulationStatistics"></span><span class="target" id="classpxsimulationstatistics_1a910e1921a55acda66f5c22ee173eda32"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationStatistics</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics22PxSimulationStatisticsEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics19nbActiveConstraintsE">
+<span id="_CPPv3N22PxSimulationStatistics19nbActiveConstraintsE"></span><span id="_CPPv2N22PxSimulationStatistics19nbActiveConstraintsE"></span><span id="PxSimulationStatistics::nbActiveConstraints__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a3ba1901c4ac662c535daa1ac58987aba"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbActiveConstraints</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics19nbActiveConstraintsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of active <a class="reference internal" href="classPxConstraint.html#classpxconstraint"><span class="std std-ref">PxConstraint</span></a> objects (joints etc.) for the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics21nbActiveDynamicBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics21nbActiveDynamicBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics21nbActiveDynamicBodiesE"></span><span id="PxSimulationStatistics::nbActiveDynamicBodies__PxU32"></span><span class="target" id="classpxsimulationstatistics_1adb8e7d0a9d70b16a4b7309c4d47685e2"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbActiveDynamicBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics21nbActiveDynamicBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of active dynamic bodies for the current simulation step. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Does not include active kinematic bodies </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics23nbActiveKinematicBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics23nbActiveKinematicBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics23nbActiveKinematicBodiesE"></span><span id="PxSimulationStatistics::nbActiveKinematicBodies__PxU32"></span><span class="target" id="classpxsimulationstatistics_1af783cd541d93f5f72b64f07cebbbe71a"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbActiveKinematicBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics23nbActiveKinematicBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of active kinematic bodies for the current simulation step. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Kinematic deactivation occurs at the end of the frame after the last call to <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic_1a4464d188e7a1e94582c9cf35da9bbc93"><span class="std std-ref">PxRigidDynamic::setKinematicTarget()</span></a> was called so kinematics that are deactivated in a given frame will be included by this counter. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics14nbStaticBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics14nbStaticBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics14nbStaticBodiesE"></span><span id="PxSimulationStatistics::nbStaticBodies__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a8aebb151f3f50cd831f2a42165ef9409"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbStaticBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics14nbStaticBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of static bodies for the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15nbDynamicBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics15nbDynamicBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics15nbDynamicBodiesE"></span><span id="PxSimulationStatistics::nbDynamicBodies__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a1d5feb904597a5a98d02f39707e6c349"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbDynamicBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15nbDynamicBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of dynamic bodies for the current simulation step. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Includes inactive bodies and articulation links </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Does not include kinematic bodies </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics17nbKinematicBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics17nbKinematicBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics17nbKinematicBodiesE"></span><span id="PxSimulationStatistics::nbKinematicBodies__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a38012209b56e1e6993e0955f3a5606d2"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbKinematicBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics17nbKinematicBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of kinematic bodies for the current simulation step. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Includes inactive bodies </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics8nbShapesE">
+<span id="_CPPv3N22PxSimulationStatistics8nbShapesE"></span><span id="_CPPv2N22PxSimulationStatistics8nbShapesE"></span><span id="PxSimulationStatistics::nbShapes__PxU32A"></span><span class="target" id="classpxsimulationstatistics_1a2385b3afe6fc6237f7fcbb4712e4ad57"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbShapes</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics8nbShapesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of shapes of each geometry type. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics12nbAggregatesE">
+<span id="_CPPv3N22PxSimulationStatistics12nbAggregatesE"></span><span id="_CPPv2N22PxSimulationStatistics12nbAggregatesE"></span><span id="PxSimulationStatistics::nbAggregates__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a4903606cb701b7237a92a6a43f8d60ea"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbAggregates</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics12nbAggregatesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of aggregates in the scene. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15nbArticulationsE">
+<span id="_CPPv3N22PxSimulationStatistics15nbArticulationsE"></span><span id="_CPPv2N22PxSimulationStatistics15nbArticulationsE"></span><span id="PxSimulationStatistics::nbArticulations__PxU32"></span><span class="target" id="classpxsimulationstatistics_1abfd24df0bcef58fccc82cd06423aeff2"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbArticulations</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15nbArticulationsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of articulations in the scene. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics23nbAxisSolverConstraintsE">
+<span id="_CPPv3N22PxSimulationStatistics23nbAxisSolverConstraintsE"></span><span id="_CPPv2N22PxSimulationStatistics23nbAxisSolverConstraintsE"></span><span id="PxSimulationStatistics::nbAxisSolverConstraints__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a9b03e0dc11df05eea8ded2e95d01fdcf"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbAxisSolverConstraints</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics23nbAxisSolverConstraintsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of 1D axis constraints(joints+contact) present in the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics21compressedContactSizeE">
+<span id="_CPPv3N22PxSimulationStatistics21compressedContactSizeE"></span><span id="_CPPv2N22PxSimulationStatistics21compressedContactSizeE"></span><span id="PxSimulationStatistics::compressedContactSize__PxU32"></span><span class="target" id="classpxsimulationstatistics_1abfacb597d8b72b1d86961dfdb8e768e3"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compressedContactSize</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics21compressedContactSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The size (in bytes) of the compressed contact stream in the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics31requiredContactConstraintMemoryE">
+<span id="_CPPv3N22PxSimulationStatistics31requiredContactConstraintMemoryE"></span><span id="_CPPv2N22PxSimulationStatistics31requiredContactConstraintMemoryE"></span><span id="PxSimulationStatistics::requiredContactConstraintMemory__PxU32"></span><span class="target" id="classpxsimulationstatistics_1aa1e487295538b16ec29c359082d12976"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">requiredContactConstraintMemory</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics31requiredContactConstraintMemoryE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The total required size (in bytes) of the contact constraints in the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics20peakConstraintMemoryE">
+<span id="_CPPv3N22PxSimulationStatistics20peakConstraintMemoryE"></span><span id="_CPPv2N22PxSimulationStatistics20peakConstraintMemoryE"></span><span id="PxSimulationStatistics::peakConstraintMemory__PxU32"></span><span class="target" id="classpxsimulationstatistics_1ab56ac5aa68f31b68a0852c87817ff026"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">peakConstraintMemory</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics20peakConstraintMemoryE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The peak amount of memory (in bytes) that was allocated for constraints (this includes joints) in the current simulation step. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics27nbDiscreteContactPairsTotalE">
+<span id="_CPPv3N22PxSimulationStatistics27nbDiscreteContactPairsTotalE"></span><span id="_CPPv2N22PxSimulationStatistics27nbDiscreteContactPairsTotalE"></span><span id="PxSimulationStatistics::nbDiscreteContactPairsTotal__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a6310732fffde7fa5013aada6ca2434c1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbDiscreteContactPairsTotal</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics27nbDiscreteContactPairsTotalE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Total number of (non CCD) pairs reaching narrow phase. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics35nbDiscreteContactPairsWithCacheHitsE">
+<span id="_CPPv3N22PxSimulationStatistics35nbDiscreteContactPairsWithCacheHitsE"></span><span id="_CPPv2N22PxSimulationStatistics35nbDiscreteContactPairsWithCacheHitsE"></span><span id="PxSimulationStatistics::nbDiscreteContactPairsWithCacheHits__PxU32"></span><span class="target" id="classpxsimulationstatistics_1afc4203ee9a309b63e0a9638595d28867"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbDiscreteContactPairsWithCacheHits</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics35nbDiscreteContactPairsWithCacheHitsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Total number of (non CCD) pairs for which contacts are successfully cached (&lt;=nbDiscreteContactPairsTotal) </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This includes pairs for which no contacts are generated, it still counts as a cache hit. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics34nbDiscreteContactPairsWithContactsE">
+<span id="_CPPv3N22PxSimulationStatistics34nbDiscreteContactPairsWithContactsE"></span><span id="_CPPv2N22PxSimulationStatistics34nbDiscreteContactPairsWithContactsE"></span><span id="PxSimulationStatistics::nbDiscreteContactPairsWithContacts__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a897bc3a4b6dc809b1f04059fe4b4a2af"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbDiscreteContactPairsWithContacts</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics34nbDiscreteContactPairsWithContactsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Total number of (non CCD) pairs for which at least 1 contact was generated (&lt;=nbDiscreteContactPairsTotal) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics10nbNewPairsE">
+<span id="_CPPv3N22PxSimulationStatistics10nbNewPairsE"></span><span id="_CPPv2N22PxSimulationStatistics10nbNewPairsE"></span><span id="PxSimulationStatistics::nbNewPairs__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a717bce9ff3da25dd9250c1746008e52b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbNewPairs</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics10nbNewPairsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of new pairs found by BP this frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics11nbLostPairsE">
+<span id="_CPPv3N22PxSimulationStatistics11nbLostPairsE"></span><span id="_CPPv2N22PxSimulationStatistics11nbLostPairsE"></span><span id="PxSimulationStatistics::nbLostPairs__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a84b14e904af17d9c86d158ecea5fb9d1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbLostPairs</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics11nbLostPairsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of lost pairs from BP this frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics12nbNewTouchesE">
+<span id="_CPPv3N22PxSimulationStatistics12nbNewTouchesE"></span><span id="_CPPv2N22PxSimulationStatistics12nbNewTouchesE"></span><span id="PxSimulationStatistics::nbNewTouches__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a612d72aad0d4e7adab3bbb5f14135bf1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbNewTouches</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics12nbNewTouchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of new touches found by NP this frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics13nbLostTouchesE">
+<span id="_CPPv3N22PxSimulationStatistics13nbLostTouchesE"></span><span id="_CPPv2N22PxSimulationStatistics13nbLostTouchesE"></span><span id="PxSimulationStatistics::nbLostTouches__PxU32"></span><span class="target" id="classpxsimulationstatistics_1ae20e0fabfd1e8dfdec622a496bfbaf83"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbLostTouches</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics13nbLostTouchesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of lost touches from NP this frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics12nbPartitionsE">
+<span id="_CPPv3N22PxSimulationStatistics12nbPartitionsE"></span><span id="_CPPv2N22PxSimulationStatistics12nbPartitionsE"></span><span id="PxSimulationStatistics::nbPartitions__PxU32"></span><span class="target" id="classpxsimulationstatistics_1aab9b2646eb89d7fb3bb707256be46cf0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbPartitions</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics12nbPartitionsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of partitions used by the solver this frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15gpuMemParticlesE">
+<span id="_CPPv3N22PxSimulationStatistics15gpuMemParticlesE"></span><span id="_CPPv2N22PxSimulationStatistics15gpuMemParticlesE"></span><span id="PxSimulationStatistics::gpuMemParticles__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a446732c02c175c4fd41f33d29ad9a67a"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemParticles</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15gpuMemParticlesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device memory in bytes allocated for particle state accessible through API. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics24gpuMemDeformableSurfacesE">
+<span id="_CPPv3N22PxSimulationStatistics24gpuMemDeformableSurfacesE"></span><span id="_CPPv2N22PxSimulationStatistics24gpuMemDeformableSurfacesE"></span><span id="PxSimulationStatistics::gpuMemDeformableSurfaces__PxU64"></span><span class="target" id="classpxsimulationstatistics_1aa02735b5c47aa4ea1f5afedb7f2f9cf3"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemDeformableSurfaces</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics24gpuMemDeformableSurfacesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device memory in bytes allocated for deformable surface state accessible through API. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics23gpuMemDeformableVolumesE">
+<span id="_CPPv3N22PxSimulationStatistics23gpuMemDeformableVolumesE"></span><span id="_CPPv2N22PxSimulationStatistics23gpuMemDeformableVolumesE"></span><span id="PxSimulationStatistics::gpuMemDeformableVolumes__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a4e35b94353df3fc69da452d9e0cab288"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemDeformableVolumes</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics23gpuMemDeformableVolumesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device memory in bytes allocated for deformable volume state accessible through API. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics16gpuMemSoftBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics16gpuMemSoftBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics16gpuMemSoftBodiesE"></span><span id="PxSimulationStatistics::gpuMemSoftBodies__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a1422bc55296da1d49b665e5362f4a486"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemSoftBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics16gpuMemSoftBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxsimulationstatistics_1a4e35b94353df3fc69da452d9e0cab288"><span class="std std-ref">gpuMemDeformableVolumes</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics10gpuMemHeapE">
+<span id="_CPPv3N22PxSimulationStatistics10gpuMemHeapE"></span><span id="_CPPv2N22PxSimulationStatistics10gpuMemHeapE"></span><span id="PxSimulationStatistics::gpuMemHeap__PxU64"></span><span class="target" id="classpxsimulationstatistics_1af35388473622dad296255641cc3cbf81"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeap</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics10gpuMemHeapE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device memory in bytes allocated for internal heap allocation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics20gpuMemHeapBroadPhaseE">
+<span id="_CPPv3N22PxSimulationStatistics20gpuMemHeapBroadPhaseE"></span><span id="_CPPv2N22PxSimulationStatistics20gpuMemHeapBroadPhaseE"></span><span id="PxSimulationStatistics::gpuMemHeapBroadPhase__PxU64"></span><span class="target" id="classpxsimulationstatistics_1ad54242f6116fca69300748de464dd0d7"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapBroadPhase</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics20gpuMemHeapBroadPhaseE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for broad phase in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics21gpuMemHeapNarrowPhaseE">
+<span id="_CPPv3N22PxSimulationStatistics21gpuMemHeapNarrowPhaseE"></span><span id="_CPPv2N22PxSimulationStatistics21gpuMemHeapNarrowPhaseE"></span><span id="PxSimulationStatistics::gpuMemHeapNarrowPhase__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a2bd935c82cae0ebdb5001f68093c7d63"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapNarrowPhase</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics21gpuMemHeapNarrowPhaseE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for narrow phase in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics16gpuMemHeapSolverE">
+<span id="_CPPv3N22PxSimulationStatistics16gpuMemHeapSolverE"></span><span id="_CPPv2N22PxSimulationStatistics16gpuMemHeapSolverE"></span><span id="PxSimulationStatistics::gpuMemHeapSolver__PxU64"></span><span class="target" id="classpxsimulationstatistics_1ad0c0bd9420ec0e51101ce85b88f3ad08"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSolver</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics16gpuMemHeapSolverE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for solver in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics22gpuMemHeapArticulationE">
+<span id="_CPPv3N22PxSimulationStatistics22gpuMemHeapArticulationE"></span><span id="_CPPv2N22PxSimulationStatistics22gpuMemHeapArticulationE"></span><span id="PxSimulationStatistics::gpuMemHeapArticulation__PxU64"></span><span class="target" id="classpxsimulationstatistics_1aec993e86b7ebb7802a69a02c875ab31c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapArticulation</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics22gpuMemHeapArticulationE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for articulations in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics20gpuMemHeapSimulationE">
+<span id="_CPPv3N22PxSimulationStatistics20gpuMemHeapSimulationE"></span><span id="_CPPv2N22PxSimulationStatistics20gpuMemHeapSimulationE"></span><span id="PxSimulationStatistics::gpuMemHeapSimulation__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a59fbc24dce4a4ef7e306641cd897145e"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSimulation</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics20gpuMemHeapSimulationE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for simulation pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics32gpuMemHeapSimulationArticulationE">
+<span id="_CPPv3N22PxSimulationStatistics32gpuMemHeapSimulationArticulationE"></span><span id="_CPPv2N22PxSimulationStatistics32gpuMemHeapSimulationArticulationE"></span><span id="PxSimulationStatistics::gpuMemHeapSimulationArticulation__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a88fbb5f0c2ac69d8c74d9773cb05eeb1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSimulationArticulation</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics32gpuMemHeapSimulationArticulationE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for articulations in the simulation pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics29gpuMemHeapSimulationParticlesE">
+<span id="_CPPv3N22PxSimulationStatistics29gpuMemHeapSimulationParticlesE"></span><span id="_CPPv2N22PxSimulationStatistics29gpuMemHeapSimulationParticlesE"></span><span id="PxSimulationStatistics::gpuMemHeapSimulationParticles__PxU64"></span><span class="target" id="classpxsimulationstatistics_1af7da1f41d8f29a5ba61abf44b4015bdc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSimulationParticles</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics29gpuMemHeapSimulationParticlesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for particles in the simulation pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics37gpuMemHeapSimulationDeformableSurfaceE">
+<span id="_CPPv3N22PxSimulationStatistics37gpuMemHeapSimulationDeformableSurfaceE"></span><span id="_CPPv2N22PxSimulationStatistics37gpuMemHeapSimulationDeformableSurfaceE"></span><span id="PxSimulationStatistics::gpuMemHeapSimulationDeformableSurface__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a2cdf431d52abf01738b20f629964423f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSimulationDeformableSurface</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics37gpuMemHeapSimulationDeformableSurfaceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for deformable surfaces in the simulation pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics36gpuMemHeapSimulationDeformableVolumeE">
+<span id="_CPPv3N22PxSimulationStatistics36gpuMemHeapSimulationDeformableVolumeE"></span><span id="_CPPv2N22PxSimulationStatistics36gpuMemHeapSimulationDeformableVolumeE"></span><span id="PxSimulationStatistics::gpuMemHeapSimulationDeformableVolume__PxU64"></span><span class="target" id="classpxsimulationstatistics_1ad9fde43066333a8095b44e0dec0149e9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSimulationDeformableVolume</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics36gpuMemHeapSimulationDeformableVolumeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for deformable volumes in the simulation pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics28gpuMemHeapSimulationSoftBodyE">
+<span id="_CPPv3N22PxSimulationStatistics28gpuMemHeapSimulationSoftBodyE"></span><span id="_CPPv2N22PxSimulationStatistics28gpuMemHeapSimulationSoftBodyE"></span><span id="PxSimulationStatistics::gpuMemHeapSimulationSoftBody__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a5c79827a121e540c82ce06ff71fc83b0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSimulationSoftBody</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics28gpuMemHeapSimulationSoftBodyE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxsimulationstatistics_1ad9fde43066333a8095b44e0dec0149e9"><span class="std std-ref">gpuMemHeapSimulationDeformableVolume</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics19gpuMemHeapParticlesE">
+<span id="_CPPv3N22PxSimulationStatistics19gpuMemHeapParticlesE"></span><span id="_CPPv2N22PxSimulationStatistics19gpuMemHeapParticlesE"></span><span id="PxSimulationStatistics::gpuMemHeapParticles__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a35381658666f4acdffe0df44dd4783e5"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapParticles</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics19gpuMemHeapParticlesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for shared buffers in the particles pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics28gpuMemHeapDeformableSurfacesE">
+<span id="_CPPv3N22PxSimulationStatistics28gpuMemHeapDeformableSurfacesE"></span><span id="_CPPv2N22PxSimulationStatistics28gpuMemHeapDeformableSurfacesE"></span><span id="PxSimulationStatistics::gpuMemHeapDeformableSurfaces__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a627c393af139057d5d531c560f4537e6"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapDeformableSurfaces</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics28gpuMemHeapDeformableSurfacesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for shared buffers in the deformable surface pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics27gpuMemHeapDeformableVolumesE">
+<span id="_CPPv3N22PxSimulationStatistics27gpuMemHeapDeformableVolumesE"></span><span id="_CPPv2N22PxSimulationStatistics27gpuMemHeapDeformableVolumesE"></span><span id="PxSimulationStatistics::gpuMemHeapDeformableVolumes__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a3149916d38712e41dfcca21e0cb524ed"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapDeformableVolumes</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics27gpuMemHeapDeformableVolumesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory used for shared buffers in the deformable volume pipeline in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics20gpuMemHeapSoftBodiesE">
+<span id="_CPPv3N22PxSimulationStatistics20gpuMemHeapSoftBodiesE"></span><span id="_CPPv2N22PxSimulationStatistics20gpuMemHeapSoftBodiesE"></span><span id="PxSimulationStatistics::gpuMemHeapSoftBodies__PxU64"></span><span class="target" id="classpxsimulationstatistics_1a8b7b33ac9f5635f5a810abaae538d9b5"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapSoftBodies</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics20gpuMemHeapSoftBodiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxsimulationstatistics_1a3149916d38712e41dfcca21e0cb524ed"><span class="std std-ref">gpuMemHeapDeformableVolumes</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics15gpuMemHeapOtherE">
+<span id="_CPPv3N22PxSimulationStatistics15gpuMemHeapOtherE"></span><span id="_CPPv2N22PxSimulationStatistics15gpuMemHeapOtherE"></span><span id="PxSimulationStatistics::gpuMemHeapOther__PxU64"></span><span class="target" id="classpxsimulationstatistics_1ac9f00c43ee21ae7cf972a7e2450f7ba8"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMemHeapOther</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics15gpuMemHeapOtherE" title="Link to this definition">#</a><br /></dt>
+<dd><p>GPU device heap memory not covered by other stats in bytes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics33gpuDynamicsMemoryConfigStatisticsE">
+<span id="_CPPv3N22PxSimulationStatistics33gpuDynamicsMemoryConfigStatisticsE"></span><span id="_CPPv2N22PxSimulationStatistics33gpuDynamicsMemoryConfigStatisticsE"></span><span id="PxSimulationStatistics::gpuDynamicsMemoryConfigStatistics__PxGpuDynamicsMemoryConfigStatistics"></span><span class="target" id="classpxsimulationstatistics_1a1fffbda3fb363c5136c956045ba53028"></span><a class="reference internal" href="structPxGpuDynamicsMemoryConfigStatistics.html#_CPPv435PxGpuDynamicsMemoryConfigStatistics" title="PxGpuDynamicsMemoryConfigStatistics"><span class="n"><span class="pre">PxGpuDynamicsMemoryConfigStatistics</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuDynamicsMemoryConfigStatistics</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics33gpuDynamicsMemoryConfigStatisticsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Structure containing statistics about actual count/sizes used for the configuration parameters in <a class="reference internal" href="structPxGpuDynamicsMemoryConfig.html#structpxgpudynamicsmemoryconfig"><span class="std std-ref">PxGpuDynamicsMemoryConfig</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics16nbBroadPhaseAddsE">
+<span id="_CPPv3N22PxSimulationStatistics16nbBroadPhaseAddsE"></span><span id="_CPPv2N22PxSimulationStatistics16nbBroadPhaseAddsE"></span><span id="PxSimulationStatistics::nbBroadPhaseAdds__PxU32"></span><span class="target" id="classpxsimulationstatistics_1a832a4823ac63af2716b4132aad10b51c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbBroadPhaseAdds</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics16nbBroadPhaseAddsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics19nbBroadPhaseRemovesE">
+<span id="_CPPv3N22PxSimulationStatistics19nbBroadPhaseRemovesE"></span><span id="_CPPv2N22PxSimulationStatistics19nbBroadPhaseRemovesE"></span><span id="PxSimulationStatistics::nbBroadPhaseRemoves__PxU32"></span><span class="target" id="classpxsimulationstatistics_1ac086bc02b779c42c0b38f09c2fde294b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbBroadPhaseRemoves</span></span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics19nbBroadPhaseRemovesE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics22nbDiscreteContactPairsE">
+<span id="_CPPv3N22PxSimulationStatistics22nbDiscreteContactPairsE"></span><span id="_CPPv2N22PxSimulationStatistics22nbDiscreteContactPairsE"></span><span id="PxSimulationStatistics::nbDiscreteContactPairs__PxU32AA"></span><span class="target" id="classpxsimulationstatistics_1a97dfe63f126e504699c8eeda86ebcb28"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbDiscreteContactPairs</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics22nbDiscreteContactPairsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics10nbCCDPairsE">
+<span id="_CPPv3N22PxSimulationStatistics10nbCCDPairsE"></span><span id="_CPPv2N22PxSimulationStatistics10nbCCDPairsE"></span><span id="PxSimulationStatistics::nbCCDPairs__PxU32AA"></span><span class="target" id="classpxsimulationstatistics_1a3a3e17aed5223a69ba3b832f909a6a59"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbCCDPairs</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics10nbCCDPairsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics22nbModifiedContactPairsE">
+<span id="_CPPv3N22PxSimulationStatistics22nbModifiedContactPairsE"></span><span id="_CPPv2N22PxSimulationStatistics22nbModifiedContactPairsE"></span><span id="PxSimulationStatistics::nbModifiedContactPairs__PxU32AA"></span><span class="target" id="classpxsimulationstatistics_1aade3e5f9699bfd0858786f9ed6b7d1c9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbModifiedContactPairs</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics22nbModifiedContactPairsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSimulationStatistics14nbTriggerPairsE">
+<span id="_CPPv3N22PxSimulationStatistics14nbTriggerPairsE"></span><span id="_CPPv2N22PxSimulationStatistics14nbTriggerPairsE"></span><span id="PxSimulationStatistics::nbTriggerPairs__PxU32AA"></span><span class="target" id="classpxsimulationstatistics_1abcb6c70a6d7e5146767b0be74db34cde"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbTriggerPairs</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxGeometryType.html#_CPPv4N14PxGeometryType4Enum15eGEOMETRY_COUNTE" title="PxGeometryType::eGEOMETRY_COUNT"><span class="n"><span class="pre">eGEOMETRY_COUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N22PxSimulationStatistics14nbTriggerPairsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxSimulationFilterCallback.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxSimulationFilterCallback</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxSimulationTetrahedronMeshData.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxSimulationTetrahedronMeshData</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv422PxSimulationStatistics"><code class="docutils literal notranslate"><span class="pre">PxSimulationStatistics</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsTypeE"><code class="docutils literal notranslate"><span class="pre">RbPairStatsType</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType23eDISCRETE_CONTACT_PAIRSE"><code class="docutils literal notranslate"><span class="pre">eDISCRETE_CONTACT_PAIRS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType10eCCD_PAIRSE"><code class="docutils literal notranslate"><span class="pre">eCCD_PAIRS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType23eMODIFIED_CONTACT_PAIRSE"><code class="docutils literal notranslate"><span class="pre">eMODIFIED_CONTACT_PAIRS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15RbPairStatsType14eTRIGGER_PAIRSE"><code class="docutils literal notranslate"><span class="pre">eTRIGGER_PAIRS</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK22PxSimulationStatistics19getNbBroadPhaseAddsEv"><code class="docutils literal notranslate"><span class="pre">getNbBroadPhaseAdds()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK22PxSimulationStatistics22getNbBroadPhaseRemovesEv"><code class="docutils literal notranslate"><span class="pre">getNbBroadPhaseRemoves()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK22PxSimulationStatistics14getRbPairStatsE15RbPairStatsTypeN14PxGeometryType4EnumEN14PxGeometryType4EnumE"><code class="docutils literal notranslate"><span class="pre">getRbPairStats()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics22PxSimulationStatisticsEv"><code class="docutils literal notranslate"><span class="pre">PxSimulationStatistics()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics19nbActiveConstraintsE"><code class="docutils literal notranslate"><span class="pre">nbActiveConstraints</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics21nbActiveDynamicBodiesE"><code class="docutils literal notranslate"><span class="pre">nbActiveDynamicBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics23nbActiveKinematicBodiesE"><code class="docutils literal notranslate"><span class="pre">nbActiveKinematicBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics14nbStaticBodiesE"><code class="docutils literal notranslate"><span class="pre">nbStaticBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15nbDynamicBodiesE"><code class="docutils literal notranslate"><span class="pre">nbDynamicBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics17nbKinematicBodiesE"><code class="docutils literal notranslate"><span class="pre">nbKinematicBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics8nbShapesE"><code class="docutils literal notranslate"><span class="pre">nbShapes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics12nbAggregatesE"><code class="docutils literal notranslate"><span class="pre">nbAggregates</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15nbArticulationsE"><code class="docutils literal notranslate"><span class="pre">nbArticulations</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics23nbAxisSolverConstraintsE"><code class="docutils literal notranslate"><span class="pre">nbAxisSolverConstraints</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics21compressedContactSizeE"><code class="docutils literal notranslate"><span class="pre">compressedContactSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics31requiredContactConstraintMemoryE"><code class="docutils literal notranslate"><span class="pre">requiredContactConstraintMemory</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics20peakConstraintMemoryE"><code class="docutils literal notranslate"><span class="pre">peakConstraintMemory</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics27nbDiscreteContactPairsTotalE"><code class="docutils literal notranslate"><span class="pre">nbDiscreteContactPairsTotal</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics35nbDiscreteContactPairsWithCacheHitsE"><code class="docutils literal notranslate"><span class="pre">nbDiscreteContactPairsWithCacheHits</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics34nbDiscreteContactPairsWithContactsE"><code class="docutils literal notranslate"><span class="pre">nbDiscreteContactPairsWithContacts</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics10nbNewPairsE"><code class="docutils literal notranslate"><span class="pre">nbNewPairs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics11nbLostPairsE"><code class="docutils literal notranslate"><span class="pre">nbLostPairs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics12nbNewTouchesE"><code class="docutils literal notranslate"><span class="pre">nbNewTouches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics13nbLostTouchesE"><code class="docutils literal notranslate"><span class="pre">nbLostTouches</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics12nbPartitionsE"><code class="docutils literal notranslate"><span class="pre">nbPartitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15gpuMemParticlesE"><code class="docutils literal notranslate"><span class="pre">gpuMemParticles</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics24gpuMemDeformableSurfacesE"><code class="docutils literal notranslate"><span class="pre">gpuMemDeformableSurfaces</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics23gpuMemDeformableVolumesE"><code class="docutils literal notranslate"><span class="pre">gpuMemDeformableVolumes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics16gpuMemSoftBodiesE"><code class="docutils literal notranslate"><span class="pre">gpuMemSoftBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics10gpuMemHeapE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeap</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics20gpuMemHeapBroadPhaseE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapBroadPhase</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics21gpuMemHeapNarrowPhaseE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapNarrowPhase</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics16gpuMemHeapSolverE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSolver</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics22gpuMemHeapArticulationE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapArticulation</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics20gpuMemHeapSimulationE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSimulation</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics32gpuMemHeapSimulationArticulationE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSimulationArticulation</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics29gpuMemHeapSimulationParticlesE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSimulationParticles</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics37gpuMemHeapSimulationDeformableSurfaceE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSimulationDeformableSurface</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics36gpuMemHeapSimulationDeformableVolumeE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSimulationDeformableVolume</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics28gpuMemHeapSimulationSoftBodyE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSimulationSoftBody</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics19gpuMemHeapParticlesE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapParticles</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics28gpuMemHeapDeformableSurfacesE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapDeformableSurfaces</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics27gpuMemHeapDeformableVolumesE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapDeformableVolumes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics20gpuMemHeapSoftBodiesE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapSoftBodies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics15gpuMemHeapOtherE"><code class="docutils literal notranslate"><span class="pre">gpuMemHeapOther</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics33gpuDynamicsMemoryConfigStatisticsE"><code class="docutils literal notranslate"><span class="pre">gpuDynamicsMemoryConfigStatistics</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics16nbBroadPhaseAddsE"><code class="docutils literal notranslate"><span class="pre">nbBroadPhaseAdds</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics19nbBroadPhaseRemovesE"><code class="docutils literal notranslate"><span class="pre">nbBroadPhaseRemoves</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics22nbDiscreteContactPairsE"><code class="docutils literal notranslate"><span class="pre">nbDiscreteContactPairs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics10nbCCDPairsE"><code class="docutils literal notranslate"><span class="pre">nbCCDPairs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics22nbModifiedContactPairsE"><code class="docutils literal notranslate"><span class="pre">nbModifiedContactPairs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSimulationStatistics14nbTriggerPairsE"><code class="docutils literal notranslate"><span class="pre">nbTriggerPairs</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,984 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxDirectGPUAPI &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxDirectGPUAPI';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxDistanceJoint" href="classPxDistanceJoint.html" />
+    <link rel="prev" title="PxDim3" href="structPxDim3.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxDirectGPUAPI</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxdirectgpuapi">
+<h1>PxDirectGPUAPI<a class="headerlink" href="#pxdirectgpuapi" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxDirectGPUAPI.h.html#pxdirectgpuapi-8h"><span class="std std-ref">include/PxDirectGPUAPI.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv414PxDirectGPUAPI">
+<span id="_CPPv314PxDirectGPUAPI"></span><span id="_CPPv214PxDirectGPUAPI"></span><span id="PxDirectGPUAPI"></span><span class="target" id="classpxdirectgpuapi"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDirectGPUAPI</span></span></span><a class="headerlink" href="#_CPPv414PxDirectGPUAPI" title="Link to this definition">#</a><br /></dt>
+<dd><p><a class="reference internal" href="#classpxdirectgpuapi"><span class="std std-ref">PxDirectGPUAPI</span></a> exposes an API that enables batched direct access to GPU data for a <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a>. </p>
+<p>The functions in this class allow batched direct access to GPU data for <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> and <a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a> types. This allows interoperation with GPU post- and preprocessing for users and allows the user to implement more efficient CPU-GPU data copies based on the specific needs of the application.</p>
+<p>Using this direct-API will disable the existing CPU-based API for all the data exposed in the direct-API. For any API function that does not have a counterpart in this direct-API, the existing API will continue to work.</p>
+<p>To use this API, PxSceneFlag::eENABLE_DIRECT_GPU_API needs to be raised, in combination with PxSceneFlag::eENABLE_GPU_DYNAMICS and PxBroadphaseType::eGPU. Note that these options are immutable and cannot be changed after the scene has been created.</p>
+<p>Due to the internal architecture of the GPU-accelerated parts of PhysX, using this API comes with caveats:</p>
+<p>1) All GPU-CPU copies for data exposed in this API will be disabled. This means that the existing CPU-based API will return outdated data, and any setters for data exposed in the interface will not work. On the other hand, significant speedups can be achieved because of the reduced amount of GPU-CPU memory copies.</p>
+<p>2) Due to the internal architecture of the GPU-accelerated PhysX, this API will only work after a first simulation step has been taken. The reason for this is that the <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a> first needs to know all the actors it will have to simulate, and setup the sizes of the GPU-based structures. For setup, the existing CPU API should be used.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Due to the fact that this API is exposing low-level data, we do reserve the right to change this API without deprecation in case of changes in the internal implementations. </p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::getRigidDynamicData__voidP.PxRigidDynamicGPUIndexCP.PxRigidDynamicGPUAPIReadType::Enum.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1a5958b954dfe3c6b8e51a908264f3791a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRigidDynamicData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a81c06417f3e249c64200a4ce643446f9.html#_CPPv422PxRigidDynamicGPUIndex" title="PxRigidDynamicGPUIndex"><span class="n"><span class="pre">PxRigidDynamicGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#_CPPv428PxRigidDynamicGPUAPIReadType" title="PxRigidDynamicGPUAPIReadType"><span class="n"><span class="pre">PxRigidDynamicGPUAPIReadType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#_CPPv4N28PxRigidDynamicGPUAPIReadType4EnumE" title="PxRigidDynamicGPUAPIReadType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>Copies the simulation state for a set of <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> actors into a user-provided GPU data buffer. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic_1ac22616b90c338ea28e1c4f20d2815480"><span class="std std-ref">PxRigidDynamic::getGPUIndex()</span></a>. The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data requested for the <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> with its GPU index at position x in the gpuIndices array will be located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#classpxrigiddynamicgpuapireadtype"><span class="std std-ref">PxRigidDynamicGPUAPIReadType</span></a>. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[out]</strong> User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the dataType options in <a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#classpxrigiddynamicgpuapireadtype"><span class="std std-ref">PxRigidDynamicGPUAPIReadType</span></a>. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> objects that are part of this get operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to get. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of rigid bodies to be copied. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::setRigidDynamicData__voidCP.PxRigidDynamicGPUIndexCP.PxRigidDynamicGPUAPIWriteType::Enum.PxU32.CUevent.CUevent"></span><span class="target" id="classpxdirectgpuapi_1a55a15df9fd2a6b38d83e4cf9c4dd84ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRigidDynamicData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a81c06417f3e249c64200a4ce643446f9.html#_CPPv422PxRigidDynamicGPUIndex" title="PxRigidDynamicGPUIndex"><span class="n"><span class="pre">PxRigidDynamicGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html#_CPPv429PxRigidDynamicGPUAPIWriteType" title="PxRigidDynamicGPUAPIWriteType"><span class="n"><span class="pre">PxRigidDynamicGPUAPIWriteType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html#_CPPv4N29PxRigidDynamicGPUAPIWriteType4EnumE" title="PxRigidDynamicGPUAPIWriteType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the simulation state for a set of <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> actors from a user-provided GPU data buffer. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic_1ac22616b90c338ea28e1c4f20d2815480"><span class="std std-ref">PxRigidDynamic::getGPUIndex()</span></a>. The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data for the <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> with its GPU index at position x in the gpuIndices array needs to be located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html#classpxrigiddynamicgpuapiwritetype"><span class="std std-ref">PxRigidDynamicGPUAPIWriteType</span></a>. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[in]</strong> User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the dataType options in <a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html#classpxrigiddynamicgpuapiwritetype"><span class="std std-ref">PxRigidDynamicGPUAPIWriteType</span></a>. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the <a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic"><span class="std std-ref">PxRigidDynamic</span></a> objects that are part of this set operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to set. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of rigid bodies to be set. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::getArticulationData__voidP.PxArticulationGPUIndexCP.PxArticulationGPUAPIReadType::Enum.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1aee59fa52e0aa719e6fa608c17904778f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getArticulationData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_CPPv422PxArticulationGPUIndex" title="PxArticulationGPUIndex"><span class="n"><span class="pre">PxArticulationGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html#_CPPv428PxArticulationGPUAPIReadType" title="PxArticulationGPUAPIReadType"><span class="n"><span class="pre">PxArticulationGPUAPIReadType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxArticulationGPUAPIReadType.html#_CPPv4N28PxArticulationGPUAPIReadType4EnumE" title="PxArticulationGPUAPIReadType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the simulation state for a set of articulations, i.e. </p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> objects and copies into a user-provided GPU data buffer.</p>
+<p>
+The data buffer must be sized according to the maximum component counts across all articulations in the <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a>, as summarised in <a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html#structpxarticulationgpuapimaxcounts"><span class="std std-ref">PxArticulationGPUAPIMaxCounts</span></a>. The data buffer is split into sequential blocks that are of equal size and can hold the data for all components of an articulation. For example, for a link-centric data type (<a class="reference internal" href="classPxArticulationGPUAPIReadType.html#classpxarticulationgpuapireadtype_1a4074f87650d3cf428adea83494e07a32a7e5502b01ebacce37487b87a117e157f"><span class="std std-ref">PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE</span></a>, for example) each of these blocks has to be maxLinks * sizeof(dataType). The size of the complete buffer would then be nbElements * maxLinks * sizeof(dataType). For a dof-centric data type, the block size would be maxDofs * sizeof(dataType). The specific layout for each dataType is detailed in the API documentation of <a class="reference internal" href="classPxArticulationGPUAPIReadType.html#classpxarticulationgpuapireadtype"><span class="std std-ref">PxArticulationGPUAPIReadType</span></a>. The max counts for a scene can be obtained by calling <a class="reference internal" href="#classpxdirectgpuapi_1a41b9b9eef95652e28fe7432a16ce6438"><span class="std std-ref">PxDirectGPUAPI::getArticulationGPUAPIMaxCounts()</span></a>.<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a7f97ef5266f19658bbfcc04e0f166108"><span class="std std-ref">PxArticulationReducedCoordinate::getGPUIndex()</span></a>. The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> with its GPU index at position x in the gpuIndices array will have its data block located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationGPUAPIReadType.html#classpxarticulationgpuapireadtype"><span class="std std-ref">PxArticulationGPUAPIReadType</span></a>. </p>
+</div>
+</p>
+<p>The link and dof indexing of these blocks then follows the same pattern as the <a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref">PxArticulationCache</span></a> API. We refer to the user guide for an explanation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[out]</strong> User-provided GPU data buffer that is appropriately sized for the data being requested. The sizing is explained in detail below. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> objects that are part of this get operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to get. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of articulations to copy data from. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::setArticulationData__voidCP.PxArticulationGPUIndexCP.PxArticulationGPUAPIWriteType::Enum.PxU32.CUevent.CUevent"></span><span class="target" id="classpxdirectgpuapi_1a8f0cd900de000a77fb5aa3ed8a881bb7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setArticulationData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_CPPv422PxArticulationGPUIndex" title="PxArticulationGPUIndex"><span class="n"><span class="pre">PxArticulationGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#_CPPv429PxArticulationGPUAPIWriteType" title="PxArticulationGPUAPIWriteType"><span class="n"><span class="pre">PxArticulationGPUAPIWriteType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#_CPPv4N29PxArticulationGPUAPIWriteType4EnumE" title="PxArticulationGPUAPIWriteType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the simulation state for a set of articulations, i.e. </p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> objects from a user-provided GPU data buffer.</p>
+<p>
+The data buffer must be sized according to the maximum component counts across all articulations in the <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a>, as summarised in <a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html#structpxarticulationgpuapimaxcounts"><span class="std std-ref">PxArticulationGPUAPIMaxCounts</span></a>. The data buffer is split into sequential blocks that are of equal size and can hold the data for all components of an articulation. For example, for a link-centric data type (<a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#classpxarticulationgpuapiwritetype_1ae9d4d666e5b913d197e93183d130d8c5a0ce0b8851b4aee892d40029f1dc4e8fd"><span class="std std-ref">PxArticulationGPUAPIWriteType::eLINK_FORCE</span></a>, for example) each of these blocks has to be maxLinks * sizeof(dataType). The size of the complete buffer would then be nbElements * maxLinks * sizeof(dataType). For a dof-centric data type, the block size would be maxDofs * sizeof(dataType). The specific layout for each dataType is detailed in the API documentation of <a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#classpxarticulationgpuapiwritetype"><span class="std std-ref">PxArticulationGPUAPIWriteType</span></a>. The max counts for a scene can be obtained by calling <a class="reference internal" href="#classpxdirectgpuapi_1a41b9b9eef95652e28fe7432a16ce6438"><span class="std std-ref">PxDirectGPUAPI::getArticulationGPUAPIMaxCounts()</span></a>.<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a7f97ef5266f19658bbfcc04e0f166108"><span class="std std-ref">PxArticulationReducedCoordinate::getGPUIndex()</span></a>. The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> with its GPU index at position x in the gpuIndices array needs to have its data block located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#classpxarticulationgpuapiwritetype"><span class="std std-ref">PxArticulationGPUAPIWriteType</span></a>. </p>
+</div>
+</p>
+<p>The internal indexing of these blocks then follows the same pattern as the <a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref">PxArticulationCache</span></a> API. We refer to the user guide for an explanation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[in]</strong> User-provided GPU data buffer that is appropriately sized for the data to be set. The sizing is explained in detail below. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> objects that are part of this set operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to set. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of articulations to set data for. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::computeArticulationData__voidP.PxArticulationGPUIndexCP.PxArticulationGPUAPIComputeType::Enum.PxU32.CUevent.CUevent"></span><span class="target" id="classpxdirectgpuapi_1a2f78069c94e9557d7b0131d0b1eef82c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeArticulationData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_CPPv422PxArticulationGPUIndex" title="PxArticulationGPUIndex"><span class="n"><span class="pre">PxArticulationGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html#_CPPv431PxArticulationGPUAPIComputeType" title="PxArticulationGPUAPIComputeType"><span class="n"><span class="pre">PxArticulationGPUAPIComputeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html#_CPPv4N31PxArticulationGPUAPIComputeType4EnumE" title="PxArticulationGPUAPIComputeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">operation</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>performs a compute operation on a set of articulations, i.e. </p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> objects.</p>
+<p>
+The appropriate sizing of the data buffer as well as the data layout is documented alongside the compute operations in the API documentation of <a class="reference internal" href="classPxArticulationGPUAPIComputeType.html#classpxarticulationgpuapicomputetype"><span class="std std-ref">PxArticulationGPUAPIComputeType</span></a>. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a7f97ef5266f19658bbfcc04e0f166108"><span class="std std-ref">PxArticulationReducedCoordinate::getGPUIndex()</span></a>. The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[inout]</strong> User-provided GPU data buffer that is appropriately sized for the operation to be performed. Depending on the operation, can be input or output data. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> objects that are part of this compute operation. </p></li>
+<li><p><strong>operation</strong> – <strong>[in]</strong> The operation to perform. See <a class="reference internal" href="classPxArticulationGPUAPIComputeType.html#classpxarticulationgpuapicomputetype_1ad8b847f82d89cb46072d7f26b9dc594a"><span class="std std-ref">PxArticulationGPUAPIComputeType::Enum</span></a>. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of articulations to perform this compute operation on. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the computation immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the computation to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::copyContactData__voidP.PxU32P.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1a6f1e63793d8191f1424cf0d1311a96bd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyContactData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">nbContactPairs</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxPairs</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>Copy rigid body (<a class="reference internal" href="classPxRigidBody.html#classpxrigidbody"><span class="std std-ref">PxRigidBody</span></a>) and articulation (<a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a>) contact data to a user-provided GPU data buffer. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function only reports contact data for actor pairs where both actors are either rigid bodies or articulations. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The contact data contains pointers to internal state and is only valid until the next call to simulate().</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[out]</strong> User-provided GPU data buffer, which should be the size of <a class="reference internal" href="structPxGpuContactPair.html#structpxgpucontactpair"><span class="std std-ref">PxGpuContactPair</span></a> * maxPairs </p></li>
+<li><p><strong>nbContactPairs</strong> – <strong>[out]</strong> User-provided GPU data buffer of 1 * sizeof(PxU32) that contains the actual number of pairs that was written. </p></li>
+<li><p><strong>maxPairs</strong> – <strong>[in]</strong> The maximum number of pairs that the buffer can contain. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::evaluateSDFDistances__PxVec4P.PxShapeGPUIndexCP.PxVec4CP.PxU32CP.PxU32.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1a486ede2a9d5d5005777a5953c5fd5126"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">evaluateSDFDistances</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">localGradientAndSignedDistanceConcatenated</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aead54aeb211f662449da2d7adb4b45eb.html#_CPPv415PxShapeGPUIndex" title="PxShapeGPUIndex"><span class="n"><span class="pre">PxShapeGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shapeIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">localSamplePointsConcatenated</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">samplePointCountPerShape</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxPointCount</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent" title="Link to this definition">#</a><br /></dt>
+<dd><p>Evaluate sample point distances and gradients on SDF shapes in local space. </p>
+<p><p>Local space is the space in which the mesh’s raw vertex positions are represented.</p>
+<p>Example: Ten shapes are part of the simulation. Three of them have an SDF (shapeIndices of the SDF meshes are 2, 4 and 6). For the first shape, the SDF distance of 10 sample points should be queried. 20 sample points for the second mesh and 30 sample points for the third mesh. The slice size (=maxPointCount) is the maximum of sample points required for any shape participating in the query, 30 = max(10, 20, 30) for this example. The buffers required for the method evaluateSDFDistances are constructed as follows (not including optional parameters): localGradientAndSignedDistanceConcatenated[length: 3 * 30]: No initialization needed. It will hold the result after the finishEvent occurred. It has the same structure as localSamplePointsConcatenated, see below. The format of the written PxVec4 is as follows (gradX, gradY, gradZ, sdfDistance) shapeIndices[length: 3] The content is {2, 4, 6} which are the shape indices for this example localSamplePointsConcatenated[length: 3 * 30]:</p>
+
+ Slice 0…29 has only the first 10 elements set to local sample points (w component is unused) with respect to the coordinate frame of the first shape to be queried Slice 30…59 has only the first 20 elements set to local sample points (w component is unused) with respect to the coordinate frame of the second shape to be queried Slice 60…89 has all 30 elements set to local sample points (w component is unused) with respect to the coordinate frame of the third shape to be queried samplePointCountPerShape[length: 3] The content is {10, 20, 30} which are the number of samples to evaluate per shape used in this example. Note that the slice size (=maxPointCount) is the maximum value in this list. nbElements: 3 for this example since 3 shapes are participating in the query maxPointCount: 30 for this example since 30 is the slice size (= maxPointCount = 30 = max(10, 20, 30))<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxShape.html#classpxshape_1a724fc3cae6793d9ae63da3233a16028e"><span class="std std-ref">PxShape::getGPUIndex()</span></a>. The size of this buffer (in bytes) needs to be nbElements * sizeof(PxShapeGPUIndex). The shapes must be triangle mesh shapes with SDFs. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>localGradientAndSignedDistanceConcatenated</strong> – <strong>[out]</strong> User-provided GPU buffer where the evaluated gradients and distances in SDF local space get stored. It has the same structure as localSamplePointsConcatenated. The PxVec4 elements contain the gradient and the distance (gradX, gradY, gradZ, distance). </p></li>
+<li><p><strong>shapeIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxShapeGPUIndex. This buffer contains the GPU indices of the <a class="reference internal" href="classPxShape.html#classpxshape"><span class="std std-ref">PxShape</span></a> objects that are part of this operation. </p></li>
+<li><p><strong>localSamplePointsConcatenated</strong> – <strong>[in]</strong> User-provided GPU buffer containing the sample point locations for every shape in the shapes’ local space. The buffer stride is maxPointCount. </p></li>
+<li><p><strong>samplePointCountPerShape</strong> – <strong>[in]</strong> User-provided GPU buffer containing the number of sample points for every shape. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of shapes to be queried. </p></li>
+<li><p><strong>maxPointCount</strong> – <strong>[in]</strong> The maximum value in the array samplePointCountPerShape. Note that the arrays localGradientAndSignedDistanceConcatenated and localSamplePointsConcatenated must have the size (in bytes) nbElements * maxPointCount * sizeof(PxVec4). </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the computation immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the computation to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv">
+<span id="_CPPv3NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv"></span><span id="_CPPv2NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv"></span><span id="PxDirectGPUAPI::getArticulationGPUAPIMaxCountsC"></span><span class="target" id="classpxdirectgpuapi_1a41b9b9eef95652e28fe7432a16ce6438"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html#_CPPv429PxArticulationGPUAPIMaxCounts" title="PxArticulationGPUAPIMaxCounts"><span class="n"><span class="pre">PxArticulationGPUAPIMaxCounts</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getArticulationGPUAPIMaxCounts</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the maximal articulation index and component counts for a <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a>. </p>
+<p>Get the maximal articulation index and component counts for a <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a>. This is a helper function to ease the derivation of the correct data layout for the articulation functions in <a class="reference internal" href="#classpxdirectgpuapi"><span class="std std-ref">PxDirectGPUAPI</span></a>. Specifically, this function will return maxLinks, maxDofs, maxFixedTendons, maxFixedTendonJoints, maxSpatialTendons and maxSpatialTendonAttachments for a scene. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html#structpxarticulationgpuapimaxcounts"><span class="std std-ref">PxArticulationGPUAPIMaxCounts</span></a>.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxdirectgpuapi_1aee59fa52e0aa719e6fa608c17904778f"><span class="std std-ref">PxDirectGPUAPI::getArticulationData</span></a>, <a class="reference internal" href="#classpxdirectgpuapi_1a8f0cd900de000a77fb5aa3ed8a881bb7"><span class="std std-ref">PxDirectGPUAPI::setArticulationData</span></a>, <a class="reference internal" href="#classpxdirectgpuapi_1a2f78069c94e9557d7b0131d0b1eef82c"><span class="std std-ref">PxDirectGPUAPI::computeArticulationData</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html#structpxarticulationgpuapimaxcounts"><span class="std std-ref">PxArticulationGPUAPIMaxCounts</span></a> the max counts across the scene for all articulation indices and components. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI14PxDirectGPUAPIEv">
+<span id="_CPPv3N14PxDirectGPUAPI14PxDirectGPUAPIEv"></span><span id="_CPPv2N14PxDirectGPUAPI14PxDirectGPUAPIEv"></span><span id="PxDirectGPUAPI::PxDirectGPUAPI"></span><span class="target" id="classpxdirectgpuapi_1ae7f1cb7354bc33d3ec033e6e9d9687ec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDirectGPUAPI</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI14PxDirectGPUAPIEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPID0Ev">
+<span id="_CPPv3N14PxDirectGPUAPID0Ev"></span><span id="_CPPv2N14PxDirectGPUAPID0Ev"></span><span id="PxDirectGPUAPI::~PxDirectGPUAPI"></span><span class="target" id="classpxdirectgpuapi_1a98f246ec05658c6ce564fb0acbff3bd8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxDirectGPUAPI</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPID0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxDim3.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxDim3</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxDistanceJoint.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxDistanceJoint</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv414PxDirectGPUAPI"><code class="docutils literal notranslate"><span class="pre">PxDirectGPUAPI</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">getRigidDynamicData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">setRigidDynamicData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">getArticulationData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">setArticulationData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">computeArticulationData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">copyContactData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent"><code class="docutils literal notranslate"><span class="pre">evaluateSDFDistances()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv"><code class="docutils literal notranslate"><span class="pre">getArticulationGPUAPIMaxCounts()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxDirectGPUAPI14PxDirectGPUAPIEv"><code class="docutils literal notranslate"><span class="pre">PxDirectGPUAPI()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxDirectGPUAPID0Ev"><code class="docutils literal notranslate"><span class="pre">~PxDirectGPUAPI()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

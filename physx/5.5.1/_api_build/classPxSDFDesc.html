@@ -1,0 +1,780 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxSDFDesc &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxSDFDesc';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSIMDGuard" href="classPxSIMDGuard.html" />
+    <link rel="prev" title="PxSDFBuilder" href="classPxSDFBuilder.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxSDFDesc</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxsdfdesc">
+<h1>PxSDFDesc<a class="headerlink" href="#pxsdfdesc" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxSDFDesc.h.html#pxsdfdesc-8h"><span class="std std-ref">include/cooking/PxSDFDesc.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv49PxSDFDesc">
+<span id="_CPPv39PxSDFDesc"></span><span id="_CPPv29PxSDFDesc"></span><span id="PxSDFDesc"></span><span class="target" id="classpxsdfdesc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSDFDesc</span></span></span><a class="headerlink" href="#_CPPv49PxSDFDesc" title="Link to this definition">#</a><br /></dt>
+<dd><p>A structure describing signed distance fields (SDF) for triangle meshes. </p>
+<p>SDF colliders only work when the GPU solver is used to run the simulation. The GPU solver is enabled by setting the flag PxSceneFlag::eENABLE_GPU_DYNAMICS in the scene description. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc9PxSDFDescEv">
+<span id="_CPPv3N9PxSDFDesc9PxSDFDescEv"></span><span id="_CPPv2N9PxSDFDesc9PxSDFDescEv"></span><span id="PxSDFDesc::PxSDFDesc"></span><span class="target" id="classpxsdfdesc_1a7f9de098410071bc0468c81b2804ea77"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSDFDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxSDFDesc9PxSDFDescEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxSDFDesc7isValidEv">
+<span id="_CPPv3NK9PxSDFDesc7isValidEv"></span><span id="_CPPv2NK9PxSDFDesc7isValidEv"></span><span id="PxSDFDesc::isValidC"></span><span class="target" id="classpxsdfdesc_1ac3af561a25afce6cc4ae8f64120ece60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxSDFDesc7isValidEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>true if the current settings are valid </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc3sdfE">
+<span id="_CPPv3N9PxSDFDesc3sdfE"></span><span id="_CPPv2N9PxSDFDesc3sdfE"></span><span id="PxSDFDesc::sdf__PxBoundedData"></span><span class="target" id="classpxsdfdesc_1a78b32e0ea3e088ebc0dc6bc03d127a49"></span><a class="reference internal" href="structPxBoundedData.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdf</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc3sdfE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to first sdf array element. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc4dimsE">
+<span id="_CPPv3N9PxSDFDesc4dimsE"></span><span id="_CPPv2N9PxSDFDesc4dimsE"></span><span id="PxSDFDesc::dims__PxDim3"></span><span class="target" id="classpxsdfdesc_1a9806a4f67c99c055243c86aee70a6128"></span><a class="reference internal" href="structPxDim3.html#_CPPv46PxDim3" title="PxDim3"><span class="n"><span class="pre">PxDim3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dims</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc4dimsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Dimensions of sdf. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc9meshLowerE">
+<span id="_CPPv3N9PxSDFDesc9meshLowerE"></span><span id="_CPPv2N9PxSDFDesc9meshLowerE"></span><span id="PxSDFDesc::meshLower__PxVec3"></span><span class="target" id="classpxsdfdesc_1a935686f68607bfbbec48546af9064858"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshLower</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc9meshLowerE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The Lower bound of the original mesh. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc7spacingE">
+<span id="_CPPv3N9PxSDFDesc7spacingE"></span><span id="_CPPv2N9PxSDFDesc7spacingE"></span><span id="PxSDFDesc::spacing__PxReal"></span><span class="target" id="classpxsdfdesc_1a7ddab440215abc02092fd2402453015f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">spacing</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc7spacingE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The spacing of each sdf voxel. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc11subgridSizeE">
+<span id="_CPPv3N9PxSDFDesc11subgridSizeE"></span><span id="_CPPv2N9PxSDFDesc11subgridSizeE"></span><span id="PxSDFDesc::subgridSize__PxU32"></span><span class="target" id="classpxsdfdesc_1a37096435c99a537e7a48f26941a05755"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridSize</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc11subgridSizeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of cells in a sparse subgrid block (full block has subgridSize^3 cells and (subgridSize+1)^3 samples). </p>
+<p>If set to zero, this indicates that only a dense background grid SDF is used without sparse blocks </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc19bitsPerSubgridPixelE">
+<span id="_CPPv3N9PxSDFDesc19bitsPerSubgridPixelE"></span><span id="_CPPv2N9PxSDFDesc19bitsPerSubgridPixelE"></span><span id="PxSDFDesc::bitsPerSubgridPixel__PxSdfBitsPerSubgridPixel::Enum"></span><span class="target" id="classpxsdfdesc_1a8f2ea4c137b8808ac0fe005ce325a0a9"></span><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html#_CPPv424PxSdfBitsPerSubgridPixel" title="PxSdfBitsPerSubgridPixel"><span class="n"><span class="pre">PxSdfBitsPerSubgridPixel</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html#_CPPv4N24PxSdfBitsPerSubgridPixel4EnumE" title="PxSdfBitsPerSubgridPixel::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bitsPerSubgridPixel</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc19bitsPerSubgridPixelE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enumeration that defines the number of bits per subgrid pixel (either 32, 16 or 8bits) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc24sdfSubgrids3DTexBlockDimE">
+<span id="_CPPv3N9PxSDFDesc24sdfSubgrids3DTexBlockDimE"></span><span id="_CPPv2N9PxSDFDesc24sdfSubgrids3DTexBlockDimE"></span><span id="PxSDFDesc::sdfSubgrids3DTexBlockDim__PxDim3"></span><span class="target" id="classpxsdfdesc_1aa173262095941ad39dad815d07e6ed4d"></span><a class="reference internal" href="structPxDim3.html#_CPPv46PxDim3" title="PxDim3"><span class="n"><span class="pre">PxDim3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfSubgrids3DTexBlockDim</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc24sdfSubgrids3DTexBlockDimE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of subgrid blocks in the 3d texture. </p>
+<p>The full texture dimension will be sdfSubgrids3DTexBlockDim*(subgridSize+1). </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc11sdfSubgridsE">
+<span id="_CPPv3N9PxSDFDesc11sdfSubgridsE"></span><span id="_CPPv2N9PxSDFDesc11sdfSubgridsE"></span><span id="PxSDFDesc::sdfSubgrids__PxBoundedData"></span><span class="target" id="classpxsdfdesc_1ae1b97005a1270bebbe91ba18eeb4663b"></span><a class="reference internal" href="structPxBoundedData.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfSubgrids</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc11sdfSubgridsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The data to create the 3d texture containg the packed subgrid blocks. </p>
+<p>Stored as PxU8 to support multiple formats (8, 16 and 32 bits per pixel) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc13sdfStartSlotsE">
+<span id="_CPPv3N9PxSDFDesc13sdfStartSlotsE"></span><span id="_CPPv2N9PxSDFDesc13sdfStartSlotsE"></span><span id="PxSDFDesc::sdfStartSlots__PxBoundedData"></span><span class="target" id="classpxsdfdesc_1abbbf3af3e9655cb3137870c259ca12c2"></span><a class="reference internal" href="structPxBoundedData.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfStartSlots</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc13sdfStartSlotsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Array with start indices into the subgrid texture for every subgrid block. </p>
+<p>10bits for z coordinate, 10bits for y and 10bits for x. Encoding is as follows: slot = (z &lt;&lt; 20) | (y &lt;&lt; 10) | x </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc19subgridsMinSdfValueE">
+<span id="_CPPv3N9PxSDFDesc19subgridsMinSdfValueE"></span><span id="_CPPv2N9PxSDFDesc19subgridsMinSdfValueE"></span><span id="PxSDFDesc::subgridsMinSdfValue__PxReal"></span><span class="target" id="classpxsdfdesc_1a9f699674b05168ac89d384e9820aef5d"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridsMinSdfValue</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc19subgridsMinSdfValueE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The minimum value over all subgrid blocks. </p>
+<p>Used if normalized textures are used which is the case for 8 and 16bit formats </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc19subgridsMaxSdfValueE">
+<span id="_CPPv3N9PxSDFDesc19subgridsMaxSdfValueE"></span><span id="_CPPv2N9PxSDFDesc19subgridsMaxSdfValueE"></span><span id="PxSDFDesc::subgridsMaxSdfValue__PxReal"></span><span class="target" id="classpxsdfdesc_1aed02f5c12b414d008114938a134a2cc3"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridsMaxSdfValue</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc19subgridsMaxSdfValueE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The maximum value over all subgrid blocks. </p>
+<p>Used if normalized textures are used which is the case for 8 and 16bit formats </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc9sdfBoundsE">
+<span id="_CPPv3N9PxSDFDesc9sdfBoundsE"></span><span id="_CPPv2N9PxSDFDesc9sdfBoundsE"></span><span id="PxSDFDesc::sdfBounds__PxBounds3"></span><span class="target" id="classpxsdfdesc_1aeecd3538de3093bb66cfaf73bab8978b"></span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfBounds</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc9sdfBoundsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The bounds of the sdf. </p>
+<p>If left unassigned (empty), the bounds of the mesh will be used </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE">
+<span id="_CPPv3N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE"></span><span id="_CPPv2N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE"></span><span id="PxSDFDesc::narrowBandThicknessRelativeToSdfBoundsDiagonal__PxReal"></span><span class="target" id="classpxsdfdesc_1abf8ea1429a01b2944775bfd467cac30e"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">narrowBandThicknessRelativeToSdfBoundsDiagonal</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Narrow band thickness as a fraction of the bounds diagonal length. </p>
+<p>Every subgrid block that overlaps with the narrow band around the mesh surface will be kept providing high resolution around the mesh surface. The valid range of this parameter is (0, 1). The higher the value, the more subgrids will get created, the more memory will be required. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc28numThreadsForSdfConstructionE">
+<span id="_CPPv3N9PxSDFDesc28numThreadsForSdfConstructionE"></span><span id="_CPPv2N9PxSDFDesc28numThreadsForSdfConstructionE"></span><span id="PxSDFDesc::numThreadsForSdfConstruction__PxU32"></span><span class="target" id="classpxsdfdesc_1a63938107507f8db32fd9d4f0446105a6"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numThreadsForSdfConstruction</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc28numThreadsForSdfConstructionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of threads that are launched to compute the signed distance field. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc8baseMeshE">
+<span id="_CPPv3N9PxSDFDesc8baseMeshE"></span><span id="_CPPv2N9PxSDFDesc8baseMeshE"></span><span id="PxSDFDesc::baseMesh__PxSimpleTriangleMesh"></span><span class="target" id="classpxsdfdesc_1ad3e5d1cea41ce2ee8a6fcea3b1e9bb42"></span><a class="reference internal" href="classPxSimpleTriangleMesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">baseMesh</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc8baseMeshE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Optional pointer to the geometry of the mesh that is used to compute the SDF. </p>
+<p>If it is not set, the geometry of the mesh, that this descriptor is passed to during cooking, will be taken. The mesh data must only be available during cooking. It can be released once cooking completed. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc10sdfBuilderE">
+<span id="_CPPv3N9PxSDFDesc10sdfBuilderE"></span><span id="_CPPv2N9PxSDFDesc10sdfBuilderE"></span><span id="PxSDFDesc::sdfBuilder__PxSDFBuilderP"></span><span class="target" id="classpxsdfdesc_1a1c00fc4ddad0f64bb3c1df7da80e29ea"></span><a class="reference internal" href="classPxSDFBuilder.html#_CPPv412PxSDFBuilder" title="PxSDFBuilder"><span class="n"><span class="pre">PxSDFBuilder</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">sdfBuilder</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc10sdfBuilderE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Optional pointer to an instance of a SDF builder. </p>
+<p>This significantly speeds up the construction of the SDF since the default SDF builder will do almost all computations directly on the GPU. The user must release the instance of the SDF builder once cooking completed. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxSDFBuilder.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxSDFBuilder</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxSIMDGuard.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxSIMDGuard</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv49PxSDFDesc"><code class="docutils literal notranslate"><span class="pre">PxSDFDesc</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc9PxSDFDescEv"><code class="docutils literal notranslate"><span class="pre">PxSDFDesc()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK9PxSDFDesc7isValidEv"><code class="docutils literal notranslate"><span class="pre">isValid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc3sdfE"><code class="docutils literal notranslate"><span class="pre">sdf</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc4dimsE"><code class="docutils literal notranslate"><span class="pre">dims</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc9meshLowerE"><code class="docutils literal notranslate"><span class="pre">meshLower</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc7spacingE"><code class="docutils literal notranslate"><span class="pre">spacing</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc11subgridSizeE"><code class="docutils literal notranslate"><span class="pre">subgridSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc19bitsPerSubgridPixelE"><code class="docutils literal notranslate"><span class="pre">bitsPerSubgridPixel</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc24sdfSubgrids3DTexBlockDimE"><code class="docutils literal notranslate"><span class="pre">sdfSubgrids3DTexBlockDim</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc11sdfSubgridsE"><code class="docutils literal notranslate"><span class="pre">sdfSubgrids</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc13sdfStartSlotsE"><code class="docutils literal notranslate"><span class="pre">sdfStartSlots</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc19subgridsMinSdfValueE"><code class="docutils literal notranslate"><span class="pre">subgridsMinSdfValue</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc19subgridsMaxSdfValueE"><code class="docutils literal notranslate"><span class="pre">subgridsMaxSdfValue</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc9sdfBoundsE"><code class="docutils literal notranslate"><span class="pre">sdfBounds</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE"><code class="docutils literal notranslate"><span class="pre">narrowBandThicknessRelativeToSdfBoundsDiagonal</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc28numThreadsForSdfConstructionE"><code class="docutils literal notranslate"><span class="pre">numThreadsForSdfConstruction</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc8baseMeshE"><code class="docutils literal notranslate"><span class="pre">baseMesh</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxSDFDesc10sdfBuilderE"><code class="docutils literal notranslate"><span class="pre">sdfBuilder</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

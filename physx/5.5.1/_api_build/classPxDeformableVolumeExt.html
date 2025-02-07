@@ -1,0 +1,1178 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxDeformableVolumeExt &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxDeformableVolumeExt';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxDeformableVolumeFlag" href="structPxDeformableVolumeFlag.html" />
+    <link rel="prev" title="PxDeformableVolumeDataFlag" href="structPxDeformableVolumeDataFlag.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxDeformable...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxdeformablevolumeext">
+<h1>PxDeformableVolumeExt<a class="headerlink" href="#pxdeformablevolumeext" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxDeformableVolumeExt.h.html#pxdeformablevolumeext-8h"><span class="std std-ref">include/extensions/PxDeformableVolumeExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv421PxDeformableVolumeExt">
+<span id="_CPPv321PxDeformableVolumeExt"></span><span id="_CPPv221PxDeformableVolumeExt"></span><span id="PxDeformableVolumeExt"></span><span class="target" id="classpxdeformablevolumeext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDeformableVolumeExt</span></span></span><a class="headerlink" href="#_CPPv421PxDeformableVolumeExt" title="Link to this definition">#</a><br /></dt>
+<dd><p>Utility functions for use with <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a> and subclasses. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt10updateMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4">
+<span id="_CPPv3N21PxDeformableVolumeExt10updateMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4"></span><span id="_CPPv2N21PxDeformableVolumeExt10updateMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4"></span><span id="PxDeformableVolumeExt::updateMass__PxDeformableVolumeR.PxRealC.PxRealC.PxVec4P"></span><span class="target" id="classpxdeformablevolumeext_1a18fc9fdfe12709825f0f69fec8823943"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateMass</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxInvMassRatio</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt10updateMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Computes the deformable volume’s vertex masses from the provided density and the volume of the tetrahedra. </p>
+<p>The buffers affected by this operation can be obtained from the deformable volume using the methods getSimPositionInvMassBufferD() and getSimVelocityBufferD()</p>
+<p>The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh’s position buffer.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a> <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume_1a28916a78c2fbbc8c111dc84cda3df07e"><span class="std std-ref">PxDeformableVolume::getSimPositionInvMassBufferD()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> The deformable volume which will get its mass updated </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density to used to calculate the mass from the body’s volume </p></li>
+<li><p><strong>maxInvMassRatio</strong> – <strong>[in]</strong> Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt7setMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4">
+<span id="_CPPv3N21PxDeformableVolumeExt7setMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4"></span><span id="_CPPv2N21PxDeformableVolumeExt7setMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4"></span><span id="PxDeformableVolumeExt::setMass__PxDeformableVolumeR.PxRealC.PxRealC.PxVec4P"></span><span class="target" id="classpxdeformablevolumeext_1a69b19e2d556183114c985a2797bbf0ee"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMass</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mass</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxInvMassRatio</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt7setMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Computes the deformable volume’s vertex masses such that the sum of all masses is equal to the provided mass. </p>
+<p>The buffers affected by this operation can be obtained from the deformable volume using the methods getSimPositionInvMassBufferD()) and getSimVelocityBufferD()</p>
+<p>The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh’s position buffer.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a> <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume_1a28916a78c2fbbc8c111dc84cda3df07e"><span class="std std-ref">PxDeformableVolume::getSimPositionInvMassBufferD()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> The deformable volume which will get its mass updated </p></li>
+<li><p><strong>mass</strong> – <strong>[in]</strong> The deformable volume’s mass </p></li>
+<li><p><strong>maxInvMassRatio</strong> – <strong>[in]</strong> Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt9transformER18PxDeformableVolumeRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4">
+<span id="_CPPv3N21PxDeformableVolumeExt9transformER18PxDeformableVolumeRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4"></span><span id="_CPPv2N21PxDeformableVolumeExt9transformER18PxDeformableVolumeRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4"></span><span id="PxDeformableVolumeExt::transform__PxDeformableVolumeR.PxTransformCR.PxRealC.PxVec4P.PxVec4P.PxVec4P.PxVec4P"></span><span class="target" id="classpxdeformablevolumeext_1a5be1e219be33919092e83130d10bc71c"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simVelocitiesPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositionsPinned</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt9transformER18PxDeformableVolumeRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Transforms a deformable volume. </p>
+<p>The buffers affected by this operation can be obtained from the deformable volume using the methods getSimPositionInvMassBufferD() and getSimVelocityBufferD()</p>
+<p>Applies a transformation to the simulation mesh’s positions an velocities. Velocities only get rotated and scaled (translation is not applicable to direction vectors). It does not modify the body’s mass. If the method is called multiple times, the transformation will compound with the ones previously applied.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> The deformable volume which is transformed </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> The transform to apply </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> A scaling factor </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>simVelocitiesPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh. </p></li>
+<li><p><strong>restPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing rest positions of the collision mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt27updateEmbeddedCollisionMeshER18PxDeformableVolumeP6PxVec4P6PxVec4">
+<span id="_CPPv3N21PxDeformableVolumeExt27updateEmbeddedCollisionMeshER18PxDeformableVolumeP6PxVec4P6PxVec4"></span><span id="_CPPv2N21PxDeformableVolumeExt27updateEmbeddedCollisionMeshER18PxDeformableVolumeP6PxVec4P6PxVec4"></span><span id="PxDeformableVolumeExt::updateEmbeddedCollisionMesh__PxDeformableVolumeR.PxVec4P.PxVec4P"></span><span class="target" id="classpxdeformablevolumeext_1a8900b093ea8de8e884b5bce2010cd4b7"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateEmbeddedCollisionMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt27updateEmbeddedCollisionMeshER18PxDeformableVolumeP6PxVec4P6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Updates the collision mesh’s vertex positions to match the simulation mesh’s transformation and scale. </p>
+<p>The buffer affected by this operation can be obtained from the deformable volume using the method getPositionInvMassBufferD()</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> The deformable volume which will get its collision mesh vertices updated </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt12copyToDeviceER18PxDeformableVolume27PxDeformableVolumeDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream">
+<span id="_CPPv3N21PxDeformableVolumeExt12copyToDeviceER18PxDeformableVolume27PxDeformableVolumeDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"></span><span id="_CPPv2N21PxDeformableVolumeExt12copyToDeviceER18PxDeformableVolume27PxDeformableVolumeDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"></span><span id="PxDeformableVolumeExt::copyToDevice__PxDeformableVolumeR.PxDeformableVolumeDataFlags.PxVec4P.PxVec4P.PxVec4P.PxVec4P.CUstream"></span><span class="target" id="classpxdeformablevolumeext_1ac5cc361cf62341d5db23b3897a0060e2"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyToDevice</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxDeformableVolumeFlag_8h_1a16699d11e57bccc4bd38bcde9cb47324.html#_CPPv427PxDeformableVolumeDataFlags" title="PxDeformableVolumeDataFlags"><span class="n"><span class="pre">PxDeformableVolumeDataFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simVelocitiesPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositionsPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="p"><span class="pre">(</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt12copyToDeviceER18PxDeformableVolume27PxDeformableVolumeDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream" title="Link to this definition">#</a><br /></dt>
+<dd><p>Uploads prepared deformable volume data to the GPU. </p>
+<p>It ensures that the embedded collision mesh matches the simulation mesh’s transformation and scale.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> The deformable volume which will perform the data upload </p></li>
+<li><p><strong>flags</strong> – <strong>[in]</strong> Specifies which buffers the data transfer should include </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>simVelocitiesPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh. </p></li>
+<li><p><strong>restPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing rest positions of the collision mesh. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> A cuda stream to perform the copies.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt26createDeformableVolumeMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb">
+<span id="_CPPv3N21PxDeformableVolumeExt26createDeformableVolumeMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"></span><span id="_CPPv2N21PxDeformableVolumeExt26createDeformableVolumeMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"></span><span id="PxDeformableVolumeExt::createDeformableVolumeMesh__PxCookingParamsCR.PxSimpleTriangleMeshCR.PxU32.PxInsertionCallbackR.bC"></span><span class="target" id="classpxdeformablevolumeext_1a02be4f2ceb4267997d4d7ff398ce9f36"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMesh.html#_CPPv422PxDeformableVolumeMesh" title="PxDeformableVolumeMesh"><span class="n"><span class="pre">PxDeformableVolumeMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createDeformableVolumeMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxSimpleTriangleMesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">surfaceMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numVoxelsAlongLongestAABBAxis</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxInsertionCallback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">validate</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt26createDeformableVolumeMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a full deformable volume mesh matching the shape given as input. </p>
+<p>Uses a voxel mesh for FEM simulation and a surface-matching mesh for collision detection.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolumeMesh.html#classpxdeformablevolumemesh"><span class="std std-ref">PxDeformableVolumeMesh</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> – <strong>[in]</strong> Cooking params instance required for mesh processing </p></li>
+<li><p><strong>surfaceMesh</strong> – <strong>[in]</strong> Input triangle mesh that represents the surface of the deformable volume </p></li>
+<li><p><strong>numVoxelsAlongLongestAABBAxis</strong> – <strong>[in]</strong> The number of voxels along the longest bounding box axis </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="classPxPhysics.html#classpxphysics"><span class="std std-ref">PxPhysics</span></a></p></li>
+<li><p><strong>validate</strong> – <strong>[in]</strong> If set to true the input triangle mesh will get analyzed to find possible deficiencies </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Deformable volume mesh if cooking was successful, NULL otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb">
+<span id="_CPPv3N21PxDeformableVolumeExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"></span><span id="_CPPv2N21PxDeformableVolumeExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"></span><span id="PxDeformableVolumeExt::createSoftBodyMesh__PxCookingParamsCR.PxSimpleTriangleMeshCR.PxU32.PxInsertionCallbackR.bC"></span><span class="target" id="classpxdeformablevolumeext_1a72b5166f6ce27d065acfef5ef39b6f5b"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMesh.html#_CPPv422PxDeformableVolumeMesh" title="PxDeformableVolumeMesh"><span class="n"><span class="pre">PxDeformableVolumeMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxSimpleTriangleMesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">surfaceMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numVoxelsAlongLongestAABBAxis</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxInsertionCallback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">validate</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxdeformablevolumeext_1a02be4f2ceb4267997d4d7ff398ce9f36"><span class="std std-ref">createDeformableVolumeMesh</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt34createDeformableVolumeMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb">
+<span id="_CPPv3N21PxDeformableVolumeExt34createDeformableVolumeMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"></span><span id="_CPPv2N21PxDeformableVolumeExt34createDeformableVolumeMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"></span><span id="PxDeformableVolumeExt::createDeformableVolumeMeshNoVoxels__PxCookingParamsCR.PxSimpleTriangleMeshCR.PxInsertionCallbackR.PxReal.bC"></span><span class="target" id="classpxdeformablevolumeext_1a5ea43befb6b91a989ba8bd346a924e8f"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMesh.html#_CPPv422PxDeformableVolumeMesh" title="PxDeformableVolumeMesh"><span class="n"><span class="pre">PxDeformableVolumeMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createDeformableVolumeMeshNoVoxels</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxSimpleTriangleMesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">surfaceMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxInsertionCallback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxWeightRatioInTet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.5f</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">validate</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt34createDeformableVolumeMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a full deformable volume mesh matching the shape given as input. </p>
+<p>Uses the same surface-matching mesh for collision detection and FEM simulation.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolumeMesh.html#classpxdeformablevolumemesh"><span class="std std-ref">PxDeformableVolumeMesh</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> – <strong>[in]</strong> Cooking params instance required for mesh processing </p></li>
+<li><p><strong>surfaceMesh</strong> – <strong>[in]</strong> Input triangle mesh that represents the surface of the deformable volume </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="classPxPhysics.html#classpxphysics"><span class="std std-ref">PxPhysics</span></a></p></li>
+<li><p><strong>maxWeightRatioInTet</strong> – <strong>[in]</strong> Upper limit for the ratio of node weights that are adjacent to the same tetrahedron. The closer to one (while remaining larger than one), the more stable the simulation. </p></li>
+<li><p><strong>validate</strong> – <strong>[in]</strong> If set to true the input triangle mesh will get analyzed to find possible deficiencies </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Deformable volume mesh if cooking was successful, NULL otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb">
+<span id="_CPPv3N21PxDeformableVolumeExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"></span><span id="_CPPv2N21PxDeformableVolumeExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"></span><span id="PxDeformableVolumeExt::createSoftBodyMeshNoVoxels__PxCookingParamsCR.PxSimpleTriangleMeshCR.PxInsertionCallbackR.PxReal.bC"></span><span class="target" id="classpxdeformablevolumeext_1a9d2fb752de024f1dc688b0177fddfeb1"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMesh.html#_CPPv422PxDeformableVolumeMesh" title="PxDeformableVolumeMesh"><span class="n"><span class="pre">PxDeformableVolumeMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyMeshNoVoxels</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxCookingParams.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxSimpleTriangleMesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">surfaceMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxInsertionCallback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxWeightRatioInTet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.5f</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">validate</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxdeformablevolumeext_1a5ea43befb6b91a989ba8bd346a924e8f"><span class="std std-ref">createDeformableVolumeMeshNoVoxels</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt30createDeformableVolumeFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal">
+<span id="_CPPv3N21PxDeformableVolumeExt30createDeformableVolumeFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal"></span><span id="_CPPv2N21PxDeformableVolumeExt30createDeformableVolumeFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal"></span><span id="PxDeformableVolumeExt::createDeformableVolumeFromMesh__PxDeformableVolumeMeshP.PxTransformCR.PxDeformableVolumeMaterialCR.PxCudaContextManagerR.PxReal.PxReal"></span><span class="target" id="classpxdeformablevolumeext_1abc0646e76001fdf60a83fed0b5d38d9d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createDeformableVolumeFromMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolumeMesh.html#_CPPv422PxDeformableVolumeMesh" title="PxDeformableVolumeMesh"><span class="n"><span class="pre">PxDeformableVolumeMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deformableVolumeMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMaterial.html#_CPPv426PxDeformableVolumeMaterial" title="PxDeformableVolumeMaterial"><span class="n"><span class="pre">PxDeformableVolumeMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">material</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">100.0f</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt30createDeformableVolumeFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a deformable volume instance from a deformable volume mesh. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolumeMesh.html#classpxdeformablevolumemesh"><span class="std std-ref">PxDeformableVolumeMesh</span></a>, <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolumeMesh</strong> – <strong>[in]</strong> The deformable volume mesh </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> The transform that defines initial position and orientation of the deformable volume </p></li>
+<li><p><strong>material</strong> – <strong>[in]</strong> The material </p></li>
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density used to compute the mass properties </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> The scaling of the deformable volume </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Deformable volume instance </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt22createSoftBodyFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal">
+<span id="_CPPv3N21PxDeformableVolumeExt22createSoftBodyFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal"></span><span id="_CPPv2N21PxDeformableVolumeExt22createSoftBodyFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal"></span><span id="PxDeformableVolumeExt::createSoftBodyFromMesh__PxDeformableVolumeMeshP.PxTransformCR.PxDeformableVolumeMaterialCR.PxCudaContextManagerR.PxReal.PxU32.PxFEMParametersCR.PxReal"></span><span class="target" id="classpxdeformablevolumeext_1a73cf52f7a0fb66ada856157bc952fb16"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyFromMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolumeMesh.html#_CPPv422PxDeformableVolumeMesh" title="PxDeformableVolumeMesh"><span class="n"><span class="pre">PxDeformableVolumeMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deformableVolumeMesh</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMaterial.html#_CPPv426PxDeformableVolumeMaterial" title="PxDeformableVolumeMaterial"><span class="n"><span class="pre">PxDeformableVolumeMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">material</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">100.0f</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">solverIterationCount</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">30</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxFEMParameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">femParams</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="structPxFEMParameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt22createSoftBodyFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxdeformablevolumeext_1abc0646e76001fdf60a83fed0b5d38d9d"><span class="std std-ref">createDeformableVolumeFromMesh</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt25createDeformableVolumeBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU326PxReal">
+<span id="_CPPv3N21PxDeformableVolumeExt25createDeformableVolumeBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU326PxReal"></span><span id="_CPPv2N21PxDeformableVolumeExt25createDeformableVolumeBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU326PxReal"></span><span id="PxDeformableVolumeExt::createDeformableVolumeBox__PxTransformCR.PxVec3CR.PxDeformableVolumeMaterialCR.PxCudaContextManagerR.PxReal.PxReal.PxU32.PxReal"></span><span class="target" id="classpxdeformablevolumeext_1ae9700fb916d25cda9ac00ce42f06614e"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createDeformableVolumeBox</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">boxDimensions</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMaterial.html#_CPPv426PxDeformableVolumeMaterial" title="PxDeformableVolumeMaterial"><span class="n"><span class="pre">PxDeformableVolumeMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">material</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxEdgeLength</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">100.0f</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numVoxelsAlongLongestAABBAxis</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">10</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt25createDeformableVolumeBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a deformable volume instance with a box shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolumeMesh.html#classpxdeformablevolumemesh"><span class="std std-ref">PxDeformableVolumeMesh</span></a>, <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> – <strong>[in]</strong> The transform that defines initial position and orientation of the deformable volume </p></li>
+<li><p><strong>boxDimensions</strong> – <strong>[in]</strong> The dimensions (side lengths) of the box shape </p></li>
+<li><p><strong>material</strong> – <strong>[in]</strong> The material </p></li>
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>maxEdgeLength</strong> – <strong>[in]</strong> The maximal length of a triangle edge. Subdivision will get applied until the edge length criteria is matched. -1 means no subdivision is applied. </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density used to compute the mass properties </p></li>
+<li><p><strong>numVoxelsAlongLongestAABBAxis</strong> – <strong>[in]</strong> The number of voxels to use for the simulation mesh along the longest bounding box dimension </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> The scaling of the deformable volume </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Deformable volume instance </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal">
+<span id="_CPPv3N21PxDeformableVolumeExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal"></span><span id="_CPPv2N21PxDeformableVolumeExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal"></span><span id="PxDeformableVolumeExt::createSoftBodyBox__PxTransformCR.PxVec3CR.PxDeformableVolumeMaterialCR.PxCudaContextManagerR.PxReal.PxReal.PxU32.PxFEMParametersCR.PxU32.PxReal"></span><span class="target" id="classpxdeformablevolumeext_1a62d9a27adaed4d3d04b37cc0659d7083"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyBox</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">boxDimensions</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxDeformableVolumeMaterial.html#_CPPv426PxDeformableVolumeMaterial" title="PxDeformableVolumeMaterial"><span class="n"><span class="pre">PxDeformableVolumeMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">material</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxEdgeLength</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">100.0f</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">solverIterationCount</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">30</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxFEMParameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">femParams</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="structPxFEMParameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numVoxelsAlongLongestAABBAxis</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">10</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxdeformablevolumeext_1ae9700fb916d25cda9ac00ce42f06614e"><span class="std std-ref">createDeformableVolumeBox</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt31allocateAndInitializeHostMirrorER18PxDeformableVolumeP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4">
+<span id="_CPPv3N21PxDeformableVolumeExt31allocateAndInitializeHostMirrorER18PxDeformableVolumeP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4"></span><span id="_CPPv2N21PxDeformableVolumeExt31allocateAndInitializeHostMirrorER18PxDeformableVolumeP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4"></span><span id="PxDeformableVolumeExt::allocateAndInitializeHostMirror__PxDeformableVolumeR.PxCudaContextManagerP.PxVec4PR.PxVec4PR.PxVec4PR.PxVec4PR"></span><span class="target" id="classpxdeformablevolumeext_1a7ce9418630d8d74be2559b126720a116"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">allocateAndInitializeHostMirror</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simPositionInvMassPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simVelocityPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collPositionInvMassPinned</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">restPositionPinned</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt31allocateAndInitializeHostMirrorER18PxDeformableVolumeP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>allocates and initializes pinned host memory buffers from an actor with shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> A <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a> that has a valid shape attached to it. </p></li>
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> The <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager"><span class="std std-ref">PxCudaContextManager</span></a> of the scene this deformable volume will be simulated in </p></li>
+<li><p><strong>simPositionInvMassPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the simPositionInvMassPinned buffer, will be set by this function. </p></li>
+<li><p><strong>simVelocityPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the simVelocityPinned buffer, will be set by this function. </p></li>
+<li><p><strong>collPositionInvMassPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the collPositionInvMassPinned buffer, will be set by this function. </p></li>
+<li><p><strong>restPositionPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the restPositionPinned buffer, will be set by this function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt25relaxDeformableVolumeMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32">
+<span id="_CPPv3N21PxDeformableVolumeExt25relaxDeformableVolumeMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"></span><span id="_CPPv2N21PxDeformableVolumeExt25relaxDeformableVolumeMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"></span><span id="PxDeformableVolumeExt::relaxDeformableVolumeMesh__PxVec4CP.PxVec4P.PxU32.PxU32CP.PxU32.bCP.PxU32"></span><span class="target" id="classpxdeformablevolumeext_1a5e54b1e4213f8c9953a7a018aacda4f1"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">relaxDeformableVolumeMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">verticesOriginal</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">verticesDeformed</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbVertices</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">tetrahedra</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbTetraheda</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertexIsFixed</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numIterations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt25relaxDeformableVolumeMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Given a set of points and a set of tetrahedra, it finds the equilibrium state of the deformable volume. </p>
+<p>Every input point is either fixed or can move freely.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>verticesOriginal</strong> – <strong>[in]</strong> Mesh vertex positions in undeformed original state. </p></li>
+<li><p><strong>verticesDeformed</strong> – <strong>[in]</strong> Mesh vertex positions in new deformed state. Only fixed vertices must have their final location, all other locations will get updated by the method. </p></li>
+<li><p><strong>nbVertices</strong> – <strong>[in]</strong> The number of vertices. </p></li>
+<li><p><strong>tetrahedra</strong> – <strong>[in]</strong> The tetrahedra. </p></li>
+<li><p><strong>nbTetraheda</strong> – <strong>[in]</strong> The number of tetrahedra. </p></li>
+<li><p><strong>vertexIsFixed</strong> – <strong>[in]</strong> Optional input that specifies which vertex is fixed and which one can move to relax the tension. If not provided, vertices from verticesOriginal which have a .w value of 0 will be considered fixed. </p></li>
+<li><p><strong>numIterations</strong> – <strong>[in]</strong> The number of stress relaxation iterations to run. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32">
+<span id="_CPPv3N21PxDeformableVolumeExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"></span><span id="_CPPv2N21PxDeformableVolumeExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"></span><span id="PxDeformableVolumeExt::relaxSoftBodyMesh__PxVec4CP.PxVec4P.PxU32.PxU32CP.PxU32.bCP.PxU32"></span><span class="target" id="classpxdeformablevolumeext_1a0c1818e2c64292bf3123cc30e5282e0a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">relaxSoftBodyMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">verticesOriginal</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">verticesDeformed</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbVertices</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">tetrahedra</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbTetraheda</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertexIsFixed</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numIterations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deprecated. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxdeformablevolumeext_1a5e54b1e4213f8c9953a7a018aacda4f1"><span class="std std-ref">relaxDeformableVolumeMesh</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxDeformableVolumeExt31convertCollisionToSimulationTetER18PxDeformableVolume5PxU32RK6PxVec4R5PxU32R6PxVec4">
+<span id="_CPPv3N21PxDeformableVolumeExt31convertCollisionToSimulationTetER18PxDeformableVolume5PxU32RK6PxVec4R5PxU32R6PxVec4"></span><span id="_CPPv2N21PxDeformableVolumeExt31convertCollisionToSimulationTetER18PxDeformableVolume5PxU32RK6PxVec4R5PxU32R6PxVec4"></span><span id="PxDeformableVolumeExt::convertCollisionToSimulationTet__PxDeformableVolumeR.PxU32.PxVec4CR.PxU32R.PxVec4R"></span><span class="target" id="classpxdeformablevolumeext_1a7abe5c49ce6be1e4b8fd15e0064f83da"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convertCollisionToSimulationTet</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxDeformableVolume.html#_CPPv418PxDeformableVolume" title="PxDeformableVolume"><span class="n"><span class="pre">PxDeformableVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deformableVolume</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">tetId</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tetBarycentric</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">outTetId</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">outTetBarycentric</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxDeformableVolumeExt31convertCollisionToSimulationTetER18PxDeformableVolume5PxU32RK6PxVec4R5PxU32R6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Converts the tet id and barycentric from the collision mesh to the tet id and barycentric of the simulation mesh. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deformableVolume</strong> – <strong>[in]</strong> The deformable volume to perform the operation on. </p></li>
+<li><p><strong>tetId</strong> – <strong>[in]</strong> The tet id of the deformable volume’s collision mesh. </p></li>
+<li><p><strong>tetBarycentric</strong> – <strong>[in]</strong> The barycentric coordinates of the tetrahedron specified with tetId. </p></li>
+<li><p><strong>outTetId</strong> – <strong>[out]</strong> The tet id of the deformable volume’s simulation mesh. </p></li>
+<li><p><strong>outTetBarycentric</strong> – <strong>[out]</strong> The barycentric coordinates of the tetrahedron specified with outTetId. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxDeformableVolumeDataFlag.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxDeformableVolumeDataFlag</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxDeformableVolumeFlag.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxDeformableVolumeFlag</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv421PxDeformableVolumeExt"><code class="docutils literal notranslate"><span class="pre">PxDeformableVolumeExt</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt10updateMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4"><code class="docutils literal notranslate"><span class="pre">updateMass()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt7setMassER18PxDeformableVolumeK6PxRealK6PxRealP6PxVec4"><code class="docutils literal notranslate"><span class="pre">setMass()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt9transformER18PxDeformableVolumeRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4"><code class="docutils literal notranslate"><span class="pre">transform()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt27updateEmbeddedCollisionMeshER18PxDeformableVolumeP6PxVec4P6PxVec4"><code class="docutils literal notranslate"><span class="pre">updateEmbeddedCollisionMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt12copyToDeviceER18PxDeformableVolume27PxDeformableVolumeDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"><code class="docutils literal notranslate"><span class="pre">copyToDevice()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt26createDeformableVolumeMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"><code class="docutils literal notranslate"><span class="pre">createDeformableVolumeMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"><code class="docutils literal notranslate"><span class="pre">createSoftBodyMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt34createDeformableVolumeMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"><code class="docutils literal notranslate"><span class="pre">createDeformableVolumeMeshNoVoxels()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"><code class="docutils literal notranslate"><span class="pre">createSoftBodyMeshNoVoxels()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt30createDeformableVolumeFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal"><code class="docutils literal notranslate"><span class="pre">createDeformableVolumeFromMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt22createSoftBodyFromMeshEP22PxDeformableVolumeMeshRK11PxTransformRK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal"><code class="docutils literal notranslate"><span class="pre">createSoftBodyFromMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt25createDeformableVolumeBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">createDeformableVolumeBox()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK26PxDeformableVolumeMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">createSoftBodyBox()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt31allocateAndInitializeHostMirrorER18PxDeformableVolumeP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4"><code class="docutils literal notranslate"><span class="pre">allocateAndInitializeHostMirror()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt25relaxDeformableVolumeMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"><code class="docutils literal notranslate"><span class="pre">relaxDeformableVolumeMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"><code class="docutils literal notranslate"><span class="pre">relaxSoftBodyMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxDeformableVolumeExt31convertCollisionToSimulationTetER18PxDeformableVolume5PxU32RK6PxVec4R5PxU32R6PxVec4"><code class="docutils literal notranslate"><span class="pre">convertCollisionToSimulationTet()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

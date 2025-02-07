@@ -1,0 +1,774 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxMetaDataFlag &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=eb367b29" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=7abaf8bc" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=8ca671aa"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxMetaDataFlag';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.5.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxMidphaseDesc" href="classPxMidphaseDesc.html" />
+    <link rel="prev" title="PxMetaDataEntry" href="structPxMetaDataEntry.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 07, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxMetaDataFlag</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxmetadataflag">
+<h1>PxMetaDataFlag<a class="headerlink" href="#pxmetadataflag" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxMetaDataFlags.h.html#pxmetadataflags-8h"><span class="std std-ref">include/common/PxMetaDataFlags.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxMetaDataFlag">
+<span id="_CPPv314PxMetaDataFlag"></span><span id="_CPPv214PxMetaDataFlag"></span><span id="PxMetaDataFlag"></span><span class="target" id="structpxmetadataflag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMetaDataFlag</span></span></span><a class="headerlink" href="#_CPPv414PxMetaDataFlag" title="Link to this definition">#</a><br /></dt>
+<dd><p>Flags used to configure binary meta data entries, typically set through PX_DEF_BIN_METADATA defines. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxMetaDataEntry.html#structpxmetadataentry"><span class="std std-ref">PxMetaDataEntry</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4EnumE">
+<span id="_CPPv3N14PxMetaDataFlag4EnumE"></span><span id="_CPPv2N14PxMetaDataFlag4EnumE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654c"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4EnumE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum6eCLASSE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum6eCLASSE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum6eCLASSE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654cad9aa10c12e5694495894ce759636071a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCLASS</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum6eCLASSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares a class </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum8eVIRTUALE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum8eVIRTUALE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum8eVIRTUALE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca5af5b1fe2c903eef9584a6d6d24f9a47"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eVIRTUAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum8eVIRTUALE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares class to be virtual </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum8eTYPEDEFE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum8eTYPEDEFE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum8eTYPEDEFE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca01cb08bb8663787a10fdc899fdcc5d41"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTYPEDEF</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum8eTYPEDEFE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares a typedef </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum4ePTRE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum4ePTRE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum4ePTRE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca1d241c59c1e26a777c46ff7688f8f1dd"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePTR</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum4ePTRE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares a pointer </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum7eHANDLEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum7eHANDLEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum7eHANDLEE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654cab9d90e378cc25d7bf6fee1c0c04df432"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHANDLE</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum7eHANDLEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares a handle </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_DATAE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum11eEXTRA_DATAE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum11eEXTRA_DATAE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654caed572f08dc7c6adff8f2b229a7354cce"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_DATA</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_DATAE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares extra data exported with <a class="reference internal" href="classPxSerializer.html#classpxserializer_1ac3531178852e0c6e43519aa254ceb823"><span class="std std-ref">PxSerializer::exportExtraData</span></a></p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_ITEME">
+<span id="_CPPv3N14PxMetaDataFlag4Enum11eEXTRA_ITEME"></span><span id="_CPPv2N14PxMetaDataFlag4Enum11eEXTRA_ITEME"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca798b67b9b884d9937c5e020f227ac72d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_ITEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_ITEME" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies one element of extra data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca0480301f6d90a4bfdafa082c2be71b14"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_ITEMS</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies an array of extra data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_NAMEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum11eEXTRA_NAMEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum11eEXTRA_NAMEE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca0d903640b00c4f61682c59c792108e96"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_NAME</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_NAMEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies a name of extra data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum6eUNIONE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum6eUNIONE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum6eUNIONE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca1e6f153be653b33f7abfc2e91bd473cc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUNION</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum6eUNIONE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares a union </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum8ePADDINGE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum8ePADDINGE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum8ePADDINGE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca9b31caa710193a63e3c4f6952379410e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePADDING</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum8ePADDINGE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares explicit padding data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum10eALIGNMENTE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum10eALIGNMENTE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum10eALIGNMENTE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca50e48879be65410602056c6c386e798f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eALIGNMENT</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum10eALIGNMENTE" title="Link to this definition">#</a><br /></dt>
+<dd><p>declares aligned data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca1c334cca9e1cb29487a78e17c9d4a257"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOUNT_MASK_MSB</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies that the count value’s most significant bit needs to be masked out </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca2e8ace3233bfe1a331ef8b2fe196e022"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOUNT_SKIP_IF_ONE</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies that the count value is treated as zero for a variable value of one - special case for single triangle meshes </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_FLIPE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum13eCONTROL_FLIPE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum13eCONTROL_FLIPE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca8d15e5a39bfb17a0b856e16b4600e3b5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTROL_FLIP</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_FLIPE" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies that the control value is the negate of the variable value </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_MASKE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum13eCONTROL_MASKE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum13eCONTROL_MASKE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654ca361e04e4149dd27200c276f908a4106b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTROL_MASK</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_MASKE" title="Link to this definition">#</a><br /></dt>
+<dd><p>specifies that the control value is masked - mask bits are assumed to be within eCONTROL_MASK_RANGE </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654cabec61fbbaa42b2bf3ad7a397455f2f87"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTROL_MASK_RANGE</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>mask range allowed for eCONTROL_MASK </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum12eFORCE_DWORDE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum12eFORCE_DWORDE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum12eFORCE_DWORDE"></span><span class="target" id="structpxmetadataflag_1a5125f2eba9d78234a2bc7a00b3c3654cadc74b55b18447acfcf32f0d3ca7a4463"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFORCE_DWORD</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum12eFORCE_DWORDE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxMetaDataEntry.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxMetaDataEntry</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxMidphaseDesc.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxMidphaseDesc</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv414PxMetaDataFlag"><code class="docutils literal notranslate"><span class="pre">PxMetaDataFlag</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4EnumE"><code class="docutils literal notranslate"><span class="pre">Enum</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum6eCLASSE"><code class="docutils literal notranslate"><span class="pre">eCLASS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum8eVIRTUALE"><code class="docutils literal notranslate"><span class="pre">eVIRTUAL</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum8eTYPEDEFE"><code class="docutils literal notranslate"><span class="pre">eTYPEDEF</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum4ePTRE"><code class="docutils literal notranslate"><span class="pre">ePTR</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum7eHANDLEE"><code class="docutils literal notranslate"><span class="pre">eHANDLE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_DATAE"><code class="docutils literal notranslate"><span class="pre">eEXTRA_DATA</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_ITEME"><code class="docutils literal notranslate"><span class="pre">eEXTRA_ITEM</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE"><code class="docutils literal notranslate"><span class="pre">eEXTRA_ITEMS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_NAMEE"><code class="docutils literal notranslate"><span class="pre">eEXTRA_NAME</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum6eUNIONE"><code class="docutils literal notranslate"><span class="pre">eUNION</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum8ePADDINGE"><code class="docutils literal notranslate"><span class="pre">ePADDING</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum10eALIGNMENTE"><code class="docutils literal notranslate"><span class="pre">eALIGNMENT</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE"><code class="docutils literal notranslate"><span class="pre">eCOUNT_MASK_MSB</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE"><code class="docutils literal notranslate"><span class="pre">eCOUNT_SKIP_IF_ONE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_FLIPE"><code class="docutils literal notranslate"><span class="pre">eCONTROL_FLIP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_MASKE"><code class="docutils literal notranslate"><span class="pre">eCONTROL_MASK</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE"><code class="docutils literal notranslate"><span class="pre">eCONTROL_MASK_RANGE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N14PxMetaDataFlag4Enum12eFORCE_DWORDE"><code class="docutils literal notranslate"><span class="pre">eFORCE_DWORD</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Feb 07, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
