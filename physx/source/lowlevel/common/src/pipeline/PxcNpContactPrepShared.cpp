@@ -64,10 +64,10 @@ void combineMaterials(const PxsMaterialManager* materialManager, PxU16 origMatIn
 
 struct StridePatch
 {
-	PxU8 startIndex;
-	PxU8 endIndex;
+	PxU16 startIndex;
+	PxU16 endIndex;
+	PxU16 totalCount;
 	PxU8 nextIndex;
-	PxU8 totalCount;
 	bool isRoot;
 };
 
@@ -116,13 +116,13 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 			{
 				StridePatch& patch = stridePatches[numStrideHeaders-1];
 
-				patch.startIndex = PxU8(strideStart);
-				patch.endIndex = PxU8(a);
+				patch.startIndex = PxU16(strideStart);
+				patch.endIndex = PxU16(a);
 				patch.nextIndex = 0xFF;
-				patch.totalCount = PxU8(a - strideStart);
+				patch.totalCount = PxU16(a - strideStart);
 				patch.isRoot = root;
 				if(parentRootPatch)
-					parentRootPatch->totalCount += PxU8(a - strideStart);
+					parentRootPatch->totalCount += PxU16(a - strideStart);
 
 				root = true;
 				parentRootPatch = NULL;
@@ -163,15 +163,16 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	}
 	{
 		StridePatch& patch = stridePatches[numStrideHeaders-1];
-		patch.startIndex = PxU8(strideStart);
-		patch.endIndex = PxU8(numContactPoints);
+		patch.startIndex = PxU16(strideStart);
+		patch.endIndex = PxU16(numContactPoints);
 		patch.nextIndex = 0xFF;
-		patch.totalCount = PxU8(numContactPoints - strideStart);
+		patch.totalCount = PxU16(numContactPoints - strideStart);
 		patch.isRoot = root;
 		if(parentRootPatch)
-			parentRootPatch->totalCount += PxU8(numContactPoints - strideStart);
+			parentRootPatch->totalCount += PxU16(numContactPoints - strideStart);
 	}
 
+	PX_ASSERT(totalUniquePatches <= PX_MAX_U8);
 	numPatches = PxU8(totalUniquePatches);
 
 	//Calculate the number of patches/points required
