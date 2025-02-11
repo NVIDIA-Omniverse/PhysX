@@ -1,6 +1,6 @@
 # NVIDIA PhysX
 
-Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@ This repository contains source releases of the PhysX, Flow, and Blast SDKs used
 
 ## Documentation
 
-The user guide and API documentation are available on [GitHub Pages](https://nvidia-omniverse.github.io/PhysX). Please create an [Issue](https://github.com/NVIDIA-Omniverse/PhysX/issues/) if you find a documentation issue.
+The user guide and API documentation are available on our [GitHub Pages](https://nvidia-omniverse.github.io/PhysX). Please create an [Issue](https://github.com/NVIDIA-Omniverse/PhysX/issues/) if you find a documentation issue.
 
 ## Instructions
 
