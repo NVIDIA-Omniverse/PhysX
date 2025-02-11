@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,6 +39,21 @@ namespace physx
 #endif
 
 	/**
+	\brief Base class for all report callbacks.
+
+	\see PxRegularReportCallback PxLocalStorageReportCallback PxExternalStorageReportCallback PxDynamicArrayReportCallback
+	*/
+	class PxReportCallbackBase
+	{
+		public:
+						PxReportCallbackBase(PxU32 capacity=0) : mCapacity(capacity), mSize(0)	{}
+		virtual			~PxReportCallbackBase()													{}
+		
+				PxU32	mCapacity;	// Capacity of mBuffer. If mBuffer is NULL, this controls how many items are reported to users at the same time (with a limit of 256).
+				PxU32	mSize;		// Current number of items in the buffer. This is entirely managed by the system.
+	};
+
+	/**
 	\brief Base class for callback reporting an unknown number of items to users.
 
 	This can be used as-is and customized by users, or several pre-designed callbacks can be used instead (see below).
@@ -53,16 +68,14 @@ namespace physx
 	\see PxRegularReportCallback PxLocalStorageReportCallback PxExternalStorageReportCallback PxDynamicArrayReportCallback
 	*/
 	template<class T>
-	class PxReportCallback
+	class PxReportCallback : public PxReportCallbackBase
 	{
 		public:
-						PxReportCallback(T* buffer=NULL, PxU32 capacity=0) : mBuffer(buffer), mCapacity(capacity), mSize(0)	{}
-		virtual			~PxReportCallback()																					{}
+						PxReportCallback(T* buffer=NULL, PxU32 capacity=0) : PxReportCallbackBase(capacity), mBuffer(buffer)	{}
+		virtual			~PxReportCallback()																						{}
 		
 				T*		mBuffer;	// Destination buffer for writing results. if NULL, the system will use its internal buffer and set that pointer as it sees fit.
 									// Otherwise users can set it to where they want the results to be written.	
-				PxU32	mCapacity;	// Capacity of mBuffer. If mBuffer is NULL, this controls how many items are reported to users at the same time (with a limit of 256).
-				PxU32	mSize;		//!< Current number of items in the buffer. This is entirely managed by the system.
 
 		/**
 		\brief Reports query results to users.

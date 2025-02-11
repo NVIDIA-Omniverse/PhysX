@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -165,7 +165,40 @@ public:
 
 	\see PxTriangleMeshGeometry getTriangle() PxReportCallback PxGeometryQueryFlags PxMeshMeshQueryFlags
 	*/
-	PX_PHYSX_COMMON_API static bool findOverlapTriangleMesh(PxReportCallback<PxGeomIndexPair>& callback,
+	PX_DEPRECATED	PX_PHYSX_COMMON_API static bool findOverlapTriangleMesh(PxReportCallback<PxGeomIndexPair>& callback,
+															const PxTriangleMeshGeometry& meshGeom0, const PxTransform& meshPose0,
+															const PxTriangleMeshGeometry& meshGeom1, const PxTransform& meshPose1,
+															PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT,
+															PxMeshMeshQueryFlags meshMeshFlags = PxMeshMeshQueryFlag::eDEFAULT,
+															float tolerance = 0.0f);
+
+	/**
+	\brief Mesh-vs-mesh overlap test
+
+	A specialized findOverlapTriangleMesh function for mesh-vs-mesh. The other findOverlapTriangleMesh() function above cannot be used
+	directly since it only returns a single set of triangle indices that belongs to one of the meshes only. This function returns pairs
+	of triangle indices that belong to both the first & second input meshes.
+
+	Returned triangle indices can be used with #getTriangle() to retrieve the triangle properties.
+
+	If a non-zero tolerance is used, the function performs distance queries (rather than pure overlaps) between involved triangles,
+	and returned data also includes the distance between reported triangles.
+
+	\note	This is only implemented for the PxMeshMidPhase::eBVH34 data structure.
+
+	\param[in] callback			The callback object used to report results
+	\param[in] meshGeom0		First triangle mesh geometry
+	\param[in] meshPose0		Pose of first triangle mesh geometry
+	\param[in] meshGeom1		Second triangle mesh geometry
+	\param[in] meshPose1		Pose of second triangle mesh geometry
+	\param[in] queryFlags		Optional flags controlling the query.
+	\param[in] meshMeshFlags	Optional flags controlling the query.
+	\param[in] tolerance		Optional tolerance distance
+	\return true if an overlap has been detected, false if the meshes are disjoint
+
+	\see PxTriangleMeshGeometry getTriangle() PxReportCallback PxGeometryQueryFlags PxMeshMeshQueryFlags
+	*/
+	PX_PHYSX_COMMON_API static bool findOverlapTriangleMesh(PxReportCallback<PxGeomIndexClosePair>& callback,
 															const PxTriangleMeshGeometry& meshGeom0, const PxTransform& meshPose0,
 															const PxTriangleMeshGeometry& meshGeom1, const PxTransform& meshPose1,
 															PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT,

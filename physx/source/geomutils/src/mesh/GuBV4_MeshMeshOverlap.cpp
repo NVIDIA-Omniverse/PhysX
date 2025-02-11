@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -127,7 +127,7 @@ using namespace aos;
 	}													\
 }
 
-static PxU32 CoplanarTriTri(const PxVec3& n, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, const PxVec3& u0, const PxVec3& u1, const PxVec3& u2)
+static PxU32 coplanarTriTri(const PxVec3& n, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, const PxVec3& u0, const PxVec3& u1, const PxVec3& u2)
 {
 	int i0,i1;
 	{
@@ -207,7 +207,7 @@ static PxU32 CoplanarTriTri(const PxVec3& n, const PxVec3& v0, const PxVec3& v1,
 	else																				\
 	{																					\
 		/* triangles are coplanar */													\
-		return ignoreCoplanar ? 0 : CoplanarTriTri(N1, V0, V1, V2, U0, U1, U2);			\
+		return ignoreCoplanar ? 0 : coplanarTriTri(N1, V0, V1, V2, U0, U1, U2);			\
 	}																					\
 }
 //#endif
@@ -266,7 +266,7 @@ namespace
 }
 
 //#ifndef USE_GU_TRI_TRI_OVERLAP_FUNCTION
-static PxU32 TriTriOverlap(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
+static PxU32 triTriOverlap(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
 {
 	const PxVec3& V0 = data0.mV0;
 	const PxVec3& V1 = data0.mV1;
@@ -511,7 +511,7 @@ static PX_FORCE_INLINE bool testEdges(	const TriangleData& tri0, const TriangleD
 	return true;
 }
 
-static bool TriTriSAT(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
+static bool triTriSAT(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
 {
 	{
 		const PxReal data1_v0_dot_N0 = data1.mV0.dot(data0.mNormal);
@@ -526,7 +526,7 @@ static bool TriTriSAT(const TriangleData& data0, const TriangleData& data1, bool
 
 		if(PxAbs(p1ToA) < tolerance && PxAbs(p1ToB) < tolerance && PxAbs(p1ToC) < tolerance)
 		{
-			return ignoreCoplanar ? false : CoplanarTriTri(data0.mNormal,	data0.mV0, data0.mV1, data0.mV2,
+			return ignoreCoplanar ? false : coplanarTriTri(data0.mNormal,	data0.mV0, data0.mV1, data0.mV2,
 																			data1.mV0, data1.mV1, data1.mV2)!=0;
 		}
 
@@ -591,7 +591,7 @@ static bool TriTriSAT(const TriangleData& data0, const TriangleData& data1, bool
 	return true;
 }
 
-static bool TriTriSAT_SIMD(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
+static bool triTriSAT_SIMD(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
 {
 	const Vec4V tri1_xs = V4LoadA(&data1.mXXX.x);
 	const Vec4V tri1_ys = V4LoadA(&data1.mYYY.x);
@@ -609,7 +609,7 @@ static bool TriTriSAT_SIMD(const TriangleData& data0, const TriangleData& data1,
 		const Vec4V p1ToABC = V4Add(tri1_dot_N0, V4Load(data0.mD));
 		if(V4AllGrtrOrEq3(V4Load(1e-8f), V4Abs(p1ToABC)))
 		{
-			return ignoreCoplanar ? false : CoplanarTriTri(data0.mNormal,	data0.mV0, data0.mV1, data0.mV2,
+			return ignoreCoplanar ? false : coplanarTriTri(data0.mNormal,	data0.mV0, data0.mV1, data0.mV2,
 																			data1.mV0, data1.mV1, data1.mV2)!=0;
 		}
 
@@ -720,6 +720,37 @@ static bool accumulateResults(PxReportCallback<PxGeomIndexPair>& callback, PxGeo
 	return true;
 }
 
+static bool accumulateResults(PxReportCallback<PxGeomIndexPair>& callback, PxGeomIndexPair*& dst, PxU32& capacity, PxU32& currentSize, PxU32 primIndex0, PxU32 primIndex1, float /*distance*/, bool mustFlip, bool& abort)
+{
+	return accumulateResults(callback, dst, capacity, currentSize, primIndex0, primIndex1, mustFlip, abort);
+}
+
+static bool accumulateResults(PxReportCallback<PxGeomIndexClosePair>& callback, PxGeomIndexClosePair*& dst, PxU32& capacity, PxU32& currentSize, PxU32 primIndex0, PxU32 primIndex1, float distance, bool mustFlip, bool& abort)
+{
+	dst[currentSize].id0 = mustFlip ? primIndex1 : primIndex0;
+	dst[currentSize].id1 = mustFlip ? primIndex0 : primIndex1;
+	dst[currentSize].distance = distance;
+	currentSize++;
+	if(currentSize==capacity)
+	{
+		callback.mSize = 0;
+		if(!callback.flushResults(currentSize, dst))
+		{
+			abort = true;
+			return false;
+		}
+		dst = callback.mBuffer;
+		capacity = callback.mCapacity;
+		currentSize = callback.mSize;
+	}
+	return true;
+}
+
+static bool accumulateResults(PxReportCallback<PxGeomIndexClosePair>& callback, PxGeomIndexClosePair*& dst, PxU32& capacity, PxU32& currentSize, PxU32 primIndex0, PxU32 primIndex1, bool mustFlip, bool& abort)
+{
+	return accumulateResults(callback, dst, capacity, currentSize, primIndex0, primIndex1, 0.0f, mustFlip, abort);
+}
+
 namespace
 {
 	struct TriVsTriParams;
@@ -739,7 +770,7 @@ namespace
 
 	struct TriVsTriParams
 	{
-		PX_FORCE_INLINE	TriVsTriParams(trisVsTrisFunction leafFunc, PxReportCallback<PxGeomIndexPair>& callback, float tolerance, bool mustFlip, bool ignoreCoplanar) :
+		PX_FORCE_INLINE	TriVsTriParams(trisVsTrisFunction leafFunc, PxReportCallbackBase& callback, float tolerance, bool mustFlip, bool ignoreCoplanar) :
 			mLeafFunction	(leafFunc),
 			mCallback		(callback),
 			mTolerance		(tolerance),
@@ -748,17 +779,17 @@ namespace
 		{
 		}
 
-		const trisVsTrisFunction			mLeafFunction;
-		PxReportCallback<PxGeomIndexPair>&	mCallback;
-		const float							mTolerance;
-		const bool							mMustFlip;
-		const bool							mIgnoreCoplanar;
+		const trisVsTrisFunction	mLeafFunction;
+		PxReportCallbackBase&		mCallback;
+		const float					mTolerance;
+		const bool					mMustFlip;
+		const bool					mIgnoreCoplanar;
 
 		PX_NOCOPY(TriVsTriParams)
 	};
 }
 
-template<const TriVsTriImpl impl>
+template<const TriVsTriImpl impl, class T>
 static bool doTriVsTri_Overlap(	const TriVsTriParams& params,
 								PxU32 nb0, PxU32 startPrim0, const TriangleData* data0,
 								PxU32 nb1, PxU32 startPrim1, const TriangleData* data1,
@@ -767,8 +798,8 @@ static bool doTriVsTri_Overlap(	const TriVsTriParams& params,
 	PX_ASSERT(nb0<=16);
 	PX_ASSERT(nb1<=16);
 
-	PxReportCallback<PxGeomIndexPair>& callback = params.mCallback;
-	PxGeomIndexPair* dst = callback.mBuffer;
+	PxReportCallback<T>& callback = static_cast<PxReportCallback<T>&>(params.mCallback);
+	T* dst = callback.mBuffer;
 	PxU32 capacity = callback.mCapacity;
 	PxU32 currentSize = callback.mSize;
 	PX_ASSERT(currentSize<capacity);
@@ -785,13 +816,13 @@ static bool doTriVsTri_Overlap(	const TriVsTriParams& params,
 		{
 			bool ret;
 			if(impl==TRI_TRI_MOLLER_REGULAR)
-				ret = TriTriOverlap(data0[i], data1[j], ignoreCoplanar);
+				ret = triTriOverlap(data0[i], data1[j], ignoreCoplanar);
 			else if(impl==TRI_TRI_MOLLER_NEW)
 				ret = intersectTriangleTriangle(data0[i].mV0, data0[i].mV1, data0[i].mV2, data1[j].mV0, data1[j].mV1, data1[j].mV2, ignoreCoplanar);
 			else if(impl==TRI_TRI_NEW_SAT)
-				ret = TriTriSAT(data0[i], data1[j], ignoreCoplanar);
+				ret = triTriSAT(data0[i], data1[j], ignoreCoplanar);
 			else if(impl==TRI_TRI_NEW_SAT_SIMD)
-				ret = TriTriSAT_SIMD(data0[i], data1[j], ignoreCoplanar);
+				ret = triTriSAT_SIMD(data0[i], data1[j], ignoreCoplanar);
 			else
 				ret = false;
 
@@ -808,6 +839,7 @@ static bool doTriVsTri_Overlap(	const TriVsTriParams& params,
 	return foundHit;
 }
 
+template<class T>
 static bool doTriVsTri_Distance(const TriVsTriParams& params,
 								PxU32 nb0, PxU32 startPrim0, const TriangleData* data0,
 								PxU32 nb1, PxU32 startPrim1, const TriangleData* data1,
@@ -816,8 +848,8 @@ static bool doTriVsTri_Distance(const TriVsTriParams& params,
 	PX_ASSERT(nb0<=16);
 	PX_ASSERT(nb1<=16);
 
-	PxReportCallback<PxGeomIndexPair>& callback = params.mCallback;
-	PxGeomIndexPair* dst = callback.mBuffer;
+	PxReportCallback<T>& callback = static_cast<PxReportCallback<T>&>(params.mCallback);
+	T* dst = callback.mBuffer;
 	PxU32 capacity = callback.mCapacity;
 	PxU32 currentSize = callback.mSize;
 	PX_ASSERT(currentSize<capacity);
@@ -862,7 +894,7 @@ static bool doTriVsTri_Distance(const TriVsTriParams& params,
 					const Vec4V p1ToABC = V4Add(tri1_dot_N0, V4Load(data0->mD));
 					if(V4AllGrtrOrEq3(V4Load(1e-8f), V4Abs(p1ToABC)))
 					{
-						skip = CoplanarTriTri(data0->mNormal,	data0->mV0, data0->mV1, data0->mV2,
+						skip = coplanarTriTri(data0->mNormal,	data0->mV0, data0->mV1, data0->mV2,
 																data1->mV0, data1->mV1, data1->mV2)!=0;
 					}
 				}
@@ -870,8 +902,7 @@ static bool doTriVsTri_Distance(const TriVsTriParams& params,
 				if(!skip)
 				{
 					foundHit = true;
-					// PT: TODO: this is not enough here
-					if(!accumulateResults(callback, dst, capacity, currentSize, startPrim0 + i, startPrim1 + j, mustFlip, abort))
+					if(!accumulateResults(callback, dst, capacity, currentSize, startPrim0 + i, startPrim1 + j, PxSqrt(d), mustFlip, abort))
 						return true;
 				}
 			}
@@ -959,7 +990,7 @@ namespace
 {
 struct MeshMeshParams : OBBTestParams
 {
-	PX_FORCE_INLINE	MeshMeshParams(	trisVsTrisFunction leafFunc, PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, const BV4Tree& tree,
+	PX_FORCE_INLINE	MeshMeshParams(	trisVsTrisFunction leafFunc, PxReportCallbackBase& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, const BV4Tree& tree,
 									bool mustFlip, bool ignoreCoplanar, float tolerance) :
 		mTriVsTriParams		(leafFunc, callback, tolerance, mustFlip, ignoreCoplanar),
 		mMesh0				(mesh0),
@@ -1074,27 +1105,28 @@ static void computeBoundsAroundVertices(Vec4V& centerV, Vec4V& extentsV, PxU32 n
 	extentsV = V4Scale(V4Sub(maxV, minV), HalfV);
 }
 
-static PX_NOINLINE bool abortQuery(PxReportCallback<PxGeomIndexPair>& callback, bool& abort)
+static PX_NOINLINE bool abortQuery(PxReportCallbackBase& callback, bool& abort)
 {
 	abort = true;
 	callback.mSize = 0;
 	return true;
 }
 
+template<class T>
 static PX_FORCE_INLINE trisVsTrisFunction getLeafFunc(PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
 {
 	if(tolerance!=0.0f)
-		return doTriVsTri_Distance;
+		return doTriVsTri_Distance<T>;
 	if(meshMeshFlags & PxMeshMeshQueryFlag::eRESERVED1)
-		return doTriVsTri_Overlap<TRI_TRI_MOLLER_NEW>;
+		return doTriVsTri_Overlap<TRI_TRI_MOLLER_NEW, T>;
 	if(meshMeshFlags & PxMeshMeshQueryFlag::eRESERVED2)
-		return doTriVsTri_Overlap<TRI_TRI_NEW_SAT>;
+		return doTriVsTri_Overlap<TRI_TRI_NEW_SAT, T>;
 	if(meshMeshFlags & PxMeshMeshQueryFlag::eRESERVED3)
-		return doTriVsTri_Overlap<TRI_TRI_NEW_SAT_SIMD>;
-	return doTriVsTri_Overlap<TRI_TRI_MOLLER_REGULAR>;
+		return doTriVsTri_Overlap<TRI_TRI_NEW_SAT_SIMD, T>;
+	return doTriVsTri_Overlap<TRI_TRI_MOLLER_REGULAR, T>;
 }
 
-static PX_NOINLINE bool doSmallMeshVsSmallMesh(	PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1,
+static PX_NOINLINE bool doSmallMeshVsSmallMesh(	PxReportCallbackBase& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1,
 												bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
 	const PxU32 nbTris0 = mesh0->getNbTriangles();
@@ -1114,7 +1146,7 @@ static PX_NOINLINE bool doSmallMeshVsSmallMesh(	PxReportCallback<PxGeomIndexPair
 }
 
 template<class PackedNodeT, class SwizzledNodeT>
-static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallback<PxGeomIndexPair>& callback, MeshMeshParams& params,
+static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallbackBase& callback, MeshMeshParams& params,
 											const PackedNodeT* PX_RESTRICT node, const SourceMesh* mesh0, const SourceMesh* mesh1, bool& _abort)
 {
 	const PxU32 nbTris = mesh0->getNbTriangles();
@@ -1167,7 +1199,7 @@ static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallback<PxGeomIndexPair>& ca
 }
 
 template<class PackedNodeT0, class PackedNodeT1, class SwizzledNodeT0, class SwizzledNodeT1>
-static bool BV4_OverlapMeshVsMeshT(	PxReportCallback<PxGeomIndexPair>& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+static bool BV4_OverlapMeshVsMeshT(	PxReportCallbackBase& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
 									bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
 	const SourceMesh* mesh0 = static_cast<const SourceMesh*>(tree0.mMeshInterface);
@@ -1433,7 +1465,7 @@ static bool doLeafVsLeaf_Scaled(const TriVsTriParams& params, const PxU32 prim0,
 	return (params.mLeafFunction)(params, nb0, startPrim0, data0, nb1, startPrim1, data1, abort);
 }
 
-static PX_NOINLINE bool doSmallMeshVsSmallMesh_Scaled(	PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1,
+static PX_NOINLINE bool doSmallMeshVsSmallMesh_Scaled(	PxReportCallbackBase& callback, const SourceMesh* mesh0, const SourceMesh* mesh1,
 														const PxMat34& absPose0, const PxMat34& absPose1,
 														bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
@@ -1465,7 +1497,7 @@ static PxMat34 getAbsPose(const PxTransform& meshPose, const PxMeshScale& meshSc
 
 struct MeshMeshParams_Scaled : MeshMeshParams
 {
-	PX_FORCE_INLINE	MeshMeshParams_Scaled(trisVsTrisFunction leafFunc, PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, 
+	PX_FORCE_INLINE	MeshMeshParams_Scaled(trisVsTrisFunction leafFunc, PxReportCallbackBase& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, 
 		const PxTransform& meshPose0, const PxTransform& meshPose1,
 		const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
 		const PxMat34& absPose0, const PxMat34& absPose1,
@@ -1538,7 +1570,7 @@ static void computeVertexSpaceOBB(Box& dst, const PxVec3& center, const PxVec3& 
 }
 
 template<class PackedNodeT, class SwizzledNodeT>
-static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallback<PxGeomIndexPair>& callback, MeshMeshParams_Scaled& params,
+static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallbackBase& callback, MeshMeshParams_Scaled& params,
 													const PackedNodeT* PX_RESTRICT node, const SourceMesh* mesh0, const SourceMesh* mesh1, bool& _abort)
 {
 	const PxU32 nbTris = mesh0->getNbTriangles();
@@ -1611,7 +1643,7 @@ static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallback<PxGeomIndexPa
 }
 
 template<class PackedNodeT0, class PackedNodeT1, class SwizzledNodeT0, class SwizzledNodeT1>
-static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallbackBase& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
 	const PxTransform& meshPose0, const PxTransform& meshPose1,
 	const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
 	const PxMat34& absPose0, const PxMat34& absPose1,
@@ -1799,13 +1831,14 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 // UPDATE: and now we also want distance/tolerance queries so multiply this by 2. This is getting too complicated.
 // We were at 48 test cases, *2 for scaling, *2 for distance queries = 192 cases to test?
 
-bool BV4_OverlapMeshVsMesh(	PxReportCallback<PxGeomIndexPair>& callback,
-							const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
-							const PxTransform& meshPose0, const PxTransform& meshPose1,
-							const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
-							PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
+template<class T>
+static bool BV4_OverlapMeshVsMeshT(	PxReportCallback<T>& callback,
+									const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+									const PxTransform& meshPose0, const PxTransform& meshPose1,
+									const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
+									PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
 {
-	PxGeomIndexPair stackBuffer[256];
+	T stackBuffer[256];
 	bool mustResetBuffer;
 	if(callback.mBuffer)
 	{
@@ -1825,7 +1858,7 @@ bool BV4_OverlapMeshVsMesh(	PxReportCallback<PxGeomIndexPair>& callback,
 	}
 
 	const bool ignoreCoplanar = meshMeshFlags & PxMeshMeshQueryFlag::eDISCARD_COPLANAR;
-	const trisVsTrisFunction leafFunc = getLeafFunc(meshMeshFlags, tolerance);
+	const trisVsTrisFunction leafFunc = getLeafFunc<T>(meshMeshFlags, tolerance);
 
 	bool status;
 	bool abort = false;
@@ -1903,3 +1936,20 @@ bool BV4_OverlapMeshVsMesh(	PxReportCallback<PxGeomIndexPair>& callback,
 	return status;
 }
 
+bool BV4_OverlapMeshVsMesh(	PxReportCallback<PxGeomIndexPair>& callback,
+							const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+							const PxTransform& meshPose0, const PxTransform& meshPose1,
+							const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
+							PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
+{
+	return BV4_OverlapMeshVsMeshT<PxGeomIndexPair>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, meshMeshFlags, tolerance);
+}
+
+bool BV4_OverlapMeshVsMeshDistance(	PxReportCallback<PxGeomIndexClosePair>& callback,
+									const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+									const PxTransform& meshPose0, const PxTransform& meshPose1,
+									const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
+									PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
+{
+	return BV4_OverlapMeshVsMeshT<PxGeomIndexClosePair>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, meshMeshFlags, tolerance);
+}
