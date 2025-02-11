@@ -1,3 +1,25 @@
+# v5.5.1-106.5
+
+## Collision
+
+### Fixed
+
+* A bug when colliding a static rigid body with PxConvexCoreGeometry against PxDeformableVolume led to a crash. 
+* A hanging issue in PxConvexCoreGeometry collision.
+
+## Joints
+
+### Fixed
+
+* When running on GPU, PxConstraint::getForce() might not have returned the correct forces if a scene contained both, joints that did connect to articulation links and joints that did not.
+
+
+## Pvd
+
+### Changed
+
+* Fixed a potential bug in recording of Direct GPU API set operations followed by a removal of either a rigiddynamic or an articulation.
+
 # v5.5.0-106.4
 
 ## Supported Platforms

@@ -81,9 +81,9 @@ public:
 	\return True if the current settings are valid
 
 	\note A valid box has a positive extent in each direction (halfExtents.x > 0, halfExtents.y > 0, halfExtents.z > 0). 
-	It is illegal to call PxRigidActor::createShape and PxPhysics::createShape with a box that has zero extent in any direction.
+	It is illegal to call PxPhysics::createShape with a box that has zero extent in any direction.
 
-	\see PxRigidActor::createShape, PxPhysics::createShape
+	\see PxPhysics::createShape
 	*/
 	PX_INLINE bool isValid() const;
 

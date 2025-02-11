@@ -1049,17 +1049,17 @@ namespace physx
 		virtual		void					computeJointAcceleration(PxArticulationCache& cache) const = 0;
 
 		/**
-		\brief Computes the joint forces for the given articulation state and joint accelerations, not considering gravity.
+		\brief Computes the joint forces for the given articulation pose and joint accelerations, not considering gravity and velocity.
 
-		- Inputs:	Joint accelerations (in cache) and articulation state (joint positions and velocities (in cache), and base transform and spatial velocity).
+		- Inputs:	Joint accelerations (in cache).
 		- Outputs:	Joint forces (in cache).
 
-		- The computation includes Coriolis terms. However, joint drives and potential damping terms are not considered in the computation
+		- Gravity, Coriolis effects, joint drives and potential damping terms are not considered in the computation
 		(for example, linear link damping or joint friction).
-		- Prior to the computation, update/set the base spatial velocity with PxArticulationCache::rootLinkData and applyCache().
+		- To compute the joint force for a different pose, the joint positions and root transform first need to be applied with applyCache() as this function ignores any values set to joint positions and root transform in the cache
 		- commonInit() must be called before the computation, and after setting the articulation pose via applyCache().
 
-		\param[in,out] cache In: PxArticulationCache::jointAcceleration and PxArticulationCache::jointVelocity; Out: PxArticulationCache::jointForce.
+		\param[in,out] cache In: PxArticulationCache::jointAcceleration; Out: PxArticulationCache::jointForce.
 
 		\note This call may only be made on articulations that are in a scene, and may not be made during simulation.
 

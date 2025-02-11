@@ -770,7 +770,7 @@ PxU32 NpPhysics::getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial** use
 
 IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpDeformableSurfaceMaterial, mMasterDeformableSurfaceMaterialManager, "PxPhysics::createDeformableSurfaceMaterial: limit of 64K materials reached.")
 #else
-PxDeformableSurfaceMaterial* NpPhysics::createDeformableSurfaceMaterial(PxReal, PxReal, PxReal, PxReal, PxReal) { return NULL; }
+PxDeformableSurfaceMaterial* NpPhysics::createDeformableSurfaceMaterial(PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal) { return NULL; }
 PxU32 NpPhysics::getNbDeformableSurfaceMaterials() const { return 0; }
 PxU32 NpPhysics::getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial**, PxU32, PxU32) const { return 0; }
 #endif
@@ -828,33 +828,6 @@ PxDeformableVolumeMaterial* NpPhysics::createDeformableVolumeMaterial(PxReal, Px
 	PxPBDMaterial* NpPhysics::createPBDMaterial(PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal)	{ return NULL;	}
 	PxU32 NpPhysics::getNbPBDMaterials()																						const	{ return 0;		}
 	PxU32 NpPhysics::getPBDMaterials(PxPBDMaterial**, PxU32, PxU32)																const	{ return 0;		}
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-#if PX_SUPPORT_GPU_PHYSX
-	/*PxDeformableSurfaceMaterial* NpPhysics::createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness, PxReal bendingStiffness, PxReal damping)
-	{
-		PxDeformableSurfaceMaterial* m = NpFactory::getInstance().createDeformableSurfaceMaterial(youngs, poissons, dynamicFriction, thickness, bendingStiffness, damping);
-		return addMaterial(static_cast<NpDeformableSurfaceMaterial*>(m));
-	}*/
-
-	/*PxU32 NpPhysics::getNbDeformableSurfaceMaterials() const
-	{
-		PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
-		return mMasterDeformableSurfaceMaterialManager.getNumMaterials();
-	}
-
-	PxU32 NpPhysics::getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
-	{
-		return ::getMaterials(mMasterDeformableSurfaceMaterialManager, mSceneAndMaterialMutex, userBuffer, bufferSize, startIndex);
-	}*/
-
-	//IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpDeformableSurfaceMaterial, mMasterDeformableSurfaceMaterialManager, "PxPhysics::createDeformableSurfaceMaterial: limit of 64K materials reached.")
-#else
-	PxDeformableSurfaceMaterial* NpPhysics::createDeformableSurfaceMaterial(PxReal, PxReal, PxReal, PxReal, PxReal) { return NULL;	}
-	PxU32 NpPhysics::getNbDeformableSurfaceMaterials() const	{ return 0;		}
-	PxU32 NpPhysics::getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial**, PxU32, PxU32) const	{ return 0;		}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////

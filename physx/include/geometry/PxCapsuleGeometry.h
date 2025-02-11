@@ -78,9 +78,9 @@ public:
 	\return True if the current settings are valid.
 
 	\note A valid capsule has radius > 0, halfHeight >= 0.
-	It is illegal to call PxRigidActor::createShape and PxPhysics::createShape with a capsule that has zero radius or height.
+	It is illegal to call PxPhysics::createShape with a capsule that has zero radius or height.
 
-	\see PxRigidActor::createShape, PxPhysics::createShape
+	\see PxPhysics::createShape
 	*/
 	PX_INLINE bool isValid() const;
 

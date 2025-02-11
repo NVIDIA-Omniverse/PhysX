@@ -353,16 +353,6 @@ namespace physx
 		return mMargin;
 	}
 
-	/// \cond PRIVATE
-	// OmniPVD friendly aliases
-	typedef PxConvexCore::Point PxConvexCorePoint;
-	typedef PxConvexCore::Segment PxConvexCoreSegment;
-	typedef PxConvexCore::Box PxConvexCoreBox;
-	typedef PxConvexCore::Ellipsoid PxConvexCoreEllipsoid;
-	typedef PxConvexCore::Cylinder PxConvexCoreCylinder;
-	typedef PxConvexCore::Cone PxConvexCoreCone;
-	/// \endcond
-
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

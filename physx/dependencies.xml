@@ -16,9 +16,9 @@
 	</dependency>
 
 	<dependency name="PhysXGpu">
-		<package name="PhysXGpu" version="5.5.0.2aa3c8a3-release-106.4-windows-public"  platforms="vc15win64 vc16win64 vc17win64"/>
-		<package name="PhysXGpu" version="5.5.0.2aa3c8a3-release-106.4-linux-x86_64-public"  platforms="linux-gcc linux-clang"/>
-		<package name="PhysXGpu" version="5.5.0.2aa3c8a3-release-106.4-linux-aarch64-public"  platforms="linux-aarch64-gcc linux-aarch64-clang"/>
+		<package name="PhysXGpu" version="5.5.1.71a0947a-release-106.5-windows-public"  platforms="vc15win64 vc16win64 vc17win64"/>
+		<package name="PhysXGpu" version="5.5.1.71a0947a-release-106.5-linux-x86_64-public"  platforms="linux-gcc linux-clang"/>
+		<package name="PhysXGpu" version="5.5.1.71a0947a-release-106.5-linux-aarch64-public"  platforms="linux-aarch64-gcc linux-aarch64-clang"/>
 	</dependency>
 
 	<dependency name="opengllinux" tags="requiredForDistro">
