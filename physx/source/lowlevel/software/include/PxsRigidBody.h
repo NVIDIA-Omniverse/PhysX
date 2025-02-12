@@ -115,6 +115,8 @@ class PxsRigidBody
 	PX_FORCE_INLINE	void				clearFreezeFlag()							{ mInternalFlags &= ~eFREEZE_THIS_FRAME;					}
 	PX_FORCE_INLINE	void				clearUnfreezeFlag()							{ mInternalFlags &= ~eUNFREEZE_THIS_FRAME;					}
 	PX_FORCE_INLINE	void				clearAllFrameFlags()						{ mInternalFlags &= ~(eFREEZE_THIS_FRAME | eUNFREEZE_THIS_FRAME | eACTIVATE_THIS_FRAME | eDEACTIVATE_THIS_FRAME);	}
+	PX_FORCE_INLINE void				setLeapfrogAccelerationScale()				{ mAccelScale = 0.5f;										}
+	PX_FORCE_INLINE void				resetLeapfrogAccelerationScale()			{ mAccelScale = 1.0f;										}
 
 	PX_FORCE_INLINE	void				resetSleepFilter()							{ mSleepAngVelAcc = mSleepLinVelAcc = PxVec3(0.0f);			}
 
