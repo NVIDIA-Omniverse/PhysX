@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -142,18 +142,6 @@ PxTriangleMeshGeometry PxHeightFieldGeometry
 class PxShape : public PxRefCounted
 {
 public:
-	/**
-	\brief Decrements the reference count of a shape and releases it if the new reference count is zero.
-
-	Note that in releases prior to PhysX 3.3 this method did not have reference counting semantics and was used to destroy a shape 
-	created with PxActor::createShape(). In PhysX 3.3 and above, this usage is deprecated, instead, use PxRigidActor::detachShape() to detach
-	a shape from an actor. If the shape to be detached was created with PxActor::createShape(), the actor holds the only counted reference,
-	and so when the shape is detached it will also be destroyed. 
-
-	\see PxRigidActor::createShape() PxPhysics::createShape() PxRigidActor::attachShape() PxRigidActor::detachShape()
-	*/
-	virtual		void	release() = 0;
-
 	/**
 	\brief Adjust the geometry of the shape.
 

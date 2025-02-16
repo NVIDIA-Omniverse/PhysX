@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -56,6 +56,7 @@ namespace physx
 
 	template <> struct IGNodeTraits<PxsRigidBody>					{ enum { TypeID = IG::Node::eRIGID_BODY_TYPE };			};
 	template <> struct IGNodeTraits<Dy::FeatherstoneArticulation>	{ enum { TypeID = IG::Node::eARTICULATION_TYPE };		};
+
 #if PX_SUPPORT_GPU_PHYSX
 	template <> struct IGNodeTraits<Dy::DeformableSurface>			{ enum { TypeID = IG::Node::eDEFORMABLE_SURFACE_TYPE };	};
 	template <> struct IGNodeTraits<Dy::DeformableVolume>			{ enum { TypeID = IG::Node::eDEFORMABLE_VOLUME_TYPE };	};

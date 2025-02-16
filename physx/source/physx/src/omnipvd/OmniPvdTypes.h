@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -645,34 +645,34 @@ OMNI_PVD_CLASS_END				(PxConvexCoreGeometry)
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexCorePoint
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN			(PxConvexCorePoint)
+OMNI_PVD_CLASS_UNTYPED_BEGIN	(PxConvexCorePoint)
 OMNI_PVD_CLASS_END				(PxConvexCorePoint)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexCoreSegment
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN			(PxConvexCoreSegment)
+OMNI_PVD_CLASS_UNTYPED_BEGIN	(PxConvexCoreSegment)
 OMNI_PVD_ATTRIBUTE				(PxConvexCoreSegment, length, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_CLASS_END				(PxConvexCoreSegment)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexCoreBox
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN			(PxConvexCoreBox)
+OMNI_PVD_CLASS_UNTYPED_BEGIN	(PxConvexCoreBox)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE(PxConvexCoreBox, extents, PxVec3, OmniPvdDataType::eFLOAT32, 3)
 OMNI_PVD_CLASS_END				(PxConvexCoreBox)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexCoreEllipsoid
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN			(PxConvexCoreEllipsoid)
+OMNI_PVD_CLASS_UNTYPED_BEGIN	(PxConvexCoreEllipsoid)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE(PxConvexCoreEllipsoid, radii, PxVec3, OmniPvdDataType::eFLOAT32, 3)
 OMNI_PVD_CLASS_END				(PxConvexCoreEllipsoid)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexCoreCylinder
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN			(PxConvexCoreCylinder)
+OMNI_PVD_CLASS_UNTYPED_BEGIN	(PxConvexCoreCylinder)
 OMNI_PVD_ATTRIBUTE				(PxConvexCoreCylinder, height, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE				(PxConvexCoreCylinder, radius, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_CLASS_END				(PxConvexCoreCylinder)
@@ -680,7 +680,7 @@ OMNI_PVD_CLASS_END				(PxConvexCoreCylinder)
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexCoreCone
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN			(PxConvexCoreCone)
+OMNI_PVD_CLASS_UNTYPED_BEGIN	(PxConvexCoreCone)
 OMNI_PVD_ATTRIBUTE				(PxConvexCoreCone, height, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE				(PxConvexCoreCone, radius, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_CLASS_END				(PxConvexCoreCone)

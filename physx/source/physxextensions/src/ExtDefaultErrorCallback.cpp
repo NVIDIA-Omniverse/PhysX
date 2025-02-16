@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -90,15 +90,9 @@ void PxDefaultErrorCallback::reportError(PxErrorCode::Enum e, const char* messag
 
 		PxPrintString(buffer);
 
-		// in debug builds halt execution for abort codes
 		PX_ASSERT(e != PxErrorCode::eABORT);
 
-		// in release builds we also want to halt execution 
-		// and make sure that the error message is flushed  
-		while (e == PxErrorCode::eABORT)
-		{
-			PxPrintString(buffer);
-			PxThread::sleep(1000);
-		}
+		if (e == PxErrorCode::eABORT)
+			PxThread::sleep(1000);	// make sure that the error message is flushed  
 	}	
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -558,7 +558,7 @@ namespace Dy
 		const PxU32 rootDof = (rootMotion && !fixBase) ? 6 : 0; //add the DoF of the root in the floating base case
 
 		//note that with the new API, for both fixed-base and floating-base, we consider no acceleration for all joints and all links
-		//this is consistent with the assumption behind the robotic manipulator equation
+		//this is consistent with the assumption behind the equation of motion
 		if (rootMotion || fixBase)
 		{
 			Cm::SpatialVectorF* spatialZAForces = reinterpret_cast<Cm::SpatialVectorF*>(allocator->alloc(sizeof(Cm::SpatialVectorF) * linkCount));

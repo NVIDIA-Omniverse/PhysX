@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,7 @@
 #if PX_SUPPORT_OMNI_PVD
 
 #include "PxsSimulationController.h"
+#include "foundation/PxArray.h"
 
 namespace physx
 {
@@ -43,18 +44,17 @@ class NpOmniPvdSimulationControllerCallbacks : public PxsSimulationControllerOVD
 {  
 public:
 	NpOmniPvdSimulationControllerCallbacks(NpScene& scene);
-	virtual void processRigidDynamicSet(PxsRigidBody** rigids, void* dataVec, PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements) PX_OVERRIDE;
-	virtual void processArticulationSet(Dy::FeatherstoneArticulation** articulations, void* dataVec, PxArticulationGPUIndex* nodeIndices, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
+	virtual void processRigidDynamicSet(const PxsRigidBody* const * rigids, const void* dataVec, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements) PX_OVERRIDE;
+	virtual void processArticulationSet(const Dy::FeatherstoneArticulation* const * articulations, const void* dataVec, const PxArticulationGPUIndex* nodeIndices, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
 			PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments) PX_OVERRIDE;
 private:
-	const PxRigidDynamic* castPxsRigidBodyToPxRigidDynamic(PxsRigidBody* const rigidBody);
-	static const NpArticulationReducedCoordinate* castFeatherstoneToNpArticulation(Dy::FeatherstoneArticulation* const featherstone);
-	PxU32 getArticulationDataMaxSubElementsNb(PxArticulationGPUAPIWriteType::Enum dataType,
-		PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments);
+	const PxRigidDynamic* castPxsRigidBodyToPxRigidDynamic(const PxsRigidBody* rigidBody);
+	static const NpArticulationReducedCoordinate* castFeatherstoneToNpArticulation(const Dy::FeatherstoneArticulation* const featherstone);
 	void setDofOffsetVec(PxArray<PxU32>& dofStarts, PxU32 nbLinks, const NpArticulationLink* const * npLinks);
-	void streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, Dy::FeatherstoneArticulation** articulations, PxReal* realsDataVec, PxArticulationGPUIndex* nodeIndices,
+	void streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, const Dy::FeatherstoneArticulation* const * articulations, const PxReal* realsDataVec, const PxArticulationGPUIndex* nodeIndices,
 		PxU32 nbArticulations, PxU32 maxLinks, PxU32 maxSubElementsInBlock);
 	NpScene& mNpScene;
+	PxArray<PxU32> mDofStarts;
 };
 
 }
