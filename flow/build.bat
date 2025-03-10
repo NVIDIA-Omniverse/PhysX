@@ -7,11 +7,11 @@ echo Running packman in preparation for premake ...
 
 call "%~dp0buildtools\packman\packman.cmd" pull "%~dp0dependencies.xml" -p windows-x86_64
 
-for /f "tokens=*" %%i in ('"%PM_vswhere_PATH%\VsWhere.exe -latest -property installationPath"') do (
-	set InstallDir=%%i
+for /f "tokens=*" %%i in ('"%PM_vswhere_PATH%\VsWhere.exe" -latest -property installationPath') do (
+    set InstallDir=%%i
 )
 
-for /f "tokens=*" %%i in ('"%PM_vswhere_PATH%\VsWhere.exe -latest -property installationVersion"') do (
+for /f "tokens=*" %%i in ('"%PM_vswhere_PATH%\VsWhere.exe" -latest -property installationVersion') do (
     set "VS_VERSION=%%i"
 )
 
@@ -22,14 +22,15 @@ for /f "tokens=1 delims=." %%v in ("%VS_VERSION%") do (
 
 if "%MAJOR_VERSION%"=="16" (
     set MSVS_VERSION=vs2019
-) else if "%MAJOR_VERSION%"=="17" (
+) else if "%MAJOR_VERSION%" GEQ "17" (
     set MSVS_VERSION=vs2022
 ) else (
-    echo Unsupported Visual Studio version
+    echo Unsupported Visual Studio version: %VS_VERSION%
     goto Error
 )
 
 echo Microsoft Visual Studio version: %MSVS_VERSION%
+echo Install directory: %InstallDir%
 
 :: Construct the path to cl.exe
 setlocal enabledelayedexpansion
@@ -44,6 +45,11 @@ if exist "%InstallDir%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt" 
     popd
 )
 endlocal & set "MSVS_TOOLSET=%MSVS_TOOLSET%"
+
+if not exist "%MSVS_TOOLSET%" (
+    echo MSVC toolset not found, check Visual Studio installation
+    goto Error
+)
 
 set CL_PATH="%MSVS_TOOLSET%\bin\HostX64\x64\cl.exe"
 

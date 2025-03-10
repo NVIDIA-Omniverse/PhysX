@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -30,84 +31,84 @@
 
 struct NvFlowBufferVariable
 {
-	NvFlowContextInterface* contextInterface = nullptr;
-	NvFlowBufferTransient* transientBuffer = nullptr;
-	NvFlowUint64 transientFrame = ~0llu;
-	NvFlowBuffer* buffer = nullptr;
-	NvFlowArray<NvFlowBufferAcquire*, 4u> acquires;
+    NvFlowContextInterface* contextInterface = nullptr;
+    NvFlowBufferTransient* transientBuffer = nullptr;
+    NvFlowUint64 transientFrame = ~0llu;
+    NvFlowBuffer* buffer = nullptr;
+    NvFlowArray<NvFlowBufferAcquire*, 4u> acquires;
 };
 
 NV_FLOW_INLINE void NvFlowBufferVariable_init(NvFlowContextInterface* contextInterface, NvFlowBufferVariable* ptr)
 {
-	ptr->contextInterface = contextInterface;
+    ptr->contextInterface = contextInterface;
 }
 
 NV_FLOW_INLINE void NvFlowBufferVariable_flush(NvFlowContext* context, NvFlowBufferVariable* ptr)
 {
-	// process acquire queue
-	NvFlowUint acquireWriteIdx = 0u;
-	for (NvFlowUint acquireReadIdx = 0u; acquireReadIdx < ptr->acquires.size; acquireReadIdx++)
-	{
-		NvFlowBuffer* acquiredBuffer = nullptr;
-		if (ptr->contextInterface->getAcquiredBuffer(context, ptr->acquires[acquireReadIdx], &acquiredBuffer))
-		{
-			if (ptr->buffer)
-			{
-				ptr->contextInterface->destroyBuffer(context, ptr->buffer);
-				ptr->buffer = nullptr;
-			}
-			ptr->buffer = acquiredBuffer;
-		}
-		else
-		{
-			ptr->acquires[acquireWriteIdx++] = ptr->acquires[acquireReadIdx];
-		}
-	}
-	ptr->acquires.size = acquireWriteIdx;
+    // process acquire queue
+    NvFlowUint acquireWriteIdx = 0u;
+    for (NvFlowUint acquireReadIdx = 0u; acquireReadIdx < ptr->acquires.size; acquireReadIdx++)
+    {
+        NvFlowBuffer* acquiredBuffer = nullptr;
+        if (ptr->contextInterface->getAcquiredBuffer(context, ptr->acquires[acquireReadIdx], &acquiredBuffer))
+        {
+            if (ptr->buffer)
+            {
+                ptr->contextInterface->destroyBuffer(context, ptr->buffer);
+                ptr->buffer = nullptr;
+            }
+            ptr->buffer = acquiredBuffer;
+        }
+        else
+        {
+            ptr->acquires[acquireWriteIdx++] = ptr->acquires[acquireReadIdx];
+        }
+    }
+    ptr->acquires.size = acquireWriteIdx;
 }
 
 NV_FLOW_INLINE NvFlowBufferTransient* NvFlowBufferVariable_get(NvFlowContext* context, NvFlowBufferVariable* ptr)
 {
-	if (ptr->transientFrame == ptr->contextInterface->getCurrentFrame(context))
-	{
-		return ptr->transientBuffer;
-	}
+    if (ptr->transientFrame == ptr->contextInterface->getCurrentFrame(context))
+    {
+        return ptr->transientBuffer;
+    }
 
-	NvFlowBufferVariable_flush(context, ptr);
+    NvFlowBufferVariable_flush(context, ptr);
 
-	if (ptr->buffer)
-	{
-		ptr->transientBuffer = ptr->contextInterface->registerBufferAsTransient(context, ptr->buffer);
-		ptr->transientFrame = ptr->contextInterface->getCurrentFrame(context);
-	}
-	else
-	{
-		ptr->transientBuffer = nullptr;
-		ptr->transientFrame = ~0llu;
-	}
-	return ptr->transientBuffer;
+    if (ptr->buffer)
+    {
+        ptr->transientBuffer = ptr->contextInterface->registerBufferAsTransient(context, ptr->buffer);
+        ptr->transientFrame = ptr->contextInterface->getCurrentFrame(context);
+    }
+    else
+    {
+        ptr->transientBuffer = nullptr;
+        ptr->transientFrame = ~0llu;
+    }
+    return ptr->transientBuffer;
 }
 
 NV_FLOW_INLINE void NvFlowBufferVariable_set(NvFlowContext* context, NvFlowBufferVariable* ptr, NvFlowBufferTransient* transientBuffer)
 {
-	NvFlowBufferVariable_flush(context, ptr);
-	if (ptr->buffer)
-	{
-		ptr->contextInterface->destroyBuffer(context, ptr->buffer);
-		ptr->buffer = nullptr;
-	}
-	ptr->transientBuffer = nullptr;
-	ptr->transientFrame = ~0llu;
-	if (transientBuffer)
-	{
-		ptr->transientBuffer = transientBuffer;
-		ptr->transientFrame = ptr->contextInterface->getCurrentFrame(context);
-		// push acquire
-		ptr->acquires.pushBack(ptr->contextInterface->enqueueAcquireBuffer(context, transientBuffer));
-	}
+    NvFlowBufferVariable_flush(context, ptr);
+    if (ptr->buffer)
+    {
+        ptr->contextInterface->destroyBuffer(context, ptr->buffer);
+        ptr->buffer = nullptr;
+    }
+    ptr->transientBuffer = nullptr;
+    ptr->transientFrame = ~0llu;
+    if (transientBuffer)
+    {
+        ptr->transientBuffer = transientBuffer;
+        ptr->transientFrame = ptr->contextInterface->getCurrentFrame(context);
+        // push acquire
+        ptr->acquires.pushBack(ptr->contextInterface->enqueueAcquireBuffer(context, transientBuffer));
+    }
 }
 
 NV_FLOW_INLINE void NvFlowBufferVariable_destroy(NvFlowContext* context, NvFlowBufferVariable* ptr)
 {
-	NvFlowBufferVariable_set(context, ptr, nullptr);
+    NvFlowBufferVariable_set(context, ptr, nullptr);
 }

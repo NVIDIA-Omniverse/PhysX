@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,28 +24,50 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
 struct NvFlowImguiRenderer;
+struct NvFlowImguiTexture;
 
 struct NvFlowImguiRendererInterface
 {
-	NV_FLOW_REFLECT_INTERFACE();
+    NV_FLOW_REFLECT_INTERFACE();
 
-	NvFlowImguiRenderer*(NV_FLOW_ABI* create)(
-		NvFlowContextInterface* contextInterface, 
-		NvFlowContext* context, 
-		unsigned char* pixels,
-		int texWidth,
-		int texHeight
-	);
+    NvFlowImguiRenderer*(NV_FLOW_ABI* create)(
+        NvFlowContextInterface* contextInterface,
+        NvFlowContext* context,
+        unsigned char* pixels,
+        int texWidth,
+        int texHeight
+    );
 
-	void(NV_FLOW_ABI* destroy)(NvFlowContext* context, NvFlowImguiRenderer* renderer);
+    void(NV_FLOW_ABI* destroy)(NvFlowContext* context, NvFlowImguiRenderer* renderer);
 
-	void(NV_FLOW_ABI* render)(NvFlowContext* context, NvFlowImguiRenderer* renderer, ImDrawData* drawData, NvFlowUint width, NvFlowUint height, NvFlowTextureTransient* colorIn, NvFlowTextureTransient* colorOut);
+    void(NV_FLOW_ABI* render)(NvFlowContext* context, NvFlowImguiRenderer* renderer, ImDrawData* drawData, NvFlowUint width, NvFlowUint height, NvFlowTextureTransient* colorIn, NvFlowTextureTransient* colorOut);
+
+    NvFlowImguiTexture*(NV_FLOW_ABI* createTexture)(
+        NvFlowContext* context,
+        NvFlowImguiRenderer* renderer,
+        unsigned char* pixels,
+        int texWidth,
+        int texHeight
+    );
+
+    void(NV_FLOW_ABI* updateTexture)(
+        NvFlowContext* context,
+        NvFlowImguiRenderer* renderer,
+        NvFlowImguiTexture* texture,
+        unsigned char* pixels,
+        int texWidth,
+        int texHeight
+    );
+
+    void(NV_FLOW_ABI* destroyTexture)(
+        NvFlowContext* context,
+        NvFlowImguiRenderer* renderer,
+        NvFlowImguiTexture* texture
+    );
 };
 
 #define NV_FLOW_REFLECT_TYPE NvFlowImguiRendererInterface
@@ -50,6 +75,9 @@ NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_FUNCTION_POINTER(create, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(destroy, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(render, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(createTexture, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(updateTexture, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(destroyTexture, 0, 0)
 NV_FLOW_REFLECT_END(0)
 NV_FLOW_REFLECT_INTERFACE_IMPL()
 #undef NV_FLOW_REFLECT_TYPE

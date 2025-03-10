@@ -4,14 +4,34 @@
 
 Platforms supported: Windows, Linux, Linux ARM64
 
+
+## Building the SDK
+
 ### Build Requirements
 
 Windows: Visual Studio 2017 and higher. VsWhere will select the latest version.
+
 Linux: GMake
 
-After cloning this repository onto your local drive, change directory to flow/ and run ./build.[bat|sh].
+After cloning this repository onto your local drive:
 
-Run **nvfloweditor** from the _build directory.
+### Windows
+```bat
+cd flow
+.\build.bat
+```
+To run Flow editor: `_build\windows-x86_64\release\nvfloweditor.exe` (release), `_build\windows-x86_64\debug\nvfloweditor.exe` (debug) 
+
+### Linux
+```sh
+cd flow
+./build.sh
+```
+To run Flow editor: `_build/linux-x86_64/release/nvfloweditor` (release), `_build/linux-x86_64/debug/nvfloweditor` (debug) 
+
+## Documentation
+
+The documentation is available on [GitHub Pages](https://nvidia-omniverse.github.io/PhysX/flow/index.html).
 
 ## Acknowledgements
 

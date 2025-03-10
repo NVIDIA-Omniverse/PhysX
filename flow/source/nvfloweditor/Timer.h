@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -36,91 +37,91 @@
 
 struct AppTimer
 {
-	NvFlowUint64 freq;
-	NvFlowUint64 begin;
-	NvFlowUint64 end;
-	NvFlowUint state;
-	float statTimeAccum;
-	float statTimeCount;
+    NvFlowUint64 freq;
+    NvFlowUint64 begin;
+    NvFlowUint64 end;
+    NvFlowUint state;
+    float statTimeAccum;
+    float statTimeCount;
 };
 
 NV_FLOW_INLINE void appTimerInit(AppTimer* ptr)
 {
-	ptr->freq = 1ull;
-	ptr->begin = 0ull;
-	ptr->end = 0ull;
-	ptr->state = 0u;
-	ptr->statTimeAccum = 0.f;
-	ptr->statTimeCount = 0.f;
+    ptr->freq = 1ull;
+    ptr->begin = 0ull;
+    ptr->end = 0ull;
+    ptr->state = 0u;
+    ptr->statTimeAccum = 0.f;
+    ptr->statTimeCount = 0.f;
 }
 
 NV_FLOW_INLINE void appTimerDestroy(AppTimer* ptr)
 {
-	// NOP
+    // NOP
 }
 
 NV_FLOW_INLINE void appTimerBegin(AppTimer* ptr)
 {
-	if (ptr->state == 0u)
-	{
+    if (ptr->state == 0u)
+    {
 #if defined(_WIN32)
-		LARGE_INTEGER tmpCpuFreq = {};
-		QueryPerformanceFrequency(&tmpCpuFreq);
-		ptr->freq = tmpCpuFreq.QuadPart;
+        LARGE_INTEGER tmpCpuFreq = {};
+        QueryPerformanceFrequency(&tmpCpuFreq);
+        ptr->freq = tmpCpuFreq.QuadPart;
 
-		LARGE_INTEGER tmpCpuTime = {};
-		QueryPerformanceCounter(&tmpCpuTime);
-		ptr->begin = tmpCpuTime.QuadPart;
-#else 
-		ptr->freq = 1E9;
+        LARGE_INTEGER tmpCpuTime = {};
+        QueryPerformanceCounter(&tmpCpuTime);
+        ptr->begin = tmpCpuTime.QuadPart;
+#else
+        ptr->freq = 1E9;
 
-		timespec timeValue = {};
-		clock_gettime(CLOCK_MONOTONIC, &timeValue);
-		ptr->begin = 1E9 * NvFlowUint64(timeValue.tv_sec) + NvFlowUint64(timeValue.tv_nsec);
+        timespec timeValue = {};
+        clock_gettime(CLOCK_MONOTONIC, &timeValue);
+        ptr->begin = 1E9 * NvFlowUint64(timeValue.tv_sec) + NvFlowUint64(timeValue.tv_nsec);
 #endif
 
-		ptr->state = 1u;
-	}
+        ptr->state = 1u;
+    }
 }
 
 NV_FLOW_INLINE void appTimerEnd(AppTimer* ptr)
 {
-	if (ptr->state == 1u)
-	{
+    if (ptr->state == 1u)
+    {
 #if defined(_WIN32)
-		LARGE_INTEGER tmpCpuTime = {};
-		QueryPerformanceCounter(&tmpCpuTime);
-		ptr->end = tmpCpuTime.QuadPart;
-#else 
-		timespec timeValue = {};
-		clock_gettime(CLOCK_MONOTONIC, &timeValue);
-		ptr->end = 1E9 * NvFlowUint64(timeValue.tv_sec) + NvFlowUint64(timeValue.tv_nsec);
+        LARGE_INTEGER tmpCpuTime = {};
+        QueryPerformanceCounter(&tmpCpuTime);
+        ptr->end = tmpCpuTime.QuadPart;
+#else
+        timespec timeValue = {};
+        clock_gettime(CLOCK_MONOTONIC, &timeValue);
+        ptr->end = 1E9 * NvFlowUint64(timeValue.tv_sec) + NvFlowUint64(timeValue.tv_nsec);
 #endif
 
-		ptr->state = 0u;
-	}
+        ptr->state = 0u;
+    }
 }
 
 NV_FLOW_INLINE NvFlowBool32 appTimerGetResults(AppTimer* ptr, float* deltaTime)
 {
-	if (ptr->state == 0u)
-	{
-		*deltaTime = (float)(((double)(ptr->end - ptr->begin) / (double)(ptr->freq)));
-		return NV_FLOW_TRUE;
-	}
-	return NV_FLOW_FALSE;
+    if (ptr->state == 0u)
+    {
+        *deltaTime = (float)(((double)(ptr->end - ptr->begin) / (double)(ptr->freq)));
+        return NV_FLOW_TRUE;
+    }
+    return NV_FLOW_FALSE;
 }
 
 NV_FLOW_INLINE NvFlowBool32 appTimerUpdateStats(AppTimer* ptr, float deltaTime, float sampleCount, float* pAverageTime)
 {
-	ptr->statTimeAccum += deltaTime;
-	ptr->statTimeCount += 1.f;
-	if (ptr->statTimeCount > sampleCount)
-	{
-		*pAverageTime = ptr->statTimeAccum / ptr->statTimeCount;
-		ptr->statTimeAccum = 0.f;
-		ptr->statTimeCount = 0.f;
-		return NV_FLOW_TRUE;
-	}
-	return NV_FLOW_FALSE;
+    ptr->statTimeAccum += deltaTime;
+    ptr->statTimeCount += 1.f;
+    if (ptr->statTimeCount > sampleCount)
+    {
+        *pAverageTime = ptr->statTimeAccum / ptr->statTimeCount;
+        ptr->statTimeAccum = 0.f;
+        ptr->statTimeCount = 0.f;
+        return NV_FLOW_TRUE;
+    }
+    return NV_FLOW_FALSE;
 }

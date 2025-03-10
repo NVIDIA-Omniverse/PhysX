@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.2.0] - 2025-03-10
+
+* Better interpolation in point emitter.
+* Texture Emitter SDF.
+* NanoVDB RGB export.
+* Persistent voxelization context.
+* Support for AABB on velocity voxelization.
+* Support for FP32 precision mode.
+* Voxelization CUDA interop support.
+* Support for computing speed in NanoVDB emitter.
+* Vec4 interpolation support.
+* Support for computing speed in NanoVDB emitter.
+* Support for debug volume to run before shadow.
+* Dense SDF to NanoVDB.
+* Sphere emitter trace support.
+* NanoVDB readback lite when interop enabled but readback disabled.
+
 ## [2.1.0] - 2024-05-30
 
 * Fixes in point emitter:

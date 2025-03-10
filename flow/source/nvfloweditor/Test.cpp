@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,8 @@
 #include "Timer.h"
 
 #include "NvFlowDatabase.h"
+
+#include "NvFlowLoader.h"
 
 struct NvFlowDatabasePrim
 {
@@ -113,9 +116,9 @@ NV_FLOW_INLINE NvFlowDatabaseValue* copyArray(
     NvFlowUint8* mappedData)
 {
     auto value = attr->values.allocateBackPointer();
-    //printf("Creating %s %p!!! version(%llu) minActiveVersion(%llu) active(%llu) free(%llu)\n", 
-    //	reflectData->name, value, version, minActiveVersion,
-    //	attr->values.activeCount(), attr->values.freeCount());
+    //printf("Creating %s %p!!! version(%llu) minActiveVersion(%llu) active(%llu) free(%llu)\n",
+    //    reflectData->name, value, version, minActiveVersion,
+    //    attr->values.activeCount(), attr->values.freeCount());
 
     value->version = version;
     value->lastUsed = version;
@@ -284,4 +287,9 @@ void testArray()
     testArray.allocateBackPointer();
     testArray.allocateBackPointer();
     testArray.allocateBackPointer();
+}
+
+static void flowLoaderError(const char* str, void* userdata)
+{
+    printf("omni.flow.usd failed to load Flow library!!!\n%s\n", str);
 }

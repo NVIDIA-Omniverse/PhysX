@@ -1,21 +1,21 @@
 <project toolsVersion="6.4">
 
-	<dependency name="dxc" linkPath="./external/dxc">
-		<package name="dxc" version="1.7.2308-win" platforms="windows-x86_64" />
-	</dependency>
+    <dependency name="dxc" linkPath="./external/dxc">
+        <package name="dxc" version="1.7.2308-win" platforms="windows-x86_64" />
+    </dependency>
 
-	<dependency name="premake" linkPath="./external/premake/${platform}">
-		<package name="premake" version="5.0.0-beta2+nv1-${platform}" />
-	</dependency>
+    <dependency name="premake" linkPath="./external/premake/${platform}">
+        <package name="premake" version="5.0.0-beta2+nv1-${platform}" />
+    </dependency>
 
-	<dependency name="slang" linkPath="./external/slang">
-		<package name="slang" version="v2024.1.17-windows-x64-release" platforms="windows-x86_64" />
-		<package name="slang" version="v2024.1.17-linux-x86_64-release" platforms="linux-x86_64" />
-		<package name="slang" version="v2024.1.17-linux-aarch64-release"  platforms="linux-aarch64" />
-	</dependency>
+    <dependency name="slang" linkPath="./external/slang">
+        <package name="slang" version="v2025.6.1-windows-x64-release" platforms="windows-x86_64" />
+        <package name="slang" version="v2025.6.1-linux-x86_64-release" platforms="linux-x86_64" />
+        <package name="slang" version="v2025.6.1-linux-aarch64-release"  platforms="linux-aarch64" />
+    </dependency>
 
-	<dependency name="vswhere">
-		<package name="VsWhere" version="2.7.3111.17308_1.0" />
-	</dependency>
+    <dependency name="vswhere">
+        <package name="VsWhere" version="2.7.3111.17308_1.0" />
+    </dependency>
 
 </project>

@@ -1,5 +1,6 @@
-#pragma once
-
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -23,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_LOADER_H
 #define NV_FLOW_LOADER_H
@@ -33,45 +32,45 @@
 #include <Windows.h>
 static void* NvFlowLoadLibrary(const char* winName, const char* linuxName)
 {
-	return (void*)LoadLibraryA(winName);
+    return (void*)LoadLibraryA(winName);
 }
 static void* NvFlowGetProcAddress(void* module, const char* name)
 {
-	return GetProcAddress((HMODULE)module, name);
+    return GetProcAddress((HMODULE)module, name);
 }
 static void NvFlowFreeLibrary(void* module)
 {
-	FreeLibrary((HMODULE)module);
+    FreeLibrary((HMODULE)module);
 }
 static const char* NvFlowLoadLibraryError()
 {
-	DWORD lastError = GetLastError();
-	static char buf[1024];
-	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, sizeof(buf), NULL);
-	return buf;
+    DWORD lastError = GetLastError();
+    static char buf[1024];
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, sizeof(buf), NULL);
+    return buf;
 }
 #else
 #include <dlfcn.h>
 static void* NvFlowLoadLibrary(const char* winName, const char* linuxName)
 {
-	void* module = dlopen(linuxName, RTLD_NOW);
-	//if (!module)
-	//{
-	//	fprintf(stderr, "Module %s failed to load : %s\n", linuxName, dlerror());
-	//}
-	return module;
+    void* module = dlopen(linuxName, RTLD_NOW);
+    //if (!module)
+    //{
+    //    fprintf(stderr, "Module %s failed to load : %s\n", linuxName, dlerror());
+    //}
+    return module;
 }
 static void* NvFlowGetProcAddress(void* module, const char* name)
 {
-	return dlsym(module, name);
+    return dlsym(module, name);
 }
 static void NvFlowFreeLibrary(void* module)
 {
-	dlclose(module);
+    dlclose(module);
 }
 static const char* NvFlowLoadLibraryError()
 {
-	return dlerror();
+    return dlerror();
 }
 #endif
 
@@ -79,15 +78,15 @@ static const char* NvFlowLoadLibraryError()
 
 struct NvFlowLoader
 {
-	void* module_nvflow;
-	void* module_nvflowext;
+    void* module_nvflow;
+    void* module_nvflowext;
 
-	NvFlowOpList opList;
-	NvFlowExtOpList extOpList;
-	NvFlowGridInterface gridInterface;
-	NvFlowGridParamsInterface gridParamsInterface;
-	NvFlowContextOptInterface contextOptInterface;
-	NvFlowDeviceInterface deviceInterface;
+    NvFlowOpList opList;
+    NvFlowExtOpList extOpList;
+    NvFlowGridInterface gridInterface;
+    NvFlowGridParamsInterface gridParamsInterface;
+    NvFlowContextOptInterface contextOptInterface;
+    NvFlowDeviceInterface deviceInterface;
 
     NvFlowOpList* opList_orig;
     NvFlowExtOpList* extOpList_orig;
@@ -103,44 +102,44 @@ static void NvFlowLoaderInitDeviceAPICustom(
     const char* nvflowext_dll,
     const char* nvflowext_so )
 {
-	NvFlowReflectClear(ptr, sizeof(NvFlowLoader));
+    NvFlowReflectClear(ptr, sizeof(NvFlowLoader));
 
-	/// Load nvflow and nvflowext
-	ptr->module_nvflow = NvFlowLoadLibrary(nvflow_dll, nvflow_so);
-	if (ptr->module_nvflow)
-	{
-		PFN_NvFlowGetOpList getOpList = (PFN_NvFlowGetOpList)NvFlowGetProcAddress(ptr->module_nvflow, "NvFlowGetOpList");
+    /// Load nvflow and nvflowext
+    ptr->module_nvflow = NvFlowLoadLibrary(nvflow_dll, nvflow_so);
+    if (ptr->module_nvflow)
+    {
+        PFN_NvFlowGetOpList getOpList = (PFN_NvFlowGetOpList)NvFlowGetProcAddress(ptr->module_nvflow, "NvFlowGetOpList");
 
-		if (getOpList) { NvFlowOpList_duplicate(&ptr->opList, getOpList()); }
+        if (getOpList) { NvFlowOpList_duplicate(&ptr->opList, getOpList()); }
 
         if (getOpList) { ptr->opList_orig = getOpList(); }
-	}
-	else if (printError)
-	{
-		printError(NvFlowLoadLibraryError(), userdata);
-	}
+    }
+    else if (printError)
+    {
+        printError(NvFlowLoadLibraryError(), userdata);
+    }
 
-	ptr->module_nvflowext = NvFlowLoadLibrary(nvflowext_dll, nvflowext_so);
-	if (ptr->module_nvflowext)
-	{
-		PFN_NvFlowGetExtOpList getExtOpList = (PFN_NvFlowGetExtOpList)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetExtOpList");
-		PFN_NvFlowGetGridInterface getGridInterface = (PFN_NvFlowGetGridInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetGridInterface");
-		PFN_NvFlowGetGridParamsInterface getGridParamsInterface = (PFN_NvFlowGetGridParamsInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetGridParamsInterface");
-		PFN_NvFlowGetContextOptInterface getContextOptInterface = (PFN_NvFlowGetContextOptInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetContextOptInterface");
-		PFN_NvFlowGetDeviceInterface getDeviceInterface = (PFN_NvFlowGetDeviceInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetDeviceInterface");
+    ptr->module_nvflowext = NvFlowLoadLibrary(nvflowext_dll, nvflowext_so);
+    if (ptr->module_nvflowext)
+    {
+        PFN_NvFlowGetExtOpList getExtOpList = (PFN_NvFlowGetExtOpList)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetExtOpList");
+        PFN_NvFlowGetGridInterface getGridInterface = (PFN_NvFlowGetGridInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetGridInterface");
+        PFN_NvFlowGetGridParamsInterface getGridParamsInterface = (PFN_NvFlowGetGridParamsInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetGridParamsInterface");
+        PFN_NvFlowGetContextOptInterface getContextOptInterface = (PFN_NvFlowGetContextOptInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetContextOptInterface");
+        PFN_NvFlowGetDeviceInterface getDeviceInterface = (PFN_NvFlowGetDeviceInterface)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetDeviceInterface");
 
-		if (getExtOpList) { NvFlowExtOpList_duplicate(&ptr->extOpList, getExtOpList()); }
-		if (getGridInterface) { NvFlowGridInterface_duplicate(&ptr->gridInterface, getGridInterface()); }
-		if (getGridParamsInterface) { NvFlowGridParamsInterface_duplicate(&ptr->gridParamsInterface, getGridParamsInterface()); }
-		if (getContextOptInterface) { NvFlowContextOptInterface_duplicate(&ptr->contextOptInterface, getContextOptInterface()); }
-		if (getDeviceInterface) { NvFlowDeviceInterface_duplicate(&ptr->deviceInterface, getDeviceInterface(deviceAPI)); }
+        if (getExtOpList) { NvFlowExtOpList_duplicate(&ptr->extOpList, getExtOpList()); }
+        if (getGridInterface) { NvFlowGridInterface_duplicate(&ptr->gridInterface, getGridInterface()); }
+        if (getGridParamsInterface) { NvFlowGridParamsInterface_duplicate(&ptr->gridParamsInterface, getGridParamsInterface()); }
+        if (getContextOptInterface) { NvFlowContextOptInterface_duplicate(&ptr->contextOptInterface, getContextOptInterface()); }
+        if (getDeviceInterface) { NvFlowDeviceInterface_duplicate(&ptr->deviceInterface, getDeviceInterface(deviceAPI)); }
 
         if (getExtOpList) { ptr->extOpList_orig = getExtOpList(); }
-	}
-	else if (printError)
-	{
-		printError(NvFlowLoadLibraryError(), userdata);
-	}
+    }
+    else if (printError)
+    {
+        printError(NvFlowLoadLibraryError(), userdata);
+    }
 }
 
 static void NvFlowLoaderInitDeviceAPI(NvFlowLoader* ptr, void(*printError)(const char* str, void* userdata), void* userdata, NvFlowContextApi deviceAPI)
@@ -152,7 +151,7 @@ static void NvFlowLoaderInitDeviceAPI(NvFlowLoader* ptr, void(*printError)(const
 
 static void NvFlowLoaderInit(NvFlowLoader* ptr, void(*printError)(const char* str, void* userdata), void* userdata)
 {
-	NvFlowLoaderInitDeviceAPI(ptr, printError, userdata, eNvFlowContextApi_vulkan);
+    NvFlowLoaderInitDeviceAPI(ptr, printError, userdata, eNvFlowContextApi_vulkan);
 }
 
 static void NvFlowLoaderInitCustom(
@@ -171,8 +170,8 @@ static void NvFlowLoaderInitCustom(
 
 static void NvFlowLoaderDestroy(NvFlowLoader* ptr)
 {
-	NvFlowFreeLibrary(ptr->module_nvflow);
-	NvFlowFreeLibrary(ptr->module_nvflowext);
+    NvFlowFreeLibrary(ptr->module_nvflow);
+    NvFlowFreeLibrary(ptr->module_nvflowext);
 }
 
 #endif

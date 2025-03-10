@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #include "EditorCommon.h"
 
@@ -159,6 +160,24 @@ void editorImgui_init(EditorImgui* ptr, NvFlowContextInterface* contextInterface
     NvFlowImguiRendererInterface_duplicate(&ptr->imguiRendererInterface, NvFlowGetImguiRendererInterface());
 
     ptr->imguiRenderer = ptr->imguiRendererInterface.create(contextInterface, context, pixels, texWidth, texHeight);
+
+    static const NvFlowUint textureWidth = 64u;
+    static const NvFlowUint textureHeight = 64u;
+    static unsigned char textureData[textureHeight * textureWidth * 4u];
+    for (NvFlowUint j = 0; j < textureHeight; j++)
+    {
+        for (NvFlowUint i = 0; i < textureWidth; i++)
+        {
+            float u = (float)i / (float)textureWidth;
+            float v = (float)j / (float)textureHeight;
+            textureData[4u * (j * textureWidth + i) + 0u] = (int)(255.f * u);
+            textureData[4u * (j * textureWidth + i) + 1u] = (int)(255.f * (1.f - (u > v ? u : v)));
+            textureData[4u * (j * textureWidth + i) + 2u] = (int)(255.f * v);
+            textureData[4u * (j * textureWidth + i) + 3u] = 255u;
+        }
+    }
+
+    ptr->imguiTexture = ptr->imguiRendererInterface.createTexture(context, ptr->imguiRenderer, textureData, textureWidth, textureHeight);
 
     editorCompute_logPrint(eNvFlowLogLevel_info, "Initialized Imgui Renderer");
 }
@@ -402,6 +421,9 @@ void editorImgui_update(
 
             ImGui::TreePop();
         }
+
+        // ImVec2 logoSize(64.f, 64.f);
+        // ImGui::ImageButton(ptr->imguiTexture, logoSize);
 
         ImGui::End();
     }
