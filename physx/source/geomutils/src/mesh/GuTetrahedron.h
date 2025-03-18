@@ -43,7 +43,7 @@ namespace physx
 		*/
 
 		template <class T>
-		struct TetrahedronT// : public PxUserAllocated
+		struct TetrahedronT
 		{
 			PX_INLINE	TetrahedronT() {}
 			PX_INLINE	TetrahedronT(T a, T b, T c, T d) { v[0] = a; v[1] = b; v[2] = c; v[3] = d; }

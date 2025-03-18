@@ -173,7 +173,6 @@ namespace physx
 											// PT: preserve type, reset base index
 											setBaseIndex(NP_UNUSED_BASE_INDEX);
 										}
-		static			void			getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										NpBase(NpType::Enum type) :
 											mScene		(NULL),

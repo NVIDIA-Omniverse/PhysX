@@ -51,7 +51,6 @@ namespace physx
 			// PX_SERIALIZATION
 		public:
 			ParticleSystemCore(const PxEMPTY) : ActorCore(PxEmpty) {}
-			static		void			getBinaryMetaData(PxOutputStream& stream);
 			//~PX_SERIALIZATION
 			ParticleSystemCore(PxActorType::Enum actorType);
 			~ParticleSystemCore();

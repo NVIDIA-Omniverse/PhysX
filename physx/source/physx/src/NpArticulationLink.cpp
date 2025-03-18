@@ -210,7 +210,7 @@ void NpArticulationLink::setCMassLocalPose(const PxTransform& pose)
 
 	if(mInboundJoint)
 	{
-		NpArticulationJointReducedCoordinate* j =static_cast<NpArticulationJointReducedCoordinate*>(mInboundJoint);
+		NpArticulationJointReducedCoordinate* j = static_cast<NpArticulationJointReducedCoordinate*>(mInboundJoint);
 		// PT:: tag: scalar transform*transform
 		j->scSetChildPose(comShift.transform(j->getCore().getChildPose()));
 	}

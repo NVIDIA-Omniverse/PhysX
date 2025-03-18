@@ -49,6 +49,10 @@ namespace physx
 		typedef void (*SolveBlockMethod)			(DY_PGS_SOLVE_METHOD_PARAMS);
 		typedef void (*SolveWriteBackBlockMethod)	(DY_PGS_SOLVE_METHOD_PARAMS);
 		typedef void (*WriteBackBlockMethod)		(DY_PGS_SOLVE_METHOD_PARAMS);
+
+		extern SolveBlockMethod				gVTableSolveBlock[];
+		extern SolveWriteBackBlockMethod	gVTableSolveWriteBackBlock[];
+		extern SolveBlockMethod				gVTableSolveConcludeBlock[];
 	}
 }
 

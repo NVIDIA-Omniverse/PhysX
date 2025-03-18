@@ -55,7 +55,6 @@ OMNI_PVD_ENUM_END		(PxSceneFlag)
 OMNI_PVD_ENUM_BEGIN		(PxMaterialFlag)
 OMNI_PVD_ENUM_VALUE		(PxMaterialFlag, eDISABLE_FRICTION)
 OMNI_PVD_ENUM_VALUE		(PxMaterialFlag, eDISABLE_STRONG_FRICTION)
-OMNI_PVD_ENUM_VALUE		(PxMaterialFlag, eIMPROVED_PATCH_FRICTION)
 OMNI_PVD_ENUM_END		(PxMaterialFlag)
 
 OMNI_PVD_ENUM_BEGIN		(PxActorFlag)
@@ -121,8 +120,6 @@ OMNI_PVD_ENUM_END		(PxParticleLockFlag)
 
 OMNI_PVD_ENUM_BEGIN		(PxFrictionType)
 OMNI_PVD_ENUM_VALUE		(PxFrictionType, ePATCH)
-OMNI_PVD_ENUM_VALUE		(PxFrictionType, eONE_DIRECTIONAL)
-OMNI_PVD_ENUM_VALUE		(PxFrictionType, eTWO_DIRECTIONAL)
 OMNI_PVD_ENUM_END		(PxFrictionType)
 
 OMNI_PVD_ENUM_BEGIN		(PxBroadPhaseType)
@@ -177,8 +174,6 @@ OMNI_PVD_ENUM_END		(PxArticulationMotion)
 OMNI_PVD_ENUM_BEGIN		(PxArticulationDriveType)
 OMNI_PVD_ENUM_VALUE		(PxArticulationDriveType, eFORCE)
 OMNI_PVD_ENUM_VALUE		(PxArticulationDriveType, eACCELERATION)
-OMNI_PVD_ENUM_VALUE		(PxArticulationDriveType, eTARGET)
-OMNI_PVD_ENUM_VALUE		(PxArticulationDriveType, eVELOCITY)
 OMNI_PVD_ENUM_VALUE		(PxArticulationDriveType, eNONE)
 OMNI_PVD_ENUM_END		(PxArticulationDriveType)
 
@@ -529,8 +524,6 @@ OMNI_PVD_ATTRIBUTE					(PxArticulationReducedCoordinate, isSleeping,					bool, O
 OMNI_PVD_ATTRIBUTE					(PxArticulationReducedCoordinate, sleepThreshold,				PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE					(PxArticulationReducedCoordinate, stabilizationThreshold,		PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE					(PxArticulationReducedCoordinate, wakeCounter,					PxReal, OmniPvdDataType::eFLOAT32)
-OMNI_PVD_ATTRIBUTE					(PxArticulationReducedCoordinate, maxLinearVelocity,			PxReal, OmniPvdDataType::eFLOAT32)
-OMNI_PVD_ATTRIBUTE					(PxArticulationReducedCoordinate, maxAngularVelocity,			PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxArticulationReducedCoordinate, links,						PxArticulationLink)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxArticulationReducedCoordinate, worldBounds,					PxBounds3, OmniPvdDataType::eFLOAT32, 6)
 OMNI_PVD_ATTRIBUTE_FLAG				(PxArticulationReducedCoordinate, articulationFlags,			PxArticulationFlags, PxArticulationFlag)
@@ -548,6 +541,7 @@ OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxArticulationJointReducedCoordinate, pare
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxArticulationJointReducedCoordinate, childTranslation,		PxVec3, OmniPvdDataType::eFLOAT32, 3)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxArticulationJointReducedCoordinate, childRotation,			PxQuat, OmniPvdDataType::eFLOAT32, 4)
 OMNI_PVD_ATTRIBUTE_FLAG					(PxArticulationJointReducedCoordinate, type,					PxArticulationJointType::Enum, PxArticulationJointType)
+OMNI_PVD_ATTRIBUTE_STRING				(PxArticulationJointReducedCoordinate, name)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, motion,					PxArticulationMotion::Enum, OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, armature,				PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE						(PxArticulationJointReducedCoordinate, frictionCoefficient,		PxReal, OmniPvdDataType::eFLOAT32)
@@ -564,6 +558,10 @@ OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, dr
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, driveType,				PxArticulationDriveType::Enum, OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, driveTarget,				PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, driveVelocity,			PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, staticFrictionEffort,	PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, dynamicFrictionEffort,	PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, viscousFrictionCoefficient,     	PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, maxJointDofVelocity,	    PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_CLASS_END						(PxArticulationJointReducedCoordinate)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -787,6 +785,8 @@ OMNI_PVD_ATTRIBUTE							(PxParticleBuffer, flatListStartIndex, PxU32, OmniPvdDa
 OMNI_PVD_ATTRIBUTE							(PxParticleBuffer, uniqueId, PxU32, OmniPvdDataType::eUINT32)
 OMNI_PVD_CLASS_END							(PxParticleBuffer)
 
+#if PX_SUPPORT_GPU_PHYSX
+
 ////////////////////////////////////////////////////////////////////////////////
 // PxDiffuseParticleParams
 ////////////////////////////////////////////////////////////////////////////////
@@ -824,3 +824,5 @@ OMNI_PVD_CLASS_END(PxParticleClothBuffer)
 ////////////////////////////////////////////////////////////////////////////////
 OMNI_PVD_CLASS_DERIVED_BEGIN(PxParticleRigidBuffer, PxParticleBuffer)
 OMNI_PVD_CLASS_END(PxParticleRigidBuffer)
+
+#endif

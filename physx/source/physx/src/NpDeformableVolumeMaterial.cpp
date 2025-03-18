@@ -154,27 +154,27 @@ PxReal NpDeformableVolumeMaterial::getDynamicFriction() const
 void NpDeformableVolumeMaterial::setDamping(PxReal x)
 {
 	PX_CHECK_AND_RETURN(x >= 0.f, "PxMaterial::setDamping: invalid float");
-	mMaterial.damping = x;
+	mMaterial.elasticityDamping = x;
 
 	updateMaterial();
 }
 
 PxReal NpDeformableVolumeMaterial::getDamping() const
 {
-	return mMaterial.damping;
+	return mMaterial.elasticityDamping;
 }
 
 void NpDeformableVolumeMaterial::setElasticityDamping(PxReal x)
 {
 	PX_CHECK_AND_RETURN(x >= 0.f, "PxMaterial::setElasticityDamping: invalid float");
-	mMaterial.damping = x;
+	mMaterial.elasticityDamping = x;
 
 	updateMaterial();
 }
 
 PxReal NpDeformableVolumeMaterial::getElasticityDamping() const
 {
-	return mMaterial.damping;
+	return mMaterial.elasticityDamping;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

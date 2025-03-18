@@ -38,6 +38,7 @@
 #include "../../lowleveldynamics/src/DyTGSContactPrep.h"
 #include "../../lowleveldynamics/src/DyTGS.h"
 #include "../../lowleveldynamics/src/DyConstraintPartition.h"
+#include "../../lowleveldynamics/src/DyPGS.h"
 #include "../../lowleveldynamics/shared/DyCpuGpuArticulation.h"
 #include "GuPersistentContactManifold.h"
 #include "NpConstraint.h"
@@ -103,7 +104,7 @@ namespace
 		PX_FORCE_INLINE	void							immSolveInternalConstraints(PxReal dt, PxReal invDt, PxReal elapsedTime, bool velocityIteration, bool isTGS)
 														{
 															// PT: TODO: revisit the TGS coeff (PX-4516)
-															FeatherstoneArticulation::solveInternalConstraints(dt, invDt, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT, false);
+															FeatherstoneArticulation::solveInternalConstraints(dt, dt, invDt, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT, false, false); //  pass correct flag value - PX-4744
 														}
 
 		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocitiesTGS(PxReal dt, PxReal totalDt, PxReal invDt, PxReal /*invTotalDt*/, const PxVec3& gravity, PxReal invLengthScale)
@@ -627,9 +628,9 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 	PX_ASSERT(PxIsZero(solverBodies, nbSolverBodies)); //Ensure that solver body velocities have been zeroed before solving
 	PX_ASSERT((size_t(solverBodies) & 0xf) == 0);
 
-	const Dy::SolveBlockMethod* solveTable = Dy::getSolveBlockTable();
-	const Dy::SolveBlockMethod* solveConcludeTable = Dy::getSolverConcludeBlockTable();
-	const Dy::SolveWriteBackBlockMethod* solveWritebackTable = Dy::getSolveWritebackBlockTable();
+	const Dy::SolveBlockMethod* solveTable = Dy::gVTableSolveBlock;
+	const Dy::SolveBlockMethod* solveConcludeTable = Dy::gVTableSolveConcludeBlock;
+	const Dy::SolveWriteBackBlockMethod* solveWritebackTable = Dy::gVTableSolveWriteBackBlock;
 
 	Dy::SolverContext cache;
 	cache.solverBodyArray = NULL;
@@ -870,6 +871,7 @@ void immArticulation::initJointCore(Dy::ArticulationJointCore& core, const PxArt
 	{
 		core.setLimit(PxArticulationAxis::Enum(i), inboundJoint.limits[i]);
 		core.setDrive(PxArticulationAxis::Enum(i), inboundJoint.drives[i]);
+		core.setMaxJointVelocity(inboundJoint.maxJointVelocity[i]);
 
 		// See Sc::ArticulationJointCore::setTargetP and Sc::ArticulationJointCore::setTargetV
 		if(binP[i]!=0xffffffff)
@@ -887,7 +889,6 @@ void immArticulation::initJointCore(Dy::ArticulationJointCore& core, const PxArt
 	}
 
 	core.setFrictionCoefficient(inboundJoint.frictionCoefficient);
-	core.setMaxJointVelocity(inboundJoint.maxJointVelocity);
 	core.setJointType(inboundJoint.type);
 }
 
@@ -1259,7 +1260,6 @@ bool immediate::PxGetJointData(const PxArticulationLinkHandle& link, PxArticulat
 	data.parentPose				= core.parentPose;
 	data.childPose				= core.childPose;
 	data.frictionCoefficient	= core.frictionCoefficient;
-	data.maxJointVelocity		= core.maxJointVelocity;
 	data.type					= PxArticulationJointType::Enum(core.jointType);
 	for(PxU32 i=0;i<PxArticulationAxis::eCOUNT;i++)
 	{
@@ -1271,6 +1271,7 @@ bool immediate::PxGetJointData(const PxArticulationLinkHandle& link, PxArticulat
 		data.armature[i]	= core.armature[i];
 		data.jointPos[i]	= core.jointPos[i];
 		data.jointVel[i]	= core.jointVel[i];
+		data.maxJointVelocity[i] = core.maxJointVelocity[i];
 	}
 	return true;
 }
@@ -1315,13 +1316,13 @@ bool immediate::PxSetJointData(const PxArticulationLinkHandle& link, const PxArt
 
 	// PT: TODO: do we need to recompute jcalc for these?
 	core.frictionCoefficient	= data.frictionCoefficient;
-	core.maxJointVelocity		= data.maxJointVelocity;
 
 	for(PxU32 i=0;i<PxArticulationAxis::eCOUNT;i++)
 	{
 		// PT: we don't need to recompute jcalc for these
 		core.limits[i]	= data.limits[i];
 		core.drives[i]	= data.drives[i];
+		core.maxJointVelocity[i] = data.maxJointVelocity[i];
 
 		core.jointPos[i] = data.jointPos[i];
 		core.jointVel[i] = data.jointVel[i];

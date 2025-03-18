@@ -50,8 +50,6 @@ struct PxConstraintExtIDs
 	enum Enum
 	{
 		eJOINT,
-		eVEHICLE_SUSP_LIMIT_DEPRECATED,   //!< \deprecated This value will be removed in a future version together with the deprecated vehicle API.
-		eVEHICLE_STICKY_TYRE_DEPRECATED,  //!< \deprecated This value will be removed in a future version together with the deprecated vehicle API.
 		eVEHICLE_JOINT,
 		eNEXT_FREE_ID,
 		eINVALID_ID = 0x7fffffff

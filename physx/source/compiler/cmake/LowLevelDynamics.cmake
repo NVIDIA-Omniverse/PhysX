@@ -73,7 +73,6 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DyAllocator.h
 	${LLDYNAMICS_BASE_DIR}/src/DyAllocator.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyArticulationContactPrep.cpp
-	${LLDYNAMICS_BASE_DIR}/src/DyArticulationContactPrepPF.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyArticulationMimicJoint.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyFeatherstoneArticulation.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyFeatherstoneForwardDynamic.cpp
@@ -83,17 +82,13 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DyConstraintSetupBlock.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyContactPrep.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyContactPrep4.cpp
-	${LLDYNAMICS_BASE_DIR}/src/DyContactPrep4PF.cpp
-	${LLDYNAMICS_BASE_DIR}/src/DyContactPrepPF.cpp
+	${LLDYNAMICS_BASE_DIR}/src/DyDynamicsBase.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyDynamics.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyFrictionCorrelation.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyRigidBodyToSolverBody.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DySolverConstraints.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DySolverConstraintsBlock.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DySolverControl.cpp
-	${LLDYNAMICS_BASE_DIR}/src/DySolverControlPF.cpp
-	${LLDYNAMICS_BASE_DIR}/src/DySolverPFConstraints.cpp
-	${LLDYNAMICS_BASE_DIR}/src/DySolverPFConstraintsBlock.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DySolverConstraint1DStep.h
 	${LLDYNAMICS_BASE_DIR}/src/DyThreadContext.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyThresholdTable.cpp
@@ -111,6 +106,7 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DyContactPrepShared.h
 	${LLDYNAMICS_BASE_DIR}/src/DyContactReduction.h
 	${LLDYNAMICS_BASE_DIR}/src/DyCorrelationBuffer.h
+	${LLDYNAMICS_BASE_DIR}/src/DyDynamicsBase.h
 	${LLDYNAMICS_BASE_DIR}/src/DyDynamics.h
 	${LLDYNAMICS_BASE_DIR}/src/DyFrictionPatch.h
 	${LLDYNAMICS_BASE_DIR}/src/DyFrictionPatchStreamPair.h
@@ -123,11 +119,8 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DySolverConstraintTypes.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverContact.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverContact4.h
-	${LLDYNAMICS_BASE_DIR}/src/DySolverContactPF.h
-	${LLDYNAMICS_BASE_DIR}/src/DySolverContactPF4.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverContext.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverControl.h
-	${LLDYNAMICS_BASE_DIR}/src/DySolverControlPF.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverCore.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverCore.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DySolverExt.h

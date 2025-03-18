@@ -46,8 +46,6 @@ Sc::ArticulationCore::ArticulationCore() :
 	mCore.freezeThreshold			= 5e-6f * scale.speed * scale.speed;
 	mCore.wakeCounter				= Physics::sWakeCounterOnCreation;
 	mCore.gpuRemapIndex				= 0xffffffff;
-	mCore.maxLinearVelocity			= 1e+6f;
-	mCore.maxAngularVelocity		= 1e+6f;
 }
 
 Sc::ArticulationCore::~ArticulationCore()
@@ -73,26 +71,6 @@ void Sc::ArticulationCore::setWakeCounter(const PxReal v)
 	if(mSim)
 		mSim->debugCheckWakeCounterOfLinks(v);
 #endif
-}
-
-void Sc::ArticulationCore::setMaxLinearVelocity(const PxReal v)
-{
-	mCore.maxLinearVelocity = v;
-
-	if (mSim)
-	{
-		mSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_VELOCITY_LIMITS);
-	}
-}
-
-void Sc::ArticulationCore::setMaxAngularVelocity(const PxReal v)
-{
-	mCore.maxAngularVelocity = v;
-
-	if (mSim)
-	{
-		mSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_VELOCITY_LIMITS);
-	}
 }
 
 bool Sc::ArticulationCore::isSleeping() const

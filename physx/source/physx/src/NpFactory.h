@@ -169,14 +169,14 @@ public:
 				void									addConstraint(PxConstraint*, bool lock=true);
 				void									releaseConstraintToPool(NpConstraint&);
 // PT: TODO: add missing functions
-//				PxU32									getNbConstraints() const;
+				PxU32									getNbConstraints() const;
 //				PxU32									getConstraints(PxConstraint** userBuffer, PxU32 bufferSize, PxU32 startIndex)	const;
 
 				// Articulations
 				void									addArticulation(PxArticulationReducedCoordinate*, bool lock=true);
 				void									releaseArticulationToPool(PxArticulationReducedCoordinate& articulation);
 				PxArticulationReducedCoordinate*		createArticulationRC();
-				NpArticulationReducedCoordinate*		createNpArticulationRC();
+				PxU32									getNbArticulations() const;
 
 				// Articulation links
 				NpArticulationLink*						createNpArticulationLink(NpArticulationReducedCoordinate& root, NpArticulationLink* parent, const PxTransform& pose);
@@ -234,7 +234,7 @@ public:
 				void									addAggregate(PxAggregate*, bool lock=true);
 				void									releaseAggregateToPool(NpAggregate&);
 // PT: TODO: add missing functions
-//				PxU32									getNbAggregates() const;
+				PxU32									getNbAggregates() const;
 //				PxU32									getAggregates(PxAggregate** userBuffer, PxU32 bufferSize, PxU32 startIndex)	const;
 
 				// Materials
@@ -243,10 +243,10 @@ public:
 
 #if PX_SUPPORT_GPU_PHYSX
 
-				PxDeformableSurfaceMaterial*			createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness, PxReal bendingStiffness, PxReal damping, PxReal bendingDamping);
+				PxDeformableSurfaceMaterial*			createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness, PxReal bendingStiffness, PxReal elasticityDamping, PxReal bendingDamping);
 				void									releaseDeformableSurfaceMaterialToPool(PxDeformableSurfaceMaterial& material);
 
-				PxDeformableVolumeMaterial*				createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction);
+				PxDeformableVolumeMaterial*				createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal elasticityDamping);
 				void									releaseDeformableVolumeMaterialToPool(PxDeformableVolumeMaterial& material);
 
 				PxPBDMaterial*							createPBDMaterial(PxReal friction, PxReal damping, PxReal adhesion, PxReal viscosity, PxReal vorticityConfinement, PxReal surfaceTension, PxReal cohesion, PxReal lift, PxReal drag, PxReal cflCoefficient, PxReal gravityScale);

@@ -57,7 +57,6 @@ class PxFixedJoint;
 class PxPrismaticJoint;
 class PxRevoluteJoint;
 class PxSphericalJoint;
-class PxContactJoint;
 class PxGearJoint;
 class PxRackAndPinionJoint;
 }
@@ -74,8 +73,6 @@ namespace pvdsdk {
 	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxFixedJointGeneratedValues)
 	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxDistanceJoint)
 	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxDistanceJointGeneratedValues)
-	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxContactJoint)
-	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxContactJointGeneratedValues)
 	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxPrismaticJoint)
 	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxPrismaticJointGeneratedValues)
 	DEFINE_NATIVE_PVD_PHYSX3_TYPE_MAP(PxRevoluteJoint)

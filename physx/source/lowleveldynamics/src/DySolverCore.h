@@ -37,7 +37,7 @@
 #include "DySolverConstraintDesc.h"
 #include "DyResidualAccumulator.h"
 // PT: it is not wrong to include DyPGS.h here because the SolverCore class is actually only used by PGS.
-// (for patch / point friction). TGS doesn't use the same architecture / class hierarchy.
+// (for patch friction). TGS doesn't use the same architecture / class hierarchy.
 #include "DyPGS.h"
 
 namespace physx
@@ -177,17 +177,6 @@ struct SolverIslandParams
 	PxReal dt;
 	PxReal invDt;
 
-	//Additional 1d/2d friction model params
-	PxSolverConstraintDesc* frictionConstraintList;	// PT: only needed by the PF solver
-	
-	PxConstraintBatchHeader* frictionConstraintBatches;	// PT: only needed by the PF solver
-	PxU32 numFrictionConstraintHeaders;	// PT: only needed by the PF solver
-	PxU32* frictionHeadersPerPartition;	// PT: only needed by the PF solver
-	PxU32 nbFrictionPartitions;	// PT: only needed by the PF solver
-
-	//Additional Shared state progress counters
-	PxI32 frictionConstraintIndex;	// PT: only needed by the PF solver
-
 	//Write-back threshold information
 	ThresholdStreamElement* thresholdStream;
 	PxU32 thresholdStreamLength;
@@ -199,27 +188,6 @@ struct SolverIslandParams
 	Dy::ErrorAccumulatorEx* errorAccumulator; //only used by the single-threaded solver
 };
 
-/*!
-Interface to constraint solver cores
-*/    
-class SolverCore : public PxUserAllocated
-{
-public:
-    virtual ~SolverCore() {}
-
-	/*
-	solves dual problem exactly by GS-iterating until convergence stops
-	only uses regular velocity vector for storing results, and backs up initial state, which is restored.
-	the solution forces are saved in a vector.
-
-	state should not be stored, this function is safe to call from multiple threads.
-	*/
-	virtual void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator) const = 0;
-
-	virtual void solveV_Blocks(SolverIslandParams& params) const = 0;
-};
-
-// PT: code shared between patch & point friction solvers.
 void solveNoContactsCase(	PxU32 bodyListSize, const PxSolverBody* PX_RESTRICT bodyListStart, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
 							PxU32 articulationListSize, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
 							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, bool residualReportingActive);

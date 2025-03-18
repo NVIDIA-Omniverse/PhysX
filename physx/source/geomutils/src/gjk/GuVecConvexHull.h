@@ -489,7 +489,7 @@ namespace Gu
 			//transform dir into the shape space
 //			const Vec3V dir_ = aTob.rotateInv(dir);//relTra.rotateInv(dir);
 			const Vec3V dir_ = aTobT.rotate(dir);//relTra.rotateInv(dir);
-			const Vec3V maxPoint =supportLocal(dir_);
+			const Vec3V maxPoint = supportLocal(dir_);
 			//translate maxPoint from shape space of a back to the b space
 			return aTob.transform(maxPoint);//relTra.transform(maxPoint);
 		}

@@ -33,9 +33,10 @@ using namespace Sc;
 
 void resetElementID(Scene& scene, ShapeSimBase& shapeSim);
 
-ShapeSim::ShapeSim(RigidSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core)
+ShapeSim::ShapeSim(ActorSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core)
 {
-	initSubsystemsDependingOnElementID();
+	const PxU32 index = getElementID();
+	initSubsystemsDependingOnElementID(index);
 	core.setExclusiveSim(this);
 }
 

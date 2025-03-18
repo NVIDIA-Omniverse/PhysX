@@ -32,8 +32,7 @@
 #include "foundation/PxUserAllocated.h"
 #include "DyDeformableSurface.h"
 #include "ScDeformableSurfaceCore.h" 
-#include "ScDeformableSurfaceShapeSim.h"
-#include "ScActorSim.h"  // to be deleted
+#include "ScGpuActorSim.h"
 
 namespace physx
 {
@@ -42,7 +41,7 @@ namespace Sc
 
 class Scene;
 
-class DeformableSurfaceSim : public ActorSim
+class DeformableSurfaceSim : public GPUActorSim
 {
 	PX_NOCOPY(DeformableSurfaceSim)
 public:
@@ -53,10 +52,6 @@ public:
 	PX_INLINE	DeformableSurfaceCore&	getCore() const { return static_cast<DeformableSurfaceCore&>(mCore); }
 	virtual		PxActor*				getPxActor() const { return getCore().getPxActor(); }
 
-	void							updateBounds();
-	void							updateBoundsInAABBMgr();
-	PxBounds3						getBounds() const;
-
 	bool							isSleeping() const;
 	PX_FORCE_INLINE	bool			isActive() const { return !isSleeping(); }
 
@@ -65,13 +60,10 @@ public:
 	void							onSetWakeCounter();
 
 	void							attachShapeCore(ShapeCore* core);
-
-	DeformableSurfaceShapeSim&		getShapeSim() { return mShapeSim; }
+	PxBounds3						getWorldBounds()	const;
 
 private:
 	Dy::DeformableSurface*			mLLDeformableSurface;
-
-	DeformableSurfaceShapeSim		mShapeSim;
 
 	PxU32							mIslandNodeIndex;
 

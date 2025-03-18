@@ -48,8 +48,6 @@ namespace physx
 			PxReal					freezeThreshold;
 			PxReal					wakeCounter;
 			PxU32					gpuRemapIndex;
-			PxReal					maxLinearVelocity;
-			PxReal					maxAngularVelocity;
 		};
 	}
 }

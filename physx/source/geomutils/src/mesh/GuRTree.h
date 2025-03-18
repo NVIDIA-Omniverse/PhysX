@@ -115,7 +115,6 @@ namespace Gu {
 		RTree(const PxEMPTY);
 		void	exportExtraData(PxSerializationContext&);
 		void	importExtraData(PxDeserializationContext& context);
-		static	void	getBinaryMetaData(PxOutputStream& stream);
 		//~PX_SERIALIZATION
 
 		PX_INLINE RTree(); // offline static rtree constructor used with cooking

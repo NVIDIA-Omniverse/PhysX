@@ -91,7 +91,7 @@ public:
 	//TODO: tune cache size based on number of active objects.
 	ThreadContext(PxcNpMemBlockPool* memBlockPool);
 	void reset();
-	void resizeArrays(PxU32 frictionConstraintDescCount, PxU32 articulationCount);
+	void resizeArrays(PxU32 articulationCount);
 
 	// PT: TODO: is there a reason why everything is public except mArticulations ?
 	PX_FORCE_INLINE	PxArray<ArticulationSolverDesc>&	getArticulations()	{ return mArticulations;	}
@@ -120,15 +120,10 @@ public:
 	// here we should move these from public to private
 
 	PxU32										mNumDifferentBodyConstraints;
-	PxU32										mNumDifferentBodyFrictionConstraints;
-	PxU32										mNumSelfConstraints;
 	PxU32										mNumStaticConstraints;
-	PxU32										mNumSelfFrictionConstraints;
-	PxU32										mNumSelfConstraintFrictionBlocks;
 	bool										mHasOverflowPartitions;
 
 	PxArray<PxU32>								mConstraintsPerPartition;
-	PxArray<PxU32>								mFrictionConstraintsPerPartition;
 	//PxArray<PxU32>								mPartitionNormalizationBitmap;	// PT: for PX_NORMALIZE_PARTITIONS
 	PxsBodyCore**								mBodyCoreArray;
 	PxsRigidBody**								mRigidBodyArray;
@@ -149,10 +144,7 @@ public:
 	//Constraint info for partitioning
 	PxSolverConstraintDesc*						tempConstraintDescArray;
 
-	//Additional constraint info for 1d/2d friction model
-	PxArray<PxSolverConstraintDesc>				frictionConstraintDescArray;
-	PxArray<PxConstraintBatchHeader>			frictionConstraintBatchHeaders;
-
+#if PGS_SUPPORT_COMPOUND_CONSTRAINTS
 	//Info for tracking compound contact managers (temporary data - could use scratch memory!)
 	PxArray<CompoundContactManager>				compoundConstraints;
 
@@ -160,19 +152,16 @@ public:
 	PxArray<const PxsIndexedContactManager*>	orderedContactList;
 	PxArray<const PxsIndexedContactManager*>	tempContactList;
 	PxArray<PxU32>								sortIndexArray;
-	
+#endif
+
 	PxArray<Cm::SpatialVectorF>					mZVector; // scratch space, used for propagation during constraint prepping
 	PxArray<Cm::SpatialVectorF>					mDeltaV; // scratch space, used temporarily for propagating velocities
-
-	PxU32										numDifferentBodyBatchHeaders;
-	PxU32										numSelfConstraintBatchHeaders;
 
 	PxU32										mOrderedContactDescCount;
 	PxU32										mOrderedFrictionDescCount;
 
-	PxU32										mConstraintSize;
-
-	PxU32										mAxisConstraintCount;
+	PxU32										mConstraintSize;		// PT: TODO: consider removing, this is only used for stats
+	PxU32										mAxisConstraintCount;	// PT: TODO: consider removing, this is only used for stats
 
 	PxU32										mMaxPartitions;
 	PxU32										mMaxFrictionPartitions;
@@ -181,8 +170,6 @@ public:
 	PxU32										mMaxArticulationLinks;
 	
 	PxSolverConstraintDesc*						mContactDescPtr;
-	PxSolverConstraintDesc*						mStartContactDescPtr;
-	PxSolverConstraintDesc*						mFrictionDescPtr;
 private:
 
 	PxArray<ArticulationSolverDesc>				mArticulations;

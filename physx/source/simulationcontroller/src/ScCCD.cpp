@@ -576,11 +576,7 @@ void Sc::Scene::ccdBroadPhase(PxBaseTask* continuation)
 
 		mCCDBp = true;
 
-		mBpSecondPass.setContinuation(continuationTask);
-		mBpFirstPass.setContinuation(&mBpSecondPass);
-
-		mBpSecondPass.removeReference();
-		mBpFirstPass.removeReference();
+		setupBroadPhaseFirstAndSecondPassTasks(continuationTask);
 		
 		//mAABBManager->updateAABBsAndBP(numCpuTasks, mLLContext->getTaskPool(), &mLLContext->getScratchAllocator(), false, continuationTask, NULL);
 
@@ -680,7 +676,7 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 		ShapeInteraction* si = getSI(newTouches[i]);
 		PX_ASSERT(si);
 		mNPhaseCore->managerNewTouch(*si);
-		si->managerNewTouch(currentPass, true, outputs);
+		si->managerNewTouch(currentPass, outputs);
 		if (!si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
 		{
 			mSimpleIslandManager->setEdgeConnected(si->getEdgeIndex(), IG::Edge::eCONTACT_MANAGER);
@@ -690,8 +686,8 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 	{
 		ShapeInteraction* si = getSI(lostTouches[i]);
 		PX_ASSERT(si);
-		if (si->managerLostTouch(currentPass, true, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
-			addToLostTouchList(si->getShape0().getActor(), si->getShape1().getActor());
+		if (si->managerLostTouch(currentPass, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
+			addToLostTouchList(si->getActor0(), si->getActor1());
 
 		mSimpleIslandManager->setEdgeDisconnected(si->getEdgeIndex());
 	}

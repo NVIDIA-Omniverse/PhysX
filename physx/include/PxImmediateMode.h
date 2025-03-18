@@ -281,7 +281,7 @@ namespace immediate
 		PxReal							jointPos[PxArticulationAxis::eCOUNT];
 		PxReal							jointVel[PxArticulationAxis::eCOUNT];
 		PxReal							frictionCoefficient;
-		PxReal							maxJointVelocity;
+		PxReal							maxJointVelocity[PxArticulationAxis::eCOUNT];
 		PxArticulationJointType::Enum	type;
 
 		void	initData()
@@ -289,7 +289,6 @@ namespace immediate
 			parentPose			= PxTransform(PxIdentity);
 			childPose			= PxTransform(PxIdentity);
 			frictionCoefficient	= 0.05f;
-			maxJointVelocity	= 100.0f;
 			type				= PxArticulationJointType::eUNDEFINED;	// For root
 
 			for(PxU32 i=0;i<PxArticulationAxis::eCOUNT;i++)
@@ -300,6 +299,7 @@ namespace immediate
 				armature[i] = 0.0f;
 				jointPos[i] = 0.0f;
 				jointVel[i] = 0.0f;
+				maxJointVelocity[i] = 100.0f;
 			}
 			PxMemSet(targetPos, 0xff, sizeof(PxReal)*PxArticulationAxis::eCOUNT);
 			PxMemSet(targetVel, 0xff, sizeof(PxReal)*PxArticulationAxis::eCOUNT);

@@ -365,7 +365,7 @@ namespace Midphase
 	// \param[in]	localDir		sweep's unit dir, in local/mesh space
 	// \param[in]	distance		sweep's length/max distance
 	// \param[in]	callback		callback object, called each time a hit is found
-	// \param[in]	anyHit			true for PxHitFlag::eMESH_ANY queries
+	// \param[in]	anyHit			true for PxHitFlag::eANY_HIT queries
 	PX_FORCE_INLINE void sweepConvexVsMesh(const TriangleMesh* mesh, const Gu::Box& hullBox, const PxVec3& localDir, PxReal distance, SweepConvexMeshHitCallback& callback, bool anyHit)
 	{
 		const PxU32 index = PxU32(mesh->getConcreteType() - PxConcreteType::eTRIANGLE_MESH_BVH33);

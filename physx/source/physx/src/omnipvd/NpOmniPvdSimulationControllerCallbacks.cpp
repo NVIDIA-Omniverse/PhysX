@@ -99,27 +99,27 @@ void NpOmniPvdSimulationControllerCallbacks::processRigidDynamicSet(const PxsRig
 	{
 	case PxRigidDynamicGPUAPIWriteType::eGLOBAL_POSE:
 	{
-		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidActor, const PxTransform, globalPose)
+		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidActor, PxTransform, globalPose)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY:
 	{	
-		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, const PxVec3, linearVelocity)
+		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, PxVec3, linearVelocity)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY:
 	{
-		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, const PxVec3, angularVelocity)
+		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, PxVec3, angularVelocity)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eFORCE:
 	{
-		SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, mNpScene, addRigidDynamicForceReset, PxRigidBody, const PxVec3, force)
+		SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, mNpScene, addRigidDynamicForceReset, PxRigidBody, PxVec3, force)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eTORQUE:
 	{
-		SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, mNpScene, addRigidDynamicTorqueReset, PxRigidBody, const PxVec3, torque)
+		SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, mNpScene, addRigidDynamicTorqueReset, PxRigidBody, PxVec3, torque)
 		break;
 	}
 	default:
@@ -146,7 +146,7 @@ void NpOmniPvdSimulationControllerCallbacks::setDofOffsetVec(PxArray<PxU32>& dof
 	}
 }
 
-void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, const Dy::FeatherstoneArticulation* const * articulations, const PxReal* realsDataVec, const PxArticulationGPUIndex* nodeIndices,
+void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, const Dy::FeatherstoneArticulation* const * articulations, PxReal* realsDataVec, const PxArticulationGPUIndex* nodeIndices,
 	PxU32 nbArticulations, PxU32 maxLinks, PxU32 maxSubElementsInBlock)
 {
 	NpOmniPvdSceneClient& ovdClient = mNpScene.getSceneOvdClientInternal();
@@ -159,14 +159,14 @@ void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulat
 		{
 			ovdClient.addArticulationJointsForceReset(static_cast<const PxArticulationReducedCoordinate*>(npArticulation));
 		}
-		const PxReal* realsForArticulation = &realsDataVec[ artId * maxSubElementsInBlock ];
+		PxReal* realsForArticulation = &realsDataVec[ artId * maxSubElementsInBlock ];
 		const PxU32 nbLinks = npArticulation->getNbLinks();
 		const NpArticulationLink* const * npLinks = npArticulation->getLinks();
 		setDofOffsetVec(mDofStarts, nbLinks, npLinks);
 		for(PxU32 linkId = 1; linkId < nbLinks; linkId++)
 		{
 			const NpArticulationLink* npLink = npLinks[linkId];						
-			const PxReal* realsForDofs = &realsForArticulation[mDofStarts[npLink->getLinkIndex()]];
+			PxReal* realsForDofs = &realsForArticulation[mDofStarts[npLink->getLinkIndex()]];
 			const PxArticulationJointReducedCoordinate& joint = *static_cast<const PxArticulationJointReducedCoordinate*>(npLink->getInboundJoint());
 			const PxU32 nbrDofs = npLink->getInboundJointDof();
 			switch(dataType)
@@ -258,32 +258,32 @@ void NpOmniPvdSimulationControllerCallbacks::processArticulationSet(const Dy::Fe
 		case PxArticulationGPUAPIWriteType::eJOINT_TARGET_VELOCITY:
 		case PxArticulationGPUAPIWriteType::eJOINT_TARGET_POSITION:
 		{
-			streamJointValues(dataType, articulations, (const PxReal*)dataVec, nodeIndices, nbElements, maxLinks, nbrSubElementsPerBlock);
+			streamJointValues(dataType, articulations, (PxReal*)dataVec, nodeIndices, nbElements, maxLinks, nbrSubElementsPerBlock);
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eROOT_GLOBAL_POSE:		
 		{
-			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidActor, const PxTransform, globalPose)
+			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidActor, PxTransform, globalPose)
 			break;
 		}
         case PxArticulationGPUAPIWriteType::eROOT_LINEAR_VELOCITY:
 		{
-			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidBody, const PxVec3, linearVelocity)
+			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidBody, PxVec3, linearVelocity)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eROOT_ANGULAR_VELOCITY:
 		{
-			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidBody, const PxVec3, angularVelocity)
+			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidBody, PxVec3, angularVelocity)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eLINK_FORCE:
 		{
-			SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, mNpScene, addArticulationLinksForceReset, PxRigidBody, const PxVec3, force)
+			SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, mNpScene, addArticulationLinksForceReset, PxRigidBody, PxVec3, force)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eLINK_TORQUE:
 		{
-			SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, mNpScene, addArticulationLinksTorqueReset, PxRigidBody, const PxVec3, torque)
+			SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, mNpScene, addArticulationLinksTorqueReset, PxRigidBody, PxVec3, torque)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eFIXED_TENDON:

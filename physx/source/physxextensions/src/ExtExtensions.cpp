@@ -27,7 +27,6 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "foundation/PxIO.h"
-#include "common/PxMetaData.h"
 #include "common/PxSerializer.h"
 #include "extensions/PxExtensionsAPI.h"
 #include "extensions/PxRepXSerializer.h"

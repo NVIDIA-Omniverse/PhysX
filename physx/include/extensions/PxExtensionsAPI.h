@@ -33,7 +33,6 @@
 #include "extensions/PxDefaultAllocator.h"
 #include "extensions/PxConstraintExt.h"
 #include "extensions/PxDistanceJoint.h"
-#include "extensions/PxContactJoint.h"
 #include "extensions/PxFixedJoint.h"
 #include "extensions/PxPrismaticJoint.h"
 #include "extensions/PxRevoluteJoint.h"

@@ -749,13 +749,6 @@ void NpRigidBodyTemplate<APIClass>::setRigidBodyFlag(PxRigidBodyFlag::Enum flag,
 	NpScene* npScene = RigidActorTemplateClass::getNpScene();
 	NP_WRITE_CHECK(npScene);
 
-	if((flag & PxRigidBodyFlag::eKINEMATIC) && npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) &&
-	   npScene->isDirectGPUAPIInitialized())
-	{
-		 NP_API_READ_WRITE_ERROR_MSG(
-			"PxRigidBody::setRigidBodyFlag() not allowed for dynamic/kinematic switch when direct-GPU API has already been initialized.");
-	}
-
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidBody::setRigidBodyFlag() not allowed while simulation is running. Call will be ignored.")
 
 	const PxRigidBodyFlags currentFlags = mCore.getFlags();

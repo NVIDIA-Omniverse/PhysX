@@ -72,7 +72,7 @@ namespace Gu
 	{
 		using namespace aos;
 		const Vec4V eps = V4Splat(FEps());
-		const Vec4V zero =V4Neg(eps);
+		const Vec4V zero = V4Neg(eps);
 		const Vec4V one = V4Add(V4One(), eps);
 
 		const Vec4V v0v1v0v1 = V4PermXZXZ(vwvw);

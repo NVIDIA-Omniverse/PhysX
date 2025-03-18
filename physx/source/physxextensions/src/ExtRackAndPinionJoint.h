@@ -56,7 +56,6 @@ namespace Ext
 										RackAndPinionJoint(PxBaseFlags baseFlags) : RackAndPinionJointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	RackAndPinionJoint*		createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<RackAndPinionJoint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										RackAndPinionJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxRackAndPinionJoint

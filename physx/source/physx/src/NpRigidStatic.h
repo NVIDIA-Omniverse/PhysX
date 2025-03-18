@@ -29,7 +29,6 @@
 #ifndef NP_RIGID_STATIC_H
 #define NP_RIGID_STATIC_H
 
-#include "common/PxMetaData.h"
 #include "PxRigidStatic.h"
 #include "NpRigidActorTemplate.h"
 #include "ScStaticCore.h"
@@ -47,7 +46,6 @@ public:
 					void					preExportDataReset() { NpRigidStaticT::preExportDataReset(); }
 	virtual			void					requiresObjects(PxProcessPxBaseCallback& c);
 	static			NpRigidStatic*			createObject(PxU8*& address, PxDeserializationContext& context);
-	static			void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 
 											NpRigidStatic(const PxTransform& pose);

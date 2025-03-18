@@ -384,6 +384,7 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 			// send contacts info
 			omniPvdSampler->streamSceneContacts(*this);
 
+#if PX_SUPPORT_GPU_PHYSX
 			// process particle data
 			if (mPBDParticleSystems.size() > 0)
 			{
@@ -461,6 +462,7 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 				}
 
 			}
+#endif
 
 			NpOmniPvdSceneClient& ovdClient = getSceneOvdClientInternal();
 			ovdClient.resetForces();

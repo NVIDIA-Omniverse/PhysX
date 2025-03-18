@@ -67,7 +67,6 @@ struct Px1DConstraintFlag
 		eOUTPUT_FORCE			= 1<<4,	//!< whether to accumulate the force value from this constraint in the force total that is reported for the constraint and tested for breakage
 		eHAS_DRIVE_LIMIT		= 1<<5,	//!< whether the constraint has a drive force limit (which will be scaled by dt unless #PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES is set)
 		eANGULAR_CONSTRAINT		= 1<<6,	//!< whether this is an angular or linear constraint
-		eDEPRECATED_DRIVE_ROW	= 1<<7	//!< whether the constraint's geometric error should drive the target velocity \deprecated this member will be removed in a future version with no substitute
 	};
 };
 

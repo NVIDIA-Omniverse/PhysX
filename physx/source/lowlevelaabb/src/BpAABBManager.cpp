@@ -1229,6 +1229,8 @@ AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup:
 
 	mVolumeData[index].setAggregate(handle);
 
+	//creates an extra empty bound explicitly. Corresponding entry in the transform cache is guaranteed by resizing and advancing the index for next transforms, although explicitly setTransform is not called
+	//bounds and transforms are in sync and this change is reflected in changes array for GPU transfer
 	mBoundsArray.setBounds(PxBounds3::empty(), index);
 
 	mNbAggregates++;

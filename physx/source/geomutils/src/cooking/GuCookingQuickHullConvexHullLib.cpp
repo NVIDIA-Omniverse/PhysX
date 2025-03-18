@@ -1934,7 +1934,7 @@ PxConvexMeshCookingResult::Enum QuickHullConvexHullLib::createConvexHull()
 	// check if we need to build GRB compatible mesh
 	// if hull was cropped we already have a compatible mesh, if not check 
 	// the max verts per face
-	if(((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) || mCookingParams.buildGPUData) && !mCropedConvexHull &&
+	if(mCookingParams.buildGPUData && !mCropedConvexHull &&
 		(res == PxConvexMeshCookingResult::eSUCCESS || res == PxConvexMeshCookingResult::ePOLYGONS_LIMIT_REACHED))
 	{
 		PX_ASSERT(mQuickHull);
@@ -2292,7 +2292,7 @@ PxConvexMeshCookingResult::Enum QuickHullConvexHullLib::expandHullOBB()
 			break;
 		}
 		// check for vertex limit per face if necessary, GRB supports max 32 verts per face
-		if (((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) || mCookingParams.buildGPUData) && c->maxNumVertsPerFace() > gpuMaxVertsPerFace)
+		if (mCookingParams.buildGPUData && c->maxNumVertsPerFace() > gpuMaxVertsPerFace)
 		{ 
 			PX_DELETE(c);
 			c = tmp;

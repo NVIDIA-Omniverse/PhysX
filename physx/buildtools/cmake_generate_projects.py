@@ -52,9 +52,9 @@ def noPresetProvided(physx_root_dir):
             counter = counter + 1
     # Fix Python 2.x.
     try:
-    	input = raw_input
+        input = raw_input
     except NameError:
-    	pass
+        pass
     mode = int(eval(input('Enter preset number: ')))
     return presetList[mode]
 
@@ -117,15 +117,50 @@ class CMakePreset:
             return False
         return True
 
+
     def getCMakeSwitches(self):
         outString = ''
-        # We need gpuProjectsFound flag to avoid issues when we have both
-        # PX_GENERATE_GPU_PROJECTS and PX_GENERATE_GPU_PROJECTS_ONLY switches
-        gpuProjectsFound = False  # initialize flag
+        # We need to check both GPU-related switches
+        gpuProjectsEnabled = False
+        gpuProjectsOnlyEnabled = False
+        
+        # Define the switch names for clarity and consistency
+        GPU_PROJECTS_SWITCH = 'PX_GENERATE_GPU_PROJECTS'
+        GPU_PROJECTS_ONLY_SWITCH = 'PX_GENERATE_GPU_PROJECTS_ONLY'
+        
+        # First pass: Check the state of GPU-related switches
+        gpu_projects_found = False
+        gpu_projects_only_found = False
+        
+        for cmakeSwitch in self.cmakeSwitches:
+            # Format of cmakeSwitch is "-DSWITCH_NAME=VALUE"
+            # Use a more flexible approach to match switches
+            if f'-D{GPU_PROJECTS_SWITCH}=' in cmakeSwitch:
+                gpu_projects_found = True
+                gpuProjectsEnabled = cmakeSwitch.endswith('=TRUE')
+            elif f'-D{GPU_PROJECTS_ONLY_SWITCH}=' in cmakeSwitch:
+                gpu_projects_only_found = True
+                gpuProjectsOnlyEnabled = cmakeSwitch.endswith('=TRUE')
+        
+        # Log the state of GPU switches for debugging
+        if not gpu_projects_found:
+            print(f"Warning: {GPU_PROJECTS_SWITCH} switch not found in preset. Defaulting to disabled.")
+        if not gpu_projects_only_found:
+            print(f"Warning: {GPU_PROJECTS_ONLY_SWITCH} switch not found in preset. Defaulting to disabled.")
+            
+        # Determine if we need to add CUDA paths
+        gpuEnabled = gpuProjectsEnabled or gpuProjectsOnlyEnabled
+        
+        # Log GPU status
+        print(f"GPU projects enabled: {gpuEnabled} ({GPU_PROJECTS_SWITCH}={gpuProjectsEnabled}, {GPU_PROJECTS_ONLY_SWITCH}={gpuProjectsOnlyEnabled})")
+                
+        # Second pass: Add all switches to output
         for cmakeSwitch in self.cmakeSwitches:
             outString = outString + ' ' + cmakeSwitch
-            if not gpuProjectsFound and cmakeSwitch.find('PX_GENERATE_GPU_PROJECTS') != -1:
-                gpuProjectsFound = True  # set flag to True when keyword found
+            
+        # Only add CUDA paths if GPU is enabled
+        if gpuEnabled:
+            if os.environ.get('PM_CUDA_PATH') is not None:
                 if os.environ.get('PM_CUDA_PATH') is not None:
                     outString = outString + ' -DCUDAToolkit_ROOT_DIR=' + \
                             os.environ['PM_CUDA_PATH']
@@ -136,6 +171,7 @@ class CMakePreset:
                         if os.environ.get('PM_clang_PATH') is not None:
                             outString = outString + ' -DCMAKE_CUDA_HOST_COMPILER=' + \
                                 os.environ['PM_clang_PATH'] + '/bin/clang++'
+                        
         return outString
 
     def getCMakeParams(self):
@@ -216,6 +252,16 @@ class CMakePreset:
                 # host compiler for CUDA above.
                 outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=\"' + \
                     cmake_modules_root + '/linux/LinuxAarch64.cmake\"'
+            elif self.compiler == 'clang':
+                if os.environ.get('PM_clang_PATH') is not None:
+                    outString = outString + ' -DCMAKE_C_COMPILER=' + \
+                        os.environ['PM_clang_PATH'] + '/bin/clang'
+                    outString = outString + ' -DCMAKE_CXX_COMPILER=' + \
+                        os.environ['PM_clang_PATH'] + '/bin/clang++'
+                else:
+                    outString = outString + ' -DCMAKE_C_COMPILER=clang'
+                    outString = outString + ' -DCMAKE_CXX_COMPILER=clang++'
+            
             return outString
         elif self.targetPlatform == 'mac64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'

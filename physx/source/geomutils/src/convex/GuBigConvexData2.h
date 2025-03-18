@@ -31,7 +31,6 @@
 
 #include "foundation/PxVec3.h"
 #include "common/PxPhysXCommonConfig.h"
-#include "common/PxMetaData.h"
 #include "GuBigConvexData.h"
 
 namespace physx
@@ -44,7 +43,6 @@ namespace physx
 		public:
 // PX_SERIALIZATION
 											BigConvexData(const PxEMPTY)	{}
-		static		void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 											BigConvexData();
 											~BigConvexData();

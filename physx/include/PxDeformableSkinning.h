@@ -112,7 +112,7 @@ namespace physx
         /**
         \brief Pointer to guide vertices data on the GPU.
         */
-        PxTypedStridedData<PxVec3> guideVerticesD;
+        PxTypedBoundedData<PxVec3> guideVerticesD;
 
         /**
         \brief Pointer to guide tetrahedra data on the GPU.
@@ -143,7 +143,7 @@ namespace physx
         /**
         \brief Pointer to guide normals data on the GPU.
         */
-        PxTypedStridedData<PxVec3> guideNormalsD;
+        PxTypedBoundedData<PxVec3> guideNormalsD;
 
         /**
         \brief Pointer to guide triangles data on the GPU.

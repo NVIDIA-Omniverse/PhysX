@@ -428,7 +428,7 @@ struct ExtMultiQueryCallback : public PrunerRaycastCallback, public PrunerOverla
 			mFilterData			(filterData),
 			mFilterCall			(filterCall),
 			mShrunkDistance		(shrunkDistance),
-			mMeshAnyHitFlags	((hitFlags.isSet(PxHitFlag::eMESH_ANY) || anyHit) ? PxHitFlag::eMESH_ANY : PxHitFlag::Enum(0)),
+			mMeshAnyHitFlags	((hitFlags.isSet(PxHitFlag::eANY_HIT) || anyHit) ? PxHitFlag::eANY_HIT : PxHitFlag::Enum(0)),
 			mReportTouchesAgain	(true),
 			mFarBlockFound		(filterData.flags & PxQueryFlag::eNO_BLOCK),
 			mNoBlock			(filterData.flags & PxQueryFlag::eNO_BLOCK),

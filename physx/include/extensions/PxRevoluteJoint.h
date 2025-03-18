@@ -84,11 +84,9 @@ PX_FLAGS_OPERATORS(PxRevoluteJointFlag::Enum, PxU16)
  \image html revoluteJoint.png
 
  A revolute joint can be given a motor, so that it can apply a force to rotate the attached actors.
- It may also be given a limit, to restrict the revolute motion to within a certain range. In
- addition, the bodies may be projected together if the distance or angle between them exceeds
- a given threshold.
+ It may also be given a limit, to restrict the revolute motion to within a certain range.
  
- Projection, drive and limits are activated by setting the appropriate flags on the joint.
+ Drive and limits are activated by setting the appropriate flags on the joint.
 
  \see PxRevoluteJointCreate() PxJoint
 */

@@ -141,7 +141,7 @@ namespace Gu
 						const Vec3V bPreCenter = x;
 						x = V3ScaleAdd(r, _lambda, s);
 						
-						const Vec3V offSet =V3Sub(x, bPreCenter);
+						const Vec3V offSet = V3Sub(x, bPreCenter);
 						const Vec3V b0 = V3Add(B[0], offSet);
 						const Vec3V b1 = V3Add(B[1], offSet);
 						const Vec3V b2 = V3Add(B[2], offSet);

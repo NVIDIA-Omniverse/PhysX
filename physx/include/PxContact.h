@@ -813,7 +813,7 @@ private:
 };
 
 /**
-\brief Contains contact information for a contact reported by the direct-GPU contact report API. See PxScene::copyContactData().
+\brief Contains contact information for a contact reported by the direct-GPU contact report API. See PxDirectGPUAPI::copyContactData().
 */
 struct PxGpuContactPair
 {

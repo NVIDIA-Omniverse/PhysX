@@ -120,7 +120,6 @@ void Pvd::sendClassDescriptions(physx::pvdsdk::PvdDataStream& inStream)
 		registerProperties<PxJoint>( inStream );
 		inStream.createProperty<PxJoint,ObjectRef>( "Parent", "parents" );
 		registerPropertiesAndValueStruct<PxDistanceJoint,PxDistanceJointGeneratedValues>( inStream);
-		registerPropertiesAndValueStruct<PxContactJoint, PxContactJointGeneratedValues>(inStream);
 		registerPropertiesAndValueStruct<PxFixedJoint,PxFixedJointGeneratedValues>( inStream);
 		registerPropertiesAndValueStruct<PxPrismaticJoint,PxPrismaticJointGeneratedValues>( inStream);
 		registerPropertiesAndValueStruct<PxSphericalJoint,PxSphericalJointGeneratedValues>( inStream);

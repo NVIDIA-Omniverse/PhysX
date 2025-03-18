@@ -49,6 +49,7 @@ namespace physx
 	class PxMaterial;
 
 	class PxArticulationReducedCoordinate;
+	class PxArticulationJointReducedCoordinate;
 	class PxArticulationLink;
 	class PxRigidDynamic;
 
@@ -66,6 +67,7 @@ namespace physx
 void streamActorName(const physx::PxActor & a, const char* name);
 void streamSceneName(const physx::PxScene & s, const char* name);
 void streamArticulationName(const physx::PxArticulationReducedCoordinate & art, const char* name);
+void streamArticulationJointName(const physx::PxArticulationJointReducedCoordinate& joint, const char* name);
 
 void streamShapeMaterials(const physx::PxShape&, physx::PxMaterial* const * mats, physx::PxU32 nbrMaterials);
 

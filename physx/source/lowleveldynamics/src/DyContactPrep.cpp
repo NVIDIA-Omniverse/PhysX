@@ -46,13 +46,6 @@ namespace physx
 namespace Dy
 {
 
-PxcCreateFinalizeSolverContactMethod createFinalizeMethods[3] =
-{
-	createFinalizeSolverContacts,
-	createFinalizeSolverContactsCoulomb1D,
-	createFinalizeSolverContactsCoulomb2D
-};
-
 static void setupFinalizeSolverConstraints(
 							const PxSolverContactDesc& contactDesc,
 							const CorrelationBuffer& c,
@@ -208,7 +201,7 @@ static void setupFinalizeSolverConstraints(
 		PxMemZero(forceBuffers, sizeof(PxF32) * contactCount);
 		ptr += ((contactCount + 3) & (~3)) * sizeof(PxF32); // jump to next 16-byte boundary
 		
-		const PxReal frictionCoefficient = (contactBase0->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
+		const PxReal frictionCoefficient = (frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
 
 		const PxReal staticFriction = contactBase0->staticFriction * frictionCoefficient;
 		const PxReal dynamicFriction = contactBase0->dynamicFriction* frictionCoefficient;

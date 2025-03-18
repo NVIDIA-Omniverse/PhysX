@@ -281,6 +281,17 @@ namespace Cm
 			task->runInternal();
 	}
 
+	template<class T>
+	PX_FORCE_INLINE void updateTaskLinkedList(T*& previousTask, T* task, T*& head)
+	{
+		if(previousTask)
+			previousTask->mNext = task;
+		else
+			head = task;
+
+		previousTask = task;
+	}
+
 } // namespace Cm
 
 }

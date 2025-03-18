@@ -75,7 +75,7 @@ namespace physx
 
 		\see materialIndexStride
 		*/
-		PxTypedStridedData<PxDeformableMaterialTableIndex> materialIndices;
+		PxTypedBoundedData<PxDeformableMaterialTableIndex> materialIndices;
 
 		/**
 		\brief Pointer to first vertex point.

@@ -104,7 +104,6 @@ namespace Ext
 										D6Joint(PxBaseFlags baseFlags) : D6JointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	D6Joint*				createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<D6Joint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										D6Joint(const PxTolerancesScale& scale, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxD6Joint
@@ -128,7 +127,8 @@ namespace Ext
 		virtual	void					setDrivePosition(const PxTransform& pose, bool autowake = true)	PX_OVERRIDE;
 		virtual	PxTransform				getDrivePosition()	const	PX_OVERRIDE;
 		virtual	void					setDriveVelocity(const PxVec3& linear, const PxVec3& angular, bool autowake = true)	PX_OVERRIDE;
-		virtual	void					getDriveVelocity(PxVec3& linear, PxVec3& angular)	const	PX_OVERRIDE;						
+		virtual	void					getDriveVelocity(PxVec3& linear, PxVec3& angular)	const	PX_OVERRIDE;
+		virtual PxD6JointGPUIndex		getGPUIndex() const PX_OVERRIDE;
 		//~PxD6Joint
 
 		// PxConstraintConnector

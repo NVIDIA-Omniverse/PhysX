@@ -41,6 +41,14 @@ namespace Sn
 	const char* getBinaryPlatformName(PxU32 platformTag);
 	const char* getBinaryVersionGuid();
 	bool checkCompatibility(const char* binaryVersionGuidCandidate);
+
+	PX_INLINE PxU32 getPadding(size_t value, PxU32 alignment)
+	{
+		const PxU32 mask = alignment - 1;
+		const PxU32 overhead = PxU32(value) & mask;
+		return (alignment - overhead) & mask;
+	}
+
 }
 
 }

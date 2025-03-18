@@ -69,7 +69,6 @@ struct ConstraintPartitionOut
 		mOverflowConstraintDescriptors(overflowConstraintDescriptors),
 		mConstraintsPerPartition(constraintsPerPartition),
 		mNumDifferentBodyConstraints(0),
-		mNumSelfConstraints(0),
 		mNumStaticConstraints(0),
 		mNumOverflowConstraints(0)
 	{
@@ -78,9 +77,7 @@ struct ConstraintPartitionOut
 	PxSolverConstraintDesc*	mOrderedContactConstraintDescriptors;
 	PxSolverConstraintDesc*	mOverflowConstraintDescriptors;
 	PxArray<PxU32>*			mConstraintsPerPartition;	// PT: actually accumulated constraints per partition
-	//PxArray<PxU32>*		mBitField;	// PT: removed, unused
 	PxU32					mNumDifferentBodyConstraints;
-	PxU32					mNumSelfConstraints;
 	PxU32					mNumStaticConstraints;
 	PxU32					mNumOverflowConstraints;
 };

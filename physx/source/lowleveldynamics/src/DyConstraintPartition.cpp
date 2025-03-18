@@ -895,10 +895,8 @@ PxU32 partitionContactConstraints(ConstraintPartitionOut& out, const ConstraintP
 	//PX_ASSERT(numConstraintsDifferentBodies == numConstraintDescriptors);
 
 	//Now handle the articulated self-constraints.
-	PxU32 totalConstraintCount = numConstraintsDifferentBodies;	
 
 	out.mNumDifferentBodyConstraints = numConstraintsDifferentBodies;
-	out.mNumSelfConstraints = totalConstraintCount - numConstraintsDifferentBodies;
 
 	out.mNumStaticConstraints = numStaticConstraints;
 	out.mNumOverflowConstraints = numOverflows;

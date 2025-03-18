@@ -29,32 +29,18 @@
 #ifndef DY_TGS_DYNAMICS_H
 #define DY_TGS_DYNAMICS_H
 
+#include "DyDynamicsBase.h"
 #include "PxvConfig.h"
 #include "CmSpatialVector.h"
 #include "CmTask.h"
 #include "CmPool.h"
 #include "PxcThreadCoherentCache.h"
-#include "DyThreadContext.h"
 #include "PxcConstraintBlockStream.h"
 #include "DySolverBody.h"
-#include "DyContext.h"
-#include "PxsIslandManagerTypes.h"
-#include "PxvNphaseImplementationContext.h"
-#include "solver/PxSolverDefs.h"
 #include "PxsIslandSim.h"
 
 namespace physx
 {
-	namespace Cm
-	{
-		class FlushPool;
-	}
-
-	namespace IG
-	{
-		class SimpleIslandManager;
-	}
-
 	class PxsRigidBody;
 
 	struct PxsBodyCore;
@@ -152,7 +138,7 @@ namespace physx
 #pragma warning( disable : 4324 ) // Padding was added at the end of a structure because of a __declspec(align) value.
 #endif
 
-class DynamicsTGSContext : public Context
+class DynamicsTGSContext : public DynamicsContextBase
 {
 	PX_NOCOPY(DynamicsTGSContext)
 public:
@@ -161,7 +147,7 @@ public:
 										Cm::FlushPool& taskPool,
 										PxvSimStats& simStats,
 										PxTaskManager* taskManager,
-										PxVirtualAllocatorCallback* allocator,
+										PxVirtualAllocatorCallback* allocatorCallback,
 										PxsMaterialManager* materialManager,
 										IG::SimpleIslandManager& islandManager,
 										PxU64 contextID,
@@ -176,30 +162,13 @@ public:
 
 	// Context
 	virtual	void						destroy()	PX_OVERRIDE;
-	virtual void						update(PxBaseTask* continuation, PxBaseTask* lostTouchTask,
-										PxvNphaseImplementationContext* nphase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
+	virtual void						update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* lostTouchTask,
+												PxvNphaseImplementationContext* nphase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
 	virtual void						mergeResults()	PX_OVERRIDE;
 	virtual void						setSimulationController(PxsSimulationController* simulationController)	PX_OVERRIDE	{ mSimulationController = simulationController; }
 	virtual PxSolverType::Enum			getSolverType()	const	PX_OVERRIDE	{ return PxSolverType::eTGS;	}
 		
 	//~Context
-
-	/**
-	\brief Allocates and returns a thread context object.
-	\return A thread context.
-	*/
-	PX_FORCE_INLINE ThreadContext*		getThreadContext()	{ return mThreadContextPool.get();	}
-
-	/**
-	\brief Returns a thread context to the thread context pool.
-	\param[in] context The thread context to return to the thread context pool.
-	*/
-					void				putThreadContext(ThreadContext* context)	{ mThreadContextPool.put(context);	}
-
-	PX_FORCE_INLINE Cm::FlushPool&		getTaskPool()					{ return mTaskPool;			}
-	PX_FORCE_INLINE ThresholdStream&	getThresholdStream()			{ return *mThresholdStream; }
-	PX_FORCE_INLINE PxvSimStats&		getSimStats()					{ return mSimStats;			}
-	PX_FORCE_INLINE	PxU32				getKinematicCount()		const	{ return mKinematicCount;	}
 
 					void				updatePostKinematic(IG::SimpleIslandManager& simpleIslandManager, PxBaseTask* continuation, PxBaseTask* lostTouchTask, PxU32 maxLinks);
 protected:
@@ -218,17 +187,11 @@ protected:
 			*/
 			void								computeUnconstrainedVelocity(PxsRigidBody* atom)	const;
 
-			/**
-			\brief fills in a PxSolverConstraintDesc from an indexed interaction
-			\param[in,out] desc The PxSolverConstraintDesc
-			\param[in] constraint The PxsIndexedInteraction
-			*/
-			void								setDescFromIndices(PxSolverConstraintDesc& desc, const IG::IslandSim& islandSim,
-				const PxsIndexedInteraction& constraint, PxU32 solverBodyOffset, PxTGSSolverBodyVel* solverBodies);
+			void								setDescFromIndices_Contacts(PxSolverConstraintDesc& desc, const IG::IslandSim& islandSim,
+																			const PxsIndexedInteraction& constraint, PxU32 solverBodyOffset, PxTGSSolverBodyVel* solverBodies);
 
-
-			void								setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeIndex edgeIndex,
-				const IG::SimpleIslandManager& islandManager, PxU32* bodyRemapTable, PxU32 solverBodyOffset, PxTGSSolverBodyVel* solverBodies);
+			void								setDescFromIndices_Constraints(	PxSolverConstraintDesc& desc, const IG::IslandSim& islandSim, IG::EdgeIndex edgeIndex,
+																				const PxU32* bodyRemapTable, PxU32 solverBodyOffset, PxTGSSolverBodyVel* solverBodies);
 
 			void solveIsland(const SolverIslandObjectsStep& objects,
 				const PxsIslandIndices& counts,
@@ -282,19 +245,13 @@ protected:
 			void applyArticulationSubstepGravityParallel(PxU32& startArticulationIdx, PxU32& targetArticulationProgressCount, PxI32* articulationProgressCount,
 				PxI32* articulationIntegrationCounts, ArticulationSolverDesc* articulationDescs, PxU32 nbArticulations, PxReal stepDt, ThreadContext& threadContext);
 
-			void integrateBodies(const SolverIslandObjectsStep& objects,
-				PxU32 count, PxTGSSolverBodyVel* vels,
-				PxTGSSolverBodyTxInertia* txInertias, const PxTGSSolverBodyData*const bodyDatas, PxReal dt, PxReal invTotalDt, bool averageBodies,
-				PxReal ratio);
+			void integrateBodies(PxU32 count, PxTGSSolverBodyVel* vels, PxTGSSolverBodyTxInertia* txInertias, PxReal dt);
 
-			void integrateBodiesAndApplyGravity(const SolverIslandObjectsStep& objects,
-				PxU32 count, PxTGSSolverBodyVel* vels,
-				PxTGSSolverBodyTxInertia* txInertias, const PxTGSSolverBodyData*const bodyDatas, PxReal dt, PxReal invTotalDt, bool averageBodies,
-				PxReal ratio, PxU32 posIters);
+			void integrateBodiesAndApplyGravity(const SolverIslandObjectsStep& objects, PxU32 count, PxTGSSolverBodyVel* vels,
+				PxTGSSolverBodyTxInertia* txInertias, PxReal dt, PxU32 posIters);
 
 			void parallelIntegrateBodies(PxTGSSolverBodyVel* vels, PxTGSSolverBodyTxInertia* txInertias,
-				const PxTGSSolverBodyData* const bodyDatas, PxU32 count, PxReal dt, PxU32 iteration, PxReal invTotalDt, bool average,
-				PxReal ratio);
+				PxU32 count, PxReal dt, PxU32 iteration);
 
 			void copyBackBodies(const SolverIslandObjectsStep& objects,
 				PxTGSSolverBodyVel* vels, PxTGSSolverBodyTxInertia* txInertias,
@@ -308,40 +265,21 @@ protected:
 			void applyArticulationTgsSubstepForces(Dy::ThreadContext& threadContext, PxU32 numArticulations, PxReal stepDt);
 
 			void iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-				PxReal stepDt, PxReal invStepDt, PxU32 posIters, PxU32 velIters, SolverContext& cache, PxReal ratio,
-				PxReal biasCoefficient);
+				PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, SolverContext& cache, PxReal biasCoefficient);
 
 			void iterativeSolveIslandParallel(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-				PxReal stepDt, PxU32 posIters, PxU32 velIters, PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts, PxI32* gravityCounts,
+				PxReal stepDt,  PxReal totalDt, PxU32 posIters, PxU32 velIters, PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts, PxI32* gravityCounts,
 				PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxI32* gravityProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize,
-				PxReal ratio, PxReal biasCoefficient);
+				PxReal biasCoefficient);
 
 			void endIsland(ThreadContext& mThreadContext);
 
 			void finishSolveIsland(ThreadContext& mThreadContext, const SolverIslandObjectsStep& objects,
 				const PxsIslandIndices& counts, IG::SimpleIslandManager& islandManager, PxBaseTask* continuation);
 
-			/**
-			\brief Resets the thread contexts
-			*/
-			void									resetThreadContexts();
-
-			/**
-			\brief Returns the scratch memory allocator.
-			\return The scratch memory allocator.
-			*/
-			PX_FORCE_INLINE PxcScratchAllocator&	getScratchAllocator() { return mScratchAllocator; }
-
-			//Data
-
-			PxTGSSolverBodyVel						mWorldSolverBodyVel;
-			PxTGSSolverBodyTxInertia				mWorldSolverBodyTxInertia;
-			PxTGSSolverBodyData						mWorldSolverBodyData2;
-
-			/**
-			\brief A thread context pool
-			*/
-			PxcThreadCoherentCache<ThreadContext, PxcNpMemBlockPool> mThreadContextPool;
+			PxTGSSolverBodyVel				mWorldSolverBodyVel;
+			PxTGSSolverBodyTxInertia		mWorldSolverBodyTxInertia;
+			PxTGSSolverBodyData				mWorldSolverBodyData2;
 
 			/**
 			\brief Solver constraint desc array
@@ -352,65 +290,14 @@ protected:
 
 			SolverStepConstraintDescPool	mTempSolverConstraintDescPool;
 
-			PxArray<PxConstraintBatchHeader> mContactConstraintBatchHeaders;
+			SolverBodyVelDataPool			mSolverBodyVelPool;
 
-			/**
-			\brief Array of motion velocities for all bodies in the scene.
-			*/
-			PxArray<Cm::SpatialVector> mMotionVelocityArray;
+			SolverBodyTxInertiaPool			mSolverBodyTxInertiaPool;
 
-			/**
-			\brief Array of body core pointers for all bodies in the scene.
-			*/
-			PxArray<PxsBodyCore*>	mBodyCoreArray;
-
-			/**
-			\brief Array of rigid body pointers for all bodies in the scene.
-			*/
-			PxArray<PxsRigidBody*> mRigidBodyArray;
-
-			/**
-			\brief Array of articulationpointers for all articulations in the scene.
-			*/
-			PxArray<FeatherstoneArticulation*>	mArticulationArray;
-
-			SolverBodyVelDataPool				mSolverBodyVelPool;
-
-			SolverBodyTxInertiaPool				mSolverBodyTxInertiaPool;
-
-			SolverBodyDataStepPool				mSolverBodyDataPool2;
-
-			ThresholdStream*					mExceededForceThresholdStream[2]; //this store previous and current exceeded force thresholdStream	
-
-			PxArray<PxU32>						mExceededForceThresholdStreamMask;
-
-			PxArray<PxU32>						mSolverBodyRemapTable;				//Remaps from the "active island" index to the index within a solver island
-
-			PxArray<PxU32>						mNodeIndexArray;					//island node index
-
-			PxArray<PxsIndexedContactManager>	mContactList;
-
-			/**
-			\brief The total number of kinematic bodies in the scene
-			*/
-			PxU32						mKinematicCount;
-
-			/**
-			\brief Atomic counter for the number of threshold stream elements.
-			*/
-			PxI32						mThresholdStreamOut;
-
-			PxsMaterialManager*			mMaterialManager;
-
-			PxsContactManagerOutputIterator mOutputIterator;
+			SolverBodyDataStepPool			mSolverBodyDataPool2;			
 
 		private:
-			//private:
-			PxcScratchAllocator&						mScratchAllocator;
-			Cm::FlushPool&								mTaskPool;
-			PxTaskManager*								mTaskManager;
-			PxU32										mCurrentIndex; // this is the index point to the current exceeded force threshold stream
-			bool										mIsExternalForcesEveryTgsIterationEnabled;
+			bool	mIsExternalForcesEveryTgsIterationEnabled;
 
 			friend class SetupDescsTask;
 			friend class PreIntegrateTask;

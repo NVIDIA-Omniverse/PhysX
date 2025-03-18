@@ -49,7 +49,6 @@ public:
 									NpMaterial(PxBaseFlags baseFlags) : PxMaterial(baseFlags), mMaterial(PxEmpty) {}								
 	virtual		void				resolveReferences(PxDeserializationContext& context);
 	static		NpMaterial*			createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void				getBinaryMetaData(PxOutputStream& stream);
 
 				void				preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 				void				exportExtraData(PxSerializationContext&) {}

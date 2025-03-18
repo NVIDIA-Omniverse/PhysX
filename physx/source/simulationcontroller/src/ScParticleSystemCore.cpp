@@ -258,14 +258,11 @@ void Sc::ParticleSystemCore::setFlags(PxParticleFlags flags)
 		if (wasRigidCollisionDisabled ^ isRigidCollisionDisabled)
 		{
 			if (wasRigidCollisionDisabled)
-				sim->getShapeSim().createLowLevelVolume();
+				sim->createLowLevelVolume();
 			else
-				sim->getShapeSim().destroyLowLevelVolume();
-
+				sim->destroyLowLevelVolume();
 		}
 	}
-
-	
 }
 
 #endif //PX_SUPPORT_GPU_PHYSX

@@ -337,8 +337,8 @@ bool CustomScene::shadowRay(const PxVec3& origin, const PxVec3& unitDir, float m
 				return true;
 
 			// PT: we don't need the hit position/normal for shadow rays, so we tell PhysX it can skip computing them.
-			// We also use eMESH_ANY to tell the system not to look for the closest hit on triangle meshes.
-			if(PxGeometryQuery::raycast(mOrigin, mDir, obj.mGeom.any(), obj.mPose, distance, PxHitFlag::eMESH_ANY, 1, &mLocalHit, sizeof(PxGeomRaycastHit), gQueryFlags))
+			// We also use eANY_HIT to tell the system not to look for the closest hit on triangle meshes.
+			if(PxGeometryQuery::raycast(mOrigin, mDir, obj.mGeom.any(), obj.mPose, distance, PxHitFlag::eANY_HIT, 1, &mLocalHit, sizeof(PxGeomRaycastHit), gQueryFlags))
 			{
 				mStatus = true;
 				return false;

@@ -4,25 +4,15 @@
 	</dependency>
 
 	<dependency name="vswhere">
-		<package name="VsWhere" version="2.7.3111.17308_1.0"  platforms="vc15win64  vc16win64 vc17win64 linux-crosscompile linux-aarch64-crosscompile "/>
-	</dependency>
-
-	<dependency name="PhysXDevice">
-		<package name="PhysXDevice" version="18.12.7.6"  platforms="vc15win64  vc16win64 vc17win64"/>
+		<package name="VsWhere" version="2.7.3111.17308_1.0"  platforms="vc15win64* vc16win64* vc17win64* linux-crosscompile linux-aarch64-crosscompile "/>
 	</dependency>
 
 	<dependency name="freeglut">
-		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64  vc16win64 vc17win64"/>
-	</dependency>
-
-	<dependency name="PhysXGpu">
-		<package name="PhysXGpu" version="5.5.1.71a0947a-release-106.5-windows-public"  platforms="vc15win64 vc16win64 vc17win64"/>
-		<package name="PhysXGpu" version="5.5.1.71a0947a-release-106.5-linux-x86_64-public"  platforms="linux-gcc linux-clang"/>
-		<package name="PhysXGpu" version="5.5.1.71a0947a-release-106.5-linux-aarch64-public"  platforms="linux-aarch64-gcc linux-aarch64-clang"/>
+		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64* vc16win64* vc17win64*"/>
 	</dependency>
 
 	<dependency name="opengllinux" tags="requiredForDistro">
-		<package name="opengl-linux" version="2017.5.19.1"  platforms="linux-gcc linux-clang"/>
+		<package name="opengl-linux" version="2017.5.19.1"  platforms="linux-gcc* linux-clang*"/>
 	</dependency>
 
     <dependency name="rapidjson">

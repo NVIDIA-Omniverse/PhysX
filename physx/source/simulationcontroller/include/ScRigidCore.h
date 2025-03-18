@@ -75,7 +75,6 @@ namespace Sc
 					RigidSim*	getSim() const;
 
 					PxU32		getRigidID() const;
-	static			void		getBinaryMetaData(PxOutputStream& stream);
 	protected:
 								RigidCore(const PxEMPTY) :	ActorCore(PxEmpty)	{}
 								RigidCore(PxActorType::Enum type);

@@ -391,7 +391,7 @@ namespace physx { namespace Sn {
 					mReader.leaveChild();
 				mNames.popBack();
 			}
-			mValid =true;
+			mValid = true;
 			if ( mNames.size() && mNames.back().mValid == false )
 				mValid = false;
 		}

@@ -41,8 +41,25 @@ OPTION(PX_BUILDSNIPPETS "Generate the snippets" OFF)
 OPTION(PX_BUILDPVDRUNTIME "Generate the OmniPVD project" OFF)
 OPTION(PX_CMAKE_SUPPRESS_REGENERATION "Disable zero_check projects" OFF)
 
-IF(PX_CMAKE_SUPPRESS_REGENERATION)
-	SET(CMAKE_SUPPRESS_REGENERATION true)
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+IF(NOT CMAKE_CROSSCOMPILING AND (TARGET_BUILD_PLATFORM STREQUAL "windows" OR TARGET_BUILD_PLATFORM STREQUAL "linux"))
+	OPTION(PX_GENERATE_GPU_PROJECTS "Generate the GPU projects, if possible." OFF)
+	OPTION(PX_GENERATE_GPU_PROJECTS_ONLY "Generate ONLY the GPU projects, if possible." OFF)
+
+	IF(PX_GENERATE_GPU_PROJECTS OR PX_GENERATE_GPU_PROJECTS_ONLY)
+		# Will enable building CUDA files ( .cu )
+		ENABLE_LANGUAGE(CUDA)
+		# The FIND_PACKAGE(CUDAToolkit) makes it easier if you have CUDA language enabled to link to
+		# CTK libraries by providing nice targets like CUDA::cudart
+		FIND_PACKAGE(CUDAToolkit REQUIRED)
+
+		# We need to set CMAKE_CUDA_ARCHITECTURES with a default value
+		# see policy CMP0104
+		IF(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+			SET(CMAKE_CUDA_ARCHITECTURES 75)
+		ENDIF()
+	ENDIF()
 ENDIF()
 
 # This is required to be defined by external callers!
@@ -66,8 +83,14 @@ ENDIF()
 
 # Add PhysX SDK Source code to solution
 ADD_SUBDIRECTORY(${PHYSX_ROOT_DIR}/source/compiler/cmake ${CMAKE_CURRENT_BINARY_DIR}/sdk_source_bin)
-
 MESSAGE("Added PhysX")
+
+IF(PX_GENERATE_GPU_PROJECTS OR PX_GENERATE_GPU_PROJECTS_ONLY)
+	# Add PhysX SDK Gpu Source code to solution
+	ADD_SUBDIRECTORY(${PHYSX_ROOT_DIR}/source/compiler/cmakegpu ${CMAKE_CURRENT_BINARY_DIR}/sdk_gpu_source_bin)
+	MESSAGE("Added PhysX GPU")
+ENDIF()
+
 
 IF(PX_BUILDPVDRUNTIME)
 	IF(TARGET_BUILD_PLATFORM STREQUAL "windows" OR TARGET_BUILD_PLATFORM STREQUAL "linux")

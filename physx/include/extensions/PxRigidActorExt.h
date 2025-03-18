@@ -86,7 +86,7 @@ public:
 		if(shape)
 		{
 			bool status = actor.attachShape(*shape);	// attach can fail, if e.g. we try and attach a trimesh simulation shape to a dynamic actor
-			shape->release();		// if attach fails, we hold the only counted reference, and so this cleans up properly
+			shape->release();							// if attach fails, we hold the only counted reference, and so this cleans up properly
 			if(!status)
 				shape = NULL;
 		}

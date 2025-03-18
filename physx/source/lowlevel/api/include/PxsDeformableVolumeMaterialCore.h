@@ -52,9 +52,9 @@ PX_ALIGN_PREFIX(16) struct PxsDeformableVolumeMaterialData
 	PxReal	youngs;					//4
 	PxReal	poissons;				//8
 	PxReal	dynamicFriction;		//12
-	PxReal	damping;				//16
+	PxReal	elasticityDamping;		// 16
 	PxU16	dampingScale;			//20, known to be in the range of 0...1. Mapped to integer range 0...65535
-	PxU16	materialModel;          //22
+	PxU16	materialModel;			//22
 	PxReal	deformThreshold;		//24
 	PxReal	deformLowLimitRatio;	//28
 	PxReal	deformHighLimitRatio;	//32
@@ -63,9 +63,9 @@ PX_ALIGN_PREFIX(16) struct PxsDeformableVolumeMaterialData
 		youngs				(1.e+6f),
 		poissons			(0.45f),
 		dynamicFriction		(0.0f),
-		damping				(0.0f),
-		//dampingScale        (0),
-		materialModel       (PxDeformableVolumeMaterialModel::eCO_ROTATIONAL),
+		elasticityDamping	(0.0f),
+		//dampingScale		(0),
+		materialModel		(PxDeformableVolumeMaterialModel::eCO_ROTATIONAL),
 		deformThreshold		(PX_MAX_F32),
 		deformLowLimitRatio	(1.0f),
 		deformHighLimitRatio(1.0f)

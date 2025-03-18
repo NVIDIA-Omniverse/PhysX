@@ -642,6 +642,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mMemBlock128Pool				("PxsContext ConstraintBlock128Pool"),
 	mMemBlock256Pool				("PxsContext ConstraintBlock256Pool"),
 	mMemBlock384Pool				("PxsContext ConstraintBlock384Pool"),
+	mMemBlock512Pool				("PxsContext ConstraintBlock512Pool"),
 	mNPhaseCore						(NULL),
 	mKineKineFilteringMode			(desc.kineKineFilteringMode),
 	mStaticKineFilteringMode		(desc.staticKineFilteringMode),
@@ -657,6 +658,8 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mPublicFlags					(desc.flags),
 	mAnchorCore						(PxTransform(PxIdentity)),
 	mStaticAnchor					(NULL),
+	mConstraintSimPool				("ScScene::ConstraintSim"),
+	mConstraintInteractionPool		("ScScene::ConstraintInteraction"),
 	mBatchRemoveState				(NULL),
 	mLostTouchPairs					("sceneLostTouchPairs"),
 	mVisualizationParameterChanged	(false),
@@ -675,6 +678,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mUpdateShapes					(contextID, this, "ScScene.updateShapes"),
 	mUpdateSimulationController		(contextID, this, "ScScene.updateSimulationController"),
 	mUpdateDynamics					(contextID, this, "ScScene.updateDynamics"),
+	mUpdateDynamicsPostPartitioning	(contextID, this, "ScScene.updateDynamicsPostPartitioning"),
 	mProcessLostContactsTask		(contextID, this, "ScScene.processLostContact"),
 	mProcessLostContactsTask2		(contextID, this, "ScScene.processLostContact2"),
 	mProcessLostContactsTask3		(contextID, this, "ScScene.processLostContact3"),
@@ -684,11 +688,12 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mProcessNarrowPhaseLostTouchTasks(contextID, this, "ScScene.processNpLostTouchTask"),
 	mProcessNPLostTouchEvents		(contextID, this, "ScScene.processNPLostTouchEvents"),
 	mPostThirdPassIslandGenTask		(contextID, this, "ScScene.postThirdPassIslandGenTask"),
+#if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 	mPostIslandGen					(contextID, this, "ScScene.postIslandGen"),
+#endif
 	mIslandGen						(contextID, this, "ScScene.islandGen"),
 	mPreRigidBodyNarrowPhase		(contextID, this, "ScScene.preRigidBodyNarrowPhase"),
 	mSetEdgesConnectedTask			(contextID, this, "ScScene.setEdgesConnectedTask"),
-	mProcessPatchesTask				(contextID, this, "ScScene.processSolverPatchesTask"),
 	mUpdateBoundAndShapeTask		(contextID, this, "ScScene.updateBoundsAndShapesTask"),
 	mRigidBodyNarrowPhase			(contextID, this, "ScScene.rigidBodyNarrowPhase"),
 	mRigidBodyNPhaseUnlock			(contextID, this, "ScScene.unblockNarrowPhase"),
@@ -712,12 +717,14 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mTaskManager					(NULL),
 	mCudaContextManager				(desc.cudaContextManager),
 	mContactReportsNeedPostSolverVelocity(false),
-	mUseGpuDynamics(false),
+	mUseGpuDynamics					(false),
 	mUseGpuBp						(false),
 	mCCDBp							(false),
 	mSimulationStage				(SimulationStage::eCOMPLETE),
 	mPosePreviewBodies				("scenePosePreviewBodies"),
 	mOverlapFilterTaskHead			(NULL),
+	mOverlapCreatedTaskHead			(NULL),
+	mIslandInsertionTaskHead		(NULL),
 	mIsCollisionPhaseActive			(false),
 	mIsDirectGPUAPIInitialized		(false),
 	mResidual						(),
@@ -753,9 +760,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 
 	mStaticSimPool				= PX_NEW(PreallocatingPool<StaticSim>)(64, "StaticSim");
 	mBodySimPool				= PX_NEW(PreallocatingPool<BodySim>)(64, "BodySim");
-	mShapeSimPool				= PX_NEW(PreallocatingPool<ShapeSim>)(64, "ShapeSim");
-	mConstraintSimPool			= PX_NEW(PxPool<ConstraintSim>)("ScScene::ConstraintSim");
-	mConstraintInteractionPool	= PX_NEW(PxPool<ConstraintInteraction>)("ScScene::ConstraintInteraction");
+	mShapeSimPool				= PX_NEW(PreallocatingPool<ShapeSim>)(128, "ShapeSim");
 	mLLArticulationRCPool		= PX_NEW(LLArticulationRCPool);
 	mSimStateDataPool			= PX_NEW(PxPool<SimStateData>)("ScScene::SimStateData");
 
@@ -851,7 +856,18 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	PxVirtualAllocatorCallback* allocatorCallback = mMemoryManager->getHostMemoryAllocator();
 	PxVirtualAllocator allocator(allocatorCallback);
 
-	mBoundsArray = PX_NEW(Bp::BoundsArray)(allocator);
+#if PX_SUPPORT_GPU_PHYSX
+	const bool directAPI = mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API;
+	if(directAPI)
+	{
+		mBoundsArray = PxvGetPhysXGpu(true)->createGpuBounds(allocator);
+	}
+	else
+#endif
+	{
+		mBoundsArray = PX_NEW(Bp::BoundsArray)(allocator);
+	}
+	
 	mContactDistance = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxFloatArrayPinned), "ContactDistance"), PxFloatArrayPinned)(allocator);
 	mHasContactDistanceChanged = false;
 
@@ -898,7 +914,6 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	else
 	{
 #if PX_SUPPORT_GPU_PHYSX
-		const bool directAPI = mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API;
 		const bool enableBodyAccelerations = mPublicFlags & PxSceneFlag::eENABLE_BODY_ACCELERATIONS;
 
 		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
@@ -1013,8 +1028,6 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 
 	setGravity(desc.gravity);
 
-	setFrictionType(desc.frictionType);
-
 	setPCM(desc.flags & PxSceneFlag::eENABLE_PCM);
 
 	setContactCache(!(desc.flags & PxSceneFlag::eDISABLE_CONTACT_CACHE));
@@ -1096,8 +1109,6 @@ void Sc::Scene::release()
 	PX_DELETE(mSqBoundsManager);
 	PX_DELETE(mBoundsArray);
 
-	PX_DELETE(mConstraintInteractionPool);
-	PX_DELETE(mConstraintSimPool);
 	PX_DELETE(mSimStateDataPool);
 	PX_DELETE(mStaticSimPool);
 	PX_DELETE(mShapeSimPool);
@@ -1676,9 +1687,31 @@ void Sc::Scene::removeBody(BodySim& body)	//this also notifies any connected joi
 
 void Sc::Scene::addConstraint(ConstraintCore& constraint, RigidCore* body0, RigidCore* body1)
 {
-	ConstraintSim* sim = mConstraintSimPool->construct(constraint, body0, body1, *this);
-	PX_UNUSED(sim);
+	ConstraintSim* sim = mConstraintSimPool.construct(constraint, body0, body1, *this);
 
+	addConstraintToMap(constraint, body0, body1);
+
+	mConstraints.insert(&constraint);
+
+	getSimulationController()->addJoint(sim->getLowLevelConstraint());
+}
+
+void Sc::Scene::removeConstraint(ConstraintCore& constraint)
+{
+	ConstraintSim* cSim = constraint.getSim();
+
+	if (cSim)
+	{
+		removeConstraintFromMap(*cSim->getInteraction());
+
+		mConstraintSimPool.destroy(cSim);
+	}
+
+	mConstraints.erase(&constraint);
+}
+
+void Sc::Scene::addConstraintToMap(ConstraintCore& constraint, RigidCore* body0, RigidCore* body1)
+{
 	PxNodeIndex nodeIndex0, nodeIndex1;
 
 	ActorSim* sim0 = NULL;
@@ -1699,39 +1732,24 @@ void Sc::Scene::addConstraint(ConstraintCore& constraint, RigidCore* body0, Rigi
 		PxSwap(sim0, sim1);
 
 	mConstraintMap.insert(PxPair<const Sc::ActorSim*, const Sc::ActorSim*>(sim0, sim1), &constraint);
-
-	mConstraints.insert(&constraint);
 }
 
-void Sc::Scene::removeConstraint(ConstraintCore& constraint)
+void Sc::Scene::removeConstraintFromMap(const ConstraintInteraction& interaction)
 {
-	ConstraintSim* cSim = constraint.getSim();
+	PxNodeIndex nodeIndex0, nodeIndex1;
 
-	if (cSim)
-	{
-		{
-			PxNodeIndex nodeIndex0, nodeIndex1;
+	Sc::ActorSim* bSim = &interaction.getActorSim0();
+	Sc::ActorSim* bSim1 = &interaction.getActorSim1();
 
-			const ConstraintInteraction* interaction = cSim->getInteraction();
+	if (bSim)
+		nodeIndex0 = bSim->getNodeIndex();
+	if (bSim1)
+		nodeIndex1 = bSim1->getNodeIndex();
 
-			Sc::ActorSim* bSim = &interaction->getActorSim0();
-			Sc::ActorSim* bSim1 = &interaction->getActorSim1();
+	if (nodeIndex1 < nodeIndex0)
+		PxSwap(bSim, bSim1);
 
-			if (bSim)
-				nodeIndex0 = bSim->getNodeIndex();
-			if (bSim1)
-				nodeIndex1 = bSim1->getNodeIndex();
-
-			if (nodeIndex1 < nodeIndex0)
-				PxSwap(bSim, bSim1);
-
-			mConstraintMap.erase(PxPair<const Sc::ActorSim*, const Sc::ActorSim*>(bSim, bSim1));
-		}
-
-		mConstraintSimPool->destroy(cSim);
-	}
-
-	mConstraints.erase(&constraint);
+	mConstraintMap.erase(PxPair<const Sc::ActorSim*, const Sc::ActorSim*>(bSim, bSim1));
 }
 
 void Sc::Scene::addArticulation(ArticulationCore& articulation, BodyCore& root)
@@ -1763,20 +1781,19 @@ void Sc::Scene::removeArticulation(ArticulationCore& articulation)
 
 void Sc::Scene::addArticulationJoint(ArticulationJointCore& joint, BodyCore& parent, BodyCore& child)
 {
-	ArticulationJointSim* sim = PX_NEW(ArticulationJointSim)(joint, *parent.getSim(), *child.getSim());
+	ArticulationJointSim* sim = mArticulationJointSimPool.construct(joint, *parent.getSim(), *child.getSim());
 	PX_UNUSED(sim);
 }
 
 void Sc::Scene::removeArticulationJoint(ArticulationJointCore& joint)
 {
 	ArticulationJointSim* sim = joint.getSim();
-	PX_DELETE(sim);
+	mArticulationJointSimPool.destroy(sim);
 }
 
 void Sc::Scene::addArticulationTendon(ArticulationSpatialTendonCore& tendon)
 {
 	ArticulationSpatialTendonSim* sim = PX_NEW(ArticulationSpatialTendonSim)(tendon, *this);
-
 	PX_UNUSED(sim);
 }
 
@@ -1836,6 +1853,8 @@ void* Sc::Scene::allocateConstraintBlock(PxU32 size)
 		return mMemBlock256Pool.construct();
 	else  if(size<=384)
 		return mMemBlock384Pool.construct();
+	else  if(size<=512)
+		return mMemBlock512Pool.construct();
 	else
 		return PX_ALLOC(size, "ConstraintBlock");
 }
@@ -1848,6 +1867,8 @@ void Sc::Scene::deallocateConstraintBlock(void* ptr, PxU32 size)
 		mMemBlock256Pool.destroy(reinterpret_cast<MemBlock256*>(ptr));
 	else  if(size<=384)
 		mMemBlock384Pool.destroy(reinterpret_cast<MemBlock384*>(ptr));
+	else  if(size<=512)
+		mMemBlock512Pool.destroy(reinterpret_cast<MemBlock512*>(ptr));
 	else
 		PX_FREE(ptr);
 }
@@ -3197,18 +3218,33 @@ void Sc::Scene::gpu_fireOnWakeCallback(PxActor** actors)
 
 void Sc::Scene::gpu_updateBounds()
 {
+	bool gpuStateChanged = false;
+
+	PxBitMapPinned& changedMap = mAABBManager->getChangedAABBMgActorHandleMap();
+
 	//update deformable volumes world bound
 	Sc::DeformableVolumeCore* const* deformableVolumes = mDeformableVolumes.getEntries();
 	PxU32 size = mDeformableVolumes.size();
 	if (mUseGpuBp)
 	{
 		for (PxU32 i = 0; i < size; ++i)
-			deformableVolumes[i]->getSim()->updateBoundsInAABBMgr();
+			changedMap.growAndSet(deformableVolumes[i]->getSim()->getShapeSim().getElementID());
+
+		if(size)
+			gpuStateChanged = true;
 	}
 	else
 	{
 		for (PxU32 i = 0; i < size; ++i)
-			deformableVolumes[i]->getSim()->updateBounds();
+		{
+			DeformableVolumeSim* volumeSim = deformableVolumes[i]->getSim();
+			ShapeSimBase& shapeSim = volumeSim->getShapeSim();
+
+			PxBounds3 worldBounds = volumeSim->getWorldBounds();
+			worldBounds.fattenSafe(shapeSim.getContactOffset()); // fatten for fast moving colliders
+			mBoundsArray->setBounds(worldBounds, shapeSim.getElementID());
+			changedMap.growAndSet(shapeSim.getElementID());
+		}
 	}
 
 	// update FEM-cloth world bound
@@ -3217,12 +3253,23 @@ void Sc::Scene::gpu_updateBounds()
 	if (mUseGpuBp)
 	{
 		for (PxU32 i = 0; i < size; ++i)
-			deformableSurfaces[i]->getSim()->updateBoundsInAABBMgr();
+			changedMap.growAndSet(deformableSurfaces[i]->getSim()->getShapeSim().getElementID());
+
+		if(size)
+			gpuStateChanged = true;
 	}
 	else
 	{
 		for (PxU32 i = 0; i < size; ++i)
-			deformableSurfaces[i]->getSim()->updateBounds();
+		{
+			Sc::DeformableSurfaceSim* surfaceSim = deformableSurfaces[i]->getSim();
+			ShapeSimBase& shapeSim = surfaceSim->getShapeSim();
+
+			PxBounds3 worldBounds = surfaceSim->getWorldBounds();
+			worldBounds.fattenSafe(shapeSim.getContactOffset()); // fatten for fast moving colliders
+			mBoundsArray->setBounds(worldBounds, shapeSim.getElementID());
+			changedMap.growAndSet(shapeSim.getElementID());
+		}
 	}
 
 	//upate the actor handle of particle system in AABB manager 
@@ -3232,12 +3279,31 @@ void Sc::Scene::gpu_updateBounds()
 	if (mUseGpuBp)
 	{
 		for (PxU32 i = 0; i < size; ++i)
-			particleSystems[i]->getSim()->updateBoundsInAABBMgr();
+		{
+			Sc::ShapeSimBase& ps = particleSystems[i]->getSim()->getShapeSim();
+
+			//we are updating the bound in GPU so we just need to set the actor handle in CPU to make sure
+			//the GPU BP will process the particles
+			if (!(static_cast<Sc::ParticleSystemSim&>(ps.getActor()).getCore().getFlags() & PxParticleFlag::eDISABLE_RIGID_COLLISION))
+			{
+				changedMap.growAndSet(ps.getElementID());
+				gpuStateChanged = true;
+			}
+		}
+
+		if(gpuStateChanged)
+			mAABBManager->setGPUStateChanged();
 	}
 	else
 	{
 		for (PxU32 i = 0; i < size; ++i)
-			particleSystems[i]->getSim()->updateBounds();
+		{
+			ShapeSimBase& shapeSim = particleSystems[i]->getSim()->getShapeSim();
+
+			const PxVec3 offset(shapeSim.getContactOffset());	// fatten for fast moving colliders
+			mBoundsArray->setBounds(PxBounds3(-offset, offset), shapeSim.getElementID());
+			changedMap.growAndSet(shapeSim.getElementID());
+		}
 	}
 }
 

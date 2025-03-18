@@ -35,7 +35,6 @@
 #include "DySolverConstraintDesc.h"
 #include "DySolverConstraint1D.h"
 #include "DySolverContact.h"
-#include "DySolverContactPF.h"
 #include "PxcNpWorkUnit.h"
 #include "PxsMaterialManager.h"
 

@@ -59,7 +59,6 @@ struct PxJointConcreteType
 		eFIXED,
 		eDISTANCE,
 		eD6,
-		eCONTACT,
 		eGEAR,
 		eRACK_AND_PINION,
 		eLast
@@ -71,7 +70,6 @@ PX_DEFINE_TYPEINFO(PxRackAndPinionJoint,	PxJointConcreteType::eRACK_AND_PINION)
 PX_DEFINE_TYPEINFO(PxGearJoint,				PxJointConcreteType::eGEAR)
 PX_DEFINE_TYPEINFO(PxD6Joint,				PxJointConcreteType::eD6)
 PX_DEFINE_TYPEINFO(PxDistanceJoint,			PxJointConcreteType::eDISTANCE)
-PX_DEFINE_TYPEINFO(PxContactJoint,			PxJointConcreteType::eCONTACT)
 PX_DEFINE_TYPEINFO(PxFixedJoint,			PxJointConcreteType::eFIXED)
 PX_DEFINE_TYPEINFO(PxPrismaticJoint,		PxJointConcreteType::ePRISMATIC)
 PX_DEFINE_TYPEINFO(PxRevoluteJoint,			PxJointConcreteType::eREVOLUTE)
@@ -340,15 +338,6 @@ public:
 
 	void*						userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
 
-	//serialization
-
-	/**
-	\brief Put class meta data in stream, used for serialization
-	*/
-	static	void				getBinaryMetaData(PxOutputStream& stream);
-
-	//~serialization
-					
 protected:
 	virtual						~PxJoint() {}
 

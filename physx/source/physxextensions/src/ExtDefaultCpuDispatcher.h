@@ -35,15 +35,14 @@
 
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxSync.h"
-#include "foundation/PxSList.h"
 #include "ExtSharedQueueEntryPool.h"
+#include "ExtTaskQueueHelper.h"
+#include "ExtCpuWorkerThread.h"
 
 namespace physx
 {
 namespace Ext
 {
-	class CpuWorkerThread;
-
 #if PX_VC
 #pragma warning(push)
 #pragma warning(disable:4324)	// Padding was added at the end of a structure because of a __declspec(align) value.
@@ -51,7 +50,6 @@ namespace Ext
 
 	class DefaultCpuDispatcher : public PxDefaultCpuDispatcher, public PxUserAllocated
 	{
-		friend class TaskQueueHelper;
 																		PX_NOCOPY(DefaultCpuDispatcher)
 	private:
 																		~DefaultCpuDispatcher();
@@ -69,9 +67,24 @@ namespace Ext
 		virtual			bool											getRunProfiled()	const			PX_OVERRIDE	{ return mRunProfiled;			}
 		//~PxDefaultCpuDispatcher
 
-						PxBaseTask*										getJob();
-						PxBaseTask*										stealJob();
-						PxBaseTask*										fetchNextTask();
+		template<const bool highPriorityT>
+						PxBaseTask*										fetchNextTask()
+																		{
+																			// PT: get job from local list
+																			PxBaseTask* task = mHelper.fetchTask<highPriorityT>();
+																			if(!task)
+																			{
+																				// PT: steal job from other threads
+																				const PxU32 nbThreads = mNumThreads;
+																				for(PxU32 i=0; i<nbThreads; ++i)
+																				{
+																					task = mWorkerThreads[i].getJob<highPriorityT>();
+																					if(task)
+																						return task;
+																				}
+																			}
+																			return task;
+																		}
 
 		PX_FORCE_INLINE	void											runTask(PxBaseTask& task)
 																		{
@@ -94,8 +107,7 @@ namespace Ext
 
 	protected:
 						CpuWorkerThread*								mWorkerThreads;
-						SharedQueueEntryPool<>							mQueueEntryPool;
-						PxSList											mJobList;
+						TaskQueueHelper									mHelper;
 						PxSync											mWorkReady;
 						PxU8*											mThreadNames;
 						PxU32											mNumThreads;

@@ -48,7 +48,7 @@ namespace physx
 		{
 		public:
 
-			ArticulationJointCoreData() : jointOffset(0xffffffff), dofConstraintMask(0)
+			ArticulationJointCoreData() : jointOffset(0xffffffff)
 			{
 			}
 
@@ -101,7 +101,6 @@ namespace physx
 			PxU32	jointOffset;				//4
 			//degree of freedom
 			PxU8	nbDof;						//1
-			PxU8	dofConstraintMask;	//1
 			PxU8	dofLimitMask;					//1	
 
 		};

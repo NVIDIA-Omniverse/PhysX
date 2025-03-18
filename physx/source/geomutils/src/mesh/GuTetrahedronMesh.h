@@ -239,7 +239,6 @@ namespace physx
 			// PX_SERIALIZATION
 			virtual void								exportExtraData(PxSerializationContext& ctx);
 			void										importExtraData(PxDeserializationContext&);
-			//PX_PHYSX_COMMON_API	static	void		getBinaryMetaData(PxOutputStream& stream);
 			virtual	void								release();
 
 			void										resolveReferences(PxDeserializationContext&) {}

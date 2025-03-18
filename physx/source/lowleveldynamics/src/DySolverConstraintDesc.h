@@ -35,6 +35,8 @@
 #include "PxConstraintDesc.h"
 #include "solver/PxSolverDefs.h"
 
+#define PGS_SUPPORT_COMPOUND_CONSTRAINTS	0
+
 namespace physx
 {
 struct PxcNpWorkUnit;
@@ -46,6 +48,7 @@ class FeatherstoneArticulation;
 
 // dsequeira: moved this articulation stuff here to sever a build dep on Articulation.h through DyThreadContext.h and onward
 
+#if PGS_SUPPORT_COMPOUND_CONSTRAINTS
 //This class rolls together multiple contact managers into a single contact manager.
 struct CompoundContactManager
 {
@@ -66,6 +69,7 @@ struct CompoundContactManager
 
 	PxU8* originalFrictionPatches;	//This is the original friction patches buffer that we replaced with a combined buffer	
 };
+#endif
 
 struct SolverConstraintPrepState
 {

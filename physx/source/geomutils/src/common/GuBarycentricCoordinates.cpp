@@ -60,7 +60,7 @@ void Gu::barycentricCoordinates(const aos::Vec3VArg p, const aos::Vec3VArg a, co
 	const FloatV va = V3Dot(n, bCrossC);//edge region of BC, signed area rbc, u = S(rbc)/S(abc) for a
 	const FloatV vb = V3Dot(n, cCrossA);//edge region of AC, signed area rac, v = S(rca)/S(abc) for b
 	const FloatV vc = V3Dot(n, aCrossB);//edge region of AB, signed area rab, w = S(rab)/S(abc) for c
-	const FloatV totalArea =FAdd(va, FAdd(vb, vc));
+	const FloatV totalArea = FAdd(va, FAdd(vb, vc));
 	const FloatV zero = FZero();
 	const FloatV denom = FSel(FIsEq(totalArea, zero), zero, FRecip(totalArea));
 	v = FMul(vb, denom);

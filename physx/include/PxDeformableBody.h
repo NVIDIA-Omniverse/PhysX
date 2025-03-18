@@ -110,23 +110,43 @@ public:
 	\brief Sets the maximal velocity vertices can reach
 
 	Allows to limit the vertices' maximal velocity to control the maximal distance a vertex can move per frame
-	<b>Default:</b> 0.0, which means the limit is ignored.
+	<b>Default:</b> 1.0e32
+	\param[in] maxLinearVelocity The maximal linear velocity
+	*/
+	virtual		void						setMaxLinearVelocity(const PxReal maxLinearVelocity) = 0;
+
+	/**
+	\brief Sets the maximal velocity vertices can reach
+
+	\deprecated Use setMaxLinearVelocity instead.
+
+	Allows to limit the vertices' maximal velocity to control the maximal distance a vertex can move per frame
+	<b>Default:</b> 1.0e32
 	\param[in] maxVelocity The maximal velocity
 	*/
-	virtual		void						setMaxVelocity(const PxReal maxVelocity) = 0;
+	PX_DEPRECATED PX_FORCE_INLINE void		setMaxVelocity(const PxReal maxVelocity) { setMaxLinearVelocity(maxVelocity); }
 
 	/**
 	\brief Retrieves maximal velocity a vertex can have.
 
 	\return The maximal velocity
 	*/
-	virtual		PxReal						getMaxVelocity() const = 0;
+	virtual		PxReal						getMaxLinearVelocity() const = 0;
+
+	/**
+	\brief Retrieves maximal velocity a vertex can have.
+
+	\deprecated Use getMaxLinearVelocity instead.
+
+	\return The maximal velocity
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxReal	getMaxVelocity() const { return getMaxLinearVelocity(); }
 
 	/**
 	\brief Sets the maximal depenetration velocity vertices can reach
 
 	Allows to limit the vertices' maximal depenetration velocity to avoid that collision responses lead to very high particle velocities
-	<b>Default:</b> 0.0, which means the limit is ignored.
+	<b>Default:</b> 1.0e32
 	\param[in] maxDepenetrationVelocity The maximal depenetration velocity
 	*/
 	virtual		void						setMaxDepenetrationVelocity(const PxReal maxDepenetrationVelocity) = 0;

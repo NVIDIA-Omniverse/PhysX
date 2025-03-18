@@ -55,7 +55,6 @@ namespace Ext
 										GearJoint(PxBaseFlags baseFlags) : GearJointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	GearJoint*				createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<GearJoint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										GearJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxGearJoint

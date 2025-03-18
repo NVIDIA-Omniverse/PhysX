@@ -125,7 +125,6 @@ namespace physx
 			BV32Tree(const PxEMPTY);
 			void			exportExtraData(PxSerializationContext&);
 			void			importExtraData(PxDeserializationContext& context);
-			static			void			getBinaryMetaData(PxOutputStream& stream);
 			//~PX_SERIALIZATION
 
 							BV32Tree();

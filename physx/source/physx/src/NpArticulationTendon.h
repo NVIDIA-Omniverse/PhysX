@@ -56,7 +56,6 @@ class NpArticulationAttachmentArray : public PxInlineArray<NpArticulationAttachm
 public:
 	// PX_SERIALIZATION
 	NpArticulationAttachmentArray(const PxEMPTY) : PxInlineArray<NpArticulationAttachment*, 4>(PxEmpty) {}
-	static	void	getBinaryMetaData(PxOutputStream& stream);
 	//~PX_SERIALIZATION
 	NpArticulationAttachmentArray() : PxInlineArray<NpArticulationAttachment*, 4>("NpArticulationAttachmentArray") {}
 };
@@ -66,7 +65,6 @@ class NpArticulationTendonJointArray : public PxInlineArray<NpArticulationTendon
 public:
 	// PX_SERIALIZATION
 	NpArticulationTendonJointArray(const PxEMPTY) : PxInlineArray<NpArticulationTendonJoint*, 4>(PxEmpty) {}
-	static	void	getBinaryMetaData(PxOutputStream& stream);
 	//~PX_SERIALIZATION
 	NpArticulationTendonJointArray() : PxInlineArray<NpArticulationTendonJoint*, 4>("NpArticulationTendonJointArray") {}
 };
@@ -86,7 +84,6 @@ public:
 	virtual		void						requiresObjects(PxProcessPxBaseCallback&);
 	virtual		bool						isSubordinate()  const	 { return true; } 
 	static		NpArticulationAttachment*	createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void						getBinaryMetaData(PxOutputStream& stream);		
 //~PX_SERIALIZATION
 
 
@@ -146,7 +143,6 @@ public:
 	virtual		void						requiresObjects(PxProcessPxBaseCallback&);
 	virtual		bool						isSubordinate()  const	 { return true; } 
 	static		NpArticulationSpatialTendon* createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void						getBinaryMetaData(PxOutputStream& stream);		
 //~PX_SERIALIZATION
 
 	NpArticulationSpatialTendon(NpArticulationReducedCoordinate* articulation);
@@ -204,7 +200,6 @@ public:
 	virtual		void			requiresObjects(PxProcessPxBaseCallback&);
 	virtual		bool			isSubordinate()  const	 { return true; } 
 	static		NpArticulationTendonJoint*	createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void						getBinaryMetaData(PxOutputStream& stream);		
 	//~PX_SERIALIZATION
 
 	NpArticulationTendonJoint(PxArticulationTendonJoint* parent, PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient, PxArticulationLink* link);
@@ -254,7 +249,6 @@ public:
 	virtual		void						requiresObjects(PxProcessPxBaseCallback&);
 	virtual		bool						isSubordinate()  const	 { return true; } 
 	static		NpArticulationFixedTendon* createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void						getBinaryMetaData(PxOutputStream& stream);
 	//~PX_SERIALIZATION
 
 	NpArticulationFixedTendon(NpArticulationReducedCoordinate* articulation);

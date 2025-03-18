@@ -52,7 +52,7 @@ namespace physx
 	PxGearJoint*	PxGearJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 
 	/**
-	\brief A joint that connects two existing revolute joints and constrains their relative angular velocity and position with respect to each other.
+	\brief A joint that connects two existing revolute joints and constrains their relative angular velocity with respect to each other.
 
 	\see PxGearJointCreate PxJoint
 	*/

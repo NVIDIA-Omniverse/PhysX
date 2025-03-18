@@ -46,7 +46,6 @@ namespace physx
 			// PX_SERIALIZATION
 			ArticulationTendonJointCore(const PxEMPTY) : mTendonSim(NULL) {}
 			void preExportDataReset() { }
-			static void getBinaryMetaData(PxOutputStream& stream);
 			//~PX_SERIALIZATION
 
 			ArticulationTendonJointCore()

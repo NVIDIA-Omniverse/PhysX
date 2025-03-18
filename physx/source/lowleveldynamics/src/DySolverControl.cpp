@@ -74,7 +74,7 @@ void solve1D4Block_WriteBack			(DY_PGS_SOLVE_METHOD_PARAMS);
 //void contactPreBlock_WriteBack	(DY_PGS_SOLVE_METHOD_PARAMS);
 //void writeBack1D4Block			(DY_PGS_SOLVE_METHOD_PARAMS);
 
-static SolveBlockMethod gVTableSolveBlock[] PX_UNUSED_ATTRIBUTE = 
+SolveBlockMethod gVTableSolveBlock[] PX_UNUSED_ATTRIBUTE = 
 {
 	0,
 	solveContactBlock,				// DY_SC_TYPE_RB_CONTACT
@@ -87,7 +87,7 @@ static SolveBlockMethod gVTableSolveBlock[] PX_UNUSED_ATTRIBUTE =
 	solve1D4_Block,					// DY_SC_TYPE_BLOCK_1D,
 };
 
-static SolveWriteBackBlockMethod gVTableSolveWriteBackBlock[] PX_UNUSED_ATTRIBUTE = 
+SolveWriteBackBlockMethod gVTableSolveWriteBackBlock[] PX_UNUSED_ATTRIBUTE = 
 {
 	0,
 	solveContactBlockWriteBack,				// DY_SC_TYPE_RB_CONTACT
@@ -100,7 +100,7 @@ static SolveWriteBackBlockMethod gVTableSolveWriteBackBlock[] PX_UNUSED_ATTRIBUT
 	solve1D4Block_WriteBack,				// DY_SC_TYPE_BLOCK_1D,
 };
 
-static SolveBlockMethod gVTableSolveConcludeBlock[] PX_UNUSED_ATTRIBUTE = 
+SolveBlockMethod gVTableSolveConcludeBlock[] PX_UNUSED_ATTRIBUTE = 
 {
 	0,
 	solveContactConcludeBlock,				// DY_SC_TYPE_RB_CONTACT
@@ -113,22 +113,7 @@ static SolveBlockMethod gVTableSolveConcludeBlock[] PX_UNUSED_ATTRIBUTE =
 	solve1D4Block_Conclude,					// DY_SC_TYPE_BLOCK_1D,
 };
 
-SolveBlockMethod* getSolveBlockTable()
-{
-	return gVTableSolveBlock;
-}
-
-SolveBlockMethod* getSolverConcludeBlockTable()
-{
-	return gVTableSolveConcludeBlock;
-}
-
-SolveWriteBackBlockMethod* getSolveWritebackBlockTable()
-{
-	return gVTableSolveWriteBackBlock;
-}
-
-void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
+void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
 {
 	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
 	const bool isTGS = false;
@@ -184,13 +169,13 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 		if (cache.contactErrorAccumulator)
 			cache.contactErrorAccumulator->reset();
 
-		cache.doFriction = mFrictionEveryIteration ? true : iteration <= 3;
+		cache.doFriction = solveFrictionEveryIteration ? true : iteration <= 3;
 
 		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
 			cache, contactIterator, iteration == 1 ? gVTableSolveConcludeBlock : gVTableSolveBlock, normalIter);
 
 		for (PxU32 i = 0; i < articulationListSize; ++i)
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
+			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.dt, params.invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
 
 		++normalIter;
 	}
@@ -213,7 +198,7 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 			cache, contactIterator, gVTableSolveBlock, normalIter);
 
 		for (PxU32 i = 0; i < articulationListSize; ++i)
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
+			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
 		++normalIter;
 	}
 
@@ -235,7 +220,7 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 
 		for (PxU32 i = 0; i < articulationListSize; ++i)
 		{
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
+			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
 			articulationListStart[i].articulation->writebackInternalConstraints(false);
 		}
 
@@ -255,7 +240,8 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 	}
 }
 
-void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator) const
+void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator,
+	bool solveFrictionEveryIteration)
 {
 #if PX_PROFILE_SOLVE_STALLS
 	PxU64 startTime = readTimer();
@@ -336,7 +322,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 			if (i == 0 && cache.contactErrorAccumulator)
 				cache.contactErrorAccumulator->reset();
 
-			cache.doFriction = mFrictionEveryIteration ? true : (positionIterations - a) <= 3;
+			cache.doFriction = solveFrictionEveryIteration ? true : (positionIterations - a) <= 3;
 			for(PxU32 b = 0; b < nbPartitions; ++b)
 			{
 				WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid solve of previous partition
@@ -378,7 +364,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 				PxI32 nbSolved = 0;
 				while (articSolveStart < endIdx)
 				{
-					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
+					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
 					articSolveStart++;
 					nbSolved++;
 				}
@@ -516,7 +502,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 			PxI32 nbSolved = 0;
 			while (articSolveStart < endIdx)
 			{
-				articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
+				articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, dt, invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
 				articSolveStart++;
 				nbSolved++;
 			}
@@ -598,7 +584,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 				PxI32 nbSolved = 0;
 				while (articSolveStart < endIdx)
 				{
-					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
+					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
 					articulationListStart[articSolveStart - articIndexCounter].articulation->writebackInternalConstraints(false);
 					articSolveStart++;
 					nbSolved++;

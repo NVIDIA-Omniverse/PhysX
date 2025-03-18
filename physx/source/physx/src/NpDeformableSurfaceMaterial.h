@@ -50,7 +50,6 @@ public:
 												NpDeformableSurfaceMaterial(PxBaseFlags baseFlags) : PxDeformableSurfaceMaterial(baseFlags), mMaterial(PxEmpty) {}
 	virtual		void							resolveReferences(PxDeserializationContext& context);
 	static		NpDeformableSurfaceMaterial*	createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void							getBinaryMetaData(PxOutputStream& stream);
 
 				void							preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 				void							exportExtraData(PxSerializationContext&) {}

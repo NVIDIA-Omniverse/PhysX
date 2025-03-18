@@ -39,7 +39,7 @@ namespace physx
 #endif
 
 
-struct PxStridedData
+struct PxBoundedData
 {
 	/**
 	\brief The offset in bytes between consecutive samples in the data.
@@ -48,8 +48,16 @@ struct PxStridedData
 	*/
 	const void* data;
 	PxU32 stride;
+	PxU32 count;
 
-	PxStridedData() : data( NULL ), stride(0) {}
+	PxBoundedData() : data( NULL ), stride(0), count(0) {}
+
+	PxBoundedData(void* data_, PxU32 stride_ = 0, PxU32 count_ = 0)
+		: data(data_)
+		, stride(stride_)
+		, count(count_)
+	{
+	}
 
 	template<typename TDataType>
 	PX_INLINE const TDataType& at( PxU32 idx ) const
@@ -62,21 +70,26 @@ struct PxStridedData
 	}
 };
 
+typedef PX_DEPRECATED PxBoundedData PxStridedData;
+
 template<typename TDataType>
-struct PxTypedStridedData
+struct PxTypedBoundedData
 {
 	TDataType* data;
 	PxU32 stride;
+	PxU32 count;
 
-	PxTypedStridedData()
+	PxTypedBoundedData()
 		: data(NULL)
 		, stride(0)
+		, count(0)
 	{
 	}
 
-	PxTypedStridedData(TDataType* data_, PxU32 stride_ = 0)
+	PxTypedBoundedData(TDataType* data_, PxU32 stride_ = 0, PxU32 count_ = 0)
 		: data(data_)
 		, stride(stride_)
+		, count(count_)
 	{
 	}
 	
@@ -99,17 +112,16 @@ struct PxTypedStridedData
 	}
 };
 
-struct PxBoundedData : public PxStridedData
+template<typename TDataType>
+PX_DEPRECATED struct PxTypedStridedData : public PxTypedBoundedData<TDataType>
 {
-	PxU32 count;
-	PxBoundedData() : count( 0 ) {}
-};
+	PxTypedStridedData() : PxTypedBoundedData<TDataType>()
+	{
+	}
 
-template <typename TDataType>
-struct PxTypedBoundedData : public PxTypedStridedData<TDataType>
-{
-	PxU32 count;
-	PxTypedBoundedData() : count(0) {}
+	PxTypedStridedData(TDataType* data_, PxU32 stride_ = 0) : PxTypedBoundedData<TDataType>(data_, stride_)
+	{
+	}
 };
 
 template<PxU8 TNumBytes>

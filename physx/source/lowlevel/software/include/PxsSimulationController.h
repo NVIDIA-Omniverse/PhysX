@@ -76,7 +76,6 @@ namespace physx
 		class ShapeSimBase;
 	}
 
-	class PxNodeIndex;
 	class PxsTransformCache;
 	class PxvNphaseImplementationContext;
 	class PxBaseTask;
@@ -240,6 +239,8 @@ namespace physx
 		virtual void releaseParticleSystem(Dy::ParticleSystem* /*particleSystem*/) 	{}
 		virtual void releaseDeferredParticleSystemIds() 	{}
 
+#endif
+
 		virtual void setEnableOVDReadback(bool) {}
 		virtual bool getEnableOVDReadback() const { return false; }
 		virtual void setEnableOVDCollisionReadback(bool) {}
@@ -249,9 +250,8 @@ namespace physx
 		virtual void setOVDCallbacks(PxsSimulationControllerOVDCallbacks& /*ovdCallbacks*/) {}
 #endif
 
-#endif
-
 		virtual void updateDynamic(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
+		virtual void addJoint(const Dy::Constraint&) {}
 		virtual void updateJoint(const PxU32 /*edgeIndex*/, Dy::Constraint* /*constraint*/){}
 		virtual void updateBodies(PxsRigidBody** /*rigidBodies*/, PxU32* /*nodeIndices*/, const PxU32 /*nbBodies*/, PxsExternalAccelerationProvider* /*externalAccelerations*/) {}
 //		virtual void updateBody(PxsRigidBody* /*rigidBody*/, const PxU32 /*nodeIndex*/) {}
@@ -310,21 +310,11 @@ namespace physx
 
 		virtual PxArticulationGPUAPIMaxCounts getArticulationGPUAPIMaxCounts()	const	{ return PxArticulationGPUAPIMaxCounts(); }
 
+		virtual	bool	getD6JointData(void* /*data*/, const PxD6JointGPUIndex* /*gpuIndices*/, PxD6JointGPUAPIReadType::Enum /*dataType*/, PxU32 /*nbElements*/, PxF32 /*oneOverDt*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) const { return false; }
+
 		// END NEW DIRECT-GPU API
 
 		// DEPRECATED DIRECT-GPU API
-
-		PX_DEPRECATED virtual	void	copyArticulationDataDEPRECATED(void* /*jointData*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*copyEvent*/) {}
-		PX_DEPRECATED virtual	void	applyArticulationDataDEPRECATED(void* /*data*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
-		PX_DEPRECATED virtual	void	applyActorDataDEPRECATED(void* /*data*/, PxGpuActorPair* /*index*/, PxActorCacheFlag::Enum /*flag*/, const PxU32 /*nbUpdatedActors*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
-		PX_DEPRECATED virtual	void	evaluateSDFDistancesDEPRECATED(const PxU32* /*sdfShapeIds*/, const PxU32 /*nbShapes*/, const PxVec4* /*samplePointsConcatenated*/,
-															const PxU32* /*samplePointCountPerShape*/, const PxU32 /*maxPointCount*/, PxVec4* /*localGradientAndSDFConcatenated*/, CUevent /*event*/)	{}
-		PX_DEPRECATED virtual	void 	copyBodyDataDEPRECATED(PxGpuBodyData* /*data*/, PxGpuActorPair* /*index*/, const PxU32 /*nbCopyActors*/, CUevent /*copyEvent*/){}
-		PX_DEPRECATED virtual	void	updateArticulationsKinematicDEPRECATED(CUevent /*signalEvent*/) {}
-		PX_DEPRECATED virtual	void	computeDenseJacobiansDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
-		PX_DEPRECATED virtual	void	computeGeneralizedMassMatricesDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
-		PX_DEPRECATED virtual	void	computeGeneralizedGravityForcesDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, const PxVec3& /*gravity*/, CUevent /*computeEvent*/){}
-		PX_DEPRECATED virtual	void	computeCoriolisAndCentrifugalForcesDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/) {}
 
 		PX_DEPRECATED virtual	void	copySoftBodyDataDEPRECATED(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbCopySoftBodies*/, const PxU32 /*maxSize*/, CUevent /*copyEvent*/) {}
 		PX_DEPRECATED virtual	void	applySoftBodyDataDEPRECATED(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbUpdatedSoftBodies*/, const PxU32 /*maxSize*/, CUevent /*applyEvent*/, CUevent /*signalEvent*/) {}

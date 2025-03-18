@@ -202,31 +202,3 @@ if (stderr != ""):
 print("wrote meta data files in", targetDir)
 
 test_targetdir(targetDir, metaDataDir, args.test)
-
-###############################
-# PxVehicleExtension          #
-###############################
-
-print("PxVehicleExtension:")
-
-srcPath = "PxVehicleExtensionAPI.h"
-metaDataDir = os.path.join(sdkRoot, os.path.normpath("source/physxvehicle/src/physxmetadata"))
-
-includes += includeString(sdkRoot + '/include/vehicle')
-#TODO, get rid of source include
-includes += includeString(sdkRoot + '/source/physxvehicle/src')
-
-targetDir = setup_targetdir(metaDataDir, args.test)
-
-cmd = " ".join(["", clangExe, commonFlags, "", platformFlags, includes, srcPath, "-o", '"'+targetDir+'"'])
-print(cmd, file=debugFile)
-(stdout, stderr) = utils.run_cmd(cmd)
-if (stderr != "" or stdout != ""):
-	print(stderr, "\n", stdout)
-if (stderr != ""):
-	print("failed to compile metadata!")
-	sys.exit(1)
-print("wrote meta data files in", targetDir)
-
-test_targetdir(targetDir, metaDataDir, args.test)
-

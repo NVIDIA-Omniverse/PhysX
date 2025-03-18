@@ -44,7 +44,7 @@ ThirdPassTask::ThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager
 
 void ThirdPassTask::runInternal()
 {
-	PX_PROFILE_ZONE("Basic.thirdPassIslandGen", getContextId());
+	PX_PROFILE_ZONE("Basic.thirdPassIslandGen", mContextID);
 
 	mIslandSim.removeDestroyedEdges();
 	mIslandSim.processLostEdges(mIslandManager.mDestroyedNodes, true, true, mIslandManager.mMaxDirtyNodesPerFrame);
@@ -58,7 +58,7 @@ PostThirdPassTask::PostThirdPassTask(PxU64 contextID, SimpleIslandManager& islan
 
 void PostThirdPassTask::runInternal()
 {
-	PX_PROFILE_ZONE("Basic.postThirdPassIslandGen", getContextId());
+	PX_PROFILE_ZONE("Basic.postThirdPassIslandGen", mContextID);
 
 	for (PxU32 a = 0; a < mIslandManager.mDestroyedNodes.size(); ++a)
 		mIslandManager.mNodeHandles.freeHandle(mIslandManager.mDestroyedNodes[a].index());
@@ -117,12 +117,12 @@ EdgeIndex SimpleIslandManager::addEdge(void* edge, PxNodeIndex nodeHandle1, PxNo
 	const PxU32 nodeIds = 2 * handle;
 	if (mCpuData.mEdgeNodeIndices.size() == nodeIds)
 	{
-		PX_PROFILE_ZONE("ReserveEdges", getContextId());
+		PX_PROFILE_ZONE("ReserveEdges", mContextID);
 		const PxU32 newSize = nodeIds + 2048;
 		mCpuData.mEdgeNodeIndices.resize(newSize);
-		// PT: TODO: isn't that twice as much as needed for these arrays?
-		mAuxCpuData.mConstraintOrCm.resize(newSize);
-		mInteractions.resize(newSize);
+		// PT: newSize is for mEdgeNodeIndices which holds two indices per edge. We only need half that size for regular edge-indexed buffers.
+		mAuxCpuData.mConstraintOrCm.resize(newSize/2);
+		mInteractions.resize(newSize/2);
 	}
 
 	mCpuData.mEdgeNodeIndices[nodeIds] = nodeHandle1;
@@ -148,6 +148,77 @@ EdgeIndex SimpleIslandManager::resizeEdgeArrays(EdgeIndex handle, bool flag)
 
 	return handle;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+// PT: the two functions below are to replicate SimpleIslandManager::addContactManager() multi-threaded
+void SimpleIslandManager::preallocateContactManagers(PxU32 nb, EdgeIndex* handles)
+{
+	// PT: part from SimpleIslandManager::addContactManager / addEdge
+	EdgeIndex maxHandle = 0;
+	{
+		{
+			PX_PROFILE_ZONE("getHandles", mContextID);
+			for(PxU32 i=0;i<nb;i++)
+			{
+				const EdgeIndex handle = mEdgeHandles.getHandle();	// PT: TODO: better version
+				handles[i] = handle;
+				if(handle>maxHandle)
+					maxHandle = handle;
+			}
+		}
+
+		const PxU32 nodeIds = 2 * maxHandle;
+		if (mCpuData.mEdgeNodeIndices.size() <= nodeIds)
+		{
+			PX_PROFILE_ZONE("ReserveEdges", mContextID);
+			const PxU32 newSize = nodeIds + 2048;
+			mCpuData.mEdgeNodeIndices.resize(newSize);
+			mAuxCpuData.mConstraintOrCm.resize(newSize/2);
+			mInteractions.resize(newSize/2);
+		}
+	}
+
+	// PT: part from SimpleIslandManager::addContactManager / mSpeculativeIslandManager.addConnection()
+	mSpeculativeIslandManager.preallocateConnections(maxHandle);
+
+	// PT: part from SimpleIslandManager::addContactManager / resizeEdgeArrays
+	// PT: TODO: refactor with regular code
+	if(mConnectedMap.size() <= maxHandle)
+		mConnectedMap.resize(2 * (maxHandle + 1));
+
+	if(mGPU && mGpuData.mFirstPartitionEdges.capacity() <= maxHandle)
+		mGpuData.mFirstPartitionEdges.resize(2 * (maxHandle + 1));
+}
+
+bool SimpleIslandManager::addPreallocatedContactManager(EdgeIndex handle, PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction, Edge::EdgeType edgeType)
+{
+	// PT: part of SimpleIslandManager::addEdge that can be multi-threaded
+	{
+		const PxU32 nodeIds = 2 * handle;
+		mCpuData.mEdgeNodeIndices[nodeIds] = nodeHandle1;
+		mCpuData.mEdgeNodeIndices[nodeIds + 1] = nodeHandle2;
+		mAuxCpuData.mConstraintOrCm[handle] = manager;
+		mInteractions[handle] = interaction;
+	}
+
+	// PT: part of mSpeculativeIslandManager.addConnection() that can be multi-threaded
+	bool status = mSpeculativeIslandManager.addConnectionPreallocated(nodeHandle1, nodeHandle2, edgeType, handle);
+	if (manager)
+		manager->getWorkUnit().mEdgeIndex = handle;
+
+	// PT: part of SimpleIslandManager::addContactManager / resizeEdgeArrays() for contact manager
+	{
+		// PT: this is effectively just: mConnectedMap.reset(handle);	// PT: for contact manager
+		// So just this, with atomics: map[index >> 5] &= ~(1 << (index & 31));
+		PxU32* map = mConnectedMap.getWords() + (handle >> 5);
+		PxAtomicAnd(reinterpret_cast<volatile PxI32*>(map), ~(1 << (handle & 31)));
+	}
+
+	return status;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 EdgeIndex SimpleIslandManager::addContactManager(PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction, Edge::EdgeType edgeType)
 {
@@ -207,10 +278,13 @@ void SimpleIslandManager::removeConnection(EdgeIndex edgeIndex)
 
 void SimpleIslandManager::firstPassIslandGen()
 {
-	PX_PROFILE_ZONE("Basic.firstPassIslandGen", getContextId());
+	PX_PROFILE_ZONE("Basic.firstPassIslandGen", mContextID);
+
 	mSpeculativeIslandManager.clearDeactivations();
+
 	mSpeculativeIslandManager.wakeIslands();
 	mSpeculativeIslandManager.processNewEdges();
+
 	mSpeculativeIslandManager.removeDestroyedEdges();
 	mSpeculativeIslandManager.processLostEdges(mDestroyedNodes, false, false, mMaxDirtyNodesPerFrame);
 }
@@ -222,11 +296,29 @@ void SimpleIslandManager::additionalSpeculativeActivation()
 
 void SimpleIslandManager::secondPassIslandGen()
 {
-	PX_PROFILE_ZONE("Basic.secondPassIslandGen", getContextId());
+	PX_PROFILE_ZONE("Basic.secondPassIslandGen", mContextID);
+	
+	secondPassIslandGenPart1();
+	secondPassIslandGenPart2();
+}
+
+// PT: first part of secondPassIslandGen().
+// We can put in this function any code that does not modify data we read in PxgIncrementalPartition::processLostFoundPatches(). 
+// The two will overlap / run in parallel.
+void SimpleIslandManager::secondPassIslandGenPart1()
+{
+	PX_PROFILE_ZONE("Basic.secondPassIslandGenPart1", mContextID);
 	
 	mAccurateIslandManager.wakeIslands();
 	mAccurateIslandManager.processNewEdges();
+}
 
+// PT: second part of secondPassIslandGen(). Will run serially after PxgIncrementalPartition::processLostFoundPatches(). 
+void SimpleIslandManager::secondPassIslandGenPart2()
+{
+	PX_PROFILE_ZONE("Basic.secondPassIslandGenPart2", mContextID);
+	
+	// PT: TODO: analyze remaining code below, maybe we can move more of it to Part1
 	mAccurateIslandManager.removeDestroyedEdges();
 	mAccurateIslandManager.processLostEdges(mDestroyedNodes, false, false, mMaxDirtyNodesPerFrame);
 
@@ -235,6 +327,28 @@ void SimpleIslandManager::secondPassIslandGen()
 
 	mDestroyedNodes.clear();
 	//mDestroyedEdges.clear();
+}
+
+void SimpleIslandManager::thirdPassIslandGen(PxBaseTask* continuation)
+{
+	mAccurateIslandManager.clearDeactivations();
+
+	mPostThirdPassTask.setContinuation(continuation);
+	
+	mSpeculativeThirdPassTask.setContinuation(&mPostThirdPassTask);
+	mAccurateThirdPassTask.setContinuation(&mPostThirdPassTask);
+
+	mSpeculativeThirdPassTask.removeReference();
+	mAccurateThirdPassTask.removeReference();
+
+	mPostThirdPassTask.removeReference();
+
+	//PX_PROFILE_ZONE("Basic.thirdPassIslandGen", mContextID);
+	//mSpeculativeIslandManager.removeDestroyedEdges();
+	//mSpeculativeIslandManager.processLostEdges(mDestroyedNodes, true, true);
+
+	//mAccurateIslandManager.removeDestroyedEdges();
+	//mAccurateIslandManager.processLostEdges(mDestroyedNodes, true, true);
 }
 
 bool SimpleIslandManager::validateDeactivations() const
@@ -258,28 +372,6 @@ bool SimpleIslandManager::validateDeactivations() const
 	return true;
 }
 
-void SimpleIslandManager::thirdPassIslandGen(PxBaseTask* continuation)
-{
-	mAccurateIslandManager.clearDeactivations();
-
-	mPostThirdPassTask.setContinuation(continuation);
-	
-	mSpeculativeThirdPassTask.setContinuation(&mPostThirdPassTask);
-	mAccurateThirdPassTask.setContinuation(&mPostThirdPassTask);
-
-	mSpeculativeThirdPassTask.removeReference();
-	mAccurateThirdPassTask.removeReference();
-
-	mPostThirdPassTask.removeReference();
-
-	//PX_PROFILE_ZONE("Basic.thirdPassIslandGen", getContextId());
-	//mSpeculativeIslandManager.removeDestroyedEdges();
-	//mSpeculativeIslandManager.processLostEdges(mDestroyedNodes, true, true);
-
-	//mAccurateIslandManager.removeDestroyedEdges();
-	//mAccurateIslandManager.processLostEdges(mDestroyedNodes, true, true);
-}
-
 bool SimpleIslandManager::checkInternalConsistency()
 {
 	return mAccurateIslandManager.checkInternalConsistency() && mSpeculativeIslandManager.checkInternalConsistency();
@@ -294,16 +386,6 @@ void SimpleIslandManager::setEdgeConnected(EdgeIndex edgeIndex, Edge::EdgeType e
 	}
 }
 
-void SimpleIslandManager::deactivateEdge(const EdgeIndex edgeIndex)
-{
-	if (mGPU && mGpuData.mFirstPartitionEdges[edgeIndex])
-	{
-		//this is the partition edges created/updated by the gpu solver
-		mGpuData.mDestroyedPartitionEdges.pushBack(mGpuData.mFirstPartitionEdges[edgeIndex]);
-		mGpuData.mFirstPartitionEdges[edgeIndex] = NULL;
-	}
-}
-
 void SimpleIslandManager::setEdgeDisconnected(EdgeIndex edgeIndex)
 {
 	if(mConnectedMap.test(edgeIndex))
@@ -311,6 +393,16 @@ void SimpleIslandManager::setEdgeDisconnected(EdgeIndex edgeIndex)
 		//PX_ASSERT(!mAccurateIslandManager.getEdge(edgeIndex).isInDirtyList());
 		mAccurateIslandManager.removeConnection(edgeIndex);
 		mConnectedMap.reset(edgeIndex);
+	}
+}
+
+void SimpleIslandManager::deactivateEdge(const EdgeIndex edgeIndex)
+{
+	if (mGPU && mGpuData.mFirstPartitionEdges[edgeIndex])
+	{
+		//this is the partition edges created/updated by the gpu solver
+		mGpuData.mDestroyedPartitionEdges.pushBack(mGpuData.mFirstPartitionEdges[edgeIndex]);
+		mGpuData.mFirstPartitionEdges[edgeIndex] = NULL;
 	}
 }
 

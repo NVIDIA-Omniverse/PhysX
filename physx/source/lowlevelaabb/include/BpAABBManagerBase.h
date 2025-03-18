@@ -109,7 +109,9 @@ namespace Bp
 	{
 												PX_NOCOPY(BoundsArray)
 	public:
-												BoundsArray(PxVirtualAllocator& allocator) : mBounds(allocator)	{}
+												BoundsArray(PxVirtualAllocator& allocator) : mBounds(allocator), mHasAnythingChanged(true)	{} //needs to be set explicitly for PxgBounds first copy
+
+		virtual									~BoundsArray(){}
 
 		PX_FORCE_INLINE	void					initEntry(PxU32 index)
 												{
@@ -123,13 +125,14 @@ namespace Bp
 													}
 												}
 
-		PX_FORCE_INLINE void					updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index)
+		virtual void							updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index, PxU32 /*indexFrom*/)
 												{
 													Gu::computeBounds(mBounds[index], geom, transform, 0.0f, 1.0f);
 													mHasAnythingChanged = true;
 												}
 
-		PX_FORCE_INLINE	void					setBounds(const PxBounds3& bounds, PxU32 index)
+
+		virtual void							setBounds(const PxBounds3& bounds, PxU32 index)
 												{
 	//												PX_CHECK_AND_RETURN(bounds.isValid() && !bounds.isEmpty(), "BoundsArray::setBounds - illegal bounds\n");
 													mBounds[index] = bounds;
@@ -156,7 +159,7 @@ namespace Bp
 													}
 													mHasAnythingChanged = true;
 												}
-	private:
+	protected:
 						PxBoundsArrayPinned		mBounds;
 						bool					mHasAnythingChanged;
 	};

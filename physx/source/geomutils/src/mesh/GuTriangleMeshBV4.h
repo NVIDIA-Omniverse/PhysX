@@ -51,7 +51,6 @@ class BV4TriangleMesh : public TriangleMesh
 	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx);
 								void					importExtraData(PxDeserializationContext&);
 	PX_PHYSX_COMMON_API	static	TriangleMesh*			createObject(PxU8*& address, PxDeserializationContext& context);
-	PX_PHYSX_COMMON_API	static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 														BV4TriangleMesh(MeshFactory* factory, TriangleMeshData& data);
 						virtual							~BV4TriangleMesh(){}

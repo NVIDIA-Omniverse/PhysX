@@ -56,6 +56,8 @@ public:
 	virtual void							release();
 	virtual PxActorType::Enum				getType() const { return PxActorType::eDEFORMABLE_SURFACE; }
 	virtual PxBounds3	 					getWorldBounds(float inflation = 1.01f) const;
+	virtual void							setActorFlag(PxActorFlag::Enum flag, bool value);
+	virtual void							setActorFlags(PxActorFlags inFlags);
 
 	// PxDeformableBody API
 
@@ -66,8 +68,8 @@ public:
 	virtual		void						setLinearDamping(const PxReal linearDamping);
 	virtual		PxReal						getLinearDamping() const;
 
-	virtual		void						setMaxVelocity(const PxReal maxVelocity);
-	virtual		PxReal						getMaxVelocity() const;
+	virtual		void						setMaxLinearVelocity(const PxReal maxLinearVelocity);
+	virtual		PxReal						getMaxLinearVelocity() const;
 
 	virtual		void						setMaxDepenetrationVelocity(const PxReal maxDepenetrationVelocity);
 	virtual		PxReal						getMaxDepenetrationVelocity() const;

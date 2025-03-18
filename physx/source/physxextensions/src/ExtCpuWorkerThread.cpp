@@ -29,14 +29,11 @@
 #include "task/PxTask.h"
 #include "ExtCpuWorkerThread.h"
 #include "ExtDefaultCpuDispatcher.h"
-#include "ExtTaskQueueHelper.h"
 #include "foundation/PxFPU.h"
 
 using namespace physx;
 
-Ext::CpuWorkerThread::CpuWorkerThread()
-:	mQueueEntryPool(EXT_TASK_QUEUE_ENTRY_POOL_SIZE),
-	mThreadId(0)
+Ext::CpuWorkerThread::CpuWorkerThread() : mOwner(NULL), mThreadId(0)
 {
 }
 
@@ -44,32 +41,8 @@ Ext::CpuWorkerThread::~CpuWorkerThread()
 {
 }
 
-void Ext::CpuWorkerThread::initialize(DefaultCpuDispatcher* ownerDispatcher)
-{
-	mOwner = ownerDispatcher;
-}
-
-bool Ext::CpuWorkerThread::tryAcceptJobToLocalQueue(PxBaseTask& task, PxThread::Id taskSubmitionThread)
-{
-	if(taskSubmitionThread == mThreadId)
-	{
-		SharedQueueEntry* entry = mQueueEntryPool.getEntry(&task);
-		if (entry)
-		{
-			mLocalJobList.push(*entry);
-			return true;
-		}
-		else
-			return false;
-	}
-
-	return false;
-}
-
-PxBaseTask* Ext::CpuWorkerThread::giveUpJob()
-{
-	return TaskQueueHelper::fetchTask(mLocalJobList, mQueueEntryPool);
-}
+#define HighPriority	true
+#define RegularPriority	false
 
 void Ext::CpuWorkerThread::execute()
 {
@@ -82,11 +55,17 @@ void Ext::CpuWorkerThread::execute()
 		if(PxDefaultCpuDispatcherWaitForWorkMode::eWAIT_FOR_WORK == ownerWaitForWorkMode)
 			mOwner->resetWakeSignal();
 
-		PxBaseTask* task = TaskQueueHelper::fetchTask(mLocalJobList, mQueueEntryPool);
-
+		// PT: look for high priority tasks first, across threads
+		PxBaseTask* task = getJob<HighPriority>();
 		if(!task)
-			task = mOwner->fetchNextTask();
-		
+			task = mOwner->fetchNextTask<HighPriority>();
+
+		// PT: then look for regular tasks
+		if(!task)
+			task = getJob<RegularPriority>();
+		if(!task)
+			task = mOwner->fetchNextTask<RegularPriority>();
+
 		if(task)
 		{
 			mOwner->runTask(*task);

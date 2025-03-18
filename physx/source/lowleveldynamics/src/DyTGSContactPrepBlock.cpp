@@ -831,10 +831,10 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 
 			//for (PxU32 f = 0; f < 4; ++f)
 			{
-				PxReal coeff0 = (contactBase0->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && clampedAnchorCount0 == 2) ? 0.5f : 1.f;
-				PxReal coeff1 = (contactBase1->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && clampedAnchorCount1 == 2) ? 0.5f : 1.f;
-				PxReal coeff2 = (contactBase2->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && clampedAnchorCount2 == 2) ? 0.5f : 1.f;
-				PxReal coeff3 = (contactBase3->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && clampedAnchorCount3 == 2) ? 0.5f : 1.f;
+				PxReal coeff0 = (clampedAnchorCount0 == 2) ? 0.5f : 1.f;
+				PxReal coeff1 = (clampedAnchorCount1 == 2) ? 0.5f : 1.f;
+				PxReal coeff2 = (clampedAnchorCount2 == 2) ? 0.5f : 1.f;
+				PxReal coeff3 = (clampedAnchorCount3 == 2) ? 0.5f : 1.f;
 
 				staticFriction[0] = contactBase0->staticFriction * coeff0;
 				dynamicFriction[0] = contactBase0->dynamicFriction * coeff0;
@@ -952,15 +952,15 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 					t1Y = V4Mul(maxImpulseScale, t1Y);
 					t1Z = V4Mul(maxImpulseScale, t1Z);
 
-					Vec3V body0Anchor0 = V3LoadU(frictionPatch0.body0Anchors[index0]);
-					Vec3V body0Anchor1 = V3LoadU(frictionPatch1.body0Anchors[index1]);
-					Vec3V body0Anchor2 = V3LoadU(frictionPatch2.body0Anchors[index2]);
-					Vec3V body0Anchor3 = V3LoadU(frictionPatch3.body0Anchors[index3]);
+					const Vec4V body0Anchor0 = V4LoadU(&frictionPatch0.body0Anchors[index0].x);
+					const Vec4V body0Anchor1 = V4LoadU(&frictionPatch1.body0Anchors[index1].x);
+					const Vec4V body0Anchor2 = V4LoadU(&frictionPatch2.body0Anchors[index2].x);
+					const Vec4V body0Anchor3 = V4LoadU(&frictionPatch3.body0Anchors[index3].x);
 
-					Vec4V ra0 = Vec4V_From_Vec3V(QuatRotate(bodyFrame00q, body0Anchor0));
-					Vec4V ra1 = Vec4V_From_Vec3V(QuatRotate(bodyFrame01q, body0Anchor1));
-					Vec4V ra2 = Vec4V_From_Vec3V(QuatRotate(bodyFrame02q, body0Anchor2));
-					Vec4V ra3 = Vec4V_From_Vec3V(QuatRotate(bodyFrame03q, body0Anchor3));
+					Vec4V ra0 = QuatRotate4V(bodyFrame00q, body0Anchor0);
+					Vec4V ra1 = QuatRotate4V(bodyFrame01q, body0Anchor1);
+					Vec4V ra2 = QuatRotate4V(bodyFrame02q, body0Anchor2);
+					Vec4V ra3 = QuatRotate4V(bodyFrame03q, body0Anchor3);
 
 					Vec4V raX, raY, raZ;
 					PX_TRANSPOSE_44_34(ra0, ra1, ra2, ra3, raX, raY, raZ);
@@ -973,15 +973,15 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 					const Vec4V raWorldY = V4Add(raY, bodyFrame0pY);
 					const Vec4V raWorldZ = V4Add(raZ, bodyFrame0pZ);
 
-					Vec3V body1Anchor0 = V3LoadU(frictionPatch0.body1Anchors[index0]);
-					Vec3V body1Anchor1 = V3LoadU(frictionPatch1.body1Anchors[index1]);
-					Vec3V body1Anchor2 = V3LoadU(frictionPatch2.body1Anchors[index2]);
-					Vec3V body1Anchor3 = V3LoadU(frictionPatch3.body1Anchors[index3]);
+					const Vec4V body1Anchor0 = V4LoadU(&frictionPatch0.body1Anchors[index0].x);
+					const Vec4V body1Anchor1 = V4LoadU(&frictionPatch1.body1Anchors[index1].x);
+					const Vec4V body1Anchor2 = V4LoadU(&frictionPatch2.body1Anchors[index2].x);
+					const Vec4V body1Anchor3 = V4LoadU(&frictionPatch3.body1Anchors[index3].x);
 
-					Vec4V rb0 = Vec4V_From_Vec3V(QuatRotate(bodyFrame10q, body1Anchor0));
-					Vec4V rb1 = Vec4V_From_Vec3V(QuatRotate(bodyFrame11q, body1Anchor1));
-					Vec4V rb2 = Vec4V_From_Vec3V(QuatRotate(bodyFrame12q, body1Anchor2));
-					Vec4V rb3 = Vec4V_From_Vec3V(QuatRotate(bodyFrame13q, body1Anchor3));
+					Vec4V rb0 = QuatRotate4V(bodyFrame10q, body1Anchor0);
+					Vec4V rb1 = QuatRotate4V(bodyFrame11q, body1Anchor1);
+					Vec4V rb2 = QuatRotate4V(bodyFrame12q, body1Anchor2);
+					Vec4V rb3 = QuatRotate4V(bodyFrame13q, body1Anchor3);
 
 					Vec4V rbX, rbY, rbZ;
 					PX_TRANSPOSE_44_34(rb0, rb1, rb2, rb3, rbX, rbY, rbZ);
@@ -1002,7 +1002,6 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 					errorY = V4Sel(V4IsGrtr(solverOffsetSlop, V4Abs(errorY)), zero, errorY);
 					errorZ = V4Sel(V4IsGrtr(solverOffsetSlop, V4Abs(errorZ)), zero, errorZ);*/
 
-					//KS - todo - get this working with per-point friction
 					PxU32 contactIndex0 = c.contactID[frictionIndex0][index0];
 					PxU32 contactIndex1 = c.contactID[frictionIndex1][index1];
 					PxU32 contactIndex2 = c.contactID[frictionIndex2][index2];
@@ -1567,13 +1566,12 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4Step(
 		blockDescs[a].desc->constraintLengthOver16 = 0;
 	}
 
+	// PT: commented out because TGS does not support compound constraints
 	//PX_ASSERT(cmOutputs[0]->nbContacts && cmOutputs[1]->nbContacts && cmOutputs[2]->nbContacts && cmOutputs[3]->nbContacts);
 
 	PxContactBuffer& buffer = threadContext.mContactBuffer;
 
 	buffer.count = 0;
-
-	//PxTransform idt = PxTransform(PxIdentity);
 
 	CorrelationBuffer& c = threadContext.mCorrelationBuffer;
 

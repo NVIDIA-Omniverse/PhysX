@@ -50,7 +50,6 @@ public:
 										NpDeformableVolumeMaterial(PxBaseFlags baseFlags) : PxDeformableVolumeMaterial(baseFlags), mMaterial(PxEmpty) {}
 	virtual	void						resolveReferences(PxDeserializationContext& context);
 	static	NpDeformableVolumeMaterial*	createObject(PxU8*& address, PxDeserializationContext& context);
-	static	void						getBinaryMetaData(PxOutputStream& stream);
 
 			void						preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 			void						exportExtraData(PxSerializationContext&) {}

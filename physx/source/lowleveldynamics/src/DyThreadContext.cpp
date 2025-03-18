@@ -39,14 +39,9 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 	mConstraintBlockManager					(*memBlockPool),
 	mConstraintBlockStream					(*memBlockPool),
 	mNumDifferentBodyConstraints			(0),
-	mNumDifferentBodyFrictionConstraints	(0),
-	mNumSelfConstraints						(0),
 	mNumStaticConstraints					(0),
-	mNumSelfFrictionConstraints				(0),
-	mNumSelfConstraintFrictionBlocks		(0),
 	mHasOverflowPartitions					(false),
 	mConstraintsPerPartition				("ThreadContext::mConstraintsPerPartition"),
-	mFrictionConstraintsPerPartition		("ThreadContext::frictionsConstraintsPerPartition"),
 	//mPartitionNormalizationBitmap			("ThreadContext::mPartitionNormalizationBitmap"),
 	mBodyCoreArray							(NULL),
 	mRigidBodyArray							(NULL),
@@ -60,14 +55,12 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 	contactConstraintBatchHeaders			(NULL),
 	numContactConstraintBatches				(0),
 	tempConstraintDescArray					(NULL),
-	frictionConstraintDescArray				("ThreadContext::solverFrictionConstraintArray"),
-	frictionConstraintBatchHeaders			("ThreadContext::frictionConstraintBatchHeaders"),
+#if PGS_SUPPORT_COMPOUND_CONSTRAINTS
 	compoundConstraints						("ThreadContext::compoundConstraints"),
 	orderedContactList						("ThreadContext::orderedContactList"),
 	tempContactList							("ThreadContext::tempContactList"),
 	sortIndexArray							("ThreadContext::sortIndexArray"),
-	numDifferentBodyBatchHeaders			(0),
-	numSelfConstraintBatchHeaders			(0),
+#endif
 	mOrderedContactDescCount				(0),
 	mOrderedFrictionDescCount				(0),
 	mConstraintSize							(0),
@@ -78,8 +71,6 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 	mMaxSolverVelocityIterations			(0),
 	mMaxArticulationLinks					(0),
 	mContactDescPtr							(NULL),
-	mStartContactDescPtr					(NULL),
-	mFrictionDescPtr						(NULL),
 	mArticulations							("ThreadContext::articulations")
 {
 #if PX_ENABLE_SIM_STATS
@@ -93,18 +84,13 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 	mConstraintsPerPartition.reserve(128);
 }
 
-void ThreadContext::resizeArrays(PxU32 frictionConstraintDescCount, PxU32 articulationCount)
+void ThreadContext::resizeArrays(PxU32 articulationCount)
 {
-	// resize resizes smaller arrays to the exact target size, which can generate a lot of churn
-	frictionConstraintDescArray.forceSize_Unsafe(0);
-	frictionConstraintDescArray.reserve((frictionConstraintDescCount+63)&~63);
-
 	mArticulations.forceSize_Unsafe(0);
 	mArticulations.reserve(PxMax<PxU32>(PxNextPowerOfTwo(articulationCount), 16));
 	mArticulations.forceSize_Unsafe(articulationCount);
 
 	mContactDescPtr = contactConstraintDescArray;
-	mFrictionDescPtr = frictionConstraintDescArray.begin();
 }
 
 void ThreadContext::reset()
@@ -114,13 +100,11 @@ void ThreadContext::reset()
 	mConstraintBlockStream.reset();
 
 	mContactDescPtr = contactConstraintDescArray;
-	mFrictionDescPtr = frictionConstraintDescArray.begin();
 
 	mAxisConstraintCount = 0;
 	mMaxSolverPositionIterations = 0;
 	mMaxSolverVelocityIterations = 0;
 	mNumDifferentBodyConstraints = 0;
-	mNumSelfConstraints = 0;
 	mNumStaticConstraints = 0;
 	mConstraintSize = 0;
 }

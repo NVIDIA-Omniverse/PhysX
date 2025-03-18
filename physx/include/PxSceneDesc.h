@@ -51,6 +51,8 @@ namespace physx
 /**
 \brief Enum for selecting the friction algorithm used for simulation.
 
+\deprecated Since only the patch friction model is supported now, the friction type option is obsolete.
+
 #PxFrictionType::ePATCH is the default friction logic (Couloumb type friction model). Friction gets computed per contact patch.
 Up to two contact points lying in the contact patch area are selected as friction anchors to which friction impulses are applied. If there
 are more than two contact points, to select anchors from, the anchors are selected using a heuristic that tries to maximize the distance
@@ -64,13 +66,11 @@ and all velocity iterations (unless #PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATI
 
 #PxFrictionType::eFRICTION_COUNT is the total number of friction models supported by the SDK.
 */
-struct PxFrictionType
+struct PX_DEPRECATED PxFrictionType
 {
 	enum Enum
 	{
 		ePATCH,				//!< Select default patch-friction model.
-		eONE_DIRECTIONAL PX_DEPRECATED, //!< \deprecated Will be removed in a future version without replacement. Please do not use.
-		eTWO_DIRECTIONAL PX_DEPRECATED,	//!< \deprecated Will be removed in a future version without replacement. Please do not use.
 		eFRICTION_COUNT		//!< The total number of friction models supported by the SDK.
 	};
 };
@@ -627,13 +627,13 @@ public:
 	/**
 	\brief Selects the friction algorithm to use for simulation.
 
-	\note frictionType cannot be modified after the first call to any of PxScene::simulate, PxScene::solve and PxScene::collide
+	\deprecated Since only the patch friction model is supported now, the frictionType parameter is obsolete.
 
 	<b>Default:</b> PxFrictionType::ePATCH
 
-	\see PxFrictionType PxScene.setFrictionType(), PxScene.getFrictionType()
+	\see PxFrictionType PxScene.getFrictionType()
 	*/
-	PxFrictionType::Enum frictionType;
+	PX_DEPRECATED PxFrictionType::Enum frictionType;
 
 	/**
 	\brief Selects the solver algorithm to use.
@@ -1101,9 +1101,12 @@ PX_INLINE bool PxSceneDesc::isValid() const
 	if(!gpuDynamicsConfig.isValid())
 		return false;
 
-	if (flags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
+	if(flags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 	{
 		if(!(flags & PxSceneFlag::eENABLE_GPU_DYNAMICS && broadPhaseType == PxBroadPhaseType::eGPU))
+			return false;
+
+		if(flags & PxSceneFlag::eENABLE_CCD)
 			return false;
 	}
 #endif

@@ -152,7 +152,7 @@ static void setActive(PxU32& nbModified, const IG::IslandSim& islandSim, IG::Nod
 	{
 		const IG::Node& node = islandSim.getNode(*indices++);
 		PX_ASSERT(node.mType == type);
-		if(node.isActive()==active)
+		if((!!node.isActive())==active)
 		{
 			SimT* sim = SimAccessT::getSim(node);
 			if(sim)

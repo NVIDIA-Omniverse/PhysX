@@ -26,13 +26,11 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "common/PxMetaData.h"
 #include "common/PxSerializer.h"
 #include "extensions/PxConstraintExt.h"
 #include "foundation/PxPhysicsVersion.h"
 #include "PxPhysicsAPI.h"
 
-#include "SnConvX.h"
 #include "SnSerializationRegistry.h"
 #include "SnSerialUtils.h"
 #include "ExtSerialization.h"
@@ -302,116 +300,4 @@ void PxSerialization::createSerialObjectIds(PxCollection& collection, const PxSe
 			localBase++;
 		}
 	}
-}
-
-namespace physx { namespace Sn
-{
-	static PxU32 addToStringTable(physx::PxArray<char>& stringTable, const char* str)
-	{
-		if(!str)
-			return 0xffffffff;
-
-		PxI32 length = PxI32(stringTable.size());
-		const char* table = stringTable.begin();
-		const char* start = table;
-		while(length)
-		{
-			if(Pxstrcmp(table, str)==0)
-				return PxU32(table - start);
-
-			const char* saved = table;
-			while(*table++);
-			length -= PxU32(table - saved);
-			PX_ASSERT(length>=0);
-		}
-
-		const PxU32 offset = stringTable.size();
-
-		while(*str)
-			stringTable.pushBack(*str++);
-		stringTable.pushBack(0);
-		return offset;
-	}
-} }
-
-void PxSerialization::dumpBinaryMetaData(PxOutputStream& outputStream, PxSerializationRegistry& sr)
-{
-	class MetaDataStream : public PxOutputStream
-	{
-	public:
-		bool addNewType(const char* typeName)
-		{			
-			for(PxU32 i=0;i<types.size();i++)
-			{			
-				if(Pxstrcmp(types[i], typeName)==0)
-					return false;
-			}
-			types.pushBack(typeName);
-			return true;
-		}
-		virtual	PxU32 write(const void* src, PxU32 count)
-		{
-			PX_ASSERT(count==sizeof(PxMetaDataEntry));
-			const PxMetaDataEntry* entry = reinterpret_cast<const PxMetaDataEntry*>(src);
-			if(( entry->flags & PxMetaDataFlag::eTYPEDEF) || ((entry->flags & PxMetaDataFlag::eCLASS) && (!entry->name)) )
-                 newType = addNewType(entry->type);
-			if(newType)
-			   metaData.pushBack(*entry);
-			return count;
-		}		
-		PxArray<PxMetaDataEntry> metaData;
-		PxArray<const char*> types;
-		bool newType;
-	}s;
-
-	SerializationRegistry& sn = static_cast<SerializationRegistry&>(sr);
-	sn.getBinaryMetaData(s);
-
-	PxArray<char>	stringTable;
-
-	PxU32 nb = s.metaData.size();
-	PxMetaDataEntry* entries = s.metaData.begin();
-	for(PxU32 i=0;i<nb;i++)
-	{
-		entries[i].type = reinterpret_cast<const char*>(size_t(addToStringTable(stringTable, entries[i].type)));
-		entries[i].name = reinterpret_cast<const char*>(size_t(addToStringTable(stringTable, entries[i].name)));
-	}
-
-	PxU32 platformTag = getBinaryPlatformTag();
-
-	const PxU32 gaussMapLimit = 32;
-
-	const PxU32 header = PX_MAKE_FOURCC('M','E','T','A');
-	const PxU32 version = PX_PHYSICS_VERSION;
-	const PxU32 ptrSize = sizeof(void*);
-	outputStream.write(&header, 4);
-	outputStream.write(&version, 4);
-	outputStream.write(PX_BINARY_SERIAL_VERSION, SN_BINARY_VERSION_GUID_NUM_CHARS);
-	outputStream.write(&ptrSize, 4);
-	outputStream.write(&platformTag, 4);
-	outputStream.write(&gaussMapLimit, 4);
-
-	outputStream.write(&nb, 4);
-	outputStream.write(entries, nb*sizeof(PxMetaDataEntry));
-	
-	//concreteTypes to name	
-	PxU32 num = sn.getNbSerializers();
-	outputStream.write(&num, 4);
-	for(PxU32 i=0; i<num; i++)
-	{
-		PxU16 type = sn.getSerializerType(i);
-		PxU32 nameOffset = addToStringTable(stringTable, sn.getSerializerName(i)); 
-		outputStream.write(&type, 2);
-		outputStream.write(&nameOffset, 4);
-	}
-
-	PxU32 length = stringTable.size();
-	const char* table = stringTable.begin();
-	outputStream.write(&length, 4);
-	outputStream.write(table, length);
-}
-
-PxBinaryConverter* PxSerialization::createBinaryConverter()
-{
-	return PX_NEW(ConvX)();
 }

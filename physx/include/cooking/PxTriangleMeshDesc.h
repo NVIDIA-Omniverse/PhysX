@@ -68,7 +68,7 @@ public:
 
 	\see materialIndexStride
 	*/
-	PxTypedStridedData<const PxMaterialTableIndex> materialIndices;
+	PxTypedBoundedData<const PxMaterialTableIndex> materialIndices;
 
 	/**
 	\brief SDF descriptor. When this descriptor is set, a signed distance field (SDF) is calculated. SDF collisions only 

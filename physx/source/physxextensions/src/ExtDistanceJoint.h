@@ -60,7 +60,6 @@ namespace Ext
 										DistanceJoint(PxBaseFlags baseFlags) : DistanceJointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	DistanceJoint*			createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<DistanceJoint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 		//~PX_SERIALIZATION
 										DistanceJoint(const PxTolerancesScale& scale, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxDistanceJoint

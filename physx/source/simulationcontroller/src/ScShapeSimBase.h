@@ -103,7 +103,7 @@ namespace physx
 
 			PX_FORCE_INLINE	void					internalAddToBroadPhase();
 			PX_FORCE_INLINE	bool					internalRemoveFromBroadPhase(bool wakeOnLostTouch = true);
-							void					initSubsystemsDependingOnElementID();
+							void					initSubsystemsDependingOnElementID(PxU32 indexFrom);
 							
 							PxsShapeCore*			mShapeCore;
 							PxU32					mSqBoundsId;

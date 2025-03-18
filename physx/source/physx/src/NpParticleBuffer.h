@@ -29,6 +29,8 @@
 #ifndef NP_PARTICLE_BUFFER_H
 #define NP_PARTICLE_BUFFER_H
 
+#if PX_SUPPORT_GPU_PHYSX
+
 #include "PxParticleBuffer.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxArray.h"
@@ -365,4 +367,5 @@ namespace physx
 	};
 
 }
+#endif
 #endif

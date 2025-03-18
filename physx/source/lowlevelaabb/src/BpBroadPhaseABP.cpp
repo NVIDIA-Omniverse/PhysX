@@ -1792,6 +1792,8 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 
 		virtual void run()	PX_OVERRIDE;
 
+		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
+
 		BroadPhaseABP*			mBP;
 		ABP_TaskID				mID;
 	};
@@ -1814,6 +1816,8 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 		}
 
 		virtual void run()	PX_OVERRIDE;
+
+		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
 
 		ABP_CompleteBoxPruningStartTask*	mStartTask;
 
@@ -1856,6 +1860,8 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 
 		virtual void run()	PX_OVERRIDE;
 
+		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
+
 		ABP_CompleteBoxPruningStartTask*	mStartTask;
 	};
 
@@ -1883,6 +1889,8 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 		void	addDelayedPairs2(PxArray<BroadPhasePair>& createdPairs);
 		
 		virtual void run()	PX_OVERRIDE;
+
+		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
 
 		const SIMD_AABB_X4*				mListX;
 		const SIMD_AABB_YZ4*			mListYZ;
@@ -2052,9 +2060,13 @@ void ABP_PairManager::resizeForNewPairs(PxU32 nbDelayedPairs)
 
 	const PxU32 newNbPairs = currentNbPairs + nbDelayedPairs;
 
+	const PxU32 newHashSize = PxNextPowerOfTwo(newNbPairs + 1);
+	if(newHashSize == mHashSize)
+		return;
+
 	// Get more entries
-	mHashSize = PxNextPowerOfTwo(newNbPairs+1);
-	mMask = mHashSize-1;
+	mHashSize = newHashSize;
+	mMask = newHashSize - 1;
 
 	//reallocPairs();
 	{
@@ -2081,6 +2093,8 @@ void ABP_PairManager::resizeForNewPairs(PxU32 nbDelayedPairs)
 		// ### check it's actually needed... probably only for pairs whose hash value was cut by the and
 		// yeah, since hash(id0, id1) is a constant
 		// However it might not be needed to recompute them => only less efficient but still ok
+
+		// PT: TODO: in heavy scenes like Avalanche100K the number of pairs gets close to a million, and this loop becomes very expensive. Revisit.
 		for(PxU32 i=0;i<currentNbPairs;i++)
 		{
 			const PxU32 hashValue = hash(mActivePairs[i].getId0(), mActivePairs[i].getId1()) & mMask;	// New hash value with new mask

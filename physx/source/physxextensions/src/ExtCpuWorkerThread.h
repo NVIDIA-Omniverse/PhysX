@@ -30,7 +30,7 @@
 #define EXT_CPU_WORKER_THREAD_H
 
 #include "foundation/PxThread.h"
-#include "ExtDefaultCpuDispatcher.h"
+#include "ExtTaskQueueHelper.h"
 #include "ExtSharedQueueEntryPool.h"
 
 namespace physx
@@ -47,20 +47,27 @@ class DefaultCpuDispatcher;
 	class CpuWorkerThread : public PxThread
 	{
 	public:
-								CpuWorkerThread();
-								~CpuWorkerThread();
+												CpuWorkerThread();
+												~CpuWorkerThread();
 		
-		void					initialize(DefaultCpuDispatcher* ownerDispatcher);
-		void					execute();
-		bool					tryAcceptJobToLocalQueue(PxBaseTask& task, PxThread::Id taskSubmitionThread);
-		PxBaseTask*				giveUpJob();
-		PxThread::Id			getWorkerThreadId() const { return mThreadId; }
+		PX_FORCE_INLINE	void					initialize(DefaultCpuDispatcher* ownerDispatcher)		{ mOwner = ownerDispatcher;				}
+		PX_FORCE_INLINE	PxThread::Id			getWorkerThreadId()								const	{ return mThreadId;						}
 
+		template<const bool highPriorityT>
+		PX_FORCE_INLINE	PxBaseTask*				getJob()	{ return mHelper.fetchTask<highPriorityT>();	}
+
+						void					execute();
+
+		PX_FORCE_INLINE	bool					tryAcceptJobToLocalQueue(PxBaseTask& task, PxThread::Id taskSubmitionThread)
+												{
+													if(taskSubmitionThread == mThreadId)
+														return mHelper.tryAcceptJobToQueue(task);
+													return false;
+												}
 	protected:
-		SharedQueueEntryPool<>	mQueueEntryPool;
-		DefaultCpuDispatcher*	mOwner;
-		PxSList					mLocalJobList;
-		PxThread::Id			mThreadId;
+						DefaultCpuDispatcher*	mOwner;
+						TaskQueueHelper			mHelper;
+						PxThread::Id			mThreadId;
 	};
 
 #if PX_VC

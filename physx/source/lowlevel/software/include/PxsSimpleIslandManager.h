@@ -33,6 +33,52 @@
 #include "PxsIslandSim.h"
 #include "CmTask.h"
 
+/*
+PT: runs first part of the island gen's second pass in parallel with the Pxg-level constraint partitioning.
+
+mIslandGen task spawns Pxg constraint partitioning task(s).
+mIslandGen runs processNarrowPhaseTouchEvents() in parallel with Pxg.
+
+///////////////////////////////////////////////////////////////////////////////
+
+Previous design:
+
+mPostIslandGen runs as a continuation task after mIslandGen and Pxg.
+
+mPostIslandGen mainly runs mSetEdgesConnectedTask, which:
+- calls mSimpleIslandManager->setEdgeConnected()
+- calls mSimpleIslandManager-secondPassIslandGen()
+- calls wakeObjectsUp()
+
+///////////////////////////////////////////////////////////////////////////////
+
+New design:
+
+postIslandGen is not a task anymore (mPostIslandGen does not exist).
+postIslandGen is directly called at the end of mIslandGen.
+So it now runs in parallel with Pxg.
+mIslandGen and Pxg continue to mSolver task.
+
+postIslandGen mainly runs mSetEdgesConnectedTask, which:
+- calls mSimpleIslandManager->setEdgeConnected()
+- calls mSimpleIslandManager->secondPassIslandGenPart1()
+
+mSolver now first runs the parts that don't overlap with Pxg:
+- calls mSimpleIslandManager-secondPassIslandGenPart2()
+- calls wakeObjectsUp()
+
+///////////////////////////////////////////////////////////////////////////////
+
+Before:
+mIslandGen->processNarrowPhaseTouchEvents	|mPostIslandGen											|mSolver
+=>PxgConstraintPartition					|=>setEdgesConnected->secondPassIslandGen->wakeObjectsUp|
+
+After:
+mIslandGen->processNarrowPhaseTouchEvents->postIslandGen									|secondPassIslandGenPart2->wakeObjectsUp->mSolver
+=>PxgConstraintPartition					=>setEdgesConnected->secondPassIslandGenPart1	|
+*/
+#define USE_SPLIT_SECOND_PASS_ISLAND_GEN	1
+
 namespace physx
 {
 	class PxsContactManager;
@@ -137,6 +183,10 @@ public:
 	PxNodeIndex	addNode(bool isActive, bool isKinematic, Node::NodeType type, void* object);
 	void		removeNode(const PxNodeIndex index);
 
+	// PT: these two functions added for multithreaded implementation of Sc::Scene::islandInsertion
+	void preallocateContactManagers(PxU32 nb, EdgeIndex* handles);
+	bool addPreallocatedContactManager(EdgeIndex handle, PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction, Edge::EdgeType edgeType);
+
 	EdgeIndex addContactManager(PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction, Edge::EdgeType edgeType);
 	EdgeIndex addConstraint(Dy::Constraint* constraint, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction);
 
@@ -151,6 +201,8 @@ public:
 	void firstPassIslandGen();
 	void additionalSpeculativeActivation();
 	void secondPassIslandGen();
+	void secondPassIslandGenPart1();
+	void secondPassIslandGenPart2();
 	void thirdPassIslandGen(PxBaseTask* continuation);
 
 	PX_INLINE void clearDestroyedPartitionEdges()

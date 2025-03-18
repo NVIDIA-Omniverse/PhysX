@@ -751,6 +751,7 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 
 		//Articulations defer registering their shapes with the nphaseContext until the IG node index is known.
 		{
+			// PT: TODO: skip this on CPU
 			PxvNphaseImplementationContext*	ctx = mScene.getLowLevelContext()->getNphaseImplementationContext();
 			ElementSim** current = getElements();
 			PxU32 nbElements = getNbElements();
@@ -764,13 +765,16 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 		//Force node index into LL shapes
 		{
 			PxsSimulationController* sc = getScene().getSimulationController();
-			const PxNodeIndex nodeIndex = mNodeIndex;
-			PxU32 nbElems = getNbElements();
-			ElementSim** elems = getElements();
-			while (nbElems--)
+			if(sc->mGPU)
 			{
-				ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
-				sc->setPxgShapeBodyNodeIndex(nodeIndex, sim->getElementID());
+				const PxNodeIndex nodeIndex = mNodeIndex;
+				PxU32 nbElems = getNbElements();
+				ElementSim** elems = getElements();
+				while (nbElems--)
+				{
+					ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
+					sc->setPxgShapeBodyNodeIndex(nodeIndex, sim->getElementID());
+				}
 			}
 		}
 

@@ -547,7 +547,7 @@ namespace Gu
 				aBuf[numVertsLocal]=tempa;
 				bBuf[numVertsLocal]=tempb;
 
-				const PxU32 index =PxU32(numVertsLocal++);
+				const PxU32 index = PxU32(numVertsLocal++);
 
 				// Compute the silhouette cast by the new vertex
 				// Note that the new vertex is on the positive side

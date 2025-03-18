@@ -521,20 +521,6 @@ public:
 	virtual		PxReal	getMinTorsionalPatchRadius() const = 0;
 
 	/**
-	\brief Gets internal shape id
-
-	The internal shape id can be used to reference a specific shape when processing data on the gpu.
-
-	This is not supported on the CPU, and the function will return PX_INVALID_U32;
-	
-	\return The shape id
-
-	\see PxScene evaluateSDFDistances()
-	\deprecated, use getGPUIndex() instead.
-	*/
-	virtual	PX_DEPRECATED	PxU32	getInternalShapeIndex() const = 0;
-
-	/**
 	\brief Returns the GPU shape index.
 
 	\note This function only returns valid results if GPU dynamics is enabled.

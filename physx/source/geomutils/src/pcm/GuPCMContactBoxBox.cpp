@@ -340,7 +340,7 @@ static PxU32 doBoxBoxGenerateContacts(const Vec3VArg box0Extent, const Vec3VArg 
 	const FloatV eb2 = V3GetZ(box1Extent);
 
 	const PxMatTransformV transform1To0 = transform0.transformInv(transform1);
-	const Mat33V rot0To1 =M33Trnsps(transform1To0.rot);
+	const Mat33V rot0To1 = M33Trnsps(transform1To0.rot);
 
 	const Vec3V uEps = V3Load(1e-6f); 
 

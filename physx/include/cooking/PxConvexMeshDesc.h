@@ -116,15 +116,6 @@ struct PxConvexFlag
 		eFAST_INERTIA_COMPUTATION = (1 << 6),
 
 		/**
-		\brief Convex hulls are created with respect to GPU simulation limitations. Vertex limit and polygon limit 
-		is set to 64 and vertex limit per face is internally set to 32.
-		\note Can be used only with eCOMPUTE_CONVEX flag.
-
-		\deprecated since PhysX 5.2. Setting #PxCookingParams::buildGPUData to true always cooks GPU-compatible meshes.
-		*/
-		eGPU_COMPATIBLE PX_DEPRECATED = (1 << 7),
-
-		/**
 		\brief Convex hull input vertices are shifted to be around origin to provide better computation stability.
 		It is recommended to provide input vertices around the origin, otherwise use this flag to improve 
 		numerical stability.

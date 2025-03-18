@@ -465,7 +465,7 @@ namespace
 	{
 		const ShapeData queryVolume(geom, pose, 0.0f);
 
-		CallbackT pcb(gFilterCallback, gCachedFuncs.mCachedSweepFuncs, geom, pose, queryVolume, unitDir, maxDist, PxHitFlag::eMESH_ANY | PxHitFlag::ePRECISE_SWEEP, true);
+		CallbackT pcb(gFilterCallback, gCachedFuncs.mCachedSweepFuncs, geom, pose, queryVolume, unitDir, maxDist, PxHitFlag::eANY_HIT | PxHitFlag::ePRECISE_SWEEP, true);
 
 		sqs.sweep(queryVolume, unitDir, pcb.mClosestHit.distance, pcb, NULL);
 

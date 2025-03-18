@@ -48,7 +48,6 @@ namespace physx
 	class PxsContactManagerOutputIterator;
 	struct PxSolverConstraintDesc;
 	struct PxSolverBodyData;
-	class PxContactJoint;
 	struct PxTGSSolverBodyData;
 	struct PxTGSSolverBodyTxInertia;
 	struct PxSolverConstraintDesc;

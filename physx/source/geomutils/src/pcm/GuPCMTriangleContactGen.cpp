@@ -213,7 +213,7 @@ static bool testPolyEdgeNormal(const TriangleV& triangle, const PxU8 triFlags, c
 			continue;
 
 		// Loop through polygon vertices == polygon edges;
-		for(PxU32 lStart = 0, lEnd =PxU32(polygon.mNbVerts-1); lStart<polygon.mNbVerts; lEnd = PxU32(lStart++))
+		for(PxU32 lStart = 0, lEnd = PxU32(polygon.mNbVerts-1); lStart<polygon.mNbVerts; lEnd = PxU32(lStart++))
 		{
 			//in the vertex space
 			const Vec3V p10 = V3LoadU_SafeReadW(polyData.mVerts[inds[lStart]]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData
@@ -288,7 +288,7 @@ static bool testPolyEdgeNormalBruteForce(const TriangleV& triangle, PxU8 triFlag
 		const PxU8* inds = polyData.mPolygonVertexRefs + polygon.mVRef8;
 			
 		// Loop through polygon vertices == polygon edges;
-		for(PxU32 lStart = 0, lEnd =PxU32(polygon.mNbVerts-1); lStart<polygon.mNbVerts; lEnd = PxU32(lStart++))
+		for(PxU32 lStart = 0, lEnd = PxU32(polygon.mNbVerts-1); lStart<polygon.mNbVerts; lEnd = PxU32(lStart++))
 		{
 			//in the vertex space
 			const Vec3V p10 = V3LoadU_SafeReadW(polyData.mVerts[inds[lStart]]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData
@@ -637,7 +637,7 @@ static void generatedTriangleContacts(const TriangleV& triangle, PxU32 triangleI
 	PxU32 inside = 0;
 	for(PxU32 i=0; i<incidentPolygon.mNbVerts; ++i)
 	{
-		const Vec3V vert1 =points1In0[i]; //this still in polyData1's local space
+		const Vec3V vert1 = points1In0[i]; //this still in polyData1's local space
 		points1In0[i] = M33MulV3(rot, vert1);
 		const FloatV z = V3GetZ(points1In0[i]);
 		points1In0TValue[i] = FSub(z, d);
@@ -856,7 +856,7 @@ static void generatedPolyContacts(const PolygonalData& polyData0, const HullPoly
 	PxU32 inside = 0;
 	for(PxU32 i=0; i<3; ++i)
 	{
-		const Vec3V vert1 =points1In0[i]; //this still in polyData1's local space
+		const Vec3V vert1 = points1In0[i]; //this still in polyData1's local space
 		points1In0[i] = M33MulV3(rot, vert1);
 		const FloatV z = V3GetZ(points1In0[i]);
 		points1In0TValue[i] = FSub(z, d);

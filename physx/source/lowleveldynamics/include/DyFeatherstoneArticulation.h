@@ -52,7 +52,6 @@
 namespace physx
 {
 
-class PxContactJoint;
 class PxcConstraintBlockStream;
 class PxcScratchAllocator;
 class PxsConstraintBlockManager;
@@ -138,11 +137,15 @@ namespace Dy
 	struct ArticulationInternalConstraint : public ArticulationInternalConstraintBase
 	{	
 		ArticulationImplicitDriveDesc implicitDriveDesc;
-		PxReal driveMaxForce;					
+		PxReal driveMaxForce;
 		PxReal driveForce;						
 
-		PxReal frictionMaxForce;				
-		PxReal frictionForce;
+		PxReal dynamicFrictionEffort;
+		PxReal staticFrictionEffort;
+		PxReal viscousFrictionCoefficient;
+		PxReal frictionMaxForce;
+		PxReal accumulatedFrictionImpulse;
+		PxReal maxJointVelocity;
 
 		bool isLinearConstraint;
 
@@ -153,7 +156,7 @@ namespace Dy
 		const ArticulationImplicitDriveDesc& getImplicitDriveDesc() const
 		{
 			return implicitDriveDesc;
-		}	
+		}
 	};
 	PX_COMPILE_TIME_ASSERT(0 == (sizeof(ArticulationInternalConstraint) & 0x0f));
 
@@ -542,10 +545,9 @@ namespace Dy
 			eDIRTY_FIXED_TENDON = 1 << 16,
 			eDIRTY_FIXED_TENDON_JOINT = 1 << 17,
 			eDIRTY_MIMIC_JOINT = 1 << 18,
-			eDIRTY_VELOCITY_LIMITS = 1 <<19,
-			eDIRTY_USER_FLAGS =  1 << 20,
-			eNEEDS_KINEMATIC_UPDATE = 1 << 21,
-			eALL = (1<<22)-1 
+			eDIRTY_USER_FLAGS =  1 << 19,
+			eNEEDS_KINEMATIC_UPDATE = 1 << 20,
+			eALL = (1<<21)-1
 		};
 	};
 
@@ -642,8 +644,6 @@ namespace Dy
 		//These two functions are for closed loop system
 		void		getKMatrix(ArticulationJointCore* loopJoint, const PxU32 parentIndex, const PxU32 childIndex, PxArticulationCache& cache);
 
-		void		getCoefficientMatrix(const PxReal dt, const PxU32 linkID, const PxContactJoint* contactJoints, const PxU32 nbContacts, PxArticulationCache& cache);
-
 		void		getCoefficientMatrixWithLoopJoints(ArticulationLoopConstraint* lConstraints, const PxU32 nbJoints, PxArticulationCache& cache);
 
 		bool		getLambda(ArticulationLoopConstraint* lConstraints, const PxU32 nbJoints, PxArticulationCache& cache, PxArticulationCache& rollBackCache, 
@@ -712,8 +712,7 @@ namespace Dy
 
 		static PxU32 setupSolverConstraintsTGS(const ArticulationSolverDesc& articDesc,
 			PxReal dt,
-			PxReal invDt,
-			PxReal totalDt);
+			PxReal invDt, PxReal totalDt);
 
 		static void saveVelocity(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* deltaV);
 
@@ -879,11 +878,11 @@ namespace Dy
 		void computeZ(const ArticulationData& data, const PxVec3& gravity, ScratchData& scratchData);
 		void computeZD(const ArticulationData& data, const PxVec3& gravity, ScratchData& scratchData);
 
-		void solveInternalConstraints(const PxReal dt, const PxReal invDt,
-			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive);
+		void solveInternalConstraints(const PxReal dt, const PxReal stepDt, const PxReal invStepDt,
+			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive, bool isExternalForcesEveryTgsIterationEnabled = false);
 
-		void solveInternalJointConstraints(const PxReal dt, const PxReal invDt,
-			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive);
+		void solveInternalJointConstraints(const PxReal dt, const PxReal stepDt, const PxReal invStepDt,
+			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive, bool isExternalForcesEveryTgsIterationEnabled);
 
 	private:
 		Cm::SpatialVectorF solveInternalJointConstraintRecursive(const InternalConstraintSolverData& data, const PxU32 linkID,
@@ -1213,8 +1212,6 @@ namespace Dy
         \param[in] fixBase describes whether the root of the articulation is fixed or free to rotate and translate.
 		\param[in] comW is the centre of mass of the ensemble of links in the articulation. com is used only to enforce the max linear and angular velocity.
 		\param[in] invSumMass is the inverse of the mass sum of the ensemble of links in the articulation. invSumMass is used only to enforce the max linear and angular velocity.
-		\param[in] linkMaxLinearVelocity is the maximum allowed linear velocity of any link. The link linear velocities are rescaled to ensure none breaches the limit.
-		\param[in] linkMaxAngularVelocity is the maximum allowed angular velocity of any link. The link angular velocities are rescaled to ensure none breaches the limit.
 		\param[in] linkIsolatedSpatialArticulatedInertiasW is an array of link inertias.  The link inertias are used only to enforce the max linear and angular velocity.
         \param[in] baseInvSpatialArticulatedInertiaW is the inverse of the articulated spatial inertia of the root link. 
         \param[in] links is an array of articulation links with one entry for each link. 
@@ -1239,7 +1236,7 @@ namespace Dy
 		static void computeLinkInternalAcceleration
 			(const PxReal dt,
 			 const bool fixBase,
-			 const PxVec3& comW, const PxReal invSumMass, const PxReal linkMaxLinearVelocity, const PxReal linkMaxAngularVelocity, const PxMat33* linkIsolatedSpatialArticulatedInertiasW, 
+			 const PxVec3& comW, const PxReal invSumMass, const PxMat33* linkIsolatedSpatialArticulatedInertiasW,
 			 const SpatialMatrix& baseInvSpatialArticulatedInertiaW,	
 			 const ArticulationLink* links, const PxU32 linkCount, 
 			 const PxReal* linkMasses, const PxVec3* linkRsW, const PxTransform* linkAccumulatedPosesW,

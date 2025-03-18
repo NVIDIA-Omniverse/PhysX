@@ -284,9 +284,23 @@ void Sc::ArticulationJointCore::setFrictionCoefficient(PxReal frictionCoefficien
 	setSimDirty();
 }
 
+void Sc::ArticulationJointCore::setFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams)
+{
+	mCore.setFrictionParams(axis, jointFrictionParams);
+
+	setSimDirty();
+}
+
 void Sc::ArticulationJointCore::setMaxJointVelocity(PxReal maxJointV)
 {
 	mCore.setMaxJointVelocity(maxJointV);
+
+	setSimDirty();
+}
+
+void Sc::ArticulationJointCore::setMaxJointVelocity(PxArticulationAxis::Enum axis, PxReal maxJointV)
+{
+	mCore.setMaxJointVelocity(axis, maxJointV);
 
 	setSimDirty();
 }

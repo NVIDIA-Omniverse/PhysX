@@ -33,7 +33,7 @@
 // The snippet supports connecting to PVD in order to display the scene.
 //
 // It is a simple command-line tool supporting the following options::
-// SnippetLoadCollection [--pvdhost=<ip address> ] [--pvdport=<ip port> ] [--pvdtimeout=<time ms> ] [--generateExampleFiles] <filename>...		   
+// SnippetLoadCollection [--pvdhost=<ip address> ] [--pvdport=<ip port> ] [--pvdtimeout=<time ms> ] [--generateExampleFiles] <filename>...
 //
 // --pvdhost=<ip address>              Defines ip address of PVD, default is 127.0.0.1
 // --pvdport=<ip port>                 Defines ip port of PVD, default is 5425

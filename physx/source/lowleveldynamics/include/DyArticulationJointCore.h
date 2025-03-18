@@ -83,8 +83,21 @@ namespace physx
 			PX_FORCE_INLINE	void	setLimit(PxArticulationAxis::Enum axis, const PxArticulationLimit& limit)	{ limits[axis] = limit;					}
 			PX_FORCE_INLINE	void	setDrive(PxArticulationAxis::Enum axis, const PxArticulationDrive& drive)	{ drives[axis] = drive;					}
 			PX_FORCE_INLINE	void	setJointType(PxArticulationJointType::Enum type)							{ jointType = PxU8(type);				}
-			PX_FORCE_INLINE	void	setMaxJointVelocity(const PxReal maxJointV)								{ maxJointVelocity = maxJointV;			}
+			PX_FORCE_INLINE	void	setMaxJointVelocity(const PxReal maxJointV)								{ 
+				for(PxU32 i = 0; i < PxArticulationAxis::eCOUNT; i++)
+				{
+					maxJointVelocity[i] = maxJointV;
+				}
+			}
+			PX_FORCE_INLINE	void	setMaxJointVelocity(PxArticulationAxis::Enum axis, const PxReal maxJointV)								{ 
+				maxJointVelocity[axis] = maxJointV;
+			}
 			PX_FORCE_INLINE	void	setFrictionCoefficient(const PxReal coefficient)							{ frictionCoefficient = coefficient;	}
+
+			PX_FORCE_INLINE void setFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams) 
+			{ 
+				frictionParams[axis] = jointFrictionParams;
+			}
 
 			void	init(const PxTransform& parentFrame, const PxTransform& childFrame)
 			{
@@ -104,7 +117,8 @@ namespace physx
 				{
 					setLimit(PxArticulationAxis::Enum(i), PxArticulationLimit(0.0f, 0.0f));
 					setDrive(PxArticulationAxis::Enum(i), PxArticulationDrive(0.0f, 0.0f, 0.0f, PxArticulationDriveType::eNONE));
-
+					setFrictionParams(PxArticulationAxis::Enum(i), PxJointFrictionParams(0.0f, 0.0f, 0.0f));
+					setFrictionParams(PxArticulationAxis::Enum(i), PxJointFrictionParams(0.0f, 0.0f, 0.0f));
 					targetP[i] = 0.0f;
 					targetV[i] = 0.0f;
 					armature[i] = 0.0f;
@@ -200,6 +214,8 @@ namespace physx
 					targetP[i] = other.targetP[i];
 					targetV[i] = other.targetV[i];
 					armature[i] = other.armature[i];
+					frictionParams[i] = other.frictionParams[i];
+					maxJointVelocity[i] = other.maxJointVelocity[i];
 
 					jointPos[i] = other.jointPos[i];
 					jointVel[i] = other.jointVel[i];
@@ -210,7 +226,6 @@ namespace physx
 				}
 
 				frictionCoefficient = other.frictionCoefficient;
-				maxJointVelocity = other.maxJointVelocity;
 				jointOffset = other.jointOffset;
 				jCalcUpdateFrames = other.jCalcUpdateFrames;
 				jointType = other.jointType;
@@ -238,17 +253,19 @@ namespace physx
 			PxReal							jointVel[PxArticulationAxis::eCOUNT];	//24		320
 			
 			PxReal							frictionCoefficient;					//4			324
-			PxReal							maxJointVelocity;						//4			328
+			PxJointFrictionParams			frictionParams[PxArticulationAxis::eCOUNT]; //72	396
+			PxReal							maxJointVelocity[PxArticulationAxis::eCOUNT]; // 24			420
 
 			//this is the dof offset for the joint in the cache. 
-			PxU32							jointOffset;							//4			332
+			PxU32							jointOffset;							//4			424
 
-			PxU8							dofIds[PxArticulationAxis::eCOUNT];		//6			338
-			PxU8							motion[PxArticulationAxis::eCOUNT];		//6			344
-			PxU8							invDofIds[PxArticulationAxis::eCOUNT];	//6			350
+			PxU8							dofIds[PxArticulationAxis::eCOUNT];		//6			430
+			PxU8							motion[PxArticulationAxis::eCOUNT];		//6			436
+			PxU8							invDofIds[PxArticulationAxis::eCOUNT];	//6			442
 
-			bool							jCalcUpdateFrames;							//1			351
-			PxU8							jointType;								//1			352
+			bool							jCalcUpdateFrames;						//1			443
+			PxU8							jointType;								//1			444
+			PxReal padding[1];														//4		````448
 		}PX_ALIGN_SUFFIX(16);
 	}
 }

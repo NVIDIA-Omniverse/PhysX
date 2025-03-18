@@ -58,14 +58,24 @@ void PxDeformableSkinningExt::initializeInterpolatedVertices(
 		const PxU32 closestTriangleid = traversalController.getClosestTriId();
 
 		const PxU32* tri = &guideTriangles[3 * closestTriangleid];
+		const PxVec3& v0 = guideVertices[tri[0]];
+		const PxVec3& v1 = guideVertices[tri[1]];
+		const PxVec3& v2 = guideVertices[tri[2]];
 
 		const PxVec3 closestPoint = traversalController.getClosestPoint();
+
+		PxVec3 triNormal = (v1 - v0).cross(v2 - v0);
+		triNormal.normalize();
+
+		PxVec3 distVec = (embeddedVertices[i] - closestPoint);
+
+		PxReal normalOffset = distVec.dot(triNormal);
+		PxVec3 projPoint = embeddedVertices[i] - normalOffset*triNormal;
+
 		PxVec4 barycentric;
-		PxComputeBarycentric(guideVertices[tri[0]], guideVertices[tri[1]], guideVertices[tri[2]], closestPoint, barycentric);
+		PxComputeBarycentric(v0, v1, v2, projPoint, barycentric);
 
-		PxReal closestDistance = (embeddedVertices[i] - closestPoint).normalize();
-
-		embeddingInfo[i] = PxTriangleMeshEmbeddingInfo(PxVec2(barycentric.x, barycentric.y), closestDistance, closestTriangleid);
+		embeddingInfo[i] = PxTriangleMeshEmbeddingInfo(PxVec2(barycentric.x, barycentric.y), normalOffset, closestTriangleid);
 	}
 }
 

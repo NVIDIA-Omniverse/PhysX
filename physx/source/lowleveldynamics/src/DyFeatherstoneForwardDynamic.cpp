@@ -1219,7 +1219,7 @@ namespace Dy
 	void FeatherstoneArticulation::computeLinkInternalAcceleration
 	(	const PxReal dt,
 		const bool fixBase,
-		const PxVec3& rcom, const PxReal recipMass, const PxReal maxLinearVelocity, const PxReal maxAngularVelocity, const PxMat33* linkIsolatedSpatialArticulatedInertiasW, 
+		const PxVec3& rcom, const PxReal recipMass, const PxMat33* linkIsolatedSpatialArticulatedInertiasW,
 		const SpatialMatrix& baseInvSpatialArticulatedInertiaW,
 		const ArticulationLink* links, const PxU32 linkCount, 
 		const PxReal* linkMasses, const PxVec3* linkRsW, const PxTransform* linkAccumulatedPosesW,
@@ -1311,8 +1311,6 @@ namespace Dy
 			linkMotionVelocitiesW[linkID] += velDelta;
 		}
 
-
-
 		if (!fixBase)
 		{
 			PxVec3 linMomentum1(PxZero);
@@ -1340,20 +1338,6 @@ namespace Dy
 			//Compute the delta angular velocity.
 			PxVec3 deltaAng = invCompoundInertia * deltaAngMom;
 
-			//If we are above the max angular velocity then work out a new delta angular velocity
-			//that would be required to brings us back to the max.
-			if (maxAngularVelocity > 0.0f)
-			{
-				const PxReal maxAng = maxAngularVelocity;
-				const PxReal maxAngSq = maxAng * maxAng;
-				PxVec3 ang = (invCompoundInertia * angMomentum1) + deltaAng;
-				if (ang.magnitudeSquared() > maxAngSq)
-				{
-					PxReal ratio = maxAng / ang.magnitude();
-					deltaAng += (ratio - 1.f)*ang;
-				}
-			}
-
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
 				const PxVec3 offset = (linkAccumulatedPosesW[linkID].p - rcom);
@@ -1365,18 +1349,6 @@ namespace Dy
 
 			const PxVec3 deltaLinMom = linMomentum0 - linMomentum1;
 			PxVec3 deltaLin = deltaLinMom * recipMass;
-
-			if (maxLinearVelocity >= 0.0f)
-			{
-				const PxReal maxLin = maxLinearVelocity;
-				const PxReal maxLinSq = maxLin * maxLin;
-				PxVec3 lin = (linMomentum1 * recipMass) + deltaLin;
-				if (lin.magnitudeSquared() > maxLinSq)
-				{
-					PxReal ratio = maxLin / lin.magnitude();
-					deltaLin += (ratio - 1.f)*lin;
-				}
-			}
 
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
@@ -1783,8 +1755,6 @@ namespace Dy
 			const PxVec3& comW = mArticulationData.mCOM;
 			const PxReal invSumMass = mArticulationData.mInvSumMass;
 			const SpatialMatrix& baseInvSpatialArticulatedInertiaW = mArticulationData.mBaseInvSpatialArticulatedInertiaW;
-			const PxReal linkMaxLinearVelocity = mSolverDesc.core ? mSolverDesc.core->maxLinearVelocity : -1.0f;
-			const PxReal linkMaxAngularVelocity = mSolverDesc.core ? mSolverDesc.core->maxAngularVelocity : -1.0f;
 			const ArticulationLink* links = mArticulationData.getLinks();
 			const PxU32 linkCount = mArticulationData.getLinkCount();
 			const ArticulationJointCoreData* jointDatas = mArticulationData.getJointData();
@@ -1810,9 +1780,8 @@ namespace Dy
 			PxReal* jointNewVelocities = mArticulationData.mJointNewVelocity.begin();
 
 			computeLinkInternalAcceleration(
-				dt, fixBase, comW, invSumMass, linkMaxLinearVelocity, linkMaxAngularVelocity, linkIsolatedSpatialArticulatedInertiasW,
-				baseInvSpatialArticulatedInertiaW, 
-				links, linkCount, 
+				dt, fixBase, comW, invSumMass, linkIsolatedSpatialArticulatedInertiasW, baseInvSpatialArticulatedInertiaW,
+				links, linkCount,
 				linkMasses, linkRsW, linkAccumulatedPosesW,
 				linkSpatialZAIntForcesW, linkCoriolisVectorsW,
 				jointDatas, jointDofMotionMatricesW,

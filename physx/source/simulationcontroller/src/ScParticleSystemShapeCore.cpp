@@ -29,7 +29,6 @@
 #if PX_SUPPORT_GPU_PHYSX
 #include "foundation/PxErrorCallback.h"
 #include "ScParticleSystemShapeCore.h"
-#include "ScParticleSystemShapeSim.h"
 #include "ScPhysics.h"
 #include "PxvGlobals.h"
 #include "PxPhysXGpu.h"

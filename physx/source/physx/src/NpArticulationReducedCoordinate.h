@@ -73,7 +73,6 @@ namespace physx
 					virtual			void				requiresObjects(PxProcessPxBaseCallback& c);
 
 		static		NpArticulationReducedCoordinate*	createObject(PxU8*& address, PxDeserializationContext& context);
-		static		void								getBinaryMetaData(PxOutputStream& stream);
 		//~PX_SERIALIZATION
 
 		// PxBase
@@ -94,10 +93,6 @@ namespace physx
 		virtual	void		wakeUp()	PX_OVERRIDE	PX_FINAL;
 		virtual	void		putToSleep()	PX_OVERRIDE	PX_FINAL;
 		virtual PxVec3		computeArticulationCOM(const bool rootFrame) const	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	void	setMaxCOMLinearVelocity(const PxReal maxLinearVelocity)	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	PxReal	getMaxCOMLinearVelocity() const	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	void	setMaxCOMAngularVelocity(const PxReal maxAngularVelocity)	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	PxReal	getMaxCOMAngularVelocity() const	PX_OVERRIDE	PX_FINAL;
 		virtual PxArticulationLink*		createLink(PxArticulationLink* parent, const PxTransform& pose)	PX_OVERRIDE	PX_FINAL;
 		virtual	PxU32					getNbLinks() const	PX_OVERRIDE	PX_FINAL;
 		virtual	PxU32					getLinks(PxArticulationLink** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE	PX_FINAL;
@@ -143,7 +138,6 @@ namespace physx
 		virtual	void					setRootAngularVelocity(const PxVec3& velocity, bool autowake = true)	PX_OVERRIDE	PX_FINAL;
 		virtual	PxVec3					getRootAngularVelocity() const	PX_OVERRIDE	PX_FINAL;
 		virtual	PxSpatialVelocity		getLinkAcceleration(const PxU32 linkId)	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	PxU32	getGpuArticulationIndex()	PX_OVERRIDE	PX_FINAL;
 		virtual	PxArticulationGPUIndex	getGPUIndex() const PX_OVERRIDE PX_FINAL;
 		virtual	PxArticulationSpatialTendon*	createSpatialTendon()	PX_OVERRIDE	PX_FINAL;
 		virtual	PxU32					getSpatialTendons(PxArticulationSpatialTendon** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE	PX_FINAL;
@@ -247,20 +241,6 @@ namespace physx
 			PX_ASSERT(getNpScene());
 			PX_ASSERT(!isAPIWriteForbiddenExceptSplitSim());
 			mCore.wakeUp(wakeCounter);
-		}
-
-		PX_FORCE_INLINE	void		scSetMaxLinearVelocity(PxReal maxLinearVelocity)
-		{
-			PX_ASSERT(!isAPIWriteForbidden());
-			mCore.setMaxLinearVelocity(maxLinearVelocity);
-			UPDATE_PVD_PROPERTY
-		}
-
-		PX_FORCE_INLINE	void		scSetMaxAngularVelocity(PxReal maxAngularVelocity)
-		{
-			PX_ASSERT(!isAPIWriteForbidden());
-			mCore.setMaxAngularVelocity(maxAngularVelocity);
-			UPDATE_PVD_PROPERTY
 		}
 
 		void			recomputeLinkIDs();

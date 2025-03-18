@@ -77,6 +77,12 @@ typedef PxU32 PxArticulationGPUIndex;
 typedef PxU32 PxRigidDynamicGPUIndex;
 typedef PxU32 PxShapeGPUIndex;
 
+typedef PxU32 PxConstraintGPUIndex;
+#define PX_INVALID_CONSTRAINT_GPU_INDEX 0xffffFFFF
+
+typedef PxConstraintGPUIndex PxD6JointGPUIndex;
+#define PX_INVALID_D6_JOINT_GPU_INDEX PX_INVALID_CONSTRAINT_GPU_INDEX
+
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

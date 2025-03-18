@@ -84,17 +84,17 @@ public:
 	PX_FORCE_INLINE	PxReal					getRestDistance()			const	{ return mNpUnit.mRestDistance;	}
 	PX_FORCE_INLINE	void					setRestDistance(PxReal v)			{ mNpUnit.mRestDistance = v;	}
 
-	PX_FORCE_INLINE	PxU8					getDominance0()				const	{ return mNpUnit.mDominance0;	}
-	PX_FORCE_INLINE	void					setDominance0(PxU8 v)				{ mNpUnit.mDominance0 = v;		}
+	PX_FORCE_INLINE	PxU8					getDominance0()				const	{ return mNpUnit.getDominance0();	}
+	PX_FORCE_INLINE	void					setDominance0(PxU8 v)				{ mNpUnit.setDominance0(v);			}
 
-	PX_FORCE_INLINE	PxU8					getDominance1()				const	{ return mNpUnit.mDominance1;	}
-	PX_FORCE_INLINE	void					setDominance1(PxU8 v)				{ mNpUnit.mDominance1 = v;		}
+	PX_FORCE_INLINE	PxU8					getDominance1()				const	{ return mNpUnit.getDominance1();	}
+	PX_FORCE_INLINE	void					setDominance1(PxU8 v)				{ mNpUnit.setDominance1(v);			}
 
 	PX_FORCE_INLINE	PxU16					getTouchStatus()			const	{ return PxU16(mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH); }
 	PX_FORCE_INLINE	PxU16					touchStatusKnown()			const	{ return PxU16(mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eTOUCH_KNOWN); }
 	PX_FORCE_INLINE	PxI32					getTouchIdx()				const	{ return (mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH) ? 1 : (mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_NO_TOUCH ? -1 : 0); }
 
-	PX_FORCE_INLINE	PxU32					getIndex()					const	{ return mNpUnit.mIndex;	}
+	PX_FORCE_INLINE	PxU32					getIndex()					const	{ return mCmIndex;	}
 
 	PX_FORCE_INLINE	PxU16					getHasCCDRetouch()			const	{ return PxU16(mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH); }
 	PX_FORCE_INLINE	void					clearCCDRetouch()					{ mNpUnit.mStatusFlags &= ~PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH; }
@@ -125,10 +125,11 @@ public:
 private:
 					//KS - moving this up - we want to get at flags
 					
-					PxsRigidBody*			mRigidBody0;		//4		//8
-					PxsRigidBody*			mRigidBody1;		//8		//16	
-					PxU32					mFlags;				//20	//36
-					Sc::ShapeInteraction*	mShapeInteraction;	//16	//32
+					PxsRigidBody*			mRigidBody0;
+					PxsRigidBody*			mRigidBody1;
+					PxU32					mFlags;
+					PxU32					mCmIndex;	// PT: moved to padding bytes from mNpUnit
+					Sc::ShapeInteraction*	mShapeInteraction;
 
 	// everything required for narrow phase to run
 					PxcNpWorkUnit			mNpUnit;

@@ -28,7 +28,7 @@
 
 #include "foundation/PxPreprocessor.h"
 
-#define USE_CUDA_INTEROP (!PX_PUBLIC_RELEASE)
+#define USE_CUDA_INTEROP (PX_SUPPORT_GPU_PHYSX)
 
 #if (PX_SUPPORT_GPU_PHYSX && USE_CUDA_INTEROP)
 #if PX_LINUX && PX_CLANG
