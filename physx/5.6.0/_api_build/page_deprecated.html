@@ -1,0 +1,1267 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Deprecated List &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/page_deprecated';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Deprecated list" href="deprecated.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="deprecated.html" class="nav-link">Deprecated list</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Deprecated List</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="deprecated-list">
+<h1>Deprecated List<a class="headerlink" href="#deprecated-list" title="Link to this heading">#</a></h1>
+<p id="deprecated_1_deprecated000036"><dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#classextgpu_1_1pxparticleattachmentbuffer"><span class="std std-ref"><span class="pre">ExtGpu::PxParticleAttachmentBuffer</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classExtGpu_1_1PxParticleClothBufferHelper.html#classextgpu_1_1pxparticleclothbufferhelper"><span class="std std-ref"><span class="pre">ExtGpu::PxParticleClothBufferHelper</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000032"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structExtGpu_1_1PxParticleClothConstraint.html#structextgpu_1_1pxparticleclothconstraint"><span class="std std-ref"><span class="pre">ExtGpu::PxParticleClothConstraint</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000031"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classExtGpu_1_1PxParticleRigidBufferHelper.html#classextgpu_1_1pxparticlerigidbufferhelper"><span class="std std-ref"><span class="pre">ExtGpu::PxParticleRigidBufferHelper</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000035"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classExtGpu_1_1PxParticleVolumeBufferHelper.html#classextgpu_1_1pxparticlevolumebufferhelper"><span class="std std-ref"><span class="pre">ExtGpu::PxParticleVolumeBufferHelper</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000034"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structExtGpu_1_1PxParticleVolumeMesh.html#structextgpu_1_1pxparticlevolumemesh"><span class="std std-ref"><span class="pre">ExtGpu::PxParticleVolumeMesh</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000033"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache_1a9df694963228f4ae0c9e58ca9d6bff02"><span class="std std-ref"><span class="pre">PxArticulationCache::coefficientMatrix</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000091"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache_1aa90b660a293d6ce7984d49e8be270465"><span class="std std-ref"><span class="pre">PxArticulationCache::lambda</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000092"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a1fd71a479d6e4588cfe90ca18a38a675"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::addLoopJoint</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxConstraint.html#classpxconstraint"><span class="std std-ref"><span class="pre">PxConstraint</span></span></a> <span class="pre">*joint)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000098"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a0eb36b4e092c322893c811f1e7c85b4d"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::computeCoefficientMatrix</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref"><span class="pre">PxArticulationCache</span></span></a> <span class="pre">&amp;cache)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000095"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1af1947172f99feef066872b12d675d046"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref"><span class="pre">PxArticulationCache</span></span></a> <span class="pre">&amp;cache)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000094"></span>Please use computeCoriolisCompensation instead. It provides a more complete Coriolis and centrifugal compensation force for floating-base articulations. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1af8b5217bd48e6d1ccc8ba3e495c66df7"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::computeGeneralizedGravityForce</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref"><span class="pre">PxArticulationCache</span></span></a> <span class="pre">&amp;cache)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000093"></span>Please use computeGravityCompensation instead. It provides a more complete gravity compensation force for floating-base articulations. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a92e7a37bc7b058364398265b80996607"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::computeGeneralizedMassMatrix</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref"><span class="pre">PxArticulationCache</span></span></a> <span class="pre">&amp;cache)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000097"></span>Please use computeMassMatrix instead. It provides a more complete mass matrix for floating-base articulations. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a06a554a20844b28a9251e60ca69ebac5"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::computeLambda</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref"><span class="pre">PxArticulationCache</span></span></a> <span class="pre">&amp;cache,</span> <a class="reference internal" href="classPxArticulationCache.html#classpxarticulationcache"><span class="std std-ref"><span class="pre">PxArticulationCache</span></span></a> <span class="pre">&amp;initialState,</span> <span class="pre">const</span> <span class="pre">PxReal</span> <span class="pre">*const</span> <span class="pre">jointTorque,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">maxIter)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000096"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a54da9e7775e8b619d5172039213beaff"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::getCoefficientMatrixSize</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000102"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a7638fb7542a21d008c7c5bf700c2588c"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::getLoopJoints</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxConstraint.html#classpxconstraint"><span class="std std-ref"><span class="pre">PxConstraint</span></span></a> <span class="pre">**userBuffer,</span> <span class="pre">PxU32</span> <span class="pre">bufferSize,</span> <span class="pre">PxU32</span> <span class="pre">startIndex=0)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000101"></span>The API related to loop joints will be removed in a future version once a replacement is made available.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1aa89014cf296753fd9ddffbd62ef46c4c"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::getNbLoopJoints</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000100"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a92b60a7ed800eb9e8632d0c762f5d8c1"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::removeLoopJoint</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxConstraint.html#classpxconstraint"><span class="std std-ref"><span class="pre">PxConstraint</span></span></a> <span class="pre">*joint)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000099"></span>The API related to loop joints will be removed in a future version once a replacement is made available. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxBVH33MidphaseDesc.html#structpxbvh33midphasedesc"><span class="std std-ref"><span class="pre">PxBVH33MidphaseDesc</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000123"></span>BVH33 is deprecated and will be removed in a future version. Use BVH34 instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxBVH33TriangleMesh.html#classpxbvh33trianglemesh"><span class="std std-ref"><span class="pre">PxBVH33TriangleMesh</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000118"></span>Use <a class="reference internal" href="classPxBVH34TriangleMesh.html#classpxbvh34trianglemesh"><span class="std std-ref">PxBVH34TriangleMesh</span></a> instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8a1e82400ef7c1baf3c75f850648519faf"><span class="std std-ref"><span class="pre">PxConcreteType::eSOFT_BODY</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000131"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8a486b9554105468f2eba5f06cdd64bc31"><span class="std std-ref"><span class="pre">PxConcreteType::eSOFT_BODY_STATE</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000132"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8a3da3c32678c7d3510794b696df57ccf0"><span class="std std-ref"><span class="pre">PxConcreteType::eSOFTBODY_MATERIAL</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000130"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8ae391bbfadb8eeb717623823e502ca211"><span class="std std-ref"><span class="pre">PxConcreteType::eSOFTBODY_MESH</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000129"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8ab6ae11318fb26a00eff8864beaa1290d"><span class="std std-ref"><span class="pre">PxConcreteType::eTRIANGLE_MESH_BVH33</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000128"></span>Will be removed together with deprecated BVH33.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1adb990d3e04793a323a40c43d12ede137"><span class="std std-ref"><span class="pre">PxCudaContextManager::allocDeviceBuffer</span></span></a>&#160; <span class="pre">(PxU32</span> <span class="pre">numElements,</span> <span class="pre">const</span> <span class="pre">char</span> <span class="pre">*filename=__FILE__,</span> <span class="pre">PxI32</span> <span class="pre">line=__LINE__)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000085"></span>- use PxCudaHelpersExt::allocDeviceBuffer instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1aba25a6dd8d09c111e9018de7c0e5b6cf"><span class="std std-ref"><span class="pre">PxCudaContextManager::allocDeviceBuffer</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*&amp;deviceBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">const</span> <span class="pre">char</span> <span class="pre">*filename=__FILE__,</span> <span class="pre">PxI32</span> <span class="pre">line=__LINE__)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000084"></span>- use PxCudaHelpersExt::allocDeviceBuffer instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1abc458d6c9548778f962722d013b48d33"><span class="std std-ref"><span class="pre">PxCudaContextManager::allocPinnedHostBuffer</span></span></a>&#160; <span class="pre">(PxU32</span> <span class="pre">numElements,</span> <span class="pre">const</span> <span class="pre">char</span> <span class="pre">*filename=__FILE__,</span> <span class="pre">PxI32</span> <span class="pre">line=__LINE__)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000088"></span>- use PxCudaHelpersExt::allocPinnedHostBuffer instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1ac152f0da563a4a695a9be36082ec062c"><span class="std std-ref"><span class="pre">PxCudaContextManager::allocPinnedHostBuffer</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*&amp;pinnedHostBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">const</span> <span class="pre">char</span> <span class="pre">*filename=__FILE__,</span> <span class="pre">PxI32</span> <span class="pre">line=__LINE__)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000087"></span>- use PxCudaHelpersExt::allocPinnedHostBuffer instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a7b19ff0c94d3d07ca71bdc7061f0eb13"><span class="std std-ref"><span class="pre">PxCudaContextManager::clearDeviceBufferAsync</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*deviceBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">CUstream</span> <span class="pre">stream,</span> <span class="pre">PxI32</span> <span class="pre">value=0)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000077"></span>The replacement is PxCudaHelpersExt::memsetAsync.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a4d3b831faf7bd2e708c2fbefe5acce2b"><span class="std std-ref"><span class="pre">PxCudaContextManager::copyDToDAsync</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*dstDeviceBuffer,</span> <span class="pre">const</span> <span class="pre">T</span> <span class="pre">*srcDeviceBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">CUstream</span> <span class="pre">stream)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000082"></span>Use PxCudaHelpersExt::copyDToDAsync instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1aed83eaea5a3e9328c72195a6cebb7f11"><span class="std std-ref"><span class="pre">PxCudaContextManager::copyDToH</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*hostBuffer,</span> <span class="pre">const</span> <span class="pre">T</span> <span class="pre">*deviceBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000078"></span>The replacement is PxCudaHelpersExt::copyDToH.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a9a2cc4bc7eed9c2891f850ca0926d529"><span class="std std-ref"><span class="pre">PxCudaContextManager::copyDToHAsync</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*hostBuffer,</span> <span class="pre">const</span> <span class="pre">T</span> <span class="pre">*deviceBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">CUstream</span> <span class="pre">stream)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000080"></span>Use PxCudaHelpersExt::copyDToHAsync instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1aa75739bceee0e71dc09a8b5592d3d2b6"><span class="std std-ref"><span class="pre">PxCudaContextManager::copyHToD</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*deviceBuffer,</span> <span class="pre">const</span> <span class="pre">T</span> <span class="pre">*hostBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000079"></span>The replacement is PxCudaHelpersExt::copyHtoD  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a9adaf493fcac9b191697773a7e5b82e6"><span class="std std-ref"><span class="pre">PxCudaContextManager::copyHToDAsync</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*deviceBuffer,</span> <span class="pre">const</span> <span class="pre">T</span> <span class="pre">*hostBuffer,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">CUstream</span> <span class="pre">stream)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000081"></span>Use PxCudaHelpersExt::copyHToDAsync instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a1db732f53c60f4bcb4170de5c3363b39"><span class="std std-ref"><span class="pre">PxCudaContextManager::freeDeviceBuffer</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*&amp;deviceBuffer)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000086"></span>- use PxCudaHelpersExt::freeDeviceBuffer instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a2f0f3021f96ce44ec306a565ec20e195"><span class="std std-ref"><span class="pre">PxCudaContextManager::freePinnedHostBuffer</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*&amp;pinnedHostBuffer)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000089"></span>- use PxCudaHelpersExt::freePinnedHostBuffer instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxCudaContextManager.html#classpxcudacontextmanager_1a724d358b2c17ed62007323c75b3240f8"><span class="std std-ref"><span class="pre">PxCudaContextManager::memsetAsync</span></span></a>&#160; <span class="pre">(T</span> <span class="pre">*dstDeviceBuffer,</span> <span class="pre">const</span> <span class="pre">T</span> <span class="pre">&amp;value,</span> <span class="pre">PxU32</span> <span class="pre">numElements,</span> <span class="pre">CUstream</span> <span class="pre">stream)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000083"></span>Use PxCudaHelpersExt::memsetAsync instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxD6Joint.html#classpxd6joint_1a51b4b407ec90d74c9155d303433efdca"><span class="std std-ref"><span class="pre">PxD6Joint::getLinearLimit</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000029"></span>Use getDistanceLimit instead. Deprecated since PhysX version 4.0  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxD6Joint.html#classpxd6joint_1a4656e67e1cbf34d7de568970ed80fa0e"><span class="std std-ref"><span class="pre">PxD6Joint::getTwist</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000027"></span>Use getTwistAngle instead. Deprecated since PhysX version 4.0  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxD6Joint.html#classpxd6joint_1a15d7e18a2bd253f7facc0016c4874d2d"><span class="std std-ref"><span class="pre">PxD6Joint::setLinearLimit</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="classPxJointLinearLimit.html#classpxjointlinearlimit"><span class="std std-ref"><span class="pre">PxJointLinearLimit</span></span></a> <span class="pre">&amp;limit)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000028"></span>Use setDistanceLimit instead. Deprecated since PhysX version 4.0  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1a4f0c788812448cc67a159f4f8e03740a"><span class="std std-ref"><span class="pre">PxDeformableBody::getMaxVelocity</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000121"></span>Use getMaxLinearVelocity instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1a8e38db1a5ad8c7e6e722ba6a456ac64f"><span class="std std-ref"><span class="pre">PxDeformableBody::setMaxVelocity</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">PxReal</span> <span class="pre">maxVelocity)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000120"></span>Use setMaxLinearVelocity instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxDeformableVolumeMaterial.html#classpxdeformablevolumematerial_1a2328eb9b59b5fa7b473a3e5d06469780"><span class="std std-ref"><span class="pre">PxDeformableVolumeMaterial::getDamping</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000106"></span>Use getElasticityDamping instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxDeformableVolumeMaterial.html#classpxdeformablevolumematerial_1a665115ce71efa9c9f2bdba8c06053b90"><span class="std std-ref"><span class="pre">PxDeformableVolumeMaterial::getDampingScale</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000108"></span>Damping scale is deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxDeformableVolumeMaterial.html#classpxdeformablevolumematerial_1a99b16b932cc8616e194b156d1bf0a460"><span class="std std-ref"><span class="pre">PxDeformableVolumeMaterial::setDamping</span></span></a>&#160; <span class="pre">(PxReal</span> <span class="pre">damping)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000105"></span>Use setElasticityDamping instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxDeformableVolumeMaterial.html#classpxdeformablevolumematerial_1a1bc1a9195858bb81d2f609e24c9ac251"><span class="std std-ref"><span class="pre">PxDeformableVolumeMaterial::setDampingScale</span></span></a>&#160; <span class="pre">(PxReal</span> <span class="pre">scale)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000107"></span>Damping scale is deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters"><span class="std std-ref"><span class="pre">PxFEMParameters</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000111"></span>See methods of <a class="reference internal" href="classPxDeformableBody.html#classpxdeformablebody"><span class="std std-ref">PxDeformableBody</span></a>.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters_1aa3f6032e7900fb5a34a4a7389f93ddb6"><span class="std std-ref"><span class="pre">PxFEMParameters::selfCollisionFilterDistance</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000116"></span>See <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1a287e8649e10c38fb21165a9b6b0f89dd"><span class="std std-ref">PxDeformableBody.setSelfCollisionFilterDistance</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters_1acc97f845e7c8a06f9b6ba9974304e648"><span class="std std-ref"><span class="pre">PxFEMParameters::selfCollisionStressTolerance</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000117"></span>See <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume_1a825575051cb15033b78a3a10a4785270"><span class="std std-ref">PxDeformableVolume.setSelfCollisionStressTolerance</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters_1a0758e45486f413ff5d11302af4cefcf5"><span class="std std-ref"><span class="pre">PxFEMParameters::settlingThreshold</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000113"></span>See <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1acdccd7581266e0e59664fc5ac757a18e"><span class="std std-ref">PxDeformableBody.setSettlingThreshold</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters_1a2d15e9ab76eaf7d101414e4a0349ab16"><span class="std std-ref"><span class="pre">PxFEMParameters::sleepDamping</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000115"></span>See <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1a29ec13949a43ea5129a3130c68389a07"><span class="std std-ref">PxDeformableBody.setSettlingDamping</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters_1a4438f335b4070cdb4999ace969898cd2"><span class="std std-ref"><span class="pre">PxFEMParameters::sleepThreshold</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000114"></span>See <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1a9f720b6560aad335150ac64037c11c02"><span class="std std-ref">PxDeformableBody.setSleepThreshold</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFEMParameters.html#structpxfemparameters_1ac6c233730552e2a758d925ae40b1128a"><span class="std std-ref"><span class="pre">PxFEMParameters::velocityDamping</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000112"></span>See <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablebody_1a6746a31cf0652cb25e5bbb9291d5c06f"><span class="std std-ref">PxDeformableBody.setLinearDamping</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxFilterObjectType.html#structpxfilterobjecttype_1a6b94c22981119369d08ce8b13838a3cfaacef750336772ed0ba0573194f3917f4"><span class="std std-ref"><span class="pre">PxFilterObjectType::eSOFTBODY</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000110"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxFrictionType.html#structpxfrictiontype"><span class="std std-ref"><span class="pre">PxFrictionType</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000022"></span>Since only the patch friction model is supported now, the friction type option is obsolete. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxGpuParticleBufferIndexPair.html#structpxgpuparticlebufferindexpair"><span class="std std-ref"><span class="pre">PxGpuParticleBufferIndexPair</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000070"></span>There is no replacement.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxMeshCookingHint.html#structpxmeshcookinghint"><span class="std std-ref"><span class="pre">PxMeshCookingHint</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000122"></span>This is only used for BVH33 which is deprecated and will be removed in a future version. Use BVH34 instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxMeshMidPhase.html#structpxmeshmidphase_1a49f740883fbfb1a49631c28818c219f4aa791bfd986fc6edb77db2928e3c5e529"><span class="std std-ref"><span class="pre">PxMeshMidPhase::eBVH33</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000119"></span>Use eBVH34 instead. Used to be default midphase mesh structure up to PhysX 3.3  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1a9524248a628550eb6be92b52254de1e4"><span class="std std-ref"><span class="pre">PxParticleBuffer::bufferUniqueId</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000069"></span>Will be removed in a future version, use <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1a174ec9f7fc49025545562003128b95a9"><span class="std std-ref">getUniqueId()</span></a> instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1a10e85e4bdb5025b61213ef58f9c8c1da"><span class="std std-ref"><span class="pre">PxParticleBuffer::getMaxParticleVolumes</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000066"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1ac2cd698a1bc5b0f7afc4ab1e3d97aad4"><span class="std std-ref"><span class="pre">PxParticleBuffer::getNbParticleVolumes</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000064"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1ac27f68be2b37b17ebe8f1305d0ed18c4"><span class="std std-ref"><span class="pre">PxParticleBuffer::getParticleVolumes</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000063"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. See <a class="reference internal" href="structPxParticleVolume.html#structpxparticlevolume"><span class="std std-ref">PxParticleVolume</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1a5b3781136a97790165ab0ca137b502bf"><span class="std std-ref"><span class="pre">PxParticleBuffer::setNbParticleVolumes</span></span></a>&#160; <span class="pre">(PxU32</span> <span class="pre">nbParticleVolumes)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000065"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1a8da5aebbccd79eeb1b119cbeb698c0fb"><span class="std std-ref"><span class="pre">PxParticleBuffer::setRigidAttachments</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="structPxParticleRigidAttachment.html#structpxparticlerigidattachment"><span class="std std-ref"><span class="pre">PxParticleRigidAttachment</span></span></a> <span class="pre">*attachments,</span> <span class="pre">PxU32</span> <span class="pre">nbAttachments)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000068"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlebuffer_1a832b3cdc2fad0005eb84a5fc19df7ca9"><span class="std std-ref"><span class="pre">PxParticleBuffer::setRigidFilters</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="structPxParticleRigidFilterPair.html#structpxparticlerigidfilterpair"><span class="std std-ref"><span class="pre">PxParticleRigidFilterPair</span></span></a> <span class="pre">*filters,</span> <span class="pre">PxU32</span> <span class="pre">nbFilters)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000067"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. See <a class="reference internal" href="structPxParticleRigidFilterPair.html#structpxparticlerigidfilterpair"><span class="std std-ref">PxParticleRigidFilterPair</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleCloth.html#structpxparticlecloth"><span class="std std-ref"><span class="pre">PxParticleCloth</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000056"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxParticleClothBuffer.html#classpxparticleclothbuffer"><span class="std std-ref"><span class="pre">PxParticleClothBuffer</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000059"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleClothDesc.html#structpxparticleclothdesc"><span class="std std-ref"><span class="pre">PxParticleClothDesc</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000057"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxParticleClothPreProcessor.html#classpxparticleclothpreprocessor"><span class="std std-ref"><span class="pre">PxParticleClothPreProcessor</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000061"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleRigidAttachment.html#structpxparticlerigidattachment"><span class="std std-ref"><span class="pre">PxParticleRigidAttachment</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000104"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxParticleRigidBuffer.html#classpxparticlerigidbuffer"><span class="std std-ref"><span class="pre">PxParticleRigidBuffer</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000060"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleRigidFilterPair.html#structpxparticlerigidfilterpair"><span class="std std-ref"><span class="pre">PxParticleRigidFilterPair</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000109"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleSolverType.html#structpxparticlesolvertype"><span class="std std-ref"><span class="pre">PxParticleSolverType</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000124"></span>The solver type will be removed in a future version without replacement.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleSpring.html#structpxparticlespring"><span class="std std-ref"><span class="pre">PxParticleSpring</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000055"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxParticleVolume.html#structpxparticlevolume"><span class="std std-ref"><span class="pre">PxParticleVolume</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000054"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxPartitionedParticleCloth.html#structpxpartitionedparticlecloth"><span class="std std-ref"><span class="pre">PxPartitionedParticleCloth</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000058"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDMaterial.html#classpxpbdmaterial_1aa34cb87cf268dba20b4c2e5f03a7e6ff"><span class="std std-ref"><span class="pre">PxPBDMaterial::getDrag</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000004"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDMaterial.html#classpxpbdmaterial_1a4b86a0714397d17063619df01b6e19da"><span class="std std-ref"><span class="pre">PxPBDMaterial::getLift</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000002"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDMaterial.html#classpxpbdmaterial_1a16a7684ed917569bb652a940e59a275d"><span class="std std-ref"><span class="pre">PxPBDMaterial::setDrag</span></span></a>&#160; <span class="pre">(PxReal</span> <span class="pre">drag)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000003"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDMaterial.html#classpxpbdmaterial_1a501d08af03d6c667bac4f2a3ac956496"><span class="std std-ref"><span class="pre">PxPBDMaterial::setLift</span></span></a>&#160; <span class="pre">(PxReal</span> <span class="pre">lift)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000001"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDParticleSystem.html#classpxpbdparticlesystem_1a97fffc156738863e816c16d7af2e6ba8"><span class="std std-ref"><span class="pre">PxPBDParticleSystem::addRigidAttachment</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxRigidActor.html#classpxrigidactor"><span class="std std-ref"><span class="pre">PxRigidActor</span></span></a> <span class="pre">*actor)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000024"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDParticleSystem.html#classpxpbdparticlesystem_1a813a40a3b7376d56f5971a0eceb08e89"><span class="std std-ref"><span class="pre">PxPBDParticleSystem::enableCCD</span></span></a>&#160; <span class="pre">(bool</span> <span class="pre">enable)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000026"></span>Replaced by particle flag, </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxPBDParticleSystem.html#classpxpbdparticlesystem_1a8f9b3a3af5c3604d7208777eca8fe85c"><span class="std std-ref"><span class="pre">PxPBDParticleSystem::removeRigidAttachment</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxRigidActor.html#classpxrigidactor"><span class="std std-ref"><span class="pre">PxRigidActor</span></span></a> <span class="pre">*actor)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000025"></span>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxRepXInstantiationArgs.html#structpxrepxinstantiationargs"><span class="std std-ref"><span class="pre">PxRepXInstantiationArgs</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000049"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxRepXObject.html#structpxrepxobject"><span class="std std-ref"><span class="pre">PxRepXObject</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000048"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxRepXSerializer.html#classpxrepxserializer"><span class="std std-ref"><span class="pre">PxRepXSerializer</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000042"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxScene.html#classpxscene_1a1bc6cd3cf02ec0e18ce22699c634d734"><span class="std std-ref"><span class="pre">PxScene::applyParticleBufferData</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">PxU32</span> <span class="pre">*indices,</span> <span class="pre">const</span> <a class="reference internal" href="structPxGpuParticleBufferIndexPair.html#structpxgpuparticlebufferindexpair"><span class="std std-ref"><span class="pre">PxGpuParticleBufferIndexPair</span></span></a> <span class="pre">*bufferIndexPair,</span> <span class="pre">const</span> <span class="pre">PxParticleBufferFlags</span> <span class="pre">*flags,</span> <span class="pre">PxU32</span> <span class="pre">nbUpdatedBuffers,</span> <span class="pre">CUevent</span> <span class="pre">waitEvent=NULL,</span> <span class="pre">CUevent</span> <span class="pre">signalEvent=NULL)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000021"></span>There is no direct replacement. The data is exposed in the PxParticleBuffer/PxParticleSystem interface.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxScene.html#classpxscene_1a215b4083d22278d157f7a135a64469a4"><span class="std std-ref"><span class="pre">PxScene::applySoftBodyData</span></span></a>&#160; <span class="pre">(void</span> <span class="pre">**data,</span> <span class="pre">void</span> <span class="pre">*dataSizes,</span> <span class="pre">void</span> <span class="pre">*deformableVolumeIndices,</span> <a class="reference internal" href="classPxSoftBodyGpuDataFlag.html#classpxsoftbodygpudataflag_1ad7912c722be5fb439a4b75963d2c5bfe"><span class="std std-ref"><span class="pre">PxSoftBodyGpuDataFlag::Enum</span></span></a> <span class="pre">flag,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">nbUpdatedDeformableVolumes,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">maxSize,</span> <span class="pre">CUevent</span> <span class="pre">applyEvent=NULL,</span> <span class="pre">CUevent</span> <span class="pre">signalEvent=NULL)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000020"></span>There is no direct replacement. Most of the data is exposed in the <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a> interface.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxScene.html#classpxscene_1ae566f8280bbdec96504c8b16c27acdb8"><span class="std std-ref"><span class="pre">PxScene::copySoftBodyData</span></span></a>&#160; <span class="pre">(void</span> <span class="pre">**data,</span> <span class="pre">void</span> <span class="pre">*dataSizes,</span> <span class="pre">void</span> <span class="pre">*deformableVolumeIndices,</span> <a class="reference internal" href="classPxSoftBodyGpuDataFlag.html#classpxsoftbodygpudataflag_1ad7912c722be5fb439a4b75963d2c5bfe"><span class="std std-ref"><span class="pre">PxSoftBodyGpuDataFlag::Enum</span></span></a> <span class="pre">flag,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">nbCopyDeformableVolumes,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">maxSize,</span> <span class="pre">CUevent</span> <span class="pre">copyEvent=NULL)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000019"></span>There is no direct replacement. Most of the data is exposed in the <a class="reference internal" href="classPxDeformableVolume.html#classpxdeformablevolume"><span class="std std-ref">PxDeformableVolume</span></a> interface.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxScene.html#classpxscene_1aaca4a2838bc3bf7ffece380c8c7f0f4e"><span class="std std-ref"><span class="pre">PxScene::getFrictionType</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000018"></span>Since only the patch friction model is supported now, the friction type option is obsolete. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxScene.html#classpxscene_1a9deda0accc52b645cf39328eb1cf43ae"><span class="std std-ref"><span class="pre">PxScene::getNbParticleSystems</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="structPxParticleSolverType.html#structpxparticlesolvertype_1a343f8511949480ec8dca071672f05421"><span class="std std-ref"><span class="pre">PxParticleSolverType::Enum</span></span></a> <span class="pre">type)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000016"></span>Use <a class="reference internal" href="classPxScene.html#classpxscene_1a623b30e2636e629797d58366c1f00c48"><span class="std std-ref">getNbPBDParticleSystems()</span></a> instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxScene.html#classpxscene_1aa65f8c5a0460be3300f72c7bc380975d"><span class="std std-ref"><span class="pre">PxScene::getParticleSystems</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="structPxParticleSolverType.html#structpxparticlesolvertype_1a343f8511949480ec8dca071672f05421"><span class="std std-ref"><span class="pre">PxParticleSolverType::Enum</span></span></a> <span class="pre">type,</span> <span class="pre">class</span> <a class="reference internal" href="classPxPBDParticleSystem.html#classpxpbdparticlesystem"><span class="std std-ref"><span class="pre">PxPBDParticleSystem</span></span></a> <span class="pre">**userBuffer,</span> <span class="pre">PxU32</span> <span class="pre">bufferSize,</span> <span class="pre">PxU32</span> <span class="pre">startIndex=0)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000017"></span>Use <a class="reference internal" href="classPxScene.html#classpxscene_1a1efd685844b233afd344c0138fc73285"><span class="std std-ref">getPBDParticleSystems()</span></a> instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc_1ab1f18b0666adb645d92fc2f53373b1e9"><span class="std std-ref"><span class="pre">PxSceneDesc::frictionType</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000023"></span>Since only the patch friction model is supported now, the frictionType parameter is obsolete. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxSerialization.html#classpxserialization_1af2b460d435af5210fac525802655395c"><span class="std std-ref"><span class="pre">PxSerialization::createCollectionFromXml</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxInputData.html#classpxinputdata"><span class="std std-ref"><span class="pre">PxInputData</span></span></a> <span class="pre">&amp;inputData,</span> <span class="pre">const</span> <a class="reference internal" href="structPxCookingParams.html#structpxcookingparams"><span class="std std-ref"><span class="pre">PxCookingParams</span></span></a> <span class="pre">&amp;params,</span> <a class="reference internal" href="classPxSerializationRegistry.html#classpxserializationregistry"><span class="std std-ref"><span class="pre">PxSerializationRegistry</span></span></a> <span class="pre">&amp;sr,</span> <span class="pre">const</span> <a class="reference internal" href="classPxCollection.html#classpxcollection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">*externalRefs=NULL,</span> <a class="reference internal" href="classPxStringTable.html#classpxstringtable"><span class="std std-ref"><span class="pre">PxStringTable</span></span></a> <span class="pre">*stringTable=NULL,</span> <a class="reference internal" href="classPxSerialization.html#structpxserialization_1_1pxxmlmiscparameter"><span class="std std-ref"><span class="pre">PxXmlMiscParameter</span></span></a> <span class="pre">*outArgs=NULL)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000051"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxSerialization.html#structpxserialization_1_1pxxmlmiscparameter"><span class="std std-ref"><span class="pre">PxSerialization::PxXmlMiscParameter</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000050"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxSerialization.html#classpxserialization_1a4f10972f3d0d0e6fa637905a572bc316"><span class="std std-ref"><span class="pre">PxSerialization::serializeCollectionToXml</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="classPxOutputStream.html#classpxoutputstream"><span class="std std-ref"><span class="pre">PxOutputStream</span></span></a> <span class="pre">&amp;outputStream,</span> <a class="reference internal" href="classPxCollection.html#classpxcollection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">&amp;collection,</span> <a class="reference internal" href="classPxSerializationRegistry.html#classpxserializationregistry"><span class="std std-ref"><span class="pre">PxSerializationRegistry</span></span></a> <span class="pre">&amp;sr,</span> <span class="pre">const</span> <a class="reference internal" href="structPxCookingParams.html#structpxcookingparams"><span class="std std-ref"><span class="pre">PxCookingParams</span></span></a> <span class="pre">*params=NULL,</span> <span class="pre">const</span> <a class="reference internal" href="classPxCollection.html#classpxcollection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">*externalRefs=NULL,</span> <a class="reference internal" href="classPxSerialization.html#structpxserialization_1_1pxxmlmiscparameter"><span class="std std-ref"><span class="pre">PxXmlMiscParameter</span></span></a> <span class="pre">*inArgs=NULL)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000052"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxSerializationRegistry.html#classpxserializationregistry_1a3551805f317e2ff29b4c5e521f67886a"><span class="std std-ref"><span class="pre">PxSerializationRegistry::getRepXSerializer</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">char</span> <span class="pre">*typeName)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000127"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxSerializationRegistry.html#classpxserializationregistry_1a8c22f511770403078c3a0616251014e4"><span class="std std-ref"><span class="pre">PxSerializationRegistry::registerRepXSerializer</span></span></a>&#160; <span class="pre">(PxType</span> <span class="pre">type,</span> <a class="reference internal" href="classPxRepXSerializer.html#classpxrepxserializer"><span class="std std-ref"><span class="pre">PxRepXSerializer</span></span></a> <span class="pre">&amp;serializer)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000125"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="classPxSerializationRegistry.html#classpxserializationregistry_1a8edf5488d4e8c78ba16531937858d80c"><span class="std std-ref"><span class="pre">PxSerializationRegistry::unregisterRepXSerializer</span></span></a>&#160; <span class="pre">(PxType</span> <span class="pre">type)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000126"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxSoftBodyGpuDataFlag.html#classpxsoftbodygpudataflag"><span class="std std-ref"><span class="pre">PxSoftBodyGpuDataFlag</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000053"></span>There is no direct replacement. The data is exposed in the PxSoftBody interface, accessible directly from GPU. There is no replacement for eTET_REST_POSES, as the data is constant and can be derived from the input collision mesh.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxTriggerPair.html#structpxtriggerpair_1a483aaaaecb45e77230879bb0b303b8df"><span class="std std-ref"><span class="pre">PxTriggerPair::otherShape</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000090"></span>(see <a class="reference internal" href="classPxSimulationEventCallback.html#classpxsimulationeventcallback_1a768b2ee9fe28736da3fcdc6a0eae9733"><span class="std std-ref">PxSimulationEventCallback::onTrigger()</span></a>) If collision between trigger shapes is enabled, then this member might point to a trigger shape as well.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxVehicleFourWheelDriveDifferentialLegacyParams.html#structpxvehiclefourwheeldrivedifferentiallegacyparams"><span class="std std-ref"><span class="pre">PxVehicleFourWheelDriveDifferentialLegacyParams</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000009"></span>This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html#classpxvehiclelegacyfourwheeldrivedifferentialstatecomponent"><span class="std std-ref"><span class="pre">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000005"></span>This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html#classpxvehiclelegacysuspensioncomponent"><span class="std std-ref"><span class="pre">PxVehicleLegacySuspensionComponent</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000010"></span>This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="classPxVehicleLegacyTireComponent.html#classpxvehiclelegacytirecomponent"><span class="std std-ref"><span class="pre">PxVehicleLegacyTireComponent</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000013"></span>This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="structPxVehicleSuspensionForceLegacyParams.html#structpxvehiclesuspensionforcelegacyparams"><span class="std std-ref"><span class="pre">PxVehicleSuspensionForceLegacyParams</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000012"></span>This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="structPxVisualizationParameter.html#structpxvisualizationparameter_1adce8e8a77c144356b0968d2b9f79eb10a4c8d383ccf06759f8c9a102a18ba9d4b"><span class="std std-ref"><span class="pre">PxVisualizationParameter::eCONTACT_FORCE</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000103"></span>Use eCONTACT_IMPULSE instead. </p>
+</dd></dl>
+
+</p>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="deprecated.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Deprecated list</p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

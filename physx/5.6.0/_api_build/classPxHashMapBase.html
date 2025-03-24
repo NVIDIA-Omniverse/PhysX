@@ -1,0 +1,824 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxHashMapBase &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxHashMapBase';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxHashSet" href="classPxHashSet.html" />
+    <link rel="prev" title="PxHashMap" href="classPxHashMap.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxHashMapBase</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxhashmapbase">
+<h1>PxHashMapBase<a class="headerlink" href="#pxhashmapbase" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxHashInternals.h.html#pxhashinternals-8h"><span class="std std-ref">include/foundation/PxHashInternals.h</span></a></p>
+<section id="structs">
+<h2>Structs<a class="headerlink" href="#structs" title="Link to this heading">#</a></h2>
+<div class="docutils container">
+<dl class="simple">
+<dt><a class="reference internal" href="#structpxhashmapbase_1_1getkey"><span class="std std-ref">GetKey</span></a></dt><dd><p></p>
+</dd>
+</dl>
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0000E13PxHashMapBase">
+<span id="_CPPv3I0000E13PxHashMapBase"></span><span id="_CPPv2I0000E13PxHashMapBase"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">Value</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">HashFn</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">PxAllocator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="structPxAllocatorTraits.html#_CPPv4I0E17PxAllocatorTraits" title="PxAllocatorTraits"><span class="n"><span class="pre">PxAllocatorTraits</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="classPxPair.html#_CPPv4I00E6PxPair" title="PxPair"><span class="n"><span class="pre">PxPair</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Value"><span class="n"><span class="pre">Value</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxAllocatorTraits.html#_CPPv4N17PxAllocatorTraits4TypeE" title="PxAllocatorTraits::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxhashmapbase"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashMapBase</span></span></span><a class="headerlink" href="#_CPPv4I0000E13PxHashMapBase" title="Link to this definition">#</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase5EntryE">
+<span id="_CPPv3N13PxHashMapBase5EntryE"></span><span id="_CPPv2N13PxHashMapBase5EntryE"></span><span id="PxHashMapBase::Entry"></span><span class="target" id="classpxhashmapbase_1a46ec511c9159e7548560154b18662905"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="classPxPair.html#_CPPv4I00E6PxPair" title="PxPair"><span class="n"><span class="pre">PxPair</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Value"><span class="n"><span class="pre">Value</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Entry</span></span></span><a class="headerlink" href="#_CPPv4N13PxHashMapBase5EntryE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase7BaseMapE">
+<span id="_CPPv3N13PxHashMapBase7BaseMapE"></span><span id="_CPPv2N13PxHashMapBase7BaseMapE"></span><span id="PxHashMapBase::BaseMap"></span><span class="target" id="classpxhashmapbase_1a93173796a1d8a487241c6d87bb00d4a3"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="classPxHashBase.html#_CPPv4I00000_bE10PxHashBase" title="PxHashBase"><span class="n"><span class="pre">PxHashBase</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N13PxHashMapBase5EntryE" title="PxHashMapBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::HashFn"><span class="n"><span class="pre">HashFn</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase6GetKeyE" title="PxHashMapBase::GetKey"><span class="n"><span class="pre">GetKey</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BaseMap</span></span></span><a class="headerlink" href="#_CPPv4N13PxHashMapBase7BaseMapE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase8IteratorE">
+<span id="_CPPv3N13PxHashMapBase8IteratorE"></span><span id="_CPPv2N13PxHashMapBase8IteratorE"></span><span id="PxHashMapBase::Iterator"></span><span class="target" id="classpxhashmapbase_1a46a1bef3a6ce134fb99f6b53cace7395"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase7BaseMapE" title="PxHashMapBase::BaseMap"><span class="n"><span class="pre">BaseMap</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Iter</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><a class="headerlink" href="#_CPPv4N13PxHashMapBase8IteratorE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase13EraseIteratorE">
+<span id="_CPPv3N13PxHashMapBase13EraseIteratorE"></span><span id="_CPPv2N13PxHashMapBase13EraseIteratorE"></span><span id="PxHashMapBase::EraseIterator"></span><span class="target" id="classpxhashmapbase_1ae663ac9d96018a65d5569b08c131be61"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase7BaseMapE" title="PxHashMapBase::BaseMap"><span class="n"><span class="pre">BaseMap</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxEraseIterator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EraseIterator</span></span></span><a class="headerlink" href="#_CPPv4N13PxHashMapBase13EraseIteratorE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase13PxHashMapBaseE8uint32_tfRK11PxAllocator">
+<span id="_CPPv3N13PxHashMapBase13PxHashMapBaseE8uint32_tfRK11PxAllocator"></span><span id="_CPPv2N13PxHashMapBase13PxHashMapBaseE8uint32_tfRK11PxAllocator"></span><span id="PxHashMapBase::PxHashMapBase__uint32_t.float.PxAllocatorCR"></span><span class="target" id="classpxhashmapbase_1aae3550ad7f82d6a2d34bef35a31e6009"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashMapBase</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initialTableSize</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">loadFactor</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase13PxHashMapBaseE8uint32_tfRK11PxAllocator" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase13PxHashMapBaseERK11PxAllocator">
+<span id="_CPPv3N13PxHashMapBase13PxHashMapBaseERK11PxAllocator"></span><span id="_CPPv2N13PxHashMapBase13PxHashMapBaseERK11PxAllocator"></span><span id="PxHashMapBase::PxHashMapBase__PxAllocatorCR"></span><span class="target" id="classpxhashmapbase_1a6287b0b3ac8deaf11a5306a7c83d7b32"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashMapBase</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase13PxHashMapBaseERK11PxAllocator" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase13PxHashMapBaseE8uint32_tf">
+<span id="_CPPv3N13PxHashMapBase13PxHashMapBaseE8uint32_tf"></span><span id="_CPPv2N13PxHashMapBase13PxHashMapBaseE8uint32_tf"></span><span id="PxHashMapBase::PxHashMapBase__uint32_t.float"></span><span class="target" id="classpxhashmapbase_1a7a2e006f90d287a3e01ffd7384e83112"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashMapBase</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initialTableSize</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">64</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">loadFactor</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.75f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase13PxHashMapBaseE8uint32_tf" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase6insertEK3KeyK5Value">
+<span id="_CPPv3N13PxHashMapBase6insertEK3KeyK5Value"></span><span id="_CPPv2N13PxHashMapBase6insertEK3KeyK5Value"></span><span id="PxHashMapBase::insert__KeyC.ValueC"></span><span class="target" id="classpxhashmapbase_1accefa9efdb88ce90683aa4bc488d864c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Value"><span class="n"><span class="pre">Value</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase6insertEK3KeyK5Value" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBaseixERK3Key">
+<span id="_CPPv3N13PxHashMapBaseixERK3Key"></span><span id="_CPPv2N13PxHashMapBaseixERK3Key"></span><span id="PxHashMapBase::subscript-operator__KeyCR"></span><span class="target" id="classpxhashmapbase_1a5af4027204acfa177c691322a83b807d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Value"><span class="n"><span class="pre">Value</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBaseixERK3Key" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHashMapBase4findERK3Key">
+<span id="_CPPv3NK13PxHashMapBase4findERK3Key"></span><span id="_CPPv2NK13PxHashMapBase4findERK3Key"></span><span id="PxHashMapBase::find__KeyCRC"></span><span class="target" id="classpxhashmapbase_1a6e7199d34e118aeb19647a1b09faa643"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase5EntryE" title="PxHashMapBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHashMapBase4findERK3Key" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase5eraseERK3Key">
+<span id="_CPPv3N13PxHashMapBase5eraseERK3Key"></span><span id="_CPPv2N13PxHashMapBase5eraseERK3Key"></span><span id="PxHashMapBase::erase__KeyCR"></span><span class="target" id="classpxhashmapbase_1a7f027d9795ed2275a5f3390c2b2e3abb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase5eraseERK3Key" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase5eraseERK3KeyR5Entry">
+<span id="_CPPv3N13PxHashMapBase5eraseERK3KeyR5Entry"></span><span id="_CPPv2N13PxHashMapBase5eraseERK3KeyR5Entry"></span><span id="PxHashMapBase::erase__KeyCR.EntryR"></span><span class="target" id="classpxhashmapbase_1af6a33bbeb67260f9adcb73b320feff32"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span></em>, <em class="sig-param"><a class="reference internal" href="#_CPPv4N13PxHashMapBase5EntryE" title="PxHashMapBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase5eraseERK3KeyR5Entry" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHashMapBase4sizeEv">
+<span id="_CPPv3NK13PxHashMapBase4sizeEv"></span><span id="_CPPv2NK13PxHashMapBase4sizeEv"></span><span id="PxHashMapBase::sizeC"></span><span class="target" id="classpxhashmapbase_1a037a9f1bf8ee8f9796d07b71c1ba6360"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHashMapBase4sizeEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxHashMapBase8capacityEv">
+<span id="_CPPv3NK13PxHashMapBase8capacityEv"></span><span id="_CPPv2NK13PxHashMapBase8capacityEv"></span><span id="PxHashMapBase::capacityC"></span><span class="target" id="classpxhashmapbase_1a58be38e307b0d2346af2594be45933f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capacity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxHashMapBase8capacityEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase11getIteratorEv">
+<span id="_CPPv3N13PxHashMapBase11getIteratorEv"></span><span id="_CPPv2N13PxHashMapBase11getIteratorEv"></span><span id="PxHashMapBase::getIterator"></span><span class="target" id="classpxhashmapbase_1a8d2fd01e92d18be1cc804194b8a40665"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase8IteratorE" title="PxHashMapBase::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getIterator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase11getIteratorEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase16getEraseIteratorEv">
+<span id="_CPPv3N13PxHashMapBase16getEraseIteratorEv"></span><span id="_CPPv2N13PxHashMapBase16getEraseIteratorEv"></span><span id="PxHashMapBase::getEraseIterator"></span><span class="target" id="classpxhashmapbase_1afbb9880cf1d86d239e75a93247cfc8b6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase13EraseIteratorE" title="PxHashMapBase::EraseIterator"><span class="n"><span class="pre">EraseIterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getEraseIterator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase16getEraseIteratorEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase7reserveE8uint32_t">
+<span id="_CPPv3N13PxHashMapBase7reserveE8uint32_t"></span><span id="_CPPv2N13PxHashMapBase7reserveE8uint32_t"></span><span id="PxHashMapBase::reserve__uint32_t"></span><span class="target" id="classpxhashmapbase_1a7106d4e7ecb8348fcc5b12978be32b55"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase7reserveE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase5clearEv">
+<span id="_CPPv3N13PxHashMapBase5clearEv"></span><span id="_CPPv2N13PxHashMapBase5clearEv"></span><span id="PxHashMapBase::clear"></span><span class="target" id="classpxhashmapbase_1a19cea5b41c46489e6a7b2a3ec360dea1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase5clearEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase5mBaseE">
+<span id="_CPPv3N13PxHashMapBase5mBaseE"></span><span id="_CPPv2N13PxHashMapBase5mBaseE"></span><span id="PxHashMapBase::mBase__BaseMap"></span><span class="target" id="classpxhashmapbase_1a89f32b49635b9e2dfdae9b89384b1170"></span><a class="reference internal" href="#_CPPv4N13PxHashMapBase7BaseMapE" title="PxHashMapBase::BaseMap"><span class="n"><span class="pre">BaseMap</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBase</span></span></span><a class="headerlink" href="#_CPPv4N13PxHashMapBase5mBaseE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase6GetKeyE">
+<span id="_CPPv3N13PxHashMapBase6GetKeyE"></span><span id="_CPPv2N13PxHashMapBase6GetKeyE"></span><span id="PxHashMapBase::GetKey"></span><span class="target" id="structpxhashmapbase_1_1getkey"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">GetKey</span></span></span><a class="headerlink" href="#_CPPv4N13PxHashMapBase6GetKeyE" title="Link to this definition">#</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxHashMapBase6GetKeyclERK5Entry">
+<span id="_CPPv3N13PxHashMapBase6GetKeyclERK5Entry"></span><span id="_CPPv2N13PxHashMapBase6GetKeyclERK5Entry"></span><span id="PxHashMapBase::GetKey::call-operator__EntryCR"></span><span class="target" id="structpxhashmapbase_1_1getkey_1a056d7bfcee97f0090ed2d56c8ebde031"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0000E13PxHashMapBase" title="PxHashMapBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxHashMapBase5EntryE" title="PxHashMapBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxHashMapBase6GetKeyclERK5Entry" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxHashMap.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxHashMap</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxHashSet.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxHashSet</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structs">Structs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0000E13PxHashMapBase"><code class="docutils literal notranslate"><span class="pre">PxHashMapBase</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase5EntryE"><code class="docutils literal notranslate"><span class="pre">Entry</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase7BaseMapE"><code class="docutils literal notranslate"><span class="pre">BaseMap</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase8IteratorE"><code class="docutils literal notranslate"><span class="pre">Iterator</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase13EraseIteratorE"><code class="docutils literal notranslate"><span class="pre">EraseIterator</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase13PxHashMapBaseE8uint32_tfRK11PxAllocator"><code class="docutils literal notranslate"><span class="pre">PxHashMapBase()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase13PxHashMapBaseERK11PxAllocator"><code class="docutils literal notranslate"><span class="pre">PxHashMapBase()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase13PxHashMapBaseE8uint32_tf"><code class="docutils literal notranslate"><span class="pre">PxHashMapBase()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase6insertEK3KeyK5Value"><code class="docutils literal notranslate"><span class="pre">insert()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBaseixERK3Key"><code class="docutils literal notranslate"><span class="pre">operator[]()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHashMapBase4findERK3Key"><code class="docutils literal notranslate"><span class="pre">find()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase5eraseERK3Key"><code class="docutils literal notranslate"><span class="pre">erase()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase5eraseERK3KeyR5Entry"><code class="docutils literal notranslate"><span class="pre">erase()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHashMapBase4sizeEv"><code class="docutils literal notranslate"><span class="pre">size()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK13PxHashMapBase8capacityEv"><code class="docutils literal notranslate"><span class="pre">capacity()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase11getIteratorEv"><code class="docutils literal notranslate"><span class="pre">getIterator()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase16getEraseIteratorEv"><code class="docutils literal notranslate"><span class="pre">getEraseIterator()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase7reserveE8uint32_t"><code class="docutils literal notranslate"><span class="pre">reserve()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase5clearEv"><code class="docutils literal notranslate"><span class="pre">clear()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase5mBaseE"><code class="docutils literal notranslate"><span class="pre">mBase</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase6GetKeyE"><code class="docutils literal notranslate"><span class="pre">GetKey</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13PxHashMapBase6GetKeyclERK5Entry"><code class="docutils literal notranslate"><span class="pre">operator()()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

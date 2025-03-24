@@ -1,0 +1,1142 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxConstraint &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxConstraint';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxConstraintAllocator" href="classPxConstraintAllocator.html" />
+    <link rel="prev" title="PxConeLimitedConstraint" href="structPxConeLimitedConstraint.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxConstraint</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxconstraint">
+<h1>PxConstraint<a class="headerlink" href="#pxconstraint" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxConstraint.h.html#pxconstraint-8h"><span class="std std-ref">include/PxConstraint.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxConstraint">
+<span id="_CPPv312PxConstraint"></span><span id="_CPPv212PxConstraint"></span><span id="PxConstraint"></span><span class="target" id="classpxconstraint"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraint</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxBase.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><a class="headerlink" href="#_CPPv412PxConstraint" title="Link to this definition">#</a><br /></dt>
+<dd><p>A plugin class for implementing constraints. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxPhysics.html#classpxphysics_1af5ad902d8fc400a845c4d5a96b1ccd99"><span class="std std-ref">PxPhysics.createConstraint</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint7releaseEv">
+<span id="_CPPv3N12PxConstraint7releaseEv"></span><span id="_CPPv2N12PxConstraint7releaseEv"></span><span id="PxConstraint::release"></span><span class="target" id="classpxconstraint_1a8153c211d21fff49565e7e06e475d5cc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Releases a <a class="reference internal" href="#classpxconstraint"><span class="std std-ref">PxConstraint</span></a> instance. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxPhysics.html#classpxphysics_1af5ad902d8fc400a845c4d5a96b1ccd99"><span class="std std-ref">PxPhysics.createConstraint</span></a>, <a class="reference internal" href="classPxDeformableElementFilter.html#classpxbase_1afe6aedda1df0d6d29b1a28213a5ee25a"><span class="std std-ref">PxBase.release()</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This call does not wake up the connected rigid bodies.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint8getSceneEv">
+<span id="_CPPv3NK12PxConstraint8getSceneEv"></span><span id="_CPPv2NK12PxConstraint8getSceneEv"></span><span id="PxConstraint::getSceneC"></span><span class="target" id="classpxconstraint_1aea11083a58661feed0f1dcb89ab56f04"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxScene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint8getSceneEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the scene which this constraint belongs to. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Owner Scene. NULL if not part of a scene.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint9getActorsERP12PxRigidActorRP12PxRigidActor">
+<span id="_CPPv3NK12PxConstraint9getActorsERP12PxRigidActorRP12PxRigidActor"></span><span id="_CPPv2NK12PxConstraint9getActorsERP12PxRigidActorRP12PxRigidActor"></span><span id="PxConstraint::getActors__PxRigidActorPR.PxRigidActorPRC"></span><span class="target" id="classpxconstraint_1ae0842055f2c3263cebcea65b1b09888e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getActors</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor0</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor1</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint9getActorsERP12PxRigidActorRP12PxRigidActor" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves the actors for this constraint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxActor.html#classpxactor"><span class="std std-ref">PxActor</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor0</strong> – <strong>[out]</strong> a reference to the pointer for the first actor </p></li>
+<li><p><strong>actor1</strong> – <strong>[out]</strong> a reference to the pointer for the second actor</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint9setActorsEP12PxRigidActorP12PxRigidActor">
+<span id="_CPPv3N12PxConstraint9setActorsEP12PxRigidActorP12PxRigidActor"></span><span id="_CPPv2N12PxConstraint9setActorsEP12PxRigidActorP12PxRigidActor"></span><span id="PxConstraint::setActors__PxRigidActorP.PxRigidActorP"></span><span class="target" id="classpxconstraint_1aad3f1f8c8e4220238c8fcb00c440e701"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setActors</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor0</span></span></em>, <em class="sig-param"><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor1</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint9setActorsEP12PxRigidActorP12PxRigidActor" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the actors for this constraint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxActor.html#classpxactor"><span class="std std-ref">PxActor</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor0</strong> – <strong>[in]</strong> a reference to the pointer for the first actor </p></li>
+<li><p><strong>actor1</strong> – <strong>[in]</strong> a reference to the pointer for the second actor</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint9markDirtyEv">
+<span id="_CPPv3N12PxConstraint9markDirtyEv"></span><span id="_CPPv2N12PxConstraint9markDirtyEv"></span><span id="PxConstraint::markDirty"></span><span class="target" id="classpxconstraint_1ac54f23bc7b3d52d3b5f265f6750e3199"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">markDirty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint9markDirtyEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Notify the scene that the constraint shader data has been updated by the application. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint8getFlagsEv">
+<span id="_CPPv3NK12PxConstraint8getFlagsEv"></span><span id="_CPPv2NK12PxConstraint8getFlagsEv"></span><span id="PxConstraint::getFlagsC"></span><span class="target" id="classpxconstraint_1a45297b7f2310005fd74f3e7be995b0f8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxConstraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee.html#_CPPv417PxConstraintFlags" title="PxConstraintFlags"><span class="n"><span class="pre">PxConstraintFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint8getFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieve the flags for this constraint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConstraintFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the constraint flags </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint8setFlagsE17PxConstraintFlags">
+<span id="_CPPv3N12PxConstraint8setFlagsE17PxConstraintFlags"></span><span id="_CPPv2N12PxConstraint8setFlagsE17PxConstraintFlags"></span><span id="PxConstraint::setFlags__PxConstraintFlags"></span><span class="target" id="classpxconstraint_1a2d697724814976973b1de9e303e15b3f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxConstraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee.html#_CPPv417PxConstraintFlags" title="PxConstraintFlags"><span class="n"><span class="pre">PxConstraintFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint8setFlagsE17PxConstraintFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set the flags for this constraint. </p>
+<p>
+default: <a class="reference internal" href="structPxConstraintFlag.html#structpxconstraintflag_1a86960e99b3e80ddb9e0ab51d7afc3427a330ccf346c5056c0570dbc495007d1ce"><span class="std std-ref">PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConstraintFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> the new constraint flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint7setFlagEN16PxConstraintFlag4EnumEb">
+<span id="_CPPv3N12PxConstraint7setFlagEN16PxConstraintFlag4EnumEb"></span><span id="_CPPv2N12PxConstraint7setFlagEN16PxConstraintFlag4EnumEb"></span><span id="PxConstraint::setFlag__PxConstraintFlag::Enum.b"></span><span class="target" id="classpxconstraint_1a95488eea1d5847d3d1408c3d5cdf2576"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFlag</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="structPxConstraintFlag.html#_CPPv416PxConstraintFlag" title="PxConstraintFlag"><span class="n"><span class="pre">PxConstraintFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxConstraintFlag.html#_CPPv4N16PxConstraintFlag4EnumE" title="PxConstraintFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint7setFlagEN16PxConstraintFlag4EnumEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set a flag for this constraint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConstraintFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> the constraint flag </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> the new value of the flag</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint8getForceER6PxVec3R6PxVec3">
+<span id="_CPPv3NK12PxConstraint8getForceER6PxVec3R6PxVec3"></span><span id="_CPPv2NK12PxConstraint8getForceER6PxVec3R6PxVec3"></span><span id="PxConstraint::getForce__PxVec3R.PxVec3RC"></span><span class="target" id="classpxconstraint_1a5838f1118a15b32ca27a6b89e6580cf4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getForce</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">linear</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angular</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint8getForceER6PxVec3R6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieve the constraint force most recently applied to maintain this constraint. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is not allowed to use this method while the simulation is running (except during <a class="reference internal" href="classPxScene.html#classpxscene_1a698947ec5653ac7a2c466122f393e477"><span class="std std-ref">PxScene::collide()</span></a>, in <a class="reference internal" href="classPxContactModifyCallback.html#classpxcontactmodifycallback"><span class="std std-ref">PxContactModifyCallback</span></a> or in contact report callbacks).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>linear</strong> – <strong>[out]</strong> the constraint force </p></li>
+<li><p><strong>angular</strong> – <strong>[out]</strong> the constraint torque </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint7isValidEv">
+<span id="_CPPv3NK12PxConstraint7isValidEv"></span><span id="_CPPv2NK12PxConstraint7isValidEv"></span><span id="PxConstraint::isValidC"></span><span class="target" id="classpxconstraint_1a96bea6e60039cf468b1c677d2594611a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint7isValidEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>whether the constraint is valid. </p>
+<p>A constraint is valid if it has at least one dynamic rigid body or articulation link. A constraint that is not valid may not be inserted into a scene, and therefore a static actor to which an invalid constraint is attached may not be inserted into a scene.</p>
+<p>Invalid constraints arise only when an actor to which the constraint is attached has been deleted. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint13setBreakForceE6PxReal6PxReal">
+<span id="_CPPv3N12PxConstraint13setBreakForceE6PxReal6PxReal"></span><span id="_CPPv2N12PxConstraint13setBreakForceE6PxReal6PxReal"></span><span id="PxConstraint::setBreakForce__PxReal.PxReal"></span><span class="target" id="classpxconstraint_1adc0b069b41e76b7c017632cfc24f08d3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBreakForce</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">linear</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">angular</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint13setBreakForceE6PxReal6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set the break force and torque thresholds for this constraint. </p>
+<p>If either the force or torque measured at the constraint exceed these thresholds the constraint will break.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>linear</strong> – <strong>[in]</strong> the linear break threshold </p></li>
+<li><p><strong>angular</strong> – <strong>[in]</strong> the angular break threshold </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint13getBreakForceER6PxRealR6PxReal">
+<span id="_CPPv3NK12PxConstraint13getBreakForceER6PxRealR6PxReal"></span><span id="_CPPv2NK12PxConstraint13getBreakForceER6PxRealR6PxReal"></span><span id="PxConstraint::getBreakForce__PxRealR.PxRealRC"></span><span class="target" id="classpxconstraint_1a9b0da09475c44c2957e1dd6c7fb91ab1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBreakForce</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">linear</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angular</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint13getBreakForceER6PxRealR6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieve the constraint break force and torque thresholds. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>linear</strong> – <strong>[out]</strong> the linear break threshold </p></li>
+<li><p><strong>angular</strong> – <strong>[out]</strong> the angular break threshold </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint23setMinResponseThresholdE6PxReal">
+<span id="_CPPv3N12PxConstraint23setMinResponseThresholdE6PxReal"></span><span id="_CPPv2N12PxConstraint23setMinResponseThresholdE6PxReal"></span><span id="PxConstraint::setMinResponseThreshold__PxReal"></span><span class="target" id="classpxconstraint_1a9ddd5450fca029d9574b5c854b77d3d6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMinResponseThreshold</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint23setMinResponseThresholdE6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set the minimum response threshold for a constraint row. </p>
+<p>When using mass modification for a joint or infinite inertia for a jointed body, very stiff solver constraints can be generated which can destabilize simulation. Setting this value to a small positive value (e.g. 1e-8) will cause constraint rows to be ignored if very large changes in impulses will generate only small changes in velocity. When setting this value, also set <a class="reference internal" href="structPxConstraintFlag.html#structpxconstraintflag_1a86960e99b3e80ddb9e0ab51d7afc3427a519966ef860b18d3609d7c08f66389ef"><span class="std std-ref">PxConstraintFlag::eDISABLE_PREPROCESSING</span></a>. The solver accuracy for this joint may be reduced.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConstraintFlag.html#structpxconstraintflag_1a86960e99b3e80ddb9e0ab51d7afc3427a519966ef860b18d3609d7c08f66389ef"><span class="std std-ref">PxConstraintFlag::eDISABLE_PREPROCESSING</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>threshold</strong> – <strong>[in]</strong> the minimum response threshold</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint23getMinResponseThresholdEv">
+<span id="_CPPv3NK12PxConstraint23getMinResponseThresholdEv"></span><span id="_CPPv2NK12PxConstraint23getMinResponseThresholdEv"></span><span id="PxConstraint::getMinResponseThresholdC"></span><span class="target" id="classpxconstraint_1a0319884873f5ad2c5e6b6798d6c985a4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMinResponseThreshold</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint23getMinResponseThresholdEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieve the constraint break force and torque thresholds. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the minimum response threshold for a constraint row </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint20getExternalReferenceER5PxU32">
+<span id="_CPPv3N12PxConstraint20getExternalReferenceER5PxU32"></span><span id="_CPPv2N12PxConstraint20getExternalReferenceER5PxU32"></span><span id="PxConstraint::getExternalReference__PxU32R"></span><span class="target" id="classpxconstraint_1a66de7e64dd9cfadb88d500cd80c36e72"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getExternalReference</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">typeID</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint20getExternalReferenceER5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Fetch external owner of the constraint. </p>
+<p>Provides a reference to the external owner of a constraint and a unique owner type ID.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxConstraintConnector.html#classpxconstraintconnector_1a7602b817f2a65366eb2dbf1f0d1e41a7"><span class="std std-ref">PxConstraintConnector.getExternalReference()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>typeID</strong> – <strong>[out]</strong> Unique type identifier of the external object. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reference to the external object which owns the constraint.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint22setConstraintFunctionsER21PxConstraintConnectorRK23PxConstraintShaderTable">
+<span id="_CPPv3N12PxConstraint22setConstraintFunctionsER21PxConstraintConnectorRK23PxConstraintShaderTable"></span><span id="_CPPv2N12PxConstraint22setConstraintFunctionsER21PxConstraintConnectorRK23PxConstraintShaderTable"></span><span id="PxConstraint::setConstraintFunctions__PxConstraintConnectorR.PxConstraintShaderTableCR"></span><span class="target" id="classpxconstraint_1a3fb6da793a10be50c30bb8e3fb175d68"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setConstraintFunctions</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="classPxConstraintConnector.html#_CPPv421PxConstraintConnector" title="PxConstraintConnector"><span class="n"><span class="pre">PxConstraintConnector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">connector</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxConstraintShaderTable.html#_CPPv423PxConstraintShaderTable" title="PxConstraintShaderTable"><span class="n"><span class="pre">PxConstraintShaderTable</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shaders</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConstraint22setConstraintFunctionsER21PxConstraintConnectorRK23PxConstraintShaderTable" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set the constraint functions for this constraint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxConstraintConnector.html#classpxconstraintconnector"><span class="std std-ref">PxConstraintConnector</span></a> PxConstraintSolverPrep PxConstraintVisualize </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>connector</strong> – <strong>[in]</strong> the constraint connector object by which the SDK communicates with the constraint. </p></li>
+<li><p><strong>shaders</strong> – <strong>[in]</strong> the shader table for the constraint</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint19getConcreteTypeNameEv">
+<span id="_CPPv3NK12PxConstraint19getConcreteTypeNameEv"></span><span id="_CPPv2NK12PxConstraint19getConcreteTypeNameEv"></span><span id="PxConstraint::getConcreteTypeNameC"></span><span class="target" id="classpxconstraint_1a85b6fc47f4572e7eb5d9254120112199"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">final</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint19getConcreteTypeNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint17getSolverResidualEv">
+<span id="_CPPv3NK12PxConstraint17getSolverResidualEv"></span><span id="_CPPv2NK12PxConstraint17getSolverResidualEv"></span><span id="PxConstraint::getSolverResidualC"></span><span class="target" id="classpxconstraint_1af2c6208a1cbd0407bdcd231b12b41f7d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxConstraintResidual.html#_CPPv420PxConstraintResidual" title="PxConstraintResidual"><span class="n"><span class="pre">PxConstraintResidual</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSolverResidual</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint17getSolverResidualEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the residual for this constraint. </p>
+<p>The residual represents the current error in this constraint measured as the delta impulse applied in the last velocity or position iteration. If the solver converges perfectly, the residual should approach zero.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConstraintResidual.html#structpxconstraintresidual"><span class="std std-ref">PxConstraintResidual</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The residual for this constraint.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxConstraint2isEP1Tv">
+<span id="_CPPv3I0EN12PxConstraint2isEv"></span><span id="_CPPv2I0EN12PxConstraint2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN12PxConstraint2isEP1Tv" title="PxConstraint::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxConstraint2isEP1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK12PxConstraint2isEPK1Tv">
+<span id="_CPPv3I0ENK12PxConstraint2isEv"></span><span id="_CPPv2I0ENK12PxConstraint2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK12PxConstraint2isEPK1Tv" title="PxConstraint::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK12PxConstraint2isEPK1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint15getConcreteTypeEv">
+<span id="_CPPv3NK12PxConstraint15getConcreteTypeEv"></span><span id="_CPPv2NK12PxConstraint15getConcreteTypeEv"></span><span id="PxConstraint::getConcreteTypeC"></span><span class="target" id="classpxbase_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint15getConcreteTypeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype"><span class="std std-ref">PxConcreteType</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8"><span class="std std-ref">PxConcreteType::Enum</span></a> of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N12PxConstraint11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N12PxConstraint11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxConstraint::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="classpxbase_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="structPxBaseFlag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxBaseFlag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConstraint11setBaseFlagEN10PxBaseFlag4EnumEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set <a class="reference internal" href="structPxBaseFlag.html#structpxbaseflag"><span class="std std-ref">PxBaseFlag</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N12PxConstraint12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N12PxConstraint12setBaseFlagsE11PxBaseFlags"></span><span id="PxConstraint::setBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConstraint12setBaseFlagsE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint12getBaseFlagsEv">
+<span id="_CPPv3NK12PxConstraint12getBaseFlagsEv"></span><span id="_CPPv2NK12PxConstraint12getBaseFlagsEv"></span><span id="PxConstraint::getBaseFlagsC"></span><span class="target" id="classpxbase_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint12getBaseFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint12isReleasableEv">
+<span id="_CPPv3NK12PxConstraint12isReleasableEv"></span><span id="_CPPv2NK12PxConstraint12isReleasableEv"></span><span id="PxConstraint::isReleasableC"></span><span class="target" id="classpxbase_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint12isReleasableEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSerialization.html#classpxserialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint8userDataE">
+<span id="_CPPv3N12PxConstraint8userDataE"></span><span id="_CPPv2N12PxConstraint8userDataE"></span><span id="PxConstraint::userData__voidP"></span><span class="target" id="classpxconstraint_1af901dd8431a8e6a74f3f494ebdddd829"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N12PxConstraint8userDataE" title="Link to this definition">#</a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint12PxConstraintE6PxType11PxBaseFlags">
+<span id="_CPPv3N12PxConstraint12PxConstraintE6PxType11PxBaseFlags"></span><span id="_CPPv2N12PxConstraint12PxConstraintE6PxType11PxBaseFlags"></span><span id="PxConstraint::PxConstraint__PxType.PxBaseFlags"></span><span class="target" id="classpxconstraint_1a19517d64772f9fe25ad7e05a2f23e2cd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraint</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConstraint12PxConstraintE6PxType11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint12PxConstraintE11PxBaseFlags">
+<span id="_CPPv3N12PxConstraint12PxConstraintE11PxBaseFlags"></span><span id="_CPPv2N12PxConstraint12PxConstraintE11PxBaseFlags"></span><span id="PxConstraint::PxConstraint__PxBaseFlags"></span><span class="target" id="classpxconstraint_1acb3425e77d66da711c50313449a332ee"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraint</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConstraint12PxConstraintE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraintD0Ev">
+<span id="_CPPv3N12PxConstraintD0Ev"></span><span id="_CPPv2N12PxConstraintD0Ev"></span><span id="PxConstraint::~PxConstraint"></span><span class="target" id="classpxconstraint_1adbcf13c57ee012d5e03ea54017c127cb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxConstraint</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConstraintD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConstraint8isKindOfEPKc">
+<span id="_CPPv3NK12PxConstraint8isKindOfEPKc"></span><span id="_CPPv2NK12PxConstraint8isKindOfEPKc"></span><span id="PxConstraint::isKindOf__cCPC"></span><span class="target" id="classpxconstraint_1aae1d46a4b2b0db16eac5d2840e130349"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><a class="headerlink" href="#_CPPv4NK12PxConstraint8isKindOfEPKc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK12PxConstraint9typeMatchEbv">
+<span id="_CPPv3I0ENK12PxConstraint9typeMatchEv"></span><span id="_CPPv2I0ENK12PxConstraint9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK12PxConstraint9typeMatchEbv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint13mConcreteTypeE">
+<span id="_CPPv3N12PxConstraint13mConcreteTypeE"></span><span id="_CPPv2N12PxConstraint13mConcreteTypeE"></span><span id="PxConstraint::mConcreteType__PxType"></span><span class="target" id="classpxbase_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N12PxConstraint13mConcreteTypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint10mBaseFlagsE">
+<span id="_CPPv3N12PxConstraint10mBaseFlagsE"></span><span id="_CPPv2N12PxConstraint10mBaseFlagsE"></span><span id="PxConstraint::mBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N12PxConstraint10mBaseFlagsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConstraint16mBuiltInRefCountE">
+<span id="_CPPv3N12PxConstraint16mBuiltInRefCountE"></span><span id="_CPPv2N12PxConstraint16mBuiltInRefCountE"></span><span id="PxConstraint::mBuiltInRefCount__PxU32"></span><span class="target" id="classpxbase_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N12PxConstraint16mBuiltInRefCountE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxConeLimitedConstraint.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxConeLimitedConstraint</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxConstraintAllocator.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxConstraintAllocator</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv412PxConstraint"><code class="docutils literal notranslate"><span class="pre">PxConstraint</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint8getSceneEv"><code class="docutils literal notranslate"><span class="pre">getScene()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint9getActorsERP12PxRigidActorRP12PxRigidActor"><code class="docutils literal notranslate"><span class="pre">getActors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint9setActorsEP12PxRigidActorP12PxRigidActor"><code class="docutils literal notranslate"><span class="pre">setActors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint9markDirtyEv"><code class="docutils literal notranslate"><span class="pre">markDirty()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint8getFlagsEv"><code class="docutils literal notranslate"><span class="pre">getFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint8setFlagsE17PxConstraintFlags"><code class="docutils literal notranslate"><span class="pre">setFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint7setFlagEN16PxConstraintFlag4EnumEb"><code class="docutils literal notranslate"><span class="pre">setFlag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint8getForceER6PxVec3R6PxVec3"><code class="docutils literal notranslate"><span class="pre">getForce()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint7isValidEv"><code class="docutils literal notranslate"><span class="pre">isValid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint13setBreakForceE6PxReal6PxReal"><code class="docutils literal notranslate"><span class="pre">setBreakForce()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint13getBreakForceER6PxRealR6PxReal"><code class="docutils literal notranslate"><span class="pre">getBreakForce()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint23setMinResponseThresholdE6PxReal"><code class="docutils literal notranslate"><span class="pre">setMinResponseThreshold()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint23getMinResponseThresholdEv"><code class="docutils literal notranslate"><span class="pre">getMinResponseThreshold()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint20getExternalReferenceER5PxU32"><code class="docutils literal notranslate"><span class="pre">getExternalReference()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint22setConstraintFunctionsER21PxConstraintConnectorRK23PxConstraintShaderTable"><code class="docutils literal notranslate"><span class="pre">setConstraintFunctions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint19getConcreteTypeNameEv"><code class="docutils literal notranslate"><span class="pre">getConcreteTypeName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint17getSolverResidualEv"><code class="docutils literal notranslate"><span class="pre">getSolverResidual()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN12PxConstraint2isEP1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK12PxConstraint2isEPK1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint15getConcreteTypeEv"><code class="docutils literal notranslate"><span class="pre">getConcreteType()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint11setBaseFlagEN10PxBaseFlag4EnumEb"><code class="docutils literal notranslate"><span class="pre">setBaseFlag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint12setBaseFlagsE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">setBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint12getBaseFlagsEv"><code class="docutils literal notranslate"><span class="pre">getBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint12isReleasableEv"><code class="docutils literal notranslate"><span class="pre">isReleasable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint8userDataE"><code class="docutils literal notranslate"><span class="pre">userData</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint12PxConstraintE6PxType11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxConstraint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint12PxConstraintE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxConstraint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraintD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxConstraint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxConstraint8isKindOfEPKc"><code class="docutils literal notranslate"><span class="pre">isKindOf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK12PxConstraint9typeMatchEbv"><code class="docutils literal notranslate"><span class="pre">typeMatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint13mConcreteTypeE"><code class="docutils literal notranslate"><span class="pre">mConcreteType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint10mBaseFlagsE"><code class="docutils literal notranslate"><span class="pre">mBaseFlags</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxConstraint16mBuiltInRefCountE"><code class="docutils literal notranslate"><span class="pre">mBuiltInRefCount</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

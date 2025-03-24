@@ -1,0 +1,883 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxCustomGeometryExt &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxCustomGeometryExt';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxCustomSceneQuerySystem" href="classPxCustomSceneQuerySystem.html" />
+    <link rel="prev" title="PxCustomGeometry" href="classPxCustomGeometry.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxCustomGeometryExt</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxcustomgeometryext">
+<h1>PxCustomGeometryExt<a class="headerlink" href="#pxcustomgeometryext" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxCustomGeometryExt.h.html#pxcustomgeometryext-8h"><span class="std std-ref">include/extensions/PxCustomGeometryExt.h</span></a></p>
+<section id="structs">
+<h2>Structs<a class="headerlink" href="#structs" title="Link to this heading">#</a></h2>
+<div class="docutils container">
+<dl class="simple">
+<dt><a class="reference internal" href="#structpxcustomgeometryext_1_1conecallbacks"><span class="std std-ref">ConeCallbacks</span></a></dt><dd><p>Cone geometry callbacks.</p>
+</dd>
+<dt><a class="reference internal" href="#structpxcustomgeometryext_1_1cylindercallbacks"><span class="std std-ref">CylinderCallbacks</span></a></dt><dd><p>Cylinder geometry callbacks.</p>
+</dd>
+</dl>
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxCustomGeometryExt">
+<span id="_CPPv319PxCustomGeometryExt"></span><span id="_CPPv219PxCustomGeometryExt"></span><span id="PxCustomGeometryExt"></span><span class="target" id="classpxcustomgeometryext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCustomGeometryExt</span></span></span><a class="headerlink" href="#_CPPv419PxCustomGeometryExt" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pre-made custom geometry callbacks implementations. </p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt13ConeCallbacksE">
+<span id="_CPPv3N19PxCustomGeometryExt13ConeCallbacksE"></span><span id="_CPPv2N19PxCustomGeometryExt13ConeCallbacksE"></span><span id="PxCustomGeometryExt::ConeCallbacks"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ConeCallbacks</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><span class="n"><span class="pre">BaseConvexCallbacks</span></span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacksE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Cone geometry callbacks. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt13ConeCallbacks13ConeCallbacksEffif">
+<span id="_CPPv3N19PxCustomGeometryExt13ConeCallbacks13ConeCallbacksEffif"></span><span id="_CPPv2N19PxCustomGeometryExt13ConeCallbacks13ConeCallbacksEffif"></span><span id="PxCustomGeometryExt::ConeCallbacks::ConeCallbacks__float.float.i.float"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1aa7621b1923a3e86c8f452f322b490691"></span><span class="sig-name descname"><span class="n"><span class="pre">ConeCallbacks</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">axis</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks13ConeCallbacksEffif" title="Link to this definition">#</a><br /></dt>
+<dd><p>Construct cone geometry callbacks object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>height</strong> – <strong>[in]</strong> The cylinder height. </p></li>
+<li><p><strong>radius</strong> – <strong>[in]</strong> The cylinder radius. </p></li>
+<li><p><strong>axis</strong> – <strong>[in]</strong> The cylinder axis (0 - X, 1 - Y, 2 - Z). </p></li>
+<li><p><strong>margin</strong> – <strong>[in]</strong> The cylinder margin. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt13ConeCallbacks9setHeightEf">
+<span id="_CPPv3N19PxCustomGeometryExt13ConeCallbacks9setHeightEf"></span><span id="_CPPv2N19PxCustomGeometryExt13ConeCallbacks9setHeightEf"></span><span id="PxCustomGeometryExt::ConeCallbacks::setHeight__float"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1ae52e1f803312b2ad5d6ebd985a9477df"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHeight</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks9setHeightEf" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set cone height. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>h</strong> – <strong>[in]</strong> The cone height </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCustomGeometryExt13ConeCallbacks9getHeightEv">
+<span id="_CPPv3NK19PxCustomGeometryExt13ConeCallbacks9getHeightEv"></span><span id="_CPPv2NK19PxCustomGeometryExt13ConeCallbacks9getHeightEv"></span><span id="PxCustomGeometryExt::ConeCallbacks::getHeightC"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1a70f17b4d678ce47b11aef2775083b145"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHeight</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxCustomGeometryExt13ConeCallbacks9getHeightEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get cone height. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cone height </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt13ConeCallbacks9setRadiusEf">
+<span id="_CPPv3N19PxCustomGeometryExt13ConeCallbacks9setRadiusEf"></span><span id="_CPPv2N19PxCustomGeometryExt13ConeCallbacks9setRadiusEf"></span><span id="PxCustomGeometryExt::ConeCallbacks::setRadius__float"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1ab675a7fddb5a4e42baaddf85074baf5e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRadius</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks9setRadiusEf" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set cone radius. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>r</strong> – <strong>[in]</strong> The cone radius </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCustomGeometryExt13ConeCallbacks9getRadiusEv">
+<span id="_CPPv3NK19PxCustomGeometryExt13ConeCallbacks9getRadiusEv"></span><span id="_CPPv2NK19PxCustomGeometryExt13ConeCallbacks9getRadiusEv"></span><span id="PxCustomGeometryExt::ConeCallbacks::getRadiusC"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1a84306af23d39bfc2218e0eefa81ee25c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRadius</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxCustomGeometryExt13ConeCallbacks9getRadiusEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get cone radius. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cone radius </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt13ConeCallbacks7setAxisEi">
+<span id="_CPPv3N19PxCustomGeometryExt13ConeCallbacks7setAxisEi"></span><span id="_CPPv2N19PxCustomGeometryExt13ConeCallbacks7setAxisEi"></span><span id="PxCustomGeometryExt::ConeCallbacks::setAxis__i"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1a6f4e07ed206840f87832ca73306ef0a0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAxis</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks7setAxisEi" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set cone axis. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> – <strong>[in]</strong> The cone axis </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCustomGeometryExt13ConeCallbacks7getAxisEv">
+<span id="_CPPv3NK19PxCustomGeometryExt13ConeCallbacks7getAxisEv"></span><span id="_CPPv2NK19PxCustomGeometryExt13ConeCallbacks7getAxisEv"></span><span id="PxCustomGeometryExt::ConeCallbacks::getAxisC"></span><span class="target" id="structpxcustomgeometryext_1_1conecallbacks_1ad1080a6b3bc4b3a6b681fa50486cbdb4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAxis</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxCustomGeometryExt13ConeCallbacks7getAxisEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get cone axis. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cone axis </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt17CylinderCallbacksE">
+<span id="_CPPv3N19PxCustomGeometryExt17CylinderCallbacksE"></span><span id="_CPPv2N19PxCustomGeometryExt17CylinderCallbacksE"></span><span id="PxCustomGeometryExt::CylinderCallbacks"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">CylinderCallbacks</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><span class="n"><span class="pre">BaseConvexCallbacks</span></span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacksE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Cylinder geometry callbacks. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt17CylinderCallbacks17CylinderCallbacksEffif">
+<span id="_CPPv3N19PxCustomGeometryExt17CylinderCallbacks17CylinderCallbacksEffif"></span><span id="_CPPv2N19PxCustomGeometryExt17CylinderCallbacks17CylinderCallbacksEffif"></span><span id="PxCustomGeometryExt::CylinderCallbacks::CylinderCallbacks__float.float.i.float"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1a7232b87a19df4426909421f62db815c3"></span><span class="sig-name descname"><span class="n"><span class="pre">CylinderCallbacks</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">height</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">axis</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks17CylinderCallbacksEffif" title="Link to this definition">#</a><br /></dt>
+<dd><p>Construct cylinder geometry callbacks object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>height</strong> – <strong>[in]</strong> The cylinder height. </p></li>
+<li><p><strong>radius</strong> – <strong>[in]</strong> The cylinder radius. </p></li>
+<li><p><strong>axis</strong> – <strong>[in]</strong> The cylinder axis (0 - X, 1 - Y, 2 - Z). </p></li>
+<li><p><strong>margin</strong> – <strong>[in]</strong> The cylinder margin. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt17CylinderCallbacks9setHeightEf">
+<span id="_CPPv3N19PxCustomGeometryExt17CylinderCallbacks9setHeightEf"></span><span id="_CPPv2N19PxCustomGeometryExt17CylinderCallbacks9setHeightEf"></span><span id="PxCustomGeometryExt::CylinderCallbacks::setHeight__float"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1a7d1be6d0d04072fcd5f1a01459aa3cd6"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHeight</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks9setHeightEf" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set cylinder height. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>h</strong> – <strong>[in]</strong> The cylinder height </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks9getHeightEv">
+<span id="_CPPv3NK19PxCustomGeometryExt17CylinderCallbacks9getHeightEv"></span><span id="_CPPv2NK19PxCustomGeometryExt17CylinderCallbacks9getHeightEv"></span><span id="PxCustomGeometryExt::CylinderCallbacks::getHeightC"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1a70d351e870686f191bb054c9ef6dfa28"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHeight</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks9getHeightEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get cylinder height. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cylinder height </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt17CylinderCallbacks9setRadiusEf">
+<span id="_CPPv3N19PxCustomGeometryExt17CylinderCallbacks9setRadiusEf"></span><span id="_CPPv2N19PxCustomGeometryExt17CylinderCallbacks9setRadiusEf"></span><span id="PxCustomGeometryExt::CylinderCallbacks::setRadius__float"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1aa79b0ba19aa192ec59189f4d64ebbc87"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRadius</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks9setRadiusEf" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set cylinder radius. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>r</strong> – <strong>[in]</strong> The cylinder radius. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks9getRadiusEv">
+<span id="_CPPv3NK19PxCustomGeometryExt17CylinderCallbacks9getRadiusEv"></span><span id="_CPPv2NK19PxCustomGeometryExt17CylinderCallbacks9getRadiusEv"></span><span id="PxCustomGeometryExt::CylinderCallbacks::getRadiusC"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1aea620279b77f5d80d623f80a2b59004a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRadius</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks9getRadiusEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get cylinder radius. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cylinder radius </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCustomGeometryExt17CylinderCallbacks7setAxisEi">
+<span id="_CPPv3N19PxCustomGeometryExt17CylinderCallbacks7setAxisEi"></span><span id="_CPPv2N19PxCustomGeometryExt17CylinderCallbacks7setAxisEi"></span><span id="PxCustomGeometryExt::CylinderCallbacks::setAxis__i"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1a96fcc039c75e92c4ffd6a85067fd70a9"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAxis</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks7setAxisEi" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set cylinder axis. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> – <strong>[in]</strong> The cylinder axis (0 - X, 1 - Y, 2 - Z). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks7getAxisEv">
+<span id="_CPPv3NK19PxCustomGeometryExt17CylinderCallbacks7getAxisEv"></span><span id="_CPPv2NK19PxCustomGeometryExt17CylinderCallbacks7getAxisEv"></span><span id="PxCustomGeometryExt::CylinderCallbacks::getAxisC"></span><span class="target" id="structpxcustomgeometryext_1_1cylindercallbacks_1af34b8082888f60bcd94066246a05a2af"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAxis</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks7getAxisEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get cylinder axis. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cylinder axis </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxCustomGeometry.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxCustomGeometry</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxCustomSceneQuerySystem.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxCustomSceneQuerySystem</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structs">Structs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv419PxCustomGeometryExt"><code class="docutils literal notranslate"><span class="pre">PxCustomGeometryExt</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacksE"><code class="docutils literal notranslate"><span class="pre">ConeCallbacks</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks13ConeCallbacksEffif"><code class="docutils literal notranslate"><span class="pre">ConeCallbacks()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks9setHeightEf"><code class="docutils literal notranslate"><span class="pre">setHeight()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxCustomGeometryExt13ConeCallbacks9getHeightEv"><code class="docutils literal notranslate"><span class="pre">getHeight()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks9setRadiusEf"><code class="docutils literal notranslate"><span class="pre">setRadius()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxCustomGeometryExt13ConeCallbacks9getRadiusEv"><code class="docutils literal notranslate"><span class="pre">getRadius()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt13ConeCallbacks7setAxisEi"><code class="docutils literal notranslate"><span class="pre">setAxis()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxCustomGeometryExt13ConeCallbacks7getAxisEv"><code class="docutils literal notranslate"><span class="pre">getAxis()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacksE"><code class="docutils literal notranslate"><span class="pre">CylinderCallbacks</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks17CylinderCallbacksEffif"><code class="docutils literal notranslate"><span class="pre">CylinderCallbacks()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks9setHeightEf"><code class="docutils literal notranslate"><span class="pre">setHeight()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks9getHeightEv"><code class="docutils literal notranslate"><span class="pre">getHeight()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks9setRadiusEf"><code class="docutils literal notranslate"><span class="pre">setRadius()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks9getRadiusEv"><code class="docutils literal notranslate"><span class="pre">getRadius()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxCustomGeometryExt17CylinderCallbacks7setAxisEi"><code class="docutils literal notranslate"><span class="pre">setAxis()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxCustomGeometryExt17CylinderCallbacks7getAxisEv"><code class="docutils literal notranslate"><span class="pre">getAxis()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

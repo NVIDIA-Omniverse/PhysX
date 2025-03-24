@@ -1,0 +1,890 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Particle System &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/ParticleSystem';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Geometry Queries" href="GeometryQueries.html" />
+    <link rel="prev" title="Deformable Volume" href="DeformableVolume.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Particle System</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="particle-system">
+<span id="particlesystem"></span><h1>Particle System<a class="headerlink" href="#particle-system" title="Link to this heading">#</a></h1>
+<section id="position-based-dynamics-pbd-particle-systems">
+<h2>Position-based Dynamics (PBD) Particle Systems<a class="headerlink" href="#position-based-dynamics-pbd-particle-systems" title="Link to this heading">#</a></h2>
+<p>A particle system, defined as an instance of the <a class="reference internal" href="../_api_build/classPxPBDParticleSystem.html#_CPPv419PxPBDParticleSystem" title="PxPBDParticleSystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPBDParticleSystem</span></code></a>, is capable of simulating dynamics that can be represented with a set of particles.
+The PhysX particle system solver uses position-based dynamics (PBD) for solving particle-to-particle dynamics, and can handle a wide range of dynamics including fluid and deformable objects.
+Unlike other particle solvers which mostly compute velocity first, PBD finds positions of particles that meet given constraints (such as volume preservation) and then calculates velocities from the optimized positions.
+This approach makes PBD stable and more robust to larger simulation time-steps.</p>
+<p>Simulating particle systems requires a CUDA capable GPU and a <a class="reference internal" href="../_api_build/classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">CUDA</span> <span class="pre">context</span> <span class="pre">manager</span></code></a> must be provided upon creation of the particle system.
+A <a class="reference internal" href="../_api_build/classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCudaContextManager</span></code></a> object can be created as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxCudaContextManagerDesc</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">;</span>
+<span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateCudaContextManager</span><span class="p">(</span><span class="o">*</span><span class="n">gFoundation</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">,</span><span class="w"> </span><span class="n">PxGetProfilerCallback</span><span class="p">());</span>
+</pre></div>
+</div>
+<p>As a first step to make a PBD simulation in PhysX, an instance of <a class="reference internal" href="../_api_build/classPxPBDParticleSystem.html#_CPPv419PxPBDParticleSystem" title="PxPBDParticleSystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPBDParticleSystem</span></code></a> can be created as shown below:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="n">particleSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createPBDParticleSystem</span><span class="p">(</span><span class="o">*</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="mi">96</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The maximum number of neighbors is set to 96, which upper-bounds the number of particles considered in neighborhood-based particle interaction calculations (e.g. fluid density constraints).</p>
+<p>User-visible particle system state is stored in <a class="reference internal" href="#particlebuffers"><span class="std std-ref">particle buffers</span></a>, which are independent of the particle system and scene and can be added/removed on demand.
+This section first introduces some general concepts before diving into the details of the position-based dynamics particle system.</p>
+<p>Several snippets demonstrate the setup of PBD particle systems:</p>
+<ul class="simple">
+<li><p>SnippetPBF demonstrates fluid simulation</p></li>
+<li><p>SnippetPBFMultiMat demonstrates fluid simulation with multiple materials</p></li>
+<li><p>SnippetPBDCloth demonstrates cloth simulation (Note: Particle cloth has been deprecated)</p></li>
+<li><p>SnippetPBDInflatable demonstrates inflatable simulation (Note: Particle cloth has been deprecated)</p></li>
+</ul>
+</section>
+<section id="particle-buffers">
+<span id="particlebuffers"></span><h2>Particle Buffers<a class="headerlink" href="#particle-buffers" title="Link to this heading">#</a></h2>
+<p>Particle system simulation state is represented using one or multiple <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBuffers</span></code></a> that are associated with a particle system.
+A <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBuffer</span></code></a> object can be created as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxParticleBuffer</span><span class="o">*</span><span class="w"> </span><span class="n">particleBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createParticleBuffer</span><span class="p">(</span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">maxVolumes</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">cudaContextManager</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>This buffer has the capacity to hold <code class="docutils literal notranslate"><span class="pre">maxParticles</span></code> particles and <code class="docutils literal notranslate"><span class="pre">maxVolumes</span></code> <a class="reference internal" href="#particlevolume"><span class="std std-ref">particle volumes</span></a>.
+Note that a <a class="reference internal" href="../_api_build/classPxCudaContextManager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">CUDA</span> <span class="pre">context</span> <span class="pre">manager</span></code></a> needs to be provided because creating a particle buffer will allocate GPU memory to hold the particle data for this buffer.
+The CUDA context manager provided here needs to be the same as the context manager provided to <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv4N9PxPhysics23createPBDParticleSystemER20PxCudaContextManager5PxU326PxReal" title="PxPhysics::createPBDParticleSystem"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::createPBDParticleSystem()</span></code></a>.</p>
+<p>Once a particle buffer is created, it can be initialized with initial positions, velocities and <a class="reference internal" href="#particlephase"><span class="std std-ref">phases</span></a> for simulation.
+Because the memory allocated during the creation of the particle buffer resides on the GPU, all of the responsibility of copying data to and from the GPU is left to the user.
+All pointers returned by functions of <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBuffer</span></code></a> are device pointers, i.e. point to GPU memory.</p>
+<p>Given a list of initial positions for 1000 particles residing in host memory, the positions are initialized as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">bufferPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">particleBuffer</span><span class="o">-&gt;</span><span class="n">getPositionInvMasses</span><span class="p">();</span>
+<span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">bufferPos</span><span class="p">,</span><span class="w"> </span><span class="n">positionsHost</span><span class="p">,</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">particleBuffer</span><span class="o">-&gt;</span><span class="n">raiseFlags</span><span class="p">(</span><span class="n">PxParticleBufferFlag</span><span class="o">::</span><span class="n">eUPDATE_POSITION</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Whenever GPU state is changed by the user, the corresponding <a class="reference internal" href="../_api_build/structPxParticleBufferFlag.html#_CPPv420PxParticleBufferFlag" title="PxParticleBufferFlag"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBufferFlag</span></code></a> has to be raised to notify the particle system of the changes.
+If a particle buffer is added to a particle system, all the <a class="reference internal" href="../_api_build/structPxParticleBufferFlag.html#_CPPv420PxParticleBufferFlag" title="PxParticleBufferFlag"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBufferFlags</span></code></a> will be raised implicitly.
+Setting up intial velocities follows the same pattern, using <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv4NK16PxParticleBuffer13getVelocitiesEv" title="PxParticleBuffer::getVelocities"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleBuffer::getVelocities()</span></code></a> and <a class="reference internal" href="../_api_build/structPxParticleBufferFlag.html#_CPPv4N20PxParticleBufferFlag4Enum16eUPDATE_VELOCITYE" title="PxParticleBufferFlag::eUPDATE_VELOCITY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxParticleBufferFlag::eUPDATE_VELOCITY</span></code></a>.</p>
+<p>After setting up initial state, the number of active particles in the buffer has to be set, and the buffer needs to be added to a particle system:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">particleBuffer</span><span class="o">-&gt;</span><span class="n">setNbActiveParticles</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">addParticleBuffer</span><span class="p">(</span><span class="n">particleBuffer</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Note that the number of active particles needs to be &lt;= <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv4NK16PxParticleBuffer15getMaxParticlesEv" title="PxParticleBuffer::getMaxParticles"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleBuffer::getMaxParticles()</span></code></a>.</p>
+<p>The results of each simulation step in a particle system simulation are ready after <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene26fetchResultsParticleSystemEv" title="PxScene::fetchResultsParticleSystem"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResultsParticleSystem()</span></code></a> completes.
+At this point in time, the updated positions/velocities are ready in the GPU buffers returned by <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv4NK16PxParticleBuffer20getPositionInvMassesEv" title="PxParticleBuffer::getPositionInvMasses"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleBuffer::getPositionInvMasses()</span></code></a>/ <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv4NK16PxParticleBuffer13getVelocitiesEv" title="PxParticleBuffer::getVelocities"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleBuffer::getVelocities()</span></code></a> and it is the user’s responsibility to copy the data to the host if needed.</p>
+<p>Because different types of effects that can be simulated with particle systems require different amounts of simulation state, several types of <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBuffers</span></code></a> exist:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBuffer</span></code></a> to simulate fluid and granular particles</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxParticleAndDiffuseBuffer.html#_CPPv426PxParticleAndDiffuseBuffer" title="PxParticleAndDiffuseBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleAndDiffuseBuffer</span></code></a> to simulate fluid particles with additional diffuse particle effects (spray, foam, bubbles)</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxParticleClothBuffer.html#_CPPv421PxParticleClothBuffer" title="PxParticleClothBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleClothBuffer</span></code></a> to simulate particle cloth</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxParticleRigidBuffer.html#_CPPv421PxParticleRigidBuffer" title="PxParticleRigidBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleRigidBuffer</span></code></a> to simulate rigid bodies using shape matching with particles</p></li>
+</ul>
+</section>
+<section id="particle-phases">
+<span id="particlephase"></span><h2>Particle Phases<a class="headerlink" href="#particle-phases" title="Link to this heading">#</a></h2>
+<p>Every particle in a particle system is associated with a particle phase that defines collision properties, particle groups and material bindings.
+A particle phase is a created as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particlePhase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">createPhase</span><span class="p">(</span><span class="n">defaultMat</span><span class="p">,</span><span class="w"> </span><span class="n">PxParticlePhaseFlags</span><span class="p">(</span><span class="n">PxParticlePhaseFlag</span><span class="o">::</span><span class="n">eParticlePhaseFluid</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxParticlePhaseFlag</span><span class="o">::</span><span class="n">eParticlePhaseSelfCollide</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>This creation function takes a <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv4N9PxPhysics17createPBDMaterialE6PxReal6PxReal6PxReal6PxReal6PxReal6PxReal6PxReal6PxReal6PxReal6PxReal6PxReal" title="PxPhysics::createPBDMaterial"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPBDMaterial</span></code></a> and a set of <a class="reference internal" href="../_api_build/structPxParticlePhaseFlag.html#_CPPv419PxParticlePhaseFlag" title="PxParticlePhaseFlag"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticlePhaseFlags</span></code></a>.
+After creating one or multiple particle phases, phases are assigned to particles by inserting the PxU32 returned by the creation method in the buffer returned by <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv4NK16PxParticleBuffer9getPhasesEv" title="PxParticleBuffer::getPhases"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleBuffer::getPhases()</span></code></a> at the same index as the position/velocity for said particle.</p>
+<p>The following properties are important when working with particle phases:</p>
+<ul class="simple">
+<li><p>particles with the same phase always use the same material</p></li>
+<li><p>particles with different phases will collide with each other</p></li>
+<li><p>particles with the same phase will collide if <a class="reference internal" href="../_api_build/structPxParticlePhaseFlag.html#_CPPv4N19PxParticlePhaseFlag4Enum25eParticlePhaseSelfCollideE" title="PxParticlePhaseFlag::eParticlePhaseSelfCollide"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxParticlePhaseFlag::eParticlePhaseSelfCollide</span></code></a> is set</p></li>
+<li><p>particles with the same phase will generate fluid density constraints for overlapping neighbors if <a class="reference internal" href="../_api_build/structPxParticlePhaseFlag.html#_CPPv4N19PxParticlePhaseFlag4Enum19eParticlePhaseFluidE" title="PxParticlePhaseFlag::eParticlePhaseFluid"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxParticlePhaseFlag::eParticlePhaseFluid</span></code></a> is set</p></li>
+<li><p>particles with the same phase will not generate collisions with particles closer than the rest offset if <code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">eParticlePhaseSelfCollideFilter</span></code> is set and valid rest positions are set.</p></li>
+</ul>
+</section>
+<section id="particle-volumes">
+<span id="particlevolume"></span><h2>Particle Volumes<a class="headerlink" href="#particle-volumes" title="Link to this heading">#</a></h2>
+<p><a class="reference internal" href="../_api_build/structPxParticleVolume.html#_CPPv416PxParticleVolume" title="PxParticleVolume"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleVolume</span></code></a> objects are used to accelerate scene queries, for example to support picking.
+It is required to specify the maximum number of <a class="reference internal" href="../_api_build/structPxParticleVolume.html#_CPPv416PxParticleVolume" title="PxParticleVolume"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">particle</span> <span class="pre">volumes</span></code></a> when creating a particle buffer.
+A <a class="reference internal" href="../_api_build/classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleBuffer</span></code></a> can contain multiple volumes, however the particles contributing to the same volume need to be consecutive within this buffer.</p>
+<p>Note that the <a class="reference internal" href="../_api_build/structPxParticleVolume.html#_CPPv416PxParticleVolume" title="PxParticleVolume"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleVolume</span></code></a> only provides an up-to-date axis-aligned bounding box for the particles in the volume. Actual geometric queries need to be implemented by the application. The bounding box can be used to evaluate which underlying particle based geometry needs to be tested.</p>
+</section>
+<section id="particle-system-configuration">
+<h2>Particle System Configuration<a class="headerlink" href="#particle-system-configuration" title="Link to this heading">#</a></h2>
+<p>Next the particle properties such as particle radius and mass need to specified.
+The following example code sets up fluid particles:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">particleSpacing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.2f</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">fluidDensity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1000.f</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">restOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">particleSpacing</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">0.6f</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">solidRestOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">restOffset</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">fluidRestOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">restOffset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.6f</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">renderRadius</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fluidRestOffset</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">particleMass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fluidDensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1.333f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">3.14159f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">renderRadius</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">renderRadius</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">renderRadius</span><span class="p">;</span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setRestOffset</span><span class="p">(</span><span class="n">restOffset</span><span class="p">);</span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setContactOffset</span><span class="p">(</span><span class="n">restOffset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">);</span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setParticleContactOffset</span><span class="p">(</span><span class="n">PxMax</span><span class="p">(</span><span class="n">solidRestOffset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">,</span><span class="w"> </span><span class="n">fluidRestOffset</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">0.6f</span><span class="p">));</span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setSolidRestOffset</span><span class="p">(</span><span class="n">solidRestOffset</span><span class="p">);</span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setFluidRestOffset</span><span class="p">(</span><span class="n">fluidRestOffset</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The following list describes each parameter which was set above:</p>
+<ul class="simple">
+<li><p><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">particleSystem-&gt;setRestOffset(...)</span></code>: set the <a class="reference internal" href="AdvancedCollisionDetection.html#shapecollisiontuning"><span class="std std-ref">rest offset</span></a> between particles and rigids or deformables.</p></li>
+<li><p><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">particleSystem-&gt;setContactOffset(...)</span></code>: set the <a class="reference internal" href="AdvancedCollisionDetection.html#shapecollisiontuning"><span class="std std-ref">contact offset</span></a> for the collision between particles and rigids or deformables.</p></li>
+<li><p><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">particleSystem-&gt;setParticleContactOffset(...)</span></code>: set the <a class="reference internal" href="AdvancedCollisionDetection.html#shapecollisiontuning"><span class="std std-ref">contact offset</span></a> for the interactions between particles.</p></li>
+<li><p><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">particleSystem-&gt;setSolidRestOffset(...)</span></code>: set the <a class="reference internal" href="AdvancedCollisionDetection.html#shapecollisiontuning"><span class="std std-ref">rest offset</span></a> for interactions between particles marked as solid/granular particles.</p></li>
+<li><p><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">particleSystem-&gt;setFluidRestOffset(...)</span></code>: set the target rest offset for interactions between particles marked as fluid (fluid rest distance = 2 * fluid rest offset).</p></li>
+</ul>
+<p>Once configured, the new particle system can be added to the scene:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addParticleSystem</span><span class="p">(</span><span class="o">*</span><span class="n">particleSystem</span><span class="p">);</span>
+</pre></div>
+</div>
+<section id="cloth-simulation-deprecated">
+<h3>Cloth Simulation - DEPRECATED<a class="headerlink" href="#cloth-simulation-deprecated" title="Link to this heading">#</a></h3>
+<p>NOTE: Particle Cloth has been deprecated. Please use PxDeformableSurface instead.</p>
+<p>Particles in a <a class="reference internal" href="../_api_build/classPxPBDParticleSystem.html#_CPPv419PxPBDParticleSystem" title="PxPBDParticleSystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">particle</span> <span class="pre">system</span></code></a> can not only behave like fluid or granular material.
+It is possible to insert additional constraints into the particle systems to connect a group of particles to act like a piece of cloth.
+To set up a cloth, a <a class="reference internal" href="../_api_build/classPxParticleClothBuffer.html#_CPPv421PxParticleClothBuffer" title="PxParticleClothBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleClothBuffer</span></code></a> is required to define the connections between the particles:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxParticleClothBuffer</span><span class="o">*</span><span class="w"> </span><span class="n">clothBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createParticleClothBuffer</span><span class="p">(</span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">maxVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">nbCloths</span><span class="p">,</span><span class="w"> </span><span class="n">nbTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">nbSprings</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">cudaContextManager</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In addition to setting up the positions, velocities and phases as descibed in the section on <a class="reference internal" href="#particlebuffers"><span class="std std-ref">particle buffers</span></a>, the user is required to setup and preprocess the <a class="reference internal" href="../_api_build/structPxParticleSpring.html#_CPPv416PxParticleSpring" title="PxParticleSpring"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSprings</span></code></a> and <code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleTriangles</span></code>.
+This is done by creating two arrays for springs and triangles and defining the connections:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Define springs and triangles</span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxParticleSpring</span><span class="o">&gt;</span><span class="w"> </span><span class="n">springs</span><span class="p">;</span>
+<span class="n">springs</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">numSprings</span><span class="p">);</span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">triangles</span><span class="p">;</span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">numTriangles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span>
+
+<span class="p">...</span>
+
+<span class="c1">//Places a spring between particles at index i and j in the particle buffer</span>
+<span class="n">PxParticleSpring</span><span class="w"> </span><span class="n">spring</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">,</span><span class="w"> </span><span class="n">stretchStiffness</span><span class="p">,</span><span class="w"> </span><span class="n">springDamping</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="n">springs</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">spring</span><span class="p">);</span>
+
+<span class="c1">//Adds a triangle between vertices at indices a, b and c in the particle buffer. Triangles are used to compute approximated aerodynamic forces for cloth</span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">b</span><span class="p">);</span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For every piece of cloth in the buffer, an additional set of parameters needs to be specified, using a <a class="reference internal" href="../_api_build/structPxParticleCloth.html#_CPPv415PxParticleCloth" title="PxParticleCloth"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleCloth</span></code></a> struct.
+After setting up springs and triangles, a <a class="reference internal" href="../_api_build/structPxParticleClothDesc.html#_CPPv419PxParticleClothDesc" title="PxParticleClothDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleClothDesc</span></code></a> needs to be created:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxParticleClothDesc</span><span class="w"> </span><span class="n">clothDesc</span><span class="p">;</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">cloths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cloths</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span><span class="w"> </span><span class="c1">// list of PxParticleCloth</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">triangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">triangles</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">springs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">springs</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">restPositions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">restPositions</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">nbCloths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbCloth</span><span class="p">;</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">nbSprings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbSprings</span><span class="p">;</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">nbTriangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbTriangles</span><span class="p">;</span>
+<span class="n">clothDesc</span><span class="p">.</span><span class="n">nbParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbParticles</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>At this point, the cloth buffer is ready to be preprocessed. This is done as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxParticleClothPreProcessor</span><span class="o">*</span><span class="w"> </span><span class="n">processor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleClothPreProcessor</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">);</span>
+<span class="n">PxPartitionedParticleCloth</span><span class="w"> </span><span class="n">output</span><span class="p">;</span>
+<span class="n">processor</span><span class="o">-&gt;</span><span class="n">partitionSprings</span><span class="p">(</span><span class="n">clothDesc</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">);</span>
+<span class="n">processor</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Cloth preprocessing will partition the spring constraints to maximize parallelism in the solver.
+Note that changing the spring or triangle lists will require a repartitioning.
+After preprocessing, all the data needs to be copied into the <a class="reference internal" href="../_api_build/classPxParticleClothBuffer.html#_CPPv421PxParticleClothBuffer" title="PxParticleClothBuffer"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleClothBuffer</span></code></a> and the buffer can be added to the particle system:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">getPositionsInvMasses</span><span class="p">(),</span><span class="w"> </span><span class="n">hostPositions</span><span class="p">,</span><span class="w"> </span><span class="n">nbParticles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">getVelocities</span><span class="p">(),</span><span class="w"> </span><span class="n">hostVelocities</span><span class="p">,</span><span class="w"> </span><span class="n">nbParticles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">getPhases</span><span class="p">(),</span><span class="w"> </span><span class="n">hostPhases</span><span class="p">,</span><span class="w"> </span><span class="n">nbParticles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxU32</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">getVolumes</span><span class="p">(),</span><span class="w"> </span><span class="n">hostVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">numVolumes</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxParticleVolume</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">getTriangles</span><span class="p">(),</span><span class="w"> </span><span class="n">triangles</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">nbTriangles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxU32</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">cudaContext</span><span class="o">-&gt;</span><span class="n">memcpyHtoDAsync</span><span class="p">(</span><span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">getRestPositions</span><span class="p">(),</span><span class="w"> </span><span class="n">hostRestPositions</span><span class="p">,</span><span class="w"> </span><span class="n">nbParticles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">setNbActiveParticles</span><span class="p">(</span><span class="n">nbParticles</span><span class="p">);</span>
+<span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">setNbParticleVolumes</span><span class="p">(</span><span class="n">nbVolumes</span><span class="p">);</span>
+<span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">setNbTriangles</span><span class="p">(</span><span class="n">nbTriangles</span><span class="p">);</span>
+
+<span class="n">clothBuffer</span><span class="o">-&gt;</span><span class="n">setCloths</span><span class="p">(</span><span class="n">output</span><span class="p">);</span><span class="w"> </span><span class="c1">// result of the preprocessing</span>
+
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">addParticleBuffer</span><span class="p">(</span><span class="n">clothBuffer</span><span class="p">);</span>
+</pre></div>
+</div>
+<section id="cloth-cooking">
+<h4>Cloth Cooking<a class="headerlink" href="#cloth-cooking" title="Link to this heading">#</a></h4>
+<p>Setting up springs and triangles the right way can be tricky.
+PhysX provides a <code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleClothCooker</span></code> to help with setting up springs and triangles from a triangle mesh.
+The following example shows how to cook particle cloth constraints from a triangle mesh defined by a list of vertices and a list of triangle indices:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxParticleClothCooker</span><span class="o">*</span><span class="w"> </span><span class="n">cooker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleClothCooker</span><span class="p">(</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">vertices</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">indices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">indices</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span>
+<span class="w">    </span><span class="n">PxParticleClothConstraint</span><span class="o">::</span><span class="n">eTYPE_HORIZONTAL_CONSTRAINT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxParticleClothConstraint</span><span class="o">::</span><span class="n">eTYPE_VERTICAL_CONSTRAINT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxParticleClothConstraint</span><span class="o">::</span><span class="n">eTYPE_DIAGONAL_CONSTRAINT</span><span class="p">);</span>
+<span class="n">cooker</span><span class="o">-&gt;</span><span class="n">cookConstraints</span><span class="p">();</span>
+<span class="n">cooker</span><span class="o">-&gt;</span><span class="n">calculateMeshVolume</span><span class="p">();</span>
+
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">triangles</span><span class="p">;</span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxParticleSpring</span><span class="o">&gt;</span><span class="w"> </span><span class="n">springs</span><span class="p">;</span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">cookedTriangleIndicesCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getTriangleIndicesCount</span><span class="p">();</span>
+<span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">cookedTriangleIndices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getTriangleIndices</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">cookedTriangleIndicesCount</span><span class="p">;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">triangles</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">cookedTriangleIndices</span><span class="p">[</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span>
+<span class="w">    </span><span class="n">triangles</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">cookedTriangleIndices</span><span class="p">[</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]);</span>
+<span class="w">    </span><span class="n">triangles</span><span class="p">.</span><span class="n">push_bacl</span><span class="p">(</span><span class="n">cookedTriangleIndices</span><span class="p">[</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="p">}</span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">constraintCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getConstraintCount</span><span class="p">();</span>
+<span class="n">PxClothConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraintBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getConstraints</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">constraintCount</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxParticleSpring</span><span class="w"> </span><span class="n">spring</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spring</span><span class="p">.</span><span class="n">ind0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">mParticleIndexA</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spring</span><span class="p">.</span><span class="n">ind1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">mParticleIndexB</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spring</span><span class="p">.</span><span class="n">stiffness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stiffness</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spring</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">c</span><span class="p">.</span><span class="n">mLength</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spring</span><span class="p">.</span><span class="n">damping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">damping</span><span class="p">;</span>
+<span class="w">    </span><span class="n">springs</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">spring</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The resulting arrays <code class="docutils literal notranslate"><span class="pre">triangles</span></code> and <code class="docutils literal notranslate"><span class="pre">springs</span></code> can then be used as an input for cloth preprocessing.</p>
+</section>
+</section>
+<section id="inflatables">
+<h3>Inflatables<a class="headerlink" href="#inflatables" title="Link to this heading">#</a></h3>
+<p>A group of particles that is configured as cloth can be used to create an inflatable cloth if the triangle mesh used to create the inflatable is a non-overlapping, watertight mesh with a well defined volume.
+In contrast to a simple cloth, an inflatable body will simulate pressure inside the object.
+The pressure factor to control the behavior defines the volume the inflatable body tries to maintain during simulation.
+If the pressure is set to a value larger than one, the inflatable will show a behavior like a balloon.
+The setup is identical to cloth with the difference that the <a class="reference internal" href="../_api_build/structPxParticleCloth.html#_CPPv4N15PxParticleCloth8pressureE" title="PxParticleCloth::pressure"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxParticleCloth::pressure</span></code></a> parameter needs to be nonzero.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="DeformableVolume.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Deformable Volume</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="GeometryQueries.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Geometry Queries</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#position-based-dynamics-pbd-particle-systems">Position-based Dynamics (PBD) Particle Systems</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-buffers">Particle Buffers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-phases">Particle Phases</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-volumes">Particle Volumes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-system-configuration">Particle System Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cloth-simulation-deprecated">Cloth Simulation - DEPRECATED</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#cloth-cooking">Cloth Cooking</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inflatables">Inflatables</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

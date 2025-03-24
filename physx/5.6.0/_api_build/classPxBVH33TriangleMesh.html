@@ -1,0 +1,1205 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxBVH33TriangleMesh &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxBVH33TriangleMesh';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxBVH34BuildStrategy" href="structPxBVH34BuildStrategy.html" />
+    <link rel="prev" title="PxBVH33MidphaseDesc" href="structPxBVH33MidphaseDesc.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxBVH33TriangleMesh</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxbvh33trianglemesh">
+<h1>PxBVH33TriangleMesh<a class="headerlink" href="#pxbvh33trianglemesh" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxTriangleMesh.h.html#pxtrianglemesh-8h"><span class="std std-ref">include/geometry/PxTriangleMesh.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxBVH33TriangleMesh">
+<span id="_CPPv319PxBVH33TriangleMesh"></span><span id="_CPPv219PxBVH33TriangleMesh"></span><span id="PxBVH33TriangleMesh"></span><span class="target" id="classpxbvh33trianglemesh"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH33TriangleMesh</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxTriangleMesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><span class="n"><span class="pre">PxTriangleMesh</span></span></a><a class="headerlink" href="#_CPPv419PxBVH33TriangleMesh" title="Link to this definition">#</a><br /></dt>
+<dd><p>A triangle mesh containing the <a class="reference internal" href="structPxMeshMidPhase.html#structpxmeshmidphase_1a49f740883fbfb1a49631c28818c219f4aa791bfd986fc6edb77db2928e3c5e529"><span class="std std-ref">PxMeshMidPhase::eBVH33</span></a> structure. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000118"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use <a class="reference internal" href="classPxBVH34TriangleMesh.html#classpxbvh34trianglemesh"><span class="std std-ref">PxBVH34TriangleMesh</span></a> instead.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxMeshMidPhase.html#structpxmeshmidphase"><span class="std std-ref">PxMeshMidPhase</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh13getNbVerticesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh13getNbVerticesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh13getNbVerticesEv"></span><span id="PxBVH33TriangleMesh::getNbVerticesC"></span><span class="target" id="classpxtrianglemesh_1ab2ee402843a2f19a252ecb229d9cfbc8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh13getNbVerticesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1a76a26a4dbeaddf6be059dc935bd23bab"><span class="std std-ref">getVertices()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>number of vertices </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh11getVerticesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh11getVerticesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh11getVerticesEv"></span><span id="PxBVH33TriangleMesh::getVerticesC"></span><span class="target" id="classpxtrianglemesh_1a76a26a4dbeaddf6be059dc935bd23bab"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh11getVerticesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1ab2ee402843a2f19a252ecb229d9cfbc8"><span class="std std-ref">getNbVertices()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array of vertices </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh26getVerticesForModificationEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh26getVerticesForModificationEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh26getVerticesForModificationEv"></span><span id="PxBVH33TriangleMesh::getVerticesForModification"></span><span class="target" id="classpxtrianglemesh_1a4a037fd65ae091eadc1979b4f703d106"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getVerticesForModification</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh26getVerticesForModificationEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns all mesh vertices for modification. </p>
+<p>This function will return the vertices of the mesh so that their positions can be changed in place. After modifying the vertices you must call refitBVH for the refitting to actually take place. This function maintains the old mesh topology (triangle indices). </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1ab2ee402843a2f19a252ecb229d9cfbc8"><span class="std std-ref">getNbVertices()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1acc5c3b6c67a887917a111c432a799eff"><span class="std std-ref">refitBVH()</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is recommended to use this feature for scene queries only. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Size of array returned is equal to the number returned by <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1ab2ee402843a2f19a252ecb229d9cfbc8"><span class="std std-ref">getNbVertices()</span></a>. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function operates on cooked vertex indices. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This means the index mapping and vertex count can be different from what was provided as an input to the cooking routine. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To achieve unchanged 1-to-1 index mapping with orignal mesh data (before cooking) please use the following cooking flags: </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eWELD_VERTICES = 0, eDISABLE_CLEAN_MESH = 1. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is also recommended to make sure that a call to validateTriangleMesh returns true if mesh cleaning is disabled. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>inplace vertex coordinates for each existing mesh vertex.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh8refitBVHEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh8refitBVHEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh8refitBVHEv"></span><span id="PxBVH33TriangleMesh::refitBVH"></span><span class="target" id="classpxtrianglemesh_1acc5c3b6c67a887917a111c432a799eff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">refitBVH</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh8refitBVHEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Refits BVH for mesh vertices. </p>
+<p>This function will refit the mesh BVH to correctly enclose the new positions updated by getVerticesForModification. Mesh BVH will not be reoptimized by this function so significantly different new positions will cause significantly reduced performance. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1ab2ee402843a2f19a252ecb229d9cfbc8"><span class="std std-ref">getNbVertices()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1a4a037fd65ae091eadc1979b4f703d106"><span class="std std-ref">getVerticesForModification()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxBVH34MidphaseDesc.html#structpxbvh34midphasedesc_1ae1ca7383160c33302b920b1f450d7671"><span class="std std-ref">PxBVH34MidphaseDesc::quantized</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For <a class="reference internal" href="structPxMeshMidPhase.html#structpxmeshmidphase_1a49f740883fbfb1a49631c28818c219f4a42051af73b6c6b3a5ac4df2928b6d446"><span class="std std-ref">PxMeshMidPhase::eBVH34</span></a> trees the refit operation is only available on non-quantized trees (see <a class="reference internal" href="structPxBVH34MidphaseDesc.html#structpxbvh34midphasedesc_1ae1ca7383160c33302b920b1f450d7671"><span class="std std-ref">PxBVH34MidphaseDesc::quantized</span></a>) </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PhysX does not keep a mapping from the mesh to mesh shapes that reference it. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Call <a class="reference internal" href="classPxShape.html#classpxshape_1ac6112e8c0ee9803eb3436bbaf673d98a"><span class="std std-ref">PxShape::setGeometry</span></a> on each shape which references the mesh, to ensure that internal data structures are updated to reflect the new geometry. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="classPxShape.html#classpxshape_1ac6112e8c0ee9803eb3436bbaf673d98a"><span class="std std-ref">PxShape::setGeometry</span></a> does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is also recommended to make sure that a call to validateTriangleMesh returns true if mesh cleaning is disabled. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Active edges information will be lost during refit, the rigid body mesh contact generation might not perform as expected. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New bounds for the entire mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh14getNbTrianglesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh14getNbTrianglesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh14getNbTrianglesEv"></span><span id="PxBVH33TriangleMesh::getNbTrianglesC"></span><span class="target" id="classpxtrianglemesh_1a611c8453a6b6256a63f1450aa8cf237a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh14getNbTrianglesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of triangles. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1aaba16b4d85ec80320e1906bf8f6273a7"><span class="std std-ref">getTriangles()</span></a> <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1a35fcfe415fe778a1259dea87522c0e42"><span class="std std-ref">getTrianglesRemap()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>number of triangles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh12getTrianglesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh12getTrianglesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh12getTrianglesEv"></span><span id="PxBVH33TriangleMesh::getTrianglesC"></span><span class="target" id="classpxtrianglemesh_1aaba16b4d85ec80320e1906bf8f6273a7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh12getTrianglesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the triangle indices. </p>
+<p>The indices can be 16 or 32bit depending on the number of triangles in the mesh. Call <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1adf820099ddef71863f8528e6b8fc957c"><span class="std std-ref">getTriangleMeshFlags()</span></a> to know if the indices are 16 or 32 bits.</p>
+<p>The number of indices is the number of triangles * 3.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1a611c8453a6b6256a63f1450aa8cf237a"><span class="std std-ref">getNbTriangles()</span></a> <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1adf820099ddef71863f8528e6b8fc957c"><span class="std std-ref">getTriangleMeshFlags()</span></a> <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1a35fcfe415fe778a1259dea87522c0e42"><span class="std std-ref">getTrianglesRemap()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array of triangles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv"></span><span id="PxBVH33TriangleMesh::getTriangleMeshFlagsC"></span><span class="target" id="classpxtrianglemesh_1adf820099ddef71863f8528e6b8fc957c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTriangleMesh_8h_1a9bff69ddd57aac22aad966a4b30983e7.html#_CPPv419PxTriangleMeshFlags" title="PxTriangleMeshFlags"><span class="n"><span class="pre">PxTriangleMeshFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleMeshFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Reads the <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh"><span class="std std-ref">PxTriangleMesh</span></a> flags. </p>
+<p>See the list of flags <a class="reference internal" href="structPxTriangleMeshFlag.html#structpxtrianglemeshflag"><span class="std std-ref">PxTriangleMeshFlag</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh"><span class="std std-ref">PxTriangleMesh</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The values of the <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh"><span class="std std-ref">PxTriangleMesh</span></a> flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh17getTrianglesRemapEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh17getTrianglesRemapEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh17getTrianglesRemapEv"></span><span id="PxBVH33TriangleMesh::getTrianglesRemapC"></span><span class="target" id="classpxtrianglemesh_1a35fcfe415fe778a1259dea87522c0e42"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTrianglesRemap</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh17getTrianglesRemapEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the triangle remapping table. </p>
+<p>The triangles are internally sorted according to various criteria. Hence the internal triangle order does not always match the original (user-defined) order. The remapping table helps finding the old indices knowing the new ones: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">remapTable</span><span class="p">[</span><span class="w"> </span><span class="n">internalTriangleIndex</span><span class="w"> </span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">originalTriangleIndex</span>
+</pre></div>
+</div>
+ <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1a611c8453a6b6256a63f1450aa8cf237a"><span class="std std-ref">getNbTriangles()</span></a> <a class="reference internal" href="classPxTriangleMesh.html#classpxtrianglemesh_1aaba16b4d85ec80320e1906bf8f6273a7"><span class="std std-ref">getTriangles()</span></a> <a class="reference internal" href="structPxCookingParams.html#structpxcookingparams_1a50426ff06726ccab3f5e0503077778a6"><span class="std std-ref">PxCookingParams::suppressTriangleMeshRemapTable</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the remapping table (or NULL if ‘<a class="reference internal" href="structPxCookingParams.html#structpxcookingparams_1a50426ff06726ccab3f5e0503077778a6"><span class="std std-ref">PxCookingParams::suppressTriangleMeshRemapTable</span></a>’ has been used) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh7releaseEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh7releaseEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh7releaseEv"></span><span id="PxBVH33TriangleMesh::release"></span><span class="target" id="classpxtrianglemesh_1a168cc0000372c63857d128d04f1d32fa"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Decrements the reference count of a triangle mesh and releases it if the new reference count is zero. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxPhysics.html#classpxphysics_1a8fafcef04c5dbc74eb943694953eee1f"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID">
+<span id="_CPPv3NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID"></span><span id="_CPPv2NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID"></span><span id="PxBVH33TriangleMesh::getTriangleMaterialIndex__PxTriangleIDC"></span><span class="target" id="classpxtrianglemesh_1ac6ce228303232206a8ac953152007818"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1ac816bc62a68a52f01bf21f963295e822.html#_CPPv420PxMaterialTableIndex" title="PxMaterialTableIndex"><span class="n"><span class="pre">PxMaterialTableIndex</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleMaterialIndex</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1a19403877bf7ce42d7240e4e4c758c016.html#_CPPv412PxTriangleID" title="PxTriangleID"><span class="n"><span class="pre">PxTriangleID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleIndex</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns material table index of given triangle. </p>
+<p>This function takes a post cooking triangle index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>triangleIndex</strong> – <strong>[in]</strong> (internal) index of desired triangle </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Material table index, or 0xffff if no per-triangle materials are used </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh14getLocalBoundsEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh14getLocalBoundsEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh14getLocalBoundsEv"></span><span id="PxBVH33TriangleMesh::getLocalBoundsC"></span><span class="target" id="classpxtrianglemesh_1afe5283d82a46081bae3ef7c7132b64ec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalBounds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh14getLocalBoundsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the local-space (vertex space) AABB from the triangle mesh. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>local-space bounds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh6getSDFEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh6getSDFEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh6getSDFEv"></span><span id="PxBVH33TriangleMesh::getSDFC"></span><span class="target" id="classpxtrianglemesh_1aa6ef25a286b8f31cca2c81d934340de5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getSDF</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh6getSDFEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the local-space Signed Distance Field for this mesh if it has one. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>local-space SDF. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32">
+<span id="_CPPv3NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32"></span><span id="_CPPv2NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32"></span><span id="PxBVH33TriangleMesh::getSDFDimensions__PxU32R.PxU32R.PxU32RC"></span><span class="target" id="classpxtrianglemesh_1aa498992b3a97288f048bd6bf930ee56f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSDFDimensions</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">numX</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">numY</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">numZ</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the resolution of the local-space dense SDF. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh22setPreferSDFProjectionEb">
+<span id="_CPPv3N19PxBVH33TriangleMesh22setPreferSDFProjectionEb"></span><span id="_CPPv2N19PxBVH33TriangleMesh22setPreferSDFProjectionEb"></span><span id="PxBVH33TriangleMesh::setPreferSDFProjection__b"></span><span class="target" id="classpxtrianglemesh_1a98bd6edb0c357e5a37f1cdcfd473a569"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPreferSDFProjection</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">preferProjection</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh22setPreferSDFProjectionEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets whether this mesh should be preferred for SDF projection. </p>
+<p>By default, meshes are flagged as preferring projection and the decisions on which mesh to project is based on the triangle and vertex count. The model with the fewer triangles is projected onto the SDF of the more detailed mesh. If one of the meshes is set to prefer SDF projection (default) and the other is set to not prefer SDF projection, model flagged as preferring SDF projection will be projected onto the model flagged as not preferring, regardless of the detail of the respective meshes. Where both models are flagged as preferring no projection, the less detailed model will be projected as before.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>preferProjection</strong> – <strong>[in]</strong> Indicates if projection is preferred </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv"></span><span id="PxBVH33TriangleMesh::getPreferSDFProjectionC"></span><span class="target" id="classpxtrianglemesh_1ae936c830304b0703c0f9778ad6fad8ce"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPreferSDFProjection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether this mesh prefers SDF projection. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>whether this mesh prefers SDF projection. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3">
+<span id="_CPPv3NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"></span><span id="_CPPv2NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"></span><span id="PxBVH33TriangleMesh::getMassInformation__PxRealR.PxMat33R.PxVec3RC"></span><span class="target" id="classpxtrianglemesh_1a9449bec7cd2eaa333f9ea7d74ff386d8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMassInformation</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mass</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxMat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localInertia</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localCenterOfMass</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the mass properties of the mesh assuming unit density. </p>
+<p>The following relationship holds between mass and volume: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volume</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">density</span>
+</pre></div>
+</div>
+ The mass of a unit density mesh is equal to its volume, so this function returns the volume of the mesh.</p>
+<p>Similarly, to obtain the localInertia of an identically shaped object with a uniform density of d, simply multiply the localInertia of the unit density mesh by d.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mass</strong> – <strong>[out]</strong> The mass of the mesh assuming unit density. </p></li>
+<li><p><strong>localInertia</strong> – <strong>[out]</strong> The inertia tensor in mesh local space assuming unit density. </p></li>
+<li><p><strong>localCenterOfMass</strong> – <strong>[out]</strong> Position of center of mass (or centroid) in mesh local space. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh17getReferenceCountEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh17getReferenceCountEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh17getReferenceCountEv"></span><span id="PxBVH33TriangleMesh::getReferenceCountC"></span><span class="target" id="classpxrefcounted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh17getReferenceCountEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh16acquireReferenceEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh16acquireReferenceEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh16acquireReferenceEv"></span><span id="PxBVH33TriangleMesh::acquireReference"></span><span class="target" id="classpxrefcounted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh16acquireReferenceEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="classPxShape.html#classpxrefcounted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a></p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh19getConcreteTypeNameEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh19getConcreteTypeNameEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh19getConcreteTypeNameEv"></span><span id="PxBVH33TriangleMesh::getConcreteTypeNameC"></span><span class="target" id="classpxbase_1aeb82884b9f8bc2b9de87964e50d79f72"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh19getConcreteTypeNameEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv">
+<span id="_CPPv3I0EN19PxBVH33TriangleMesh2isEv"></span><span id="_CPPv2I0EN19PxBVH33TriangleMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv" title="PxBVH33TriangleMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv">
+<span id="_CPPv3I0ENK19PxBVH33TriangleMesh2isEv"></span><span id="_CPPv2I0ENK19PxBVH33TriangleMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv" title="PxBVH33TriangleMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh15getConcreteTypeEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh15getConcreteTypeEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh15getConcreteTypeEv"></span><span id="PxBVH33TriangleMesh::getConcreteTypeC"></span><span class="target" id="classpxbase_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh15getConcreteTypeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype"><span class="std std-ref">PxConcreteType</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="structPxConcreteType.html#structpxconcretetype_1ad762aca1d4c8fffae41267fae4f1b8e8"><span class="std std-ref">PxConcreteType::Enum</span></a> of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxBVH33TriangleMesh::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="classpxbase_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="structPxBaseFlag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxBaseFlag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set <a class="reference internal" href="structPxBaseFlag.html#structpxbaseflag"><span class="std std-ref">PxBaseFlag</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags"></span><span id="PxBVH33TriangleMesh::setBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh12getBaseFlagsEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh12getBaseFlagsEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh12getBaseFlagsEv"></span><span id="PxBVH33TriangleMesh::getBaseFlagsC"></span><span class="target" id="classpxbase_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh12getBaseFlagsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh12isReleasableEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh12isReleasableEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh12isReleasableEv"></span><span id="PxBVH33TriangleMesh::isReleasableC"></span><span class="target" id="classpxbase_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh12isReleasableEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSerialization.html#classpxserialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags">
+<span id="_CPPv3N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags"></span><span id="_CPPv2N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags"></span><span id="PxBVH33TriangleMesh::PxBVH33TriangleMesh__PxType.PxBaseFlags"></span><span class="target" id="classpxbvh33trianglemesh_1ad85ec25a086f4da4097dc950d260d96d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH33TriangleMesh</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags">
+<span id="_CPPv3N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags"></span><span id="_CPPv2N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags"></span><span id="PxBVH33TriangleMesh::PxBVH33TriangleMesh__PxBaseFlags"></span><span class="target" id="classpxbvh33trianglemesh_1aacfa3353879468fc550a5cd01de66016"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH33TriangleMesh</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMeshD0Ev">
+<span id="_CPPv3N19PxBVH33TriangleMeshD0Ev"></span><span id="_CPPv2N19PxBVH33TriangleMeshD0Ev"></span><span id="PxBVH33TriangleMesh::~PxBVH33TriangleMesh"></span><span class="target" id="classpxbvh33trianglemesh_1a04d73d186e849be0d064aca6fdf8d535"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBVH33TriangleMesh</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMeshD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh8isKindOfEPKc">
+<span id="_CPPv3NK19PxBVH33TriangleMesh8isKindOfEPKc"></span><span id="_CPPv2NK19PxBVH33TriangleMesh8isKindOfEPKc"></span><span id="PxBVH33TriangleMesh::isKindOf__cCPC"></span><span class="target" id="classpxbvh33trianglemesh_1a1fa2f684198b26d57c862436373470a1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh8isKindOfEPKc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh14onRefCountZeroEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh14onRefCountZeroEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh14onRefCountZeroEv"></span><span id="PxBVH33TriangleMesh::onRefCountZero"></span><span class="target" id="classpxrefcounted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh14onRefCountZeroEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK19PxBVH33TriangleMesh9typeMatchEbv">
+<span id="_CPPv3I0ENK19PxBVH33TriangleMesh9typeMatchEv"></span><span id="_CPPv2I0ENK19PxBVH33TriangleMesh9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK19PxBVH33TriangleMesh9typeMatchEbv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh13mConcreteTypeE">
+<span id="_CPPv3N19PxBVH33TriangleMesh13mConcreteTypeE"></span><span id="_CPPv2N19PxBVH33TriangleMesh13mConcreteTypeE"></span><span id="PxBVH33TriangleMesh::mConcreteType__PxType"></span><span class="target" id="classpxbase_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh13mConcreteTypeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh10mBaseFlagsE">
+<span id="_CPPv3N19PxBVH33TriangleMesh10mBaseFlagsE"></span><span id="_CPPv2N19PxBVH33TriangleMesh10mBaseFlagsE"></span><span id="PxBVH33TriangleMesh::mBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh10mBaseFlagsE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh16mBuiltInRefCountE">
+<span id="_CPPv3N19PxBVH33TriangleMesh16mBuiltInRefCountE"></span><span id="_CPPv2N19PxBVH33TriangleMesh16mBuiltInRefCountE"></span><span id="PxBVH33TriangleMesh::mBuiltInRefCount__PxU32"></span><span class="target" id="classpxbase_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh16mBuiltInRefCountE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxBVH33MidphaseDesc.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxBVH33MidphaseDesc</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxBVH34BuildStrategy.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxBVH34BuildStrategy</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv419PxBVH33TriangleMesh"><code class="docutils literal notranslate"><span class="pre">PxBVH33TriangleMesh</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh13getNbVerticesEv"><code class="docutils literal notranslate"><span class="pre">getNbVertices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh11getVerticesEv"><code class="docutils literal notranslate"><span class="pre">getVertices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh26getVerticesForModificationEv"><code class="docutils literal notranslate"><span class="pre">getVerticesForModification()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh8refitBVHEv"><code class="docutils literal notranslate"><span class="pre">refitBVH()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh14getNbTrianglesEv"><code class="docutils literal notranslate"><span class="pre">getNbTriangles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh12getTrianglesEv"><code class="docutils literal notranslate"><span class="pre">getTriangles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv"><code class="docutils literal notranslate"><span class="pre">getTriangleMeshFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh17getTrianglesRemapEv"><code class="docutils literal notranslate"><span class="pre">getTrianglesRemap()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID"><code class="docutils literal notranslate"><span class="pre">getTriangleMaterialIndex()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh14getLocalBoundsEv"><code class="docutils literal notranslate"><span class="pre">getLocalBounds()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh6getSDFEv"><code class="docutils literal notranslate"><span class="pre">getSDF()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32"><code class="docutils literal notranslate"><span class="pre">getSDFDimensions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh22setPreferSDFProjectionEb"><code class="docutils literal notranslate"><span class="pre">setPreferSDFProjection()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv"><code class="docutils literal notranslate"><span class="pre">getPreferSDFProjection()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"><code class="docutils literal notranslate"><span class="pre">getMassInformation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh17getReferenceCountEv"><code class="docutils literal notranslate"><span class="pre">getReferenceCount()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh16acquireReferenceEv"><code class="docutils literal notranslate"><span class="pre">acquireReference()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh19getConcreteTypeNameEv"><code class="docutils literal notranslate"><span class="pre">getConcreteTypeName()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv"><code class="docutils literal notranslate"><span class="pre">is()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh15getConcreteTypeEv"><code class="docutils literal notranslate"><span class="pre">getConcreteType()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb"><code class="docutils literal notranslate"><span class="pre">setBaseFlag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">setBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh12getBaseFlagsEv"><code class="docutils literal notranslate"><span class="pre">getBaseFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh12isReleasableEv"><code class="docutils literal notranslate"><span class="pre">isReleasable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxBVH33TriangleMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags"><code class="docutils literal notranslate"><span class="pre">PxBVH33TriangleMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMeshD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxBVH33TriangleMesh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxBVH33TriangleMesh8isKindOfEPKc"><code class="docutils literal notranslate"><span class="pre">isKindOf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh14onRefCountZeroEv"><code class="docutils literal notranslate"><span class="pre">onRefCountZero()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0ENK19PxBVH33TriangleMesh9typeMatchEbv"><code class="docutils literal notranslate"><span class="pre">typeMatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh13mConcreteTypeE"><code class="docutils literal notranslate"><span class="pre">mConcreteType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh10mBaseFlagsE"><code class="docutils literal notranslate"><span class="pre">mBaseFlags</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxBVH33TriangleMesh16mBuiltInRefCountE"><code class="docutils literal notranslate"><span class="pre">mBuiltInRefCount</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

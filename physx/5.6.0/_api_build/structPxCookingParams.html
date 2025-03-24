@@ -1,0 +1,844 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxCookingParams &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxCookingParams';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxCounterFrequencyToTensOfNanos" href="structPxCounterFrequencyToTensOfNanos.html" />
+    <link rel="prev" title="PxConvexMeshGeometryFlag" href="structPxConvexMeshGeometryFlag.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxCookingParams</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxcookingparams">
+<h1>PxCookingParams<a class="headerlink" href="#pxcookingparams" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxCooking.h.html#pxcooking-8h"><span class="std std-ref">include/cooking/PxCooking.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415PxCookingParams">
+<span id="_CPPv315PxCookingParams"></span><span id="_CPPv215PxCookingParams"></span><span id="PxCookingParams"></span><span class="target" id="structpxcookingparams"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCookingParams</span></span></span><a class="headerlink" href="#_CPPv415PxCookingParams" title="Link to this definition">#</a><br /></dt>
+<dd><p>Structure describing parameters affecting mesh cooking. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSetCookingParams() PxGetCookingParams() </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale">
+<span id="_CPPv3N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale"></span><span id="_CPPv2N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale"></span><span id="PxCookingParams::PxCookingParams__PxTolerancesScaleCR"></span><span class="target" id="structpxcookingparams_1a738bc9799f789da5c453cadae5eaec47"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCookingParams</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams15areaTestEpsilonE">
+<span id="_CPPv3N15PxCookingParams15areaTestEpsilonE"></span><span id="_CPPv2N15PxCookingParams15areaTestEpsilonE"></span><span id="PxCookingParams::areaTestEpsilon__float"></span><span class="target" id="structpxcookingparams_1aec2fbb426b8c0bb2daee1e31b8e2adc2"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">areaTestEpsilon</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams15areaTestEpsilonE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Zero-size area epsilon used in convex hull computation. </p>
+<p>If the area of a triangle of the hull is below this value, the triangle will be rejected. This test is done only if <a class="reference internal" href="structPxConvexFlag.html#structpxconvexflag_1a4b7bd21fa96c72b320a39e880208b4b6a12c7c442cadd1e3474fc613944981c44"><span class="std std-ref">PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES</span></a> is used.</p>
+<p><strong>Default value:</strong> 0.06f*PxTolerancesScale.length*PxTolerancesScale.length<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConvexFlag.html#structpxconvexflag_1a4b7bd21fa96c72b320a39e880208b4b6a12c7c442cadd1e3474fc613944981c44"><span class="std std-ref">PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES</span></a></p>
+</div>
+</p>
+<p><strong>Range:</strong> (0.0f, PX_MAX_F32) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams14planeToleranceE">
+<span id="_CPPv3N15PxCookingParams14planeToleranceE"></span><span id="_CPPv2N15PxCookingParams14planeToleranceE"></span><span id="PxCookingParams::planeTolerance__float"></span><span class="target" id="structpxcookingparams_1a45e4d60211cdd58d80a10dad39da64c9"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">planeTolerance</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams14planeToleranceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Plane tolerance used in convex hull computation. </p>
+<p>The value is used during hull construction. When a new point is about to be added to the hull it gets dropped when the point is closer to the hull than the planeTolerance. The planeTolerance is increased according to the hull size.</p>
+<p>If 0.0f is set all points are accepted when the convex hull is created. This may lead to edge cases where the new points may be merged into an existing polygon and the polygons plane equation might slightly change therefore. This might lead to failures during polygon merging phase in the hull computation.</p>
+<p>It is recommended to use the default value, however if it is required that all points needs to be accepted or huge thin convexes are created, it might be required to lower the default value.</p>
+<p><strong>Default value:</strong> 0.0007f</p>
+<p><strong>Range:</strong> &lt;0.0f, PX_MAX_F32) </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The plane tolerance is used only within <a class="reference internal" href="structPxConvexMeshCookingType.html#structpxconvexmeshcookingtype_1a5a2ae723aca74c185675cd7ba2c9c115a18916173251aae02128c79b69af46906"><span class="std std-ref">PxConvexMeshCookingType::eQUICKHULL</span></a> algorithm.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams21convexMeshCookingTypeE">
+<span id="_CPPv3N15PxCookingParams21convexMeshCookingTypeE"></span><span id="_CPPv2N15PxCookingParams21convexMeshCookingTypeE"></span><span id="PxCookingParams::convexMeshCookingType__PxConvexMeshCookingType::Enum"></span><span class="target" id="structpxcookingparams_1afbc71c4ade3b80715855125413d58f97"></span><a class="reference internal" href="structPxConvexMeshCookingType.html#_CPPv423PxConvexMeshCookingType" title="PxConvexMeshCookingType"><span class="n"><span class="pre">PxConvexMeshCookingType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxConvexMeshCookingType.html#_CPPv4N23PxConvexMeshCookingType4EnumE" title="PxConvexMeshCookingType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convexMeshCookingType</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams21convexMeshCookingTypeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Convex hull creation algorithm. </p>
+<p><strong>Default value:</strong> <a class="reference internal" href="structPxConvexMeshCookingType.html#structpxconvexmeshcookingtype_1a5a2ae723aca74c185675cd7ba2c9c115a18916173251aae02128c79b69af46906"><span class="std std-ref">PxConvexMeshCookingType::eQUICKHULL</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxConvexMeshCookingType.html#structpxconvexmeshcookingtype"><span class="std std-ref">PxConvexMeshCookingType</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams30suppressTriangleMeshRemapTableE">
+<span id="_CPPv3N15PxCookingParams30suppressTriangleMeshRemapTableE"></span><span id="_CPPv2N15PxCookingParams30suppressTriangleMeshRemapTableE"></span><span id="PxCookingParams::suppressTriangleMeshRemapTable__b"></span><span class="target" id="structpxcookingparams_1a50426ff06726ccab3f5e0503077778a6"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">suppressTriangleMeshRemapTable</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams30suppressTriangleMeshRemapTableE" title="Link to this definition">#</a><br /></dt>
+<dd><p>When true, the face remap table is not created. </p>
+<p>This saves a significant amount of memory, but the SDK will not be able to provide the remap information for internal mesh triangles returned by collisions, sweeps or raycasts hits.</p>
+<p><strong>Default value:</strong> false </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams24buildTriangleAdjacenciesE">
+<span id="_CPPv3N15PxCookingParams24buildTriangleAdjacenciesE"></span><span id="_CPPv2N15PxCookingParams24buildTriangleAdjacenciesE"></span><span id="PxCookingParams::buildTriangleAdjacencies__b"></span><span class="target" id="structpxcookingparams_1aaeff18c0f923a7c886bc29bea730c966"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buildTriangleAdjacencies</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams24buildTriangleAdjacenciesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>When true, the triangle adjacency information is created. </p>
+<p>You can get the adjacency triangles for a given triangle from getTriangle.</p>
+<p><strong>Default value:</strong> false </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams12buildGPUDataE">
+<span id="_CPPv3N15PxCookingParams12buildGPUDataE"></span><span id="_CPPv2N15PxCookingParams12buildGPUDataE"></span><span id="PxCookingParams::buildGPUData__b"></span><span class="target" id="structpxcookingparams_1ad9c00d38bdcca1c324bba906706d1c63"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buildGPUData</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams12buildGPUDataE" title="Link to this definition">#</a><br /></dt>
+<dd><p>When true, additional information required for GPU-accelerated rigid body simulation is created. </p>
+<p>This can increase memory usage and cooking times for convex meshes and triangle meshes.</p>
+<p><strong>Default value:</strong> false </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams5scaleE">
+<span id="_CPPv3N15PxCookingParams5scaleE"></span><span id="_CPPv2N15PxCookingParams5scaleE"></span><span id="PxCookingParams::scale__PxTolerancesScale"></span><span class="target" id="structpxcookingparams_1a6a51be76bb79ac1dd9a2788f54569c60"></span><a class="reference internal" href="classPxTolerancesScale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams5scaleE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Tolerance scale is used to check if cooked triangles are not too huge. </p>
+<p>This check will help with simulation stability.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxTolerancesScale.html#classpxtolerancesscale"><span class="std std-ref">PxTolerancesScale</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <a class="reference internal" href="classPxTolerancesScale.html#classpxtolerancesscale"><span class="std std-ref">PxTolerancesScale</span></a> values have to match the values used when creating a <a class="reference internal" href="classPxPhysics.html#classpxphysics"><span class="std std-ref">PxPhysics</span></a> or <a class="reference internal" href="classPxScene.html#classpxscene"><span class="std std-ref">PxScene</span></a> instance.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams20meshPreprocessParamsE">
+<span id="_CPPv3N15PxCookingParams20meshPreprocessParamsE"></span><span id="_CPPv2N15PxCookingParams20meshPreprocessParamsE"></span><span id="PxCookingParams::meshPreprocessParams__PxMeshPreprocessingFlags"></span><span class="target" id="structpxcookingparams_1a6561b14b68f097c135fe6d83f68908ce"></span><a class="reference internal" href="typedef_PxCooking_8h_1a0a0051ee56690c138fac87d780cca9b4.html#_CPPv424PxMeshPreprocessingFlags" title="PxMeshPreprocessingFlags"><span class="n"><span class="pre">PxMeshPreprocessingFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshPreprocessParams</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams20meshPreprocessParamsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Mesh pre-processing parameters. </p>
+<p>Used to control options like whether the mesh cooking performs vertex welding before cooking.</p>
+<p><strong>Default value:</strong> 0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams17meshWeldToleranceE">
+<span id="_CPPv3N15PxCookingParams17meshWeldToleranceE"></span><span id="_CPPv2N15PxCookingParams17meshWeldToleranceE"></span><span id="PxCookingParams::meshWeldTolerance__PxReal"></span><span class="target" id="structpxcookingparams_1a19bb7e28765df5c8ec1a86a45004c7b6"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshWeldTolerance</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams17meshWeldToleranceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Mesh weld tolerance. </p>
+<p>If mesh welding is enabled, this controls the distance at which vertices are welded. If mesh welding is not enabled, this value defines the acceptance distance for mesh validation. Provided no two vertices are within this distance, the mesh is considered to be clean. If not, a warning will be emitted. Having a clean, welded mesh is required to achieve the best possible performance.</p>
+<p>The default vertex welding uses a snap-to-grid approach. This approach effectively truncates each vertex to integer values using meshWeldTolerance. Once these snapped vertices are produced, all vertices that snap to a given vertex on the grid are remapped to reference a single vertex. Following this, all triangles’ indices are remapped to reference this subset of clean vertices. It should be noted that the vertices that we do not alter the position of the vertices; the snap-to-grid is only performed to identify nearby vertices.</p>
+<p>The mesh validation approach also uses the same snap-to-grid approach to identify nearby vertices. If more than one vertex snaps to a given grid coordinate, we ensure that the distance between the vertices is at least meshWeldTolerance. If this is not the case, a warning is emitted.</p>
+<p><strong>Default value:</strong> 0.0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams16meshAreaMinLimitE">
+<span id="_CPPv3N15PxCookingParams16meshAreaMinLimitE"></span><span id="_CPPv2N15PxCookingParams16meshAreaMinLimitE"></span><span id="PxCookingParams::meshAreaMinLimit__PxReal"></span><span class="target" id="structpxcookingparams_1ac8cb40858ea66759d3c0f304caa1d32c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshAreaMinLimit</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams16meshAreaMinLimitE" title="Link to this definition">#</a><br /></dt>
+<dd><p>“Zero-area” epsilon used in mesh cleaning. </p>
+<p>This is similar to areaTestEpsilon, but for the mesh cleaning operation.</p>
+<p>If the area of a triangle is below this value, the triangle will be removed. This is only done when mesh cleaning is enabled, i.e. when <a class="reference internal" href="structPxMeshPreprocessingFlag.html#structpxmeshpreprocessingflag_1ad2a46fe74aef20eff5860acd661bc8f8a059514d442911f061ea581d7e673aa24"><span class="std std-ref">PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH</span></a> is not set.</p>
+<p>Default value is 0.0f to be consistent with previous PhysX versions, which only removed triangles whose area was exactly zero.</p>
+<p><strong>Default value:</strong> 0.0f<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxMeshPreprocessingFlag.html#structpxmeshpreprocessingflag_1ad2a46fe74aef20eff5860acd661bc8f8a059514d442911f061ea581d7e673aa24"><span class="std std-ref">PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH</span></a></p>
+</div>
+</p>
+<p><strong>Range:</strong> (0.0f, PX_MAX_F32) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams22meshEdgeLengthMaxLimitE">
+<span id="_CPPv3N15PxCookingParams22meshEdgeLengthMaxLimitE"></span><span id="_CPPv2N15PxCookingParams22meshEdgeLengthMaxLimitE"></span><span id="PxCookingParams::meshEdgeLengthMaxLimit__PxReal"></span><span class="target" id="structpxcookingparams_1a71afdb88cece7931dbf45d453bfe42de"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshEdgeLengthMaxLimit</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams22meshEdgeLengthMaxLimitE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Maximum edge length. </p>
+<p>If an edge of a triangle is above this value, a warning is sent to the error stream. This is only a check, corresponding triangles are not removed.</p>
+<p>This is only done when mesh cleaning is enabled, i.e. when <a class="reference internal" href="structPxMeshPreprocessingFlag.html#structpxmeshpreprocessingflag_1ad2a46fe74aef20eff5860acd661bc8f8a059514d442911f061ea581d7e673aa24"><span class="std std-ref">PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH</span></a> is not set.</p>
+<p>Default value is 500.0f to be consistent with previous PhysX versions. This value is internally multiplied by <a class="reference internal" href="classPxTolerancesScale.html#classpxtolerancesscale_1a7d93bf20de0e5b54783eda5bb64effeb"><span class="std std-ref">PxTolerancesScale::length</span></a> before being used. Use 0.0f to disable the checks.</p>
+<p><strong>Default value:</strong> 500.0f<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxMeshPreprocessingFlag.html#structpxmeshpreprocessingflag_1ad2a46fe74aef20eff5860acd661bc8f8a059514d442911f061ea581d7e673aa24"><span class="std std-ref">PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH</span></a></p>
+</div>
+</p>
+<p><strong>Range:</strong> (0.0f, PX_MAX_F32) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams12midphaseDescE">
+<span id="_CPPv3N15PxCookingParams12midphaseDescE"></span><span id="_CPPv2N15PxCookingParams12midphaseDescE"></span><span id="PxCookingParams::midphaseDesc__PxMidphaseDesc"></span><span class="target" id="structpxcookingparams_1a8015768aa6024f1283cab006abdb63b5"></span><a class="reference internal" href="classPxMidphaseDesc.html#_CPPv414PxMidphaseDesc" title="PxMidphaseDesc"><span class="n"><span class="pre">PxMidphaseDesc</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">midphaseDesc</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams12midphaseDescE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Controls the desired midphase desc structure for triangle meshes. </p>
+<p><strong>Default value:</strong> <a class="reference internal" href="structPxMeshMidPhase.html#structpxmeshmidphase_1a49f740883fbfb1a49631c28818c219f4a42051af73b6c6b3a5ac4df2928b6d446"><span class="std std-ref">PxMeshMidPhase::eBVH34</span></a> <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxBVH33MidphaseDesc.html#structpxbvh33midphasedesc"><span class="std std-ref">PxBVH33MidphaseDesc</span></a>, <a class="reference internal" href="structPxBVH34MidphaseDesc.html#structpxbvh34midphasedesc"><span class="std std-ref">PxBVH34MidphaseDesc</span></a>, <a class="reference internal" href="classPxMidphaseDesc.html#classpxmidphasedesc"><span class="std std-ref">PxMidphaseDesc</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams13gaussMapLimitE">
+<span id="_CPPv3N15PxCookingParams13gaussMapLimitE"></span><span id="_CPPv2N15PxCookingParams13gaussMapLimitE"></span><span id="PxCookingParams::gaussMapLimit__PxU32"></span><span class="target" id="structpxcookingparams_1a6be147977f9bd24a55dc3cd16ed390bc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gaussMapLimit</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams13gaussMapLimitE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Vertex limit beyond which additional acceleration structures are computed for each convex mesh. </p>
+<p>Increase that limit to reduce memory usage. Computing the extra structures all the time does not guarantee optimal performance. There is a per-platform break-even point below which the extra structures actually hurt performance.</p>
+<p><strong>Default value:</strong> 32 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams19maxWeightRatioInTetE">
+<span id="_CPPv3N15PxCookingParams19maxWeightRatioInTetE"></span><span id="_CPPv2N15PxCookingParams19maxWeightRatioInTetE"></span><span id="PxCookingParams::maxWeightRatioInTet__PxReal"></span><span class="target" id="structpxcookingparams_1a0586dc85213dc49cf0525a63337b59ce"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxWeightRatioInTet</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams19maxWeightRatioInTetE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Maximum mass ratio allowed on vertices touched by a single tet. </p>
+<p>If a any tetrahedron exceeds the mass ratio, the masses will get smoothed locally until the maximum mass ratio is matched. Value should not be below 1. Smoothing might not fully converge for values &lt;1.5. The smaller the maximum allowed ratio, the better the stability during simulation.</p>
+<p><strong>Default value:</strong> FLT_MAX </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxConvexMeshGeometryFlag.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxConvexMeshGeometryFlag</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxCounterFrequencyToTensOfNanos.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxCounterFrequencyToTensOfNanos</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv415PxCookingParams"><code class="docutils literal notranslate"><span class="pre">PxCookingParams</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale"><code class="docutils literal notranslate"><span class="pre">PxCookingParams()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams15areaTestEpsilonE"><code class="docutils literal notranslate"><span class="pre">areaTestEpsilon</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams14planeToleranceE"><code class="docutils literal notranslate"><span class="pre">planeTolerance</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams21convexMeshCookingTypeE"><code class="docutils literal notranslate"><span class="pre">convexMeshCookingType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams30suppressTriangleMeshRemapTableE"><code class="docutils literal notranslate"><span class="pre">suppressTriangleMeshRemapTable</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams24buildTriangleAdjacenciesE"><code class="docutils literal notranslate"><span class="pre">buildTriangleAdjacencies</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams12buildGPUDataE"><code class="docutils literal notranslate"><span class="pre">buildGPUData</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams5scaleE"><code class="docutils literal notranslate"><span class="pre">scale</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams20meshPreprocessParamsE"><code class="docutils literal notranslate"><span class="pre">meshPreprocessParams</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams17meshWeldToleranceE"><code class="docutils literal notranslate"><span class="pre">meshWeldTolerance</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams16meshAreaMinLimitE"><code class="docutils literal notranslate"><span class="pre">meshAreaMinLimit</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams22meshEdgeLengthMaxLimitE"><code class="docutils literal notranslate"><span class="pre">meshEdgeLengthMaxLimit</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams12midphaseDescE"><code class="docutils literal notranslate"><span class="pre">midphaseDesc</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams13gaussMapLimitE"><code class="docutils literal notranslate"><span class="pre">gaussMapLimit</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxCookingParams19maxWeightRatioInTetE"><code class="docutils literal notranslate"><span class="pre">maxWeightRatioInTet</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

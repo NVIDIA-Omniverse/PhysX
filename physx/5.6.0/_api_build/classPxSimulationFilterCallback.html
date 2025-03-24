@@ -1,0 +1,809 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxSimulationFilterCallback &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxSimulationFilterCallback';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSimulationStatistics" href="classPxSimulationStatistics.html" />
+    <link rel="prev" title="PxSimulationEventCallback" href="classPxSimulationEventCallback.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxSimulation...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxsimulationfiltercallback">
+<h1>PxSimulationFilterCallback<a class="headerlink" href="#pxsimulationfiltercallback" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxFiltering.h.html#pxfiltering-8h"><span class="std std-ref">include/PxFiltering.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv426PxSimulationFilterCallback">
+<span id="_CPPv326PxSimulationFilterCallback"></span><span id="_CPPv226PxSimulationFilterCallback"></span><span id="PxSimulationFilterCallback"></span><span class="target" id="classpxsimulationfiltercallback"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationFilterCallback</span></span></span><a class="headerlink" href="#_CPPv426PxSimulationFilterCallback" title="Link to this definition">#</a><br /></dt>
+<dd><p>Filter callback to specify handling of collision pairs. </p>
+<p>This class is provided to implement more complex and flexible collision pair filtering logic, for instance, taking the state of the user application into account. Filter callbacks also give the user the opportunity to track collision pairs and update their filter state.</p>
+<p>You might want to check the documentation on PxSimulationFilterShader as well since it includes more general information on filtering.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc_1af7b94475075eb9b43ca32650cd169cc1"><span class="std std-ref">PxSceneDesc.filterCallback</span></a> PxSimulationFilterShader </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SDK state should not be modified from within the callbacks. In particular objects should not be created or destroyed. If state modification is needed then the changes should be stored to a buffer and performed after the simulation step.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The callbacks may execute in user threads or simulation threads, possibly simultaneously. The corresponding objects may have been deleted by the application earlier in the frame. It is the application’s responsibility to prevent race conditions arising from using the SDK API in the callback while an application thread is making write calls to the scene, and to ensure that the callbacks are thread-safe. Return values which depend on when the callback is called during the frame will introduce nondeterminism into the simulation.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags">
+<span id="_CPPv3N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags"></span><span id="_CPPv2N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags"></span><span id="PxSimulationFilterCallback::pairFound__PxU64.PxFilterObjectAttributes.PxFilterData.PxActorCP.PxShapeCP.PxFilterObjectAttributes.PxFilterData.PxActorCP.PxShapeCP.PxPairFlagsR"></span><span class="target" id="classpxsimulationfiltercallback_1a1daa55823bf72c17d0e70fa6b42fed0f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxFiltering_8h_1a675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><span class="n"><span class="pre">PxFilterFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pairFound</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pairID</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1a7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes0</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structPxFilterData.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData0</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxActor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">a0</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxShape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">s0</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1a7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes1</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structPxFilterData.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData1</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxActor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">a1</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxShape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">s1</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1acacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairFlags</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Filter method to specify how a pair of potentially colliding objects should be processed. </p>
+<p>This method gets called when the filter flags returned by the filter shader (see PxSimulationFilterShader) indicate that the filter callback should be invoked (<a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag_1a8de424e04d86b5772436423b0dc58083a62c42e8178d44dc0ead47699f9df87b8"><span class="std std-ref">PxFilterFlag::eCALLBACK</span></a> or <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a> set). Return the <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag"><span class="std std-ref">PxFilterFlag</span></a> flags and set the <a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a> flags to define what the simulation should do with the given collision pair.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSimulationFilterShader <a class="reference internal" href="structPxFilterData.html#structpxfilterdata"><span class="std std-ref">PxFilterData</span></a> PxFilterObjectAttributes <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag"><span class="std std-ref">PxFilterFlag</span></a> <a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairID</strong> – <strong>[in]</strong> Unique ID of the collision pair used to issue filter status changes for the pair (see <a class="reference internal" href="#classpxsimulationfiltercallback_1aef8aa797bf9d7df987e9ad5b2a719754"><span class="std std-ref">statusChange()</span></a>) </p></li>
+<li><p><strong>attributes0</strong> – <strong>[in]</strong> The filter attribute of the first object </p></li>
+<li><p><strong>filterData0</strong> – <strong>[in]</strong> The custom filter data of the first object </p></li>
+<li><p><strong>a0</strong> – <strong>[in]</strong> Actor pointer of the first object </p></li>
+<li><p><strong>s0</strong> – <strong>[in]</strong> Shape pointer of the first object (NULL if the object has no shapes) </p></li>
+<li><p><strong>attributes1</strong> – <strong>[in]</strong> The filter attribute of the second object </p></li>
+<li><p><strong>filterData1</strong> – <strong>[in]</strong> The custom filter data of the second object </p></li>
+<li><p><strong>a1</strong> – <strong>[in]</strong> Actor pointer of the second object </p></li>
+<li><p><strong>s1</strong> – <strong>[in]</strong> Shape pointer of the second object (NULL if the object has no shapes) </p></li>
+<li><p><strong>pairFlags</strong> – <strong>[inout]</strong> In: Pair flags returned by the filter shader. Out: Additional information on how an accepted pair should get processed </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Filter flags defining whether the pair should be discarded, temporarily ignored or processed and whether the pair should be tracked and send a report on pair deletion through the filter callback</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab">
+<span id="_CPPv3N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab"></span><span id="_CPPv2N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab"></span><span id="PxSimulationFilterCallback::pairLost__PxU64.PxFilterObjectAttributes.PxFilterData.PxFilterObjectAttributes.PxFilterData.b"></span><span class="target" id="classpxsimulationfiltercallback_1af566e6be26bdc307854aa3405af8477c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pairLost</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pairID</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1a7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes0</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structPxFilterData.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData0</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1a7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes1</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structPxFilterData.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData1</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">objectRemoved</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab" title="Link to this definition">#</a><br /></dt>
+<dd><p>Callback to inform that a tracked collision pair is gone. </p>
+<p>This method gets called when a collision pair disappears or gets re-filtered. Only applies to collision pairs which have been marked as filter callback pairs (<a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a> set in <a class="reference internal" href="#classpxsimulationfiltercallback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxsimulationfiltercallback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a> PxSimulationFilterShader <a class="reference internal" href="structPxFilterData.html#structpxfilterdata"><span class="std std-ref">PxFilterData</span></a> PxFilterObjectAttributes </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairID</strong> – <strong>[in]</strong> Unique ID of the collision pair that disappeared </p></li>
+<li><p><strong>attributes0</strong> – <strong>[in]</strong> The filter attribute of the first object </p></li>
+<li><p><strong>filterData0</strong> – <strong>[in]</strong> The custom filter data of the first object </p></li>
+<li><p><strong>attributes1</strong> – <strong>[in]</strong> The filter attribute of the second object </p></li>
+<li><p><strong>filterData1</strong> – <strong>[in]</strong> The custom filter data of the second object </p></li>
+<li><p><strong>objectRemoved</strong> – <strong>[in]</strong> True if the pair was lost because one of the objects got removed from the scene</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags">
+<span id="_CPPv3N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags"></span><span id="_CPPv2N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags"></span><span id="PxSimulationFilterCallback::statusChange__PxU64R.PxPairFlagsR.PxFilterFlagsR"></span><span class="target" id="classpxsimulationfiltercallback_1aef8aa797bf9d7df987e9ad5b2a719754"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">statusChange</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairID</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1acacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairFlags</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxFiltering_8h_1a675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><span class="n"><span class="pre">PxFilterFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterFlags</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Callback to give the opportunity to change the filter state of a tracked collision pair. </p>
+<p>This method gets called once per simulation step to let the application change the filter and pair flags of a collision pair that has been reported in <a class="reference internal" href="#classpxsimulationfiltercallback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a> and requested callbacks by setting <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a>. To request a change of filter status, the target pair has to be specified by its ID, the new filter and pair flags have to be provided and the method should return true.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxsimulationfiltercallback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a> <a class="reference internal" href="#classpxsimulationfiltercallback_1af566e6be26bdc307854aa3405af8477c"><span class="std std-ref">pairLost()</span></a> <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag"><span class="std std-ref">PxFilterFlag</span></a> <a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If this method changes the filter status of a collision pair and the pair should keep being tracked by the filter callbacks then <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a> has to be set.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The application is responsible to ensure that this method does not get called for pairs that have been reported as lost, see <a class="reference internal" href="#classpxsimulationfiltercallback_1af566e6be26bdc307854aa3405af8477c"><span class="std std-ref">pairLost()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairID</strong> – <strong>[out]</strong> ID of the collision pair for which the filter status should be changed </p></li>
+<li><p><strong>pairFlags</strong> – <strong>[out]</strong> The new pairFlags to apply to the collision pair </p></li>
+<li><p><strong>filterFlags</strong> – <strong>[out]</strong> The new filterFlags to apply to the collision pair </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the changes should be applied. In this case the method will get called again. False if no more status changes should be done in the current simulation step. In that case the provided flags will be discarded.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallbackD0Ev">
+<span id="_CPPv3N26PxSimulationFilterCallbackD0Ev"></span><span id="_CPPv2N26PxSimulationFilterCallbackD0Ev"></span><span id="PxSimulationFilterCallback::~PxSimulationFilterCallback"></span><span class="target" id="classpxsimulationfiltercallback_1a385041a8854edf7e7e2281fd56eb9b6b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSimulationFilterCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallbackD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxSimulationEventCallback.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxSimulationEventCallback</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxSimulationStatistics.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxSimulationStatistics</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv426PxSimulationFilterCallback"><code class="docutils literal notranslate"><span class="pre">PxSimulationFilterCallback</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags"><code class="docutils literal notranslate"><span class="pre">pairFound()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab"><code class="docutils literal notranslate"><span class="pre">pairLost()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags"><code class="docutils literal notranslate"><span class="pre">statusChange()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N26PxSimulationFilterCallbackD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxSimulationFilterCallback()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

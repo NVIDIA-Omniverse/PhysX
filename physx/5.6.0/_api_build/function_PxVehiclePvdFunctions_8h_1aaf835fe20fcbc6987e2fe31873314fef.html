@@ -1,0 +1,739 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxVehiclePvdWheelAttachmentsRegister &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/function_PxVehiclePvdFunctions_8h_1aaf835fe20fcbc6987e2fe31873314fef';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxVehiclePvdWheelAttachmentsWrite" href="function_PxVehiclePvdFunctions_8h_1a885c2da3fb15152feb6e33c29a209fb3.html" />
+    <link rel="prev" title="PxVehiclePvdSuspensionStateCalculationParamsWrite" href="function_PxVehiclePvdFunctions_8h_1a8946a113499c9129bd9f0ca9d09e7be4.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="file_include_vehicle2_pvd_PxVehiclePvdFunctions.h.html" class="nav-link">PxVehiclePvdFunctions.h</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxVehiclePvd...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxvehiclepvdwheelattachmentsregister">
+<h1>PxVehiclePvdWheelAttachmentsRegister<a class="headerlink" href="#pxvehiclepvdwheelattachmentsregister" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_pvd_PxVehiclePvdFunctions.h.html#pxvehiclepvdfunctions-8h"><span class="std std-ref">include/vehicle2/pvd/PxVehiclePvdFunctions.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv436PxVehiclePvdWheelAttachmentsRegisterRK24PxVehicleAxleDescriptionRK18PxVehicleArrayDataIK20PxVehicleWheelParamsERK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK18PxVehicleArrayDataIK30PxVehicleWheelRigidBody1dStateERK18PxVehicleArrayDataIK23PxVehicleWheelLocalPoseERK18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateERK18PxVehicleArrayDataIK25PxVehicleSuspensionParamsERK18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsERK18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsERK18PxVehicleArrayDataIK24PxVehicleSuspensionStateERK18PxVehicleArrayDataIK34PxVehicleSuspensionComplianceStateERK18PxVehicleArrayDataIK24PxVehicleSuspensionForceERK18PxVehicleArrayDataIK24PxVehicleTireForceParamsERK18PxVehicleArrayDataIK27PxVehicleTireDirectionStateERK18PxVehicleArrayDataIK23PxVehicleTireSpeedStateERK18PxVehicleArrayDataIK22PxVehicleTireSlipStateERK18PxVehicleArrayDataIK24PxVehicleTireStickyStateERK18PxVehicleArrayDataIK22PxVehicleTireGripStateERK18PxVehicleArrayDataIK29PxVehicleTireCamberAngleStateERK18PxVehicleArrayDataIK18PxVehicleTireForceERK28PxVehiclePvdAttributeHandlesR25PxVehiclePvdObjectHandlesR13OmniPvdWriter">
+<span id="_CPPv336PxVehiclePvdWheelAttachmentsRegisterRK24PxVehicleAxleDescriptionRK18PxVehicleArrayDataIK20PxVehicleWheelParamsERK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK18PxVehicleArrayDataIK30PxVehicleWheelRigidBody1dStateERK18PxVehicleArrayDataIK23PxVehicleWheelLocalPoseERK18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateERK18PxVehicleArrayDataIK25PxVehicleSuspensionParamsERK18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsERK18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsERK18PxVehicleArrayDataIK24PxVehicleSuspensionStateERK18PxVehicleArrayDataIK34PxVehicleSuspensionComplianceStateERK18PxVehicleArrayDataIK24PxVehicleSuspensionForceERK18PxVehicleArrayDataIK24PxVehicleTireForceParamsERK18PxVehicleArrayDataIK27PxVehicleTireDirectionStateERK18PxVehicleArrayDataIK23PxVehicleTireSpeedStateERK18PxVehicleArrayDataIK22PxVehicleTireSlipStateERK18PxVehicleArrayDataIK24PxVehicleTireStickyStateERK18PxVehicleArrayDataIK22PxVehicleTireGripStateERK18PxVehicleArrayDataIK29PxVehicleTireCamberAngleStateERK18PxVehicleArrayDataIK18PxVehicleTireForceERK28PxVehiclePvdAttributeHandlesR25PxVehiclePvdObjectHandlesR13OmniPvdWriter"></span><span id="_CPPv236PxVehiclePvdWheelAttachmentsRegisterRK24PxVehicleAxleDescriptionRK18PxVehicleArrayDataIK20PxVehicleWheelParamsERK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK18PxVehicleArrayDataIK30PxVehicleWheelRigidBody1dStateERK18PxVehicleArrayDataIK23PxVehicleWheelLocalPoseERK18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateERK18PxVehicleArrayDataIK25PxVehicleSuspensionParamsERK18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsERK18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsERK18PxVehicleArrayDataIK24PxVehicleSuspensionStateERK18PxVehicleArrayDataIK34PxVehicleSuspensionComplianceStateERK18PxVehicleArrayDataIK24PxVehicleSuspensionForceERK18PxVehicleArrayDataIK24PxVehicleTireForceParamsERK18PxVehicleArrayDataIK27PxVehicleTireDirectionStateERK18PxVehicleArrayDataIK23PxVehicleTireSpeedStateERK18PxVehicleArrayDataIK22PxVehicleTireSlipStateERK18PxVehicleArrayDataIK24PxVehicleTireStickyStateERK18PxVehicleArrayDataIK22PxVehicleTireGripStateERK18PxVehicleArrayDataIK29PxVehicleTireCamberAngleStateERK18PxVehicleArrayDataIK18PxVehicleTireForceERK28PxVehiclePvdAttributeHandlesR25PxVehiclePvdObjectHandlesR13OmniPvdWriter"></span><span id="PxVehiclePvdWheelAttachmentsRegister__PxVehicleAxleDescriptionCR.PxVehicleArrayData:PxVehicleWheelParamsC:CR.PxVehicleArrayData:PxVehicleWheelActuationStateC:CR.PxVehicleArrayData:PxVehicleWheelRigidBody1dStateC:CR.PxVehicleArrayData:PxVehicleWheelLocalPoseC:CR.PxVehicleArrayData:PxVehicleRoadGeometryStateC:CR.PxVehicleArrayData:PxVehicleSuspensionParamsC:CR.PxVehicleArrayData:PxVehicleSuspensionComplianceParamsC:CR.PxVehicleArrayData:PxVehicleSuspensionForceParamsC:CR.PxVehicleArrayData:PxVehicleSuspensionStateC:CR.PxVehicleArrayData:PxVehicleSuspensionComplianceStateC:CR.PxVehicleArrayData:PxVehicleSuspensionForceC:CR.PxVehicleArrayData:PxVehicleTireForceParamsC:CR.PxVehicleArrayData:PxVehicleTireDirectionStateC:CR.PxVehicleArrayData:PxVehicleTireSpeedStateC:CR.PxVehicleArrayData:PxVehicleTireSlipStateC:CR.PxVehicleArrayData:PxVehicleTireStickyStateC:CR.PxVehicleArrayData:PxVehicleTireGripStateC:CR.PxVehicleArrayData:PxVehicleTireCamberAngleStateC:CR.PxVehicleArrayData:PxVehicleTireForceC:CR.PxVehiclePvdAttributeHandlesCR.PxVehiclePvdObjectHandlesR.OmniPvdWriterR"></span><span class="target" id="pxvehiclepvdfunctions_8h_1aaf835fe20fcbc6987e2fe31873314fef"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePvdWheelAttachmentsRegister</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleAxleDescription.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDesc</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleWheelParams.html#_CPPv420PxVehicleWheelParams" title="PxVehicleWheelParams"><span class="n"><span class="pre">PxVehicleWheelParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleWheelActuationState.html#_CPPv428PxVehicleWheelActuationState" title="PxVehicleWheelActuationState"><span class="n"><span class="pre">PxVehicleWheelActuationState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelActuationStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleWheelRigidBody1dState.html#_CPPv430PxVehicleWheelRigidBody1dState" title="PxVehicleWheelRigidBody1dState"><span class="n"><span class="pre">PxVehicleWheelRigidBody1dState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelRigidBody1dStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleWheelLocalPose.html#_CPPv423PxVehicleWheelLocalPose" title="PxVehicleWheelLocalPose"><span class="n"><span class="pre">PxVehicleWheelLocalPose</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelLocalPoses</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleRoadGeometryState.html#_CPPv426PxVehicleRoadGeometryState" title="PxVehicleRoadGeometryState"><span class="n"><span class="pre">PxVehicleRoadGeometryState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">roadGeometryStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleSuspensionParams.html#_CPPv425PxVehicleSuspensionParams" title="PxVehicleSuspensionParams"><span class="n"><span class="pre">PxVehicleSuspensionParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleSuspensionComplianceParams.html#_CPPv435PxVehicleSuspensionComplianceParams" title="PxVehicleSuspensionComplianceParams"><span class="n"><span class="pre">PxVehicleSuspensionComplianceParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspCompParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleSuspensionForceParams.html#_CPPv430PxVehicleSuspensionForceParams" title="PxVehicleSuspensionForceParams"><span class="n"><span class="pre">PxVehicleSuspensionForceParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspForceParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleSuspensionState.html#_CPPv424PxVehicleSuspensionState" title="PxVehicleSuspensionState"><span class="n"><span class="pre">PxVehicleSuspensionState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleSuspensionComplianceState.html#_CPPv434PxVehicleSuspensionComplianceState" title="PxVehicleSuspensionComplianceState"><span class="n"><span class="pre">PxVehicleSuspensionComplianceState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspCompStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleSuspensionForce.html#_CPPv424PxVehicleSuspensionForce" title="PxVehicleSuspensionForce"><span class="n"><span class="pre">PxVehicleSuspensionForce</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspForces</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireForceParams.html#_CPPv424PxVehicleTireForceParams" title="PxVehicleTireForceParams"><span class="n"><span class="pre">PxVehicleTireForceParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireForceParams</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireDirectionState.html#_CPPv427PxVehicleTireDirectionState" title="PxVehicleTireDirectionState"><span class="n"><span class="pre">PxVehicleTireDirectionState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireDirectionStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireSpeedState.html#_CPPv423PxVehicleTireSpeedState" title="PxVehicleTireSpeedState"><span class="n"><span class="pre">PxVehicleTireSpeedState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireSpeedStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireSlipState.html#_CPPv422PxVehicleTireSlipState" title="PxVehicleTireSlipState"><span class="n"><span class="pre">PxVehicleTireSlipState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireSlipStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireStickyState.html#_CPPv424PxVehicleTireStickyState" title="PxVehicleTireStickyState"><span class="n"><span class="pre">PxVehicleTireStickyState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireStickyStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireGripState.html#_CPPv422PxVehicleTireGripState" title="PxVehicleTireGripState"><span class="n"><span class="pre">PxVehicleTireGripState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireGripStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireCamberAngleState.html#_CPPv429PxVehicleTireCamberAngleState" title="PxVehicleTireCamberAngleState"><span class="n"><span class="pre">PxVehicleTireCamberAngleState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireCamberStates</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleArrayData.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxVehicleTireForce.html#_CPPv418PxVehicleTireForce" title="PxVehicleTireForce"><span class="n"><span class="pre">PxVehicleTireForce</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireForces</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxVehiclePvdAttributeHandles</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">attributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">PxVehiclePvdObjectHandles</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">objectHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classOmniPvdWriter.html#_CPPv413OmniPvdWriter" title="OmniPvdWriter"><span class="n"><span class="pre">OmniPvdWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">omniWriter</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv436PxVehiclePvdWheelAttachmentsRegisterRK24PxVehicleAxleDescriptionRK18PxVehicleArrayDataIK20PxVehicleWheelParamsERK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK18PxVehicleArrayDataIK30PxVehicleWheelRigidBody1dStateERK18PxVehicleArrayDataIK23PxVehicleWheelLocalPoseERK18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateERK18PxVehicleArrayDataIK25PxVehicleSuspensionParamsERK18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsERK18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsERK18PxVehicleArrayDataIK24PxVehicleSuspensionStateERK18PxVehicleArrayDataIK34PxVehicleSuspensionComplianceStateERK18PxVehicleArrayDataIK24PxVehicleSuspensionForceERK18PxVehicleArrayDataIK24PxVehicleTireForceParamsERK18PxVehicleArrayDataIK27PxVehicleTireDirectionStateERK18PxVehicleArrayDataIK23PxVehicleTireSpeedStateERK18PxVehicleArrayDataIK22PxVehicleTireSlipStateERK18PxVehicleArrayDataIK24PxVehicleTireStickyStateERK18PxVehicleArrayDataIK22PxVehicleTireGripStateERK18PxVehicleArrayDataIK29PxVehicleTireCamberAngleStateERK18PxVehicleArrayDataIK18PxVehicleTireForceERK28PxVehiclePvdAttributeHandlesR25PxVehiclePvdObjectHandlesR13OmniPvdWriter" title="Link to this definition">#</a><br /></dt>
+<dd><p>Register object instances in omnipvd that will be used to reflect wheel attachment data such as tires, suspensions and wheels. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehiclePvdAttributesCreate </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehiclePvdObjectCreate </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehiclePvdWheelAttachmentsWrite </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If any array is empty, the corresponding data will not be reflected in omnipvd. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Each array must either be empty or contain an entry for each wheel present in axleDesc. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axleDesc</strong> – <strong>[in]</strong> is a description of the wheels and axles of a vehicle. </p></li>
+<li><p><strong>wheelParams</strong> – <strong>[in]</strong> is an array of wheel parameters. </p></li>
+<li><p><strong>wheelActuationStates</strong> – <strong>[in]</strong> is an array of wheel actuation states. </p></li>
+<li><p><strong>wheelRigidBody1dStates</strong> – <strong>[in]</strong> is an array of wheel rigid body states. </p></li>
+<li><p><strong>wheelLocalPoses</strong> – <strong>[in]</strong> is an array of wheel local poses. </p></li>
+<li><p><strong>roadGeometryStates</strong> – <strong>[in]</strong> is an array of road geometry states. </p></li>
+<li><p><strong>suspParams</strong> – <strong>[in]</strong> is an array of suspension parameters. </p></li>
+<li><p><strong>suspCompParams</strong> – <strong>[in]</strong> is an array of suspension compliance parameters. </p></li>
+<li><p><strong>suspForceParams</strong> – <strong>[in]</strong> is an array of suspension force parameters. </p></li>
+<li><p><strong>suspStates</strong> – <strong>[in]</strong> is an array of suspension states. </p></li>
+<li><p><strong>suspCompStates</strong> – <strong>[in]</strong> is an array of suspension compliance states. </p></li>
+<li><p><strong>suspForces</strong> – <strong>[in]</strong> is an array of suspension forces. </p></li>
+<li><p><strong>tireForceParams</strong> – <strong>[in]</strong> is an array of tire force parameters. </p></li>
+<li><p><strong>tireDirectionStates</strong> – <strong>[in]</strong> is an array of tire direction states. </p></li>
+<li><p><strong>tireSpeedStates</strong> – <strong>[in]</strong> is an array of tire speed states. </p></li>
+<li><p><strong>tireSlipStates</strong> – <strong>[in]</strong> is an array of tire slip states. </p></li>
+<li><p><strong>tireStickyStates</strong> – <strong>[in]</strong> is an array of tire sticky states. </p></li>
+<li><p><strong>tireGripStates</strong> – <strong>[in]</strong> is an array of tire grip states. </p></li>
+<li><p><strong>tireCamberStates</strong> – <strong>[in]</strong> is an array of tire camber states. </p></li>
+<li><p><strong>tireForces</strong> – <strong>[in]</strong> is an array of tire forces. </p></li>
+<li><p><strong>attributeHandles</strong> – <strong>[in]</strong> contains a general description of vehicle parameters and states that will be reflected in omnipvd. </p></li>
+<li><p><strong>objectHandles</strong> – <strong>[in]</strong> contains unique handles for the parameters and states of each vehicle instance. </p></li>
+<li><p><strong>omniWriter</strong> – <strong>[in]</strong> is an <a class="reference internal" href="classOmniPvdWriter.html#classomnipvdwriter"><span class="std std-ref">OmniPvdWriter</span></a> instance used to communicate state and parameter data to omnipvd. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="function_PxVehiclePvdFunctions_8h_1a8946a113499c9129bd9f0ca9d09e7be4.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxVehiclePvdSuspensionStateCalculationParamsWrite</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="function_PxVehiclePvdFunctions_8h_1a885c2da3fb15152feb6e33c29a209fb3.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxVehiclePvdWheelAttachmentsWrite</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv436PxVehiclePvdWheelAttachmentsRegisterRK24PxVehicleAxleDescriptionRK18PxVehicleArrayDataIK20PxVehicleWheelParamsERK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK18PxVehicleArrayDataIK30PxVehicleWheelRigidBody1dStateERK18PxVehicleArrayDataIK23PxVehicleWheelLocalPoseERK18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateERK18PxVehicleArrayDataIK25PxVehicleSuspensionParamsERK18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsERK18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsERK18PxVehicleArrayDataIK24PxVehicleSuspensionStateERK18PxVehicleArrayDataIK34PxVehicleSuspensionComplianceStateERK18PxVehicleArrayDataIK24PxVehicleSuspensionForceERK18PxVehicleArrayDataIK24PxVehicleTireForceParamsERK18PxVehicleArrayDataIK27PxVehicleTireDirectionStateERK18PxVehicleArrayDataIK23PxVehicleTireSpeedStateERK18PxVehicleArrayDataIK22PxVehicleTireSlipStateERK18PxVehicleArrayDataIK24PxVehicleTireStickyStateERK18PxVehicleArrayDataIK22PxVehicleTireGripStateERK18PxVehicleArrayDataIK29PxVehicleTireCamberAngleStateERK18PxVehicleArrayDataIK18PxVehicleTireForceERK28PxVehiclePvdAttributeHandlesR25PxVehiclePvdObjectHandlesR13OmniPvdWriter"><code class="docutils literal notranslate"><span class="pre">PxVehiclePvdWheelAttachmentsRegister()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

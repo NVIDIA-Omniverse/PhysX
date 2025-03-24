@@ -1,0 +1,843 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxRigidBodyFlag &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxRigidBodyFlag';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxRigidDynamic" href="classPxRigidDynamic.html" />
+    <link rel="prev" title="PxRigidBodyExt" href="classPxRigidBodyExt.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxRigidBodyFlag</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxrigidbodyflag">
+<h1>PxRigidBodyFlag<a class="headerlink" href="#pxrigidbodyflag" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxRigidBody.h.html#pxrigidbody-8h"><span class="std std-ref">include/PxRigidBody.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415PxRigidBodyFlag">
+<span id="_CPPv315PxRigidBodyFlag"></span><span id="_CPPv215PxRigidBodyFlag"></span><span id="PxRigidBodyFlag"></span><span class="target" id="structpxrigidbodyflag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRigidBodyFlag</span></span></span><a class="headerlink" href="#_CPPv415PxRigidBodyFlag" title="Link to this definition">#</a><br /></dt>
+<dd><p>Collection of flags describing the behavior of a rigid body. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1a9b23b890404b1010bf0b67a225bd22e7"><span class="std std-ref">PxRigidBody.setRigidBodyFlag()</span></a>, <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1a2ef3c66318db72f2dd2c1b0d20513f18"><span class="std std-ref">PxRigidBody.getRigidBodyFlags()</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4EnumE">
+<span id="_CPPv3N15PxRigidBodyFlag4EnumE"></span><span id="_CPPv2N15PxRigidBodyFlag4EnumE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4EnumE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum10eKINEMATICE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum10eKINEMATICE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum10eKINEMATICE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596abd76e6985e9db78efb7a66148ea4c212"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eKINEMATIC</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum10eKINEMATICE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables kinematic mode for the actor. </p>
+<p>Kinematic actors are special dynamic actors that are not influenced by forces (such as gravity), and have no momentum. They are considered to have infinite mass and can be moved around the world using the setKinematicTarget() method. They will push regular dynamic actors out of the way. Kinematics will not collide with static or other kinematic objects.</p>
+<p>Kinematic actors are great for moving platforms or characters, where direct motion control is desired.</p>
+<p>You can not connect Reduced joints to kinematic actors. Lagrange joints work ok if the platform is moving with a relatively low, uniform velocity.</p>
+<p><strong>Sleeping:</strong> <ul class="simple">
+<li><p>Setting this flag on a dynamic actor will put the actor to sleep and set the velocities to 0. </p></li>
+<li><p>If this flag gets cleared, the current sleep state of the actor will be kept.</p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic_1a4464d188e7a1e94582c9cf35da9bbc93"><span class="std std-ref">PxRigidDynamic.setKinematicTarget()</span></a> Enable kinematic mode for the body. </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>kinematic actors are incompatible with CCD so raising this flag will automatically clear eENABLE_CCD</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum39eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIESE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum39eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIESE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum39eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIESE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a983c62745e575428d8b0aadefc23e8bc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum39eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIESE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Use the kinematic target transform for scene queries. </p>
+<p>If this flag is raised, then scene queries will treat the kinematic target transform as the current pose of the body (instead of using the actual pose). Without this flag, the kinematic target will only take effect with respect to scene queries after a simulation step.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigiddynamic_1a4464d188e7a1e94582c9cf35da9bbc93"><span class="std std-ref">PxRigidDynamic.setKinematicTarget()</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum11eENABLE_CCDE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum11eENABLE_CCDE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum11eENABLE_CCDE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a686cdd889652a435c19d8c663d809d9e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_CCD</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum11eENABLE_CCDE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables swept integration for the actor. </p>
+<p>If this flag is raised and CCD is enabled on the scene, then this body will be simulated by the CCD system to ensure that collisions are not missed due to high-speed motion. Note individual shape pairs still need to enable <a class="reference internal" href="structPxPairFlag.html#structpxpairflag_1a60e71a2948b030140f840766a3f7ac2fac41a9f8b9326480403c023ad20cdc2f1"><span class="std std-ref">PxPairFlag::eDETECT_CCD_CONTACT</span></a> in the collision filtering to enable the CCD to respond to individual interactions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>kinematic actors are incompatible with CCD so this flag will be cleared automatically when raised on a kinematic actor </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="classPxConvexCoreGeometry.html#classpxconvexcoregeometry"><span class="std std-ref">PxConvexCoreGeometry</span></a> geometry type only supports eENABLE_SPECULATIVE_CCD at the moment. eENABLE_CCD will be ignored Enable CCD for the body. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum20eENABLE_CCD_FRICTIONE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum20eENABLE_CCD_FRICTIONE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum20eENABLE_CCD_FRICTIONE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a37775d7c189d9f499fdfda010f73fb95"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_CCD_FRICTION</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum20eENABLE_CCD_FRICTIONE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enabled CCD in swept integration for the actor. </p>
+<p>If this flag is raised and CCD is enabled, CCD interactions will simulate friction. By default, friction is disabled in CCD interactions because CCD friction has been observed to introduce some simulation artifacts. CCD friction was enabled in previous versions of the SDK. Raising this flag will result in behavior that is a closer match for previous versions of the SDK.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag requires <a class="reference internal" href="#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a686cdd889652a435c19d8c663d809d9e"><span class="std std-ref">PxRigidBodyFlag::eENABLE_CCD</span></a> to be raised to have any effect. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum23eENABLE_SPECULATIVE_CCDE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum23eENABLE_SPECULATIVE_CCDE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum23eENABLE_SPECULATIVE_CCDE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596af13d6aa80b364fe2cef81a0039e37d45"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_SPECULATIVE_CCD</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum23eENABLE_SPECULATIVE_CCDE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Register a rigid body to dynamically adjust contact offset based on velocity. </p>
+<p>This can be used to achieve a CCD effect.</p>
+<p>If both eENABLE_CCD and eENABLE_SPECULATIVE_CCD are set on the same body, then angular motions are handled by speculative contacts (eENABLE_SPECULATIVE_CCD) while linear motions are handled by sweeps (eENABLE_CCD). </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum32eENABLE_POSE_INTEGRATION_PREVIEWE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum32eENABLE_POSE_INTEGRATION_PREVIEWE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum32eENABLE_POSE_INTEGRATION_PREVIEWE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596ac89b33b0290d667f6f2ae69298631d01"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_POSE_INTEGRATION_PREVIEW</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum32eENABLE_POSE_INTEGRATION_PREVIEWE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Register a rigid body for reporting pose changes by the simulation at an early stage. </p>
+<p>Sometimes it might be advantageous to get access to the new pose of a rigid body as early as possible and not wait until the call to fetchResults() returns. Setting this flag will schedule the rigid body to get reported in <a class="reference internal" href="classPxSimulationEventCallback.html#classpxsimulationeventcallback_1a86cd9bd80e504054d075fda24498756b"><span class="std std-ref">PxSimulationEventCallback::onAdvance()</span></a>. Please refer to the documentation of that callback to understand the behavior and limitations of this functionality.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxSimulationEventCallback.html#classpxsimulationeventcallback_1a86cd9bd80e504054d075fda24498756b"><span class="std std-ref">PxSimulationEventCallback::onAdvance()</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum31eENABLE_CCD_MAX_CONTACT_IMPULSEE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum31eENABLE_CCD_MAX_CONTACT_IMPULSEE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum31eENABLE_CCD_MAX_CONTACT_IMPULSEE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596ab2bb4cc4246807076a2103d72bd69e00"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_CCD_MAX_CONTACT_IMPULSE</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum31eENABLE_CCD_MAX_CONTACT_IMPULSEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Permit CCD to limit maxContactImpulse. </p>
+<p>This is useful for use-cases like a destruction system but can cause visual artefacts so is not enabled by default. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum21eRETAIN_ACCELERATIONSE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum21eRETAIN_ACCELERATIONSE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum21eRETAIN_ACCELERATIONSE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596ae3f262927cf4d13f517c6f0c08ec448f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eRETAIN_ACCELERATIONS</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum21eRETAIN_ACCELERATIONSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Carries over forces/torques between frames, rather than clearing them. </p>
+<p>If this flag is raised, forces and torques will carry over between frames. Impulses applied with <a class="reference internal" href="structPxForceMode.html#structpxforcemode_1aadaaafefe0478d829b816154c676e545aa3699bd1b7ae178eda5b946097de52c4"><span class="std std-ref">PxForceMode::eIMPULSE</span></a> will not be retained.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1a22b0a1ef0b6c5656a6063c5c38f5679c"><span class="std std-ref">PxRigidBody::addForce()</span></a>, PxRigidBody::AddTorque(), <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1ae1cf856d4059ff6b422b2c58f91d242f"><span class="std std-ref">PxRigidBody::setForceAndTorque()</span></a>, <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1aefe5174aa160a07d488de2a18ba61f94"><span class="std std-ref">PxRigidBody::clearForce()</span></a>, <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1ae251132385cc0b082b612d709aa4375d"><span class="std std-ref">PxRigidBody::clearTorque()</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Clearing this flag will retain the accelerations for an additional frame before clearing them. To reset the forces immediately for the next frame, a call to <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1aefe5174aa160a07d488de2a18ba61f94"><span class="std std-ref">PxRigidBody::clearForce()</span></a> / <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1ae251132385cc0b082b612d709aa4375d"><span class="std std-ref">PxRigidBody::clearTorque()</span></a> is needed.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum30eFORCE_KINE_KINE_NOTIFICATIONSE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum30eFORCE_KINE_KINE_NOTIFICATIONSE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum30eFORCE_KINE_KINE_NOTIFICATIONSE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a698967abdd9280abb3a7aea8b712a9f9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFORCE_KINE_KINE_NOTIFICATIONS</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum30eFORCE_KINE_KINE_NOTIFICATIONSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Forces kinematic-kinematic pairs notifications for this actor. </p>
+<p>This flag overrides the global scene-level <a class="reference internal" href="structPxPairFilteringMode.html#structpxpairfilteringmode"><span class="std std-ref">PxPairFilteringMode</span></a> setting for kinematic actors. This is equivalent to having <a class="reference internal" href="structPxPairFilteringMode.html#structpxpairfilteringmode_1aeaa62ad327b874e4b199022401bf7615a15ecf48d452c22f6fb755df16919eca4"><span class="std std-ref">PxPairFilteringMode::eKEEP</span></a> for pairs involving this actor.</p>
+<p>A particular use case is when you have a large amount of kinematic actors, but you are only interested in interactions between a few of them. In this case it is best to use <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc_1a90e220df7cb1f25852d4cc62cecd8869"><span class="std std-ref">PxSceneDesc.kineKineFilteringMode</span></a> = <a class="reference internal" href="structPxPairFilteringMode.html#structpxpairfilteringmode_1aeaa62ad327b874e4b199022401bf7615ad053cb78e88913567e0cb208ea2c458c"><span class="std std-ref">PxPairFilteringMode::eKILL</span></a>, and then raise the eFORCE_KINE_KINE_NOTIFICATIONS flag on the small set of kinematic actors that need notifications.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxPairFilteringMode.html#structpxpairfilteringmode"><span class="std std-ref">PxPairFilteringMode</span></a> <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc_1a90e220df7cb1f25852d4cc62cecd8869"><span class="std std-ref">PxSceneDesc.kineKineFilteringMode</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This has no effect if <a class="reference internal" href="#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596abd76e6985e9db78efb7a66148ea4c212"><span class="std std-ref">PxRigidBodyFlag::eKINEMATIC</span></a> is not set.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Changing this flag at runtime will not have an effect until you remove and re-add the actor to the scene.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum32eFORCE_STATIC_KINE_NOTIFICATIONSE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum32eFORCE_STATIC_KINE_NOTIFICATIONSE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum32eFORCE_STATIC_KINE_NOTIFICATIONSE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a3500d16d79229a7aba7ec54e66adaed6"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFORCE_STATIC_KINE_NOTIFICATIONS</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum32eFORCE_STATIC_KINE_NOTIFICATIONSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Forces static-kinematic pairs notifications for this actor. </p>
+<p>Similar to eFORCE_KINE_KINE_NOTIFICATIONS, but for static-kinematic interactions.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxPairFilteringMode.html#structpxpairfilteringmode"><span class="std std-ref">PxPairFilteringMode</span></a> <a class="reference internal" href="classPxSceneDesc.html#classpxscenedesc_1a1ff29795e987f8f9b347545468915de2"><span class="std std-ref">PxSceneDesc.staticKineFilteringMode</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This has no effect if <a class="reference internal" href="#structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596abd76e6985e9db78efb7a66148ea4c212"><span class="std std-ref">PxRigidBodyFlag::eKINEMATIC</span></a> is not set.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Changing this flag at runtime will not have an effect until you remove and re-add the actor to the scene.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum25eENABLE_GYROSCOPIC_FORCESE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum25eENABLE_GYROSCOPIC_FORCESE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum25eENABLE_GYROSCOPIC_FORCESE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a082094d5f57452b70ae6d59e1a50b3f9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_GYROSCOPIC_FORCES</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum25eENABLE_GYROSCOPIC_FORCESE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables computation of gyroscopic forces on the rigid body. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxRigidBodyFlag4Enum9eRESERVEDE">
+<span id="_CPPv3N15PxRigidBodyFlag4Enum9eRESERVEDE"></span><span id="_CPPv2N15PxRigidBodyFlag4Enum9eRESERVEDE"></span><span class="target" id="structpxrigidbodyflag_1a5fd4878ae66a98c030a9d976e8ba8596a19c3d420263e8b29250817344bf7bc9f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eRESERVED</span></span></span><a class="headerlink" href="#_CPPv4N15PxRigidBodyFlag4Enum9eRESERVEDE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Reserved for internal usage. </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxRigidBodyExt.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxRigidBodyExt</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxRigidDynamic.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxRigidDynamic</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv415PxRigidBodyFlag"><code class="docutils literal notranslate"><span class="pre">PxRigidBodyFlag</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4EnumE"><code class="docutils literal notranslate"><span class="pre">Enum</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum10eKINEMATICE"><code class="docutils literal notranslate"><span class="pre">eKINEMATIC</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum39eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIESE"><code class="docutils literal notranslate"><span class="pre">eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum11eENABLE_CCDE"><code class="docutils literal notranslate"><span class="pre">eENABLE_CCD</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum20eENABLE_CCD_FRICTIONE"><code class="docutils literal notranslate"><span class="pre">eENABLE_CCD_FRICTION</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum23eENABLE_SPECULATIVE_CCDE"><code class="docutils literal notranslate"><span class="pre">eENABLE_SPECULATIVE_CCD</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum32eENABLE_POSE_INTEGRATION_PREVIEWE"><code class="docutils literal notranslate"><span class="pre">eENABLE_POSE_INTEGRATION_PREVIEW</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum31eENABLE_CCD_MAX_CONTACT_IMPULSEE"><code class="docutils literal notranslate"><span class="pre">eENABLE_CCD_MAX_CONTACT_IMPULSE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum21eRETAIN_ACCELERATIONSE"><code class="docutils literal notranslate"><span class="pre">eRETAIN_ACCELERATIONS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum30eFORCE_KINE_KINE_NOTIFICATIONSE"><code class="docutils literal notranslate"><span class="pre">eFORCE_KINE_KINE_NOTIFICATIONS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum32eFORCE_STATIC_KINE_NOTIFICATIONSE"><code class="docutils literal notranslate"><span class="pre">eFORCE_STATIC_KINE_NOTIFICATIONS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum25eENABLE_GYROSCOPIC_FORCESE"><code class="docutils literal notranslate"><span class="pre">eENABLE_GYROSCOPIC_FORCES</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N15PxRigidBodyFlag4Enum9eRESERVEDE"><code class="docutils literal notranslate"><span class="pre">eRESERVED</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

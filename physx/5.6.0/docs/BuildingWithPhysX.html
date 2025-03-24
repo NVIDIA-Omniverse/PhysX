@@ -1,0 +1,784 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Building with PhysX &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/BuildingWithPhysX';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Snippets" href="Snippets.html" />
+    <link rel="prev" title="PhysX License" href="License.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Building with PhysX</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="building-with-physx">
+<span id="id1"></span><h1>Building with PhysX<a class="headerlink" href="#building-with-physx" title="Link to this heading">#</a></h1>
+<section id="generating-projects-with-cmake">
+<h2>Generating projects with CMake<a class="headerlink" href="#generating-projects-with-cmake" title="Link to this heading">#</a></h2>
+<p>PhysX uses CMake to generate build configuration files (e.g. Microsoft Visual Studio Solutions or Makefiles) for all supported platforms. The PhysX distribution comes with default CMake parameter sets called <strong>presets</strong>.
+The build configuration files can be generated with the script <strong>generate_projects</strong> in the distributions “physx/” directory. This script either prompts for a preset or accepts a preset as a command line parameter. The resulting build configuration files are generated under “physx/compiler/&lt;preset-name&gt;” for Windows and “physx/compiler/&lt;preset-name&gt;-&lt;physx_build_type&gt;” for Linux.</p>
+<p>PhysX binaries (including static libraries) are placed into platform-specific directories:</p>
+<ul class="simple">
+<li><p>Windows:</p>
+<ul>
+<li><p>Structure: bin/&lt;platform&gt;.&lt;target&gt;.&lt;compiler&gt;.&lt;runtime&gt;/&lt;configuration&gt;/</p></li>
+<li><p>Example: “bin/win.x86_64.vc142.mt/checked/”</p></li>
+</ul>
+</li>
+<li><p>Linux (x86_64 and aarch64):</p>
+<ul>
+<li><p>Structure: bin/&lt;platform&gt;.&lt;target&gt;/&lt;configuration&gt;/</p></li>
+<li><p>Examples:</p>
+<ul>
+<li><p>“bin/linux.x86_64/checked/”</p></li>
+<li><p>“bin/linux.aarch64/checked/”</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="build-configurations">
+<h2>Build Configurations<a class="headerlink" href="#build-configurations" title="Link to this heading">#</a></h2>
+<p>The SDK has four build configurations available, designed for different stages of development and deployment.</p>
+<ul class="simple">
+<li><p>the <em>debug</em> build can be useful for error analysis, but contains asserts used for SDK development which some customers may find too intrusive for daily use. Optimizations are turned off for this configuration.</p></li>
+<li><p>the <em>checked</em> build contains code to detect invalid parameters, API race conditions, and other incorrect uses of the API which might cause otherwise surprising crashes or failures in simulation.</p></li>
+<li><p>the <em>profile</em> build omits the checks, but still has PVD and memory instrumentation.</p></li>
+<li><p>the <em>release</em> build is built for minimal footprint and maximum speed. It omits most checks and instrumentation.</p></li>
+</ul>
+<p>Simulation works the same way in all of them, and all except the debug configuration are compiled with high optimization levels.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We strongly recommend that you use the checked build as the primary configuration for day-to-day development and QA, as it includes runtime checks and debug symbols, but still provides good performance.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PhysX libraries of different build configurations (e.g. the DEBUG version of PhysXExtensions and the CHECKED version of PhysXVisualDebuggerSDK) should never be mixed in an application because this will result a CRT conflict.</p>
+</div>
+</section>
+<section id="building-and-linking-against-physx">
+<h2>Building and linking against PhysX<a class="headerlink" href="#building-and-linking-against-physx" title="Link to this heading">#</a></h2>
+<p>To build your own PhysX app, your build configuration should be set up such that the PhysX headers and libraries are discoverable at build and link time, respectively.</p>
+<p>The following is a minimal example of a CMakeLists.txt project for a user project on Linux that links against all PhysX libraries:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">CMakeLists.txt</span><a class="headerlink" href="#id3" title="Link to this code">#</a></div>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="w"> </span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.16</span><span class="p">)</span>
+<span class="nb">project</span><span class="w"> </span><span class="p">(</span><span class="s">PhysX_Standalone_Snippet</span><span class="p">)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">PHYSX_BUILD_TYPE</span><span class="w"> </span><span class="s2">&quot;checked&quot;</span><span class="w"> </span><span class="s">CACHE</span><span class="w"> </span><span class="s">STRING</span><span class="w"> </span><span class="s2">&quot;The build type of PhysX&quot;</span><span class="p">)</span>
+<span class="nb">set_property</span><span class="p">(</span><span class="s">CACHE</span><span class="w"> </span><span class="s">PHYSX_BUILD_TYPE</span><span class="w"> </span><span class="s">PROPERTY</span><span class="w"> </span><span class="s">STRINGS</span><span class="w"> </span><span class="s">debug</span><span class="w"> </span><span class="s">checked</span><span class="w"> </span><span class="s">profile</span><span class="w"> </span><span class="s">release</span><span class="p">)</span>
+
+<span class="nb">if</span><span class="p">(</span><span class="s">NOT</span><span class="w"> </span><span class="s">CMAKE_BUILD_TYPE</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">if</span><span class="p">(</span><span class="s">PHYSX_BUILD_TYPE</span><span class="w"> </span><span class="s">STREQUAL</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span><span class="w"> </span><span class="s">OR</span><span class="w"> </span><span class="s">PHYSX_BUILD_TYPE</span><span class="w"> </span><span class="s">STREQUAL</span><span class="w"> </span><span class="s2">&quot;checked&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="nb">set</span><span class="p">(</span><span class="s">CMAKE_BUILD_TYPE</span><span class="w"> </span><span class="s2">&quot;Debug&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">endif</span><span class="p">()</span>
+<span class="nb">endif</span><span class="p">()</span>
+
+<span class="nb">include_directories</span><span class="p">(</span><span class="s">PhysX/include</span><span class="p">)</span>
+<span class="nb">link_directories</span><span class="p">(</span><span class="s2">&quot;PhysX/bin/linux.x86_64/${PHYSX_BUILD_TYPE}&quot;</span><span class="p">)</span><span class="w"> </span><span class="c"># This is the path where PhysX libraries are installed</span>
+
+<span class="nb">if</span><span class="p">(</span><span class="s">CMAKE_BUILD_TYPE</span><span class="w"> </span><span class="s">STREQUAL</span><span class="w"> </span><span class="s2">&quot;Debug&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Building snippet in debug with PhysX ${PHYSX_BUILD_TYPE} configuration&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">add_compile_definitions</span><span class="p">(</span><span class="s">_DEBUG</span><span class="p">)</span>
+<span class="nb">else</span><span class="p">()</span>
+<span class="w">    </span><span class="nb">message</span><span class="p">(</span><span class="s2">&quot;Building snippet in release configuration with PhysX ${PHYSX_BUILD_TYPE} configuration&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">add_compile_definitions</span><span class="p">(</span><span class="s">NDEBUG</span><span class="p">)</span>
+<span class="nb">endif</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">Snippet</span>
+<span class="w">    </span><span class="s">main.cpp</span>
+<span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">Snippet</span>
+<span class="w">    </span><span class="s">-Wl,--start-group</span>
+<span class="w">    </span><span class="s">PhysXExtensions_static_64</span>
+<span class="w">    </span><span class="s">PhysX_static_64</span>
+<span class="w">    </span><span class="s">PhysXPvdSDK_static_64</span>
+<span class="w">    </span><span class="s">PhysXCommon_static_64</span>
+<span class="w">    </span><span class="s">PhysXFoundation_static_64</span>
+<span class="w">    </span><span class="s">-Wl,--end-group</span>
+
+<span class="w">    </span><span class="s">pthread</span>
+<span class="w">    </span><span class="s">dl</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Within your source (<cite>main.cpp</cite> in the example above) it is easiest if the provided aggregate include header is used as:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysicsAPI.h&quot;</span>
+</pre></div>
+</div>
+<p>This will include the entire PhysX API including core, extensions, vehicles, etc. It is also possible to include subsets of the SDK if preferred, for example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;vehicle2/PxVehicleAPI.h&quot;</span>
+</pre></div>
+</div>
+<p>For examples on how to set up a scene, please refer to the Snippets, e.g., <a class="reference internal" href="Snippets.html#helloworldbasics"><span class="std std-ref">HelloWorld: PhysX Basics</span></a>.</p>
+</section>
+<section id="redistribution">
+<span id="id2"></span><h2>Redistribution<a class="headerlink" href="#redistribution" title="Link to this heading">#</a></h2>
+<p>On the Windows platform, you need to redistribute some of our DLLs to end users as part of your application:</p>
+<ul class="simple">
+<li><p>PhysXCommon_*.dll               - will always be needed.</p></li>
+<li><p>PhysX_*.dll                     - will always be needed.</p></li>
+<li><p>PhysXFoundation_*.dll           - will always be needed.</p></li>
+<li><p>PhysXCooking_*.dll              - you only need to bundle if your application cooks geometry data on the fly.</p></li>
+<li><p>PhysXGPU_*.dll                  - is only needed if your application runs some simulation on the GPU.</p></li>
+</ul>
+<p>Where * is a platform specific suffix, e.g. 32 or 64.  You will need one or the other depending on whether your application is built in 64 bit mode.</p>
+<p>On Linux builds, everything that needs to be distributed will be in the corresponding install folder that is generated when running <cite>make install</cite>.</p>
+</section>
+<section id="customize-cmake-presets">
+<h2>Customize CMake presets<a class="headerlink" href="#customize-cmake-presets" title="Link to this heading">#</a></h2>
+<p>It is possible to customize the CMake presets, which are stored in <code class="docutils literal notranslate"><span class="pre">physx/buildtools/presets/public/</span></code>. Each XML file represents one preset, and several CMake switches can be toggled to alter the build behavior.</p>
+<p><strong>General switches:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_BUILDSNIPPETS</span></code> - Add the PhysX Snippets to the build configuration.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_BUILDPVDRUNTIME</span></code> - Generate the OmniPVD project.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_GENERATE_GPU_PROJECTS</span></code> - Generate the GPU projects.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_GENERATE_GPU_PROJECTS_ONLY</span></code> - Generate only the GPU projects.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_GENERATE_GPU_REDUCED_ARCHITECTURES</span></code> - Generate SASS for a reduced number of GPU architectures for faster compilation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_SCALAR_MATH</span></code> - Disable SIMD math.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_GENERATE_STATIC_LIBRARIES</span></code> - Build static libraries instead of DLLs (all except PhysXGPU).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_GENERATE_GPU_STATIC_LIBRARIES</span></code> - Build a static PhysXGPU library instead of a DLL.</p></li>
+</ul>
+<p><strong>Windows-specific switches:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">NV_USE_STATIC_WINCRT</span></code> - Set static runtime usage.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NV_USE_DEBUG_WINCRT</span></code> - Use debug CRT should be used.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PX_FLOAT_POINT_PRECISE_MATH</span></code> - Switch to precise math rather than fast math, beneficial especially for robotics projects which require higher precision.</p></li>
+</ul>
+<p>Some switches like <code class="docutils literal notranslate"><span class="pre">PX_GENERATE_STATIC_LIBRARIES</span></code> may require additional defines to be set in your application. In this case, you can include the <code class="docutils literal notranslate"><span class="pre">PxConfig.h</span></code> header in your application, which is generated during the project generation process.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="License.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PhysX License</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Snippets.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Snippets</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generating-projects-with-cmake">Generating projects with CMake</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#build-configurations">Build Configurations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-and-linking-against-physx">Building and linking against PhysX</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#redistribution">Redistribution</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customize-cmake-presets">Customize CMake presets</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

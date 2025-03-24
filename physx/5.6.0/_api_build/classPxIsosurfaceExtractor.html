@@ -1,0 +1,907 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxIsosurfaceExtractor &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxIsosurfaceExtractor';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxIsosurfaceGridFilteringType" href="structPxIsosurfaceGridFilteringType.html" />
+    <link rel="prev" title="PxIsosurfaceCallback" href="classPxIsosurfaceCallback.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxIsosurface...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxisosurfaceextractor">
+<h1>PxIsosurfaceExtractor<a class="headerlink" href="#pxisosurfaceextractor" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxIsosurfaceExtraction.h.html#pxisosurfaceextraction-8h"><span class="std std-ref">include/PxIsosurfaceExtraction.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv421PxIsosurfaceExtractor">
+<span id="_CPPv321PxIsosurfaceExtractor"></span><span id="_CPPv221PxIsosurfaceExtractor"></span><span id="PxIsosurfaceExtractor"></span><span class="target" id="classpxisosurfaceextractor"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxIsosurfaceExtractor</span></span></span><a class="headerlink" href="#_CPPv421PxIsosurfaceExtractor" title="Link to this definition">#</a><br /></dt>
+<dd><p>Base class for isosurface extractors. </p>
+<p>Allows to register the data arrays for the isosurface and to obtain the number vertices/triangles in use. </p>
+<p>Subclassed by <a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html#classpxsparsegridisosurfaceextractor"><span class="std std-ref">PxSparseGridIsosurfaceExtractor</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor19getIsosurfaceParamsEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor19getIsosurfaceParamsEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor19getIsosurfaceParamsEv"></span><span id="PxIsosurfaceExtractor::getIsosurfaceParamsC"></span><span class="target" id="classpxisosurfaceextractor_1a719c30f40eb773e2a5b8e38bf7e8f4fe"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxIsosurfaceParams.html#_CPPv418PxIsosurfaceParams" title="PxIsosurfaceParams"><span class="n"><span class="pre">PxIsosurfaceParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getIsosurfaceParams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor19getIsosurfaceParamsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the isosurface parameters. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The isosurfacesettings used for the isosurface extraction </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor19setIsosurfaceParamsERK18PxIsosurfaceParams">
+<span id="_CPPv3N21PxIsosurfaceExtractor19setIsosurfaceParamsERK18PxIsosurfaceParams"></span><span id="_CPPv2N21PxIsosurfaceExtractor19setIsosurfaceParamsERK18PxIsosurfaceParams"></span><span id="PxIsosurfaceExtractor::setIsosurfaceParams__PxIsosurfaceParamsCR"></span><span class="target" id="classpxisosurfaceextractor_1a6e69ecd796b0edf43364b7b7200c1e25"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setIsosurfaceParams</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxIsosurfaceParams.html#_CPPv418PxIsosurfaceParams" title="PxIsosurfaceParams"><span class="n"><span class="pre">PxIsosurfaceParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor19setIsosurfaceParamsERK18PxIsosurfaceParams" title="Link to this definition">#</a><br /></dt>
+<dd><p>Set the isosurface extraction parameters. </p>
+<p>Allows to configure the isosurface extraction by controlling threshold value, smoothing options etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> – <strong>[in]</strong> A collection of settings to control the isosurface extraction </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor14getNumVerticesEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor14getNumVerticesEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor14getNumVerticesEv"></span><span id="PxIsosurfaceExtractor::getNumVerticesC"></span><span class="target" id="classpxisosurfaceextractor_1aab3c5cdcec7841d0cb1a1deccff9a97e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor14getNumVerticesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of vertices that the current isosurface triangle mesh uses. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of vertices currently in use </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor15getNumTrianglesEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor15getNumTrianglesEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor15getNumTrianglesEv"></span><span id="PxIsosurfaceExtractor::getNumTrianglesC"></span><span class="target" id="classpxisosurfaceextractor_1a552e57dc75096c82f97033cb74740433"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor15getNumTrianglesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of triangles that the current isosurface triangle mesh uses. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of triangles currently in use </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor14getMaxVerticesEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor14getMaxVerticesEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor14getMaxVerticesEv"></span><span id="PxIsosurfaceExtractor::getMaxVerticesC"></span><span class="target" id="classpxisosurfaceextractor_1aab703a2192b8375e2edb48edc22dcc1a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor14getMaxVerticesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the maximum number of vertices that the isosurface triangle mesh can contain. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The maximum number of vertices that can be genrated </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor15getMaxTrianglesEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor15getMaxTrianglesEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor15getMaxTrianglesEv"></span><span id="PxIsosurfaceExtractor::getMaxTrianglesC"></span><span class="target" id="classpxisosurfaceextractor_1a2893847418256f9821f961687a88b788"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor15getMaxTrianglesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the maximum number of triangles that the isosurface triangle mesh can contain. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The maximum number of triangles that can be generated </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor26setMaxVerticesAndTrianglesE5PxU325PxU32">
+<span id="_CPPv3N21PxIsosurfaceExtractor26setMaxVerticesAndTrianglesE5PxU325PxU32"></span><span id="_CPPv2N21PxIsosurfaceExtractor26setMaxVerticesAndTrianglesE5PxU325PxU32"></span><span id="PxIsosurfaceExtractor::setMaxVerticesAndTriangles__PxU32.PxU32"></span><span class="target" id="classpxisosurfaceextractor_1a2baa7b568792b758f413eafb2526cce8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxVerticesAndTriangles</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumVertices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumTriangles</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor26setMaxVerticesAndTrianglesE5PxU325PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Resizes the internal triangle mesh buffers. </p>
+<p>If the output buffers are device buffers, nothing will get resized but new output buffers can be set using setResultBufferDevice. For host side output buffers, temporary buffers will get resized. The new host side result buffers with the same size must be set using setResultBufferHost.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>maxNumVertices</strong> – <strong>[in]</strong> The maximum number of vertices the output buffer can hold </p></li>
+<li><p><strong>maxNumTriangles</strong> – <strong>[in]</strong> The maximum number of triangles the ouput buffer can hold </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor15getMaxParticlesEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor15getMaxParticlesEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor15getMaxParticlesEv"></span><span id="PxIsosurfaceExtractor::getMaxParticlesC"></span><span class="target" id="classpxisosurfaceextractor_1aef74c45f227ddb75c812968b4fed25ad"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxParticles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor15getMaxParticlesEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>The maximal number of particles the isosurface extractor can process. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The maximal number of particles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor15setMaxParticlesE5PxU32">
+<span id="_CPPv3N21PxIsosurfaceExtractor15setMaxParticlesE5PxU32"></span><span id="_CPPv2N21PxIsosurfaceExtractor15setMaxParticlesE5PxU32"></span><span id="PxIsosurfaceExtractor::setMaxParticles__PxU32"></span><span class="target" id="classpxisosurfaceextractor_1acd70e440506ffc5721a902f0ca830f08"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxParticles</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxParticles</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor15setMaxParticlesE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the maximal number of particles the isosurface extractor can process. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>maxParticles</strong> – <strong>[in]</strong> The maximal number of particles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor7releaseEv">
+<span id="_CPPv3N21PxIsosurfaceExtractor7releaseEv"></span><span id="_CPPv2N21PxIsosurfaceExtractor7releaseEv"></span><span id="PxIsosurfaceExtractor::release"></span><span class="target" id="classpxisosurfaceextractor_1a5bbaa42415ddc67d293a9df50237efe3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Releases the isosurface extractor instance and its data. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor17extractIsosurfaceEP6PxVec4K5PxU328CUstreamP5PxU325PxU32P5PxU32P6PxVec4P6PxVec4P6PxVec46PxReal">
+<span id="_CPPv3N21PxIsosurfaceExtractor17extractIsosurfaceEP6PxVec4K5PxU328CUstreamP5PxU325PxU32P5PxU32P6PxVec4P6PxVec4P6PxVec46PxReal"></span><span id="_CPPv2N21PxIsosurfaceExtractor17extractIsosurfaceEP6PxVec4K5PxU328CUstreamP5PxU325PxU32P5PxU32P6PxVec4P6PxVec4P6PxVec46PxReal"></span><span id="PxIsosurfaceExtractor::extractIsosurface__PxVec4P.PxU32C.CUstream.PxU32P.PxU32.PxU32P.PxVec4P.PxVec4P.PxVec4P.PxReal"></span><span class="target" id="classpxisosurfaceextractor_1af3f011bd3fb63556307c0cb3cc5fa375"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">extractIsosurface</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceParticlePos</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">phases</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">validPhaseMask</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="structPxParticlePhaseFlag.html#_CPPv419PxParticlePhaseFlag" title="PxParticlePhaseFlag"><span class="n"><span class="pre">PxParticlePhaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxParticlePhaseFlag.html#_CPPv4N19PxParticlePhaseFlag4Enum19eParticlePhaseFluidE" title="PxParticlePhaseFlag::eParticlePhaseFluid"><span class="n"><span class="pre">eParticlePhaseFluid</span></span></a></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">activeIndices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy1</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy2</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy3</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">anisotropyFactor</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor17extractIsosurfaceEP6PxVec4K5PxU328CUstreamP5PxU325PxU32P5PxU32P6PxVec4P6PxVec4P6PxVec46PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Triggers the compuation of a new isosurface based on the specified particle locations. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deviceParticlePos</strong> – <strong>[in]</strong> A gpu pointer pointing to the start of the particle array </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> The stream on which all the gpu work will be performed </p></li>
+<li><p><strong>phases</strong> – <strong>[in]</strong> A phase value per particle </p></li>
+<li><p><strong>validPhaseMask</strong> – <strong>[in]</strong> A mask that specifies which phases should contribute to the isosurface. If the binary and operation between this mask and the particle phase is non zero, then the particle will contribute to the isosurface </p></li>
+<li><p><strong>activeIndices</strong> – <strong>[in]</strong> Optional array with indices of all active particles </p></li>
+<li><p><strong>anisotropy1</strong> – <strong>[in]</strong> Optional anisotropy information, x axis direction (xyz) and scale in w component </p></li>
+<li><p><strong>anisotropy2</strong> – <strong>[in]</strong> Optional anisotropy information, y axis direction (xyz) and scale in w component </p></li>
+<li><p><strong>anisotropy3</strong> – <strong>[in]</strong> Optional anisotropy information, z axis direction (xyz) and scale in w component </p></li>
+<li><p><strong>anisotropyFactor</strong> – <strong>[in]</strong> A factor to multiply with the anisotropy scale </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor19setResultBufferHostEP6PxVec4P5PxU32P6PxVec4">
+<span id="_CPPv3N21PxIsosurfaceExtractor19setResultBufferHostEP6PxVec4P5PxU32P6PxVec4"></span><span id="_CPPv2N21PxIsosurfaceExtractor19setResultBufferHostEP6PxVec4P5PxU32P6PxVec4"></span><span id="PxIsosurfaceExtractor::setResultBufferHost__PxVec4P.PxU32P.PxVec4P"></span><span class="target" id="classpxisosurfaceextractor_1a78fc02d4710beaa83af7dbb9d7d8ab92"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setResultBufferHost</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">triIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">normals</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor19setResultBufferHostEP6PxVec4P5PxU32P6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Allows to register the host buffers into which the final isosurface triangle mesh will get stored. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vertices</strong> – <strong>[in]</strong> A host buffer to store the vertices of the isosurface mesh </p></li>
+<li><p><strong>triIndices</strong> – <strong>[in]</strong> A host buffer to store the triangles of the isosurface mesh </p></li>
+<li><p><strong>normals</strong> – <strong>[in]</strong> A host buffer to store the normals of the isosurface mesh </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor21setResultBufferDeviceEP6PxVec4P5PxU32P6PxVec4">
+<span id="_CPPv3N21PxIsosurfaceExtractor21setResultBufferDeviceEP6PxVec4P5PxU32P6PxVec4"></span><span id="_CPPv2N21PxIsosurfaceExtractor21setResultBufferDeviceEP6PxVec4P5PxU32P6PxVec4"></span><span id="PxIsosurfaceExtractor::setResultBufferDevice__PxVec4P.PxU32P.PxVec4P"></span><span class="target" id="classpxisosurfaceextractor_1a1400d1b3c36c66cb7eb54f72e56d3c0d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setResultBufferDevice</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">triIndices</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">normals</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor21setResultBufferDeviceEP6PxVec4P5PxU32P6PxVec4" title="Link to this definition">#</a><br /></dt>
+<dd><p>Allows to register the host buffers into which the final isosurface triangle mesh will get stored. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vertices</strong> – <strong>[in]</strong> A device buffer to store the vertices of the isosurface mesh </p></li>
+<li><p><strong>triIndices</strong> – <strong>[in]</strong> A device buffer to store the triangles of the isosurface mesh </p></li>
+<li><p><strong>normals</strong> – <strong>[in]</strong> A device buffer to store the normals of the isosurface mesh </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractor10setEnabledEb">
+<span id="_CPPv3N21PxIsosurfaceExtractor10setEnabledEb"></span><span id="_CPPv2N21PxIsosurfaceExtractor10setEnabledEb"></span><span id="PxIsosurfaceExtractor::setEnabled__b"></span><span class="target" id="classpxisosurfaceextractor_1a7660a8c91a942e03b7d0d051622b9507"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setEnabled</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">enabled</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractor10setEnabledEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables or disables the isosurface extractor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>enabled</strong> – <strong>[in]</strong> The boolean to set the extractor to enabled or disabled </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxIsosurfaceExtractor9isEnabledEv">
+<span id="_CPPv3NK21PxIsosurfaceExtractor9isEnabledEv"></span><span id="_CPPv2NK21PxIsosurfaceExtractor9isEnabledEv"></span><span id="PxIsosurfaceExtractor::isEnabledC"></span><span class="target" id="classpxisosurfaceextractor_1ab42e4689fe471c29383ea925eb84ac61"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isEnabled</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxIsosurfaceExtractor9isEnabledEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Allows to query if the isosurface extractor is enabled. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if enabled, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxIsosurfaceExtractorD0Ev">
+<span id="_CPPv3N21PxIsosurfaceExtractorD0Ev"></span><span id="_CPPv2N21PxIsosurfaceExtractorD0Ev"></span><span id="PxIsosurfaceExtractor::~PxIsosurfaceExtractor"></span><span class="target" id="classpxisosurfaceextractor_1aa0b58bb05b5c12836e41023d229381bc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxIsosurfaceExtractor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxIsosurfaceExtractorD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Destructor. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxIsosurfaceCallback.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxIsosurfaceCallback</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxIsosurfaceGridFilteringType.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxIsosurfaceGridFilteringType</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv421PxIsosurfaceExtractor"><code class="docutils literal notranslate"><span class="pre">PxIsosurfaceExtractor</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor19getIsosurfaceParamsEv"><code class="docutils literal notranslate"><span class="pre">getIsosurfaceParams()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor19setIsosurfaceParamsERK18PxIsosurfaceParams"><code class="docutils literal notranslate"><span class="pre">setIsosurfaceParams()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor14getNumVerticesEv"><code class="docutils literal notranslate"><span class="pre">getNumVertices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor15getNumTrianglesEv"><code class="docutils literal notranslate"><span class="pre">getNumTriangles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor14getMaxVerticesEv"><code class="docutils literal notranslate"><span class="pre">getMaxVertices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor15getMaxTrianglesEv"><code class="docutils literal notranslate"><span class="pre">getMaxTriangles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor26setMaxVerticesAndTrianglesE5PxU325PxU32"><code class="docutils literal notranslate"><span class="pre">setMaxVerticesAndTriangles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor15getMaxParticlesEv"><code class="docutils literal notranslate"><span class="pre">getMaxParticles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor15setMaxParticlesE5PxU32"><code class="docutils literal notranslate"><span class="pre">setMaxParticles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor17extractIsosurfaceEP6PxVec4K5PxU328CUstreamP5PxU325PxU32P5PxU32P6PxVec4P6PxVec4P6PxVec46PxReal"><code class="docutils literal notranslate"><span class="pre">extractIsosurface()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor19setResultBufferHostEP6PxVec4P5PxU32P6PxVec4"><code class="docutils literal notranslate"><span class="pre">setResultBufferHost()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor21setResultBufferDeviceEP6PxVec4P5PxU32P6PxVec4"><code class="docutils literal notranslate"><span class="pre">setResultBufferDevice()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractor10setEnabledEb"><code class="docutils literal notranslate"><span class="pre">setEnabled()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK21PxIsosurfaceExtractor9isEnabledEv"><code class="docutils literal notranslate"><span class="pre">isEnabled()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N21PxIsosurfaceExtractorD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxIsosurfaceExtractor()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

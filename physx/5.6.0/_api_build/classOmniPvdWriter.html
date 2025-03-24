@@ -1,0 +1,1332 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>OmniPvdWriter &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classOmniPvdWriter';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="OmniPvdWriterStatusFlag" href="structOmniPvdWriterStatusFlag.html" />
+    <link rel="prev" title="OmniPvdWriteStream" href="classOmniPvdWriteStream.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">OmniPvdWriter</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="omnipvdwriter">
+<h1>OmniPvdWriter<a class="headerlink" href="#omnipvdwriter" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdWriter.h.html#omnipvdwriter-8h"><span class="std std-ref">pvdruntime/include/OmniPvdWriter.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413OmniPvdWriter">
+<span id="_CPPv313OmniPvdWriter"></span><span id="_CPPv213OmniPvdWriter"></span><span id="OmniPvdWriter"></span><span class="target" id="classomnipvdwriter"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdWriter</span></span></span><a class="headerlink" href="#_CPPv413OmniPvdWriter" title="Link to this definition">#</a><br /></dt>
+<dd><p>Used to write debug information to an <a class="reference internal" href="classOmniPvdWriteStream.html#classomnipvdwritestream"><span class="std std-ref">OmniPvdWriteStream</span></a>. </p>
+<p>Allows the registration of OmniPVD classes and attributes, in a similar fashion to an object oriented language. A registration returns a unique identifier or handle.</p>
+<p>Once classes and attributes have been registered, one can create for example object instances of a class and set the values of the attributes of a specific object.</p>
+<p>Objects can be grouped by context using the context handle. The context handle is a user-specified handle which is passed to the set functions and object creation and destruction functions.</p>
+<p>Each context can have its own notion of time. The current time of a context can be exported with calls to the startFrame and stopFrame functions. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriterD0Ev">
+<span id="_CPPv3N13OmniPvdWriterD0Ev"></span><span id="_CPPv2N13OmniPvdWriterD0Ev"></span><span id="OmniPvdWriter::~OmniPvdWriter"></span><span class="target" id="classomnipvdwriter_1a5e355bbb7aa3bfaacd83d60c8e339492"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~OmniPvdWriter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdWriterD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter14setLogFunctionE18OmniPvdLogFunction">
+<span id="_CPPv3N13OmniPvdWriter14setLogFunctionE18OmniPvdLogFunction"></span><span id="_CPPv2N13OmniPvdWriter14setLogFunctionE18OmniPvdLogFunction"></span><span id="OmniPvdWriter::setLogFunction__OmniPvdLogFunction"></span><span class="target" id="classomnipvdwriter_1ac4bbc1dcfa75200d483750f85c1dce77"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLogFunction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html#_CPPv418OmniPvdLogFunction" title="OmniPvdLogFunction"><span class="n"><span class="pre">OmniPvdLogFunction</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">logFunction</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter14setLogFunctionE18OmniPvdLogFunction" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the log function to print the internal debug messages of the OmniPVD API. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logFunction</strong> – The function pointer to receive the log messages </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter14setWriteStreamER18OmniPvdWriteStream">
+<span id="_CPPv3N13OmniPvdWriter14setWriteStreamER18OmniPvdWriteStream"></span><span id="_CPPv2N13OmniPvdWriter14setWriteStreamER18OmniPvdWriteStream"></span><span id="OmniPvdWriter::setWriteStream__OmniPvdWriteStreamR"></span><span class="target" id="classomnipvdwriter_1ab99745a4fd93dcb08c1982ce73278723"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setWriteStream</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="classOmniPvdWriteStream.html#_CPPv418OmniPvdWriteStream" title="OmniPvdWriteStream"><span class="n"><span class="pre">OmniPvdWriteStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">writeStream</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter14setWriteStreamER18OmniPvdWriteStream" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the write stream to receive the API command stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>writeStream</strong> – The <a class="reference internal" href="classOmniPvdWriteStream.html#classomnipvdwritestream"><span class="std std-ref">OmniPvdWriteStream</span></a> to receive the stream of API calls/notifications </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter14getWriteStreamEv">
+<span id="_CPPv3N13OmniPvdWriter14getWriteStreamEv"></span><span id="_CPPv2N13OmniPvdWriter14getWriteStreamEv"></span><span id="OmniPvdWriter::getWriteStream"></span><span class="target" id="classomnipvdwriter_1ae9fd9e2b46f72f562efb62fa8bbb1d7e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classOmniPvdWriteStream.html#_CPPv418OmniPvdWriteStream" title="OmniPvdWriteStream"><span class="n"><span class="pre">OmniPvdWriteStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getWriteStream</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter14getWriteStreamEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the pointer to the write stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A pointer to the write stream </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter13registerClassEPKc18OmniPvdClassHandle">
+<span id="_CPPv3N13OmniPvdWriter13registerClassEPKc18OmniPvdClassHandle"></span><span id="_CPPv2N13OmniPvdWriter13registerClassEPKc18OmniPvdClassHandle"></span><span id="OmniPvdWriter::registerClass__cCP.OmniPvdClassHandle"></span><span class="target" id="classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerClass</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">className</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseClassHandle</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter13registerClassEPKc18OmniPvdClassHandle" title="Link to this definition">#</a><br /></dt>
+<dd><p>Registers an OmniPVD class. </p>
+<p>Returns a unique handle to a class, which can be used to register class attributes and express object lifetimes with the createObject and destroyObject functions. Class inheritance can be described by calling registerClass with a base class handle. Derived classes inherit the attributes of the parent classes.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a0803ea7a706ec49c445306c49bf2e7ad"><span class="std std-ref">OmniPvdWriter::registerAttribute()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1ad636c838eb13f66c019b953383b5985b"><span class="std std-ref">OmniPvdWriter::registerEnumValue()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a39b4509f1b8ff37e7f333ee55e9e1fc1"><span class="std std-ref">OmniPvdWriter::registerFlagsAttribute()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1ac4b763b7e4d9539c131ff7e034b986c0"><span class="std std-ref">OmniPvdWriter::registerClassAttribute()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">OmniPvdWriter::registerUniqueListAttribute()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a1514ca9f797ed2adbf01e18196a3e869"><span class="std std-ref">OmniPvdWriter::createObject()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>className</strong> – The class name </p></li>
+<li><p><strong>baseClassHandle</strong> – The handle to the base class. This handle is obtained by pre-registering the base class. Defaults to 0 which means the class has no parent class </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A unique class handle for the registered class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter17registerEnumValueE18OmniPvdClassHandlePKc20OmniPvdEnumValueType">
+<span id="_CPPv3N13OmniPvdWriter17registerEnumValueE18OmniPvdClassHandlePKc20OmniPvdEnumValueType"></span><span id="_CPPv2N13OmniPvdWriter17registerEnumValueE18OmniPvdClassHandlePKc20OmniPvdEnumValueType"></span><span id="OmniPvdWriter::registerEnumValue__OmniPvdClassHandle.cCP.OmniPvdEnumValueType"></span><span class="target" id="classomnipvdwriter_1ad636c838eb13f66c019b953383b5985b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerEnumValue</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeName</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html#_CPPv420OmniPvdEnumValueType" title="OmniPvdEnumValueType"><span class="n"><span class="pre">OmniPvdEnumValueType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter17registerEnumValueE18OmniPvdClassHandlePKc20OmniPvdEnumValueType" title="Link to this definition">#</a><br /></dt>
+<dd><p>Registers an enum name and corresponding value for a pre-registered class. </p>
+<p>Registering enums happens in two steps. First, <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> is called with the name of the enum. This returns a class handle, which is used in a second step for the enum value registration with <a class="reference internal" href="#classomnipvdwriter_1ad636c838eb13f66c019b953383b5985b"><span class="std std-ref">registerEnumValue()</span></a>. If an enum has multiple values, <a class="reference internal" href="#classomnipvdwriter_1ad636c838eb13f66c019b953383b5985b"><span class="std std-ref">registerEnumValue()</span></a> has to be called with the different values.</p>
+<p>Note that enums differ from usual classes because their attributes, the enum values, do not change over time and there is no need to call <a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">setAttribute()</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call </p></li>
+<li><p><strong>attributeName</strong> – The name of the enum value </p></li>
+<li><p><strong>value</strong> – The value of the enum value </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A unique attribute handle for the registered enum value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter17registerAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter17registerAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter17registerAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE8uint32_t"></span><span id="OmniPvdWriter::registerAttribute__OmniPvdClassHandle.cCP.OmniPvdDataType::Enum.uint32_t"></span><span class="target" id="classomnipvdwriter_1a0803ea7a706ec49c445306c49bf2e7ad"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeName</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structOmniPvdDataType.html#_CPPv415OmniPvdDataType" title="OmniPvdDataType"><span class="n"><span class="pre">OmniPvdDataType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structOmniPvdDataType.html#_CPPv4N15OmniPvdDataType4EnumE" title="OmniPvdDataType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributeDataType</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter17registerAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Registers an attribute. </p>
+<p>The class handle is obtained from a previous call to <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a>. After registering an attribute, one gets an attribute handle which can be used to set data values of an attribute with <a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">setAttribute()</span></a>. All attributes are treated as arrays, even if the attribute has only a single data item. Set nbElements to 0 to indicate that the array has a variable length.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">OmniPvdWriter::setAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call </p></li>
+<li><p><strong>attributeName</strong> – The attribute name </p></li>
+<li><p><strong>attributeDataType</strong> – The attribute data type </p></li>
+<li><p><strong>nbElements</strong> – The number of elements in the array. Set this to 0 to indicate a variable length array </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A unique attribute handle for the registered attribute</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter22registerFlagsAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle">
+<span id="_CPPv3N13OmniPvdWriter22registerFlagsAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle"></span><span id="_CPPv2N13OmniPvdWriter22registerFlagsAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle"></span><span id="OmniPvdWriter::registerFlagsAttribute__OmniPvdClassHandle.cCP.OmniPvdClassHandle"></span><span class="target" id="classomnipvdwriter_1a39b4509f1b8ff37e7f333ee55e9e1fc1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerFlagsAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeName</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">enumClassHandle</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter22registerFlagsAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle" title="Link to this definition">#</a><br /></dt>
+<dd><p>Registers an attribute which is a flag. </p>
+<p>Use this function to indicate that a pre-registered class has a flag attribute, i.e., the attribute is a pre-registered enum.</p>
+<p>The returned attribute handle can be used in <a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">setAttribute()</span></a> to set an object’s flags.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">OmniPvdWriter::setAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call of the class </p></li>
+<li><p><strong>attributeName</strong> – The attribute name </p></li>
+<li><p><strong>enumClassHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call of the enum </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A unique attribute handle for the registered flags attribute</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter22registerClassAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle">
+<span id="_CPPv3N13OmniPvdWriter22registerClassAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle"></span><span id="_CPPv2N13OmniPvdWriter22registerClassAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle"></span><span id="OmniPvdWriter::registerClassAttribute__OmniPvdClassHandle.cCP.OmniPvdClassHandle"></span><span class="target" id="classomnipvdwriter_1ac4b763b7e4d9539c131ff7e034b986c0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerClassAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeName</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classAttributeHandle</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter22registerClassAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle" title="Link to this definition">#</a><br /></dt>
+<dd><p>Registers an attribute which is a class. </p>
+<p>Use this function to indicate that a pre-registered class has an attribute which is a pre-registered class.</p>
+<p>The returned attribute handle can be used in <a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">setAttribute()</span></a> to set an object’s class attribute.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"><span class="std std-ref">OmniPvdWriter::setAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call of the class </p></li>
+<li><p><strong>attributeName</strong> – The attribute name </p></li>
+<li><p><strong>classAttributeHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call of the class attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A unique handle for the registered class attribute</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter27registerUniqueListAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE">
+<span id="_CPPv3N13OmniPvdWriter27registerUniqueListAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE"></span><span id="_CPPv2N13OmniPvdWriter27registerUniqueListAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE"></span><span id="OmniPvdWriter::registerUniqueListAttribute__OmniPvdClassHandle.cCP.OmniPvdDataType::Enum"></span><span class="target" id="classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerUniqueListAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeName</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="structOmniPvdDataType.html#_CPPv415OmniPvdDataType" title="OmniPvdDataType"><span class="n"><span class="pre">OmniPvdDataType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structOmniPvdDataType.html#_CPPv4N15OmniPvdDataType4EnumE" title="OmniPvdDataType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributeDataType</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter27registerUniqueListAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Registers an attribute which can hold a list of unique items. </p>
+<p>The returned attribute handle can be used in calls to <a class="reference internal" href="#classomnipvdwriter_1a75cd3549db517062b4f1b2c0cacaa24e"><span class="std std-ref">addToUniqueListAttribute()</span></a> and <a class="reference internal" href="#classomnipvdwriter_1a71a0691083a42014b6d26cb2a4114311"><span class="std std-ref">removeFromUniqueListAttribute()</span></a>, to add an item to and remove it from the list, respectively.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a75cd3549db517062b4f1b2c0cacaa24e"><span class="std std-ref">OmniPvdWriter::addToUniqueListAttribute()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a71a0691083a42014b6d26cb2a4114311"><span class="std std-ref">OmniPvdWriter::removeFromUniqueListAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call of the class </p></li>
+<li><p><strong>attributeName</strong> – The attribute name </p></li>
+<li><p><strong>attributeDataType</strong> – The data type of the items which will get added to the list attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A unique handle for the registered list attribute</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"></span><span id="OmniPvdWriter::setAttribute__OmniPvdContextHandle.OmniPvdObjectHandle.OmniPvdAttributeHandleCP.uint8_t.uint8_tCP.uint32_t"></span><span class="target" id="classomnipvdwriter_1a3f01681ca874331a4ad23b6c5be16bc3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbAttributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbrBytes</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets an attribute value. </p>
+<p>Since an attribute can be part of a nested construct of class attributes, the method expects an array of attribute handles as input to uniquely identify the attribute.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a0803ea7a706ec49c445306c49bf2e7ad"><span class="std std-ref">OmniPvdWriter::registerAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>attributeHandles</strong> – The attribute handles containing all class attribute handles of a nested class construct. The last one has to be the handle from the <a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">registerUniqueListAttribute()</span></a> call. </p></li>
+<li><p><strong>nbAttributeHandles</strong> – The number of attribute handles provided in attributeHandles </p></li>
+<li><p><strong>data</strong> – The pointer to the data of the element(s) to remove from the set </p></li>
+<li><p><strong>nbrBytes</strong> – The number of bytes to be written</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"></span><span id="OmniPvdWriter::setAttribute__OmniPvdContextHandle.OmniPvdObjectHandle.OmniPvdAttributeHandle.uint8_tCP.uint32_t"></span><span class="target" id="classomnipvdwriter_1acbe0f7a74d3fd800dbf42dcbe42bac7c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributeHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbrBytes</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets an attribute value. </p>
+<p>See other setAttribute method for details. This special version covers the case where the attribute is not part of a class attribute construct.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a0803ea7a706ec49c445306c49bf2e7ad"><span class="std std-ref">OmniPvdWriter::registerAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>attributeHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a0803ea7a706ec49c445306c49bf2e7ad"><span class="std std-ref">registerAttribute()</span></a> call </p></li>
+<li><p><strong>data</strong> – The pointer to the data </p></li>
+<li><p><strong>nbrBytes</strong> – The number of bytes to be written</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"></span><span id="OmniPvdWriter::addToUniqueListAttribute__OmniPvdContextHandle.OmniPvdObjectHandle.OmniPvdAttributeHandleCP.uint8_t.uint8_tCP.uint32_t"></span><span class="target" id="classomnipvdwriter_1a75cd3549db517062b4f1b2c0cacaa24e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addToUniqueListAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbAttributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbrBytes</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Adds an item to a unique list attribute. </p>
+<p>A unique list attribute is defined like a set in mathematics, where each element must be unique.</p>
+<p>Since an attribute can be part of a nested construct of class attributes, the method expects an array of attribute handles as input to uniquely identify the attribute.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">OmniPvdWriter::registerUniqueListAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>attributeHandles</strong> – The attribute handles containing all class attribute handles of a nested class construct. The last one has to be the handle from the <a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">registerUniqueListAttribute()</span></a> call. </p></li>
+<li><p><strong>nbAttributeHandles</strong> – The number of attribute handles provided in attributeHandles </p></li>
+<li><p><strong>data</strong> – The pointer to the data of the item to add to the list </p></li>
+<li><p><strong>nbrBytes</strong> – The number of bytes to be written</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"></span><span id="OmniPvdWriter::addToUniqueListAttribute__OmniPvdContextHandle.OmniPvdObjectHandle.OmniPvdAttributeHandle.uint8_tCP.uint32_t"></span><span class="target" id="classomnipvdwriter_1a39afb3bb95b2a3bf7065f65d94a3a2cc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addToUniqueListAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributeHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbrBytes</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Adds an item to a unique list attribute. </p>
+<p>See other addToUniqueListAttribute method for details. This special version covers the case where the attribute is not part of a class attribute construct.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">OmniPvdWriter::registerUniqueListAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>attributeHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">registerUniqueListAttribute()</span></a> call </p></li>
+<li><p><strong>data</strong> – The pointer to the data of the item to add to the list </p></li>
+<li><p><strong>nbrBytes</strong> – The number of bytes to be written</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"></span><span id="OmniPvdWriter::removeFromUniqueListAttribute__OmniPvdContextHandle.OmniPvdObjectHandle.OmniPvdAttributeHandleCP.uint8_t.uint8_tCP.uint32_t"></span><span class="target" id="classomnipvdwriter_1a71a0691083a42014b6d26cb2a4114311"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeFromUniqueListAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbAttributeHandles</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbrBytes</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Removes an item from a uniqe list attribute. </p>
+<p>A uniqe list attribute is defined like a set in mathematics, where each element must be unique.</p>
+<p>Since an attribute can be part of a nested construct of class attributes, the method expects an array of attribute handles as input to uniquely identify the attribute.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">OmniPvdWriter::registerUniqueListAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>attributeHandles</strong> – The attribute handles containing all class attribute handles of a nested class construct. The last one has to be the handle from the <a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">registerUniqueListAttribute()</span></a> call. </p></li>
+<li><p><strong>nbAttributeHandles</strong> – The number of attribute handles provided in attributeHandles </p></li>
+<li><p><strong>data</strong> – The pointer to the data of the item to remove from the list </p></li>
+<li><p><strong>nbrBytes</strong> – The number of bytes to be written</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t">
+<span id="_CPPv3N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"></span><span id="_CPPv2N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"></span><span id="OmniPvdWriter::removeFromUniqueListAttribute__OmniPvdContextHandle.OmniPvdObjectHandle.OmniPvdAttributeHandle.uint8_tCP.uint32_t"></span><span class="target" id="classomnipvdwriter_1a77e3147f5c2cef8d3e19773f9c49d56a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeFromUniqueListAttribute</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributeHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nbrBytes</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Removes an item from a uniqe list attribute. </p>
+<p>See other removeFromUniqueListAttribute method for details. This special version covers the case where the attribute is not part of a class attribute construct.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">OmniPvdWriter::registerUniqueListAttribute()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>attributeHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a12ef96149fab84bd9a16703ccf69f4d7"><span class="std std-ref">registerUniqueListAttribute()</span></a> call </p></li>
+<li><p><strong>data</strong> – The pointer to the data of the item to remove from the list </p></li>
+<li><p><strong>nbrBytes</strong> – The number of bytes to be written</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter12createObjectE20OmniPvdContextHandle18OmniPvdClassHandle19OmniPvdObjectHandlePKc">
+<span id="_CPPv3N13OmniPvdWriter12createObjectE20OmniPvdContextHandle18OmniPvdClassHandle19OmniPvdObjectHandlePKc"></span><span id="_CPPv2N13OmniPvdWriter12createObjectE20OmniPvdContextHandle18OmniPvdClassHandle19OmniPvdObjectHandlePKc"></span><span id="OmniPvdWriter::createObject__OmniPvdContextHandle.OmniPvdClassHandle.OmniPvdObjectHandle.cCP"></span><span class="target" id="classomnipvdwriter_1a1514ca9f797ed2adbf01e18196a3e869"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">createObject</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">classHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">objectName</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter12createObjectE20OmniPvdContextHandle18OmniPvdClassHandle19OmniPvdObjectHandlePKc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates an object creation event. </p>
+<p>Indicates that an object is created. One can freely choose a context handle for grouping objects.</p>
+<p>The class handle is obtained from a <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call. The object handle should be unique, but as it’s not tracked by the OmniPVD API, it’s important this is set to a valid handle such as the object’s physical memory address.</p>
+<p>The object name can be freely choosen or not set.</p>
+<p>Create about object destruction event by calling <a class="reference internal" href="#classomnipvdwriter_1aab44eaf2e314450b694f0ba0c9294039"><span class="std std-ref">destroyObject()</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1aab44eaf2e314450b694f0ba0c9294039"><span class="std std-ref">OmniPvdWriter::destroyObject()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>classHandle</strong> – The handle from the <a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">registerClass()</span></a> call </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address </p></li>
+<li><p><strong>objectName</strong> – The user-defined name of the object. Can be the empty string</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter13destroyObjectE20OmniPvdContextHandle19OmniPvdObjectHandle">
+<span id="_CPPv3N13OmniPvdWriter13destroyObjectE20OmniPvdContextHandle19OmniPvdObjectHandle"></span><span id="_CPPv2N13OmniPvdWriter13destroyObjectE20OmniPvdContextHandle19OmniPvdObjectHandle"></span><span id="OmniPvdWriter::destroyObject__OmniPvdContextHandle.OmniPvdObjectHandle"></span><span class="target" id="classomnipvdwriter_1aab44eaf2e314450b694f0ba0c9294039"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">destroyObject</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">objectHandle</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter13destroyObjectE20OmniPvdContextHandle19OmniPvdObjectHandle" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates an object destruction event. </p>
+<p>Use this to indicate that an object is destroyed. Use the same user-defined context and object handles as were used in the create object calls.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a9818497343c3c74998bce785da61c10d"><span class="std std-ref">OmniPvdWriter::registerClass()</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classomnipvdwriter_1a1514ca9f797ed2adbf01e18196a3e869"><span class="std std-ref">OmniPvdWriter::createObject()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>objectHandle</strong> – The user-defined unique handle of the object. E.g. its physical memory address</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter10startFrameE20OmniPvdContextHandle8uint64_t">
+<span id="_CPPv3N13OmniPvdWriter10startFrameE20OmniPvdContextHandle8uint64_t"></span><span id="_CPPv2N13OmniPvdWriter10startFrameE20OmniPvdContextHandle8uint64_t"></span><span id="OmniPvdWriter::startFrame__OmniPvdContextHandle.uint64_t"></span><span class="target" id="classomnipvdwriter_1a3b313a6ff3d71657ed6cc34b89c4199a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startFrame</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeStamp</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter10startFrameE20OmniPvdContextHandle8uint64_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a frame start event. </p>
+<p>Time or frames are counted separatly per user-defined context.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>timeStamp</strong> – The timestamp of the frame start event </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter9stopFrameE20OmniPvdContextHandle8uint64_t">
+<span id="_CPPv3N13OmniPvdWriter9stopFrameE20OmniPvdContextHandle8uint64_t"></span><span id="_CPPv2N13OmniPvdWriter9stopFrameE20OmniPvdContextHandle8uint64_t"></span><span id="OmniPvdWriter::stopFrame__OmniPvdContextHandle.uint64_t"></span><span class="target" id="classomnipvdwriter_1a730ae7dc8e3db3469fb89dc62573c426"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stopFrame</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeStamp</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter9stopFrameE20OmniPvdContextHandle8uint64_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a stop frame event. </p>
+<p>Time is counted separately per user-defined context.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>timeStamp</strong> – The timestamp of the frame stop event </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter13recordMessageE20OmniPvdContextHandlePKcPKc8uint32_t8uint32_t18OmniPvdClassHandle">
+<span id="_CPPv3N13OmniPvdWriter13recordMessageE20OmniPvdContextHandlePKcPKc8uint32_t8uint32_t18OmniPvdClassHandle"></span><span id="_CPPv2N13OmniPvdWriter13recordMessageE20OmniPvdContextHandlePKcPKc8uint32_t8uint32_t18OmniPvdClassHandle"></span><span id="OmniPvdWriter::recordMessage__OmniPvdContextHandle.cCP.cCP.uint32_t.uint32_t.OmniPvdClassHandle"></span><span class="target" id="classomnipvdwriter_1a3d05a21f669e5ec95a5cd82773d6ea3e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">recordMessage</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contextHandle</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">message</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">file</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">handle</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter13recordMessageE20OmniPvdContextHandlePKcPKc8uint32_t8uint32_t18OmniPvdClassHandle" title="Link to this definition">#</a><br /></dt>
+<dd><p>Record a message. </p>
+<p>Record a message in the OVD stream. The file, line and type parameters can help locate the source of the message when debugging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contextHandle</strong> – The user-defined context handle for grouping objects </p></li>
+<li><p><strong>message</strong> – A character string text message. </p></li>
+<li><p><strong>file</strong> – A character string containing the name of the source file where the message originated from. NULL is a valid value if a file name is not needed. </p></li>
+<li><p><strong>line</strong> – The line number in the source file where the message originated from. </p></li>
+<li><p><strong>type</strong> – An enumerated type describing the message type. If unneeded, any value can be set. </p></li>
+<li><p><strong>handle</strong> – A handle to an Omni PVD enumerated type that contains all values for the previous type parameter. Setting OMNI_PVD_INVALID_HANDLE will cause this parameter to be ignored. See <a class="reference internal" href="#classomnipvdwriter_1ad636c838eb13f66c019b953383b5985b"><span class="std std-ref">registerEnumValue()</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter9getStatusEv">
+<span id="_CPPv3N13OmniPvdWriter9getStatusEv"></span><span id="_CPPv2N13OmniPvdWriter9getStatusEv"></span><span id="OmniPvdWriter::getStatus"></span><span class="target" id="classomnipvdwriter_1ae2928ddebcf90441c277034c27bb9176"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStatus</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter9getStatusEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Gets the status of the writer. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structOmniPvdWriterStatusFlag.html#structomnipvdwriterstatusflag"><span class="std std-ref">OmniPvdWriterStatusFlag</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The current status flags of the writer, held in a 32 bit unsigned integer with the flag bits defined by <a class="reference internal" href="structOmniPvdWriterStatusFlag.html#structomnipvdwriterstatusflag"><span class="std std-ref">OmniPvdWriterStatusFlag</span></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdWriter11clearStatusEv">
+<span id="_CPPv3N13OmniPvdWriter11clearStatusEv"></span><span id="_CPPv2N13OmniPvdWriter11clearStatusEv"></span><span id="OmniPvdWriter::clearStatus"></span><span class="target" id="classomnipvdwriter_1af3745a6b4dd44c34ff767901de8fdfb3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clearStatus</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdWriter11clearStatusEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Clears or resets the status of the writer. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classOmniPvdWriteStream.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">OmniPvdWriteStream</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structOmniPvdWriterStatusFlag.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">OmniPvdWriterStatusFlag</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv413OmniPvdWriter"><code class="docutils literal notranslate"><span class="pre">OmniPvdWriter</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriterD0Ev"><code class="docutils literal notranslate"><span class="pre">~OmniPvdWriter()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter14setLogFunctionE18OmniPvdLogFunction"><code class="docutils literal notranslate"><span class="pre">setLogFunction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter14setWriteStreamER18OmniPvdWriteStream"><code class="docutils literal notranslate"><span class="pre">setWriteStream()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter14getWriteStreamEv"><code class="docutils literal notranslate"><span class="pre">getWriteStream()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter13registerClassEPKc18OmniPvdClassHandle"><code class="docutils literal notranslate"><span class="pre">registerClass()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter17registerEnumValueE18OmniPvdClassHandlePKc20OmniPvdEnumValueType"><code class="docutils literal notranslate"><span class="pre">registerEnumValue()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter17registerAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE8uint32_t"><code class="docutils literal notranslate"><span class="pre">registerAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter22registerFlagsAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle"><code class="docutils literal notranslate"><span class="pre">registerFlagsAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter22registerClassAttributeE18OmniPvdClassHandlePKc18OmniPvdClassHandle"><code class="docutils literal notranslate"><span class="pre">registerClassAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter27registerUniqueListAttributeE18OmniPvdClassHandlePKcN15OmniPvdDataType4EnumE"><code class="docutils literal notranslate"><span class="pre">registerUniqueListAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">setAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter12setAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">setAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">addToUniqueListAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter24addToUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">addToUniqueListAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandlePK22OmniPvdAttributeHandle7uint8_tPK7uint8_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">removeFromUniqueListAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter29removeFromUniqueListAttributeE20OmniPvdContextHandle19OmniPvdObjectHandle22OmniPvdAttributeHandlePK7uint8_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">removeFromUniqueListAttribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter12createObjectE20OmniPvdContextHandle18OmniPvdClassHandle19OmniPvdObjectHandlePKc"><code class="docutils literal notranslate"><span class="pre">createObject()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter13destroyObjectE20OmniPvdContextHandle19OmniPvdObjectHandle"><code class="docutils literal notranslate"><span class="pre">destroyObject()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter10startFrameE20OmniPvdContextHandle8uint64_t"><code class="docutils literal notranslate"><span class="pre">startFrame()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter9stopFrameE20OmniPvdContextHandle8uint64_t"><code class="docutils literal notranslate"><span class="pre">stopFrame()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter13recordMessageE20OmniPvdContextHandlePKcPKc8uint32_t8uint32_t18OmniPvdClassHandle"><code class="docutils literal notranslate"><span class="pre">recordMessage()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter9getStatusEv"><code class="docutils literal notranslate"><span class="pre">getStatus()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N13OmniPvdWriter11clearStatusEv"><code class="docutils literal notranslate"><span class="pre">clearStatus()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

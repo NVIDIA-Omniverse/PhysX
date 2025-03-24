@@ -1,0 +1,1007 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Simulation &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=df23e5c0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/Simulation';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Advanced Collision Detection" href="AdvancedCollisionDetection.html" />
+    <link rel="prev" title="Rigid Body Dynamics" href="RigidBodyDynamics.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Mar 24, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Simulation</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="simulation">
+<span id="id1"></span><h1>Simulation<a class="headerlink" href="#simulation" title="Link to this heading">#</a></h1>
+<section id="the-simulation-loop">
+<span id="simulation-loop"></span><h2>The Simulation Loop<a class="headerlink" href="#the-simulation-loop" title="Link to this heading">#</a></h2>
+<p>Use the method <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> to advance the world forward in time.
+Here is simplified code snippet for a fixed time stepper:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mAccumulator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="n">mStepSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">;</span>
+
+<span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">advance</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">mAccumulator</span><span class="w">  </span><span class="o">+=</span><span class="w"> </span><span class="n">dt</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">mAccumulator</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">mStepSize</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">mAccumulator</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mStepSize</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">simulate</span><span class="p">(</span><span class="n">mStepSize</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This code can be called whenever the app is done with processing events and is starting to idle.
+It accumulates elapsed real time until it is greater than a sixtieth of a second, and then calls <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a>, which  moves all objects in the scene forward by that interval.
+This is probably the simplest of very many different ways to deal with time when stepping the simulation forward.</p>
+<p>To allow the simulation to finish and return the results, simply call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">fetchResults</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>True indicates that the simulation should block until it is finished, so that on return the results are guaranteed to be available.
+When <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> completes, any simulation event callback functions that you defined will also be called.
+See the chapter <a class="reference internal" href="#callbacks"><span class="std std-ref">Callback Sequence</span></a>.
+Until <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> returns, the results of the current simulation step are not available.
+It is not allowed to add, remove or modify scene objects while the simulation is running.
+See the chapter <a class="reference internal" href="Threading.html#threading"><span class="std std-ref">Threading</span></a> for more details about reading and writing while the simulation is running.</p>
+<p>For the human eye to perceive animated motion as smooth, use at least twenty discrete frames per second, with each frame corresponding to a physics time step.
+To have smooth, realistic simulation of more complex physical scenes, use at least fifty frames per second.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are making a real-time interactive simulation, you may be tempted to take different sized time steps which correspond to the amount of real time that has elapsed since the last simulation frame.  Be very careful if you do this, rather than taking constant-sized time steps:  The simulation code is sensitive to both very small and large time steps, and also to too much variation between time steps.  In these cases it will likely produce jittery simulation.</p>
+</div>
+<p>See <a class="reference internal" href="#simulation-memory"><span class="std std-ref">Simulation memory</span></a> for details on how memory is used in simulation.</p>
+</section>
+<section id="island-management">
+<span id="id2"></span><h2>Island Management<a class="headerlink" href="#island-management" title="Link to this heading">#</a></h2>
+<p>For performance reasons the simulation of scenes with multiple actors is split up into multiple islands, which are solved independently.
+Each actor is assigned to exactly one island and during the solve procedure actors can only influence other actors within the same island.</p>
+<p>Islands are created by finding disconnected subgraphs in a scene graph where actors are nodes and edges represent connections between actors.
+The edges of the graph may be interactions between actors, for example contacts, but also explicit constraints like attachments and joints.
+Most of these edges are created automatically by PhysX when contacts occur or joints are being added to the scene.
+In cases where users can directly write constraints into buffers, for example <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleSystem::addParticleBuffer()</span></code>, the SDK does not inspect the content of these constraint buffers until the constraint solver is invoked.
+Therefore, it is necessary that users manually take care of creating edges (e.g., through <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxParticleSystem::addRigidAttachment()</span></code>) such that the islands can be properly formed and interacting actors end up in the same island.
+Also note that for performance reasons, independent small islands may be fused into a bigger island.
+This is particularly the case for GPU simulation, where the entire scene is merged into a single island.</p>
+<p>Each actor in PhysX has a method for defining solver iteration counts, see e.g., <a class="reference internal" href="RigidBodyDynamics.html#solver-iterations"><span class="std std-ref">Solver Iterations</span></a>.
+Given those per-actor iteration counts, each solver island performs as many iterations as the actor with the highest iteration count requests.
+Therefore, the actual number of solver iterations each body and constraint undergoes can change over time as the assignment of actors to islands changes and actors are going to sleep.
+If these varying iteration counts are not desired, all actors in the scene should be configured to require the same number of iterations.</p>
+</section>
+<section id="callback-sequence">
+<span id="callbacks"></span><h2>Callback Sequence<a class="headerlink" href="#callback-sequence" title="Link to this heading">#</a></h2>
+<p>PhysX callbacks allow any application to listen for events and react as required.</p>
+<p>The following callbacks are executed:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>onConstraintBreak</p></li>
+<li><p>onWake</p></li>
+<li><p>onSleep</p></li>
+<li><p>onContact</p></li>
+<li><p>onTrigger</p></li>
+<li><p>onAdvance</p></li>
+</ul>
+</div></blockquote>
+<p>To listen to any of these events it is necessary to subclass <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv425PxSimulationEventCallback" title="PxSimulationEventCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSimulationEventCallback</span></code></a> so that the various virtual functions may be implemented as desired.
+An instance of this subclass can then be registered per scene with either <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene26setSimulationEventCallbackEP25PxSimulationEventCallback" title="PxScene::setSimulationEventCallback"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setSimulationEventCallback()</span></code></a> or <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc23simulationEventCallbackE" title="PxSceneDesc::simulationEventCallback"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::simulationEventCallback</span></code></a>.
+Following these steps alone will ensure that constraint break events are successfully reported.
+One more step is required to report sleep and wake events: to avoid the expense of reporting all sleep and wake events, actors identified as worthy of sleep/wake notification require the flag <a class="reference internal" href="../_api_build/structPxActorFlag.html#_CPPv4N11PxActorFlag4Enum20eSEND_SLEEP_NOTIFIESE" title="PxActorFlag::eSEND_SLEEP_NOTIFIES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxActorFlag::eSEND_SLEEP_NOTIFIES</span></code></a> to be raised.
+Finally, to receive onContact and onTrigger events it is necessary to set a flag in the filter shader callback for all pairs of interacting objects for which events are required.
+More details on the filter shader callback can be found in <a class="reference internal" href="RigidBodyCollision.html#collisionfiltering"><span class="std std-ref">Collision Filtering</span></a>.</p>
+<p>Each callback allows read operations to be performed on the relevant actors involved in each event.
+It is important to note that for all events except <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv4N25PxSimulationEventCallback9onAdvanceEPPCK11PxRigidBodyPK11PxTransformK5PxU32" title="PxSimulationEventCallback::onAdvance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onAdvance()</span></code></a>, these read operations will return the state of the actors at the end of the simulation step rather than the state the actors had when the event was first detected during the course of the simulation step.
+This particularly affects the callbacks <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv4N25PxSimulationEventCallback9onTriggerEP13PxTriggerPair5PxU32" title="PxSimulationEventCallback::onTrigger"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onTrigger()</span></code></a>, <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv4N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32" title="PxSimulationEventCallback::onContact"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onContact()</span></code></a> and <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv4N25PxSimulationEventCallback17onConstraintBreakEP16PxConstraintInfo5PxU32" title="PxSimulationEventCallback::onConstraintBreak"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onConstraintBreak()</span></code></a>.
+The linear velocity, angular velocity and pose used to detect <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv4N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32" title="PxSimulationEventCallback::onContact"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onContact()</span></code></a> events can be retrieved by amending the simulation filter shader with the flags <a class="reference internal" href="../_api_build/structPxPairFlag.html#_CPPv4N10PxPairFlag4Enum20ePRE_SOLVER_VELOCITYE" title="PxPairFlag::ePRE_SOLVER_VELOCITY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::ePRE_SOLVER_VELOCITY</span></code></a> and <a class="reference internal" href="../_api_build/structPxPairFlag.html#_CPPv4N10PxPairFlag4Enum19eCONTACT_EVENT_POSEE" title="PxPairFlag::eCONTACT_EVENT_POSE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eCONTACT_EVENT_POSE</span></code></a>.
+This leads to code as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onContact</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">        </span><span class="c1">// Retrieve the current poses and velocities of the two actors involved in the contact event.</span>
+
+<span class="w">        </span><span class="p">{</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">body0PoseAtEndOfSimulateStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">getGlobalPose</span><span class="p">();</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">body1PoseAtEndOfSimulateStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">getGlobalPose</span><span class="p">();</span>
+
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body0LinVelAtEndOfSimulateStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getLinearVelocity</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">PxZero</span><span class="p">);</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body1LinVelAtEndOfSimulateStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getLinearVelocity</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">PxZero</span><span class="p">);</span>
+
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body0AngVelAtEndOfSimulateStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getAngularVelocity</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">PxZero</span><span class="p">);</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body1AngVelAtEndOfSimulateStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">actors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getAngularVelocity</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">PxZero</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// Retrieve the poses and velocities of the two actors involved in the contact event as they were</span>
+<span class="w">        </span><span class="c1">// when the contact event was detected.</span>
+
+<span class="w">        </span><span class="n">PxContactPairExtraDataIterator</span><span class="w"> </span><span class="n">iter</span><span class="p">(</span><span class="n">pairHeader</span><span class="p">.</span><span class="n">extraDataStream</span><span class="p">,</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">extraDataStreamSize</span><span class="p">);</span>
+<span class="w">        </span><span class="k">while</span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">nextItemSet</span><span class="p">())</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">body0PoseAtContactEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">eventPose</span><span class="o">-&gt;</span><span class="n">globalPose</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">body1PoseAtContactEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">eventPose</span><span class="o">-&gt;</span><span class="n">globalPose</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body0LinearVelocityAtContactEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">preSolverVelocity</span><span class="o">-&gt;</span><span class="n">linearVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body1LinearVelocityAtContactEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">preSolverVelocity</span><span class="o">-&gt;</span><span class="n">linearVelocity</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body0AngularVelocityAtContactEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">preSolverVelocity</span><span class="o">-&gt;</span><span class="n">angularVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body1AngularVelocityAtContactEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">preSolverVelocity</span><span class="o">-&gt;</span><span class="n">angularVelocity</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../_api_build/classPxSimulationEventCallback.html#_CPPv4N25PxSimulationEventCallback9onAdvanceEPPCK11PxRigidBodyPK11PxTransformK5PxU32" title="PxSimulationEventCallback::onAdvance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onAdvance()</span></code></a> callback provides early access to the new pose of moving rigid bodies.
+When this call occurs, rigid bodies that have the flag <a class="reference internal" href="../_api_build/structPxRigidBodyFlag.html#_CPPv4N15PxRigidBodyFlag4Enum32eENABLE_POSE_INTEGRATION_PREVIEWE" title="PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW</span></code></a> raised were moved by the simulation and their new poses can be accessed using the provided buffers.
+This callback is different from the others mentioned above in the sense that it will get called while the simulation is running.
+As a consequence, code in this callback should be as lightweight as possible, as it will block the simulation.</p>
+<p>It is forbidden to perform write operations in any callback.</p>
+</section>
+<section id="simulation-memory">
+<span id="id3"></span><h2>Simulation memory<a class="headerlink" href="#simulation-memory" title="Link to this heading">#</a></h2>
+<p>PhysX relies on the application for all memory allocation. The primary interface is via the <a class="reference internal" href="../_api_build/classPxAllocatorCallback.html#_CPPv419PxAllocatorCallback" title="PxAllocatorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAllocatorCallback</span></code></a> interface required to initialize the SDK:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PxAllocatorCallback</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxAllocatorCallback</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">allocate</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">typeName</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">line</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">deallocate</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">ptr</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>After the self-explanatory function argument describing the size of the allocation, the next three function arguments are an identifier name, which identifies the type of allocation, and the <code class="docutils literal notranslate"><span class="pre">__FILE__</span></code> and <code class="docutils literal notranslate"><span class="pre">__LINE__</span></code> location inside the SDK code where the allocation was made.
+More details of these function arguments can be found in the API documentation: <a class="reference internal" href="../_api_build/classPxAllocatorCallback.html#_CPPv419PxAllocatorCallback" title="PxAllocatorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAllocatorCallback</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>An important change since 2.x:  The SDK now requires that the memory that is returned to be 16-byte aligned.
+On many platforms <code class="docutils literal notranslate"><span class="pre">malloc()</span></code> returns memory that is 16-byte aligned, but on Windows the system function <code class="docutils literal notranslate"><span class="pre">_aligned_malloc()</span></code> provides this capability.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On some platforms PhysX uses system library calls to determine the correct type name, and the system function that returns the type name may call the system memory allocator.
+If you are instrumenting system memory allocations, you may observe this behavior.
+To prevent PhysX requesting type names, disable allocation names using the method <a class="reference internal" href="../_api_build/classPxFoundation.html#_CPPv4N12PxFoundation24setReportAllocationNamesEb" title="PxFoundation::setReportAllocationNames"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxFoundation::setReportAllocationNames()</span></code></a>.</p>
+</div>
+<p>Minimizing dynamic allocation is an important aspect of performance tuning.  PhysX provides several mechanisms to control and analyze memory usage.  These shall be discussed in turn.</p>
+<section id="scene-limits">
+<h3>Scene Limits<a class="headerlink" href="#scene-limits" title="Link to this heading">#</a></h3>
+<p>The number of allocations for tracking objects can be minimized by presizing the capacities of scene data structures, using either <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc6limitsE" title="PxSceneDesc::limits"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::limits</span></code></a> before creating the scene or the function <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene9setLimitsERK13PxSceneLimits" title="PxScene::setLimits"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setLimits()</span></code></a>.
+It is useful to note that these limits do not represent hard limits, meaning that PhysX will automatically perform further allocations if the number of objects exceeds the scene limits.</p>
+</section>
+<section id="k-data-blocks">
+<h3>16K Data Blocks<a class="headerlink" href="#k-data-blocks" title="Link to this heading">#</a></h3>
+<p>Much of the memory PhysX uses for simulation is held in a pool of blocks, each 16K in size.
+The initial number of blocks allocated to the pool can be controlled by setting <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc19nbContactDataBlocksE" title="PxSceneDesc::nbContactDataBlocks"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::nbContactDataBlocks</span></code></a>, while the maximum number of blocks that can ever be in the pool is governed by <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc22maxNbContactDataBlocksE" title="PxSceneDesc::maxNbContactDataBlocks"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::maxNbContactDataBlocks</span></code></a>.
+If PhysX internally needs more blocks than <code class="docutils literal notranslate"><span class="pre">nbContactDataBlocks</span></code> then it will automatically allocate further blocks to the pool until the number of blocks reaches <code class="docutils literal notranslate"><span class="pre">maxNbContactDataBlocks</span></code>.
+If PhysX subsequently needs more blocks than the maximum number of blocks, it will simply start dropping contacts and joint constraints.
+When this happens, warnings are passed to the error stream in the <code class="docutils literal notranslate"><span class="pre">PX_CHECKED</span></code> configuration.</p>
+<p>To help tune <code class="docutils literal notranslate"><span class="pre">nbContactDataBlocks</span></code> and <code class="docutils literal notranslate"><span class="pre">maxNbContactDataBlocks</span></code> it can be useful to query the number of blocks currently allocated to the pool using the function <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4NK7PxScene26getNbContactDataBlocksUsedEv" title="PxScene::getNbContactDataBlocksUsed"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getNbContactDataBlocksUsed()</span></code></a>.
+It can also be useful to query the maximum number of blocks that can ever be allocated to the pool with <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4NK7PxScene29getMaxNbContactDataBlocksUsedEv" title="PxScene::getMaxNbContactDataBlocksUsed"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getMaxNbContactDataBlocksUsed()</span></code></a>.</p>
+<p>Unused blocks can be reclaimed using <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene15flushSimulationEb" title="PxScene::flushSimulation"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::flushSimulation()</span></code></a>.
+When this function is called any allocated blocks not required by the current scene state will be deleted so that they may be reused by the application.
+Additionally, a number of other memory resources are freed by shrinking them to the minimum size required by the scene configuration.</p>
+</section>
+<section id="scratch-buffer">
+<h3>Scratch Buffer<a class="headerlink" href="#scratch-buffer" title="Link to this heading">#</a></h3>
+<p>A scratch memory block may be passed as a function argument to the function <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a>.
+As far as possible, PhysX will internally allocate temporary buffers from the scratch memory block, thereby reducing the need to perform temporary allocations from <a class="reference internal" href="../_api_build/classPxAllocatorCallback.html#_CPPv419PxAllocatorCallback" title="PxAllocatorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAllocatorCallback</span></code></a>.
+The block may be reused by the application after the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> call, which marks the end of the simulation.
+One restriction on the scratch memory block is that its size must be a multiple of 16K, and it must be 16-byte aligned.</p>
+</section>
+<section id="in-place-serialization">
+<h3>In-Place Serialization<a class="headerlink" href="#in-place-serialization" title="Link to this heading">#</a></h3>
+<p>PhysX objects can be stored in memory owned by the application using PhysX’ binary deserialization mechanism. See <a class="reference internal" href="Serialization.html#serialization"><span class="std std-ref">Serialization</span></a> for details.</p>
+</section>
+<section id="gpu-memory">
+<h3>GPU Memory<a class="headerlink" href="#gpu-memory" title="Link to this heading">#</a></h3>
+<p>When simulating a GPU-accelerated scene (see <a class="reference internal" href="GPURigidBodies.html#gpurigidbodies"><span class="std std-ref">GPU Simulation</span></a>), PhysX will allocate GPU device memory and pinned host memory.
+Contrary to CPU-side host memory, these allocations are made though the appropriate CUDA and GPU driver APIs and do not use the application-provided allocator.
+For details on GPU memory management, refer to the Section <a class="reference internal" href="GPURigidBodies.html#gpumemory"><span class="std std-ref">GPU Memory</span></a>.</p>
+</section>
+</section>
+<section id="completion-tasks">
+<h2>Completion Tasks<a class="headerlink" href="#completion-tasks" title="Link to this heading">#</a></h2>
+<p>A completion task is a <a class="reference internal" href="Threading.html#task"><span class="std std-ref">Task</span></a> that executes once the chain of simulation tasks triggered during <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> has finished.
+If PhysX has been configured to use worker threads then <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> will start simulation tasks on the worker threads and will likely exit before the worker threads have completed the work necessary to complete the scene update.
+A typical completion task would first need to call <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults(true)</span></code></a> to wrap up the simulation update step.
+After calling <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults(true)</span></code></a>, the completion task can perform any other post-physics work deemed necessary by the application:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="p">.</span><span class="n">fetchResults</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="n">game</span><span class="p">.</span><span class="n">updateA</span><span class="p">();</span>
+<span class="n">game</span><span class="p">.</span><span class="n">updateB</span><span class="p">();</span>
+<span class="p">...</span>
+<span class="n">game</span><span class="p">.</span><span class="n">updateZ</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The completion task is specified as a function argument in <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a>.</p>
+</section>
+<section id="synchronizing-with-other-threads">
+<h2>Synchronizing with Other Threads<a class="headerlink" href="#synchronizing-with-other-threads" title="Link to this heading">#</a></h2>
+<p>An important consideration for substepping is that <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> and <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> are considered write calls on the scene, and it is therefore illegal to read from or write to a scene while those functions are running.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PhysX does not lock its scene graph, but it will report an error in checked build if it detects that multiple threads make concurrent calls to the same scene, unless they are all read calls.</p>
+</div>
+</section>
+<section id="substepping">
+<h2>Substepping<a class="headerlink" href="#substepping" title="Link to this heading">#</a></h2>
+<p>For reasons of fidelity simulation or better stability it is often desired that the simulation frequency of PhysX be higher than the update rate of the application.
+The simplest way to do this is just to call <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> and <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> multiple times:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">substepCount</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="n">pre</span><span class="o">-</span><span class="n">simulation</span><span class="w"> </span><span class="n">work</span><span class="w"> </span><span class="p">(</span><span class="n">update</span><span class="w"> </span><span class="n">controllers</span><span class="p">,</span><span class="w"> </span><span class="n">etc</span><span class="p">)</span><span class="w"> </span><span class="p">...</span>
+<span class="w">    </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">simulate</span><span class="p">(</span><span class="n">substepSize</span><span class="p">);</span>
+<span class="w">    </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">fetchResults</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="n">post</span><span class="w"> </span><span class="n">simulation</span><span class="w"> </span><span class="n">work</span><span class="w"> </span><span class="p">(</span><span class="n">process</span><span class="w"> </span><span class="n">physics</span><span class="w"> </span><span class="n">events</span><span class="p">,</span><span class="w"> </span><span class="n">etc</span><span class="p">)</span><span class="w"> </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Sub-stepping can also be integrated with the completion task feature of the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a> function. To illustrate this, consider the situation where the scene is simulated until the graphics component signals that it has completed updating the render state of the scene.
+Here, the completion task will run once the simulation tasks have finished and its first job will be to block with <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults(true)</span></code></a> to complete the simulation step.
+When the completion task is able to proceed, its next work item will be to query the graphics component to check if another <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a> is required or if it can exit.
+In the case that another <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a> step is required it will clearly need to pass a completion task to <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a>.
+A tricky point here is that a completion task cannot submit itself as the next completion task because it would cause an illegal recursion.
+A solution to this problem might to be to have two completion tasks where each stores a reference to the other.
+Each completion task can then pass its partner to <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="p">.</span><span class="n">fetchResults</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">graphics</span><span class="p">.</span><span class="n">isComplete</span><span class="p">())</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">scene</span><span class="p">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">otherCompletionTask</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="split-sim">
+<h2>Split sim<a class="headerlink" href="#split-sim" title="Link to this heading">#</a></h2>
+<p>As an alternative to <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a>/ <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults()</span></code></a>, a simulation step may be split into two phases: <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7collideE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::collide"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::collide()</span></code></a> and <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::advance()</span></code></a>.
+This is known as split simulation.
+The key point here is that the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a>/ <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults()</span></code></a> combination permits reads and writes only before <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">simulate()</span></code></a> and after <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults()</span></code></a>.
+The split simulation, on the other hand, relaxes this restriction and allows some reads and writes to take place at specific points during the course of a simulation step.
+This shall now be explained in more detail.</p>
+<p>When using split sim, a physics simulation step would look like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="p">.</span><span class="n">collide</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">fetchCollision</span><span class="p">()</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">advance</span><span class="p">()</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">fetchResults</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>As already mentioned, split sim allows some properties to be written during the simulation step.
+More specifically, some properties, known as write-through properties, may be modified in-between the return from <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene14fetchCollisionEb" title="PxScene::fetchCollision"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchCollision()</span></code></a> and the execution of the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">advance()</span></code></a> call.
+This allows <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7collideE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::collide"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">collide()</span></code></a> to begin before the data required by <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">advance()</span></code></a> is available and to run in parallel with application-side logic that generates inputs to <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">advance()</span></code></a>.
+This is particularly useful for animation logic generating kinematic targets, and for controllers applying forces to bodies.
+The write-through properties are listed below:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">/</span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">addForce</span><span class="p">()</span><span class="o">/</span><span class="n">addTorque</span><span class="p">()</span><span class="o">/</span><span class="n">clearForce</span><span class="p">()</span><span class="o">/</span><span class="n">clearTorque</span><span class="p">()</span><span class="o">/</span><span class="n">setForceAndTorque</span><span class="p">()</span>
+<span class="n">PxRigidDynamic</span><span class="o">/</span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">setAngularVelocity</span><span class="p">()</span><span class="o">/</span><span class="n">setLinearVelocity</span><span class="p">()</span>
+<span class="n">PxRigidDynamic</span><span class="o">/</span><span class="n">PxArticulation</span><span class="o">::</span><span class="n">wakeUp</span><span class="p">()</span>
+<span class="n">PxRigidDynamic</span><span class="o">/</span><span class="n">PxArticulation</span><span class="o">::</span><span class="n">setWakeCounter</span><span class="p">()</span>
+<span class="n">PxRigidDynamic</span><span class="o">::</span><span class="n">setKinematicTarget</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Split sim also allows API read commands to be called during <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7collideE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::collide"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">collide()</span></code></a> and in-between the return from <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene14fetchCollisionEb" title="PxScene::fetchCollision"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchCollision()</span></code></a> and the execution of the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">advance()</span></code></a> call.
+These read commands are listed below:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidActor</span><span class="o">/</span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getGlobalPose</span><span class="p">()</span>
+<span class="n">PxRigidActor</span><span class="o">/</span><span class="n">PxArticulation</span><span class="o">/</span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getWorldBounds</span><span class="p">()</span>
+<span class="n">PxConstraint</span><span class="o">::</span><span class="n">getForce</span><span class="p">()</span>
+<span class="n">PxRigidActor</span><span class="o">/</span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getLinearVelocity</span><span class="p">()</span><span class="o">/</span><span class="n">getAngularVelocity</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Users can interleave the physics-dependent application logic between <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7collideE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::collide"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">collide()</span></code></a> and <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">advance()</span></code></a> as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="p">.</span><span class="n">collide</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+<span class="n">read</span><span class="w"> </span><span class="n">poses</span><span class="p">,</span><span class="w"> </span><span class="n">velocities</span><span class="p">,</span><span class="w"> </span><span class="n">world</span><span class="w"> </span><span class="n">bounds</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">constraint</span><span class="w"> </span><span class="n">forces</span>
+<span class="n">physics</span><span class="o">-</span><span class="n">dependent</span><span class="w"> </span><span class="n">game</span><span class="w"> </span><span class="n">logic</span><span class="w"> </span><span class="p">(</span><span class="n">anmimation</span><span class="p">,</span><span class="w"> </span><span class="n">rendering</span><span class="p">)</span><span class="w"> </span><span class="n">generating</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">set</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">modifications</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">apply</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">write</span><span class="o">-</span><span class="n">through</span><span class="w"> </span><span class="n">properties</span><span class="w"> </span><span class="n">before</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">advance</span><span class="p">()</span><span class="w"> </span><span class="n">phase</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">fetchCollision</span><span class="p">()</span>
+<span class="n">read</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">poses</span><span class="p">,</span><span class="w"> </span><span class="n">velocities</span><span class="p">,</span><span class="w"> </span><span class="n">world</span><span class="w"> </span><span class="n">bounds</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">constraint</span><span class="w"> </span><span class="n">forces</span>
+<span class="n">apply</span><span class="w"> </span><span class="n">user</span><span class="o">-</span><span class="n">buffered</span><span class="w"> </span><span class="n">modifications</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">write</span><span class="o">-</span><span class="n">through</span><span class="w"> </span><span class="n">properties</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">advance</span><span class="p">()</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">fetchResults</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The function <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene14fetchCollisionEb" title="PxScene::fetchCollision"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchCollision()</span></code></a> will wait until <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7collideE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::collide"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">collide()</span></code></a> has finished.
+Once <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene14fetchCollisionEb" title="PxScene::fetchCollision"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchCollision()</span></code></a> has completed, user-buffered modifications to write-through properties can be applied to the objects in the executing scene.
+In the subsequent <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene7advanceEPN5physx10PxBaseTaskE" title="PxScene::advance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">advance()</span></code></a> phase, the solver will take the modified write-through properties into account when computing the new sets of velocities and poses for the actors being simulated.</p>
+<p>As a final comment, it is worth noting that illegal read and write calls are detected in all build configurations - an illegal call will immediately return with an error passed to <a class="reference internal" href="../_api_build/classPxErrorCallback.html#_CPPv415PxErrorCallback" title="PxErrorCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxErrorCallback</span></code></a> and the function will not be executed.</p>
+</section>
+<section id="split-fetchresults">
+<h2>Split fetchResults<a class="headerlink" href="#split-fetchresults" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults()</span></code></a> method is available in both a standard and split format.
+The split format offers some advantages over the standard <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults()</span></code></a> method because it permits the user to parallelize processing of contact reports, which can be expensive when simulating complex scenes.</p>
+<p>A simplistic way to use split <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">fetchResults()</span></code></a> would look something like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">gSharedIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">simulate</span><span class="p">(</span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
+
+<span class="c1">//Call fetchResultsStart. Get the set of pair headers</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">*</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">;</span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">nbContactPairs</span><span class="p">;</span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">fetchResultsStart</span><span class="p">(</span><span class="n">pairHeader</span><span class="p">,</span><span class="w"> </span><span class="n">nbContactPairs</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span>
+
+<span class="c1">//Set up continuation task to be run after callbacks have been processed in parallel</span>
+<span class="n">callbackFinishTask</span><span class="p">.</span><span class="n">setContinuation</span><span class="p">(</span><span class="o">*</span><span class="n">gScene</span><span class="o">-&gt;</span><span class="n">getTaskManager</span><span class="p">(),</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="n">callbackFinishTask</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span>
+
+<span class="c1">//process the callbacks</span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">processCallbacks</span><span class="p">(</span><span class="o">&amp;</span><span class="n">callbackFinishTask</span><span class="p">);</span>
+
+<span class="n">callbackFinishTask</span><span class="p">.</span><span class="n">removeReference</span><span class="p">();</span>
+
+<span class="n">callbackFinishTask</span><span class="p">.</span><span class="n">wait</span><span class="p">();</span>
+
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">fetchResultsFinish</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The user is free to use their own task/threading system to process the callbacks.
+However, the PhysX scene provides a utility function that processes the callbacks using multiple threads, which is used in this code snippet.
+This method takes a continuation task that will be run when the tasks processing callbacks have completed.
+In this example, the completion task raises an event that can be waited upon to notify the main thread that callback processing has completed.</p>
+<p>This feature is demonstrated in <em>SnippetSplitFetchResults</em>.
+In order to make use of this approach, contact notification callbacks must be thread-safe.
+Furthermore, for this approach to be beneficial, contact notification callbacks need to be doing a significant amount of work to benefit from multi-threading them.</p>
+</section>
+<section id="shifting-the-scene-origin">
+<span id="originshift"></span><h2>Shifting The Scene Origin<a class="headerlink" href="#shifting-the-scene-origin" title="Link to this heading">#</a></h2>
+<p>Problems arising from the limits of floating point precision become more pronounced as objects move further from the origin. This phenomenon adversely affects large world scenarios. One solution might be to teleport all objects towards the origin with the proviso that their relative positions are preserved. The problem here is that internally cached data and persistent state will become invalid. PhysX offers an API to shift the origin of an entire scene in a way that maintains the consistency of the internally cached data and persistent state.</p>
+<p>The function <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene11shiftOriginERK6PxVec3" title="PxScene::shiftOrigin"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">shiftOrigin()</span></code></a> will shift the origin of a scene by a translation vector:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">::</span><span class="n">shiftOrigin</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">shift</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The positions of all objects in the scene and the corresponding data structures will be adjusted to reflect the new origin location (basically, the shift vector will be subtracted from all object positions). The intended use pattern for this API is to shift the origin such that object positions move closer towards zero. Please note that it is the user’s responsibility to keep track of the summed total origin shift and adjust all input/output to/from PhysX accordingly. It is worth noting that this can be an expensive operation and it is recommended to use it only in the case where distance-related precision issues arise in areas far from the origin. If extension modules of PhysX, such as the character or vehicle controller, are used then it will be necessary to propagate the scene shift to those modules as well. Please refer to the API documentation of these modules for details.</p>
+</section>
+<section id="solver-residual">
+<h2>Solver Residual<a class="headerlink" href="#solver-residual" title="Link to this heading">#</a></h2>
+<p>The solver residual quantifies the convergence of the iterative physics solver. A perfectly converged solution has a residual value of zero. Each constraint contributes to the accumulated residual value. This accumulation captures the maximum value among all residuals and the root mean squared (RMS) value. Once the feature is activated by setting the ENABLE_SOLVER_RESIDUAL_REPORTING flag on the scene, residuals can be obtained from the following PhysX objects:</p>
+<ul class="simple">
+<li><p>On the physics scene (PxScene): Residual across all solver error sources, including contacts.</p></li>
+<li><p>On articulation roots (PxArticulationJointReducedCoordinate): Residual across all joints that are part of that articulation.</p></li>
+<li><p>On non-articulation joints (PxConstraint via getConstraint() on PxJoint): The joint residual</p></li>
+</ul>
+<p>The following code demonstrates how to retrieve the residual values. Remember that the returned values are meaningless if the ENABLE_SOLVER_RESIDUAL_REPORTING flag is not set during scene construction:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSceneResidual</span><span class="w"> </span><span class="n">sceneResidual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">getSolverResidual</span><span class="p">();</span>
+<span class="n">PxArticulationResidual</span><span class="w"> </span><span class="n">articulationResidual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">getSolverResidual</span><span class="p">();</span>
+<span class="n">PxConstraintResidual</span><span class="w"> </span><span class="n">jointResidual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">joint</span><span class="o">-&gt;</span><span class="n">getConstraint</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getSolverResidual</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The reported residual value encompasses all residual sources associated with the queried object. Residual values are reported for the last position and velocity iteration. Higher iteration counts typically result in lower residual values because the solver can execute more correction steps while seeking the best solution.
+When the TGS solver is active, the residuals tend to fluctuate more, compared to the PGS solver with identical iteration counts. This discrepancy arises from the TGS solver’s nature, which internally divides a full timestep into N substeps and approximately solves them, while the PGS solver allocates all its N iterations to solving the full timestep. In many scenarios, the convergence behavior of TGS is superior to PGS at identical iteration counts, despite the residual values suggesting otherwise, because the substepping strategy optimizes the use of every iteration, whereas later PGS iterations can only apply minor corrections. An example would be a pile of small rigid bodies stored in a jar. TGS almost certainly will result in less object overlap compared to PGS, even if the solver residuals report higher errors for the TGS solver. The takeaway is that TGS and PGS residual values are not directly comparable despite being based on the same metric.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="RigidBodyDynamics.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Rigid Body Dynamics</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="AdvancedCollisionDetection.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Advanced Collision Detection</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-simulation-loop">The Simulation Loop</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#island-management">Island Management</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#callback-sequence">Callback Sequence</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation-memory">Simulation memory</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scene-limits">Scene Limits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#k-data-blocks">16K Data Blocks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scratch-buffer">Scratch Buffer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#in-place-serialization">In-Place Serialization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-memory">GPU Memory</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#completion-tasks">Completion Tasks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronizing-with-other-threads">Synchronizing with Other Threads</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#substepping">Substepping</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#split-sim">Split sim</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#split-fetchresults">Split fetchResults</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shifting-the-scene-origin">Shifting The Scene Origin</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-residual">Solver Residual</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Mar 24, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
