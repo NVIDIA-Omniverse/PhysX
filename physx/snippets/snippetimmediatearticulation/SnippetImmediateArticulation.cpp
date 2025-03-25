@@ -1295,7 +1295,7 @@ void ImmediateScene::narrowPhase()
 				point.dynamicFriction	= gDynamicFriction;
 				point.restitution		= gRestitution;
 				point.damping			= 0.0f;
-				point.materialFlags		= PxMaterialFlag::eIMPROVED_PATCH_FRICTION;
+				point.materialFlags		= 0;
 				mScene->mContactPoints.pushBack(point);
 			}
 			return true;

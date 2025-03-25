@@ -30,7 +30,6 @@
 #define SC_ACTOR_CORE_H
 
 #include "foundation/PxBitAndData.h"
-#include "common/PxMetaData.h"
 #include "PxActor.h"
 
 #define SC_FILTERING_ID_SHIFT_BIT	24
@@ -50,7 +49,6 @@ namespace Sc
 											ActorCore(const PxEMPTY) :	mSim(NULL), mActorFlags(PxEmpty)
 											{
 											}
-		static			void				getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 											ActorCore(PxActorType::Enum actorType, PxU8 actorFlags, PxClientID owner, PxDominanceGroup dominanceGroup);
 											~ActorCore();

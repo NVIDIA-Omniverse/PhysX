@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -31,72 +32,76 @@
 
 struct NvFlowDynamicBuffer
 {
-	NvFlowContextInterface* contextInterface = nullptr;
-	NvFlowBufferUsageFlags flags = 0u;
-	NvFlowFormat format = eNvFlowFormat_unknown;
-	NvFlowUint structureStride = 0u;
+    NvFlowContextInterface* contextInterface = nullptr;
+    NvFlowBufferUsageFlags flags = 0u;
+    NvFlowFormat format = eNvFlowFormat_unknown;
+    NvFlowUint structureStride = 0u;
 
-	NvFlowBuffer* deviceBuffer = nullptr;
-	NvFlowUint64 deviceNumBytes = 0llu;
+    NvFlowBuffer* deviceBuffer = nullptr;
+    NvFlowUint64 deviceNumBytes = 0llu;
 
-	NvFlowBufferTransient* transientBuffer = nullptr;
-	NvFlowUint64 transientFrame = ~0llu;
+    NvFlowBufferTransient* transientBuffer = nullptr;
+    NvFlowUint64 transientFrame = ~0llu;
 };
 
 NV_FLOW_INLINE void NvFlowDynamicBuffer_init(NvFlowContextInterface* contextInterface, NvFlowContext* context, NvFlowDynamicBuffer* ptr, NvFlowBufferUsageFlags flags, NvFlowFormat format, NvFlowUint structureStride)
 {
-	ptr->contextInterface = contextInterface;
+    ptr->contextInterface = contextInterface;
 
-	ptr->flags = flags;
-	ptr->format = format;
-	ptr->structureStride = structureStride;
+    ptr->flags = flags;
+    ptr->format = format;
+    ptr->structureStride = structureStride;
 }
 
 NV_FLOW_INLINE void NvFlowDynamicBuffer_destroy(NvFlowContext* context, NvFlowDynamicBuffer* ptr)
 {
-	if (ptr->deviceBuffer)
-	{
-		ptr->contextInterface->destroyBuffer(context, ptr->deviceBuffer);
-		ptr->deviceBuffer = nullptr;
-	}
+    if (ptr->deviceBuffer)
+    {
+        ptr->contextInterface->destroyBuffer(context, ptr->deviceBuffer);
+        ptr->deviceBuffer = nullptr;
+    }
 }
 
 NV_FLOW_INLINE void NvFlowDynamicBuffer_resize(NvFlowContext* context, NvFlowDynamicBuffer* ptr, NvFlowUint64 numBytes)
 {
-	if (ptr->deviceBuffer && ptr->deviceNumBytes < numBytes)
-	{
-		ptr->contextInterface->destroyBuffer(context, ptr->deviceBuffer);
-		ptr->deviceBuffer = nullptr;
-		ptr->deviceNumBytes = 0llu;
-		ptr->transientFrame = ~0llu;
-	}
-	if (!ptr->deviceBuffer)
-	{
-		NvFlowBufferDesc bufDesc = {};
-		bufDesc.format = ptr->format;
-		bufDesc.usageFlags = ptr->flags;
-		bufDesc.structureStride = ptr->structureStride;
-		bufDesc.sizeInBytes = 65536u;
-		while (bufDesc.sizeInBytes < numBytes)
-		{
-			bufDesc.sizeInBytes *= 2u;
-		}
+    if (ptr->deviceBuffer && ptr->deviceNumBytes < numBytes)
+    {
+        ptr->contextInterface->destroyBuffer(context, ptr->deviceBuffer);
+        ptr->deviceBuffer = nullptr;
+        ptr->deviceNumBytes = 0llu;
+        ptr->transientBuffer = nullptr;
+        ptr->transientFrame = ~0llu;
+    }
+    if (!ptr->deviceBuffer)
+    {
+        NvFlowBufferDesc bufDesc = {};
+        bufDesc.format = ptr->format;
+        bufDesc.usageFlags = ptr->flags;
+        bufDesc.structureStride = ptr->structureStride;
+        bufDesc.sizeInBytes = 65536u;
+        while (bufDesc.sizeInBytes < numBytes)
+        {
+            bufDesc.sizeInBytes *= 2u;
+        }
 
-		ptr->deviceNumBytes = bufDesc.sizeInBytes;
-		ptr->deviceBuffer = ptr->contextInterface->createBuffer(context, eNvFlowMemoryType_device, &bufDesc);
-	}
+        ptr->deviceNumBytes = bufDesc.sizeInBytes;
+        ptr->deviceBuffer = ptr->contextInterface->createBuffer(context, eNvFlowMemoryType_device, &bufDesc);
+        ptr->transientBuffer = nullptr;
+        ptr->transientFrame = ~0llu;
+    }
 }
 
 NV_FLOW_INLINE NvFlowBufferTransient* NvFlowDynamicBuffer_getTransient(NvFlowContext* context, NvFlowDynamicBuffer* ptr)
 {
-	if (ptr->transientFrame == ptr->contextInterface->getCurrentFrame(context))
-	{
-		return ptr->transientBuffer;
-	}
-	if (ptr->deviceBuffer)
-	{
-		ptr->transientBuffer = ptr->contextInterface->registerBufferAsTransient(context, ptr->deviceBuffer);
-		ptr->transientFrame = ptr->contextInterface->getCurrentFrame(context);
-	}
-	return ptr->transientBuffer;
+    if (ptr->transientBuffer &&
+        ptr->transientFrame == ptr->contextInterface->getCurrentFrame(context))
+    {
+        return ptr->transientBuffer;
+    }
+    if (ptr->deviceBuffer)
+    {
+        ptr->transientBuffer = ptr->contextInterface->registerBufferAsTransient(context, ptr->deviceBuffer);
+        ptr->transientFrame = ptr->contextInterface->getCurrentFrame(context);
+    }
+    return ptr->transientBuffer;
 }

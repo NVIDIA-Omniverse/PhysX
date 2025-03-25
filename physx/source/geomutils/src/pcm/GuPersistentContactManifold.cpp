@@ -2144,7 +2144,7 @@ bool MultiplePersistentContactManifold::addManifoldContactsToContactBuffer(PxCon
 		{
 			const MeshPersistentContact& p = manifold.getContactPoint(j);
 			
-			const Vec3V worldP =meshTransform.transform(p.mLocalPointB);
+			const Vec3V worldP = meshTransform.transform(p.mLocalPointB);
 			const FloatV dist = V4GetW(p.mLocalNormalPen);
 			
 			outputPCMContact(contactBuffer, contactCount, worldP, normal, dist, p.mFaceIndex);

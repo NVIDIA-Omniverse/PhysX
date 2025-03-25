@@ -62,7 +62,6 @@ public:
 										void						importExtraData(PxDeserializationContext& context);
 		PX_FORCE_INLINE					void						setMeshFactory(MeshFactory* f)		{ mMeshFactory = f;					}
 		PX_PHYSX_COMMON_API	static		HeightField*				createObject(PxU8*& address, PxDeserializationContext& context);
-		PX_PHYSX_COMMON_API static		void						getBinaryMetaData(PxOutputStream& stream);
 										void						resolveReferences(PxDeserializationContext&) {}
 
 							virtual		void						requiresObjects(PxProcessPxBaseCallback&){}

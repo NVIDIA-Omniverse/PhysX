@@ -52,7 +52,6 @@ namespace Ext
 										FixedJoint(PxBaseFlags baseFlags) : FixedJointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	FixedJoint*				createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<FixedJoint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										FixedJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxFixedJoint

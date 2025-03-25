@@ -477,7 +477,7 @@ bool Gu::sweepBoxTriangles(GU_SWEEP_TRIANGLES_FUNC_PARAMS(PxBoxGeometry))
 			minTriangleIndex = triangleIndex;
 			V3StoreU(triNormal, bestTriNormal);
 			status = true;
-			if(hitFlags & PxHitFlag::eMESH_ANY)
+			if(hitFlags & PxHitFlag::eANY_HIT)
 				break;
 		}
 	}

@@ -197,8 +197,6 @@ NpScene::NpScene(const PxSceneDesc& desc, NpPhysics& physics) :
 
 	mThreadReadWriteDepth = PxTlsAlloc();
 
-	updatePhysXIndicator();
-	
 #if PX_SUPPORT_OMNI_PVD
 	createInOmniPVD(desc);
 	OmniPvdPxSampler* sampler = NpPhysics::getInstance().mOmniPvdSampler;
@@ -236,7 +234,6 @@ NpScene::~NpScene()
 
 	PxU32 rigidDynamicCount = mRigidDynamics.size();
 	while(rigidDynamicCount--)
-	
 		removeRigidDynamic(*mRigidDynamics[rigidDynamicCount], false, true);
 
 	PxU32 rigidStaticCount = mRigidStatics.size();
@@ -2339,7 +2336,7 @@ PxSolverType::Enum NpScene::getSolverType() const
 PxFrictionType::Enum NpScene::getFrictionType() const
 {
 	NP_READ_CHECK(this);
-	return mScene.getFrictionType();
+	return PxFrictionType::ePATCH;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2832,7 +2829,6 @@ bool NpScene::simulateOrCollide(PxReal elapsedTime, PxBaseTask* completionTask, 
 		OMNI_PVD_WRITE_SCOPE_END
 #endif
 	
-
 #if PX_ENABLE_DEBUG_VISUALIZATION
 		visualize();
 #else
@@ -2902,7 +2898,6 @@ bool NpScene::simulate(PxReal elapsedTime, PxBaseTask* completionTask, void* scr
 	return simulateOrCollide(	elapsedTime, completionTask, scratchBlock, scratchBlockSize, controlSimulation, 
 								"PxScene::simulate: Simulation is still processing last simulate call, you should call fetchResults()!", Sc::SimulationStage::eADVANCE);
 }
-
 
 bool NpScene::advance(PxBaseTask* completionTask)
 {
@@ -3041,6 +3036,8 @@ bool NpScene::checkGpuErrorsPreSim(bool isCollide /* = false */)
 				return PxGetFoundation().error(PxErrorCode::eABORT, PX_FL, "PhysX cannot advance GPU simulation because of previous CUDA errors! Error code %i!\n", PxI32(lastError));
 		}
 	}
+#else
+	PX_UNUSED(isCollide);
 #endif
 
 	return true;
@@ -3146,17 +3143,6 @@ PxDominanceGroupPair NpScene::getDominanceGroupPair(PxDominanceGroup group1, PxD
 		"PxScene::getDominanceGroupPair: invalid params! Groups must be <= 31!", PxDominanceGroupPair(PxU8(1u), PxU8(1u)));
 	return mScene.getDominanceGroupPair(group1, group2);
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-#if PX_SUPPORT_GPU_PHYSX
-void NpScene::updatePhysXIndicator()
-{
-	PxIntBool isGpu = mScene.isUsingGpuDynamicsOrBp();
-
-	mPhysXIndicator.setIsGpu(isGpu != 0);
-}
-#endif	//PX_SUPPORT_GPU_PHYSX
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -3636,6 +3622,12 @@ void NpScene::shiftOrigin(const PxVec3& shift)
 	PX_PROFILE_ZONE("API.shiftOrigin", getContextId());
 	NP_WRITE_CHECK(this);
 
+	if(getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
+	{
+		NP_API_READ_WRITE_ERROR_MSG(
+			"shiftOrigin() not allowed when direct-GPU API is used.");
+	}
+
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::shiftOrigin() not allowed while simulation is running. Call will be ignored.")
 	
 	PX_SIMD_GUARD;
@@ -3679,74 +3671,14 @@ PxPvdSceneClient* NpScene::getScenePvdClient()
 #endif
 }
 
-// PT: DIRECTGPU: deprecated
-void NpScene::copyArticulationData(void* jointData, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbCopyArticulations, CUevent copyEvent)
+void NpScene::setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)
 {
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copyArticulationData() not allowed while simulation is running. Call will be ignored.");
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyArticulationData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	if (dataType == PxArticulationGpuDataType::eLINK_FORCE ||
-		dataType == PxArticulationGpuDataType::eLINK_TORQUE ||
-		dataType == PxArticulationGpuDataType::eFIXED_TENDON ||
-		dataType == PxArticulationGpuDataType::eFIXED_TENDON_JOINT ||
-		dataType == PxArticulationGpuDataType::eSPATIAL_TENDON ||
-		dataType == PxArticulationGpuDataType::eSPATIAL_TENDON_ATTACHMENT)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyArticulationData, specified data is write only.");
-		return;
-	}
-
-	mScene.getSimulationController()->copyArticulationDataDEPRECATED(jointData, index, dataType, nbCopyArticulations, copyEvent);
+	mScene.setDeformableSurfaceGpuPostSolveCallback(postSolveCallback);
 }
 
-// PT: DIRECTGPU: deprecated
-void NpScene::applyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbUpdatedArticulations, CUevent waitEvent, CUevent signalEvent)
+void NpScene::setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)
 {
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::applyArticulationData() not allowed while simulation is running. Call will be ignored.");
-	
-	if (!data || !index)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyArticulationData, data and/or index has to be valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyArticulationData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	if (dataType == PxArticulationGpuDataType::eJOINT_ACCELERATION ||
-		dataType == PxArticulationGpuDataType::eLINK_TRANSFORM ||
-		dataType == PxArticulationGpuDataType::eLINK_VELOCITY ||
-		dataType == PxArticulationGpuDataType::eLINK_ACCELERATION ||
-		dataType == PxArticulationGpuDataType::eLINK_INCOMING_JOINT_FORCE
-	)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyArticulationData, specified data is read only.");
-		return;
-	}
-
-	mScene.getSimulationController()->applyArticulationDataDEPRECATED(data, index, dataType, nbUpdatedArticulations, waitEvent, signalEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::updateArticulationsKinematic(CUevent signalEvent)
-{
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::updateArticulationsKinematic() not allowed while simulation is running. Call will be ignored.");
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::updateArticulationsKinematic(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->updateArticulationsKinematicDEPRECATED(signalEvent);
+	mScene.setDeformableVolumeGpuPostSolveCallback(postSolveCallback);
 }
 
 // PT: DIRECTGPU: deprecated
@@ -3765,172 +3697,6 @@ void NpScene::applySoftBodyData(void** data, void* dataSizes, void* softBodyIndi
 	
 	//if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuRigidBodies())
 		mScene.getSimulationController()->applySoftBodyDataDEPRECATED(data, dataSizes, softBodyIndices, flag, nbUpdatedSoftBodies, maxSize, applyEvent, signalEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::copyContactData(void* data, const PxU32 maxContactPairs, void* numContactPairs, CUevent copyEvent)
-{
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copyContactData() not allowed while simulation is running. Call will be ignored.");
-	
-	if (!data || !numContactPairs)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyContactData, data and/or count has to be valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyContactData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->copyContactData(data, reinterpret_cast<PxU32*>(numContactPairs), maxContactPairs, NULL, copyEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU32 nbCopyActors, CUevent copyEvent)
-{
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copyBodyData() not allowed while simulation is running. Call will be ignored.");
-
-	if (!data)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyBodyData, data has to be valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyBodyData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->copyBodyDataDEPRECATED(data, index, nbCopyActors, copyEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, CUevent waitEvent, CUevent signalEvent)
-{
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::applyActorData() not allowed while simulation is running. Call will be ignored.");
-
-	if (!data || !index)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyActorData, data and/or index has to be valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyActorData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->applyActorDataDEPRECATED(data, index, flag, nbUpdatedActors, waitEvent, signalEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* samplePointsConcatenated,
-	const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, CUevent event)
-{
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::evaluateSDFDistances() not allowed while simulation is running. Call will be ignored.");
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::evaluateSDFDistances(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->evaluateSDFDistancesDEPRECATED(sdfShapeIds, nbShapes, samplePointsConcatenated, 
-		samplePointCountPerShape, maxPointCount, localGradientAndSDFConcatenated, event);
-}
-
-void NpScene::setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)
-{
-	mScene.setDeformableSurfaceGpuPostSolveCallback(postSolveCallback);
-}
-
-void NpScene::setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)
-{
-	mScene.setDeformableVolumeGpuPostSolveCallback(postSolveCallback);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
-{
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeDenseJacobians() not allowed while simulation is running. Call will be ignored.");
-
-	if (!indices)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeDenseJacobians, indices have to be a valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeDenseJacobians(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->computeDenseJacobiansDEPRECATED(indices, nbIndices, computeEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
-{
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeGeneralizedMassMatrices() not allowed while simulation is running. Call will be ignored.");
-
-	if (!indices)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeGeneralizedMassMatrices, indices have to be a valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeGeneralizedMassMatrices(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->computeGeneralizedMassMatricesDEPRECATED(indices, nbIndices, computeEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
-{
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeGeneralizedGravityForces() not allowed while simulation is running. Call will be ignored.");
-
-	if (!indices)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeGeneralizedGravityForces, indices have to be a valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeGeneralizedGravityForces(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->computeGeneralizedGravityForcesDEPRECATED(indices, nbIndices, getGravity(), computeEvent);
-}
-
-// PT: DIRECTGPU: deprecated
-void NpScene::computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
-{
-	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeCoriolisAndCentrifugalForces() not allowed while simulation is running. Call will be ignored.");
-
-	if (!indices)
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeCoriolisAndCentrifugalForces, indices have to be a valid pointer.");
-		return;
-	}
-
-	if (!isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeCoriolisAndCentrifugalForces(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
-		return;
-	}
-
-	mScene.getSimulationController()->computeCoriolisAndCentrifugalForcesDEPRECATED(indices, nbIndices, computeEvent);
 }
 
 // PT: DIRECTGPU: deprecated
@@ -3955,10 +3721,15 @@ void NpScene::applyParticleBufferData(const PxU32* indices, const PxGpuParticleB
 
 PxDirectGPUAPI& NpScene::getDirectGPUAPI()
 {
+#if PX_SUPPORT_GPU_PHYSX
 	if (!mDirectGPUAPI)
 		mDirectGPUAPI = PX_NEW(NpDirectGPUAPI)(*this);
 
 	return *mDirectGPUAPI;
+#else
+	PxDirectGPUAPI* p = NULL;
+	return *p;
+#endif
 }
 
 PxsSimulationController* NpScene::getSimulationController()
@@ -4198,8 +3969,7 @@ template<> struct ScSceneFns<NpArticulationJointReducedCoordinate>
 	}
 	static PX_FORCE_INLINE void remove(Sc::Scene& s, NpArticulationJointReducedCoordinate& v, bool /*wakeOnLostTouch*/)
 	{
-		PX_UNUSED(s);
-		Sc::Scene::removeArticulationJoint(v.getCore()); 
+		s.removeArticulationJoint(v.getCore()); 
 	}
 };
 

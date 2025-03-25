@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -209,6 +210,7 @@ struct EditorImgui
 {
     NvFlowImguiRendererInterface imguiRendererInterface = {};
     NvFlowImguiRenderer* imguiRenderer = nullptr;
+    NvFlowImguiTexture* imguiTexture = nullptr;
 };
 
 void editorImgui_init(EditorImgui* ptr, NvFlowContextInterface* contextInterface, NvFlowContext* context);
@@ -277,7 +279,6 @@ void editorGlfw_destroy(App* ptr);
 #if !defined(_WIN32)
 NV_FLOW_INLINE void fopen_s(FILE** streamptr, const char* filename, const char* mode)
 {
-	*streamptr = fopen(filename, mode);
+    *streamptr = fopen(filename, mode);
 }
 #endif
-

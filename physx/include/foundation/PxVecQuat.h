@@ -119,7 +119,7 @@ PX_FORCE_INLINE Vec3V QuatGetBasisVector0(const QuatV q)
 	                (z * w2)        + y*x2,
 	                (-y * w2)       + z*x2);*/
 
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	const FloatV w = V4GetW(q);
 	const Vec3V u = Vec3V_From_Vec4V(q);
 
@@ -143,7 +143,7 @@ PX_FORCE_INLINE Vec3V QuatGetBasisVector1(const QuatV q)
 	                (w * w2) - 1.0f + y*y2,
 	                (x * w2)        + z*y2);*/
 
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	const FloatV w = V4GetW(q);
 	const Vec3V u = Vec3V_From_Vec4V(q);
 
@@ -167,7 +167,7 @@ PX_FORCE_INLINE Vec3V QuatGetBasisVector2(const QuatV q)
 	                (-x * w2)       + y*z2,
 	                (w * w2) - 1.0f + z*z2);*/
 
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	const FloatV w = V4GetW(q);
 	const Vec3V u = Vec3V_From_Vec4V(q);
 
@@ -189,7 +189,7 @@ PX_FORCE_INLINE Vec3V QuatRotate(const QuatV q, const Vec3V v)
 	return (v*(w*w-0.5f) + (qv.cross(v))*w + qv*(qv.dot(v)))*2;
 	*/
 
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	// const FloatV half = FloatV_From_F32(0.5f);
 	const FloatV nhalf = FLoad(-0.5f);
 	const Vec3V u = Vec3V_From_Vec4V(q);
@@ -204,10 +204,35 @@ PX_FORCE_INLINE Vec3V QuatRotate(const QuatV q, const Vec3V v)
 	return V3Scale(V3ScaleAdd(u, V3Dot(u, v), temp), two);
 }
 
+// PT: same as QuatRotate but operates on a Vec4V
+PX_FORCE_INLINE Vec4V QuatRotate4V(const QuatV q, const Vec4V v)
+{
+	const FloatV two = FLoad(2.0f);
+	const FloatV nhalf = FLoad(-0.5f);
+	const Vec4V u = q;	// PT: W not cleared here
+	const FloatV w = V4GetW(q);
+	const FloatV w2 = FScaleAdd(w, w, nhalf);
+	const Vec4V a = V4Scale(v, w2);	// PT: W has non-zero data here
+	const Vec4V temp = V4ScaleAdd(V4Cross(u, v), w, a);
+	return V4Scale(V4ScaleAdd(u, V4Dot3(u, v), temp), two);	// PT: beware, V4Dot3 has one more instruction here
+}
+
+// PT: avoid some multiplies when immediately normalizing a rotated vector
+PX_FORCE_INLINE Vec3V QuatRotateAndNormalize(const QuatV q, const Vec3V v)
+{
+	const FloatV nhalf = FLoad(-0.5f);
+	const Vec3V u = Vec3V_From_Vec4V(q);
+	const FloatV w = V4GetW(q);
+	const FloatV w2 = FScaleAdd(w, w, nhalf);
+	const Vec3V a = V3Scale(v, w2);
+	const Vec3V temp = V3ScaleAdd(V3Cross(u, v), w, a);
+	return V3Normalize(V3ScaleAdd(u, V3Dot(u, v), temp));
+}
+
 PX_FORCE_INLINE Vec3V QuatTransform(const QuatV q, const Vec3V p, const Vec3V v)
 {
 	// p + q.rotate(v)
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	// const FloatV half = FloatV_From_F32(0.5f);
 	const FloatV nhalf = FLoad(-0.5f);
 	const Vec3V u = Vec3V_From_Vec4V(q);
@@ -228,7 +253,7 @@ PX_FORCE_INLINE Vec3V QuatRotateInv(const QuatV q, const Vec3V v)
 	//	const PxVec3 qv(x,y,z);
 	//	return (v*(w*w-0.5f) - (qv.cross(v))*w + qv*(qv.dot(v)))*2;
 
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	const FloatV nhalf = FLoad(-0.5f);
 	const Vec3V u = Vec3V_From_Vec4V(q);
 	const FloatV w = V4GetW(q);
@@ -324,7 +349,7 @@ PX_FORCE_INLINE bool isSaneQuatV(const QuatV q)
 
 PX_FORCE_INLINE Mat33V QuatGetMat33V(const QuatVArg q)
 {
-	// const FloatV two = FloatV_From_F32(2.f);
+	// const FloatV two = FloatV_From_F32(2.0f);
 	// const FloatV one = FOne();
 
 	// const FloatV x = V4GetX(q);
@@ -406,7 +431,7 @@ PX_FORCE_INLINE QuatV Mat33GetQuatV(const Mat33V& a)
 	const FloatV one = FOne();
 	const FloatV zero = FZero();
 	const FloatV half = FLoad(0.5f);
-	const FloatV two = FLoad(2.f);
+	const FloatV two = FLoad(2.0f);
 	const FloatV scale = FLoad(0.25f);
 	const FloatV a00 = V3GetX(a.col0);
 	const FloatV a11 = V3GetY(a.col1);

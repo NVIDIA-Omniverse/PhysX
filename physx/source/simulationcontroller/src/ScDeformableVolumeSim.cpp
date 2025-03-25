@@ -29,16 +29,13 @@
 #if PX_SUPPORT_GPU_PHYSX
 
 #include "ScDeformableVolumeSim.h"
-#include "ScDeformableVolumeCore.h"
-#include "ScScene.h"
-#include "PxsSimulationController.h"
+#include "geometry/PxTetrahedronMesh.h"
 
 using namespace physx;
 using namespace Dy;
 
 Sc::DeformableVolumeSim::DeformableVolumeSim(DeformableVolumeCore& core, Scene& scene) :
-	ActorSim(scene, core),
-	mShapeSim(*this)
+	GPUActorSim(scene, core, NULL)
 {
 	mLLDeformableVolume = scene.createLLDeformableVolume(this);
 
@@ -61,21 +58,6 @@ Sc::DeformableVolumeSim::~DeformableVolumeSim()
 	mCore.setSim(NULL);
 }
 
-void Sc::DeformableVolumeSim::updateBounds()
-{
-	mShapeSim.updateBounds();
-}
-
-void Sc::DeformableVolumeSim::updateBoundsInAABBMgr()
-{
-	mShapeSim.updateBoundsInAABBMgr();
-}
-
-PxBounds3 Sc::DeformableVolumeSim::getBounds() const
-{
-	return mShapeSim.getBounds();
-}
-
 bool Sc::DeformableVolumeSim::isSleeping() const
 {
 	IG::IslandSim& sim = mScene.getSimpleIslandManager()->getAccurateIslandSim();
@@ -84,19 +66,35 @@ bool Sc::DeformableVolumeSim::isSleeping() const
 
 void Sc::DeformableVolumeSim::onSetWakeCounter()
 {
-	getScene().getSimulationController()->setSoftBodyWakeCounter(mLLDeformableVolume);
+	mScene.getSimulationController()->setSoftBodyWakeCounter(mLLDeformableVolume);
 	if (mLLDeformableVolume->getCore().wakeCounter > 0.f)
-		getScene().getSimpleIslandManager()->activateNode(mNodeIndex);
+		mScene.getSimpleIslandManager()->activateNode(mNodeIndex);
 	else
-		getScene().getSimpleIslandManager()->deactivateNode(mNodeIndex);
+		mScene.getSimpleIslandManager()->deactivateNode(mNodeIndex);
 }
 
 void Sc::DeformableVolumeSim::attachShapeCore(ShapeCore* core)
 {
-	mShapeSim.attachShapeCore(core);
+	mShapeSim.setCore(core);
+	{
+		PX_ASSERT(getWorldBounds().isFinite());
+
+		const PxU32 index = mShapeSim.getElementID();
+
+		mScene.getBoundsArray().setBounds(getWorldBounds(), index);
+
+		addToAABBMgr(Bp::FilterType::DEFORMABLE_VOLUME);
+	}
 
 	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core->getCore());
 	mLLDeformableVolume->setShapeCore(shapeCore);
+}
+
+PxBounds3 Sc::DeformableVolumeSim::getWorldBounds() const
+{
+	const PxTetrahedronMeshGeometry& tetGeom = static_cast<const PxTetrahedronMeshGeometry&>(mShapeSim.getCore().getGeometry());
+
+	return tetGeom.tetrahedronMesh->getLocalBounds();
 }
 
 void Sc::DeformableVolumeSim::attachSimulationMesh(PxTetrahedronMesh* simulationMesh, PxDeformableVolumeAuxData* simulationState)
@@ -123,7 +121,7 @@ void Sc::DeformableVolumeSim::enableSelfCollision()
 {
 	if (isActive())
 	{
-		getScene().getSimulationController()->activateSoftbodySelfCollision(mLLDeformableVolume);
+		mScene.getSimulationController()->activateSoftbodySelfCollision(mLLDeformableVolume);
 	}
 }
 
@@ -131,7 +129,7 @@ void Sc::DeformableVolumeSim::disableSelfCollision()
 {
 	if (isActive())
 	{
-		getScene().getSimulationController()->deactivateSoftbodySelfCollision(mLLDeformableVolume);
+		mScene.getSimulationController()->deactivateSoftbodySelfCollision(mLLDeformableVolume);
 	}
 }
 

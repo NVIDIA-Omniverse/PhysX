@@ -1,0 +1,105 @@
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions
+## are met:
+##  * Redistributions of source code must retain the above copyright
+##    notice, this list of conditions and the following disclaimer.
+##  * Redistributions in binary form must reproduce the above copyright
+##    notice, this list of conditions and the following disclaimer in the
+##    documentation and/or other materials provided with the distribution.
+##  * Neither the name of NVIDIA CORPORATION nor the names of its
+##    contributors may be used to endorse or promote products derived
+##    from this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
+## EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+## PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+## CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+## EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+## PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+## PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+## OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+
+#
+# Build PhysXGpu
+#
+
+SET(PHYSXGPU_PLATFORM_LINKED_LIBS DelayImp.lib CUDA::cuda_driver)
+
+
+SET(PHYSXGPU_LINK_FLAGS "/MAP")
+SET(PHYSXGPU_LINK_FLAGS_DEBUG "/DELAYLOAD:nvcuda.dll")
+SET(PHYSXGPU_LINK_FLAGS_CHECKED "/DELAYLOAD:nvcuda.dll")
+SET(PHYSXGPU_LINK_FLAGS_PROFILE "/DELAYLOAD:nvcuda.dll")
+SET(PHYSXGPU_LINK_FLAGS_RELEASE "/DELAYLOAD:nvcuda.dll")
+
+IF(PX_GENERATE_GPU_STATIC_LIBRARIES)
+	SET(PHYSXGPU_LIBTYPE STATIC)
+ELSE()
+	SET(PHYSXGPU_LIBTYPE SHARED)
+	SET(PXPHYSXGPU_LIBTYPE_DEFS
+		PX_PHYSX_GPU_EXPORTS;
+	)
+ENDIF()
+
+# Use generator expressions to set config specific preprocessor definitions
+SET(PHYSXGPU_COMPILE_DEFS
+
+	# Common to all configurations
+	${PHYSX_WINDOWS_COMPILE_DEFS};${PXPHYSXGPU_LIBTYPE_DEFS};PX_PHYSX_STATIC_LIB;${PHYSXGPU_LIBTYPE_DEFS}
+
+	$<$<CONFIG:debug>:${PHYSX_WINDOWS_DEBUG_COMPILE_DEFS};>
+	$<$<CONFIG:checked>:${PHYSX_WINDOWS_CHECKED_COMPILE_DEFS};>
+	$<$<CONFIG:profile>:${PHYSX_WINDOWS_PROFILE_COMPILE_DEFS};>
+	$<$<CONFIG:release>:${PHYSX_WINDOWS_RELEASE_COMPILE_DEFS};>
+)
+
+IF(PX_GENERATE_GPU_STATIC_LIBRARIES)
+	SET(PHYSXGPU_PLATFORM_OBJECT_FILES
+		$<TARGET_OBJECTS:PhysXBroadphaseGpu>
+		$<TARGET_OBJECTS:PhysXNarrowphaseGpu>
+		$<TARGET_OBJECTS:PhysXSimulationControllerGpu>
+		$<TARGET_OBJECTS:PhysXSolverGpu>
+		$<TARGET_OBJECTS:PhysXCommonGpu>
+		$<TARGET_OBJECTS:PhysXCudaContextManager>
+	)
+ELSE()
+	SET(PHYSXGPU_PRIVATE_PLATFORM_LINKED_LIBS
+		PhysXBroadphaseGpu PhysXNarrowphaseGpu PhysXSimulationControllerGpu PhysXSolverGpu PhysXCommonGpu PhysXCudaContextManager PhysXArticulationGpu
+	)
+ENDIF()
+
+SET(PHYSXGPU_RESOURCE
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/PhysXGpu.rc
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/resource.h
+)
+SOURCE_GROUP(resource FILES ${PHYSXGPU_RESOURCE})
+
+SET(PHYSXGPU_PLATFORM_SOURCES
+    ${PHYSXGPU_RESOURCE}
+	${PHYSXGPU_PLATFORM_OBJECT_FILES}
+)
+
+IF(PHYSXGPU_LIBTYPE STREQUAL "STATIC")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_DEBUG "PhysXGpu_static${CMAKE_DEBUG_POSTFIX}")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_CHECKED "PhysXGpu_static${CMAKE_CHECKED_POSTFIX}")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_PROFILE "PhysXGpu_static${CMAKE_PROFILE_POSTFIX}")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_RELEASE "PhysXGpu_static${CMAKE_RELEASE_POSTFIX}")
+ELSE()
+	SET(PHYSXGPU_COMPILE_PDB_NAME_DEBUG "PhysXGpu${CMAKE_DEBUG_POSTFIX}")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_CHECKED "PhysXGpu${CMAKE_CHECKED_POSTFIX}")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_PROFILE "PhysXGpu${CMAKE_PROFILE_POSTFIX}")
+	SET(PHYSXGPU_COMPILE_PDB_NAME_RELEASE "PhysXGpu${CMAKE_RELEASE_POSTFIX}")
+ENDIF()
+
+IF(PHYSXGPU_LIBTYPE STREQUAL "SHARED")
+	INSTALL(FILES $<TARGET_PDB_FILE:PhysXGpu>
+		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile> OPTIONAL)
+ELSE()
+	INSTALL(FILES ${PHYSX_ROOT_DIR}/$<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>/$<$<CONFIG:debug>:${PHYSXGPU_COMPILE_PDB_NAME_DEBUG}>$<$<CONFIG:checked>:${PHYSXGPU_COMPILE_PDB_NAME_CHECKED}>$<$<CONFIG:profile>:${PHYSXGPU_COMPILE_PDB_NAME_PROFILE}>$<$<CONFIG:release>:${PHYSXGPU_COMPILE_PDB_NAME_RELEASE}>.pdb
+		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile> OPTIONAL)
+ENDIF()

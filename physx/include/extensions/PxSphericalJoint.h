@@ -75,10 +75,9 @@ PX_FLAGS_OPERATORS(PxSphericalJointFlag::Enum, PxU16)
 
  The position of the joint on each actor is specified by the origin of the body's joint frame.
  
- A spherical joint may have a cone limit, to restrict the motion to within a certain range. In
- addition, the bodies may be projected together if the distance between them exceeds a given threshold.
+ A spherical joint may have a cone limit, to restrict the motion to within a certain range.
  
- Projection, drive and limits are activated by setting the appropriate flags on the joint.
+ Dirve and limits are activated by setting the appropriate flags on the joint.
 
  \see PxRevoluteJointCreate() PxJoint
 */

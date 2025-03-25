@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #pragma once
@@ -33,103 +34,103 @@ struct NvFlowPreprocessor;
 
 struct NvFlowPreprocessorRange
 {
-	NvFlowUint64 begin;
-	NvFlowUint64 end;
+    NvFlowUint64 begin;
+    NvFlowUint64 end;
 };
 
 enum NvFlowPreprocessorTokenType
 {
-	eNvFlowPreprocessorTokenType_unknown = 0,	// unclassified
-	eNvFlowPreprocessorTokenType_whitespace,	//
-	eNvFlowPreprocessorTokenType_newline,		// \n
-	eNvFlowPreprocessorTokenType_comment,		// // comment
-	eNvFlowPreprocessorTokenType_name,			// alpha_1234
-	eNvFlowPreprocessorTokenType_number,		// 1234
-	eNvFlowPreprocessorTokenType_string,		// "string"
-	eNvFlowPreprocessorTokenType_char,			// 's'
+    eNvFlowPreprocessorTokenType_unknown = 0,    // unclassified
+    eNvFlowPreprocessorTokenType_whitespace,    //
+    eNvFlowPreprocessorTokenType_newline,        // \n
+    eNvFlowPreprocessorTokenType_comment,        // // comment
+    eNvFlowPreprocessorTokenType_name,            // alpha_1234
+    eNvFlowPreprocessorTokenType_number,        // 1234
+    eNvFlowPreprocessorTokenType_string,        // "string"
+    eNvFlowPreprocessorTokenType_char,            // 's'
 
-	eNvFlowPreprocessorTokenType_pound,			// #
-	eNvFlowPreprocessorTokenType_comma,			// ,
-	eNvFlowPreprocessorTokenType_period,		// .
-	eNvFlowPreprocessorTokenType_semicolon,		// ;
-	eNvFlowPreprocessorTokenType_colon,			// :
-	eNvFlowPreprocessorTokenType_equals,		// =
-	eNvFlowPreprocessorTokenType_asterisk,		// *
+    eNvFlowPreprocessorTokenType_pound,            // #
+    eNvFlowPreprocessorTokenType_comma,            // ,
+    eNvFlowPreprocessorTokenType_period,        // .
+    eNvFlowPreprocessorTokenType_semicolon,        // ;
+    eNvFlowPreprocessorTokenType_colon,            // :
+    eNvFlowPreprocessorTokenType_equals,        // =
+    eNvFlowPreprocessorTokenType_asterisk,        // *
 
-	eNvFlowPreprocessorTokenType_leftParenthesis,	// (
-	eNvFlowPreprocessorTokenType_rightParenthesis,	// )
-	eNvFlowPreprocessorTokenType_leftBracket,		// [
-	eNvFlowPreprocessorTokenType_rightBracket,		// ]
-	eNvFlowPreprocessorTokenType_leftCurlyBrace,	// {
-	eNvFlowPreprocessorTokenType_rightCurlyBrace,	// }
+    eNvFlowPreprocessorTokenType_leftParenthesis,    // (
+    eNvFlowPreprocessorTokenType_rightParenthesis,    // )
+    eNvFlowPreprocessorTokenType_leftBracket,        // [
+    eNvFlowPreprocessorTokenType_rightBracket,        // ]
+    eNvFlowPreprocessorTokenType_leftCurlyBrace,    // {
+    eNvFlowPreprocessorTokenType_rightCurlyBrace,    // }
 
-	eNvFlowPreprocessorTokenType_lessThan,			// <
-	eNvFlowPreprocessorTokenType_greaterThan,		// >
+    eNvFlowPreprocessorTokenType_lessThan,            // <
+    eNvFlowPreprocessorTokenType_greaterThan,        // >
 
-	eNvFlowPreprocessorTokenType_anyWhitespace,		// For delimiter usage, aligns with NvFlowPreprocessorTokenIsWhitespace()
+    eNvFlowPreprocessorTokenType_anyWhitespace,        // For delimiter usage, aligns with NvFlowPreprocessorTokenIsWhitespace()
 
-	eNvFlowPreprocessorTokenType_count,
-	eNvFlowPreprocessorTokenType_maxEnum = 0x7FFFFFFF
+    eNvFlowPreprocessorTokenType_count,
+    eNvFlowPreprocessorTokenType_maxEnum = 0x7FFFFFFF
 };
 
 struct NvFlowPreprocessorToken
 {
-	NvFlowPreprocessorTokenType type;
-	const char* str;
+    NvFlowPreprocessorTokenType type;
+    const char* str;
 };
 
 NV_FLOW_INLINE NvFlowBool32 NvFlowPreprocessorTokenIsWhitespace(const NvFlowPreprocessorToken token)
 {
-	return token.type == eNvFlowPreprocessorTokenType_whitespace || 
-		token.type == eNvFlowPreprocessorTokenType_newline ||
-		token.type == eNvFlowPreprocessorTokenType_comment;
+    return token.type == eNvFlowPreprocessorTokenType_whitespace ||
+        token.type == eNvFlowPreprocessorTokenType_newline ||
+        token.type == eNvFlowPreprocessorTokenType_comment;
 }
 
 NV_FLOW_INLINE void NvFlowPreprocessorSkipWhitespaceTokens(NvFlowUint64* pTokenIdx, NvFlowUint64 numTokens, const NvFlowPreprocessorToken* tokens)
 {
-	while ((*pTokenIdx) < numTokens && NvFlowPreprocessorTokenIsWhitespace(tokens[(*pTokenIdx)]))
-	{
-		(*pTokenIdx)++;
-	}
+    while ((*pTokenIdx) < numTokens && NvFlowPreprocessorTokenIsWhitespace(tokens[(*pTokenIdx)]))
+    {
+        (*pTokenIdx)++;
+    }
 }
 
 enum NvFlowPreprocessorType
 {
-	eNvFlowPreprocessorType_constant = 0,			// name
-	eNvFlowPreprocessorType_statement = 1,			// name arg0 arg1;
-	eNvFlowPreprocessorType_function = 2,			// name(arg0, arg1, arg2)
-	eNvFlowPreprocessorType_index = 3,				// name[arg0] or name[arg0]= arg1 arg2 arg3;
-	eNvFlowPreprocessorType_attribute = 4,			// [name(arg0, arg1, arg2)]
-	eNvFlowPreprocessorType_line = 5,				// #name arg0 \n
-	eNvFlowPreprocessorType_body = 6,				// name <arg0, arg1> arg2 arg3(arg4, arg5) { arg6; arg7; }	
-	eNvFlowPreprocessorType_templateInstance = 7,	// name<arg0, arg1>
-	eNvFlowPreprocessorType_statementComma = 8,		// "name arg0," or "name arg0)"
+    eNvFlowPreprocessorType_constant = 0,            // name
+    eNvFlowPreprocessorType_statement = 1,            // name arg0 arg1;
+    eNvFlowPreprocessorType_function = 2,            // name(arg0, arg1, arg2)
+    eNvFlowPreprocessorType_index = 3,                // name[arg0] or name[arg0]= arg1 arg2 arg3;
+    eNvFlowPreprocessorType_attribute = 4,            // [name(arg0, arg1, arg2)]
+    eNvFlowPreprocessorType_line = 5,                // #name arg0 \n
+    eNvFlowPreprocessorType_body = 6,                // name <arg0, arg1> arg2 arg3(arg4, arg5) { arg6; arg7; }
+    eNvFlowPreprocessorType_templateInstance = 7,    // name<arg0, arg1>
+    eNvFlowPreprocessorType_statementComma = 8,        // "name arg0," or "name arg0)"
 
-	eNvFlowPreprocessorType_maxEnum = 0x7FFFFFFF
+    eNvFlowPreprocessorType_maxEnum = 0x7FFFFFFF
 };
 
 struct NvFlowPreprocessorConstant
 {
-	const char* name;
-	const char* value;
+    const char* name;
+    const char* value;
 };
 
 struct NvFlowPreprocessorFunction
 {
-	const char* name;
-	NvFlowPreprocessorType type;
-	void* userdata;
-	char*(*substitute)(NvFlowPreprocessor* ptr, void* userdata, NvFlowUint64 numTokens, const NvFlowPreprocessorToken* tokens);
-	NvFlowBool32 allowRecursion;
+    const char* name;
+    NvFlowPreprocessorType type;
+    void* userdata;
+    char*(*substitute)(NvFlowPreprocessor* ptr, void* userdata, NvFlowUint64 numTokens, const NvFlowPreprocessorToken* tokens);
+    NvFlowBool32 allowRecursion;
 };
 
 enum NvFlowPreprocessorMode
 {
-	eNvFlowPreprocessorMode_default = 0,			// Input string evaluated and substitution evaluated, no recursion
-	eNvFlowPreprocessorMode_singlePass = 1,			// Input string evaluated once, no substitution evaluation
-	eNvFlowPreprocessorMode_disable_passthrough = 2,	// Do not passthrough strings
+    eNvFlowPreprocessorMode_default = 0,            // Input string evaluated and substitution evaluated, no recursion
+    eNvFlowPreprocessorMode_singlePass = 1,            // Input string evaluated once, no substitution evaluation
+    eNvFlowPreprocessorMode_disable_passthrough = 2,    // Do not passthrough strings
 
-	eNvFlowPreprocessorMode_maxEnum = 0x7FFFFFFF
+    eNvFlowPreprocessorMode_maxEnum = 0x7FFFFFFF
 };
 
 NvFlowPreprocessor* NvFlowPreprocessorCreate(NvFlowStringPool* pool);
@@ -170,13 +171,13 @@ void NvFlowPreprocessorTokenize(NvFlowPreprocessor* ptr, const char* input, NvFl
 
 enum NvFlowPreprocessorGlobalType
 {
-	eNvFlowPreprocessorGlobalType_unknown = 0,			// Unknown global type
-	eNvFlowPreprocessorGlobalType_statement = 1,		// ConstantBuffer<Params> gParams;
-	eNvFlowPreprocessorGlobalType_function = 2,			// returnType functionName(arg1, arg2, arg3) { [functionbody] }
-	eNvFlowPreprocessorGlobalType_attribute = 3,		// [name(arg0, arg1, arg2)]
-	eNvFlowPreprocessorGlobalType_line = 4,				// #define CONSTANT \n
+    eNvFlowPreprocessorGlobalType_unknown = 0,            // Unknown global type
+    eNvFlowPreprocessorGlobalType_statement = 1,        // ConstantBuffer<Params> gParams;
+    eNvFlowPreprocessorGlobalType_function = 2,            // returnType functionName(arg1, arg2, arg3) { [functionbody] }
+    eNvFlowPreprocessorGlobalType_attribute = 3,        // [name(arg0, arg1, arg2)]
+    eNvFlowPreprocessorGlobalType_line = 4,                // #define CONSTANT \n
 
-	eNvFlowPreprocessorGlobalType_maxEnum = 0x7FFFFFFF
+    eNvFlowPreprocessorGlobalType_maxEnum = 0x7FFFFFFF
 };
 
 char* NvFlowPreprocessorExecuteGlobal(NvFlowPreprocessor* ptr, const char* input, void* userdata, char*(*substitute)(NvFlowPreprocessor* ptr, void* userdata, NvFlowPreprocessorGlobalType globalType, NvFlowUint64 numTokens, const NvFlowPreprocessorToken* tokens));

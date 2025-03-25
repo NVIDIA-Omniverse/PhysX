@@ -33,15 +33,6 @@
 #include "PxPhysXConfig.h"
 
 #if !PX_DOXYGEN
-/**
-\brief Retrieves the PhysX SDK metadata.
-
-\deprecated Binary conversion and binary meta data are deprecated.
-
-This function is used to implement PxSerialization.dumpBinaryMetaData() and is not intended to be needed otherwise.
-\see PxSerialization.dumpBinaryMetaData()
-*/
-PX_DEPRECATED PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxGetPhysicsBinaryMetaData(physx::PxOutputStream& stream);
 
 /**
 \brief Registers physics classes for serialization.

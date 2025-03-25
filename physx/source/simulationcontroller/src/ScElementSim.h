@@ -94,6 +94,7 @@ namespace Sc
 
 		PX_FORCE_INLINE PxU32					getElementID()				const	{ return mElementID;	}
 		PX_FORCE_INLINE bool					isInBroadPhase()			const	{ return mInBroadPhase;	}
+		PX_FORCE_INLINE void					setInBroadPhase()					{ mInBroadPhase = true;	}
 
 						void					addToAABBMgr(PxReal contactDistance, Bp::FilterGroup::Enum group, Bp::ElementType::Enum type);
 		PX_FORCE_INLINE	void					addToAABBMgr(PxReal contactOffset, Bp::FilterType::Enum type)

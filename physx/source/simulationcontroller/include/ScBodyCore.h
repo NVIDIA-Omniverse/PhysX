@@ -46,7 +46,6 @@ namespace Sc
 	public:
 // PX_SERIALIZATION
 											BodyCore(const PxEMPTY) : RigidCore(PxEmpty), mCore(PxEmpty) {}
-			static			void			getBinaryMetaData(PxOutputStream& stream);
 							void			restoreDynamicData();
 
 //~PX_SERIALIZATION

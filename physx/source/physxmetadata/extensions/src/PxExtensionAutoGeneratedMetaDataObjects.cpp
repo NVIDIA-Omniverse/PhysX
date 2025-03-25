@@ -228,36 +228,6 @@ const char * getPxDistanceJoint_ConcreteTypeName( const PxDistanceJoint* inObj )
 {
 	PX_UNUSED(inSource);
 }
-void setPxContactJoint_Contact( PxContactJoint* inObj, const PxVec3 & inArg){ inObj->setContact( inArg ); }
-PxVec3 getPxContactJoint_Contact( const PxContactJoint* inObj ) { return inObj->getContact(); }
-void setPxContactJoint_ContactNormal( PxContactJoint* inObj, const PxVec3 & inArg){ inObj->setContactNormal( inArg ); }
-PxVec3 getPxContactJoint_ContactNormal( const PxContactJoint* inObj ) { return inObj->getContactNormal(); }
-void setPxContactJoint_Penetration( PxContactJoint* inObj, const PxReal inArg){ inObj->setPenetration( inArg ); }
-PxReal getPxContactJoint_Penetration( const PxContactJoint* inObj ) { return inObj->getPenetration(); }
-void setPxContactJoint_Restitution( PxContactJoint* inObj, const PxReal inArg){ inObj->setRestitution( inArg ); }
-PxReal getPxContactJoint_Restitution( const PxContactJoint* inObj ) { return inObj->getRestitution(); }
-void setPxContactJoint_BounceThreshold( PxContactJoint* inObj, const PxReal inArg){ inObj->setBounceThreshold( inArg ); }
-PxReal getPxContactJoint_BounceThreshold( const PxContactJoint* inObj ) { return inObj->getBounceThreshold(); }
-const char * getPxContactJoint_ConcreteTypeName( const PxContactJoint* inObj ) { return inObj->getConcreteTypeName(); }
- PxContactJointGeneratedInfo::PxContactJointGeneratedInfo()
-	: Contact( "Contact", setPxContactJoint_Contact, getPxContactJoint_Contact)
-	, ContactNormal( "ContactNormal", setPxContactJoint_ContactNormal, getPxContactJoint_ContactNormal)
-	, Penetration( "Penetration", setPxContactJoint_Penetration, getPxContactJoint_Penetration)
-	, Restitution( "Restitution", setPxContactJoint_Restitution, getPxContactJoint_Restitution)
-	, BounceThreshold( "BounceThreshold", setPxContactJoint_BounceThreshold, getPxContactJoint_BounceThreshold)
-	, ConcreteTypeName( "ConcreteTypeName", getPxContactJoint_ConcreteTypeName)
-{}
- PxContactJointGeneratedValues::PxContactJointGeneratedValues( const PxContactJoint* inSource )
-		:PxJointGeneratedValues( inSource )
-		,Contact( getPxContactJoint_Contact( inSource ) )
-		,ContactNormal( getPxContactJoint_ContactNormal( inSource ) )
-		,Penetration( getPxContactJoint_Penetration( inSource ) )
-		,Restitution( getPxContactJoint_Restitution( inSource ) )
-		,BounceThreshold( getPxContactJoint_BounceThreshold( inSource ) )
-		,ConcreteTypeName( getPxContactJoint_ConcreteTypeName( inSource ) )
-{
-	PX_UNUSED(inSource);
-}
 const char * getPxFixedJoint_ConcreteTypeName( const PxFixedJoint* inObj ) { return inObj->getConcreteTypeName(); }
  PxFixedJointGeneratedInfo::PxFixedJointGeneratedInfo()
 	: ConcreteTypeName( "ConcreteTypeName", getPxFixedJoint_ConcreteTypeName)

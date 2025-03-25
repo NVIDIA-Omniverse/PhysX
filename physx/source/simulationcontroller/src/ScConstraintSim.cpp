@@ -38,7 +38,7 @@ using namespace Sc;
 
 static ConstraintInteraction* createInteraction(ConstraintSim* sim, RigidCore* r0, RigidCore* r1, Scene& scene)
 {
-	return scene.getConstraintInteractionPool()->construct(	sim, 
+	return scene.getConstraintInteractionPool().construct(	sim, 
 															r0 ? *r0->getSim() : scene.getStaticAnchor(), 
 															r1 ? *r1->getSim() : scene.getStaticAnchor());
 }
@@ -48,7 +48,7 @@ static void releaseInteraction(ConstraintInteraction* interaction, const Constra
 	if(!sim->isBroken())
 		interaction->destroy();
 
-	scene.getConstraintInteractionPool()->destroy(interaction);
+	scene.getConstraintInteractionPool().destroy(interaction);
 }
 
 Sc::ConstraintSim::ConstraintSim(ConstraintCore& core, RigidCore* r0, RigidCore* r1, Scene& scene) :
@@ -150,6 +150,8 @@ void Sc::ConstraintSim::setBodies(RigidCore* r0, RigidCore* r1)
 {
 	PX_ASSERT(mInteraction);
 
+	mScene.removeConstraintFromMap(*mInteraction);
+
 	releaseInteraction(mInteraction, this, mScene);
 
 	BodySim* b0 = (r0 && (r0->getActorCoreType() != PxActorType::eRIGID_STATIC)) ? static_cast<BodySim*>(r0->getSim()) : 0;
@@ -161,6 +163,8 @@ void Sc::ConstraintSim::setBodies(RigidCore* r0, RigidCore* r1)
 	mBodies[1] = b1;
 
 	mInteraction = createInteraction(this, r0, r1, mScene);
+
+	mScene.addConstraintToMap(mCore, r0, r1);
 }
 
 void Sc::ConstraintSim::getForce(PxVec3& lin, PxVec3& ang)
@@ -204,4 +208,19 @@ void Sc::ConstraintSim::setBreakForceLL(PxReal linear, PxReal angular)
 void Sc::ConstraintSim::postFlagChange(PxConstraintFlags /*oldFlags*/, PxConstraintFlags newFlags)
 {
 	mLowLevelConstraint.flags = newFlags;
+}
+
+PxConstraintGPUIndex Sc::ConstraintSim::getGPUIndex() const
+{
+	//
+	// The constraint ID is used as GPU index
+	//
+
+	if (mLowLevelConstraint.flags & PxConstraintFlag::eGPU_COMPATIBLE)
+	{
+		PX_COMPILE_TIME_ASSERT(sizeof(Dy::Constraint::index) <= sizeof(PxConstraintGPUIndex));
+		return static_cast<PxConstraintGPUIndex>(mLowLevelConstraint.index);
+	}
+	else
+		return PX_INVALID_CONSTRAINT_GPU_INDEX;
 }

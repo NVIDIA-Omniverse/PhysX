@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -46,78 +47,78 @@
 
 struct GlfwLoader
 {
-	void* module = nullptr;
+    void* module = nullptr;
 
-	GLFW_PTR(glfwInit);
-	GLFW_PTR(glfwWindowHint);
-	GLFW_PTR(glfwCreateWindow);
-	GLFW_PTR(glfwGetPrimaryMonitor);
-	GLFW_PTR(glfwGetVideoMode);
-	GLFW_PTR(glfwSetWindowUserPointer);
-	GLFW_PTR(glfwSetWindowPos);
-	GLFW_PTR(glfwSetWindowSizeCallback);
-	GLFW_PTR(glfwSetKeyCallback);
-	GLFW_PTR(glfwSetCharCallback);
-	GLFW_PTR(glfwSetMouseButtonCallback);
-	GLFW_PTR(glfwSetCursorPosCallback);
-	GLFW_PTR(glfwSetScrollCallback);
+    GLFW_PTR(glfwInit);
+    GLFW_PTR(glfwWindowHint);
+    GLFW_PTR(glfwCreateWindow);
+    GLFW_PTR(glfwGetPrimaryMonitor);
+    GLFW_PTR(glfwGetVideoMode);
+    GLFW_PTR(glfwSetWindowUserPointer);
+    GLFW_PTR(glfwSetWindowPos);
+    GLFW_PTR(glfwSetWindowSizeCallback);
+    GLFW_PTR(glfwSetKeyCallback);
+    GLFW_PTR(glfwSetCharCallback);
+    GLFW_PTR(glfwSetMouseButtonCallback);
+    GLFW_PTR(glfwSetCursorPosCallback);
+    GLFW_PTR(glfwSetScrollCallback);
 #if defined(_WIN32)
-	GLFW_PTR(glfwGetWin32Window);
+    GLFW_PTR(glfwGetWin32Window);
 #else
-	GLFW_PTR(glfwGetX11Display);
-	GLFW_PTR(glfwGetX11Window);
+    GLFW_PTR(glfwGetX11Display);
+    GLFW_PTR(glfwGetX11Window);
 #endif
-	GLFW_PTR(glfwDestroyWindow);
-	GLFW_PTR(glfwTerminate);
-	GLFW_PTR(glfwPollEvents);
-	GLFW_PTR(glfwWindowShouldClose);
-	GLFW_PTR(glfwGetWindowUserPointer);
-	GLFW_PTR(glfwSetWindowMonitor);
-	GLFW_PTR(glfwGetMouseButton);
+    GLFW_PTR(glfwDestroyWindow);
+    GLFW_PTR(glfwTerminate);
+    GLFW_PTR(glfwPollEvents);
+    GLFW_PTR(glfwWindowShouldClose);
+    GLFW_PTR(glfwGetWindowUserPointer);
+    GLFW_PTR(glfwSetWindowMonitor);
+    GLFW_PTR(glfwGetMouseButton);
 };
 
 inline void* GlfwLoader_loadFunction(GlfwLoader* ptr, const char* name)
 {
-	return NvFlowGetProcAddress(ptr->module, name);
+    return NvFlowGetProcAddress(ptr->module, name);
 }
 
 inline void GlfwLoader_init(GlfwLoader* ptr)
 {
 #if defined(__aarch64__)
-	ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw_aarch64.so.3.3");
+    ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw_aarch64.so.3.3");
 #else
-	ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw.so.3.3");
+    ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw.so.3");
 #endif
 
-	GLFW_PTR_LOAD(glfwInit);
-	GLFW_PTR_LOAD(glfwWindowHint);
-	GLFW_PTR_LOAD(glfwCreateWindow);
-	GLFW_PTR_LOAD(glfwGetPrimaryMonitor);
-	GLFW_PTR_LOAD(glfwGetVideoMode);
-	GLFW_PTR_LOAD(glfwSetWindowUserPointer);
-	GLFW_PTR_LOAD(glfwSetWindowPos);
-	GLFW_PTR_LOAD(glfwSetWindowSizeCallback);
-	GLFW_PTR_LOAD(glfwSetKeyCallback);
-	GLFW_PTR_LOAD(glfwSetCharCallback);
-	GLFW_PTR_LOAD(glfwSetMouseButtonCallback);
-	GLFW_PTR_LOAD(glfwSetCursorPosCallback);
-	GLFW_PTR_LOAD(glfwSetScrollCallback);
+    GLFW_PTR_LOAD(glfwInit);
+    GLFW_PTR_LOAD(glfwWindowHint);
+    GLFW_PTR_LOAD(glfwCreateWindow);
+    GLFW_PTR_LOAD(glfwGetPrimaryMonitor);
+    GLFW_PTR_LOAD(glfwGetVideoMode);
+    GLFW_PTR_LOAD(glfwSetWindowUserPointer);
+    GLFW_PTR_LOAD(glfwSetWindowPos);
+    GLFW_PTR_LOAD(glfwSetWindowSizeCallback);
+    GLFW_PTR_LOAD(glfwSetKeyCallback);
+    GLFW_PTR_LOAD(glfwSetCharCallback);
+    GLFW_PTR_LOAD(glfwSetMouseButtonCallback);
+    GLFW_PTR_LOAD(glfwSetCursorPosCallback);
+    GLFW_PTR_LOAD(glfwSetScrollCallback);
 #if defined(_WIN32)
-	GLFW_PTR_LOAD(glfwGetWin32Window);
+    GLFW_PTR_LOAD(glfwGetWin32Window);
 #else
-	GLFW_PTR_LOAD(glfwGetX11Display);
-	GLFW_PTR_LOAD(glfwGetX11Window);
+    GLFW_PTR_LOAD(glfwGetX11Display);
+    GLFW_PTR_LOAD(glfwGetX11Window);
 #endif
-	GLFW_PTR_LOAD(glfwDestroyWindow);
-	GLFW_PTR_LOAD(glfwTerminate);
-	GLFW_PTR_LOAD(glfwPollEvents);
-	GLFW_PTR_LOAD(glfwWindowShouldClose);
-	GLFW_PTR_LOAD(glfwGetWindowUserPointer);
-	GLFW_PTR_LOAD(glfwSetWindowMonitor);
-	GLFW_PTR_LOAD(glfwGetMouseButton);
+    GLFW_PTR_LOAD(glfwDestroyWindow);
+    GLFW_PTR_LOAD(glfwTerminate);
+    GLFW_PTR_LOAD(glfwPollEvents);
+    GLFW_PTR_LOAD(glfwWindowShouldClose);
+    GLFW_PTR_LOAD(glfwGetWindowUserPointer);
+    GLFW_PTR_LOAD(glfwSetWindowMonitor);
+    GLFW_PTR_LOAD(glfwGetMouseButton);
 }
 
 inline void GlfwLoader_destroy(GlfwLoader* ptr)
 {
-	NvFlowFreeLibrary(ptr->module);
+    NvFlowFreeLibrary(ptr->module);
 }

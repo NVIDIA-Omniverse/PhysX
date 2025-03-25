@@ -45,7 +45,6 @@
 namespace physx
 {
 
-class PxContactJoint;
 class PxFixedJoint;
 class PxGearJoint;
 class PxRackAndPinionJoint;

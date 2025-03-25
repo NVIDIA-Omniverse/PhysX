@@ -41,10 +41,6 @@
 #include "CmRenderBuffer.h"
 #include "CmIDPool.h"
 
-#if PX_SUPPORT_GPU_PHYSX
-	#include "device/PhysXIndicator.h"
-#endif
-
 #include "NpSceneQueries.h"
 #include "NpSceneAccessor.h"
 #include "NpPruningStructure.h"
@@ -312,25 +308,10 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	virtual			void							shiftOrigin(const PxVec3& shift)	PX_OVERRIDE PX_FINAL;
 
 	virtual         PxPvdSceneClient*				getScenePvdClient()	PX_OVERRIDE PX_FINAL;
-
-	PX_DEPRECATED	virtual	void					copyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbCopyArticulations, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					applyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbUpdatedArticulations, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
-
-	PX_DEPRECATED	virtual	void					updateArticulationsKinematic(CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					copyContactData(void* data, const PxU32 numContactPatches, void* numContactPairs, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
 	
 	PX_DEPRECATED	virtual	void					copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
 	PX_DEPRECATED	virtual	void					applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
 
-	PX_DEPRECATED	virtual	void					copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU32 nbCopyActors, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
-
-	PX_DEPRECATED	virtual	void					evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* samplePointsConcatenated, const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, CUevent event)	PX_OVERRIDE	PX_FINAL;
-
-	PX_DEPRECATED	virtual	void					computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
 	PX_DEPRECATED	virtual	void					applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* bufferIndexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
 
 	virtual	void									setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)	PX_OVERRIDE	PX_FINAL;
@@ -478,12 +459,6 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 
 #if PX_CHECKED
 					void							checkPositionSanity(const PxRigidActor& a, const PxTransform& pose, const char* fnName) const;
-#endif
-
-#if PX_SUPPORT_GPU_PHYSX
-					void							updatePhysXIndicator();
-#else
-	PX_FORCE_INLINE	void							updatePhysXIndicator() {}
 #endif
 
 					void							scAddAggregate(NpAggregate&);
@@ -656,9 +631,6 @@ private:
 #endif
 
 					PxBounds3						mSanityBounds;
-#if PX_SUPPORT_GPU_PHYSX
-					PhysXIndicator					mPhysXIndicator;
-#endif
 
 					PxSync							mPhysicsDone;		// physics thread signals this when update ready
 					PxSync							mCollisionDone;		// physics thread signals this when all collisions ready

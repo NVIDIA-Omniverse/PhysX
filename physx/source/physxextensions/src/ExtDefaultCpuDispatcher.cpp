@@ -48,8 +48,7 @@ void Ext::DefaultCpuDispatcher::getAffinityMasks(PxU32* affinityMasks, PxU32 thr
 }
 #endif
 
-Ext::DefaultCpuDispatcher::DefaultCpuDispatcher(PxU32 numThreads, PxU32* affinityMasks, PxDefaultCpuDispatcherWaitForWorkMode::Enum mode, PxU32 yieldProcessorCount)
-	: mQueueEntryPool(EXT_TASK_QUEUE_ENTRY_POOL_SIZE, "QueueEntryPool"), mNumThreads(numThreads), mShuttingDown(false)
+Ext::DefaultCpuDispatcher::DefaultCpuDispatcher(PxU32 numThreads, PxU32* affinityMasks, PxDefaultCpuDispatcherWaitForWorkMode::Enum mode, PxU32 yieldProcessorCount) : mNumThreads(numThreads), mShuttingDown(false)
 #if PX_PROFILE
 	,mRunProfiled(true)
 #else
@@ -146,51 +145,18 @@ void Ext::DefaultCpuDispatcher::submitTask(PxBaseTask& task)
 		if(mWorkerThreads[i].tryAcceptJobToLocalQueue(task, currentThread))
 		{
 			if(PxDefaultCpuDispatcherWaitForWorkMode::eWAIT_FOR_WORK == mWaitForWorkMode)
-			{
-				return mWorkReady.set();
-			}
+				mWorkReady.set();
 			else
-			{
 				PX_ASSERT(PxDefaultCpuDispatcherWaitForWorkMode::eYIELD_PROCESSOR == mWaitForWorkMode || PxDefaultCpuDispatcherWaitForWorkMode::eYIELD_THREAD == mWaitForWorkMode);
-				return;
-			}
+			return;
 		}
 	}
 
-	SharedQueueEntry* entry = mQueueEntryPool.getEntry(&task);
-	if(entry)
+	if(mHelper.tryAcceptJobToQueue(task))
 	{
-		mJobList.push(*entry);
 		if(PxDefaultCpuDispatcherWaitForWorkMode::eWAIT_FOR_WORK == mWaitForWorkMode)
 			mWorkReady.set();
 	}
-}
-
-PxBaseTask* Ext::DefaultCpuDispatcher::fetchNextTask()
-{
-	PxBaseTask* task = getJob();
-
-	if(!task)
-		task = stealJob();
-
-	return task;
-}
-
-PxBaseTask* Ext::DefaultCpuDispatcher::getJob()
-{
-	return TaskQueueHelper::fetchTask(mJobList, mQueueEntryPool);
-}
-
-PxBaseTask* Ext::DefaultCpuDispatcher::stealJob()
-{
-	const PxU32 nbThreads = mNumThreads;
-	for(PxU32 i=0; i<nbThreads; ++i)
-	{
-		PxBaseTask* ret = mWorkerThreads[i].giveUpJob();
-		if(ret)
-			return ret;
-	}
-	return NULL;
 }
 
 void Ext::DefaultCpuDispatcher::resetWakeSignal()

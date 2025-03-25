@@ -29,6 +29,8 @@
 #ifndef NP_PBD_PARTICLE_SYSTEM_H
 #define NP_PBD_PARTICLE_SYSTEM_H
 
+#if PX_SUPPORT_GPU_PHYSX
+
 #include "PxPBDParticleSystem.h"
 #include "PxParticleMaterial.h"
 #include "PxSparseGridParams.h"
@@ -338,4 +340,5 @@ namespace physx
 	};
 
 }
+#endif
 #endif

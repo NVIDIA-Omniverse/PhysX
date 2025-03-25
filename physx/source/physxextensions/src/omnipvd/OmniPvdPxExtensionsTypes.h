@@ -80,7 +80,6 @@ OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		ePRISMATIC)
 OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		eFIXED)
 OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		eDISTANCE)
 OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		eD6)
-OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		eCONTACT)
 OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		eGEAR)
 OMNI_PVD_ENUM_VALUE		(PxJointConcreteType,		eRACK_AND_PINION)
 OMNI_PVD_ENUM_END		(PxJointConcreteType)
@@ -183,16 +182,6 @@ OMNI_PVD_ATTRIBUTE				(PxDistanceJoint, damping,			PxReal, OmniPvdDataType::eFLO
 OMNI_PVD_ATTRIBUTE_FLAG			(PxDistanceJoint, jointFlags,		PxDistanceJointFlags, PxDistanceJointFlag)
 OMNI_PVD_CLASS_END				(PxDistanceJoint)
 
-////////////////////////////////////////////////////////////////////////////////
-// PxContactJoint
-////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_DERIVED_BEGIN		(PxContactJoint, PxJoint)
-OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxContactJoint, point,				PxVec3, OmniPvdDataType::eFLOAT32, 3)
-OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxContactJoint, normal,			PxVec3, OmniPvdDataType::eFLOAT32, 3)
-OMNI_PVD_ATTRIBUTE					(PxContactJoint, penetration,		PxReal, OmniPvdDataType::eFLOAT32)
-OMNI_PVD_ATTRIBUTE					(PxContactJoint, restitution,		PxReal, OmniPvdDataType::eFLOAT32)
-OMNI_PVD_ATTRIBUTE					(PxContactJoint, bounceThreshold,	PxReal, OmniPvdDataType::eFLOAT32)
-OMNI_PVD_CLASS_END					(PxContactJoint)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxGearJoint

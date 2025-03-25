@@ -80,7 +80,7 @@ bool Gu::sweepCapsuleTriangles_Precise(	PxU32 nbTris, const PxTriangle* PX_RESTR
 
 	const bool meshBothSides = hitFlags & PxHitFlag::eMESH_BOTH_SIDES;
 	const bool doBackfaceCulling = !isDoubleSided && !meshBothSides;
-	const bool anyHit = hitFlags & PxHitFlag::eMESH_ANY;
+	const bool anyHit = hitFlags & PxHitFlag::eANY_HIT;
 	const bool testInitialOverlap = !(hitFlags & PxHitFlag::eASSUME_NO_INITIAL_OVERLAP);
 
 	// PT: we can fallback to sphere sweep:

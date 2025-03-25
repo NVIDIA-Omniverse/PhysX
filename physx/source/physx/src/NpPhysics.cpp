@@ -98,9 +98,6 @@ NpPhysics::NpPhysics(const PxTolerancesScale& scale, const PxvOffsetTable& pxvOf
 	mPhysics					(scale, pxvOffsetTable),
 	mDeletionListenersExist		(false),
 	mFoundation					(foundation)
-#if PX_SUPPORT_GPU_PHYSX
-	, mNbRegisteredGpuClients	(0)
-#endif	
 {
 	PX_UNUSED(trackOutstandingAllocations);
 
@@ -363,7 +360,6 @@ void NpPhysics::release()
 PxScene* NpPhysics::createScene(const PxSceneDesc& desc)
 {
 	PX_CHECK_AND_RETURN_NULL(desc.isValid(), "Physics::createScene: desc.isValid() is false!");
-
 	const PxTolerancesScale& scale = mPhysics.getTolerancesScale();
 	const PxTolerancesScale& descScale = desc.getTolerancesScale();
 	PX_UNUSED(scale);
@@ -493,6 +489,11 @@ PxShape* NpPhysics::createShape(const PxGeometry& geometry, PxDeformableVolumeMa
 #else
 PxShape* NpPhysics::createShape(const PxGeometry& geometry, PxDeformableSurfaceMaterial* const* materials, PxU16 materialCount, bool isExclusive, PxShapeFlags shapeFlags)
 {
+	PX_UNUSED(geometry);
+	PX_UNUSED(materials);
+	PX_UNUSED(materialCount);
+	PX_UNUSED(isExclusive);
+	PX_UNUSED(shapeFlags);
 	return NULL;
 }
 
@@ -523,9 +524,19 @@ PxConstraint* NpPhysics::createConstraint(PxRigidActor* actor0, PxRigidActor* ac
 	return NpFactory::getInstance().createConstraint(actor0, actor1, connector, shaders, dataSize);
 }
 
+PxU32 NpPhysics::getNbConstraints() const
+{
+	return NpFactory::getInstance().getNbConstraints();
+}
+
 PxArticulationReducedCoordinate* NpPhysics::createArticulationReducedCoordinate()
 {
 	return NpFactory::getInstance().createArticulationRC();
+}
+
+PxU32 NpPhysics::getNbArticulations() const
+{
+	return NpFactory::getInstance().getNbArticulations();
 }
 
 PxDeformableAttachment* NpPhysics::createDeformableAttachment(const PxDeformableAttachmentData& data)
@@ -547,7 +558,6 @@ PxDeformableElementFilter* NpPhysics::createDeformableElementFilter(const PxDefo
 	return NULL;
 #endif
 }
-
 
 PxDeformableSurface* NpPhysics::createDeformableSurface(PxCudaContextManager& cudaContextManager)
 {
@@ -587,6 +597,11 @@ PxAggregate* NpPhysics::createAggregate(PxU32 maxActors, PxU32 maxShapes, PxAggr
 		"PxPhysics::createAggregate: static aggregates with self-collisions are not allowed.", NULL);
 
 	return NpFactory::getInstance().createAggregate(maxActors, maxShapes, filterHint);
+}
+
+PxU32 NpPhysics::getNbAggregates() const
+{
+	return NpFactory::getInstance().getNbAggregates();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -751,9 +766,9 @@ IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpMaterial, mMasterMaterialManager, "PxPhy
 
 #if PX_SUPPORT_GPU_PHYSX
 PxDeformableSurfaceMaterial* NpPhysics::createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness, 
-	PxReal bendingStiffness, PxReal damping, PxReal bendingDamping)
+	PxReal bendingStiffness, PxReal elasticityDamping, PxReal bendingDamping)
 {
-	PxDeformableSurfaceMaterial* m = NpFactory::getInstance().createDeformableSurfaceMaterial(youngs, poissons, dynamicFriction, thickness, bendingStiffness, damping, bendingDamping);
+	PxDeformableSurfaceMaterial* m = NpFactory::getInstance().createDeformableSurfaceMaterial(youngs, poissons, dynamicFriction, thickness, bendingStiffness, elasticityDamping, bendingDamping);
 	return addMaterial(static_cast<NpDeformableSurfaceMaterial*>(m));
 }
 
@@ -778,9 +793,9 @@ PxU32 NpPhysics::getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial**, Px
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_SUPPORT_GPU_PHYSX
-	PxDeformableVolumeMaterial* NpPhysics::createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)
+	PxDeformableVolumeMaterial* NpPhysics::createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal elasticityDamping)
 	{
-		PxDeformableVolumeMaterial* m = NpFactory::getInstance().createDeformableVolumeMaterial(youngs, poissons, dynamicFriction);
+		PxDeformableVolumeMaterial* m = NpFactory::getInstance().createDeformableVolumeMaterial(youngs, poissons, dynamicFriction, elasticityDamping);
 		return addMaterial(static_cast<NpDeformableVolumeMaterial*>(m));
 	}
 
@@ -797,9 +812,9 @@ PxU32 NpPhysics::getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial**, Px
 
 	IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpDeformableVolumeMaterial, mMasterDeformableVolumeMaterialManager, "PxPhysics::createDeformableVolumeMaterial: limit of 64K materials reached.")
 #else
-PxDeformableVolumeMaterial* NpPhysics::createDeformableVolumeMaterial(PxReal, PxReal, PxReal)		{ return NULL;	}
-	PxU32 NpPhysics::getNbDeformableVolumeMaterials()									const	{ return 0;		}
-	PxU32 NpPhysics::getDeformableVolumeMaterials(PxDeformableVolumeMaterial**, PxU32, PxU32) const	{ return 0;		}
+	PxDeformableVolumeMaterial* NpPhysics::createDeformableVolumeMaterial(PxReal, PxReal, PxReal, PxReal)	{ return NULL;	}
+	PxU32 NpPhysics::getNbDeformableVolumeMaterials()												const	{ return 0;		}
+	PxU32 NpPhysics::getDeformableVolumeMaterials(PxDeformableVolumeMaterial**, PxU32, PxU32)		const	{ return 0;		}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -996,29 +1011,6 @@ PxPruningStructure* NpPhysics::createPruningStructure(PxRigidActor*const* actors
 	}
 	return ps;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-#if PX_SUPPORT_GPU_PHYSX
-void NpPhysics::registerPhysXIndicatorGpuClient()
-{
-	PxMutex::ScopedLock lock(mPhysXIndicatorMutex);
-
-	++mNbRegisteredGpuClients;
-
-	mPhysXIndicator.setIsGpu(mNbRegisteredGpuClients>0);
-}
-
-void NpPhysics::unregisterPhysXIndicatorGpuClient()
-{
-	PxMutex::ScopedLock lock(mPhysXIndicatorMutex);
-
-	if (mNbRegisteredGpuClients)
-		--mNbRegisteredGpuClients;
-
-	mPhysXIndicator.setIsGpu(mNbRegisteredGpuClients>0);
-}
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -71,6 +71,7 @@ using namespace physx;
 using namespace Cm;
 using namespace Dy;
 using namespace Sc;
+using namespace Bp;
 
 PX_IMPLEMENT_OUTPUT_ERROR
 
@@ -132,19 +133,25 @@ void Sc::Scene::collideStep(PxBaseTask* continuation)
 	mStats->simStart();
 	mLLContext->beginUpdate();
 
+	const bool useGpu = isUsingGpuDynamicsOrBp();
+
 	mRigidBodyNarrowPhase.setContinuation(continuation);
 	mPreRigidBodyNarrowPhase.setContinuation(&mRigidBodyNarrowPhase);
-	mUpdateShapes.setContinuation(&mPreRigidBodyNarrowPhase);
+	if(useGpu)
+		mUpdateShapes.setContinuation(&mPreRigidBodyNarrowPhase);
 
 	mRigidBodyNarrowPhase.removeReference();
 	mPreRigidBodyNarrowPhase.removeReference();
-	mUpdateShapes.removeReference();
+	if(useGpu)
+		mUpdateShapes.removeReference();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void Sc::Scene::updateShapes(PxBaseTask* continuation)
 {
+	PX_ASSERT(isUsingGpuDynamicsOrBp());	// PT: this is not called anymore in the CPU pipeline
+
 	//dma shapes data to gpu
 	mSimulationController->updateShapes(continuation);
 }
@@ -159,11 +166,11 @@ public:
 	static const PxU32 MaxShapes = 256;
 
 	PxsTransformCache&	mCache;
-	Bp::BoundsArray&	mBoundsArray;
+	BoundsArray&		mBoundsArray;
 	ShapeSim*			mShapes[MaxShapes];
 	PxU32				mNbShapes;
 
-	DirtyShapeUpdatesTask(PxU64 contextID, PxsTransformCache& cache, Bp::BoundsArray& boundsArray) : 
+	DirtyShapeUpdatesTask(PxU64 contextID, PxsTransformCache& cache, BoundsArray& boundsArray) : 
 		Cm::Task	(contextID),
 		mCache		(cache),
 		mBoundsArray(boundsArray),
@@ -184,7 +191,7 @@ private:
 };
 }
 
-static DirtyShapeUpdatesTask* createDirtyShapeUpdateTask(Cm::FlushPool& pool, PxU64 contextID, PxsTransformCache& cache, Bp::BoundsArray& boundsArray)
+static DirtyShapeUpdatesTask* createDirtyShapeUpdateTask(Cm::FlushPool& pool, PxU64 contextID, PxsTransformCache& cache, BoundsArray& boundsArray)
 {
 	return PX_PLACEMENT_NEW(pool.allocate(sizeof(DirtyShapeUpdatesTask)), DirtyShapeUpdatesTask)(contextID, cache, boundsArray);
 }
@@ -199,7 +206,7 @@ void Sc::Scene::updateDirtyShapes(PxBaseTask* continuation)
 	PxBitMap::Iterator dirtyShapeIter(mDirtyShapeSimMap);
 
 	PxsTransformCache& cache = mLLContext->getTransformCache();
-	Bp::BoundsArray& boundsArray = mAABBManager->getBoundsArray();
+	BoundsArray& boundsArray = mAABBManager->getBoundsArray();
 
 	Cm::FlushPool& pool = mLLContext->getTaskPool();
 	PxBitMapPinned& changedMap = mAABBManager->getChangedAABBMgActorHandleMap();
@@ -301,6 +308,27 @@ void Sc::Scene::updateBoundsAndShapes(PxBaseTask* /*continuation*/)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void Sc::Scene::setupBroadPhaseFirstAndSecondPassTasks(PxBaseTask* continuation)
+{
+	// PT: on the CPU, mBpSecondPass only starts mBpUpdate, so we can use that directly.
+	if(isUsingGpuDynamicsOrBp())
+	{
+		mBpSecondPass.setContinuation(continuation);
+		mBpFirstPass.setContinuation(&mBpSecondPass);
+
+		mBpSecondPass.removeReference();
+		mBpFirstPass.removeReference();
+	}
+	else
+	{
+		mBpUpdate.setContinuation(continuation);
+		mBpFirstPass.setContinuation(&mBpUpdate);
+
+		mBpUpdate.removeReference();
+		mBpFirstPass.removeReference();
+	}
+}
+
 void Sc::Scene::broadPhase(PxBaseTask* continuation)
 {
 	PX_PROFILE_START_CROSSTHREAD("Basic.broadPhase", mContextId);
@@ -311,19 +339,7 @@ void Sc::Scene::broadPhase(PxBaseTask* continuation)
 
 	mCCDBp = false;
 
-	mBpSecondPass.setContinuation(continuation);
-	mBpFirstPass.setContinuation(&mBpSecondPass);
-
-	mBpSecondPass.removeReference();
-	mBpFirstPass.removeReference();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void Sc::Scene::processSolverPatches(PxBaseTask* /*continuation*/)
-{
-	PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
-	mDynamicsContext->processPatches(nphase->getLostFoundPatchManagers(), nphase->getNbLostFoundPatchManagers(), nphase->getLostFoundPatchOutputCounts());
+	setupBroadPhaseFirstAndSecondPassTasks(continuation);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -348,6 +364,8 @@ void Sc::Scene::broadPhaseSecondPass(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Basic.broadPhaseSecondPass", mContextId);
 
+	PX_ASSERT(isUsingGpuDynamicsOrBp());	// PT: this is not called anymore in the CPU pipeline
+
 	mBpUpdate.setContinuation(continuation);
 	mPreIntegrate.setContinuation(&mBpUpdate);
 
@@ -361,7 +379,9 @@ void Sc::Scene::preIntegrate(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Basic.preIntegrate", mContextId);
 
-	if (!mCCDBp && isUsingGpuDynamicsOrBp())
+	PX_ASSERT(isUsingGpuDynamicsOrBp());	// PT: this is not called anymore in the CPU pipeline
+
+	if(!mCCDBp)
 		mSimulationController->preIntegrateAndUpdateBound(continuation, mGravity, mDt);
 }
 
@@ -408,25 +428,30 @@ void Sc::Scene::postBroadPhase(PxBaseTask* continuation)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+namespace
+{
+	// PT: design that doesn't use a bitmap and does not require a MaxPairs limit per task. In this version the surviving pairs
+	// are moved to the front of the input buffers.
 	class OverlapFilterTask : public Cm::Task
 	{
 	public:
-		static const PxU32 MaxPairs = 512;
-		NPhaseCore*				mNPhaseCore;
-		const Bp::AABBOverlap*	mPairs;
-
-		PxU32					mNbToProcess;
-
-		PxU32					mKeepMap[MaxPairs/32];
-
-		FilterInfo*				mFinfo;
-
+		// PT: TODO: we already have an old JIRA ticket about this but this design here is one reason why PhysX doesn't
+		// scale well to many cores. Imagine you have a a relatively heavy scene with 4K new pairs to process this frame.
+		// We fill up MaxPairs per task no matter what. With MaxPairs = 512 we won't use more than 1 task below that limit.
+		// With 4K pairs we're going to use at best 4096/512 = 8 tasks. That's it. You could have 72 cores available and
+		// we'd still create only 8 tasks. Very questionable design here.
+		//static const PxU32 MaxPairs = 512;
+		static const PxU32 MaxPairs = 64;		// PT: lower number to scale to more threads
+		//static const PxU32 MaxPairs = 32;
+		const NPhaseCore*		mNPhaseCore;
+		AABBOverlap*			mPairs;		// PT: pointers to sections of AABBManagerBase::mCreatedOverlaps
+		const PxU32				mNbToProcess;
+		FilterInfo*				mFinfo;		// PT: pointers to sections of Sc::Scene::mFilterInfo.begin()
 		PxU32					mNbToKeep;
 		PxU32					mNbToSuppress;
-
 		OverlapFilterTask*		mNext;
 
-		OverlapFilterTask(PxU64 contextID, NPhaseCore* nPhaseCore, FilterInfo* fInfo, const Bp::AABBOverlap* pairs, PxU32 nbToProcess) :
+		OverlapFilterTask(PxU64 contextID, NPhaseCore* nPhaseCore, FilterInfo* fInfo, AABBOverlap* pairs, PxU32 nbToProcess) :
 			Cm::Task		(contextID),
 			mNPhaseCore		(nPhaseCore),
 			mPairs			(pairs),
@@ -436,16 +461,18 @@ void Sc::Scene::postBroadPhase(PxBaseTask* continuation)
 			mNbToSuppress	(0),
 			mNext			(NULL)
 		{
-			PxMemZero(mKeepMap, sizeof(mKeepMap));
 		}
 
 		virtual void runInternal()
 		{
-			mNPhaseCore->runOverlapFilters(	mNbToProcess, mPairs, mFinfo, mNbToKeep, mNbToSuppress, mKeepMap);
+			// PT: after this call we have mNbToKeep + mNbToSuppress surviving pairs moved to the start of mPairs,
+			// with corresponding filtering data at the start of mFinfo.
+			mNPhaseCore->runOverlapFilters(mNbToProcess, mPairs, mFinfo, mNbToKeep, mNbToSuppress);
 		}
 
 		virtual const char* getName() const { return "OverlapFilterTask"; }
 	};
+}
 
 void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 {
@@ -468,7 +495,7 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 			PX_PROFILE_ZONE("Sim.processNewOverlaps.createOverlapsNoShapeInteractions", mContextId);
 			{
 				PxU32 createdOverlapCount;
-				const Bp::AABBOverlap* PX_RESTRICT p = mAABBManager->getCreatedOverlaps(Bp::ElementType::eTRIGGER, createdOverlapCount);
+				const AABBOverlap* PX_RESTRICT p = mAABBManager->getCreatedOverlaps(ElementType::eTRIGGER, createdOverlapCount);
 				if(createdOverlapCount)
 				{
 					mLLContext->getSimStats().mNbNewPairs += createdOverlapCount;
@@ -485,7 +512,7 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 		// - some cleanup in postBroadPhaseStage2
 		{
 			PxU32 createdOverlapCount;
-			const Bp::AABBOverlap* PX_RESTRICT p = mAABBManager->getCreatedOverlaps(Bp::ElementType::eSHAPE, createdOverlapCount);
+			AABBOverlap* PX_RESTRICT p = mAABBManager->getCreatedOverlaps(ElementType::eSHAPE, createdOverlapCount);
 
 			// PT: removed this because it's pointless at this stage?
 			if(0)
@@ -506,6 +533,9 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 			// It ideally shouldn't be a class member but just a user-data passed from one task to the next. The task manager doesn't support that though (AFAIK),
 			// so instead it just lies there in Sc::Scene as a class member. It's only used in finishBroadPhase & preallocateContactManagers though.
 			mOverlapFilterTaskHead = NULL;
+			// PT: the same design is now used for these other tasks
+			mOverlapCreatedTaskHead = NULL;
+			mIslandInsertionTaskHead = NULL;
 
 			if(createdOverlapCount)
 			{
@@ -514,11 +544,13 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 				Cm::FlushPool& flushPool = mLLContext->getTaskPool();
 
 				// PT: temporary data, similar to mOverlapFilterTaskHead. Will be filled with filter info for each pair by the OverlapFilterTask.
+				// PT: TODO: revisit this pattern forceSize_Unsafe / reserve / forceSize_Unsafe - why??
 				mFilterInfo.forceSize_Unsafe(0);
 				mFilterInfo.reserve(createdOverlapCount);
 				mFilterInfo.forceSize_Unsafe(createdOverlapCount);
 
 				// PT: TASK-CREATION TAG
+				// PT: TODO: revisit task creation here
 				const PxU32 nbPairsPerTask = OverlapFilterTask::MaxPairs;
 				OverlapFilterTask* previousTask = NULL;
 				for(PxU32 a=0; a<createdOverlapCount; a+=nbPairsPerTask)
@@ -526,16 +558,10 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 					const PxU32 nbToProcess = PxMin(createdOverlapCount - a, nbPairsPerTask);
 					OverlapFilterTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(OverlapFilterTask)), OverlapFilterTask)(mContextId, mNPhaseCore, mFilterInfo.begin() + a, p + a, nbToProcess);
 
-					task->setContinuation(&mPreallocateContactManagers);
-					task->removeReference();
+					startTask(task, &mPreallocateContactManagers);
 
 					// PT: setup a linked-list of OverlapFilterTasks, will be parsed in preallocateContactManagers
-					if(previousTask)
-						previousTask->mNext = task;
-					else
-						mOverlapFilterTaskHead = task;
-
-					previousTask = task;
+					updateTaskLinkedList(previousTask, task, mOverlapFilterTaskHead);
 				}
 			}
 		}
@@ -581,14 +607,17 @@ namespace
 	{
 	public:
 		NPhaseCore*					mNPhaseCore;
-		const Bp::AABBOverlap*		mPairs;
+		const AABBOverlap*			mPairs;
 		const FilterInfo*			mFinfo;
 		PxsContactManager**			mContactManagers;
 		ShapeInteraction**			mShapeInteractions;
 		ElementInteractionMarker**	mInteractionMarkers;
-		PxU32						mNbToProcess;
+		const PxU32					mNbToProcess;
+		// PT: we maintain these to quickly compute afterwards how many shape interactions we're dealing with (to preallocate, etc)
+		PxU32						mNbShapeInteractions;
+		OnOverlapCreatedTask*		mNext;
 
-		OnOverlapCreatedTask(PxU64 contextID, NPhaseCore* nPhaseCore, const Bp::AABBOverlap* pairs, const FilterInfo* fInfo, PxsContactManager** contactManagers,
+		OnOverlapCreatedTask(PxU64 contextID, NPhaseCore* nPhaseCore, const AABBOverlap* pairs, const FilterInfo* fInfo, PxsContactManager** contactManagers,
 							ShapeInteraction** shapeInteractions, ElementInteractionMarker** interactionMarkers, PxU32 nbToProcess) :
 			Cm::Task			(contextID),
 			mNPhaseCore			(nPhaseCore),
@@ -597,7 +626,9 @@ namespace
 			mContactManagers	(contactManagers),
 			mShapeInteractions	(shapeInteractions),
 			mInteractionMarkers	(interactionMarkers),
-			mNbToProcess		(nbToProcess)
+			mNbToProcess		(nbToProcess),
+			mNbShapeInteractions(0),
+			mNext				(NULL)
 		{
 		}
 
@@ -607,9 +638,11 @@ namespace
 			ShapeInteraction** currentSI = mShapeInteractions;
 			ElementInteractionMarker** currentEI = mInteractionMarkers;
 
-			for(PxU32 i=0; i<mNbToProcess; i++)
+			const PxU32 nbToProcess = mNbToProcess;
+			for(PxU32 i=0; i<nbToProcess; i++)
 			{
-				const Bp::AABBOverlap& pair = mPairs[i];
+				const AABBOverlap& pair = mPairs[i];
+				// PT: TODO: why did we switch 0/1 here? => undoing this makes FilteringTestsIllegalFlags.eKILL_and_eSUPPRESS fail
 				ShapeSimBase* s0 = reinterpret_cast<ShapeSimBase*>(pair.mUserData1);
 				ShapeSimBase* s1 = reinterpret_cast<ShapeSimBase*>(pair.mUserData0);
 
@@ -639,6 +672,9 @@ namespace
 					}
 				}
 			}
+
+			// PT: TODO: perhaps an atomic would be better actually
+			mNbShapeInteractions = PxU32(currentSI - mShapeInteractions);
 		}
 
 		virtual const char* getName() const { return "OnOverlapCreatedTask"; }
@@ -648,16 +684,16 @@ namespace
 void Sc::Scene::preallocateContactManagers(PxBaseTask* continuation)
 {
 	//Iterate over all filter tasks and work out how many pairs we need...
-
 	PxU32 totalCreatedPairs = 0;
 	PxU32 totalSuppressPairs = 0;
-
-	OverlapFilterTask* task = mOverlapFilterTaskHead;
-	while(task)
 	{
-		totalCreatedPairs += task->mNbToKeep;
-		totalSuppressPairs += task->mNbToSuppress;
-		task = task->mNext;
+		OverlapFilterTask* task = mOverlapFilterTaskHead;
+		while(task)
+		{
+			totalCreatedPairs += task->mNbToKeep;
+			totalSuppressPairs += task->mNbToSuppress;
+			task = task->mNext;
+		}
 	}
 
 	{
@@ -665,7 +701,7 @@ void Sc::Scene::preallocateContactManagers(PxBaseTask* continuation)
 		// PT: this has to do with the way we dereference currentCm, currentSI and currentEI in OnOverlapCreatedTask
 		// before we know which type of interaction will be created. That is, we need room for at least one of each type
 		// even if no interaction of that type will be created.
-		// PT: don't we preallocate 2 to 3 times as much memory as needed here then?
+		// PT: TODO: don't we preallocate 2 to 3 times as much memory as needed here then?
 		// PT: also doesn't it mean we're going to allocate & deallocate ALL the interaction markers most of the time?
 		mPreallocatedContactManagers.forceSize_Unsafe(0);
 		mPreallocatedShapeInteractions.forceSize_Unsafe(0);
@@ -678,101 +714,138 @@ void Sc::Scene::preallocateContactManagers(PxBaseTask* continuation)
 		mPreallocatedContactManagers.forceSize_Unsafe(totalCreatedPairs);
 		mPreallocatedShapeInteractions.forceSize_Unsafe(totalCreatedPairs);
 		mPreallocatedInteractionMarkers.forceSize_Unsafe(totalSuppressPairs);
+		// PT: TODO: revisit this pattern forceSize_Unsafe / reserve / forceSize_Unsafe - why??
 	}
 
-	PxU32 overlapCount;
-	Bp::AABBOverlap* PX_RESTRICT p = mAABBManager->getCreatedOverlaps(Bp::ElementType::eSHAPE, overlapCount);
-	if(!overlapCount)
+	// PT: beware, we compacted this array during filtering so the overlap count is misleading now. Only reliable as zero / non-zero.
+	PxU32 overlapCount_unused;
+	AABBOverlap* const PX_RESTRICT pairs = mAABBManager->getCreatedOverlaps(ElementType::eSHAPE, overlapCount_unused);
+	if(!overlapCount_unused)
 		return;
 
-	struct Local
+	struct OverlapTaskCreator
 	{
-		static void processBatch(const PxU32 createdCurrIdx, PxU32& createdStartIdx, const PxU32 suppressedCurrIdx, PxU32& suppressedStartIdx, const PxU32 batchSize,
-			PxsContext* const context, NPhaseCore* const core, OnOverlapCreatedTask* const createTask, PxBaseTask* const continuation_,
-			PxsContactManager** const cms_, ShapeInteraction** const shapeInter_, ElementInteractionMarker** const markerIter_)
+		NPhaseCore* const					mCore;
+		Cm::PoolList<PxsContactManager>&	mCMPool;
+		Cm::FlushPool&						mFlushPool;
+		PxBaseTask* const					mContinuation;
+		const AABBOverlap* const			mPairs;
+		const FilterInfo* const				mFilterInfo;
+		PxsContactManager** const			mContactManagers;
+		ShapeInteraction** const			mShapeInteractions;
+		ElementInteractionMarker** const	mMarkerIteractions;
+		const PxU64							mContextId;
+
+		OverlapTaskCreator(
+			NPhaseCore* const PX_RESTRICT core, Cm::PoolList<PxsContactManager>& cmPool, Cm::FlushPool& flushPool, PxBaseTask* const continuation,
+			const  AABBOverlap* const pairs, const  FilterInfo* const fInfo,
+			PxsContactManager** const cms, ShapeInteraction** const shapeInter, ElementInteractionMarker** const markerIter,
+			PxU64 contextId) :
+			mCore(core), mCMPool(cmPool), mFlushPool(flushPool), mContinuation(continuation),
+			mPairs(pairs), mFilterInfo(fInfo),
+			mContactManagers(cms), mShapeInteractions(shapeInter), mMarkerIteractions(markerIter),
+			mContextId(contextId)
 		{
+		}
+
+		OnOverlapCreatedTask* processBatch(	PxU32 nextCreatedOverlapCount, PxU32 nextCreatedStartIdx, PxU32 nextSuppressedStartIdx,
+											PxU32 createdCurrIdx, PxU32& createdStartIdx, PxU32 suppressedCurrIdx, PxU32& suppressedStartIdx, PxU32 batchSize)
+		{
+			OnOverlapCreatedTask* createTask = PX_PLACEMENT_NEW(mFlushPool.allocate(sizeof(OnOverlapCreatedTask)), OnOverlapCreatedTask)(mContextId, mCore,
+																																		mPairs + nextCreatedOverlapCount,
+																																		mFilterInfo + nextCreatedOverlapCount,
+																																		mContactManagers + nextCreatedStartIdx,
+																																		mShapeInteractions + nextCreatedStartIdx,
+																																		mMarkerIteractions + nextSuppressedStartIdx,
+																																		batchSize);
 			const PxU32 nbToCreate = createdCurrIdx - createdStartIdx;
 			const PxU32 nbToSuppress = suppressedCurrIdx - suppressedStartIdx;
 
-			context->getContactManagerPool().preallocate(nbToCreate, cms_ + createdStartIdx);
+			mCMPool.preallocate(nbToCreate, mContactManagers + createdStartIdx);
 
 			for (PxU32 i = 0; i < nbToCreate; ++i)
-				shapeInter_[createdStartIdx + i] = core->mShapeInteractionPool.allocate();
+				mShapeInteractions[createdStartIdx + i] = mCore->mShapeInteractionPool.allocate();
 
 			for (PxU32 i = 0; i < nbToSuppress; ++i)
-				markerIter_[suppressedStartIdx + i] = core->mInteractionMarkerPool.allocate();
+				mMarkerIteractions[suppressedStartIdx + i] = mCore->mInteractionMarkerPool.allocate();
 				
 			createdStartIdx = createdCurrIdx;
 			suppressedStartIdx = suppressedCurrIdx;
 
-			createTask->mNbToProcess = batchSize;
-			startTask(createTask, continuation_);
+			startTask(createTask, mContinuation);
+			return createTask;
 		}
 	};
 
-	const PxU32 nbPairsPerTask = 256;
-	PxsContactManager** cms = mPreallocatedContactManagers.begin();
-	ShapeInteraction** shapeInter = mPreallocatedShapeInteractions.begin();
-	ElementInteractionMarker** markerIter = mPreallocatedInteractionMarkers.begin();
+	const PxU32 nbPairsPerTask = 256;	// PT: TODO: refine this
+
+	PxsContactManager** const cms = mPreallocatedContactManagers.begin();
+	ShapeInteraction** const shapeInter = mPreallocatedShapeInteractions.begin();
+	ElementInteractionMarker** const markerIter = mPreallocatedInteractionMarkers.begin();
 
 	Cm::FlushPool& flushPool = mLLContext->getTaskPool();
+	Cm::PoolList<PxsContactManager>& cmPool = mLLContext->getContactManagerPool();
 
-	FilterInfo* fInfo = mFilterInfo.begin();
+	FilterInfo* const fInfo = mFilterInfo.begin();
 
-	// PT: TODO: why do we create the task immediately? Why not create it only when a batch is full?
-	// PT: it's the same pattern as for CCD, kinematics, etc
-	OnOverlapCreatedTask* createTask = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(OnOverlapCreatedTask)), OnOverlapCreatedTask)(mContextId, mNPhaseCore, p, fInfo, cms, shapeInter, markerIter, 0);
+	OverlapTaskCreator overlapTaskCreator(mNPhaseCore, cmPool, flushPool, continuation, pairs, fInfo, cms, shapeInter, markerIter, mContextId);
 
 	PxU32 batchSize = 0;
 	PxU32 suppressedStartIdx = 0;
 	PxU32 createdStartIdx = 0;
 	PxU32 suppressedCurrIdx = 0;
 	PxU32 createdCurrIdx = 0;
-	PxU32 currentReadIdx = 0;
-
 	PxU32 createdOverlapCount = 0;
 
+	PxU32 nextCreatedOverlapCount = 0;
+	PxU32 nextCreatedStartIdx = 0;
+	PxU32 nextSuppressedStartIdx = 0;
+
+	OnOverlapCreatedTask* previousTask = NULL;
+
 	// PT: TASK-CREATION TAG
-	task = mOverlapFilterTaskHead;
-	while(task)
+	// PT: this compacts the pairs that passed filtering to the front of the pairs & fInfo arrays
+	OverlapFilterTask* filterTask = mOverlapFilterTaskHead;
+	while(filterTask)
 	{
-		if(task->mNbToKeep || task->mNbToSuppress)
+		if(filterTask->mNbToKeep || filterTask->mNbToSuppress)
 		{
-			for(PxU32 w = 0; w < (OverlapFilterTask::MaxPairs/32); ++w)
+			// PT: we pre-compacted surviving pairs in each filtering task so a memcopy is enough here now.
+			const PxU32 nb = filterTask->mNbToKeep + filterTask->mNbToSuppress;
+			if(pairs + createdOverlapCount != filterTask->mPairs)	// PT: always happens for first task, sometimes for all tasks if nothing was filtered
 			{
-				for(PxU32 b = task->mKeepMap[w]; b; b &= b-1)
-				{
-					const PxU32 index = (w<<5) + PxLowestSetBit(b);
-
-					if(createdOverlapCount < (index + currentReadIdx))
-					{
-						p[createdOverlapCount] = task->mPairs[index];
-						fInfo[createdOverlapCount] = task->mFinfo[index];
-					}
-					createdOverlapCount++;
-					batchSize++;
-				}
+				PxMemCopy(pairs + createdOverlapCount, filterTask->mPairs, sizeof(AABBOverlap) * nb);
+				PxMemCopy(fInfo + createdOverlapCount, filterTask->mFinfo, sizeof(FilterInfo) * nb);
 			}
+			createdOverlapCount += nb;
+			batchSize += nb;
 
-			suppressedCurrIdx += task->mNbToSuppress;
-			createdCurrIdx += task->mNbToKeep;
+			suppressedCurrIdx += filterTask->mNbToSuppress;
+			createdCurrIdx += filterTask->mNbToKeep;
 
 			if(batchSize >= nbPairsPerTask)
 			{
-				Local::processBatch(createdCurrIdx, createdStartIdx, suppressedCurrIdx, suppressedStartIdx, batchSize, mLLContext, mNPhaseCore, createTask, continuation, cms, shapeInter, markerIter);
+				OnOverlapCreatedTask* task = overlapTaskCreator.processBatch(	nextCreatedOverlapCount, nextCreatedStartIdx, nextSuppressedStartIdx,
+																				createdCurrIdx, createdStartIdx, suppressedCurrIdx, suppressedStartIdx, batchSize);
 
-				createTask = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(OnOverlapCreatedTask)), OnOverlapCreatedTask)(mContextId, mNPhaseCore, p + createdOverlapCount,
-					fInfo + createdOverlapCount, cms + createdStartIdx, shapeInter + createdStartIdx, markerIter + suppressedStartIdx, 0);
+				updateTaskLinkedList(previousTask, task, mOverlapCreatedTaskHead);
 
+				nextCreatedOverlapCount = createdOverlapCount;
+				nextCreatedStartIdx = createdStartIdx;
+				nextSuppressedStartIdx = suppressedStartIdx;
 				batchSize = 0;
 			}
 		}
-		currentReadIdx += OverlapFilterTask::MaxPairs;
-		task = task->mNext;
+		filterTask = filterTask->mNext;
 	}
 
 	if(batchSize)
-		Local::processBatch(createdCurrIdx, createdStartIdx, suppressedCurrIdx, suppressedStartIdx, batchSize, mLLContext, mNPhaseCore, createTask, continuation, cms, shapeInter, markerIter);
+	{
+		OnOverlapCreatedTask* task = overlapTaskCreator.processBatch(	nextCreatedOverlapCount, nextCreatedStartIdx, nextSuppressedStartIdx,
+																		createdCurrIdx, createdStartIdx, suppressedCurrIdx, suppressedStartIdx, batchSize);
+
+		updateTaskLinkedList(previousTask, task, mOverlapCreatedTaskHead);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -820,19 +893,183 @@ void Sc::Scene::processLostTouchPairs()
 	mLostTouchPairsDeletedBodyIDs.clear();
 }
 
+namespace
+{
+	PX_COMPILE_TIME_ASSERT(sizeof(IG::EdgeIndex) <= sizeof(AABBOverlap));	// PT: because we're going to store EdgeIndex in the previous AABBOverlap buffer
+	class IslandInsertionTask : public Cm::Task
+	{
+	public:
+		IslandInsertionTask*		mNext;
+		IG::SimpleIslandManager*	mSimpleIslandManager;
+		ShapeInteraction**			mPreallocatedShapeInteractions;
+		const IG::EdgeIndex*		mHandles;
+		AABBOverlap*				mPairs;
+		const PxU32					mNbToProcess;
+		PxU32						mNbDelayed;
+		DelayedGPUTypes&			mGPUTypes;
+
+		IslandInsertionTask(PxU64 contextID,  IG::SimpleIslandManager* simpleIslandManager, ShapeInteraction** preallocatedShapeInteractions,
+			const IG::EdgeIndex* handles, AABBOverlap* pairs, DelayedGPUTypes& gpuTypes, PxU32 nbToProcess) :
+			Cm::Task						(contextID),
+			mNext							(NULL),
+			mSimpleIslandManager			(simpleIslandManager),
+			mPreallocatedShapeInteractions	(preallocatedShapeInteractions),
+			mHandles						(handles),
+			mPairs							(pairs),
+			mNbToProcess					(nbToProcess),
+			mNbDelayed						(0),
+			mGPUTypes						(gpuTypes)
+		{
+		}
+
+		PX_FORCE_INLINE	IG::EdgeIndex*	getDelayed()	{ return reinterpret_cast<IG::EdgeIndex*>(mPairs);	}
+
+		virtual void runInternal()
+		{
+			// PT: the pairs buffer we used to create the shape interactions in OnOverlapCreatedTask is now free to reuse.
+			// By construction we have at least one AABBOverlap per shape interaction so there's enough space for edge indices.
+			IG::EdgeIndex* delayed = getDelayed();
+
+			const PxU32 nb = mNbToProcess;
+			const IG::EdgeIndex* handles = mHandles;
+			for(PxU32 a=0; a<nb; a++)
+			{
+				// PT: this is the first part of Sc::Scene::islandInsertion() multi-threaded
+				ShapeInteraction* interaction = getUsedPointer(mPreallocatedShapeInteractions[a]);
+				if(interaction)
+				{
+					const ActorSim& bs0 = interaction->getActor0();
+					const ActorSim& bs1 = interaction->getActor1();
+
+					const PxActorType::Enum actorTypeLargest = PxMax(bs0.getActorType(), bs1.getActorType());
+
+					PxNodeIndex nodeIndexB;
+					if(!bs1.isStaticRigid())
+						nodeIndexB = bs1.getNodeIndex();
+
+					const IG::Edge::EdgeType type = getInteractionEdgeType(actorTypeLargest);
+
+					PxsContactManager* contactManager = const_cast<PxsContactManager*>(interaction->getContactManager());
+					// PT: non-MT version is:
+					//const IG::EdgeIndex edgeIdx = mSimpleIslandManager->addContactManager(contactManager, bs0.getNodeIndex(), nodeIndexB, interaction, type);
+					const IG::EdgeIndex edgeIdx = *handles++;
+					const bool isDirty = mSimpleIslandManager->addPreallocatedContactManager(edgeIdx, contactManager, bs0.getNodeIndex(), nodeIndexB, interaction, type);
+					PX_ASSERT(!contactManager || contactManager->getWorkUnit().mEdgeIndex == edgeIdx);
+
+					if(isDirty)
+						*delayed++ = edgeIdx;	// PT: record edges for last part of IslandSim::addConnection() that we couldn't easily MT
+
+					// PT: TODO: do we really need to store the edge index twice here?
+					interaction->mEdgeIndex = edgeIdx;
+
+					//If it is a deformable volume or particle overlap, treat it as a contact for now (we can hook up touch found/lost events later maybe)
+					if(actorTypeLargest > PxActorType::eARTICULATION_LINK)
+					{
+						// PT: codepath needed for AttachmentTests.DeformableSurfaceFiltering_GPU, also reached in ParticleCollisionTests.RigidDeltaAccum etc
+						mGPUTypes.mLock.lock();	// PT: this is not a common case so we just use a plain mutex for now
+							// PT: record what we'll need to call mSimpleIslandManager->setEdgeConnected(edgeIdx, type) later
+							DelayedGPUTypes::Data& data = mGPUTypes.mDelayed.insert();
+							data.mEdgeIndex = edgeIdx;
+							data.mType = type;
+						mGPUTypes.mLock.unlock();
+					}
+				}
+			}
+			mNbDelayed = PxU32(delayed - getDelayed());
+		}
+
+		virtual const char* getName() const { return "IslandInsertionTask"; }
+	};
+}
+
 void Sc::Scene::postBroadPhaseStage2(PxBaseTask* continuation)
 {
+	// PT: TODO: can we overlap this with something?
 	// - Wakes actors that lost touch if appropriate
 	processLostTouchPairs();
 
+	// PT: don't bother running tasks if we don't need to
+	const PxU32 nbShapeIdxCreated = mPreallocatedShapeInteractions.size();
+	const PxU32 nbInteractionMarkers = mPreallocatedInteractionMarkers.size();
+	const bool runRegisterSceneInteractions = nbShapeIdxCreated || nbInteractionMarkers;
+
+	const PxU32 nbCmsCreated = mPreallocatedContactManagers.size();
+	const bool runRegisterContactManagers = nbCmsCreated!=0;
+
+	// PT: islandInsertion / registerContactManagers / registerInteractions / registerSceneInteractions run in parallel
 	mIslandInsertion.setContinuation(continuation);
-	mRegisterContactManagers.setContinuation(continuation);
-	mRegisterInteractions.setContinuation(continuation);
-	mRegisterSceneInteractions.setContinuation(continuation);
+	if(runRegisterContactManagers)
+		mRegisterContactManagers.setContinuation(continuation);
+	if(runRegisterSceneInteractions)
+	{
+		mRegisterInteractions.setContinuation(continuation);
+		mRegisterSceneInteractions.setContinuation(continuation);
+	}
+
+	// PT: start these ones first
+	if(runRegisterContactManagers)
+		mRegisterContactManagers.removeReference();
+	if(runRegisterSceneInteractions)
+	{
+		mRegisterInteractions.removeReference();
+		mRegisterSceneInteractions.removeReference();
+	}
+
+	{
+		PX_PROFILE_ZONE("mIslandInsertion prep", mContextId);
+		// PT: TODO: maybe replace this loop with atomics in overlap created tasks
+		PxU32 totalNbShapeInteractions = 0;
+		{
+			OnOverlapCreatedTask* task = mOverlapCreatedTaskHead;
+			while(task)
+			{
+				totalNbShapeInteractions += task->mNbShapeInteractions;
+				task = task->mNext;
+			}
+		}
+
+		mGPUTypes.mDelayed.clear();	// PT: TODO: revisit memory usage (clear? reset? scratch block?)
+		mPreallocatedHandles.clear();
+
+		if(totalNbShapeInteractions)
+		{
+			IG::EdgeIndex* handles;
+			{
+				PX_PROFILE_ZONE("preallocateContactManagers", mContextId);
+				// PT: preallocate buffers initially needed in mSimpleIslandManager->addContactManager()
+				mPreallocatedHandles.resizeUninitialized(totalNbShapeInteractions);	// PT: look, no need for "forceSize_unsafe"...
+				handles = mPreallocatedHandles.begin();
+				mSimpleIslandManager->preallocateContactManagers(totalNbShapeInteractions, handles);
+			}
+
+			{
+				PX_PROFILE_ZONE("CreateIslandInsertionTask", mContextId);
+
+				Cm::FlushPool& flushPool = mLLContext->getTaskPool();
+
+				IslandInsertionTask* previousTask = NULL;
+				// PT: we create one IslandInsertionTask for each OnOverlapCreatedTask
+				// TODO: merge the two? revisit this choice?
+				OnOverlapCreatedTask* task = mOverlapCreatedTaskHead;
+				while(task)
+				{
+					if(task->mNbShapeInteractions)
+					{
+						IslandInsertionTask* newTask = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(IslandInsertionTask)), IslandInsertionTask)(
+							mContextId, mSimpleIslandManager, task->mShapeInteractions, handles, const_cast<AABBOverlap*>(task->mPairs), mGPUTypes, task->mNbShapeInteractions);
+
+						startTask(newTask, &mIslandInsertion);
+						handles += task->mNbShapeInteractions;
+
+						updateTaskLinkedList(previousTask, newTask, mIslandInsertionTaskHead);
+					}
+					task = task->mNext;
+				}
+			}
+		}
+	}
+
 	mIslandInsertion.removeReference();
-	mRegisterContactManagers.removeReference();
-	mRegisterInteractions.removeReference();
-	mRegisterSceneInteractions.removeReference();
 
 	//Release unused Cms back to the pool (later, this needs to be done in a thread-safe way from multiple worker threads
 	{
@@ -864,7 +1101,7 @@ void Sc::Scene::postBroadPhaseStage2(PxBaseTask* continuation)
 		{
 			PxU32 nb = mPreallocatedInteractionMarkers.size();
 			ElementInteractionMarker** interactions = mPreallocatedInteractionMarkers.begin();
-			PxPool<ElementInteractionMarker>& pool = mNPhaseCore->mInteractionMarkerPool;
+			PxPool2<ElementInteractionMarker, 4096>& pool = mNPhaseCore->mInteractionMarkerPool;
 			while(nb--)
 			{
 				ElementInteractionMarker* current = *interactions++;
@@ -882,33 +1119,45 @@ void Sc::Scene::islandInsertion(PxBaseTask* /*continuation*/)
 {
 	PX_PROFILE_ZONE("Sim.processNewOverlaps.islandInsertion", mContextId);
 
-	const PxU32 nbShapeIdxCreated = mPreallocatedShapeInteractions.size();
-	for(PxU32 a = 0; a < nbShapeIdxCreated; ++a)
+	// PT: TODO: get rid of this one
+	PxU32 nb = 0;
 	{
-		ShapeInteraction* interaction = getUsedPointer(mPreallocatedShapeInteractions[a]);
-		if(interaction)
+		PX_PROFILE_ZONE("ParseOnOverlapCreatedTask", mContextId);
+		OnOverlapCreatedTask* task = mOverlapCreatedTaskHead;
+		while(task)
 		{
-			PxsContactManager* contactManager = const_cast<PxsContactManager*>(interaction->getContactManager());
+			nb += task->mNbShapeInteractions;
+			task = task->mNext;
+		}
+	}
 
-			const ActorSim& bs0 = interaction->getShape0().getActor();
-			const ActorSim& bs1 = interaction->getShape1().getActor();
+	if(nb)
+	{
+		// PT: process delayed work not done directly in IslandInsertionTask
+		{
+			// PT: TODO: check how costly this is
+			PX_PROFILE_ZONE("Process delayed dirty edges", mContextId);
 
-			const PxActorType::Enum actorTypeLargest = PxMax(bs0.getActorType(), bs1.getActorType());
+			IG::IslandSim& islandSim = mSimpleIslandManager->getSpeculativeIslandSim();
+			IslandInsertionTask* task = mIslandInsertionTaskHead;
+			while(task)
+			{
+				if(task->mNbDelayed)
+					islandSim.addDelayedDirtyEdges(task->mNbDelayed, task->getDelayed());
 
-			PxNodeIndex nodeIndexB;
-			if (!bs1.isStaticRigid())
-				nodeIndexB = bs1.getNodeIndex();
+				task = task->mNext;
+			}
+		}
 
-			const IG::Edge::EdgeType type = getInteractionEdgeType(actorTypeLargest);
+		{
+			PX_PROFILE_ZONE("Process delayed GPU types", mContextId);
 
-			const IG::EdgeIndex edgeIdx = mSimpleIslandManager->addContactManager(contactManager, bs0.getNodeIndex(), nodeIndexB, interaction, type);
-			PX_ASSERT(!contactManager || contactManager->getWorkUnit().mEdgeIndex == edgeIdx);
-
-			interaction->mEdgeIndex = edgeIdx;
-
-			//If it is a deformable volume or particle overlap, treat it as a contact for now (we can hook up touch found/lost events later maybe)
-			if(actorTypeLargest > PxActorType::eARTICULATION_LINK)
-				mSimpleIslandManager->setEdgeConnected(edgeIdx, type);
+			const PxU32 nbGpu = mGPUTypes.mDelayed.size();
+			for(PxU32 i=0;i<nbGpu;i++)
+			{
+				const DelayedGPUTypes::Data& data = mGPUTypes.mDelayed[i];
+				mSimpleIslandManager->setEdgeConnected(data.mEdgeIndex, data.mType);
+			}
 		}
 	}
 
@@ -934,6 +1183,7 @@ void Sc::Scene::registerContactManagers(PxBaseTask* /*continuation*/)
 	nphaseContext->lock();
 	//nphaseContext->registerContactManagers(mPreallocatedContactManagers.begin(), mPreallocatedContactManagers.size(), mLLContext->getContactManagerPool().getMaxUsedIndex());
 	const PxU32 nbCmsCreated = mPreallocatedContactManagers.size();
+	PX_ASSERT(nbCmsCreated);	// PT: otherwise we should have skipped the task entirely
 	for(PxU32 a = 0; a < nbCmsCreated; ++a)
 	{
 		PxsContactManager* cm = getUsedPointer(mPreallocatedContactManagers[a]);
@@ -953,6 +1203,8 @@ void Sc::Scene::registerContactManagers(PxBaseTask* /*continuation*/)
 void Sc::Scene::registerInteractions(PxBaseTask* /*continuation*/)
 {
 	PX_PROFILE_ZONE("Sim.processNewOverlaps.registerInteractions", mContextId);
+
+	PX_ASSERT(mPreallocatedShapeInteractions.size() || mPreallocatedInteractionMarkers.size());	// PT: otherwise we should have skipped the task entirely
 
 	const PxU32 nbShapeIdxCreated = mPreallocatedShapeInteractions.size();
 	for(PxU32 a = 0; a < nbShapeIdxCreated; ++a)
@@ -995,6 +1247,8 @@ void Sc::Scene::registerSceneInteractions(PxBaseTask* /*continuation*/)
 {
 	PX_PROFILE_ZONE("Sim.processNewOverlaps.registerInteractionsScene", mContextId);
 
+	PX_ASSERT(mPreallocatedShapeInteractions.size() || mPreallocatedInteractionMarkers.size());	// PT: otherwise we should have skipped the task entirely
+
 	const PxU32 nbShapeIdxCreated = mPreallocatedShapeInteractions.size();
 	for(PxU32 a = 0; a < nbShapeIdxCreated; ++a)
 	{
@@ -1024,13 +1278,13 @@ void Sc::Scene::finishBroadPhaseStage2(PxU32 ccdPass)
 {
 	PX_PROFILE_ZONE("Sc::Scene::finishBroadPhase2", mContextId);
 
-	Bp::AABBManagerBase* aabbMgr = mAABBManager;
+	AABBManagerBase* aabbMgr = mAABBManager;
 
 	PxU32 nbLostPairs = 0;
-	for(PxU32 i=0; i<Bp::ElementType::eCOUNT; i++)
+	for(PxU32 i=0; i<ElementType::eCOUNT; i++)
 	{
 		PxU32 destroyedOverlapCount;
-		aabbMgr->getDestroyedOverlaps(Bp::ElementType::Enum(i), destroyedOverlapCount);
+		aabbMgr->getDestroyedOverlaps(ElementType::Enum(i), destroyedOverlapCount);
 		nbLostPairs += destroyedOverlapCount;
 	}
 	mLLContext->getSimStats().mNbLostPairs += nbLostPairs;
@@ -1046,7 +1300,7 @@ void Sc::Scene::finishBroadPhaseStage2(PxU32 ccdPass)
 
 		// PT: for regular shapes
 		{
-			Bp::AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
+			AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
 
 			while(destroyedOverlapCount--)
 			{
@@ -1074,7 +1328,7 @@ void Sc::Scene::finishBroadPhaseStage2(PxU32 ccdPass)
 							//also ceased overlapping, then this code will try to destroy the manager again.
 							if(si->getContactManager())
 								si->destroyManager();
-							si->clearIslandGenData();
+							si->clearIslandGenData(*mSimpleIslandManager);
 						}
 
 						unregisterInteraction(interaction);
@@ -1089,7 +1343,7 @@ void Sc::Scene::finishBroadPhaseStage2(PxU32 ccdPass)
 
 		// PT: for triggers
 		{
-			Bp::AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(Bp::ElementType::eTRIGGER, destroyedOverlapCount);
+			AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(ElementType::eTRIGGER, destroyedOverlapCount);
 
 			while(destroyedOverlapCount--)
 			{
@@ -1141,24 +1395,48 @@ void Sc::Scene::advanceStep(PxBaseTask* continuation)
 			mAfterIntegration.setContinuation(&mFinalizationPhase);
 		}
 
+		const bool useGpu = isUsingGpuDynamicsOrBp();
+
 		mPostSolver.setContinuation(&mAfterIntegration);
-		mUpdateSimulationController.setContinuation(&mPostSolver);
-		mUpdateDynamics.setContinuation(&mUpdateSimulationController);
-		mUpdateBodies.setContinuation(&mUpdateDynamics);
-		mSolver.setContinuation(&mUpdateBodies);
+		if(useGpu)
+		{
+			mUpdateSimulationController.setContinuation(&mPostSolver);
+			mUpdateDynamicsPostPartitioning.setContinuation(&mUpdateSimulationController);
+			mUpdateDynamics.setContinuation(&mUpdateDynamicsPostPartitioning);
+
+			mUpdateBodies.setContinuation(&mUpdateDynamics);
+			mSolver.setContinuation(&mUpdateBodies);
+		}
+		else
+		{
+			mUpdateDynamics.setContinuation(&mPostSolver);
+
+			mSolver.setContinuation(&mUpdateDynamics);
+		}
+#if USE_SPLIT_SECOND_PASS_ISLAND_GEN
+		mIslandGen.setContinuation(&mSolver);
+#else
 		mPostIslandGen.setContinuation(&mSolver);
 		mIslandGen.setContinuation(&mPostIslandGen);
+#endif
 		mPostNarrowPhase.setContinuation(&mIslandGen);
 		mSecondPassNarrowPhase.setContinuation(&mPostNarrowPhase);
 
 		mFinalizationPhase.removeReference();
 		mAfterIntegration.removeReference();
 		mPostSolver.removeReference();
-		mUpdateSimulationController.removeReference();
+		if(useGpu)
+		{
+			mUpdateSimulationController.removeReference();
+			mUpdateDynamicsPostPartitioning.removeReference();
+		}
 		mUpdateDynamics.removeReference();
-		mUpdateBodies.removeReference();
+		if(useGpu)
+			mUpdateBodies.removeReference();
 		mSolver.removeReference();
+#if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 		mPostIslandGen.removeReference();
+#endif
 		mIslandGen.removeReference();
 		mPostNarrowPhase.removeReference();
 		mSecondPassNarrowPhase.removeReference();
@@ -1270,12 +1548,17 @@ void Sc::Scene::islandGen(PxBaseTask* continuation)
 
 	//mLLContext->runModifiableContactManagers(); //KS - moved here so that we can get up-to-date touch found/lost events in IG
 
-	mProcessPatchesTask.setContinuation(continuation);
-	mProcessPatchesTask.removeReference();
+	PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
+	mDynamicsContext->processPatches(mLLContext->getTaskPool(), continuation, nphase->getLostFoundPatchManagers(), nphase->getNbLostFoundPatchManagers(), nphase->getLostFoundPatchOutputCounts());
 
 	// extracting information for the contact callbacks must happen before the solver writes the post-solve
 	// velocities and positions into the solver bodies
 	processNarrowPhaseTouchEvents(&mUpdateDynamics);
+
+#if USE_SPLIT_SECOND_PASS_ISLAND_GEN
+	// PT: in this version we run postIslandGen directly here in parallel with "islandGen" tasks (rather than just after them).
+	postIslandGen(&mSolver);
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1289,6 +1572,8 @@ namespace
 {
 	class InteractionNewTouchTask : public Cm::Task
 	{
+		PX_NOCOPY(InteractionNewTouchTask)
+
 		PxvContactManagerTouchEvent*	mEvents;
 		const PxU32						mNbEvents;
 		PxsContactManagerOutputIterator	mOutputs;
@@ -1317,12 +1602,10 @@ namespace
 				ShapeInteraction* si = getSI(mEvents[i]);
 				PX_ASSERT(si);
 				mNphaseCore->managerNewTouch(*si);
-				si->managerNewTouch(0, true, mOutputs);
+				si->managerNewTouch(0, mOutputs);
 			}
 			mNphaseCore->unlockReports();
 		}
-	private:
-		PX_NOCOPY(InteractionNewTouchTask)
 	};
 }
 
@@ -1385,7 +1668,7 @@ void Sc::Scene::processNarrowPhaseTouchEvents(PxBaseTask* continuation)
 			ShapeInteraction* si = reinterpret_cast<ShapeInteraction*>(mTouchFoundEvents[i].userData);
 			PX_ASSERT(si);
 			mNPhaseCore->managerNewTouch(*si);
-			si->managerNewTouch(0, true, outputs, useAdaptiveForce);
+			si->managerNewTouch(0, outputs, useAdaptiveForce);
 		}
 	}*/
 }
@@ -1444,13 +1727,17 @@ void Sc::Scene::postIslandGen(PxBaseTask* continuation)
 void Sc::Scene::setEdgesConnected(PxBaseTask*)
 {
 	PX_PROFILE_ZONE("Sim.preIslandGen.islandTouches", mContextId);
+
+#if USE_SPLIT_SECOND_PASS_ISLAND_GEN
+	// PT: this is now running in parallel with "islandGen" tasks and the Pxg constraint partitioning code.
+#endif
 	{
 		PX_PROFILE_ZONE("Sim.preIslandGen.setEdgesConnected", mContextId);
 
 		const PxU32 newTouchCount = mTouchFoundEvents.size();
 		for(PxU32 i = 0; i < newTouchCount; ++i)
 		{
-			ShapeInteraction* si = getSI(mTouchFoundEvents[i]);
+			const ShapeInteraction* si = getSI(mTouchFoundEvents[i]);
 
 			// jcarius: defensive coding for OM-99507. If this assert hits, you maybe hit the same issue, please report!
 			// ### DEFENSIVE
@@ -1466,9 +1753,13 @@ void Sc::Scene::setEdgesConnected(PxBaseTask*)
 		}
 	}
 
+#if USE_SPLIT_SECOND_PASS_ISLAND_GEN
+	mSimpleIslandManager->secondPassIslandGenPart1();
+#else
 	mSimpleIslandManager->secondPassIslandGen();
 
 	wakeObjectsUp();
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1476,6 +1767,14 @@ void Sc::Scene::setEdgesConnected(PxBaseTask*)
 void Sc::Scene::solver(PxBaseTask* continuation)
 {
 	PX_PROFILE_START_CROSSTHREAD("Basic.rigidBodySolver", mContextId);
+
+#if USE_SPLIT_SECOND_PASS_ISLAND_GEN
+	// PT: we run here the last part of Sc::Scene::setEdgesConnected()
+	// PT: TODO: move to a non solver part?
+	mSimpleIslandManager->secondPassIslandGenPart2();
+
+	wakeObjectsUp();
+#endif
 
 	//Update forces per body in parallel. This can overlap with the other work in this phase.
 	beforeSolver(continuation);
@@ -1734,6 +2033,8 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 
 void Sc::Scene::updateBodies(PxBaseTask* continuation)
 {
+	PX_ASSERT(isUsingGpuDynamicsOrBp());	// PT: this is not called anymore in the CPU pipeline
+
 	// AD: need to raise dirty flags serially because the PxgBodySimManager::updateArticulation() is not thread-safe.
 	const PxU32 nbDirtyArticulations = mDirtyArticulationSims.size();
 	ArticulationSim* const* artiSim = mDirtyArticulationSims.getEntries();
@@ -1751,12 +2052,12 @@ void Sc::Scene::updateBodies(PxBaseTask* continuation)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Sc::Scene::updateDynamics(PxBaseTask* continuation)
+void Sc::Scene::updateDynamics(PxBaseTask* /*continuation*/)
 {
 	PX_PROFILE_START_CROSSTHREAD("Basic.dynamics", mContextId);
 
 	//Allow processLostContactsTask to run until after 2nd pass of solver completes (update bodies, run sleeping logic etc.)
-	mProcessLostContactsTask3.setContinuation(static_cast<PxLightCpuTask*>(continuation)->getContinuation());
+	mProcessLostContactsTask3.setContinuation(&mPostSolver);
 	mProcessLostContactsTask2.setContinuation(&mProcessLostContactsTask3);
 	mProcessLostContactsTask.setContinuation(&mProcessLostContactsTask2);
 
@@ -1773,8 +2074,45 @@ void Sc::Scene::updateDynamics(PxBaseTask* continuation)
 
 	PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
 
-	mDynamicsContext->update(continuation, &mProcessLostContactsTask,
-		nphase,	maxPatchCount, mMaxNbArticulationLinks, mDt, mGravity, mAABBManager->getChangedAABBMgActorHandleMap());
+	// PT: mDynamicsContext->update() is a blocking call but we want to spawn tasks from the constraint
+	// partitioning code it calls (for the GPU pipeline only). So we will need to split this function
+	// into two. Conceptually:
+	// "updateDynamicsPart1" => contains code above this line and calls "mDynamicsContext->updatePart1()"
+	// "updateDynamicsPart2" => calls "mDynamicsContext->updatePart2()" and contains code after the current
+	// update() call below. That way the code inside update itself can be MT and have a proper continuation
+	// task ("updateDynamicsPart2"). The current code executed after the constraint partitioning code within
+	// update() has to be moved to "updateDynamicsPart2" as well, as it actually uses the partitioning data
+	// (which would not be available while the partitioning tasks are running).
+	// Note that this is not needed for the CPU pipeline, so there we just run updateDynamicsPostPartitioning
+	// immediately in the same thread to avoid the task overhead.
+
+	Cm::FlushPool& flushPool = mLLContext->getTaskPool();
+
+	if(isUsingGpuDynamicsOrBp())
+	{
+		mDynamicsContext->update(	flushPool, &mUpdateSimulationController, &mUpdateDynamicsPostPartitioning, &mProcessLostContactsTask,
+									nphase,	maxPatchCount, mMaxNbArticulationLinks, mDt, mGravity, mAABBManager->getChangedAABBMgActorHandleMap());
+	}
+	else
+	{
+		mDynamicsContext->update(	flushPool, &mPostSolver, &mUpdateDynamicsPostPartitioning, &mProcessLostContactsTask,
+									nphase,	maxPatchCount, mMaxNbArticulationLinks, mDt, mGravity, mAABBManager->getChangedAABBMgActorHandleMap());
+
+		updateDynamicsPostPartitioning(&mPostSolver);
+	}
+}
+
+void Sc::Scene::updateDynamicsPostPartitioning(PxBaseTask* /*continuation*/)
+{
+	PX_PROFILE_ZONE("Scene::updateDynamicsPostPartitioning", mContextId);
+
+	{
+		const PxU32 maxPatchCount = mLLContext->getMaxPatchCount();
+		PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
+
+		mDynamicsContext->updatePostPartitioning(&mProcessLostContactsTask,
+			nphase,	maxPatchCount, mMaxNbArticulationLinks, mDt, mGravity, mAABBManager->getChangedAABBMgActorHandleMap());
+	}
 
 	mSimpleIslandManager->clearDestroyedPartitionEdges();
 
@@ -1785,34 +2123,89 @@ void Sc::Scene::updateDynamics(PxBaseTask* continuation)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static PX_FORCE_INLINE void findInteractions(const NPhaseCore& core, PxU32 count, AABBOverlap* PX_RESTRICT overlaps)
+{
+	while(count--)
+	{
+		const ElementSim* volume0 = reinterpret_cast<const ElementSim*>(overlaps->mUserData0);
+		const ElementSim* volume1 = reinterpret_cast<const ElementSim*>(overlaps->mUserData1);
+
+		// PT: this looks useless on lost pairs but it is used in processLostContacts2 and processLostContacts3
+		// PT: it seems very questionable to store this within the BP structures at this point. If anything
+		// we should have stored that there when the overlap was created, and we wouldn't have to look for the
+		// interaction here.
+		overlaps->mPairUserData = core.findInteraction(volume0, volume1);
+		overlaps++;
+	}
+}
+
 void Sc::Scene::processLostContacts(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Sc::Scene::processLostContacts", mContextId);
 
-	mProcessNarrowPhaseLostTouchTasks.setContinuation(continuation);
-	mProcessNarrowPhaseLostTouchTasks.removeReference();
+	// PT: don't bother starting the tasks if we don't need to
+	if(mTouchLostEvents.size())
+	{
+		mProcessNarrowPhaseLostTouchTasks.setContinuation(continuation);
+		mProcessNarrowPhaseLostTouchTasks.removeReference();
 
-	//mLostTouchReportsTask.setContinuation(&mProcessLostContactsTask3);
-	mProcessNPLostTouchEvents.setContinuation(continuation);
-	mProcessNPLostTouchEvents.removeReference();
+		//mLostTouchReportsTask.setContinuation(&mProcessLostContactsTask3);
+		mProcessNPLostTouchEvents.setContinuation(continuation);
+		mProcessNPLostTouchEvents.removeReference();
+	}
 
 	{
 		PX_PROFILE_ZONE("Sim.findInteractionsPtrs", mContextId);
 
-		Bp::AABBManagerBase* aabbMgr = mAABBManager;
 		PxU32 destroyedOverlapCount;
-		Bp::AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
-		while(destroyedOverlapCount--)
+		AABBOverlap* PX_RESTRICT destroyedOverlaps = mAABBManager->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
+		if(destroyedOverlapCount)
 		{
-			ElementSim* volume0 = reinterpret_cast<ElementSim*>(p->mUserData0);
-			ElementSim* volume1 = reinterpret_cast<ElementSim*>(p->mUserData1);
+			const PxU32 numWorkerTasks = continuation->getTaskManager()->getCpuDispatcher()->getWorkerCount();
 
-			// PT: this looks useless on lost pairs but it is used in processLostContacts2 and processLostContacts3
-			// PT: it seems very questionable to store this within the BP structures at this point. If anything
-			// we should have stored that there when the overlap was created, and we wouldn't have to look for the
-			// interaction here.
-			p->mPairUserData = mNPhaseCore->findInteraction(volume0, volume1);
-			p++;
+			if(numWorkerTasks<2 || destroyedOverlapCount<32)
+			{
+				::findInteractions(*mNPhaseCore, destroyedOverlapCount, destroyedOverlaps);
+			}
+			else
+			{
+				class FindInteractionTask : public Cm::Task
+				{
+					const NPhaseCore&	mNPhaseCore;
+					AABBOverlap*		mOverlaps;
+					const PxU32			mCount;
+				public:
+					FindInteractionTask(PxU64 contextID, const NPhaseCore& core, AABBOverlap* overlaps, PxU32 count) :
+						Cm::Task	(contextID),
+						mNPhaseCore	(core),
+						mOverlaps	(overlaps),
+						mCount		(count)
+					{
+					}
+
+					virtual void runInternal()
+					{
+						::findInteractions(mNPhaseCore, mCount, mOverlaps);
+					}
+
+					virtual const char* getName() const { return "FindInteractionTask"; }
+				};
+
+				Cm::FlushPool& flushPool = mLLContext->getTaskPool();
+
+				// PT: TASK-CREATION TAG
+				PxU32 maxPerTask = destroyedOverlapCount/(numWorkerTasks*2);
+				maxPerTask = PxMax(maxPerTask, 32u);
+
+				while(destroyedOverlapCount)
+				{
+					const PxU32 localCount = PxMin(destroyedOverlapCount, maxPerTask);
+					FindInteractionTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(FindInteractionTask)), FindInteractionTask)(mContextId, *mNPhaseCore, destroyedOverlaps, localCount);
+					startTask(task, continuation);
+					destroyedOverlaps += localCount;
+					destroyedOverlapCount -= localCount;
+				}
+			}
 		}
 	}
 }
@@ -1824,6 +2217,7 @@ void Sc::Scene::processNarrowPhaseLostTouchEventsIslands(PxBaseTask*)
 	PX_PROFILE_ZONE("Sc::Scene.islandLostTouches", mContextId);
 
 	const PxU32 count = mTouchLostEvents.size();
+	PX_ASSERT(count);	// PT: otherwise we should have skipped the task entirely
 	for(PxU32 i=0; i <count; ++i)
 	{
 		ShapeInteraction* si = getSI(mTouchLostEvents[i]);
@@ -1859,6 +2253,7 @@ void Sc::Scene::processNarrowPhaseLostTouchEvents(PxBaseTask*)
 
 	PxsContactManagerOutputIterator outputs = ctx->getContactManagerOutputs();
 	const PxU32 count = mTouchLostEvents.size();
+	PX_ASSERT(count);	// PT: otherwise we should have skipped the task entirely
 	for(PxU32 i=0; i<count; ++i)
 	{
 		ShapeInteraction* si = getSI(mTouchLostEvents[i]);
@@ -1873,8 +2268,8 @@ void Sc::Scene::processNarrowPhaseLostTouchEvents(PxBaseTask*)
 		}
 
 		PX_ASSERT(si);
-		if(si->managerLostTouch(0, true, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
-			addToLostTouchList(si->getShape0().getActor(), si->getShape1().getActor());
+		if(si->managerLostTouch(0, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
+			addToLostTouchList(si->getActor0(), si->getActor1());
 	}
 }
 
@@ -1882,20 +2277,24 @@ void Sc::Scene::processNarrowPhaseLostTouchEvents(PxBaseTask*)
 
 void Sc::Scene::processLostContacts2(PxBaseTask* continuation)
 {
-	mDestroyManagersTask.setContinuation(continuation);
-	mLostTouchReportsTask.setContinuation(&mDestroyManagersTask);
-	mLostTouchReportsTask.removeReference();
+	PxU32 destroyedOverlapCount;
+	AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
 
-	mUnregisterInteractionsTask.setContinuation(continuation);
-	mUnregisterInteractionsTask.removeReference();
-	
+	mDestroyManagersTask.setContinuation(continuation);
+
+	// PT: don't bother starting the tasks if we don't need to
+	if(destroyedOverlapCount)
+	{
+		mLostTouchReportsTask.setContinuation(&mDestroyManagersTask);
+		mLostTouchReportsTask.removeReference();
+
+		mUnregisterInteractionsTask.setContinuation(continuation);
+		mUnregisterInteractionsTask.removeReference();
+	}
+
 	{
 		PX_PROFILE_ZONE("Sim.clearIslandData", mContextId);
-
-		Bp::AABBManagerBase* aabbMgr = mAABBManager;
-		PxU32 destroyedOverlapCount;
 		{
-			Bp::AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
 			while(destroyedOverlapCount--)
 			{
 				ElementSimInteraction* pair = reinterpret_cast<ElementSimInteraction*>(p->mPairUserData);
@@ -1904,7 +2303,7 @@ void Sc::Scene::processLostContacts2(PxBaseTask* continuation)
 					if(pair->getType() == InteractionType::eOVERLAP)
 					{
 						ShapeInteraction* si = static_cast<ShapeInteraction*>(pair);
-						si->clearIslandGenData();
+						si->clearIslandGenData(*mSimpleIslandManager);
 					}
 				}
 				p++;
@@ -1926,7 +2325,9 @@ void Sc::Scene::lostTouchReports(PxBaseTask*)
 	mNPhaseCore->lockReports();
 	{
 		PxU32 destroyedOverlapCount;
-		const Bp::AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
+		const AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
+		PX_ASSERT(destroyedOverlapCount);	// PT: otherwise we should have skipped the task entirely
+
 		while(destroyedOverlapCount--)
 		{
 			if(p->mPairUserData)
@@ -1948,7 +2349,8 @@ void Sc::Scene::unregisterInteractions(PxBaseTask*)
 	PX_PROFILE_ZONE("Sim.unregisterInteractions", mContextId);
 
 	PxU32 destroyedOverlapCount;
-	const Bp::AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
+	const AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
+	PX_ASSERT(destroyedOverlapCount);	// PT: otherwise we should have skipped the task entirely
 
 	while(destroyedOverlapCount--)
 	{
@@ -1973,7 +2375,7 @@ void Sc::Scene::destroyManagers(PxBaseTask*)
 	mSimpleIslandManager->thirdPassIslandGen(&mPostThirdPassIslandGenTask);
 
 	PxU32 destroyedOverlapCount;
-	const Bp::AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
+	const AABBOverlap* PX_RESTRICT p = mAABBManager->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
 
 	while(destroyedOverlapCount--)
 	{
@@ -2000,12 +2402,12 @@ void Sc::Scene::processLostContacts3(PxBaseTask* /*continuation*/)
 
 		PxsContactManagerOutputIterator outputs = mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
 
-		Bp::AABBManagerBase* aabbMgr = mAABBManager;
+		AABBManagerBase* aabbMgr = mAABBManager;
 		PxU32 destroyedOverlapCount;
 
 		// PT: for regular shapes
 		{
-			const Bp::AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(Bp::ElementType::eSHAPE, destroyedOverlapCount);
+			const AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(ElementType::eSHAPE, destroyedOverlapCount);
 			while(destroyedOverlapCount--)
 			{
 				ElementSim* volume0 = reinterpret_cast<ElementSim*>(p->mUserData0);
@@ -2018,7 +2420,7 @@ void Sc::Scene::processLostContacts3(PxBaseTask* /*continuation*/)
 
 		// PT: for triggers
 		{
-			const Bp::AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(Bp::ElementType::eTRIGGER, destroyedOverlapCount);
+			const AABBOverlap* PX_RESTRICT p = aabbMgr->getDestroyedOverlaps(ElementType::eTRIGGER, destroyedOverlapCount);
 			while(destroyedOverlapCount--)
 			{
 				ElementSim* volume0 = reinterpret_cast<ElementSim*>(p->mUserData0);
@@ -2091,8 +2493,10 @@ void Sc::Scene::updateSimulationController(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Sim.updateSimulationController", mContextId);
 	
+	PX_ASSERT(isUsingGpuDynamicsOrBp());	// PT: this is not called anymore in the CPU pipeline
+
 	PxsTransformCache& cache = getLowLevelContext()->getTransformCache();
-	Bp::BoundsArray& boundArray = getBoundsArray();
+	BoundsArray& boundArray = getBoundsArray();
 
 	PxBitMapPinned& changedAABBMgrActorHandles = mAABBManager->getChangedAABBMgActorHandleMap();
 
@@ -2211,7 +2615,7 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 	getBoundsArray().resetChangedState();
 
 	PxsTransformCache& cache = getLowLevelContext()->getTransformCache();
-	Bp::BoundsArray& boundArray = getBoundsArray();
+	BoundsArray& boundArray = getBoundsArray();
 
 	{
 		PX_PROFILE_ZONE("AfterIntegration::lockStage", mContextId);

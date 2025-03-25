@@ -63,7 +63,7 @@ INCLUDE(ConfigureFileMT)
 SET(SNIPPET_RENDER_ENABLED 1)
 
 # Include all of the projects
-SET(PLATFORM_SNIPPETS_LIST Convert LoadCollection DelayLoadHook)
+SET(PLATFORM_SNIPPETS_LIST LoadCollection DelayLoadHook)
 
 IF(PX_BUILDVHACD)
 	LIST(APPEND PLATFORM_SNIPPETS_LIST ConvexDecomposition)

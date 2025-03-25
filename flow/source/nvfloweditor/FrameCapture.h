@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -32,15 +33,15 @@ struct NvFlowFrameCapture;
 
 struct NvFlowFrameCaptureInterface
 {
-	NV_FLOW_REFLECT_INTERFACE();
+    NV_FLOW_REFLECT_INTERFACE();
 
-	NvFlowFrameCapture*(NV_FLOW_ABI* create)(NvFlowContextInterface* contextInterface, NvFlowContext* context);
+    NvFlowFrameCapture*(NV_FLOW_ABI* create)(NvFlowContextInterface* contextInterface, NvFlowContext* context);
 
-	void(NV_FLOW_ABI* destroy)(NvFlowContext* context, NvFlowFrameCapture* frameCapture);
+    void(NV_FLOW_ABI* destroy)(NvFlowContext* context, NvFlowFrameCapture* frameCapture);
 
-	void(NV_FLOW_ABI* capture)(NvFlowContext* context, NvFlowFrameCapture* frameCapture, NvFlowUint width, NvFlowUint height, NvFlowTextureTransient* texture);
+    void(NV_FLOW_ABI* capture)(NvFlowContext* context, NvFlowFrameCapture* frameCapture, NvFlowUint width, NvFlowUint height, NvFlowTextureTransient* texture);
 
-	void(NV_FLOW_ABI* update)(NvFlowContext* context, NvFlowFrameCapture* frameCapture);
+    void(NV_FLOW_ABI* update)(NvFlowContext* context, NvFlowFrameCapture* frameCapture);
 };
 
 #define NV_FLOW_REFLECT_TYPE NvFlowFrameCaptureInterface

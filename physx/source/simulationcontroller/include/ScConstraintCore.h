@@ -49,7 +49,6 @@ namespace Sc
 												mSolverPrep = shaders.solverPrep;
 												mVisualize = shaders.visualize;
 											}
-		static		void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 											ConstraintCore(PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize);
 											~ConstraintCore()	{}

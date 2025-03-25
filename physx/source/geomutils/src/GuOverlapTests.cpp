@@ -634,7 +634,7 @@ static bool GeomOverlapCallback_ConvexCoreGeometry(GU_OVERLAP_FUNC_PARAMS)
 		return false;
 
 	PxVec3 point0, point1, axis;
-	PxReal dist = Gu::RefGjkEpa::gjkDistance(shape0, shape1, shape0.pose, shape1.pose, shape0.margin + shape1.margin, point0, point1, axis);
+	PxReal dist = Gu::RefGjkEpa::computeGjkDistance(shape0, shape1, shape0.pose, shape1.pose, shape0.margin + shape1.margin, point0, point1, axis);
 
 	return dist <= shape0.margin + shape1.margin + FLT_EPSILON;
 }

@@ -107,8 +107,6 @@ public:
 	PxU32		mNbElements;
 };
 
-
-
 class PreallocatingRegionManager
 {
 	public:
@@ -202,7 +200,6 @@ class PreallocatingRegionManager
 		PX_ASSERT(0);
 	}
 
-
 private:
 
 	PreallocatingRegionManager& operator=(const PreallocatingRegionManager&);
@@ -212,7 +209,6 @@ private:
 		const PxU32 activePoolIndex = mActivePoolIndex;
 		const PxU32 maxElements = mMaxElements;
 		const PxU32 elementSize = mElementSize;
-
 
 		for(PxU32 i=0;i<nbPools;i++)
 		{
@@ -237,14 +233,10 @@ private:
 		return newPool.allocateMemory(maxElements, elementSize);
 	}
 
-
-
 	PX_FORCE_INLINE	bool contains(PxU8* memory, const PxU32 slabSize, PxU8* element)
 	{
 		return element>=memory && element<memory+slabSize;
 	}
-
-
 
 	const PxU32			mMaxElements;
 	const PxU32			mElementSize;
@@ -413,12 +405,7 @@ public:
 			this->mPool.deallocateMemory(reinterpret_cast<PxU8*>(mDeletedElems[i]));
 		mDeletedElems.clear();
 	}
-
-
 };
-
-
-
 	
 } // namespace Cm
 

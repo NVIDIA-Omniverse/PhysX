@@ -29,7 +29,6 @@
 #ifndef NP_RIGID_DYNAMIC_H
 #define NP_RIGID_DYNAMIC_H
 
-#include "common/PxMetaData.h"
 #include "PxRigidDynamic.h"
 #include "NpRigidBodyTemplate.h"
 
@@ -47,7 +46,6 @@ public:
 	virtual		void				requiresObjects(PxProcessPxBaseCallback& c);
 
 	static		NpRigidDynamic*		createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void				getBinaryMetaData(PxOutputStream& stream);	
 //~PX_SERIALIZATION
 									NpRigidDynamic(const PxTransform& bodyPose);
 	virtual							~NpRigidDynamic();

@@ -676,7 +676,7 @@ namespace Dy
 
 				header->frictionBrokenWritebackByte = writeback;
 
-				PxReal frictionScale = (contactBase0->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
+				PxReal frictionScale = (frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
 
 				for (PxU32 j = 0; j < frictionPatch.anchorCount; j++)
 				{
@@ -1171,7 +1171,7 @@ namespace Dy
 
 				header->frictionBrokenWritebackByte = writeback;
 
-				PxReal frictionScale = (contactBase0->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
+				PxReal frictionScale = (frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
 
 				for (PxU32 j = 0; j < frictionPatch.anchorCount; j++)
 				{
@@ -1792,8 +1792,8 @@ namespace Dy
 					
 					const FloatV velMultiplier = V4GetW(rbXnI_velMultiplierW);
 
-					const Vec3V v0 =V3Mul(angState0, raXnI);
-					const Vec3V v1 =V3Mul(angState1, rbXnI);
+					const Vec3V v0 = V3Mul(angState0, raXnI);
+					const Vec3V v1 = V3Mul(angState1, rbXnI);
 					const FloatV normalVel = V3SumElems(V3Sub(v0, v1));
 
 					// appliedForce -bias * velMultiplier - a hoisted part of the total impulse computation

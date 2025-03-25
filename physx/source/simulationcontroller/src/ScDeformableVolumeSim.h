@@ -32,7 +32,7 @@
 #include "foundation/PxUserAllocated.h"
 #include "DyDeformableVolume.h"
 #include "ScDeformableVolumeCore.h" 
-#include "ScDeformableVolumeShapeSim.h"
+#include "ScGpuActorSim.h"
 
 namespace physx
 {
@@ -41,7 +41,7 @@ namespace Sc
 
 class Scene;
 
-class DeformableVolumeSim : public ActorSim
+class DeformableVolumeSim : public GPUActorSim
 {
 	PX_NOCOPY(DeformableVolumeSim)
 public:
@@ -53,10 +53,6 @@ public:
 
 	virtual		PxActor*					getPxActor() const { return getCore().getPxActor(); }
 
-				void						updateBounds();
-				void						updateBoundsInAABBMgr();
-				PxBounds3					getBounds() const;
-
 				bool						isSleeping() const;
 				bool						isActive() const { return !isSleeping(); }
 		
@@ -67,6 +63,8 @@ public:
 
 				void						onSetWakeCounter();
 
+				PxBounds3					getWorldBounds() const;
+
 				void						attachShapeCore(ShapeCore* core);
 				void						attachSimulationMesh(PxTetrahedronMesh* simulationMesh, PxDeformableVolumeAuxData* simulationState);
 				PxTetrahedronMesh*			getSimulationMesh();
@@ -75,12 +73,8 @@ public:
 				PxTetrahedronMesh*			getCollisionMesh();
 
 				PxU32						getGpuIndex()	const;
-
-				DeformableVolumeShapeSim&	getShapeSim() { return mShapeSim; }
-		
 private:
 				Dy::DeformableVolume*		mLLDeformableVolume;
-				DeformableVolumeShapeSim	mShapeSim;
 				PxU32						mIslandNodeIndex;
 		
 // PT: as far as I can tell these are never actually called

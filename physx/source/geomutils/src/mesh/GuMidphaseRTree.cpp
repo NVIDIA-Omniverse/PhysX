@@ -441,7 +441,7 @@ PxU32 physx::Gu::raycast_triangleMesh_RTREE(const TriangleMesh* mesh, const PxTr
 	const bool multipleHits = hitFlags & PxHitFlag::eMESH_MULTIPLE;
 
 	RayMeshColliderCallback callback(
-		multipleHits ? CallbackMode::eMULTIPLE : (hitFlags & PxHitFlag::eMESH_ANY ? CallbackMode::eANY : CallbackMode::eCLOSEST),
+		multipleHits ? CallbackMode::eMULTIPLE : (hitFlags & PxHitFlag::eANY_HIT ? CallbackMode::eANY : CallbackMode::eCLOSEST),
 		hits, maxHits, stride, &meshGeom.scale, &pose, world2vertexSkewP, hitFlags, rayDir, isDoubleSided, distCoeff);
 
 	MeshRayCollider::collide<0, 1>(orig, dir, maxDist, bothSides, static_cast<const RTreeTriangleMesh*>(meshData), callback, NULL);

@@ -54,7 +54,6 @@ namespace Sc
 		static PX_FORCE_INLINE size_t		getCoreOffset()			{ return PX_OFFSET_OF_RT(StaticCore, mCore);}
 
 											StaticCore(const PxEMPTY) :	RigidCore(PxEmpty), mCore(PxEmpty) {}
-		static			void				getBinaryMetaData(PxOutputStream& stream);
 
 						StaticSim*			getSim() const;
 

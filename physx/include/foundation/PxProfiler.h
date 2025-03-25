@@ -50,7 +50,7 @@ public:
 
 	/**
 	\brief Mark the beginning of a nested profile block
-	\param[in] eventName	Event name. Must be a persistent const char *
+	\param[in] eventName	Event name. Must be a persistent const char* that is the same pointer passed to zoneEnd such that the pointer can be used to pair the calls.
 	\param[in] detached		True for cross thread events
 	\param[in] contextId	the context id of this zone. Zones with the same id belong to the same group. 0 is used for no specific group.
 	\return Returns implementation-specific profiler data for this event
@@ -60,7 +60,7 @@ public:
 	/**
 	\brief Mark the end of a nested profile block
 	\param[in] profilerData	The data returned by the corresponding zoneStart call (or NULL if not available)
-	\param[in] eventName	The name of the zone ending, must match the corresponding name passed with 'zoneStart'. Must be a persistent const char *.
+	\param[in] eventName	Event name. Must be a persistent const char* that is the same pointer passed to zoneStart such that the pointer can be used to pair the calls.
 	\param[in] detached		True for cross thread events. Should match the value passed to zoneStart.
 	\param[in] contextId	The context of this zone. Should match the value passed to zoneStart.
 

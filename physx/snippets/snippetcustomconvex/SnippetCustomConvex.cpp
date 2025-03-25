@@ -33,7 +33,6 @@
 #include <ctype.h>
 #include "PxPhysicsAPI.h"
 #include "geometry/PxGjkQuery.h"
-#include "CustomConvex.h"
 #include "extensions/PxCustomGeometryExt.h"
 
 // temporary disable this snippet, cannot work without rendering we cannot include GL directly
@@ -54,7 +53,6 @@ static PxDefaultCpuDispatcher* gDispatcher = NULL;
 static PxScene* gScene = NULL;
 static PxMaterial* gMaterial = NULL;
 static PxPvd* gPvd = NULL;
-//static PxArray<CustomConvex*> gConvexes;
 static PxArray<PxCustomGeometryExt::BaseConvexCallbacks*> gConvexes;
 static PxArray<PxRigidActor*> gActors;
 struct RenderMesh;
@@ -78,7 +76,6 @@ static PxRigidDynamic* createDynamic(const PxTransform& t, const PxGeometry& geo
 
 static void createCylinderActor(float height, float radius, float margin, const PxTransform& pose)
 {
-	//CustomCylinder* cylinder = new CustomCylinder(height, radius, margin);
 	PxCustomGeometryExt::CylinderCallbacks* cylinder = new PxCustomGeometryExt::CylinderCallbacks(height, radius, 0, margin);
 	gConvexes.pushBack(cylinder);
 
@@ -97,7 +94,6 @@ static void createCylinderActor(float height, float radius, float margin, const 
 
 static void createConeActor(float height, float radius, float margin, const PxTransform& pose)
 {
-	//CustomCone* cone = new CustomCone(height, radius, margin);
 	PxCustomGeometryExt::ConeCallbacks* cone = new PxCustomGeometryExt::ConeCallbacks(height, radius, 0, margin);
 	gConvexes.pushBack(cone);
 

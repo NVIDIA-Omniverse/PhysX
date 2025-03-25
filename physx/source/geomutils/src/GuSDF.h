@@ -118,7 +118,6 @@ namespace physx
 			SDF(const PxEMPTY) : mOwnsMemory(false) {}
 			void exportExtraData(PxSerializationContext& context);
 			void importExtraData(PxDeserializationContext& context);
-			static void getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 			/**
 			\brief Constructor

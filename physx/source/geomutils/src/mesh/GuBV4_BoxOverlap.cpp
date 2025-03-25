@@ -110,7 +110,7 @@ static PX_FORCE_INLINE void setupBoxParams(ParamsT* PX_RESTRICT params, const Bo
 
 PxIntBool BV4_OverlapBoxAny(const Box& box, const BV4Tree& tree, const PxMat44* PX_RESTRICT worldm_Aligned)
 {
-	const SourceMesh* PX_RESTRICT mesh =static_cast<const SourceMesh*>(tree.mMeshInterface);
+	const SourceMesh* PX_RESTRICT mesh = static_cast<const SourceMesh*>(tree.mMeshInterface);
 
 	Box localBox;
 	computeLocalBox(localBox, box, worldm_Aligned);

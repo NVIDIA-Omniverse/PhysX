@@ -157,8 +157,8 @@ public:
 					PxContactModifyPair& p = mModifiablePairArray[i];
 					const PxcNpWorkUnit& unit = cm.getWorkUnit();
 
-					p.shape[0] = gPxvOffsetTable.convertPxsShape2Px(unit.mShapeCore0);
-					p.shape[1] = gPxvOffsetTable.convertPxsShape2Px(unit.mShapeCore1);
+					p.shape[0] = gPxvOffsetTable.convertPxsShape2Px(unit.getShapeCore0());
+					p.shape[1] = gPxvOffsetTable.convertPxsShape2Px(unit.getShapeCore1());
 	
 					p.actor[0] = unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY0 | PxcNpWorkUnitFlag::eARTICULATION_BODY0) ?
 									gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(unit.mRigidCore0)
@@ -181,7 +181,7 @@ public:
 						contacts[j].maxImpulse = maxImpulse;
 	
 #if PX_ENABLE_SIM_STATS
-					const PxU8 gt0 = PxTo8(unit.mGeomType0), gt1 = PxTo8(unit.mGeomType1);
+					const PxU8 gt0 = PxTo8(unit.getGeomType0()), gt1 = PxTo8(unit.getGeomType1());
 					threadContext.mModifiedContactPairs[PxMin(gt0, gt1)][PxMax(gt0, gt1)]++;
 #else
 					PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
@@ -424,8 +424,8 @@ public:
 
 			PxPrefetchLine(cmArray[prefetch2]);
 			PxPrefetchLine(&mCmOutputs[prefetch2]);
-			PxPrefetchLine(cmArray[prefetch1]->getWorkUnit().mShapeCore0);
-			PxPrefetchLine(cmArray[prefetch1]->getWorkUnit().mShapeCore1);
+			PxPrefetchLine(cmArray[prefetch1]->getWorkUnit().getShapeCore0());
+			PxPrefetchLine(cmArray[prefetch1]->getWorkUnit().getShapeCore1());
 			PxPrefetchLine(&threadContext->mTransformCache->getTransformCache(cmArray[prefetch1]->getWorkUnit().mTransformCache0));
 			PxPrefetchLine(&threadContext->mTransformCache->getTransformCache(cmArray[prefetch1]->getWorkUnit().mTransformCache1));
 
@@ -645,16 +645,14 @@ void PxsNphaseImplementationContext::registerContactManager(PxsContactManager* c
 	PX_ASSERT(cm);
 
 	PxcNpWorkUnit& workUnit = cm->getWorkUnit();
-	PxsContactManagerOutput output;
 
-	PX_ASSERT(workUnit.mGeomType0<PxGeometryType::eGEOMETRY_COUNT);
-	PX_ASSERT(workUnit.mGeomType1<PxGeometryType::eGEOMETRY_COUNT);
-	const PxGeometryType::Enum geomType0 = PxGeometryType::Enum(workUnit.mGeomType0);
-	const PxGeometryType::Enum geomType1 = PxGeometryType::Enum(workUnit.mGeomType1);
+	const PxGeometryType::Enum geomType0 = workUnit.getGeomType0();
+	const PxGeometryType::Enum geomType1 = workUnit.getGeomType1();
 
 	Gu::Cache cache;
 	mContext.createCache(cache, geomType0, geomType1);
 
+	PxsContactManagerOutput& output = mNewNarrowPhasePairs.mOutputContactManagers.insert();
 	PxMemZero(&output, sizeof(output));
 	output.nbPatches = PxTo8(patchCount);
 
@@ -673,7 +671,6 @@ void PxsNphaseImplementationContext::registerContactManager(PxsContactManager* c
 
 	output.flags = workUnit.mFlags;
 
-	mNewNarrowPhasePairs.mOutputContactManagers.pushBack(output);
 	mNewNarrowPhasePairs.mCaches.pushBack(cache);
 	mNewNarrowPhasePairs.mContactManagerMapping.pushBack(cm);
 
@@ -874,7 +871,7 @@ void PxsNphaseImplementationContext::appendContactManagersFallback(PxsContactMan
 	//Copy new pairs to end of old pairs. Clear new flag, update npIndex on CM and clear the new pair buffer
 	const PxU32 existingSize = mNarrowPhasePairs.mContactManagerMapping.size();
 	const PxU32 nbToAdd = mNewNarrowPhasePairs.mContactManagerMapping.size();
-	const PxU32 newSize =existingSize + nbToAdd;
+	const PxU32 newSize = existingSize + nbToAdd;
 	
 	if(newSize > mNarrowPhasePairs.mContactManagerMapping.capacity())
 	{

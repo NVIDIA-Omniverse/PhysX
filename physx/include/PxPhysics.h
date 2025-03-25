@@ -29,7 +29,6 @@
 #ifndef PX_PHYSICS_H
 #define PX_PHYSICS_H
 
-
 #include "PxPhysXConfig.h"
 #include "PxDeletionListener.h"
 #include "foundation/PxTransform.h"
@@ -117,10 +116,31 @@ public:
 	virtual PxFoundation& getFoundation() = 0;
 
 	/**
+	\brief Gets PxPhysics object insertion interface.
+
+	The insertion interface is needed for PxCreateTriangleMesh, PxCooking::createTriangleMesh etc., this allows runtime mesh creation.
+
+	\see PxCreateTriangleMesh PxCreateHeightField PxCreateTetrahedronMesh PxCreateBVH
+	     PxCooking::createTriangleMesh PxCooking::createHeightfield PxCooking::createTetrahedronMesh PxCooking::createBVH
+	*/
+	virtual PxInsertionCallback& getPhysicsInsertionCallback() = 0;
+
+	/**
 	\brief Retrieves the PxOmniPvd instance if there is one registered with PxPhysics.
 	\return A pointer to a PxOmniPvd object.
 	*/
 	virtual PxOmniPvd* getOmniPvd() = 0;
+
+	/**
+	\brief Returns the simulation tolerance parameters.
+	\return The current simulation tolerance parameters.
+	*/
+	virtual const PxTolerancesScale& getTolerancesScale() const = 0;
+
+	//\}
+	/** \name Aggregates
+	*/
+	//\{
 
 	/**
 	\brief Creates an aggregate with the specified maximum size and filtering hint.
@@ -142,13 +162,14 @@ public:
 	virtual	PxAggregate* createAggregate(PxU32 maxActor, PxU32 maxShape, PxAggregateFilterHint filterHint) = 0;
 
 	/**
-	\brief Returns the simulation tolerance parameters.
-	\return The current simulation tolerance parameters.
+	\brief Return the number of aggregates that currently exist.
+
+	\return Number of aggregates.
 	*/
-	virtual const PxTolerancesScale& getTolerancesScale() const = 0;
+	virtual PxU32 getNbAggregates() const = 0;
 
 	//\}
-	/** \name Meshes
+	/** \name Triangle Meshes
 	*/
 	//\{
 
@@ -189,7 +210,6 @@ public:
 	*/
 	virtual	PxU32 getTriangleMeshes(PxTriangleMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
-
 	//\}
 	/** \name Tetrahedron Meshes
 	*/
@@ -206,25 +226,6 @@ public:
 	\see PxTetrahedronMesh PxMeshPreprocessingFlag PxTetrahedronMesh.release() PxInputStream PxTriangleMeshFlag
 	*/
 	virtual PxTetrahedronMesh* createTetrahedronMesh(PxInputStream& stream) = 0;
-
-	/**
-	\brief Creates a deformable volume mesh object.
-
-	\param[in] stream The deformable volume mesh stream.
-	\return The new deformable volume mesh.
-
-	\see createTetrahedronMesh
-	*/
-	virtual PxDeformableVolumeMesh* createDeformableVolumeMesh(PxInputStream& stream) = 0;
-
-	/**
-	\brief Deprecated
-	\see createDeformableVolumeMesh
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE PxDeformableVolumeMesh* createSoftBodyMesh(PxInputStream& stream)
-	{
-		return createDeformableVolumeMesh(stream);
-	}
 
 	/**
 	\brief Return the number of tetrahedron meshes that currently exist.
@@ -250,6 +251,11 @@ public:
 	\see getNbTetrahedronMeshes() PxTetrahedronMesh
 	*/
 	virtual	PxU32 getTetrahedronMeshes(PxTetrahedronMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
+	//\}
+	/** \name Heightfields
+	*/
+	//\{
 
 	/**
 	\brief Creates a heightfield object from previously cooked stream.
@@ -288,6 +294,11 @@ public:
 	*/
 	virtual	PxU32 getHeightFields(PxHeightField** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
+	//\}
+	/** \name Convex meshes
+	*/
+	//\{
+
 	/**
 	\brief Creates a convex mesh object.
 
@@ -324,6 +335,35 @@ public:
 	\see getNbConvexMeshes() PxConvexMesh
 	*/
 	virtual	PxU32 getConvexMeshes(PxConvexMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
+	//\}
+	/** \name Deformable volume meshes
+	*/
+	//\{
+
+	/**
+	\brief Creates a deformable volume mesh object.
+
+	\param[in] stream The deformable volume mesh stream.
+	\return The new deformable volume mesh.
+
+	\see createTetrahedronMesh
+	*/
+	virtual PxDeformableVolumeMesh* createDeformableVolumeMesh(PxInputStream& stream) = 0;
+
+	/**
+	\brief Deprecated
+	\see createDeformableVolumeMesh
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxDeformableVolumeMesh* createSoftBodyMesh(PxInputStream& stream)
+	{
+		return createDeformableVolumeMesh(stream);
+	}
+
+	//\}
+	/** \name BVHs
+	*/
+	//\{
 
 	/**
 	\brief Creates a bounding volume hierarchy.
@@ -604,6 +644,13 @@ public:
 	virtual PxConstraint* createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize) = 0;
 
 	/**
+	\brief Return the number of constraints that currently exist.
+
+	\return Number of constraints.
+	*/
+	virtual PxU32 getNbConstraints() const = 0;
+
+	/**
 	\brief Creates a reduced-coordinate articulation with all fields initialized to their default values.
 
 	\return the new articulation
@@ -611,6 +658,18 @@ public:
 	\see PxArticulationReducedCoordinate
 	*/
 	virtual PxArticulationReducedCoordinate* createArticulationReducedCoordinate() = 0;
+
+	/**
+	\brief Return the number of articulations that currently exist.
+
+	\return Number of articulations.
+	*/
+	virtual PxU32 getNbArticulations() const = 0;
+
+	//\}
+	/** \name Misc
+	*/
+	//\{
 
 	/**
 	\brief Creates an attachment between two actors, based on the provided PxDeformableAttachmentData. At least one of the actors must be a deformable.
@@ -801,13 +860,13 @@ public:
 	\param	[in] dynamicFriction		The dynamic friction coefficient
 	\param	[in] thickness				The thickness of the surface
 	\param	[in] bendingStiffness		The bending stiffness of the surface
-	\param	[in] damping				The damping of the surface with respect to stretch and shear
+	\param	[in] elasticityDamping		The damping of the surface with respect to stretch and shear
 	\param	[in] bendingDamping			The damping of the surface with respect to bending
 
 	\see PxDeformableSurfaceMaterial
 	*/
 	virtual PxDeformableSurfaceMaterial* createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, 
-		PxReal thickness = 0.001f, PxReal bendingStiffness = 0.0f, PxReal damping = 0.0f, PxReal bendingDamping = 0.0f) = 0;
+		PxReal thickness = 0.001f, PxReal bendingStiffness = 0.0f, PxReal elasticityDamping = 0.0f, PxReal bendingDamping = 0.0f) = 0;
 
 	/**
 	\brief Return the number of deformable surface materials that currently exist.
@@ -842,10 +901,11 @@ public:
 	\param	[in] youngs					The young's modulus
 	\param	[in] poissons				The poissons's ratio
 	\param	[in] dynamicFriction		The dynamic friction coefficient
+	\param	[in] elasticityDamping		The elasticity damping
 
 	\see PxDeformableVolumeMaterial
 	*/
-	virtual PxDeformableVolumeMaterial* createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction) = 0;
+	virtual PxDeformableVolumeMaterial* createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal elasticityDamping = 0.0f) = 0;
 
 	/**
 	\brief Deprecated
@@ -1010,16 +1070,6 @@ public:
 	\see PxDeletionListener registerDeletionListenerObjects
 	*/
 	virtual void unregisterDeletionListenerObjects(PxDeletionListener& observer, const PxBase* const* observables, PxU32 observableCount) = 0;
-
-	/**
-	\brief Gets PxPhysics object insertion interface.
-
-	The insertion interface is needed for PxCreateTriangleMesh, PxCooking::createTriangleMesh etc., this allows runtime mesh creation.
-
-	\see PxCreateTriangleMesh PxCreateHeightField PxCreateTetrahedronMesh PxCreateBVH
-	     PxCooking::createTriangleMesh PxCooking::createHeightfield PxCooking::createTetrahedronMesh PxCooking::createBVH
-	*/
-	virtual PxInsertionCallback& getPhysicsInsertionCallback() = 0;
 
 	//\}
 };

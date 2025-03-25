@@ -59,6 +59,8 @@ public:
 	virtual bool evaluateSDFDistances(PxVec4* localGradientAndSDFConcatenated, const PxShapeGPUIndex* shapeIndices, const PxVec4* localSamplePointsConcatenated, const PxU32* samplePointCountPerShape, PxU32 nbElements, PxU32 maxPointCount, CUevent startEvent = NULL, CUevent finishEvent = NULL) const PX_OVERRIDE PX_FINAL;
 
 	virtual PxArticulationGPUAPIMaxCounts getArticulationGPUAPIMaxCounts()	const	PX_OVERRIDE PX_FINAL;
+
+	virtual bool getD6JointData(void* data, const PxD6JointGPUIndex* gpuIndices, PxD6JointGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent = NULL, CUevent finishEvent = NULL) const PX_OVERRIDE PX_FINAL;
 	//~PxDirectGPUAPI
 
 	NpScene& mNpScene;

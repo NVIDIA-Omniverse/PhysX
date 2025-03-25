@@ -58,6 +58,8 @@ namespace Sc
 			type = IG::Edge::eFEM_CLOTH_CONTACT;
 		else if(actorTypeLargest == PxActorType::ePBD_PARTICLESYSTEM)
 			type = IG::Edge::ePARTICLE_SYSTEM_CONTACT;
+#else
+		PX_UNUSED(actorTypeLargest);
 #endif
 		return type;
 	}
@@ -118,8 +120,8 @@ namespace Sc
 						PxU32					getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& patchCount, const PxReal*& impulses, PxU32 startOffset, PxsContactManagerOutputIterator& outputs);
 						PxU32					getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& patchCount, const PxReal*& impulses, PxU32 startOffset, PxsContactManagerOutputIterator& outputs, const void*& frictionPatches);
 
-						bool					managerLostTouch(PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
-						void					managerNewTouch(PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
+						bool					managerLostTouch(PxU32 ccdPass, PxsContactManagerOutputIterator& outputs);
+						void					managerNewTouch(PxU32 ccdPass, PxsContactManagerOutputIterator& outputs);
 
 		PX_FORCE_INLINE	void					adjustCountersOnLostTouch();
 		PX_FORCE_INLINE	void					adjustCountersOnNewTouch();
@@ -155,19 +157,21 @@ namespace Sc
 
 					const PxsContactManager*	getContactManager() const { return mManager; }
 
-						void					clearIslandGenData();
+						void					clearIslandGenData(IG::SimpleIslandManager& islandManager);
 
 		PX_FORCE_INLINE IG::EdgeIndex			getEdgeIndex() const { return mEdgeIndex;  }
 
 		PX_FORCE_INLINE	Sc::ShapeSimBase&		getShape0()	const { return static_cast<ShapeSimBase&>(getElement0()); }
 		PX_FORCE_INLINE	Sc::ShapeSimBase&		getShape1()	const { return static_cast<ShapeSimBase&>(getElement1()); }
 
+		PX_FORCE_INLINE	Sc::ActorSim&			getActor0()	{ return getActorSim0();			}
+		PX_FORCE_INLINE	Sc::ActorSim&			getActor1()	{ return getActorSim1();			}
+
 	private:
 						ActorPair*				mActorPair;
 						PxsContactManager*		mManager;
 						PxU32					mContactReportStamp;
 						PxU32					mReportPairIndex;	// Owned by NPhaseCore for its report pair list
-						IG::EdgeIndex			mEdgeIndex;
 						PxU32					mReportStreamIndex;  // position of this pair in the contact report stream
 
 						void					createManager(PxsContactManager* contactManager);
@@ -281,11 +285,8 @@ PX_INLINE void Sc::ShapeInteraction::destroyManager()
 
 PX_FORCE_INLINE bool Sc::ShapeInteraction::activeManagerAllowed() const
 {
-	ShapeSimBase& shape0 = getShape0();
-	ShapeSimBase& shape1 = getShape1();
-
-	ActorSim& bodySim0 = shape0.getActor();
-	ActorSim& bodySim1 = shape1.getActor();
+	ActorSim& bodySim0 = getActorSim0();
+	ActorSim& bodySim1 = getActorSim1();
 
 	// the first shape always belongs to a dynamic body or deformable volume
 #if PX_SUPPORT_GPU_PHYSX

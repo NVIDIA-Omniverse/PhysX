@@ -32,13 +32,13 @@
 #include "foundation/PxAssert.h"
 #include "foundation/PxMemory.h"
 #include "foundation/PxHash.h"
+#include "foundation/PxUserAllocated.h"
 #include "common/PxSerialFramework.h"
 #include "extensions/PxDefaultStreams.h"
 
-#include "foundation/PxUserAllocated.h"
 #include "CmCollection.h"
 #include "CmUtils.h"
-#include "SnConvX_Align.h"
+#include "../SnSerialUtils.h"
 
 namespace physx
 {

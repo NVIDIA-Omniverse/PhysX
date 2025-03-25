@@ -54,7 +54,6 @@ public:
 					void					exportExtraData(PxSerializationContext& stream);	
 					void					importExtraData(PxDeserializationContext& context);
 					void					resolveReferences(PxDeserializationContext& context);
-	static			void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 											NpActor(NpType::Enum type);
 

@@ -178,7 +178,7 @@ PxAgain SweepCapsuleMeshHitCallback::processHit( // all reported coords are in m
 			mInitialOverlap = true;
 			return false;
 		}
-		if(mHitFlags & PxHitFlag::eMESH_ANY)
+		if(mHitFlags & PxHitFlag::eANY_HIT)
 			return false; // abort traversal
 	}
 	///
@@ -598,7 +598,7 @@ bool sweepConvex_MeshGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 	const bool meshBothSides = hitFlags & PxHitFlag::eMESH_BOTH_SIDES;
 	const bool isDoubleSided = meshGeom.meshFlags & PxMeshGeometryFlag::eDOUBLE_SIDED;
 	const bool bothTriangleSidesCollide = isDoubleSided || meshBothSides;
-	const bool anyHit = hitFlags & PxHitFlag::eMESH_ANY;
+	const bool anyHit = hitFlags & PxHitFlag::eANY_HIT;
 	SweepConvexMeshHitCallback callback(
 		convexMesh->getHull(), convexGeom.scale, meshScaling, convexPose, pose, -unitDir, distance, hitFlags,
 		bothTriangleSidesCollide, inflation, anyHit, distCoeff);

@@ -53,7 +53,7 @@ namespace physx
 		if (visualizeAABBs)
 		{
 			out << PxU32(PxDebugColor::eARGB_YELLOW) << PxMat44(PxIdentity);
-			Cm::renderOutputDebugBox(out, core.getSim()->getBounds());
+			Cm::renderOutputDebugBox(out, scScene.getBoundsArray().getBounds(core.getSim()->getShapeSim().getElementID()));
 		}
 	}
 #else
@@ -92,7 +92,7 @@ namespace physx
 
 		PX_SIMD_GUARD;
 
-		PxBounds3 bounds = sim->getBounds();
+		const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
 		PX_ASSERT(bounds.isValid());
 
 		// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.

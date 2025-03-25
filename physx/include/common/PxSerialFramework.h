@@ -270,16 +270,6 @@ protected:
 };
 
 /**
-\brief Callback type for exporting binary meta data for a serializable type.
-\deprecated Binary conversion and binary meta data are deprecated.
-
-\see PxSerializationRegistry::registerBinaryMetaDataCallback
-
-\param stream	Stream to store binary meta data. 
-*/
-typedef PX_DEPRECATED void (*PxBinaryMetaDataCallback)(PxOutputStream& stream);
-
-/**
 \brief Class serving as a registry for XML (RepX) and binary serializable types.
 
 In order to serialize and deserialize objects the application needs
@@ -318,19 +308,6 @@ public:
 	*/
 	virtual PxSerializer*               unregisterSerializer(PxType type) = 0;
 
-	/**
-	\brief Register binary meta data callback
-
-	\deprecated Binary conversion and binary meta data are deprecated.
-
-	The callback is executed when calling PxSerialization::dumpBinaryMetaData.
-
-	\param	callback PxBinaryMetaDataCallback to be registered.
-
-	\see PxBinaryMetaDataCallback, PxSerialization::dumpBinaryMetaData
-	*/
-	PX_DEPRECATED virtual void			registerBinaryMetaDataCallback(PxBinaryMetaDataCallback callback) = 0;
-	
 	/**
 	\brief Returns PxSerializer corresponding to type
 

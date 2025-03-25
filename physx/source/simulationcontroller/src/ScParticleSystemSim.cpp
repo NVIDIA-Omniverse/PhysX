@@ -29,24 +29,20 @@
 #if PX_SUPPORT_GPU_PHYSX
 
 #include "ScParticleSystemSim.h"
-#include "ScParticleSystemCore.h"
-#include "ScScene.h"
 
 using namespace physx;
 using namespace Dy;
 
-
 Sc::ParticleSystemSim::ParticleSystemSim(ParticleSystemCore& core, Scene& scene) :
-	ActorSim(scene, core),
-	mShapeSim(*this, &core.getShapeCore())
+	GPUActorSim(scene, core, &core.getShapeCore())
 {
-	
+	createLowLevelVolume();
+
 	mLLParticleSystem = scene.createLLParticleSystem(this);
 
 	mNodeIndex = scene.getSimpleIslandManager()->addNode(false, false, IG::Node::ePARTICLESYSTEM_TYPE, mLLParticleSystem);
 
 	scene.getSimpleIslandManager()->activateNode(mNodeIndex);
-
 
 	//mCore.setSim(this);
 
@@ -73,19 +69,21 @@ Sc::ParticleSystemSim::~ParticleSystemSim()
 	mCore.setSim(NULL);
 }
 
-void Sc::ParticleSystemSim::updateBounds()
+void Sc::ParticleSystemSim::createLowLevelVolume()
 {
-	mShapeSim.updateBounds();
-}
+	//PX_ASSERT(getWorldBounds().isFinite());
 
-void Sc::ParticleSystemSim::updateBoundsInAABBMgr()
-{
-	mShapeSim.updateBoundsInAABBMgr();
-}
+	const PxU32 index = mShapeSim.getElementID();
 
-PxBounds3 Sc::ParticleSystemSim::getBounds() const
-{
-	return mShapeSim.getBounds();
+	if (!(static_cast<Sc::ParticleSystemSim&>(mShapeSim.getActor()).getCore().getFlags() & PxParticleFlag::eDISABLE_RIGID_COLLISION))
+	{
+		mScene.getBoundsArray().setBounds(PxBounds3(PxVec3(PX_MAX_BOUNDS_EXTENTS), PxVec3(-PX_MAX_BOUNDS_EXTENTS)), index);
+		mShapeSim.setInBroadPhase();
+	}
+	else
+		mScene.getAABBManager()->reserveSpaceForBounds(index);
+
+	addToAABBMgr(Bp::FilterType::PARTICLESYSTEM);
 }
 
 bool Sc::ParticleSystemSim::isSleeping() const

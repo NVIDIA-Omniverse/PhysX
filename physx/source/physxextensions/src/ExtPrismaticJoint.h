@@ -59,7 +59,6 @@ namespace Ext
 										PrismaticJoint(PxBaseFlags baseFlags) : PrismaticJointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	PrismaticJoint*			createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<PrismaticJoint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										PrismaticJoint(const PxTolerancesScale& scale, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxPrismaticJoint

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -30,28 +31,28 @@ struct NvFlowShapeRenderer;
 
 struct NvFlowShapeRendererParams
 {
-	NvFlowUint numSpheres;
-	NvFlowFloat4* spherePositionRadius;
+    NvFlowUint numSpheres;
+    NvFlowFloat4* spherePositionRadius;
 };
 
 struct NvFlowShapeRendererInterface
 {
-	NV_FLOW_REFLECT_INTERFACE();
+    NV_FLOW_REFLECT_INTERFACE();
 
-	NvFlowShapeRenderer*(NV_FLOW_ABI* create)(NvFlowContextInterface* contextInterface,	NvFlowContext* context);
+    NvFlowShapeRenderer*(NV_FLOW_ABI* create)(NvFlowContextInterface* contextInterface,    NvFlowContext* context);
 
-	void(NV_FLOW_ABI* destroy)(NvFlowContext* context, NvFlowShapeRenderer* renderer);
+    void(NV_FLOW_ABI* destroy)(NvFlowContext* context, NvFlowShapeRenderer* renderer);
 
-	void(NV_FLOW_ABI* render)(
-		NvFlowContext* context, 
-		NvFlowShapeRenderer* renderer, const NvFlowShapeRendererParams* params,
-		const NvFlowFloat4x4* view,
-		const NvFlowFloat4x4* projection,
-		NvFlowUint textureWidth,
-		NvFlowUint textureHeight, 
-		NvFlowTextureTransient* depthOut, 
-		NvFlowTextureTransient* colorOut
-	);
+    void(NV_FLOW_ABI* render)(
+        NvFlowContext* context,
+        NvFlowShapeRenderer* renderer, const NvFlowShapeRendererParams* params,
+        const NvFlowFloat4x4* view,
+        const NvFlowFloat4x4* projection,
+        NvFlowUint textureWidth,
+        NvFlowUint textureHeight,
+        NvFlowTextureTransient* depthOut,
+        NvFlowTextureTransient* colorOut
+    );
 };
 
 #define NV_FLOW_REFLECT_TYPE NvFlowShapeRendererInterface

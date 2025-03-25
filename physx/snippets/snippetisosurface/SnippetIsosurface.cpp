@@ -106,7 +106,7 @@ public:
 		}
 		mMaxVertices = maxNumVertices;
 		/*ExtGpu::PxIsosurfaceParams p;
-		p.isosurfaceValue =threshold;
+		p.isosurfaceValue = threshold;
 		p.clearFilteringPasses();*/	
 		
 		PxPhysicsGpu* pxGpu = PxGetPhysicsGpu();

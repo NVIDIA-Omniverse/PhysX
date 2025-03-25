@@ -152,7 +152,6 @@ namespace Gu
 		 virtual						~SourceMeshBase();
 	
 										SourceMeshBase(const PxEMPTY) {}
-		static			void			getBinaryMetaData(PxOutputStream& stream);
 
 						PxU32			mNbVerts;
 						const PxVec3*	mVerts;
@@ -186,7 +185,6 @@ namespace Gu
 		 virtual						~SourceMesh();
 		// PX_SERIALIZATION
 										SourceMesh(const PxEMPTY) : SourceMeshBase(PxEmpty) {}
-		static			void			getBinaryMetaData(PxOutputStream& stream);
 		//~PX_SERIALIZATION
 
 						void			reset();
@@ -235,7 +233,6 @@ namespace Gu
 		virtual									~TetrahedronSourceMesh();
 		// PX_SERIALIZATION
 												TetrahedronSourceMesh(const PxEMPTY) : SourceMeshBase(TET_MESH) {}
-		static			void					getBinaryMetaData(PxOutputStream& stream);
 		//~PX_SERIALIZATION
 
 						void					reset();
@@ -346,7 +343,6 @@ namespace Gu
 								BV4Tree(const PxEMPTY);
 				void			exportExtraData(PxSerializationContext&);
 				void			importExtraData(PxDeserializationContext& context);
-		static	void			getBinaryMetaData(PxOutputStream& stream);
 		//~PX_SERIALIZATION
 								BV4Tree();
 								BV4Tree(SourceMesh* meshInterface, const PxBounds3& localBounds);

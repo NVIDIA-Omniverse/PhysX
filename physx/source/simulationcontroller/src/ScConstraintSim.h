@@ -44,7 +44,7 @@ namespace Sc
 	class BodySim;
 	class RigidSim;
 
-	class ConstraintSim : public PxUserAllocated 
+	class ConstraintSim
 	{
 		PX_NOCOPY(ConstraintSim)
 	public:
@@ -81,6 +81,8 @@ namespace Sc
 		PX_FORCE_INLINE	PxU32					isBroken()			const	{ return PxU32(mFlags) & ConstraintSim::eBROKEN;	}
 
 		PX_FORCE_INLINE const ConstraintInteraction*	getInteraction() const { return mInteraction; }
+
+						PxConstraintGPUIndex	getGPUIndex() const;
 
 	private:
 						bool					createLLConstraint();

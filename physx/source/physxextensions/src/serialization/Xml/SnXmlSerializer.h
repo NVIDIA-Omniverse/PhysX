@@ -85,7 +85,7 @@ namespace Sn {
 	}
 	
 	template<typename TDataType, typename TWriteOperator>
-	inline void writeStridedBufferProperty( XmlWriter& writer, MemoryBuffer& tempBuffer, const char* inPropName, const PxTypedStridedData<TDataType>& inData, PxU32 inCount, PxU32 inItemsPerLine, TWriteOperator inOperator )
+	inline void writeStridedBufferProperty( XmlWriter& writer, MemoryBuffer& tempBuffer, const char* inPropName, const PxTypedBoundedData<TDataType>& inData, PxU32 inCount, PxU32 inItemsPerLine, TWriteOperator inOperator )
 	{
 		writeStridedBufferProperty<TDataType>( writer, tempBuffer, inPropName, inData.data, inData.stride, inCount, inItemsPerLine, inOperator );
 	}

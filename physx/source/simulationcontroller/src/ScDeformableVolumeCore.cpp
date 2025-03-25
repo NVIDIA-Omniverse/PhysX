@@ -63,6 +63,16 @@ Sc::DeformableVolumeCore::DeformableVolumeCore() :
 Sc::DeformableVolumeCore::~DeformableVolumeCore() { }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+// PxActor API
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void Sc::DeformableVolumeCore::setActorFlags(PxActorFlags flags)
+{
+	mCore.actorFlags = flags;
+	mCore.dirty = true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 // PxDeformableBody API
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -93,15 +103,15 @@ void Sc::DeformableVolumeCore::setLinearDamping(const PxReal v)
 	mCore.dirty = true;
 }
 
-void Sc::DeformableVolumeCore::setMaxVelocity(const PxReal v)
+void Sc::DeformableVolumeCore::setMaxLinearVelocity(const PxReal v)
 {
-	mCore.maxVelocity = v;
+	mCore.maxLinearVelocity = v;
 	mCore.dirty = true;
 }
 
-void Sc::DeformableVolumeCore::setMaxDepenetrationVelocity(const PxReal v)
+void Sc::DeformableVolumeCore::setMaxPenetrationBias(const PxReal v)
 {
-	mCore.maxDepenetrationVelocity = v;
+	mCore.maxPenetrationBias = v;
 	mCore.dirty = true;
 }
 
@@ -412,7 +422,7 @@ void Sc::DeformableVolumeCore::onShapeChange(ShapeCore& shape, ShapeChangeNotify
 	DeformableVolumeSim* sim = getSim();
 	if (!sim)
 		return;
-	DeformableVolumeShapeSim& s = sim->getShapeSim();
+	ShapeSimBase& s = sim->getShapeSim();
 
 	if (notifyFlags & ShapeChangeNotifyFlag::eGEOMETRY)
 		s.onVolumeOrTransformChange();

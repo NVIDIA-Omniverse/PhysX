@@ -30,7 +30,6 @@
 #define SC_ARTICULATION_JOINT_CORE_H
 
 #include "foundation/PxTransform.h"
-#include "common/PxMetaData.h"
 #include "DyVArticulation.h"
 
 namespace physx
@@ -56,7 +55,6 @@ namespace Sc
 // PX_SERIALIZATION
 															ArticulationJointCore(const PxEMPTY) : mCore(PxEmpty), mSim(NULL) {}
 						void								preExportDataReset() { mCore.jCalcUpdateFrames = true; }
-		static			void								getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 															ArticulationJointCore(const PxTransform& parentFrame, const PxTransform& childFrame);
 															~ArticulationJointCore();
@@ -91,7 +89,10 @@ namespace Sc
 						PxReal								getJointVelocity(PxArticulationAxis::Enum axis)	const;
 
 						void								setMaxJointVelocity(PxReal maxJointV);
-		PX_FORCE_INLINE	PxReal								getMaxJointVelocity()	const	{ return mCore.maxJointVelocity;	}
+		PX_FORCE_INLINE	PxReal								getMaxJointVelocity()	const	{ return mCore.maxJointVelocity[0];	}
+
+						void								setMaxJointVelocity(PxArticulationAxis::Enum axis, PxReal maxJointV);
+		PX_FORCE_INLINE	PxReal								getMaxJointVelocity(PxArticulationAxis::Enum axis)	const	{ return mCore.maxJointVelocity[axis];	}
 
 		PX_FORCE_INLINE	void								setMotion(PxArticulationAxis::Enum axis, PxArticulationMotion::Enum motion)	{ mCore.motion[axis] = PxU8(motion);						}
 		PX_FORCE_INLINE	PxArticulationMotion::Enum			getMotion(PxArticulationAxis::Enum axis)							const	{ return PxArticulationMotion::Enum(mCore.motion[axis]);	}
@@ -101,6 +102,9 @@ namespace Sc
 						
 						void								setFrictionCoefficient(const PxReal coefficient);
 		PX_FORCE_INLINE	PxReal								getFrictionCoefficient()					const	{ return mCore.frictionCoefficient;				}
+
+						void								setFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams);
+		PX_FORCE_INLINE PxJointFrictionParams				getFrictionParams(PxArticulationAxis::Enum axis) const	{ return mCore.frictionParams[axis];				}
 
 		PX_FORCE_INLINE	ArticulationJointSim*					getSim()									const	{ return mSim;	}
 		PX_FORCE_INLINE	void									setSim(ArticulationJointSim* sim)

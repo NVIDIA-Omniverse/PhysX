@@ -35,24 +35,19 @@ namespace physx
 {
 namespace Dy
 {
-	// PT: TODO: these "solver core" classes are mostly stateless, at this point they could just be function pointers like the solve methods.
-	class SolverCoreGeneral : public SolverCore
-	{
-	public:
-		bool mFrictionEveryIteration;
-		SolverCoreGeneral(bool fricEveryIteration) : mFrictionEveryIteration(fricEveryIteration)	{}
 
-		// SolverCore
-		virtual void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator) const	PX_OVERRIDE	PX_FINAL;
+/*
+solves dual problem exactly by GS-iterating until convergence stops
+only uses regular velocity vector for storing results, and backs up initial state, which is restored.
+the solution forces are saved in a vector.
 
-		virtual void solveV_Blocks(SolverIslandParams& params) const	PX_OVERRIDE	PX_FINAL;
-		//~SolverCore
-	};
+state should not be stored, this function is safe to call from multiple threads.
+*/
+void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator, 
+	bool solveFrictionEveryIteration);
 
-	// PT: TODO: we use "extern" instead of functions for TGS. Unify.
-	SolveBlockMethod* getSolveBlockTable();
-	SolveBlockMethod* getSolverConcludeBlockTable();
-	SolveWriteBackBlockMethod* getSolveWritebackBlockTable();
+void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration);
+
 }
 }
 

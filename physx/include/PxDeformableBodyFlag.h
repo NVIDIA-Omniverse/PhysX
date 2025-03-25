@@ -50,7 +50,7 @@ struct PxDeformableBodyFlag
 	};
 };
 
-typedef PxFlags<PxDeformableBodyFlag::Enum, PxU16> PxDeformableBodyFlags;
+typedef PxFlags<PxDeformableBodyFlag::Enum, PxU8> PxDeformableBodyFlags;
 
 #if !PX_DOXYGEN
 }

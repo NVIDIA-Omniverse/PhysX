@@ -181,14 +181,14 @@ PxReal NpDeformableSurfaceMaterial::getBendingStiffness() const
 void NpDeformableSurfaceMaterial::setElasticityDamping(PxReal x)
 {
 	PX_CHECK_AND_RETURN(x >= 0.f, "PxDeformableSurfaceMaterial::setElasticityDamping: invalid float");
-	mMaterial.damping = x;
+	mMaterial.elasticityDamping = x;
 
 	updateMaterial();
 }
 
 PxReal NpDeformableSurfaceMaterial::getElasticityDamping() const
 {
-	return mMaterial.damping;
+	return mMaterial.elasticityDamping;
 }
 
 void NpDeformableSurfaceMaterial::setBendingDamping(PxReal x)

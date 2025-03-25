@@ -215,6 +215,12 @@ namespace Sc
 		PxMutex mTriggerWriteBackLock;
 	};
 
+	typedef PxPool2<ElementInteractionMarker, 4096>		ElementInteractionMarkerPool;
+	typedef PxPool2<ActorPairContactReportData, 4096>	ActorPairContactReportDataPool;
+	typedef PxPool2<TriggerInteraction, 4096>			TriggerInteractionPool;
+	typedef PxPool2<ActorPairReport, 4096>				ActorPairReportPool;
+	typedef PxPool2<ActorPair, 4096>					ActorPairPool;
+
 	class NPhaseCore : public PxUserAllocated
 	{
 		PX_NOCOPY(NPhaseCore)
@@ -227,8 +233,8 @@ namespace Sc
 
 		void	onTriggerOverlapCreated(const Bp::AABBOverlap* PX_RESTRICT pairs, PxU32 pairCount);
 
-		void	runOverlapFilters(	PxU32 nbToProcess, const Bp::AABBOverlap* PX_RESTRICT pairs, FilterInfo* PX_RESTRICT filterInfo,
-									PxU32& nbToKeep, PxU32& nbToSuppress, PxU32* PX_RESTRICT keepMap);
+		void	runOverlapFilters(	PxU32 nbToProcess, Bp::AABBOverlap* PX_RESTRICT pairs, FilterInfo* PX_RESTRICT filterInfo,
+									PxU32& nbToKeep, PxU32& nbToSuppress)	const;
 
 		void onOverlapRemoved(ElementSim* volume0, ElementSim* volume1, PxU32 ccdPass, void* elemSim, PxsContactManagerOutputIterator& outputs);
 		void onVolumeRemoved(ElementSim* volume, PxU32 flags, PxsContactManagerOutputIterator& outputs);
@@ -352,12 +358,12 @@ namespace Sc
 
 		PxCoalescedHashSet<Interaction*>			mDirtyInteractions;
 		// Pools
-		PxPool<ActorPair>							mActorPairPool;
-		PxPool<ActorPairReport>						mActorPairReportPool;
+		ActorPairPool								mActorPairPool;
+		ActorPairReportPool							mActorPairReportPool;
 		PxPool<ShapeInteraction>					mShapeInteractionPool;
-		PxPool<TriggerInteraction>					mTriggerInteractionPool;
-		PxPool<ActorPairContactReportData>			mActorPairContactReportDataPool;
-		PxPool<ElementInteractionMarker>			mInteractionMarkerPool;
+		TriggerInteractionPool						mTriggerInteractionPool;
+		ActorPairContactReportDataPool				mActorPairContactReportDataPool;
+		ElementInteractionMarkerPool				mInteractionMarkerPool;
 
 		Cm::DelegateTask<NPhaseCore, &NPhaseCore::concludeTriggerInteractionProcessing> mConcludeTriggerInteractionProcessingTask;
 		TriggerProcessingContext					mTriggerProcessingContext;

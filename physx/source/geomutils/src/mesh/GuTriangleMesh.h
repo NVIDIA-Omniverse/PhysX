@@ -84,7 +84,6 @@ public:
 								void					preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 	virtual						void					exportExtraData(PxSerializationContext& context);
 								void					importExtraData(PxDeserializationContext& context);
-	PX_PHYSX_COMMON_API	static	void					getBinaryMetaData(PxOutputStream& stream);
 	virtual						void					release();
 	virtual						void					requiresObjects(PxProcessPxBaseCallback&){}
 //~PX_SERIALIZATION

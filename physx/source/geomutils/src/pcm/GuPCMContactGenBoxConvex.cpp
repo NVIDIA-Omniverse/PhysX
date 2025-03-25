@@ -390,7 +390,7 @@ static void generatedContacts(const PolygonalData& polyData0, const PolygonalDat
 	PxU32 inside = 0;
 	for(PxU32 i=0; i<incidentPolygon.mNbVerts; ++i)
 	{
-		const Vec3V vert1 =points1In0[i]; //this still in polyData1's local space
+		const Vec3V vert1 = points1In0[i]; //this still in polyData1's local space
 		const Vec3V a = transform0To1.transformInv(vert1);
 		points1In0[i] = M33MulV3(rot, a);
 		const FloatV z = V3GetZ(points1In0[i]);
@@ -488,7 +488,7 @@ static void generatedContacts(const PolygonalData& polyData0, const PolygonalDat
 			const Vec3V rMin = V3Min(rpA, rpB);
 			const Vec3V rMax = V3Max(rpA, rpB);
 				
-			const BoolV tempCon =BOr(V3IsGrtr(iMin, rMax), V3IsGrtr(rMin, iMax));
+			const BoolV tempCon = BOr(V3IsGrtr(iMin, rMax), V3IsGrtr(rMin, iMax));
 			const BoolV con = BOr(BGetX(tempCon), BGetY(tempCon));
 		
 			if(BAllEqTTTT(con))

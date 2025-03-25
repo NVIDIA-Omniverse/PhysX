@@ -209,7 +209,7 @@ namespace physx { namespace Sn {
 			XmlNode* theChild( mCurrentNode->findChildByName( inName ) );
 			if ( theChild )
 			{
-				mCurrentNode =theChild;
+				mCurrentNode = theChild;
 				return true;
 			}
 			return false;

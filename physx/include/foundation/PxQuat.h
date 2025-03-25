@@ -294,6 +294,30 @@ class PxQuatT
 						     (vz * w2 + (x * vy - y * vx) * w + z * dot2));
 	}
 
+	/** \brief computes inverse rotation of x-axis */
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3T<Type> getInvBasisVector0() const
+	{
+		const Type x2 = x * Type(2.0);
+		const Type w2 = w * Type(2.0);
+		return PxVec3T<Type>((w * w2) - Type(1.0) + x * x2, (-z * w2) + y * x2, (y * w2) + z * x2);
+	}
+
+	/** \brief computes the inverse rotation of the y-axis */
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3T<Type> getInvBasisVector1() const
+	{
+		const Type y2 = y * Type(2.0);
+		const Type w2 = w * Type(2.0);
+		return PxVec3T<Type>((z * w2) + x * y2, (w * w2) - Type(1.0) + y * y2, (-x * w2) + z * y2);
+	}
+
+	/** \brief computes the inverse rotation of the z-axis */
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3T<Type> getInvBasisVector2() const
+	{
+		const Type z2 = z * Type(2.0);
+		const Type w2 = w * Type(2.0);
+		return PxVec3T<Type>((-y * w2) + x * z2, (x * w2) + y * z2, (w * w2) - Type(1.0) + z * z2);
+	}
+
 	/**
 	inverse rotates passed vec by this (assumed unitary)
 	*/

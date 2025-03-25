@@ -30,6 +30,13 @@
 #define PXC_NP_WORK_UNIT_H
 
 #include "PxConstraintDesc.h"
+#include "PxvGeometry.h"
+
+// PT: the shapeCore structs are 16-bytes aligned by design so the low 4 bits of their pointers are available.
+// We can store the geom types there since they fit. An alternative would be simply to read the types from
+// shapeCore->mGeometry.getType() but that is one more indirection/cache miss. We might be using other shapeCore
+// data everywhere we need the type so that might be irrelevant and could be revisited.
+PX_COMPILE_TIME_ASSERT(physx::PxGeometryType::eGEOMETRY_COUNT<16);
 
 namespace physx
 {
@@ -59,6 +66,8 @@ struct PxcNpWorkUnitFlag
 		eHAS_KINEMATIC_ACTOR		= 1 << 11,
 		eDISABLE_RESPONSE			= 1 << 12,
 		eDETECT_CCD_CONTACTS		= 1 << 13,
+		eDOMINANCE_0				= 1 << 14,
+		eDOMINANCE_1				= 1 << 15,
 	};
 };
 
@@ -81,38 +90,113 @@ struct PxcNpWorkUnitStatusFlag
 
 struct PxcNpWorkUnit
 {
-	const PxsRigidCore*	mRigidCore0;				// INPUT								//4		//8
-	const PxsRigidCore*	mRigidCore1;				// INPUT								//8		//16
+	const PxsRigidCore*	mRigidCore0;				// INPUT								//8
+	const PxsRigidCore*	mRigidCore1;				// INPUT								//16
 		
-	const PxsShapeCore*	mShapeCore0;				// INPUT								//12	//24
-	const PxsShapeCore*	mShapeCore1;				// INPUT								//16	//32
+	private:
+	const void*			mShapeCoreAndType0;			// INPUT								//24
+	const void*			mShapeCoreAndType1;			// INPUT								//32
+	public:
 
-	PxU8*				mCCDContacts;				// OUTPUT								//20	//40
+	PxU8*				mCCDContacts;				// OUTPUT								//40
+	PxU8*				mFrictionDataPtr;			// INOUT								//48
 
-	PxU8*				mFrictionDataPtr;			// INOUT								//24	//48
+	PxU16				mFlags;						// INPUT								//50
+	PxU8				mFrictionPatchCount;		// INOUT 								//51
+	PxU8				mStatusFlags;				// OUTPUT (see PxcNpWorkUnitStatusFlag) //52
 
-	PxU16				mFlags;						// INPUT								//26	//50
-	PxU8				mFrictionPatchCount;		// INOUT 								//27	//51
-	PxU8				mStatusFlags;				// OUTPUT (see PxcNpWorkUnitStatusFlag) //28	//52
+	PxReal				mRestDistance;				// INPUT								//56
 
-	PxU8				mDominance0;				// INPUT								//29	//53
-	PxU8				mDominance1;				// INPUT								//30	//54
-	PxU8				mGeomType0;					// INPUT								//31	//55
-	PxU8				mGeomType1;					// INPUT								//32	//56
-
-	PxU32				mIndex;						// INPUT								//36	//60
-
-	PxReal				mRestDistance;				// INPUT								//40	//64
-
-	PxU32				mTransformCache0;			//										//44	//68
-	PxU32				mTransformCache1;			//										//48	//72
+	PxU32				mTransformCache0;			//										//60
+	PxU32				mTransformCache1;			//										//64
 	
-	IG::EdgeIndex		mEdgeIndex;					//inout the island gen edge index		//52	//76
-	PxU32				mNpIndex;					//INPUT									//56	//80
+	IG::EdgeIndex		mEdgeIndex;					//inout the island gen edge index		//68
+	PxU32				mNpIndex;					//INPUT									//72
 
-	PxReal				mTorsionalPatchRadius;												//60	//84
-	PxReal				mMinTorsionalPatchRadius;											//64	//88
-	PxReal				mOffsetSlop;														//68	//92
+	PxReal				mTorsionalPatchRadius;												//76
+	PxReal				mMinTorsionalPatchRadius;											//80
+	PxReal				mOffsetSlop;														//84
+																							//88 pading
+
+	///////////////////////////////////////////////////////////////////////////
+
+	PX_FORCE_INLINE	const void*	encode(const PxsShapeCore* shapeCore)
+	{
+		const PxU64 type = PxU64(shapeCore->mGeometry.getType());
+		PxU64 data = PxU64(shapeCore);
+		PX_ASSERT(!(data & 15));
+		data |= type;
+		return reinterpret_cast<const void*>(data);
+	}
+
+	PX_FORCE_INLINE	void	setShapeCore0(const PxsShapeCore* shapeCore)
+	{
+		mShapeCoreAndType0 = encode(shapeCore);
+	}
+
+	PX_FORCE_INLINE	void	setShapeCore1(const PxsShapeCore* shapeCore)
+	{
+		mShapeCoreAndType1 = encode(shapeCore);
+	}
+
+	PX_FORCE_INLINE	const PxsShapeCore*	getShapeCore0()	const
+	{
+		return reinterpret_cast<const PxsShapeCore*>(PxU64(mShapeCoreAndType0) & ~15);
+	}
+
+	PX_FORCE_INLINE	const PxsShapeCore*	getShapeCore1()	const
+	{
+		return reinterpret_cast<const PxsShapeCore*>(PxU64(mShapeCoreAndType1) & ~15);
+	}
+
+	PX_FORCE_INLINE	PxGeometryType::Enum	getGeomType0()	const
+	{
+		return PxGeometryType::Enum(PxU64(mShapeCoreAndType0) & 15);
+	}
+
+	PX_FORCE_INLINE	PxGeometryType::Enum	getGeomType1()	const
+	{
+		return PxGeometryType::Enum(PxU64(mShapeCoreAndType1) & 15);
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+
+	PX_FORCE_INLINE	PxU8	getDominance0()	const
+	{
+		return (mFlags & PxcNpWorkUnitFlag::eDOMINANCE_0) ? 0 : 1;
+	}
+
+	PX_FORCE_INLINE	void	setDominance0(PxU8 v)
+	{
+		if(v==0)
+			mFlags |= PxcNpWorkUnitFlag::eDOMINANCE_0;
+		else
+			mFlags &= ~PxcNpWorkUnitFlag::eDOMINANCE_0;
+	}
+
+	PX_FORCE_INLINE	PxU8	getDominance1()	const
+	{
+		return (mFlags & PxcNpWorkUnitFlag::eDOMINANCE_1) ? 0 : 1;
+	}
+
+	PX_FORCE_INLINE	void	setDominance1(PxU8 v)
+	{
+		if(v==0)
+			mFlags |= PxcNpWorkUnitFlag::eDOMINANCE_1;
+		else
+			mFlags &= ~PxcNpWorkUnitFlag::eDOMINANCE_1;
+	}
+
+	PX_FORCE_INLINE	void	setInvMassScaleFromDominance(PxConstraintInvMassScale& invMassScales)	const
+	{
+		const PxReal dominance0 = getDominance0() ? 1.0f : 0.0f;
+		const PxReal dominance1 = getDominance1() ? 1.0f : 0.0f;
+
+		invMassScales.linear0 = invMassScales.angular0 = dominance0;
+		invMassScales.linear1 = invMassScales.angular1 = dominance1;
+	}
+
+	///////////////////////////////////////////////////////////////////////////
 
 	PX_FORCE_INLINE void	clearCachedState()
 	{
@@ -122,13 +206,6 @@ struct PxcNpWorkUnit
 	}
 };
 
-//#if !defined(PX_P64)
-//PX_COMPILE_TIME_ASSERT(0 == (sizeof(PxcNpWorkUnit) & 0x0f));
-//#endif
-
-#if !defined(PX_P64)
-//PX_COMPILE_TIME_ASSERT(sizeof(PxcNpWorkUnit)==128);
-#endif
 }
 
 #endif

@@ -46,7 +46,6 @@ namespace physx
 													PruningStructure(PxBaseFlags baseFlags);			
 			virtual			void					resolveReferences(PxDeserializationContext& );
 			static			PruningStructure*		createObject(PxU8*& address, PxDeserializationContext& context);
-			static			void					getBinaryMetaData(PxOutputStream& stream);
 							void					preExportDataReset() {}
 							void					exportExtraData(PxSerializationContext&);
 							void					importExtraData(PxDeserializationContext&);

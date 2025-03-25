@@ -30,6 +30,7 @@
 #define CM_PTR_TABLE_H
 
 #include "foundation/PxConstructor.h"
+#include "foundation/PxIO.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx
@@ -97,8 +98,6 @@ struct PX_PHYSX_COMMON_API PtrTable
 
 	void	exportExtraData(PxSerializationContext& stream);
 	void	importExtraData(PxDeserializationContext& context);
-
-	static void getBinaryMetaData(physx::PxOutputStream& stream);
 
 private:
 	void realloc(PxU32 oldCapacity, PxU32 newCapacity, PtrTableStorageManager& sm);

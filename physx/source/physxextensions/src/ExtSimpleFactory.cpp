@@ -102,7 +102,7 @@ PxRigidDynamic* PxCreateDynamic(PxPhysics& sdk,
 
 	shape->setLocalPose(shapeOffset);
 
-	PxRigidDynamic* body = shape ? PxCreateDynamic(sdk, transform, *shape, density) : NULL;
+	PxRigidDynamic* body = PxCreateDynamic(sdk, transform, *shape, density);
 	shape->release();
 	return body;
 }

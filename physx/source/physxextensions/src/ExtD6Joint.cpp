@@ -351,6 +351,14 @@ void D6Joint::setDriveVelocity(const PxVec3& linear, const PxVec3& angular, bool
 #endif
 }
 
+PxD6JointGPUIndex D6Joint::getGPUIndex() const
+{
+	PX_COMPILE_TIME_ASSERT(sizeof(PxD6JointGPUIndex) == sizeof(PxConstraintGPUIndex));
+	PX_COMPILE_TIME_ASSERT(PX_INVALID_D6_JOINT_GPU_INDEX == PX_INVALID_CONSTRAINT_GPU_INDEX);
+
+	return getConstraint()->getGPUIndex();
+}
+
 void* D6Joint::prepareData()
 {
 	D6JointData& d = data();

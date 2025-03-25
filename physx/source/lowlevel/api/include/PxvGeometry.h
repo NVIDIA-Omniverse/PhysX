@@ -69,13 +69,13 @@ struct MaterialIndicesStruct
 {
 // PX_SERIALIZATION
 	MaterialIndicesStruct(const PxEMPTY)	{}
-	static void getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 
 	MaterialIndicesStruct()
 	:	indices(NULL)
 	,	numIndices(0)
 	,	pad(PX_PADDING_16)
+	,	gpuRemapId(0)
 	{
 	}
 
@@ -142,7 +142,6 @@ class GeometryUnion
 public:
 // PX_SERIALIZATION
 	GeometryUnion(const PxEMPTY)	{}
-	static	void	getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE						GeometryUnion()						{ reinterpret_cast<InvalidGeometry&>(mGeometry) = InvalidGeometry(); }

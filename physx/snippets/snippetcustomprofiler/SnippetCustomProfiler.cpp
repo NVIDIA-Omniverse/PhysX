@@ -130,6 +130,11 @@ public:
 		printf("data: %s (context ID %llu) = %f\n", valueName, (unsigned long long)contextId, (double)value);
 	}
 
+	virtual void recordFrame(const char* name, uint64_t contextId)
+	{
+		printf("frame: %s (context ID %llu)\n", name, (unsigned long long)contextId);
+	}
+
 }gCustomProfilerCallback;
 
 void initPhysics(bool interactive)

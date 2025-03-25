@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -31,252 +32,285 @@
 
 struct NvFlowReadbackBufferInstance
 {
-	NvFlowBuffer* buffer = nullptr;
-	NvFlowUint64 bufferSizeInBytes = 0llu;
-	NvFlowBool32 isActive = NV_FLOW_FALSE;
-	NvFlowUint64 completedFrame = ~0llu;
-	NvFlowUint64 completedGlobalFrame = ~0llu;
-	NvFlowUint64 version = ~0llu;
-	NvFlowUint64 validNumBytes = 0llu;
+    NvFlowBuffer* buffer = nullptr;
+    NvFlowUint64 bufferSizeInBytes = 0llu;
+    NvFlowBool32 isActive = NV_FLOW_FALSE;
+    NvFlowUint64 completedFrame = ~0llu;
+    NvFlowUint64 completedGlobalFrame = ~0llu;
+    NvFlowUint64 version = ~0llu;
+    NvFlowUint64 validNumBytes = 0llu;
 };
 
 struct NvFlowReadbackBuffer
 {
-	NvFlowContextInterface* contextInterface = nullptr;
-	NvFlowUint64 versionCounter = 0llu;
+    NvFlowContextInterface* contextInterface = nullptr;
+    NvFlowUint64 versionCounter = 0llu;
+    NvFlowUint ringBufferCount = 0u;
 
-	NvFlowArray<NvFlowReadbackBufferInstance, 8u> buffers;
-	NvFlowArray<NvFlowUint64, 8u> activeBuffers;
+    NvFlowArray<NvFlowReadbackBufferInstance, 8u> buffers;
+    NvFlowArray<NvFlowUint64, 8u> activeBuffers;
+    NvFlowArray<NvFlowBuffer*, 8u> retainedBuffers;
 };
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_init(NvFlowContextInterface* contextInterface, NvFlowContext* context, NvFlowReadbackBuffer* ptr)
 {
-	ptr->contextInterface = contextInterface;
+    ptr->contextInterface = contextInterface;
 }
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_destroy(NvFlowContext* context, NvFlowReadbackBuffer* ptr)
 {
-	for (NvFlowUint idx = 0u; idx < ptr->buffers.size; idx++)
-	{
-		if (ptr->buffers[idx].buffer)
-		{
-			ptr->contextInterface->destroyBuffer(context, ptr->buffers[idx].buffer);
-			ptr->buffers[idx].buffer = nullptr;
-		}
-	}
-	ptr->buffers.size = 0u;
+    for (NvFlowUint idx = 0u; idx < ptr->buffers.size; idx++)
+    {
+        if (ptr->buffers[idx].buffer)
+        {
+            ptr->contextInterface->destroyBuffer(context, ptr->buffers[idx].buffer);
+            ptr->buffers[idx].buffer = nullptr;
+        }
+    }
+    ptr->buffers.size = 0u;
+    for (NvFlowUint idx = 0u; idx < ptr->retainedBuffers.size; idx++)
+    {
+        if (ptr->retainedBuffers[idx])
+        {
+            ptr->contextInterface->destroyBuffer(context, ptr->retainedBuffers[idx]);
+            ptr->retainedBuffers[idx] = nullptr;
+        }
+    }
+    ptr->retainedBuffers.size = 0u;
+}
+
+NV_FLOW_INLINE void NvFlowReadbackBuffer_setRingBufferCount(NvFlowReadbackBuffer* ptr, NvFlowUint ringBufferCount)
+{
+    ptr->ringBufferCount = ringBufferCount;
 }
 
 struct NvFlowReadbackBufferCopyRange
 {
-	NvFlowUint64 offset;
-	NvFlowUint64 numBytes;
+    NvFlowUint64 offset;
+    NvFlowUint64 numBytes;
 };
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_copyN(NvFlowContext* context, NvFlowReadbackBuffer* ptr, NvFlowUint64 numBytes, NvFlowBufferTransient* src, const NvFlowReadbackBufferCopyRange* copyRanges, NvFlowUint copyRangeCount, NvFlowUint64* pOutVersion)
 {
-	// find inactive buffer, create as needed
-	NvFlowUint64 bufferIdx = 0u;
-	for (; bufferIdx < ptr->buffers.size; bufferIdx++)
-	{
-		if (!ptr->buffers[bufferIdx].isActive)
-		{
-			break;
-		}
-	}
-	if (bufferIdx == ptr->buffers.size)
-	{
-		bufferIdx = ptr->buffers.allocateBack();
-	}
-	NvFlowReadbackBufferInstance* inst = &ptr->buffers[bufferIdx];
-	
-	// resize buffer as needed
-	if (inst->buffer && inst->bufferSizeInBytes < numBytes)
-	{
-		ptr->contextInterface->destroyBuffer(context, inst->buffer);
-		inst->buffer = nullptr;
-		inst->bufferSizeInBytes = 0llu;
-	}
-	if (!inst->buffer)
-	{
-		NvFlowBufferDesc bufDesc = {};
-		bufDesc.usageFlags = eNvFlowBufferUsage_bufferCopyDst;
-		bufDesc.format = eNvFlowFormat_unknown;
-		bufDesc.structureStride = 0u;
-		bufDesc.sizeInBytes = 65536u;
-		while (bufDesc.sizeInBytes < numBytes)
-		{
-			bufDesc.sizeInBytes *= 2u;
-		}
+    // find inactive buffer, create as needed
+    NvFlowUint64 bufferIdx = 0u;
+    for (; bufferIdx < ptr->buffers.size; bufferIdx++)
+    {
+        if (!ptr->buffers[bufferIdx].isActive)
+        {
+            break;
+        }
+    }
+    if (bufferIdx == ptr->buffers.size)
+    {
+        bufferIdx = ptr->buffers.allocateBack();
+    }
+    NvFlowReadbackBufferInstance* inst = &ptr->buffers[bufferIdx];
 
-		inst->buffer = ptr->contextInterface->createBuffer(context, eNvFlowMemoryType_readback, &bufDesc);
-		inst->bufferSizeInBytes = bufDesc.sizeInBytes;
-	}
+    // resize buffer as needed
+    if (inst->buffer && inst->bufferSizeInBytes < numBytes)
+    {
+        if (ptr->ringBufferCount == 0u)
+        {
+            ptr->contextInterface->destroyBuffer(context, inst->buffer);
+        }
+        else  // defer release to minimize segfault risk
+        {
+            ptr->retainedBuffers.pushBack(inst->buffer);
+        }
+        inst->buffer = nullptr;
+        inst->bufferSizeInBytes = 0llu;
+    }
+    if (!inst->buffer)
+    {
+        NvFlowBufferDesc bufDesc = {};
+        bufDesc.usageFlags = eNvFlowBufferUsage_bufferCopyDst;
+        bufDesc.format = eNvFlowFormat_unknown;
+        bufDesc.structureStride = 0u;
+        bufDesc.sizeInBytes = 65536u;
+        while (bufDesc.sizeInBytes < numBytes)
+        {
+            bufDesc.sizeInBytes *= 2u;
+        }
 
-	// set active state
-	ptr->versionCounter++;
-	inst->isActive = NV_FLOW_TRUE;
-	inst->completedFrame = ptr->contextInterface->getCurrentFrame(context);
-	inst->completedGlobalFrame = ptr->contextInterface->getCurrentGlobalFrame(context);
-	inst->version = ptr->versionCounter;
-	inst->validNumBytes = numBytes;
-	if (pOutVersion)
-	{
-		*pOutVersion = inst->version;
-	}
+        inst->buffer = ptr->contextInterface->createBuffer(context, eNvFlowMemoryType_readback, &bufDesc);
+        inst->bufferSizeInBytes = bufDesc.sizeInBytes;
+    }
 
-	// copy
-	NvFlowBufferTransient* dst = ptr->contextInterface->registerBufferAsTransient(context, inst->buffer);
-	for (NvFlowUint copyRangeIdx = 0u; copyRangeIdx < copyRangeCount; copyRangeIdx++)
-	{
-		NvFlowPassCopyBufferParams copyParams = {};
-		copyParams.srcOffset = copyRanges[copyRangeIdx].offset;
-		copyParams.dstOffset = copyRanges[copyRangeIdx].offset;
-		copyParams.numBytes = copyRanges[copyRangeIdx].numBytes;
-		copyParams.src = src;
-		copyParams.dst = dst;
+    // set active state
+    ptr->versionCounter++;
+    inst->isActive = NV_FLOW_TRUE;
+    inst->completedFrame = ptr->contextInterface->getCurrentFrame(context);
+    inst->completedGlobalFrame = ptr->contextInterface->getCurrentGlobalFrame(context);
+    inst->version = ptr->versionCounter;
+    inst->validNumBytes = numBytes;
+    if (pOutVersion)
+    {
+        *pOutVersion = inst->version;
+    }
 
-		copyParams.debugLabel = "ReadbackBufferCopy";
+    // copy
+    NvFlowBufferTransient* dst = ptr->contextInterface->registerBufferAsTransient(context, inst->buffer);
+    for (NvFlowUint copyRangeIdx = 0u; copyRangeIdx < copyRangeCount; copyRangeIdx++)
+    {
+        NvFlowPassCopyBufferParams copyParams = {};
+        copyParams.srcOffset = copyRanges[copyRangeIdx].offset;
+        copyParams.dstOffset = copyRanges[copyRangeIdx].offset;
+        copyParams.numBytes = copyRanges[copyRangeIdx].numBytes;
+        copyParams.src = src;
+        copyParams.dst = dst;
 
-		ptr->contextInterface->addPassCopyBuffer(context, &copyParams);
-	}
-	if (copyRangeCount == 0u)
-	{
-		NvFlowPassCopyBufferParams copyParams = {};
-		copyParams.srcOffset = 0llu;
-		copyParams.dstOffset = 0llu;
-		copyParams.numBytes = 0llu;
-		copyParams.src = src;
-		copyParams.dst = dst;
+        copyParams.debugLabel = "ReadbackBufferCopy";
 
-		copyParams.debugLabel = "ReadbackBufferCopy";
+        ptr->contextInterface->addPassCopyBuffer(context, &copyParams);
+    }
+    if (copyRangeCount == 0u)
+    {
+        NvFlowPassCopyBufferParams copyParams = {};
+        copyParams.srcOffset = 0llu;
+        copyParams.dstOffset = 0llu;
+        copyParams.numBytes = 0llu;
+        copyParams.src = src;
+        copyParams.dst = dst;
 
-		ptr->contextInterface->addPassCopyBuffer(context, &copyParams);
-	}
+        copyParams.debugLabel = "ReadbackBufferCopy";
 
-	// push on active queue
-	ptr->activeBuffers.pushBack(bufferIdx);
+        ptr->contextInterface->addPassCopyBuffer(context, &copyParams);
+    }
+
+    // push on active queue
+    ptr->activeBuffers.pushBack(bufferIdx);
 }
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_copy(NvFlowContext* context, NvFlowReadbackBuffer* ptr, NvFlowUint64 numBytes, NvFlowBufferTransient* src, NvFlowUint64* pOutVersion)
 {
-	NvFlowReadbackBufferCopyRange copyRange = { 0llu, numBytes };
-	NvFlowReadbackBuffer_copyN(context, ptr, numBytes, src, &copyRange, 1u, pOutVersion);
+    NvFlowReadbackBufferCopyRange copyRange = { 0llu, numBytes };
+    NvFlowReadbackBuffer_copyN(context, ptr, numBytes, src, &copyRange, 1u, pOutVersion);
 }
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_flush(NvFlowContext* context, NvFlowReadbackBuffer* ptr)
 {
-	// flush queue
-	NvFlowUint completedCount = 0u;
-	NvFlowUint64 lastFenceCompleted = ptr->contextInterface->getLastFrameCompleted(context);
-	for (NvFlowUint activeBufferIdx = 0u; activeBufferIdx < ptr->activeBuffers.size; activeBufferIdx++)
-	{
-		if (ptr->buffers[ptr->activeBuffers[activeBufferIdx]].completedFrame > lastFenceCompleted)
-		{
-			break;
-		}
-		completedCount++;
-	}
-	NvFlowUint popCount = completedCount >= 2u ? completedCount - 1u : 0u;
-	if (popCount > 0u)
-	{
-		for (NvFlowUint activeBufferIdx = 0u; activeBufferIdx < popCount; activeBufferIdx++)
-		{
-			ptr->buffers[ptr->activeBuffers[activeBufferIdx]].isActive = NV_FLOW_FALSE;
-		}
-		// compact
-		for (NvFlowUint activeBufferIdx = popCount; activeBufferIdx < ptr->activeBuffers.size; activeBufferIdx++)
-		{
-			ptr->activeBuffers[activeBufferIdx - popCount] = ptr->activeBuffers[activeBufferIdx];
-		}
-		ptr->activeBuffers.size = ptr->activeBuffers.size - popCount;
-	}
+    // flush queue
+    NvFlowUint completedCount = 0u;
+    NvFlowUint64 lastFenceCompleted = ptr->contextInterface->getLastFrameCompleted(context);
+    for (NvFlowUint activeBufferIdx = 0u; activeBufferIdx < ptr->activeBuffers.size; activeBufferIdx++)
+    {
+        if (ptr->buffers[ptr->activeBuffers[activeBufferIdx]].completedFrame > lastFenceCompleted)
+        {
+            break;
+        }
+        completedCount++;
+    }
+    NvFlowUint popCount = completedCount >= 2u ? completedCount - 1u : 0u;
+    if (ptr->ringBufferCount != 0u)
+    {
+        NvFlowUint activeCount = (NvFlowUint)ptr->activeBuffers.size;
+        NvFlowUint ringTargetCount = ptr->ringBufferCount - 1u;
+        NvFlowUint ringPopCount = (activeCount > ringTargetCount) ? (activeCount - ringTargetCount) : 0u;
+        if (ringPopCount < popCount)
+        {
+            popCount = ringPopCount;
+        }
+    }
+    if (popCount > 0u)
+    {
+        for (NvFlowUint activeBufferIdx = 0u; activeBufferIdx < popCount; activeBufferIdx++)
+        {
+            ptr->buffers[ptr->activeBuffers[activeBufferIdx]].isActive = NV_FLOW_FALSE;
+        }
+        // compact
+        for (NvFlowUint activeBufferIdx = popCount; activeBufferIdx < ptr->activeBuffers.size; activeBufferIdx++)
+        {
+            ptr->activeBuffers[activeBufferIdx - popCount] = ptr->activeBuffers[activeBufferIdx];
+        }
+        ptr->activeBuffers.size = ptr->activeBuffers.size - popCount;
+    }
 }
 
 NV_FLOW_INLINE NvFlowUint NvFlowReadbackBuffer_getActiveCount(NvFlowContext* context, NvFlowReadbackBuffer* ptr)
 {
-	return (NvFlowUint)ptr->activeBuffers.size;
+    return (NvFlowUint)ptr->activeBuffers.size;
 }
 
 NV_FLOW_INLINE NvFlowUint64 NvFlowReadbackBuffer_getCompletedGlobalFrame(NvFlowContext* context, NvFlowReadbackBuffer* ptr, NvFlowUint activeIdx)
 {
-	if (activeIdx < ptr->activeBuffers.size)
-	{
-		return ptr->buffers[ptr->activeBuffers[activeIdx]].completedGlobalFrame;
-	}
-	return ~0llu;
+    if (activeIdx < ptr->activeBuffers.size)
+    {
+        return ptr->buffers[ptr->activeBuffers[activeIdx]].completedGlobalFrame;
+    }
+    return ~0llu;
 }
 
 NV_FLOW_INLINE void* NvFlowReadbackBuffer_map(NvFlowContext* context, NvFlowReadbackBuffer* ptr, NvFlowUint activeIdx, NvFlowUint64* pOutVersion, NvFlowUint64* pNumBytes)
 {
-	if (activeIdx > ptr->activeBuffers.size)
-	{
-		if (pOutVersion)
-		{
-			*pOutVersion = 0llu;
-		}
-		if (pNumBytes)
-		{
-			*pNumBytes = 0llu;
-		}
-		return nullptr;
-	}
+    if (activeIdx > ptr->activeBuffers.size)
+    {
+        if (pOutVersion)
+        {
+            *pOutVersion = 0llu;
+        }
+        if (pNumBytes)
+        {
+            *pNumBytes = 0llu;
+        }
+        return nullptr;
+    }
 
-	NvFlowReadbackBufferInstance* inst = &ptr->buffers[ptr->activeBuffers[activeIdx]];
-	if (pOutVersion)
-	{
-		*pOutVersion = inst->version;
-	}
-	if (pNumBytes)
-	{
-		*pNumBytes = inst->validNumBytes;
-	}
-	return ptr->contextInterface->mapBuffer(context, inst->buffer);
+    NvFlowReadbackBufferInstance* inst = &ptr->buffers[ptr->activeBuffers[activeIdx]];
+    if (pOutVersion)
+    {
+        *pOutVersion = inst->version;
+    }
+    if (pNumBytes)
+    {
+        *pNumBytes = inst->validNumBytes;
+    }
+    return ptr->contextInterface->mapBuffer(context, inst->buffer);
 }
 
 NV_FLOW_INLINE void* NvFlowReadbackBuffer_mapLatest(NvFlowContext* context, NvFlowReadbackBuffer* ptr, NvFlowUint64* pOutVersion, NvFlowUint64* pNumBytes)
 {
-	NvFlowReadbackBuffer_flush(context, ptr);
+    NvFlowReadbackBuffer_flush(context, ptr);
 
-	NvFlowUint64 lastFenceCompleted = ptr->contextInterface->getLastFrameCompleted(context);
-	bool shouldMap = true;
-	if (ptr->activeBuffers.size > 0u)
-	{
-		if (ptr->buffers[ptr->activeBuffers[0u]].completedFrame > lastFenceCompleted)
-		{
-			shouldMap = false;
-		}
-	}
-	else if (ptr->buffers[ptr->activeBuffers[0u]].completedFrame > lastFenceCompleted)
-	{
-		shouldMap = false;
-	}
-	if (!shouldMap)
-	{
-		if (pOutVersion)
-		{
-			*pOutVersion = 0llu;
-		}
-		if (pNumBytes)
-		{
-			*pNumBytes = 0llu;
-		}
-		return nullptr;
-	}
+    NvFlowUint64 lastFenceCompleted = ptr->contextInterface->getLastFrameCompleted(context);
+    bool shouldMap = true;
+    if (ptr->activeBuffers.size > 0u)
+    {
+        if (ptr->buffers[ptr->activeBuffers[0u]].completedFrame > lastFenceCompleted)
+        {
+            shouldMap = false;
+        }
+    }
+    else if (ptr->buffers[ptr->activeBuffers[0u]].completedFrame > lastFenceCompleted)
+    {
+        shouldMap = false;
+    }
+    if (!shouldMap)
+    {
+        if (pOutVersion)
+        {
+            *pOutVersion = 0llu;
+        }
+        if (pNumBytes)
+        {
+            *pNumBytes = 0llu;
+        }
+        return nullptr;
+    }
 
-	return NvFlowReadbackBuffer_map(context, ptr, 0u, pOutVersion, pNumBytes);
+    return NvFlowReadbackBuffer_map(context, ptr, 0u, pOutVersion, pNumBytes);
 }
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_unmap(NvFlowContext* context, NvFlowReadbackBuffer* ptr, NvFlowUint activeIdx)
 {
-	if (activeIdx < ptr->activeBuffers.size)
-	{
-		NvFlowReadbackBufferInstance* inst = &ptr->buffers[ptr->activeBuffers[activeIdx]];
-		ptr->contextInterface->unmapBuffer(context, inst->buffer);
-	}
+    if (activeIdx < ptr->activeBuffers.size)
+    {
+        NvFlowReadbackBufferInstance* inst = &ptr->buffers[ptr->activeBuffers[activeIdx]];
+        ptr->contextInterface->unmapBuffer(context, inst->buffer);
+    }
 }
 
 NV_FLOW_INLINE void NvFlowReadbackBuffer_unmapLatest(NvFlowContext* context, NvFlowReadbackBuffer* ptr)
 {
-	NvFlowReadbackBuffer_unmap(context, ptr, 0u);
+    NvFlowReadbackBuffer_unmap(context, ptr, 0u);
 }

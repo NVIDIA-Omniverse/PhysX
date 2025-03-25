@@ -53,10 +53,16 @@ class DeformableSurfaceCore : public ActorCore
 public:
 	// PX_SERIALIZATION
 	DeformableSurfaceCore(const PxEMPTY) : ActorCore(PxEmpty) {}
-	static void getBinaryMetaData(PxOutputStream& stream);
 	//~PX_SERIALIZATION
 	DeformableSurfaceCore();
 	~DeformableSurfaceCore();
+
+	//---------------------------------------------------------------------------------
+	// PxActor API
+	//---------------------------------------------------------------------------------
+
+	void						setActorFlags(PxActorFlags flags);
+	PxActorFlags				getActorFlags() const { return mCore.actorFlags; }
 
 	//---------------------------------------------------------------------------------
 	// PxDeformableBody API
@@ -68,11 +74,11 @@ public:
 	void						setLinearDamping(const PxReal linearDamping);
 	PxReal						getLinearDamping() const { return mCore.linearDamping; }
 
-	void						setMaxVelocity(const PxReal maxVelocity);
-	PxReal						getMaxVelocity() const { return mCore.maxVelocity; }
+	void						setMaxLinearVelocity(const PxReal maxLinearVelocity);
+	PxReal						getMaxLinearVelocity() const { return mCore.maxLinearVelocity; }
 
-	void						setMaxDepenetrationVelocity(const PxReal maxDepenetrationVelocity);
-	PxReal						getMaxDepenetrationVelocity() const { return mCore.maxDepenetrationVelocity; }
+	void						setMaxPenetrationBias(const PxReal maxPenetrationBias);
+	PxReal						getMaxPenetrationBias() const { return mCore.maxPenetrationBias; }
 
 	void						setSolverIterationCounts(PxU16 c);
 	PxU16						getSolverIterationCounts() const { return mCore.solverIterationCounts; }

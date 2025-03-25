@@ -29,19 +29,14 @@
 #if PX_SUPPORT_GPU_PHYSX
 
 #include "ScDeformableSurfaceSim.h"
-#include "ScDeformableSurfaceCore.h"
-#include "ScScene.h"
 
-#include "ScInteraction.h"  // to be deleted
-#include "PxsSimulationController.h"
+#include "geometry/PxTriangleMesh.h"
 
 using namespace physx;
 using namespace Dy;
 
-
 Sc::DeformableSurfaceSim::DeformableSurfaceSim(DeformableSurfaceCore& core, Scene& scene) :
-	ActorSim(scene, core),
-	mShapeSim(*this)
+	GPUActorSim(scene, core, NULL)
 {
 	mLLDeformableSurface = scene.createLLDeformableSurface(this);
 
@@ -64,21 +59,6 @@ Sc::DeformableSurfaceSim::~DeformableSurfaceSim()
 	mCore.setSim(NULL);
 }
 
-void Sc::DeformableSurfaceSim::updateBounds()
-{
-	mShapeSim.updateBounds();
-}
-
-void Sc::DeformableSurfaceSim::updateBoundsInAABBMgr()
-{
-	mShapeSim.updateBoundsInAABBMgr();
-}
-
-PxBounds3 Sc::DeformableSurfaceSim::getBounds() const
-{
-	return mShapeSim.getBounds();
-}
-
 bool Sc::DeformableSurfaceSim::isSleeping() const
 {
 	IG::IslandSim& sim = mScene.getSimpleIslandManager()->getAccurateIslandSim();
@@ -87,19 +67,36 @@ bool Sc::DeformableSurfaceSim::isSleeping() const
 
 void Sc::DeformableSurfaceSim::onSetWakeCounter()
 {
-	getScene().getSimulationController()->setClothWakeCounter(mLLDeformableSurface);
+	mScene.getSimulationController()->setClothWakeCounter(mLLDeformableSurface);
 	if (mLLDeformableSurface->getCore().wakeCounter > 0.f)
-		getScene().getSimpleIslandManager()->activateNode(mNodeIndex);
+		mScene.getSimpleIslandManager()->activateNode(mNodeIndex);
 	else
-		getScene().getSimpleIslandManager()->deactivateNode(mNodeIndex);
+		mScene.getSimpleIslandManager()->deactivateNode(mNodeIndex);
 }
 
 void Sc::DeformableSurfaceSim::attachShapeCore(ShapeCore* core)
 {
-	mShapeSim.attachShapeCore(core);
+	mShapeSim.setCore(core);
+	{
+		PX_ASSERT(getWorldBounds().isFinite());
+
+		const PxU32 index = mShapeSim.getElementID();
+
+		mScene.getBoundsArray().setBounds(getWorldBounds(), index);
+
+		addToAABBMgr(Bp::FilterType::DEFORMABLE_SURFACE);
+	}
 
 	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core->getCore());
 	mLLDeformableSurface->setShapeCore(shapeCore);
+}
+
+PxBounds3 Sc::DeformableSurfaceSim::getWorldBounds() const
+{
+	const PxTriangleMeshGeometry& triGeom = static_cast<const PxTriangleMeshGeometry&>(mShapeSim.getCore().getGeometry());
+
+	// PT: are you sure you want to go through the Px API here?
+	return triGeom.triangleMesh->getLocalBounds();
 }
 
 #endif //PX_SUPPORT_GPU_PHYSX

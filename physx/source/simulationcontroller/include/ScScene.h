@@ -51,10 +51,18 @@
 #include "ScFiltering.h"
 #include "ScBroadphase.h"
 #include "ScInteraction.h"
+#include "ScArticulationJointSim.h"
+#include "ScConstraintInteraction.h"
+#include "ScConstraintSim.h"
 
 #define PX_MAX_DOMINANCE_GROUP 32
 
+namespace
+{
 class OverlapFilterTask;
+class OnOverlapCreatedTask;
+class IslandInsertionTask;
+}
 
 namespace physx
 {
@@ -78,6 +86,17 @@ namespace IG
 	class SimpleIslandManager;
 	typedef PxU32 EdgeIndex;
 }
+
+struct DelayedGPUTypes
+{
+	struct Data
+	{
+		IG::EdgeIndex		mEdgeIndex;
+		IG::Edge::EdgeType	mType;
+	};
+	PxArray<Data>	mDelayed;
+	PxMutex			mLock;
+};
 
 class PxsCCDContext;
 
@@ -129,7 +148,6 @@ namespace Sc
 	class ParticleSystemCore;
 
 	class NPhaseCore;
-	class ConstraintInteraction;
 	class ElementSimInteraction;
 	class BodySim;
 	class ShapeSim;
@@ -261,9 +279,6 @@ namespace Sc
 
 	PX_FORCE_INLINE	PxSolverType::Enum 			getSolverType()							const	{ return mDynamicsContext->getSolverType();		}
 
-	PX_FORCE_INLINE	void						setFrictionType(PxFrictionType::Enum model)		{ mDynamicsContext->setFrictionType(model);		}
-	PX_FORCE_INLINE	PxFrictionType::Enum 		getFrictionType()						const	{ return mDynamicsContext->getFrictionType();	}
-
 	PX_FORCE_INLINE	void						setSolverBatchSize(PxU32 solverBatchSize)		{ mDynamicsContext->setSolverBatchSize(solverBatchSize);	}
 	PX_FORCE_INLINE	PxU32						getSolverBatchSize()					const	{ return mDynamicsContext->getSolverBatchSize();			}
 
@@ -347,11 +362,14 @@ namespace Sc
 					void						addConstraint(ConstraintCore&, RigidCore*, RigidCore*);
 					void						removeConstraint(ConstraintCore&);
 
+					void						addConstraintToMap(ConstraintCore& constraint, RigidCore*, RigidCore*);
+					void						removeConstraintFromMap(const ConstraintInteraction&);
+
 					void						addArticulation(ArticulationCore&, BodyCore& root);
 					void						removeArticulation(ArticulationCore&);
 
 					void						addArticulationJoint(ArticulationJointCore&, BodyCore& parent, BodyCore& child);
-	static			void						removeArticulationJoint(ArticulationJointCore&);
+					void						removeArticulationJoint(ArticulationJointCore&);
 
 					void						addArticulationTendon(ArticulationSpatialTendonCore&);
 	static			void						removeArticulationTendon(ArticulationSpatialTendonCore&);
@@ -526,7 +544,7 @@ namespace Sc
 					Dy::FeatherstoneArticulation*	createLLArticulation(ArticulationSim* sim);
 					void							destroyLLArticulation(Dy::FeatherstoneArticulation&);
 
-		PX_FORCE_INLINE	PxPool<ConstraintInteraction>*	getConstraintInteractionPool()			const	{ return mConstraintInteractionPool;	}
+		PX_FORCE_INLINE	PxPool2<ConstraintInteraction, 4096>&	getConstraintInteractionPool()			{ return mConstraintInteractionPool;	}
 	public:
 		PX_FORCE_INLINE	const PxsMaterialManager&	getMaterialManager()				const	{ return mMaterialManager;			}
 		PX_FORCE_INLINE	PxsMaterialManager&			getMaterialManager()						{ return mMaterialManager;			}
@@ -584,7 +602,7 @@ namespace Sc
 						void*						allocateConstraintBlock(PxU32 size);
 						void						deallocateConstraintBlock(void* addr, PxU32 size);
 
-					void							stepSetupCollide(PxBaseTask* continuation);//This is very important to guarantee thread safty in the collide
+						void						stepSetupCollide(PxBaseTask* continuation);//This is very important to guarantee thread safety in the collide
 		PX_FORCE_INLINE void						addToPosePreviewList(BodySim& b)				{ PX_ASSERT(!mPosePreviewBodies.contains(&b)); mPosePreviewBodies.insert(&b); }
 		PX_FORCE_INLINE void						removeFromPosePreviewList(BodySim& b)			{ PX_ASSERT(mPosePreviewBodies.contains(&b)); mPosePreviewBodies.erase(&b); }
 #if PX_DEBUG
@@ -629,13 +647,13 @@ namespace Sc
 					void						kinematicsSetup(PxBaseTask* continuation);
 					void						stepSetupSolve(PxBaseTask* continuation);
 
-					void						processNarrowPhaseTouchEvents(PxBaseTask*);
-					void						setEdgesConnected(PxBaseTask*);
-					void						processNarrowPhaseLostTouchEvents(PxBaseTask*);
-					void						processNarrowPhaseLostTouchEventsIslands(PxBaseTask*);
+					void						processNarrowPhaseTouchEvents(PxBaseTask* continuation);
+					void						setEdgesConnected(PxBaseTask* continuation);
+					void						processNarrowPhaseLostTouchEvents(PxBaseTask* continuation);
+					void						processNarrowPhaseLostTouchEventsIslands(PxBaseTask* continuation);
 					void						processLostTouchPairs();
 					void						integrateKinematicPose();
-					void						updateKinematicCached(PxBaseTask* task);
+					void						updateKinematicCached(PxBaseTask* continuation);
 
 					void						beforeSolver(PxBaseTask* continuation);
 					void						checkForceThresholdContactEvents(PxU32 ccdPass);
@@ -744,14 +762,16 @@ namespace Sc
 					PxCoalescedHashSet<ConstraintSim*> mActiveBreakableConstraints;
 
 					// pools for joint buffers
-					// Fixed joint is 92 bytes, D6 is 364 bytes right now. So these three pools cover all the internal cases
+					// The pools below currently cover all the internal cases
 					typedef Block<PxU8, 128> MemBlock128;
 					typedef Block<PxU8, 256> MemBlock256;
 					typedef Block<PxU8, 384> MemBlock384;
+					typedef Block<PxU8, 512> MemBlock512;
 
 					PxPool2<MemBlock128, 8192>	mMemBlock128Pool;
 					PxPool2<MemBlock256, 8192>	mMemBlock256Pool;
 					PxPool2<MemBlock384, 8192>	mMemBlock384Pool;
+					PxPool2<MemBlock512, 8192>	mMemBlock512Pool;
 
 					// broad phase data:
 					NPhaseCore*					mNPhaseCore;
@@ -799,18 +819,19 @@ namespace Sc
 					Cm::PreallocatingPool<ShapeSim>*	mShapeSimPool;
 					Cm::PreallocatingPool<StaticSim>*	mStaticSimPool;
 					Cm::PreallocatingPool<BodySim>*		mBodySimPool;
-					PxPool<ConstraintSim>*				mConstraintSimPool;
+					PxPool2<ConstraintSim, 4096>		mConstraintSimPool;
+					PxPool2<ArticulationJointSim, 4096>	mArticulationJointSimPool;
 					LLArticulationRCPool*				mLLArticulationRCPool;
 
 					PxHashMap<PxPair<const ActorSim*, const ActorSim*>, ConstraintCore*> mConstraintMap;
 														
-					PxPool<ConstraintInteraction>*	mConstraintInteractionPool;
+					PxPool2<ConstraintInteraction, 4096>	mConstraintInteractionPool;
 
 					PxPool<SimStateData>*		mSimStateDataPool;
 
 					BatchRemoveState*			mBatchRemoveState;
 
-					PxArray<SimpleBodyPair>	mLostTouchPairs;
+					PxArray<SimpleBodyPair>		mLostTouchPairs;
 					PxBitMap					mLostTouchPairsDeletedBodyIDs;	// Need to know which bodies have been deleted when processing the lost touch pair list.
 																				// Can't use the existing rigid object ID tracker class since this map needs to be cleared at
 																				// another point in time.
@@ -837,6 +858,7 @@ namespace Sc
 					PxU32						mNumDeactivatingNodes[IG::Node::eTYPE_COUNT];
 
 					// task decomposition
+					void						setupBroadPhaseFirstAndSecondPassTasks(PxBaseTask* continuation);
 					void						broadPhase(PxBaseTask* continuation);
 					void						broadPhaseFirstPass(PxBaseTask* continuation);
 					void						broadPhaseSecondPass(PxBaseTask* continuation);
@@ -851,13 +873,13 @@ namespace Sc
 					void						rigidBodyNarrowPhase(PxBaseTask* continuation);
 					void						unblockNarrowPhase(PxBaseTask* continuation);
 					void						islandGen(PxBaseTask* continuation);
-					void						processSolverPatches(PxBaseTask* continuation);
 					void						postIslandGen(PxBaseTask* continuation);
 					void						solver(PxBaseTask* continuation);
 					void						updateBodies(PxBaseTask* continuation);
 					void						updateShapes(PxBaseTask* continuation);
 					void						updateSimulationController(PxBaseTask* continuation);
 					void						updateDynamics(PxBaseTask* continuation);
+					void						updateDynamicsPostPartitioning(PxBaseTask* continuation);
 					void						processLostContacts(PxBaseTask*);
 					void						processLostContacts2(PxBaseTask*);
 					void						processLostContacts3(PxBaseTask*);
@@ -906,6 +928,7 @@ namespace Sc
 					Cm::DelegateTask<Scene, &Scene::updateShapes>						mUpdateShapes;
 					Cm::DelegateTask<Scene, &Scene::updateSimulationController>			mUpdateSimulationController;
 					Cm::DelegateTask<Scene, &Scene::updateDynamics>						mUpdateDynamics;
+					Cm::DelegateTask<Scene, &Scene::updateDynamicsPostPartitioning>		mUpdateDynamicsPostPartitioning;
 					Cm::DelegateTask<Scene, &Scene::processLostContacts>				mProcessLostContactsTask;
 					Cm::DelegateTask<Scene, &Scene::processLostContacts2>				mProcessLostContactsTask2;
 					Cm::DelegateTask<Scene, &Scene::processLostContacts3>				mProcessLostContactsTask3;
@@ -913,15 +936,16 @@ namespace Sc
 					Cm::DelegateTask<Scene, &Scene::lostTouchReports>					mLostTouchReportsTask;
 					Cm::DelegateTask<Scene, &Scene::unregisterInteractions>				mUnregisterInteractionsTask;
 					Cm::DelegateTask<Scene,
-						&Scene::processNarrowPhaseLostTouchEventsIslands>					mProcessNarrowPhaseLostTouchTasks;
+						&Scene::processNarrowPhaseLostTouchEventsIslands>				mProcessNarrowPhaseLostTouchTasks;
 					Cm::DelegateTask<Scene,
-						&Scene::processNarrowPhaseLostTouchEvents>							mProcessNPLostTouchEvents;
+						&Scene::processNarrowPhaseLostTouchEvents>						mProcessNPLostTouchEvents;
 					Cm::DelegateTask<Scene, &Scene::postThirdPassIslandGen>				mPostThirdPassIslandGenTask;
+#if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 					Cm::DelegateTask<Scene, &Scene::postIslandGen>						mPostIslandGen;
+#endif
 					Cm::DelegateTask<Scene, &Scene::islandGen>							mIslandGen;
 					Cm::DelegateTask<Scene, &Scene::preRigidBodyNarrowPhase>			mPreRigidBodyNarrowPhase;
 					Cm::DelegateTask<Scene, &Scene::setEdgesConnected>					mSetEdgesConnectedTask;
-					Cm::DelegateTask<Scene, &Scene::processSolverPatches>				mProcessPatchesTask;
 					Cm::DelegateFanoutTask<Scene, &Scene::updateBoundsAndShapes>		mUpdateBoundAndShapeTask;
 					Cm::DelegateTask<Scene, &Scene::rigidBodyNarrowPhase>				mRigidBodyNarrowPhase;
 					Cm::DelegateTask<Scene, &Scene::unblockNarrowPhase>					mRigidBodyNPhaseUnlock;
@@ -959,8 +983,14 @@ namespace Sc
 					PxArray<ShapeInteraction*>											mPreallocatedShapeInteractions;
 					PxArray<ElementInteractionMarker*>									mPreallocatedInteractionMarkers;
 
+					// PT: class members that should ideally just be local parameters passed from task to task
 					OverlapFilterTask*													mOverlapFilterTaskHead;	// PT: tmp data passed from finishBroadPhase to preallocateContactManagers
 					PxArray<FilterInfo>													mFilterInfo;			// PT: tmp data passed from finishBroadPhase to preallocateContactManagers
+					OnOverlapCreatedTask*												mOverlapCreatedTaskHead;
+					IslandInsertionTask*												mIslandInsertionTaskHead;
+					PxArray<IG::EdgeIndex>												mPreallocatedHandles;
+					DelayedGPUTypes														mGPUTypes;				// PT: GPU types found in last part of Sc::Scene::islandInsertion(), delayed for later processing
+					//~class members that should ideally just be local parameters passed from task to task
 
 					PxBitMap															mSpeculativeCCDRigidBodyBitMap;
 					PxBitMap															mSpeculativeCDDArticulationBitMap;
@@ -1103,7 +1133,10 @@ namespace Sc
 					//PxActor**							getActiveDeformableSurfaceActors(PxU32& nbActorsOut);
 					//void								setActiveDeformableSurfaceActors(PxActor** actors, PxU32 nbActors);
 
-					PxU64								mPadding[3];
+#if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
+					PxU64								mPadding;
+#endif
+					PxU64								mPadding2;
 					PX_ALIGN(16, PxsDeformableSurfaceMaterialManager	mDeformableSurfaceMaterialManager);
 					PX_ALIGN(16, PxsDeformableVolumeMaterialManager		mDeformableVolumeMaterialManager);
 					PX_ALIGN(16, PxsPBDMaterialManager		mPBDMaterialManager);

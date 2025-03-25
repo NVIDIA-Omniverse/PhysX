@@ -270,6 +270,18 @@ protected:
 	PX_INLINE					PxConstraint(PxBaseFlags baseFlags) : PxBase(baseFlags), userData(NULL) {}
 	virtual						~PxConstraint() {}
 	virtual	bool				isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxConstraint", PxBase); }
+
+public:
+	/**
+	\cond
+	*/
+
+	// for internal use only
+	virtual PxConstraintGPUIndex getGPUIndex() const = 0;
+
+	/**
+	\endcond
+	*/
 };
 
 #if !PX_DOXYGEN

@@ -52,7 +52,6 @@ struct PxsMaterialData
 		staticFriction	(0.0f),
 		restitution		(0.0f),
 		damping			(0.0f),
-		flags			(PxMaterialFlag::eIMPROVED_PATCH_FRICTION),
 		fricCombineMode	(PxCombineMode::eAVERAGE),
 		restCombineMode	(PxCombineMode::eAVERAGE),
 		dampingCombineMode(PxCombineMode::eAVERAGE)

@@ -367,8 +367,8 @@ static PX_FORCE_INLINE bool checkContactsMustBeGenerated(PxcNpThreadContext& con
 template<bool useLegacyCodepath>
 static PX_FORCE_INLINE void discreteNarrowPhase(PxcNpThreadContext& context, const PxcNpWorkUnit& input, Gu::Cache& cache, PxsContactManagerOutput& output, PxU64 contextID)
 {
-	PxGeometryType::Enum type0 = static_cast<PxGeometryType::Enum>(input.mGeomType0);
-	PxGeometryType::Enum type1 = static_cast<PxGeometryType::Enum>(input.mGeomType1);
+	PxGeometryType::Enum type0 = input.getGeomType0();
+	PxGeometryType::Enum type1 = input.getGeomType1();
 
 	const bool flip = (type1<type0);
 
@@ -378,8 +378,8 @@ static PX_FORCE_INLINE void discreteNarrowPhase(PxcNpThreadContext& context, con
 	if(!checkContactsMustBeGenerated<useLegacyCodepath>(context, input, cache, output, cachedTransform0, cachedTransform1, flip, type0, type1))
 		return;
 
-	PxsShapeCore* shape0 = const_cast<PxsShapeCore*>(input.mShapeCore0);
-	PxsShapeCore* shape1 = const_cast<PxsShapeCore*>(input.mShapeCore1);
+	PxsShapeCore* shape0 = const_cast<PxsShapeCore*>(input.getShapeCore0());
+	PxsShapeCore* shape1 = const_cast<PxsShapeCore*>(input.getShapeCore1());
 
 	if(flip)
 	{

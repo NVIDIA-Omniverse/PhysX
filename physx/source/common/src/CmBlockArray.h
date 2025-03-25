@@ -68,7 +68,7 @@ public:
 		mBlocks.resize(0);
 	}
 
-	void reserve(PxU32 capacity)
+	PX_NOINLINE void reserve(PxU32 capacity)
 	{
 		if (capacity > mCapacity)
 		{
@@ -88,15 +88,18 @@ public:
 		}
 	}
 
-	void resize(PxU32 size)
+	PX_NOINLINE void resize(PxU32 size)
 	{
-		reserve(size);
-		for (PxU32 a = mSize; a < size; ++a)
+		if(size != mSize)
 		{
-			mBlocks[a / SlabSize][a&(SlabSize - 1)].~T();
-			mBlocks[a / SlabSize][a&(SlabSize-1)] = T();
+			reserve(size);
+			for (PxU32 a = mSize; a < size; ++a)
+			{
+				mBlocks[a / SlabSize][a&(SlabSize - 1)].~T();
+				mBlocks[a / SlabSize][a&(SlabSize - 1)] = T();
+			}
+			mSize = size;
 		}
-		mSize = size;
 	}
 
 	void forceSize_Unsafe(PxU32 size)

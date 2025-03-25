@@ -30,7 +30,6 @@
 #define GU_CONVEX_MESH_H
 
 #include "foundation/PxBitAndData.h"
-#include "common/PxMetaData.h"
 #include "geometry/PxConvexMesh.h"
 #include "geometry/PxConvexMeshGeometry.h"
 #include "foundation/PxUserAllocated.h"
@@ -103,7 +102,6 @@ namespace Gu
 		 virtual		void					exportExtraData(PxSerializationContext& stream);
 						void					importExtraData(PxDeserializationContext& context);
 		PX_PHYSX_COMMON_API static	ConvexMesh*	createObject(PxU8*& address, PxDeserializationContext& context);
-		PX_PHYSX_COMMON_API static	void		getBinaryMetaData(PxOutputStream& stream);
 						void					resolveReferences(PxDeserializationContext&)				{}
 		virtual			void					requiresObjects(PxProcessPxBaseCallback&){}
 	//~PX_SERIALIZATION

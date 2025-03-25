@@ -43,19 +43,19 @@ namespace physx
 	{
 		// some helpers
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE 
 		// select up to 4 points forming the biggest polygon
-		PxU32 reducePolygon(const void* points, PxU32 count, PxU32 stride, const PxVec3& normal,
+		static PxU32 reducePolygon(const void* points, PxU32 count, PxU32 stride, const PxVec3& normal,
 			PxU32 inds[4], bool keep1st = false);
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE
 		// rotate points around so that direction from center to points[0]
 		// matches the direction from center to ref
-		void rotatePoints(const PxVec3& center, const PxVec3& ref, const PxVec3& normal, PxVec3* points, PxU32 count);
+		static void rotatePoints(const PxVec3& center, const PxVec3& ref, const PxVec3& normal, PxVec3* points, PxU32 count);
 
 		// convex cores
 		// every core provides 2 functions: localSupport - used by GJK-EPA, and
-		// contactFace - that returns up to 4 points on of the shape's contacting face to generate
+		// contactFace - that returns up to 4 points on the shape's contacting face to generate
 		// multi-point contact from. adding a new core type implies authoring these 2 functions.
 
 		namespace ConvexCore
@@ -82,39 +82,37 @@ namespace physx
 			static const PxU32 MAX_FACE_POINTS = 4;
 
 			// Return the farthest point of this core type in a given direction
-			template <Type::Enum T> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxVec3 localSupport(const PxVec3& dir, const void* data);
+			template <Type::Enum T> PX_CUDA_CALLABLE
+			static PxVec3 localSupport(const PxVec3& dir, const void* data);
 
 			// Return up to MAX_FACE_POINTS points of this core type face in a given direction
-			template <Type::Enum T> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace(const PxVec3& dir, const PxVec3& point, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS]);
+			template <Type::Enum T> PX_CUDA_CALLABLE
+			static PxU32 contactFace(const PxVec3& dir, const PxVec3& point, const void* data,
+					PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS]);
 
 			/////////////////////////////////////////////////////////
 			// Point Core
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::ePOINT>(const PxVec3&, const void*)
-			{
-				return PxVec3(0);
-			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+				{ return PxVec3(0); }
+			template <> PX_CUDA_CALLABLE
 			PxU32 contactFace<Type::ePOINT>(const PxVec3&, const PxVec3&, const void*, PxVec3&, PxVec3*)
-			{
-				return 0;
-			}
+				{ return 0; }
 			/////////////////////////////////////////////////////////
 
 			/////////////////////////////////////////////////////////
 			// Segment Core
 			struct SegmentCore { PxReal length; };
 			PX_COMPILE_TIME_ASSERT(sizeof(SegmentCore) <= MAX_CORE_SIZE);
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::eSEGMENT>(const PxVec3& dir, const void* data)
 			{
 				const SegmentCore& core = *reinterpret_cast<const SegmentCore*>(data);
 				return PxVec3(PxSign(dir.x) * core.length * 0.5f, 0, 0);
 			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace<Type::eSEGMENT>(const PxVec3& dir, const PxVec3&, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
+			template <> PX_CUDA_CALLABLE
+			PxU32 contactFace<Type::eSEGMENT>(const PxVec3& dir, const PxVec3&, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
 				PxU32 numPoints = 0;
 				const SegmentCore& core = *reinterpret_cast<const SegmentCore*>(data);
@@ -136,7 +134,7 @@ namespace physx
 			// Box Core
 			struct BoxCore { PxVec3 extents; };
 			PX_COMPILE_TIME_ASSERT(sizeof(BoxCore) <= MAX_CORE_SIZE);
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::eBOX>(const PxVec3& dir, const void* data)
 			{
 				const BoxCore& core = *reinterpret_cast<const BoxCore*>(data);
@@ -144,8 +142,9 @@ namespace physx
 							  PxSign(dir.y) * core.extents.y * 0.5f,
 							  PxSign(dir.z) * core.extents.z * 0.5f);
 			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace<Type::eBOX>(const PxVec3& dir, const PxVec3&, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
+			template <> PX_CUDA_CALLABLE
+			PxU32 contactFace<Type::eBOX>(const PxVec3& dir, const PxVec3&, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
 				PxU32 numPoints = 0;
 				const BoxCore& core = *reinterpret_cast<const BoxCore*>(data);
@@ -205,7 +204,7 @@ namespace physx
 			// Ellipsoid Core
 			struct EllipsoidCore { PxVec3 radii; };
 			PX_COMPILE_TIME_ASSERT(sizeof(EllipsoidCore) <= MAX_CORE_SIZE);
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::eELLIPSOID>(const PxVec3& dir, const void* data)
 			{
 				const EllipsoidCore& core = *reinterpret_cast<const EllipsoidCore*>(data);
@@ -213,8 +212,9 @@ namespace physx
 				const PxVec3 dir1 = xform.transformTranspose(dir).getNormalized();
 				return xform.transform(dir1);
 			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace<Type::eELLIPSOID>(const PxVec3& dir, const PxVec3&, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
+			template <> PX_CUDA_CALLABLE
+			PxU32 contactFace<Type::eELLIPSOID>(const PxVec3& dir, const PxVec3&, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
 				PxU32 numPoints = 0;
 				const EllipsoidCore& core = *reinterpret_cast<const EllipsoidCore*>(data);
@@ -252,7 +252,7 @@ namespace physx
 			// Cylinder Core
 			struct CylinderCore { PxReal height, radius; };
 			PX_COMPILE_TIME_ASSERT(sizeof(CylinderCore) <= MAX_CORE_SIZE);
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::eCYLINDER>(const PxVec3& dir, const void* data)
 			{
 				const CylinderCore& core = *reinterpret_cast<const CylinderCore*>(data);
@@ -263,8 +263,9 @@ namespace physx
 				if (PxAbs(d.y) < eps && PxAbs(d.z) < eps) return PxVec3(PxSign(d.x) * h, r, 0);
 				return PxVec3(PxSign(d.x) * h, 0, 0) + PxVec3(0, d.y, d.z).getNormalized() * r;
 			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace<Type::eCYLINDER>(const PxVec3& dir, const PxVec3& ref, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
+			template <> PX_CUDA_CALLABLE
+			PxU32 contactFace<Type::eCYLINDER>(const PxVec3& dir, const PxVec3& ref, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
 				PxU32 numPoints = 0;
 				const CylinderCore& core = *reinterpret_cast<const CylinderCore*>(data);
@@ -295,7 +296,7 @@ namespace physx
 			// Cone Core
 			struct ConeCore { PxReal height, radius; };
 			PX_COMPILE_TIME_ASSERT(sizeof(ConeCore) <= MAX_CORE_SIZE);
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::eCONE>(const PxVec3& dir, const void* data)
 			{
 				const ConeCore& core = *reinterpret_cast<const ConeCore*>(data);
@@ -309,8 +310,9 @@ namespace physx
 				if (PxAbs(d.y) < eps && PxAbs(d.z) < eps) return PxVec3(-halfH, r, 0);
 				return PxVec3(-halfH, 0, 0) + PxVec3(0, d.y, d.z).getNormalized() * r;
 			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace<Type::eCONE>(const PxVec3& dir, const PxVec3& ref, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
+			template <> PX_CUDA_CALLABLE
+			PxU32 contactFace<Type::eCONE>(const PxVec3& dir, const PxVec3& ref, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
 				PxU32 numPoints = 0;
 				const ConeCore& core = *reinterpret_cast<const ConeCore*>(data);
@@ -351,7 +353,7 @@ namespace physx
 			// Points Core
 			struct PointsCore { const void* points; PxVec3 S; PxQuat R; PxU8 numPoints, stride, pad[2]; };
 			PX_COMPILE_TIME_ASSERT(sizeof(PointsCore) <= MAX_CORE_SIZE);
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
+			template <> PX_CUDA_CALLABLE
 			PxVec3 localSupport<Type::ePOINTS>(const PxVec3& dir, const void* data)
 			{
 				PointsCore core; memcpy(reinterpret_cast<void*>(&core), data, sizeof(core));
@@ -376,8 +378,9 @@ namespace physx
 				const PxVec3& point = *reinterpret_cast<const PxVec3*>(points + index * core.stride);
 				return core.R.rotateInv(core.S.multiply(core.R.rotate(point)));
 			}
-			template <> PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 contactFace<Type::ePOINTS>(const PxVec3& dir, const PxVec3&, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
+			template <> PX_CUDA_CALLABLE
+			PxU32 contactFace<Type::ePOINTS>(const PxVec3& dir, const PxVec3&, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
 				PxU32 numPoints = 0;
 
@@ -476,37 +479,38 @@ namespace physx
 			/////////////////////////////////////////////////////////
 			// Core functions by type
 			typedef PxVec3(*LocalSupportFn)(const PxVec3& dir, const void* data);
-			typedef PxU32(*ContactFaceFn)(const PxVec3& dir, const PxVec3& point, const void* data, PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS]);
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			LocalSupportFn localSupport(Type::Enum type)
+			typedef PxU32(*ContactFaceFn)(const PxVec3& dir, const PxVec3& point, const void* data,
+				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS]);
+			PX_CUDA_CALLABLE
+			static LocalSupportFn localSupport(Type::Enum type)
 			{
 				switch (type)
 				{
-				case Type::ePOINT: return localSupport<Type::ePOINT>;
-				case Type::eSEGMENT: return localSupport<Type::eSEGMENT>;
-				case Type::eBOX: return localSupport<Type::eBOX>;
-				case Type::eELLIPSOID: return localSupport<Type::eELLIPSOID>;
-				case Type::eCYLINDER: return localSupport<Type::eCYLINDER>;
-				case Type::eCONE: return localSupport<Type::eCONE>;
-				case Type::ePOINTS: return localSupport<Type::ePOINTS>;
-				default: break;
+					case Type::ePOINT: return localSupport<Type::ePOINT>;
+					case Type::eSEGMENT: return localSupport<Type::eSEGMENT>;
+					case Type::eBOX: return localSupport<Type::eBOX>;
+					case Type::eELLIPSOID: return localSupport<Type::eELLIPSOID>;
+					case Type::eCYLINDER: return localSupport<Type::eCYLINDER>;
+					case Type::eCONE: return localSupport<Type::eCONE>;
+					case Type::ePOINTS: return localSupport<Type::ePOINTS>;
+					default: break;
 				}
 				PX_ASSERT(0);
 				return NULL;
 			}
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			ContactFaceFn contactFace(Type::Enum type)
+			PX_CUDA_CALLABLE
+			static ContactFaceFn contactFace(Type::Enum type)
 			{
 				switch (type)
 				{
-				case Type::ePOINT: return contactFace<Type::ePOINT>;
-				case Type::eSEGMENT: return contactFace<Type::eSEGMENT>;
-				case Type::eBOX: return contactFace<Type::eBOX>;
-				case Type::eELLIPSOID: return contactFace<Type::eELLIPSOID>;
-				case Type::eCYLINDER: return contactFace<Type::eCYLINDER>;
-				case Type::eCONE: return contactFace<Type::eCONE>;
-				case Type::ePOINTS: return contactFace<Type::ePOINTS>;
-				default: break;
+					case Type::ePOINT: return contactFace<Type::ePOINT>;
+					case Type::eSEGMENT: return contactFace<Type::eSEGMENT>;
+					case Type::eBOX: return contactFace<Type::eBOX>;
+					case Type::eELLIPSOID: return contactFace<Type::eELLIPSOID>;
+					case Type::eCYLINDER: return contactFace<Type::eCYLINDER>;
+					case Type::eCONE: return contactFace<Type::eCONE>;
+					case Type::ePOINTS: return contactFace<Type::ePOINTS>;
+					default: break;
 				}
 				PX_ASSERT(0);
 				return NULL;
@@ -522,26 +526,20 @@ namespace physx
 			PxReal margin;
 			PxTransform pose;
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			bool isValid() const
-			{
-				return coreType < ConvexCore::Type::eCOUNT;
-			}
+				{ return coreType < ConvexCore::Type::eCOUNT; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			PxVec3 supportLocal(const PxVec3& dir) const
-			{
-				// Used by RefGjkEpa so doesn't include margin
-				return ConvexCore::localSupport(coreType)(dir, coreData);
-			}
+				{ // Used by RefGjkEpa so doesn't include margin
+				  return ConvexCore::localSupport(coreType)(dir, coreData); }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			PxVec3 support(const PxVec3& dir) const
-			{
-				return pose.transform(supportLocal(pose.rotateInv(dir))) + dir * margin;
-			}
+				{ return pose.transform(supportLocal(pose.rotateInv(dir))) + dir * margin; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE
 			PxU32 contactFace(const PxVec3& dir, const PxVec3& point, PxVec3& faceNormal, PxVec3 facePoints[ConvexCore::MAX_FACE_POINTS]) const
 			{
 				PxU32 numPoints = ConvexCore::contactFace(coreType)(pose.rotateInv(dir), pose.transformInv(point), coreData, faceNormal, facePoints);
@@ -553,7 +551,7 @@ namespace physx
 				return numPoints;
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE
 			PxBounds3 computeBounds() const
 			{
 				const PxVec3 X(1, 0, 0), Y(0, 1, 0), Z(0, 0, 1);
@@ -574,107 +572,157 @@ namespace physx
 		// poligon are returned.
 		struct FaceClipper
 		{
-			static const PxU32 MAX_CONTACTS = 4;
-
-			PxVec3 faceNormal0, facePoints0[ConvexCore::MAX_FACE_POINTS];
-			PxU32 numPoints0;
-			PxVec3 faceNormal1, facePoints1[ConvexCore::MAX_FACE_POINTS];
-			PxU32 numPoints1;
-			PxVec3 contactPoints[MAX_CONTACTS];
-			PxReal contactDists[MAX_CONTACTS];
-			PxU32 numContacts;
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			FaceClipper()
+			PX_CUDA_CALLABLE PX_INLINE
+			FaceClipper(const ConvexShape& convex0, const ConvexShape& convex1, const PxVec3& point0, const PxVec3& point1, const PxVec3& axis)
 				:
-				numPoints0(0), numPoints1(0), numContacts(0)
-			{}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			PxU32 clip(const PxVec3& axis, const PxVec3& ref)
+				mPoint0(point0), mPoint1(point1), mAxis(axis)
 			{
-				if (numPoints0 <= 1 || numPoints1 <= 1)
-					return 0;
+				mNumPoints0 = convex0.contactFace(-mAxis, mPoint0, mFaceNormal0, mFacePoints0);
+				mNumPoints1 = convex1.contactFace(mAxis, mPoint1, mFaceNormal1, mFacePoints1);
+			}
 
-				PX_ASSERT(numPoints0 >= 2 && numPoints1 >= 2);
+			PX_CUDA_CALLABLE
+			void clip()
+			{
+				if (mNumPoints0 < 2 || mNumPoints1 < 2)
+					return clipNone();
 
-				if (numPoints0 == 2 && numPoints1 == 2)
-					return clip2x2(axis);
+				if (mNumPoints0 == 2 && mNumPoints1 == 2)
+					return clip2x2();
 
-				if (numPoints0 == 2)
-					return clip2xN(axis);
+				return clipNxN();
+			}
 
-				if (numPoints1 == 2)
-					return clipNx2(axis);
-
-				return clipNxN(axis, ref);
+			PX_CUDA_CALLABLE PX_INLINE
+			PxU32 getContact(PxVec3& normal, PxVec4* points)
+			{
+				normal = mAxis;
+				for (PxU32 i = 0; i < mNumPoints; ++i)
+					points[i] = mPoints[i];
+				return mNumPoints;
 			}
 
 		private:
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			// clip 2 point poygon by 2 point polygon
+			PX_CUDA_CALLABLE
+			// create a single contact point from the reference points and the axis
+			void clipNone()
+			{
+				mPoints[0] = PxVec4((mPoint0 + mPoint1) * 0.5f, mAxis.dot(mPoint0 - mPoint1));
+				mNumPoints = 1;
+			}
+
+			PX_CUDA_CALLABLE
+			// clip 2 point polygon by 2 point polygon
 			// a special case when both input point sets have only 2 points
 			// if we try to clip them usual way we'll most likely end up with
 			// 0 of 1 point, and we want to have 2 if we can.
 			// it projects the ends of one segment onto the other one
 			// and check where they overlap.
-			PxU32 clip2x2(const PxVec3& axis)
+			void clip2x2()
 			{
 				const PxReal eps = 1e-5f;
-				const PxVec3 a = facePoints0[0], b = facePoints0[1];
-				const PxVec3 c = facePoints1[0], d = facePoints1[1];
+				const PxVec3 a = mFacePoints0[0], b = mFacePoints0[1];
+				const PxVec3 c = mFacePoints1[0], d = mFacePoints1[1];
+				const PxVec3 axis = mAxis;
 
-				// Only care if the segments are parallel
+				// Only care if segments are parallel
 				if (PxAbs((b - a).cross(d - c).dot(axis)) > eps)
-					return 0;
+					return clipNone();
+
+				PxU32 numPoints = 0;
+				PxVec4 points[4];
 
 				if ((a - c).dot(d - c) > -eps && (a - d).dot(c - d) > -eps) // a projects on cd
 				{
 					const PxVec3 a1 = c + (d - c) * (d - c).dot(a - c) / (d - c).magnitudeSquared();
-					addContact((a + a1) * 0.5f, axis, axis.dot(a - a1));
+					points[numPoints++] = PxVec4((a + a1) * 0.5f, axis.dot(a - a1));
 				}
 				if ((b - c).dot(d - c) > -eps && (b - d).dot(c - d) > -eps) // b projects on cd
 				{
 					const PxVec3 b1 = c + (d - c) * (d - c).dot(b - c) / (d - c).magnitudeSquared();
-					addContact((b + b1) * 0.5f, axis, axis.dot(b - b1));
+					points[numPoints++] = PxVec4((b + b1) * 0.5f, axis.dot(b - b1));
 				}
 				if ((c - a).dot(b - a) > -eps && (c - b).dot(a - b) > -eps) // c projects on ab
 				{
 					const PxVec3 c1 = a + (b - a) * (b - a).dot(c - a) / (b - a).magnitudeSquared();
-					addContact((c1 + c) * 0.5f, axis, axis.dot(c1 - c));
+					points[numPoints++] = PxVec4((c1 + c) * 0.5f, axis.dot(c1 - c));
 				}
 				if ((d - a).dot(b - a) > -eps && (d - b).dot(a - b) > -eps) // d projects on ab
 				{
 					const PxVec3 d1 = a + (b - a) * (b - a).dot(d - a) / (b - a).magnitudeSquared();
-					addContact((d1 + d) * 0.5f, axis, axis.dot(d1 - d));
+					points[numPoints++] = PxVec4((d1 + d) * 0.5f, axis.dot(d1 - d));
 				}
 
-				return numContacts;
+				PxReal mergeEps = 1e-6f;
+				for (PxI32 i = numPoints - 1; i >= 0; --i)
+					for (PxI32 j = i - 1; j >= 0; --j)
+						if ((points[i].getXYZ() - points[j].getXYZ()).magnitudeSquared() < mergeEps)
+						{
+							if (points[i].w < points[j].w) points[j] = points[i];
+							points[i] = points[--numPoints];
+							break;
+						}
+
+				for (PxU32 i = 0; i < numPoints; ++i)
+					mPoints[i] = points[i];
+				mNumPoints = numPoints;
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void makeSegmentPlanes(const PxVec3& axis, const PxVec3* facePoints, PxU32 numPoints, PxVec4d* planes, PxU32& numPlanes)
+			PX_CUDA_CALLABLE
+			// clip N point polygon by N point polygon
+			void clipNxN()
 			{
-				PX_UNUSED(numPoints);
-				PX_ASSERT(numPoints == 2);
-				const PxF64 eps = 1e-5;
-				const PxVec3d a = V3_To_V3d(facePoints[0]), b = V3_To_V3d(facePoints[1]);
-				const PxVec3d ab = b - a;
-				const PxVec3d n0 = ab.cross(V3_To_V3d(axis)).getNormalized();
-				const PxVec3d n1 = n0.cross(V3_To_V3d(axis)).getNormalized();
-				planes[numPlanes++] = PxVec4d(n0, -n0.dot(a) + eps);
-				planes[numPlanes++] = PxVec4d(-n0, n0.dot(a) + eps);
-				planes[numPlanes++] = PxVec4d(n1, -n1.dot(b));
-				planes[numPlanes++] = PxVec4d(-n1, n1.dot(a));
+				PxU32 numClipPlanes = 0;
+				PxVec4 clipPlanes[MAX_CLIP_PLANES];
+				makePlanes(clipPlanes, numClipPlanes);
+
+				PxU32 numPolyPoints = 0;
+				PxVec3 polyPoints[MAX_POLYGON_POINTS];
+				makePolygon(polyPoints, numPolyPoints);
+
+				for (PxU32 i = 0; i < numClipPlanes; ++i)
+					clipPoly(clipPlanes[i], polyPoints, numPolyPoints);
+
+				polyPoints[numPolyPoints++] = (mPoint0 + mPoint1) * 0.5f;
+
+				PX_ASSERT(numPolyPoints < MAX_POLYGON_POINTS);
+
+				const PxVec4 plane0(mFaceNormal0, -mFaceNormal0.dot(mFacePoints0[0]));
+				const PxVec4 plane1(mFaceNormal1, -mFaceNormal1.dot(mFacePoints1[0]));
+
+				const PxVec3 axis = mAxis;
+				PxVec4 polyDists[MAX_POLYGON_POINTS];
+				for (PxU32 i = 0; i < numPolyPoints; ++i)
+				{
+					const PxVec3 p = polyPoints[i];
+					const PxVec3 p0 = p - axis * plane0.dot(PxVec4(p, 1)) / axis.dot(plane0.getXYZ());
+					const PxVec3 p1 = p - axis * plane1.dot(PxVec4(p, 1)) / axis.dot(plane1.getXYZ());
+					polyDists[i] = PxVec4((p0 + p1) * 0.5f, axis.dot(p0 - p1));
+				}
+
+				PxU32 minDistIndex = 0;
+				PxReal minDist = polyDists[0].w;
+				for (PxU32 i = 0; i < numPolyPoints; ++i)
+					if (polyDists[i].w < minDist)
+						{ minDist = polyDists[i].w; minDistIndex = i; }
+				PxSwap(polyDists[0], polyDists[minDistIndex]);
+
+				PxU32 inds[4];
+				PxU32 numPoints = reducePolygon(polyDists, numPolyPoints, sizeof(PxVec4), axis, inds, true);
+
+				for (PxU32 i = 0; i < numPoints; ++i)
+					mPoints[i] = polyDists[inds[i]];
+				mNumPoints = numPoints;
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void makePlanes(const PxVec3& axis, const PxVec3* facePoints, PxU32 numPoints, PxVec4d* planes, PxU32& numPlanes)
+			PX_CUDA_CALLABLE
+			void makePlanes(const PxVec3* facePoints, PxU32 numPoints, PxVec4* planes, PxU32& numPlanes)
 			{
-				if (numPoints == 2)
-					return makeSegmentPlanes(axis, facePoints, numPoints, planes, numPlanes);
+				if (numPoints < 3)
+					return;
 
+				const PxVec3 axis = mAxis;
 				const PxReal eps = 1e-5f;
 				const PxReal eps2 = eps * eps;
 				PxU32 start = 0, stop = PxU32(-1);
@@ -709,7 +757,7 @@ namespace physx
 
 						if (edge)
 						{
-							planes[numPlanes++] = PxVec4d(-V3_To_V3d(n), PxF64(n.dot(s)));
+							planes[numPlanes++] = PxVec4(-n, n.dot(s));
 
 							if (stop == PxU32(-1))
 								stop = start;
@@ -728,62 +776,81 @@ namespace physx
 				}
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void makePlanes(const PxVec3& axis, PxVec4d* clipPlanes, PxU32& numClipPlanes)
+			PX_CUDA_CALLABLE PX_INLINE
+			void makePlanes(PxVec4* clipPlanes, PxU32& numClipPlanes)
 			{
-				makePlanes(axis, facePoints0, numPoints0, clipPlanes, numClipPlanes);
-				makePlanes(axis, facePoints1, numPoints1, clipPlanes, numClipPlanes);
+				makePlanes(mFacePoints0, mNumPoints0, clipPlanes, numClipPlanes);
+				makePlanes(mFacePoints1, mNumPoints1, clipPlanes, numClipPlanes);
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void makePoly(const PxVec3& axis, const PxVec3& reff, PxVec3d* points, PxU32& numPoints)
+			PX_CUDA_CALLABLE
+			void makePolygon(PxVec3* points, PxU32& numPoints)
 			{
-				PxVec3 Xf, Yf; PxComputeBasisVectors(axis, Xf, Yf);
-				PxVec3d X = V3_To_V3d(Xf), Y = V3_To_V3d(Yf), ref = V3_To_V3d(reff);
-				PxF64 minX = DBL_MAX, maxX = -DBL_MAX, minY = DBL_MAX, maxY = -DBL_MAX;
-				for (PxU32 i = 0; i < numPoints0; ++i)
+				PX_ASSERT(mNumPoints0 > 2 || mNumPoints1 > 2);
+
+				if (mNumPoints0 == 2)
 				{
-					const PxVec3d p = V3_To_V3d(facePoints0[i]);
-					const PxF64 pX = p.dot(X), pY = p.dot(Y);
+					points[numPoints++] = mFacePoints0[0];
+					points[numPoints++] = mFacePoints0[1];
+					return;
+				}
+
+				if (mNumPoints1 == 2)
+				{
+					points[numPoints++] = mFacePoints1[0];
+					points[numPoints++] = mFacePoints1[1];
+					return;
+				}
+
+				PxVec3 X, Y; PxComputeBasisVectors(mAxis, X, Y);
+				PxReal minX = FLT_MAX, maxX = -FLT_MAX, minY = FLT_MAX, maxY = -FLT_MAX;
+
+				for (PxU32 i = 0; i < mNumPoints0; ++i)
+				{
+					const PxVec3 p = mFacePoints0[i];
+					const PxReal pX = p.dot(X), pY = p.dot(Y);
 					minX = PxMin(minX, pX); maxX = PxMax(maxX, pX);
 					minY = PxMin(minY, pY); maxY = PxMax(maxY, pY);
 				}
-				for (PxU32 i = 0; i < numPoints1; ++i)
+
+				for (PxU32 i = 0; i < mNumPoints1; ++i)
 				{
-					const PxVec3d p = V3_To_V3d(facePoints1[i]);
-					const PxF64 pX = p.dot(X), pY = p.dot(Y);
+					const PxVec3 p = mFacePoints1[i];
+					const PxReal pX = p.dot(X), pY = p.dot(Y);
 					minX = PxMin(minX, pX); maxX = PxMax(maxX, pX);
 					minY = PxMin(minY, pY); maxY = PxMax(maxY, pY);
 				}
-				const PxF64 refX = ref.dot(X), refY = ref.dot(Y);
+
+				const PxVec3 ref = (mPoint0 + mPoint1) * 0.5f;
+				const PxReal refX = ref.dot(X), refY = ref.dot(Y);
 				points[numPoints++] = ref + X * (minX - refX) + Y * (minY - refY);
 				points[numPoints++] = ref + X * (maxX - refX) + Y * (minY - refY);
 				points[numPoints++] = ref + X * (maxX - refX) + Y * (maxY - refY);
 				points[numPoints++] = ref + X * (minX - refX) + Y * (maxY - refY);
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void clipPoly(const PxVec4d& plane, PxVec3d* points, PxU32& numPoints)
+			PX_CUDA_CALLABLE
+			void clipPoly(const PxVec4& plane, PxVec3* points, PxU32& numPoints)
 			{
-				const PxF64 eps = 1e-5;
-				PxF64 dist[4 + ConvexCore::MAX_FACE_POINTS * 2];
+				PxReal dist[MAX_POLYGON_POINTS];
 				for (PxU32 i = 0; i < numPoints; ++i)
-					dist[i] = plane.dot(PxVec4d(points[i], 1));
+					dist[i] = plane.dot(PxVec4(points[i], 1));
 
+				const PxReal eps = 1e-5f;
 				PxU32 newNumPoints = 0;
-				PxVec3d newPoints[4 + ConvexCore::MAX_FACE_POINTS * 2];
+				PxVec3 newPoints[MAX_POLYGON_POINTS];
 				for (PxU32 i = 0; i < numPoints; ++i)
 				{
 					const PxU32 i0 = i, i1 = (i + 1) % numPoints;
-					const PxF64 d0 = dist[i0], d1 = dist[i1];
-					const PxVec3d p0 = points[i0], p1 = points[i1];
-					if (d0 >= 0)
+					const PxReal d0 = dist[i0], d1 = dist[i1];
+					const PxVec3 p0 = points[i0], p1 = points[i1];
+					if (d0 > -eps)
 					{
 						newPoints[newNumPoints++] = p0;
-						if (d1 < 0 && d0 - d1 > eps)
+						if (d1 < -eps && d0 - d1 > eps)
 							newPoints[newNumPoints++] = p0 + (p1 - p0) * (d0 / (d0 - d1));
 					}
-					else if (d1 >= 0 && d1 - d0 > eps)
+					else if (d1 > -eps && d1 - d0 > eps)
 						newPoints[newNumPoints++] = p0 + (p1 - p0) * (d0 / (d0 - d1));
 				}
 
@@ -792,109 +859,29 @@ namespace physx
 					points[i] = newPoints[i];
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void addContact(const PxVec3& point, const PxVec3& normal, PxReal dist)
-			{
-				PxVec3 points[MAX_CONTACTS + 1] = { point };
-				PxReal dists[MAX_CONTACTS + 1] = { dist };
-				for (PxU32 i = 0; i < numContacts; ++i)
-				{
-					points[i + 1] = contactPoints[i];
-					dists[i + 1] = contactDists[i];
-				}
-				for (PxU32 i = 0; i < numContacts; ++i)
-					if (dists[i] > dists[i + 1])
-					{
-						PxSwap(points[i], points[i + 1]);
-						PxSwap(dists[i], dists[i + 1]);
-					}
-					else break;
+			static const PxU32 MAX_CLIP_PLANES = ConvexCore::MAX_FACE_POINTS * 2;
+			static const PxU32 MAX_POLYGON_POINTS = MAX_CLIP_PLANES + 4 + 1;
 
-				PxU32 inds[4];
-				PxU32 numPoints = reducePolygon(points, numContacts + 1, sizeof(PxVec3), normal, inds, true);
-				for (PxU32 i = 0; i < numPoints; ++i)
-				{
-					contactPoints[i] = points[inds[i]];
-					contactDists[i] = dists[inds[i]];
-				}
-
-				numContacts = numPoints;
-			}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			void writePoints(const PxVec3& axis, const PxVec3d* polyPoints, PxU32 numPolyPoints)
-			{
-				const PxVec4 plane0(faceNormal0, -faceNormal0.dot(facePoints0[0]));
-				const PxVec4 plane1(faceNormal1, -faceNormal1.dot(facePoints1[0]));
-				for (PxU32 i = 0; i < numPolyPoints; ++i)
-				{
-					const PxVec3 p = V3d_To_V3(polyPoints[i]);
-					const PxVec3 p0 = p - axis * plane0.dot(PxVec4(p, 1)) / axis.dot(plane0.getXYZ());
-					const PxVec3 p1 = p - axis * plane1.dot(PxVec4(p, 1)) / axis.dot(plane1.getXYZ());
-					addContact((p0 + p1) * 0.5f, axis, axis.dot(p0 - p1));
-				}
-			}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			// clip N point poygon by N point polygon
-			PxU32 clipNxN(const PxVec3& axis, const PxVec3& ref)
-			{
-				PxU32 numClipPlanes = 0;
-				PxVec4d clipPlanes[ConvexCore::MAX_FACE_POINTS * 2];
-				makePlanes(axis, clipPlanes, numClipPlanes);
-
-				PxU32 numPolyPoints = 0;
-				PxVec3d polyPoints[4 + ConvexCore::MAX_FACE_POINTS * 2];
-				makePoly(axis, ref, polyPoints, numPolyPoints);
-
-				for (PxU32 i = 0; i < numClipPlanes; ++i)
-					clipPoly(clipPlanes[i], polyPoints, numPolyPoints);
-
-				writePoints(axis, polyPoints, numPolyPoints);
-
-				return numContacts;
-			}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			// clip 2 point segment by N point polygon
-			PxU32 clip2xN(const PxVec3& axis)
-			{
-				PxU32 numClipPlanes = 0;
-				PxVec4d clipPlanes[ConvexCore::MAX_FACE_POINTS];
-				makePlanes(axis, facePoints1, numPoints1, clipPlanes, numClipPlanes);
-
-				PxU32 numPolyPoints = 2;
-				PxVec3d polyPoints[2 + ConvexCore::MAX_FACE_POINTS] =
-					{ V3_To_V3d(facePoints0[0]), V3_To_V3d(facePoints0[1]) };
-
-				for (PxU32 i = 0; i < numClipPlanes; ++i)
-					clipPoly(clipPlanes[i], polyPoints, numPolyPoints);
-
-				writePoints(axis, polyPoints, numPolyPoints);
-
-				return numContacts;
-			}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			// clip N point polygon by 2 point segment
-			PxU32 clipNx2(const PxVec3& axis)
-			{
-				PxU32 numClipPlanes = 0;
-				PxVec4d clipPlanes[ConvexCore::MAX_FACE_POINTS];
-				makePlanes(axis, facePoints0, numPoints0, clipPlanes, numClipPlanes);
-
-				PxU32 numPolyPoints = 2;
-				PxVec3d polyPoints[2 + ConvexCore::MAX_FACE_POINTS] =
-					{ V3_To_V3d(facePoints1[0]), V3_To_V3d(facePoints1[1]) };
-
-				for (PxU32 i = 0; i < numClipPlanes; ++i)
-					clipPoly(clipPlanes[i], polyPoints, numPolyPoints);
-
-				writePoints(axis, polyPoints, numPolyPoints);
-
-				return numContacts;
-			}
+			const PxVec3 mPoint0, mPoint1, mAxis;
+			PxVec3 mFaceNormal0, mFaceNormal1;
+			PxVec3 mFacePoints0[ConvexCore::MAX_FACE_POINTS];
+			PxVec3 mFacePoints1[ConvexCore::MAX_FACE_POINTS];
+			PxU32 mNumPoints0, mNumPoints1;
+			PxVec4 mPoints[4];
+			PxU32 mNumPoints;
 		};
+
+		PX_CUDA_CALLABLE PX_INLINE
+		// generate multi-point contact for 2 convex shapes, using GJKEPA
+		// output (2 closest points and the separating axis)
+		static PxU32 generateContactPatch(const Gu::ConvexShape& convex0, const Gu::ConvexShape& convex1,
+			const PxVec3& point0, const PxVec3& point1, const PxVec3& axis, PxVec3& normal, PxVec4* points)
+		{
+			FaceClipper clipper(convex0, convex1, point0, point1, axis);
+			clipper.clip();
+
+			return clipper.getContact(normal, points);
+		}
 
 		// contact patches generation
 		// it takes a point and distributes it among up to 16
@@ -916,48 +903,38 @@ namespace physx
 			{
 				PxVec3 p; PxReal d;
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
+				PX_CUDA_CALLABLE PX_INLINE
 				static Point make(const PxVec3& p, PxReal d)
 					{ Point pt; pt.p = p; pt.d = d; return pt; }
 			};
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			Contact()
 				:
 				mNumPatches(0), mNumPoints(0)
 			{}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			PxU32 numPatches() const
-			{
-				return mNumPatches;
-			}
+				{ return mNumPatches; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			PxU32 numPoints() const
-			{
-				return mNumPoints;
-			}
+				{ return mNumPoints; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			PxU32 numPatchPoints(PxU32 patchIndex) const
-			{
-				return mPatches[patchIndex].numPoints;
-			}
+				{ return mPatches[patchIndex].numPoints; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			const PxVec3& patchNormal(PxU32 patchIndex) const
-			{
-				return mPatches[patchIndex].normal;
-			}
+				{ return mPatches[patchIndex].normal; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE PX_INLINE
 			const Point& patchPoint(PxU32 patchIndex, PxU32 pointIndex) const
-			{
-				return mPoints[patchIndex * MAX_PATCH_POINTS + pointIndex];
-			}
+				{ return mPoints[patchIndex * MAX_PATCH_POINTS + pointIndex]; }
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE
 			void addPoint(const PxVec3& position, const PxVec3& normal, PxReal depth)
 			{
 				for (PxU32 i = 0; i < mNumPatches; ++i)
@@ -987,7 +964,7 @@ namespace physx
 			Point mPoints[MAX_PATCHES * MAX_PATCH_POINTS];
 			PxU32 mNumPatches, mNumPoints;
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE
 			void addPatch(const PxVec3& normal, const Point& point)
 			{
 				if (mNumPatches < MAX_PATCHES)
@@ -1043,7 +1020,7 @@ namespace physx
 				++mNumPoints;
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
+			PX_CUDA_CALLABLE
 			void addPatchPoint(PxU32 patchIndex, const Point& point)
 			{
 				Patch& patch = mPatches[patchIndex];
@@ -1072,10 +1049,10 @@ namespace physx
 			}
 		};
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE
 		// select 4 points forming the largest quad
 		// it can keep the 1st point if asked
-		PxU32 reducePolygon(const void* points, PxU32 count, PxU32 stride, const PxVec3& normal, PxU32 inds[4], bool keep1st)
+		static PxU32 reducePolygon(const void* points, PxU32 count, PxU32 stride, const PxVec3& normal, PxU32 inds[4], bool keep1st)
 		{
 			const PxReal eps = FLT_EPSILON;
 			using PxU8Ptr = PxU8*;
@@ -1160,10 +1137,10 @@ namespace physx
 			#undef getPoint
 		}
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE
 		// rotate given points around the center-normal, until
 		// the 1st point matchs the reference point.
-		void rotatePoints(const PxVec3& center, const PxVec3& ref, const PxVec3& normal, PxVec3* points, PxU32 count)
+		static void rotatePoints(const PxVec3& center, const PxVec3& ref, const PxVec3& normal, PxVec3* points, PxU32 count)
 		{
 			const PxReal eps = FLT_EPSILON;
 			PxVec3 dir0 = points[0] - center;
@@ -1182,11 +1159,11 @@ namespace physx
 				points[i] = rot.rotate(points[i] - center) + center;
 		}
 
-		static const PxU32 MAX_CONVEX_CONTACTS = FaceClipper::MAX_CONTACTS + 1;
+		static const PxU32 MAX_CONVEX_CONTACTS = 4;
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE
 		// generates contacts between a plane and a convex
-		PxU32 generateContacts(const PxPlane& plane0, const ConvexShape& convex1, const PxReal contactDist,
+		static PxU32 generateContacts(const PxPlane& plane0, const ConvexShape& convex1, const PxReal contactDist,
 			PxVec3& normal, PxVec3 points[MAX_CONVEX_CONTACTS], PxReal dists[MAX_CONVEX_CONTACTS])
 		{
 			normal = -plane0.n;
@@ -1198,13 +1175,17 @@ namespace physx
 
 			if (dist < contactDist)
 			{
-				const PxVec3 point = point1 + normal * dist * 0.5f;
-				points[numContacts] = point;
-				dists[numContacts] = dist;
-				++numContacts;
-
 				PxVec3 faceNormal, facePoints[Gu::ConvexCore::MAX_FACE_POINTS];
 				const PxU32 numPoints = convex1.contactFace(normal, point1, faceNormal, facePoints);
+				
+				if (numPoints == 0)
+				{
+					const PxVec3 point = point1 + normal * dist * 0.5f;
+					points[numContacts] = point;
+					dists[numContacts] = dist;
+					++numContacts;
+				}
+
 				for (PxU32 i = 0; i < numPoints; ++i)
 				{
 					const PxVec3 p1 = facePoints[i];
@@ -1218,69 +1199,52 @@ namespace physx
 			return numContacts;
 		}
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE
 		// generates contacts between 2 convexes (cullDir is for triangle backface culling)
-		PxU32 generateContacts(const ConvexShape& convex0, const ConvexShape& convex1, const PxReal contactDist,
+		static PxU32 generateContacts(const ConvexShape& convex0, const ConvexShape& convex1, const PxReal contactDist,
 			const PxVec3& cullDir, PxVec3& normal, PxVec3 points[MAX_CONVEX_CONTACTS], PxReal dists[MAX_CONVEX_CONTACTS])
 		{
+			const PxReal maxDist = convex0.margin + convex1.margin + contactDist;
+
 			PxVec3 point0, point1, axis;
-			PxReal dist = RefGjkEpa::gjkDistance(convex0, convex1, convex0.pose, convex1.pose,
-				convex0.margin + convex1.margin + contactDist, point0, point1, axis);
+			PxReal dist = RefGjkEpa::computeGjkDistance(convex0, convex1, convex0.pose, convex1.pose, maxDist, point0, point1, axis);
 
 			if (dist < FLT_EPSILON)
-				dist = RefGjkEpa::epaDepth(convex0, convex1, convex0.pose, convex1.pose,
-					point0, point1, axis);
+				dist = RefGjkEpa::computeEpaDepth(convex0, convex1, convex0.pose, convex1.pose, point0, point1, axis);
 
-			if (cullDir.dot(axis) < -FLT_EPSILON)
+			if (dist > maxDist)
+				return 0;
+
+			const PxReal testEps = 1e-5f;
+			if (cullDir.dot(axis) < -testEps)
 				return 0;
 
 			point0 -= axis * convex0.margin;
 			point1 += axis * convex1.margin;
 			dist -= convex0.margin + convex1.margin;
 
-			PxU32 count = 0;
+			PxVec4 patch[MAX_CONVEX_CONTACTS];
+			PxU32 numPoints = generateContactPatch(convex0, convex1, point0, point1, axis, normal, patch);
 
-			if (dist < contactDist)
+			for (PxU32 i = 0; i < numPoints; ++i)
 			{
-				normal = axis;
-
-				const PxVec3 point = (point0 + point1) * 0.5f;
-
-				FaceClipper clipper;
-				clipper.numPoints0 = convex0.contactFace(-axis, point0, clipper.faceNormal0, clipper.facePoints0);
-				clipper.numPoints1 = convex1.contactFace(axis, point1, clipper.faceNormal1, clipper.facePoints1);
-
-				PxU32 numPoints = clipper.clip(axis, point);
-
-				PxReal minDist = FLT_MAX;
-				for (PxU32 i = 0; i < numPoints; ++i)
-					minDist = PxMin(minDist, clipper.contactDists[i]);
-
-				if (dist < minDist - FLT_EPSILON)
-				{
-					points[count] = point;
-					dists[count] = dist;
-					count++;
-				}
-
-				for (PxU32 i = 0; i < numPoints; ++i)
-				{
-					points[count] = clipper.contactPoints[i];
-					dists[count] = clipper.contactDists[i];
-					count++;
-				}
+				points[i] = patch[i].getXYZ();
+				dists[i] = patch[i].w;
 			}
 
-			return count;
+			return numPoints;
 		}
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
+		PX_CUDA_CALLABLE PX_INLINE
 		// generates contacts between 2 convexes
-		PxU32 generateContacts(const ConvexShape& convex0, const ConvexShape& convex1, const PxReal contactDist,
+		static PxU32 generateContacts(const ConvexShape& convex0, const ConvexShape& convex1, const PxReal contactDist,
 			PxVec3& normal, PxVec3 points[MAX_CONVEX_CONTACTS], PxReal dists[MAX_CONVEX_CONTACTS])
-		{
-			return generateContacts(convex0, convex1, contactDist, PxVec3(0), normal, points, dists);
-		}
+			{ return generateContacts(convex0, convex1, contactDist, PxVec3(0), normal, points, dists); }
+
+		PX_CUDA_CALLABLE PX_INLINE
+		// suppress a warning about an unreferenced local symbol
+		PxU32 suppressUnhelpfulWarnings()
+			{ PxPlane p; ConvexShape cs; PxReal r(0); PxVec3 v; return generateContacts(p, cs, r, v, NULL, NULL); }
 	}
 }
 

@@ -55,7 +55,6 @@ public:
 	virtual		void						requiresObjects(PxProcessPxBaseCallback&) {}
 	virtual		bool						isSubordinate()  const	 { return true; } 
 	static		NpArticulationMimicJoint*	createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void						getBinaryMetaData(PxOutputStream& stream);		
 //~PX_SERIALIZATION
 
 	NpArticulationMimicJoint(

@@ -50,7 +50,6 @@ namespace Sc
 						void						exportExtraData(PxSerializationContext& stream);
 						void						importExtraData(PxDeserializationContext& context);
 						void						resolveReferences(PxDeserializationContext& context);
-		static			void						getBinaryMetaData(PxOutputStream& stream);
 		                void                        resolveMaterialReference(PxU32 materialTableIndex, PxU16 materialIndex);
 //~PX_SERIALIZATION
 													ShapeCore(	const PxGeometry& geometry, PxShapeFlags shapeFlags,

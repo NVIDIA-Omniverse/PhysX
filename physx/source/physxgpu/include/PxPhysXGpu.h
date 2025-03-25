@@ -56,6 +56,7 @@ class PxsParticleAndDiffuseBuffer;
 class PxsParticleClothBuffer;
 class PxsParticleRigidBuffer;
 class PxDelayLoadHook;
+class PxsTransformCache;
 
 class PxIsosurfaceExtractor;
 class PxSparseGridIsosurfaceExtractor;
@@ -159,6 +160,9 @@ public:
 		PxU64 contextID,
 		PxPairFilteringMode::Enum kineKineFilteringMode, 
 		PxPairFilteringMode::Enum staticKineFilteringMode) = 0;
+
+
+	virtual Bp::BoundsArray* createGpuBounds(PxVirtualAllocator& allocator) = 0;
 
 	/**
 	Create GPU narrow phase context.

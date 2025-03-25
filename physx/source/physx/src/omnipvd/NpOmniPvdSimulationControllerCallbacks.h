@@ -51,7 +51,7 @@ private:
 	const PxRigidDynamic* castPxsRigidBodyToPxRigidDynamic(const PxsRigidBody* rigidBody);
 	static const NpArticulationReducedCoordinate* castFeatherstoneToNpArticulation(const Dy::FeatherstoneArticulation* const featherstone);
 	void setDofOffsetVec(PxArray<PxU32>& dofStarts, PxU32 nbLinks, const NpArticulationLink* const * npLinks);
-	void streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, const Dy::FeatherstoneArticulation* const * articulations, const PxReal* realsDataVec, const PxArticulationGPUIndex* nodeIndices,
+	void streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, const Dy::FeatherstoneArticulation* const * articulations, PxReal* realsDataVec, const PxArticulationGPUIndex* nodeIndices,
 		PxU32 nbArticulations, PxU32 maxLinks, PxU32 maxSubElementsInBlock);
 	NpScene& mNpScene;
 	PxArray<PxU32> mDofStarts;

@@ -38,45 +38,6 @@ namespace physx
 #endif
 
 	/**
-	\brief A description of the types of articulation data that may be directly written to and read from the GPU using the functions
-	PxScene::copyArticulationData() and PxScene::applyArticulationData(). Types that are read-only may only be used in conjunction with
-	PxScene::copyArticulationData(). Types that are write-only may only be used in conjunction with PxScene::applyArticulationData().
-	A subset of data types may be used in conjunction with both PxScene::applyArticulationData() and PxScene::applyArticulationData().
-
-	\see PxArticulationCache, PxScene::copyArticulationData(), PxScene::applyArticulationData()
-
-	\deprecated The replacements are PxArticulationGPUAPIReadType and PxArticulationGPUAPIWriteType in combination with 
-	PxDirectGPUAPI::getArticulationData and PxDirectGPUAPI::setArticulationData.
-	
-	*/
-	PX_DEPRECATED	class PxArticulationGpuDataType
-	{
-	public:
-		enum Enum
-		{
-			eJOINT_POSITION = 0,		//!< The joint positions, read and write, see PxScene::copyArticulationData(), PxScene::applyArticulationData()
-			eJOINT_VELOCITY,			//!< The joint velocities, read and write, see PxScene::copyArticulationData(), PxScene::applyArticulationData()
-			eJOINT_ACCELERATION,		//!< The joint accelerations, read only, see PxScene::copyArticulationData()
-			eJOINT_FORCE,				//!< The applied joint forces, write only, see PxScene::applyArticulationData()
-			eJOINT_TARGET_VELOCITY,		//!< The velocity targets for the joint drives, write only, see PxScene::applyArticulationData()
-			eJOINT_TARGET_POSITION,		//!< The position targets for the joint drives, write only, see PxScene::applyArticulationData()
-			eROOT_TRANSFORM,			//!< The root link transform, read and write, see PxScene::copyArticulationData(), PxScene::applyArticulationData()
-			eROOT_VELOCITY,				//!< The root link velocity, read and write, see PxScene::copyArticulationData(), PxScene::applyArticulationData()
-			eLINK_TRANSFORM,			//!< The link transforms including root link, read only, see PxScene::copyArticulationData()
-			eLINK_VELOCITY,				//!< The link velocities including root link, read only, see PxScene::copyArticulationData()
-			eLINK_ACCELERATION,			//!< The link accelerations including root link, read only, see PxScene::copyArticulationData()
-			eLINK_INCOMING_JOINT_FORCE,	//!< The link incoming joint forces including root link, read only, see PxScene::copyArticulationData()
-			eLINK_FORCE,				//!< The forces to apply to links, write only, see PxScene::applyArticulationData()
-			eLINK_TORQUE,				//!< The torques to apply to links, write only, see PxScene::applyArticulationData()
-			eFIXED_TENDON,				//!< Fixed tendon data, write only, see PxScene::applyArticulationData()
-			eFIXED_TENDON_JOINT,		//!< Fixed tendon joint data, write only, see PxScene::applyArticulationData()
-			eSPATIAL_TENDON,			//!< Spatial tendon data, write only, see PxScene::applyArticulationData()
-			eSPATIAL_TENDON_ATTACHMENT  //!< Spatial tendon attachment data, write only, see PxScene::applyArticulationData()
-		};
-	};
-
-
-	/**
 	\brief These flags determine what data is read or written to the internal articulation data via cache.
 
 	\see PxArticulationCache PxArticulationReducedCoordinate::copyInternalStateToCache PxArticulationReducedCoordinate::applyCache

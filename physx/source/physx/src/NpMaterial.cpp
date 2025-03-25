@@ -177,17 +177,7 @@ void NpMaterial::setFlag(PxMaterialFlag::Enum flag, bool value)
 	if (value)
 		mMaterial.flags |= flag;
 	else
-	{
 		mMaterial.flags &= ~PxMaterialFlags(flag);
-
-#if PX_CHECKED
-		if (flag == PxMaterialFlag::eIMPROVED_PATCH_FRICTION)
-		{
-			PxGetFoundation().error(PX_WARN, "PxMaterial::setFlag(): the friction behavior with the flag "
-				"PxMaterialFlag::eIMPROVED_PATCH_FRICTION cleared is deprecated and support will end soon.");
-		}
-#endif
-	}
 	updateMaterial();
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
@@ -195,13 +185,6 @@ void NpMaterial::setFlag(PxMaterialFlag::Enum flag, bool value)
 void NpMaterial::setFlags(PxMaterialFlags inFlags)
 {
 	mMaterial.flags = inFlags;
-#if PX_CHECKED
-	if (!(inFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION))
-	{
-		PxGetFoundation().error(PX_WARN, "PxMaterial::setFlags(): the friction behavior with the flag "
-			"PxMaterialFlag::eIMPROVED_PATCH_FRICTION cleared is deprecated and support will end soon.");
-	}
-#endif
 	updateMaterial();
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }

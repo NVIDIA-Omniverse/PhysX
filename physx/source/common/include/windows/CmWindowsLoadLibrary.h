@@ -34,11 +34,6 @@
 #include "foundation/windows/PxWindowsInclude.h"
 #include "common/windows/PxWindowsDelayLoadHook.h"
 
-#ifdef PX_SECURE_LOAD_LIBRARY
-#include "nvSecureLoadLibrary.h"
-#endif
-
-
 namespace physx
 {
 namespace Cm
@@ -47,16 +42,7 @@ namespace Cm
 
 	PX_INLINE HMODULE WINAPI loadLibrary(const char* name)
 	{
-#ifdef PX_SECURE_LOAD_LIBRARY
-		HMODULE retVal = nvLoadSignedLibrary(name,true);
-		if(!retVal)
-		{
-			exit(1);
-		}
-		return retVal;
-#else
 		return ::LoadLibraryA( name );
-#endif		
 	};
 
 	PX_INLINE FARPROC WINAPI physXCommonDliNotePreLoadLibrary(const char* libraryName, const physx::PxDelayLoadHook* delayLoadHook)

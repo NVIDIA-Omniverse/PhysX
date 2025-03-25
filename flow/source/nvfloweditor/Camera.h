@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -34,55 +35,55 @@ struct NvFlowCamera;
 
 enum NvFlowCameraAction
 {
-	eNvFlowCameraAction_unknown = 0,
-	eNvFlowCameraAction_down = 1,
-	eNvFlowCameraAction_up = 2,
+    eNvFlowCameraAction_unknown = 0,
+    eNvFlowCameraAction_down = 1,
+    eNvFlowCameraAction_up = 2,
 
-	eNvFlowCameraAction_maxEnum = 0x7FFFFFFF
+    eNvFlowCameraAction_maxEnum = 0x7FFFFFFF
 };
 
 enum NvFlowCameraMouseButton
 {
-	eNvFlowCameraMouseButton_unknown = 0,
-	eNvFlowCameraMouseButton_left = 1,
-	eNvFlowCameraMouseButton_middle = 2,
-	eNvFlowCameraMouseButton_right = 3,
+    eNvFlowCameraMouseButton_unknown = 0,
+    eNvFlowCameraMouseButton_left = 1,
+    eNvFlowCameraMouseButton_middle = 2,
+    eNvFlowCameraMouseButton_right = 3,
 
-	eNvFlowCameraMouseButton_maxEnum = 0x7FFFFFFF
+    eNvFlowCameraMouseButton_maxEnum = 0x7FFFFFFF
 };
 
 enum NvFlowCameraKey
 {
-	eNvFlowCameraKey_unknown = 0,
-	eNvFlowCameraKey_up = 1,
-	eNvFlowCameraKey_down = 2,
-	eNvFlowCameraKey_left = 3,
-	eNvFlowCameraKey_right = 4,
+    eNvFlowCameraKey_unknown = 0,
+    eNvFlowCameraKey_up = 1,
+    eNvFlowCameraKey_down = 2,
+    eNvFlowCameraKey_left = 3,
+    eNvFlowCameraKey_right = 4,
 
-	eNvFlowCameraKey_maxEnum = 0x7FFFFFFF
+    eNvFlowCameraKey_maxEnum = 0x7FFFFFFF
 };
 
 struct NvFlowCameraState
 {
-	NvFlowFloat3 position;
-	NvFlowFloat3 eyeDirection;
-	NvFlowFloat3 eyeUp;
-	float eyeDistanceFromPosition;
+    NvFlowFloat3 position;
+    NvFlowFloat3 eyeDirection;
+    NvFlowFloat3 eyeUp;
+    float eyeDistanceFromPosition;
 };
 
 struct NvFlowCameraConfig
 {
-	NvFlowBool32 isProjectionRH;
-	NvFlowBool32 isOrthographic;
-	NvFlowBool32 isReverseZ;
-	float nearPlane;
-	float farPlane;
-	float fovAngleY;
-	float orthographicY;
-	float panRate;
-	float tiltRate;
-	float zoomRate;
-	float keyTranslationRate;
+    NvFlowBool32 isProjectionRH;
+    NvFlowBool32 isOrthographic;
+    NvFlowBool32 isReverseZ;
+    float nearPlane;
+    float farPlane;
+    float fovAngleY;
+    float orthographicY;
+    float panRate;
+    float tiltRate;
+    float zoomRate;
+    float keyTranslationRate;
 };
 
 NV_FLOW_API NvFlowCamera* NvFlowCameraCreate(int winw, int winh);

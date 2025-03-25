@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_RAY_MARCH_PARAMS_H
@@ -32,18 +33,18 @@
 
 struct NvFlowRayMarchCloudLayerShaderParams
 {
-	float densityMultiplier;
-	NvFlowUint enableCloudMode;
-	float pad1;
-	float pad2;
-	NvFlowFloat3 ambientColor;
-	float ambientMultiplier;
-	NvFlowFloat3 volumeBaseColor;
-	float volumeColorMultiplier;
-	NvFlowFloat3 sunDirection;
-	float shadowStepMultiplier;
-	NvFlowFloat3 attenuationMultiplier;
-	int numShadowSteps;
+    float densityMultiplier;
+    NvFlowUint enableCloudMode;
+    float pad1;
+    float pad2;
+    NvFlowFloat3 ambientColor;
+    float ambientMultiplier;
+    NvFlowFloat3 volumeBaseColor;
+    float volumeColorMultiplier;
+    NvFlowFloat3 sunDirection;
+    float shadowStepMultiplier;
+    NvFlowFloat3 attenuationMultiplier;
+    int numShadowSteps;
 };
 #ifdef NV_FLOW_CPU
 typedef struct NvFlowRayMarchCloudLayerShaderParams NvFlowRayMarchCloudLayerShaderParams;
@@ -51,40 +52,40 @@ typedef struct NvFlowRayMarchCloudLayerShaderParams NvFlowRayMarchCloudLayerShad
 
 struct NvFlowRayMarchLayerShaderParams
 {
-	NvFlowFloat3 blockSizeWorld;
-	float minBlockSizeWorld;
-	NvFlowFloat3 blockSizeWorldInv;
-	float maxBlockSizeWorld;
-	NvFlowFloat3 cellSize;
-	float stepSize;
-	NvFlowFloat3 cellSizeInv;
-	float stepSizeInv;	
-	NvFlowInt4 locationMin;
-	NvFlowInt4 locationMax;
-	NvFlowFloat3 worldMin;
-	NvFlowUint enableBlockWireframe;
-	NvFlowFloat3 worldMax;
-	NvFlowUint enableRawMode;
+    NvFlowFloat3 blockSizeWorld;
+    float minBlockSizeWorld;
+    NvFlowFloat3 blockSizeWorldInv;
+    float maxBlockSizeWorld;
+    NvFlowFloat3 cellSize;
+    float stepSize;
+    NvFlowFloat3 cellSizeInv;
+    float stepSizeInv;
+    NvFlowInt4 locationMin;
+    NvFlowInt4 locationMax;
+    NvFlowFloat3 worldMin;
+    NvFlowUint enableBlockWireframe;
+    NvFlowFloat3 worldMax;
+    NvFlowUint enableRawMode;
 
-	NvFlowFloat3 velocityCellSizeInv;
-	float deltaTime;
+    NvFlowFloat3 velocityCellSizeInv;
+    float deltaTime;
 
-	int layerAndLevel;
-	float layerAndLevelColormapV;
-	float alphaScale;
-	float colorScale;
+    int layerAndLevel;
+    float layerAndLevelColormapV;
+    float alphaScale;
+    float colorScale;
 
-	float shadowFactor;
+    float shadowFactor;
     NvFlowUint rawModeIsosurface;
     NvFlowUint rawModeNormalize;
-	float pad3;
+    float pad3;
 
     float colormapXOffset;
     float colormapXScale;
     float pad4;
     float pad5;
 
-	NvFlowRayMarchCloudLayerShaderParams cloud;
+    NvFlowRayMarchCloudLayerShaderParams cloud;
 };
 #ifdef NV_FLOW_CPU
 typedef struct NvFlowRayMarchLayerShaderParams NvFlowRayMarchLayerShaderParams;
@@ -92,34 +93,34 @@ typedef struct NvFlowRayMarchLayerShaderParams NvFlowRayMarchLayerShaderParams;
 
 struct NvFlowRayMarchIsosurfaceLayerShaderParams
 {
-	NvFlowFloat3 blockSizeWorld;
-	float minBlockSizeWorld;
-	NvFlowFloat3 blockSizeWorldInv;
-	float maxBlockSizeWorld;
-	NvFlowFloat3 cellSize;
-	float stepSize;
-	NvFlowFloat3 cellSizeInv;
-	float stepSizeInv;
-	NvFlowInt4 locationMin;
-	NvFlowInt4 locationMax;
-	NvFlowFloat3 worldMin;
-	NvFlowUint enableBlockWireframe;
-	NvFlowFloat3 worldMax;
-	NvFlowUint visualizeNormals;
+    NvFlowFloat3 blockSizeWorld;
+    float minBlockSizeWorld;
+    NvFlowFloat3 blockSizeWorldInv;
+    float maxBlockSizeWorld;
+    NvFlowFloat3 cellSize;
+    float stepSize;
+    NvFlowFloat3 cellSizeInv;
+    float stepSizeInv;
+    NvFlowInt4 locationMin;
+    NvFlowInt4 locationMax;
+    NvFlowFloat3 worldMin;
+    NvFlowUint enableBlockWireframe;
+    NvFlowFloat3 worldMax;
+    NvFlowUint visualizeNormals;
 
-	int layerAndLevel;
-	float densityThreshold;
-	NvFlowUint refractionMode;
-	NvFlowUint pad2;
+    int layerAndLevel;
+    float densityThreshold;
+    NvFlowUint refractionMode;
+    NvFlowUint pad2;
 
-	NvFlowFloat3 fluidColor;
-	float fluidIoR;
-	NvFlowFloat3 fluidSpecularReflectance;
-	float fluidAbsorptionCoefficient;
-	NvFlowFloat3 fluidDiffuseReflectance;
-	float pad3;
-	NvFlowFloat3 fluidRadiance;
-	float pad4;
+    NvFlowFloat3 fluidColor;
+    float fluidIoR;
+    NvFlowFloat3 fluidSpecularReflectance;
+    float fluidAbsorptionCoefficient;
+    NvFlowFloat3 fluidDiffuseReflectance;
+    float pad3;
+    NvFlowFloat3 fluidRadiance;
+    float pad4;
 };
 #ifdef NV_FLOW_CPU
 typedef struct NvFlowRayMarchIsosurfaceLayerShaderParams NvFlowRayMarchIsosurfaceLayerShaderParams;
@@ -127,38 +128,38 @@ typedef struct NvFlowRayMarchIsosurfaceLayerShaderParams NvFlowRayMarchIsosurfac
 
 struct NvFlowRayMarchShaderParams
 {
-	NvFlowSparseLevelParams levelParamsVelocity;
-	NvFlowSparseLevelParams levelParamsDensity;
+    NvFlowSparseLevelParams levelParamsVelocity;
+    NvFlowSparseLevelParams levelParamsDensity;
 
-	NvFlowFloat4x4 projection;
-	NvFlowFloat4x4 view;
-	NvFlowFloat4x4 projectionJitteredInv;
-	NvFlowFloat4x4 viewInv;
+    NvFlowFloat4x4 projection;
+    NvFlowFloat4x4 view;
+    NvFlowFloat4x4 projectionJitteredInv;
+    NvFlowFloat4x4 viewInv;
 
-	NvFlowFloat4 rayDir00;
-	NvFlowFloat4 rayDir10;
-	NvFlowFloat4 rayDir01;
-	NvFlowFloat4 rayDir11;
+    NvFlowFloat4 rayDir00;
+    NvFlowFloat4 rayDir10;
+    NvFlowFloat4 rayDir01;
+    NvFlowFloat4 rayDir11;
 
-	NvFlowFloat4 rayOrigin00;
-	NvFlowFloat4 rayOrigin10;
-	NvFlowFloat4 rayOrigin01;
-	NvFlowFloat4 rayOrigin11;
+    NvFlowFloat4 rayOrigin00;
+    NvFlowFloat4 rayOrigin10;
+    NvFlowFloat4 rayOrigin01;
+    NvFlowFloat4 rayOrigin11;
 
-	float width;
-	float height;
-	float widthInv;
-	float heightInv;
+    float width;
+    float height;
+    float widthInv;
+    float heightInv;
 
-	float depthWidth;
-	float depthHeight;
-	float depthWidthInv;
-	float depthHeightInv;
+    float depthWidth;
+    float depthHeight;
+    float depthWidthInv;
+    float depthHeightInv;
 
-	NvFlowUint numLayers;
-	float maxWorldDistance;
-	NvFlowUint isReverseZ;
-	float compositeColorScale;
+    NvFlowUint numLayers;
+    float maxWorldDistance;
+    NvFlowUint isReverseZ;
+    float compositeColorScale;
 };
 #ifdef NV_FLOW_CPU
 typedef struct NvFlowRayMarchShaderParams NvFlowRayMarchShaderParams;
@@ -166,15 +167,15 @@ typedef struct NvFlowRayMarchShaderParams NvFlowRayMarchShaderParams;
 
 struct NvFlowSelfShadowLayerShaderParams
 {
-	NvFlowRayMarchLayerShaderParams base;
-	float minIntensity;
-	NvFlowUint numSteps;
-	NvFlowUint isPointLight;
-	float stepOffset;
-	NvFlowFloat3 lightDirection;
-	NvFlowUint enabled;
-	NvFlowFloat3 lightPosition;
-	float pad3;
+    NvFlowRayMarchLayerShaderParams base;
+    float minIntensity;
+    NvFlowUint numSteps;
+    NvFlowUint isPointLight;
+    float stepOffset;
+    NvFlowFloat3 lightDirection;
+    NvFlowUint enabled;
+    NvFlowFloat3 lightPosition;
+    float pad3;
 };
 #ifdef NV_FLOW_CPU
 typedef struct NvFlowSelfShadowLayerShaderParams NvFlowSelfShadowLayerShaderParams;
@@ -182,12 +183,12 @@ typedef struct NvFlowSelfShadowLayerShaderParams NvFlowSelfShadowLayerShaderPara
 
 struct NvFlowSelfShadowShaderParams
 {
-	NvFlowUint blockIdxOffset;
-	NvFlowUint pad1;
-	NvFlowUint pad2;
-	NvFlowUint pad3;
-	NvFlowSparseLevelParams coarseDensityTable;
-	NvFlowSparseLevelParams densityTable;
+    NvFlowUint blockIdxOffset;
+    NvFlowUint pad1;
+    NvFlowUint pad2;
+    NvFlowUint pad3;
+    NvFlowSparseLevelParams coarseDensityTable;
+    NvFlowSparseLevelParams densityTable;
 };
 #ifdef NV_FLOW_CPU
 typedef struct NvFlowSelfShadowShaderParams NvFlowSelfShadowShaderParams;

@@ -185,6 +185,11 @@ void NpFactory::onShapeRelease(PxShape* a)
 	mShapeTracking.erase(a);
 }
 
+PxU32 NpFactory::getNbArticulations() const
+{
+	return mArticulationTracking.size();
+}
+
 void NpFactory::addArticulation(PxArticulationReducedCoordinate* npArticulation, bool lock)
 {
 	addToTracking(mArticulationTracking, npArticulation, mTrackingMutex, lock);
@@ -202,7 +207,12 @@ void NpFactory::releaseArticulationToPool(PxArticulationReducedCoordinate& artic
 
 PxArticulationReducedCoordinate* NpFactory::createArticulationRC()
 {
-	NpArticulationReducedCoordinate* npArticulation = NpFactory::getInstance().createNpArticulationRC();
+	NpArticulationReducedCoordinate* npArticulation;
+	{
+		PxMutex::ScopedLock lock(mArticulationRCPoolLock);
+		npArticulation = mArticulationRCPool.construct();
+	}
+
 	if(npArticulation)
 		addArticulation(npArticulation);
 	else
@@ -210,12 +220,6 @@ PxArticulationReducedCoordinate* NpFactory::createArticulationRC()
 
 	// OMNI_PVD_CREATE()
 	return npArticulation;
-}
-
-NpArticulationReducedCoordinate* NpFactory::createNpArticulationRC()
-{
-	PxMutex::ScopedLock lock(mArticulationRCPoolLock);
-	return mArticulationRCPool.construct();
 }
 
 void NpFactory::onArticulationRelease(PxArticulationReducedCoordinate* a)
@@ -536,6 +540,11 @@ void NpFactory::onParticleBufferRelease(PxParticleBuffer* buffer)
 
 /////////////////////////////////////////////////////////////////////////////// constraint
 
+PxU32 NpFactory::getNbConstraints() const
+{
+	return mConstraintTracking.size();
+}
+
 void NpFactory::addConstraint(PxConstraint* npConstraint, bool lock)
 {
 	addToTracking(mConstraintTracking, npConstraint, mTrackingMutex, lock);
@@ -569,6 +578,11 @@ void NpFactory::onConstraintRelease(PxConstraint* c)
 }
 
 /////////////////////////////////////////////////////////////////////////////// aggregate
+
+PxU32 NpFactory::getNbAggregates() const
+{
+	return mAggregateTracking.size();
+}
 
 void NpFactory::addAggregate(PxAggregate* npAggregate, bool lock)
 {
@@ -637,14 +651,14 @@ void NpFactory::releaseMaterialToPool(NpMaterial& material)
 ///////////////////////////////////////////////////////////////////////////////
 
 PxDeformableSurfaceMaterial* NpFactory::createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness, 
-	PxReal bendingStiffness, PxReal damping, PxReal bendingDamping)
+	PxReal bendingStiffness, PxReal elasticityDamping, PxReal bendingDamping)
 {
 	PX_CHECK_AND_RETURN_NULL(youngs >= 0.0f, "createDeformableSurfaceMaterial: youngs must be >= 0.");
 	PX_CHECK_AND_RETURN_NULL(poissons >= 0.0f && poissons < 0.5f, "createDeformableSurfaceMaterial: poissons must be in range[0.f, 0.5f).");
 	PX_CHECK_AND_RETURN_NULL(dynamicFriction >= 0.0f, "createDeformableSurfaceMaterial: dynamicFriction must be >= 0.");
 	PX_CHECK_AND_RETURN_NULL(thickness >= 0.0f, "createDeformableSurfaceMaterial: thickness must be > 0.");
 	PX_CHECK_AND_RETURN_NULL(bendingStiffness >= 0.0f, "createDeformableSurfaceMaterial: bendingStiffness must be >= 0.");
-	PX_CHECK_AND_RETURN_NULL(damping >= 0.0f, "createDeformableSurfaceMaterial: damping must be >= 0.");
+	PX_CHECK_AND_RETURN_NULL(elasticityDamping >= 0.0f, "createDeformableSurfaceMaterial: damping must be >= 0.");
 	PX_CHECK_AND_RETURN_NULL(bendingDamping >= 0.0f, "createDeformableSurfaceMaterial: bendingDamping must be >= 0.");
 
 	PxsDeformableSurfaceMaterialData materialData;
@@ -653,7 +667,7 @@ PxDeformableSurfaceMaterial* NpFactory::createDeformableSurfaceMaterial(PxReal y
 	materialData.dynamicFriction = dynamicFriction;
 	materialData.thickness = thickness;
 	materialData.bendingStiffness = bendingStiffness;
-	materialData.damping = damping;
+	materialData.elasticityDamping = elasticityDamping;
 	materialData.bendingDamping = bendingDamping;
 
 	NpDeformableSurfaceMaterial* npMaterial = NULL;
@@ -677,7 +691,7 @@ void NpFactory::releaseDeformableSurfaceMaterialToPool(PxDeformableSurfaceMateri
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_SUPPORT_GPU_PHYSX
-PxDeformableVolumeMaterial* NpFactory::createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)
+PxDeformableVolumeMaterial* NpFactory::createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal elasticityDamping)
 {
 #if PX_SUPPORT_GPU_PHYSX
 	PX_CHECK_AND_RETURN_NULL(youngs >= 0.0f, "createDeformableVolumeMaterial: youngs must be >= 0.");
@@ -688,7 +702,7 @@ PxDeformableVolumeMaterial* NpFactory::createDeformableVolumeMaterial(PxReal you
 	materialData.youngs = youngs;
 	materialData.poissons = poissons;
 	materialData.dynamicFriction = dynamicFriction;
-	materialData.damping = 0.f;
+	materialData.elasticityDamping = elasticityDamping;
 	materialData.dampingScale = toUniformU16(1.f);
 	materialData.materialModel = PxDeformableVolumeMaterialModel::eCO_ROTATIONAL;
 	materialData.deformThreshold = PX_MAX_F32;
@@ -1217,7 +1231,7 @@ void physx::NpDestroyAttachment(NpDeformableAttachment* np)							{ NpDestroy(np
 void physx::NpDestroyElementFilter(NpDeformableElementFilter* np)					{ NpDestroy(np);	}
 void physx::NpDestroyParticleSystem(NpPBDParticleSystem* np)						{ NpDestroy(np);	}
 void physx::NpDestroyParticleBuffer(NpParticleBuffer* np)							{ NpDestroy(np);	}
-void physx::NpDestroyParticleBuffer(NpParticleAndDiffuseBuffer* np)					{ NpDestroy(np); }
-void physx::NpDestroyParticleBuffer(NpParticleClothBuffer* np)						{ NpDestroy(np); }
-void physx::NpDestroyParticleBuffer(NpParticleRigidBuffer* np)						{ NpDestroy(np); }
+void physx::NpDestroyParticleBuffer(NpParticleAndDiffuseBuffer* np)					{ NpDestroy(np);	}
+void physx::NpDestroyParticleBuffer(NpParticleClothBuffer* np)						{ NpDestroy(np);	}
+void physx::NpDestroyParticleBuffer(NpParticleRigidBuffer* np)						{ NpDestroy(np);	}
 #endif

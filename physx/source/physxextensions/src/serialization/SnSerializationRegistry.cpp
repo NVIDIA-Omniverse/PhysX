@@ -149,9 +149,6 @@ SerializationRegistry::SerializationRegistry(PxPhysics& physics)
 {	
 	PxRegisterPhysicsSerializers(*this);
 	Ext::RegisterExtensionsSerializers(*this);
-
-	registerBinaryMetaDataCallback(PxGetPhysicsBinaryMetaData);
-	registerBinaryMetaDataCallback(Ext::GetExtensionsBinaryMetaData);
 }
 
 SerializationRegistry::~SerializationRegistry()
@@ -219,19 +216,6 @@ const char* SerializationRegistry::getSerializerName(PxU32 index) const
 { 
 	PX_ASSERT(index < mSerializers.size());
 	return mSerializers.getEntries()[index].second->getConcreteTypeName();
-}
-
-void SerializationRegistry::registerBinaryMetaDataCallback(PxBinaryMetaDataCallback callback)
-{
-	mMetaDataCallbacks.pushBack(callback);
-}
-
-void SerializationRegistry::getBinaryMetaData(PxOutputStream& stream) const
-{
-	for(PxU32 i = 0; i < mMetaDataCallbacks.size(); i++)
-	{
-		mMetaDataCallbacks[i](stream);
-	}
 }
 
 void SerializationRegistry::registerRepXSerializer(PxType type, PxRepXSerializer& serializer)

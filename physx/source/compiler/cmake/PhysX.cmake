@@ -43,7 +43,6 @@ include(${PHYSX_ROOT_DIR}/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/Ph
 
 SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxActor.h
-	${PHYSX_ROOT_DIR}/include/PxActorData.h
 	${PHYSX_ROOT_DIR}/include/PxAggregate.h
 	${PHYSX_ROOT_DIR}/include/PxArticulationFlag.h
 	${PHYSX_ROOT_DIR}/include/PxArticulationJointReducedCoordinate.h
@@ -134,8 +133,6 @@ SET(PHYSX_COMMON_HEADERS
 	${PHYSX_ROOT_DIR}/include/common/PxCollection.h
 	${PHYSX_ROOT_DIR}/include/common/PxCoreUtilityTypes.h
 	${PHYSX_ROOT_DIR}/include/common/PxInsertionCallback.h
-	${PHYSX_ROOT_DIR}/include/common/PxMetaData.h
-	${PHYSX_ROOT_DIR}/include/common/PxMetaDataFlags.h
 	${PHYSX_ROOT_DIR}/include/common/PxPhysXCommonConfig.h
 	${PHYSX_ROOT_DIR}/include/common/PxProfileZone.h
 	${PHYSX_ROOT_DIR}/include/common/PxRenderBuffer.h
@@ -263,7 +260,6 @@ SET(PHYSX_CORE_SOURCE
 	${PX_SOURCE_DIR}/NpParticleBuffer.cpp
 	${PX_SOURCE_DIR}/NpConstraint.cpp
 	${PX_SOURCE_DIR}/NpFactory.cpp
-	${PX_SOURCE_DIR}/NpMetaData.cpp
 	${PX_SOURCE_DIR}/NpPhysics.cpp
 	${PX_SOURCE_DIR}/NpBounds.h
 	${PX_SOURCE_DIR}/NpBounds.cpp

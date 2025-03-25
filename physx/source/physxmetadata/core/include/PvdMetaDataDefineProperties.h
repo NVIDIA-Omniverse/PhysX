@@ -63,7 +63,6 @@ namespace Vd
 	template<> struct PropertyDefinitionOp<type> { void defineProperty( PvdPropertyDefinitionHelper&, NamespacedName ){} };
 
 	//NOP out these two types.
-	DEFINE_PROPERTY_DEFINITION_OP_NOP( PxStridedData )
 	DEFINE_PROPERTY_DEFINITION_OP_NOP( PxBoundedData )
 
 #define DEFINE_PROPERTY_DEFINITION_OBJECT_REF( type )										\
@@ -223,7 +222,6 @@ struct SimplePropertyValueStructOp
 #define DEFINE_SIMPLE_PROPERTY_VALUE_STRUCT_OP_NOP( type ) \
 template<> struct SimplePropertyValueStructOp<type> { void addPropertyMessageArg( PvdPropertyDefinitionHelper&, PxU32 ){}};
 
-DEFINE_SIMPLE_PROPERTY_VALUE_STRUCT_OP_NOP( PxStridedData )
 DEFINE_SIMPLE_PROPERTY_VALUE_STRUCT_OP_NOP( PxBoundedData )
 
 #define DEFINE_SIMPLE_PROPERTY_VALUE_STRUCT_VOIDPTR_OP( type )						\

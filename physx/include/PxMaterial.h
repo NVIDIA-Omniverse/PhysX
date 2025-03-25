@@ -74,28 +74,6 @@ struct PxMaterialFlag
 		eDISABLE_STRONG_FRICTION = 1 << 1,
 
 		/**
-		\brief Whether to correct the friction force applied by the patch friction model to better match analytical models.
-		This flag only has an effect if the PxFrictionType::ePATCH friction model is used.
-
-		\note At a future point, the PhysX SDK will always behave as if this flag was set and no longer
-		support the legacy behavior mentioned further below. At that point this flag will be removed.
-		Until then, it is highly recommended to always set this flag to adapt to the corresponding friction
-		behavior (note that this flag is currently raised by default when creating a PxMaterial).
-
-		When using the patch friction model, up to two friction anchors are generated per patch. The normal force of all contacts
-		in the patch is accumulated and equally distributed among the anchors in order to compute friction forces. If this flag
-		is disabled, the legacy behavior is active which produces double the expected friction force in the case of two anchors,
-		since the full accumulated normal force is used in both anchors for the friction computation.
-		*/
-		eIMPROVED_PATCH_FRICTION = 1 << 2,
-
-		/**
-		\deprecated This flag has no longer any effect, and will be removed in a future version. Do not use.
-		Compliant contact behavior is now active whenever a negative restitution value is set.
-		*/
-		eCOMPLIANT_CONTACT PX_DEPRECATED = 1 << 3,
-
-		/**
 		\brief If this flag is raised in combination with negative restitution, the computed spring-damper output will be interpreted as
 		acceleration instead of force targets, analog to acceleration spring constraints.
 		The flag has no effect for non-compliant contacts (i.e., if restitution is nonnegative).
@@ -265,7 +243,7 @@ public:
 	
 	See the list of flags #PxMaterialFlag
 
-	<b>Default:</b> eIMPROVED_PATCH_FRICTION
+	<b>Default:</b> No flag raised.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake any actors which may be affected.
 
@@ -281,7 +259,7 @@ public:
 	
 	See the list of flags #PxMaterialFlag
 
-	<b>Default:</b> eIMPROVED_PATCH_FRICTION
+	<b>Default:</b> No flag raised.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake any actors which may be affected.
 

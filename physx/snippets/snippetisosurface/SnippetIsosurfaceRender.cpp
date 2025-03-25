@@ -38,7 +38,7 @@
 #include "PxIsosurfaceExtraction.h"
 #include "foundation/PxArray.h"
 
-#define USE_CUDA_INTEROP (!PX_PUBLIC_RELEASE)
+#define USE_CUDA_INTEROP (PX_SUPPORT_GPU_PHYSX)
 
 #define CUDA_SUCCESS 0
 #define SHOW_SOLID_SDF_SLICE 0

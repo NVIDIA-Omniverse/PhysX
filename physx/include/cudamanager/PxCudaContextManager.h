@@ -126,8 +126,8 @@ public:
 	 *
 	 * Only applicable when ctx is NULL, thus forcing a new context to be created based on the CUDA device ordinal.
 	 * The first CUDA device will have an ordinal value of 0 and so on.
-	 * If the CUDA device ordinal is -1, the device selected will be queried from PhysX settings in the NVIDIA Control Panel.
-	 * Note: The NVIDIA Control Panel is only supported on Windows.
+	 * If the CUDA device ordinal is -1, the device selected will be queried from the environment variable PHYSX_GPU_DEVICE.
+	 * \note If the environment variable PHYSX_GPU_DEVICE is not found, the CUDA device ordinal will default to 0.
 	 */
 	PxI32 deviceOrdinal;
 
@@ -372,6 +372,18 @@ public:
      */
     virtual void acquireContext() = 0;
 
+	/**
+	 * \brief Acquire the CUDA context for the current thread
+	 *
+	 * Acquisitions are allowed to be recursive within a single thread.
+	 * You can acquire the context multiple times so long as you release
+	 * it the same count.
+	 *
+	 * The context must be acquired before using most CUDA functions.
+	 * The function will return false if context aquisition fails for some reason
+	 */
+	virtual bool tryAcquireContext() = 0;
+
     /**
      * \brief Release the CUDA context from the current thread
      *
@@ -428,15 +440,6 @@ public:
     /* End query methods that don't require context to be acquired */
 
 	virtual void getDeviceMemoryInfo(size_t& free, size_t& total) const = 0; //!< get currently available and total memory
-
-	/**
-	 * \brief Determine if the user has configured a dedicated PhysX GPU in the NV Control Panel
-	 * \note If using CUDA Interop, this will always return false
-	 * \returns	1 if there is a dedicated GPU
-	 *			0 if there is NOT a dedicated GPU
-	 *			-1 if the routine is not implemented
-	*/
-	virtual int	usingDedicatedGPU() const = 0;
 
     /**
      * \brief Get the cuda modules that have been loaded into this context on construction

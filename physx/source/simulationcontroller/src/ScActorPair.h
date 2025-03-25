@@ -145,7 +145,7 @@ namespace Sc
 
 		PX_FORCE_INLINE void			createContactReportData(NPhaseCore&);
 
-		PX_FORCE_INLINE	void			convert(ActorPair& aPair) { PX_ASSERT(!aPair.isReportPair()); setTouchCount(aPair.getTouchCount()); mRefCount = aPair.getRefCount(); }
+		PX_FORCE_INLINE	void			convert(const ActorPair& aPair) { PX_ASSERT(!aPair.isReportPair()); setTouchCount(aPair.getTouchCount()); mRefCount = aPair.getRefCount(); }
 
 		PX_FORCE_INLINE static ActorPairReport& cast(ActorPair& aPair) { PX_ASSERT(aPair.isReportPair()); return static_cast<ActorPairReport&>(aPair); }
 

@@ -30,22 +30,21 @@
 
 using namespace physx;
 
-PxsContactManager::PxsContactManager(PxU32 index)
+PxsContactManager::PxsContactManager(PxU32 index) : mFlags(0), mCmIndex(index)
 {
-	mFlags = 0;
-
 	// PT: TODO: any reason why we don't initialize all members here, e.g. shapeCore pointers?
 	// PT: it might be because of the way we preallocate contact managers in the pipeline, and release the ones
 	// we filtered out. Maybe properly initializing everything "for no reason" in that case is costly.
 	// Still, it is unclear why we initialize *some* of the members there then.
-	mNpUnit.mIndex				= index;
 	mNpUnit.mRigidCore0			= NULL;
 	mNpUnit.mRigidCore1			= NULL;
 	mNpUnit.mRestDistance		= 0;
-	mNpUnit.mDominance0			= 1u;
-	mNpUnit.mDominance1			= 1u;
 	mNpUnit.mFrictionDataPtr	= NULL;
 	mNpUnit.mFrictionPatchCount	= 0;
+
+	mNpUnit.mFlags = 0;
+	mNpUnit.setDominance0(1u);
+	mNpUnit.setDominance1(1u);
 }
 
 PxsContactManager::~PxsContactManager()

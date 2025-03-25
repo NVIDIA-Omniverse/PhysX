@@ -93,9 +93,6 @@ public:
 	PX_FORCE_INLINE PxU32					getSolverArticBatchSize()			const	{ return mSolverArticBatchSize; }
 	PX_FORCE_INLINE void					setSolverArticBatchSize(PxU32 f)			{ mSolverArticBatchSize = f;	}
 
-	PX_FORCE_INLINE PxFrictionType::Enum	getFrictionType()					const	{ return mFrictionType;	}
-	PX_FORCE_INLINE void					setFrictionType(PxFrictionType::Enum f) 	{ mFrictionType = f;	}
-
 	PX_FORCE_INLINE PxReal					getDt()								const	{ return mDt;		}
 	PX_FORCE_INLINE void					setDt(const PxReal dt)						{ mDt = dt;			}
 	// PT: TODO: we have a setDt function but it doesn't set the inverse dt, what's the story here?
@@ -158,10 +155,13 @@ public:
 	Each island is solved as an independent solver task chain. In addition, large islands may be solved using multiple parallel tasks.
 	Island solving is asynchronous. Once all islands have been solved, the continuation task will be called.
 	*/
-	virtual void						update(PxBaseTask* continuation, PxBaseTask* processLostTouchTask,
-										PxvNphaseImplementationContext* nPhaseContext, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap) = 0;
+	virtual void						update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* processLostTouchTask,
+												PxvNphaseImplementationContext* nPhaseContext, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap) = 0;
+	virtual void						updatePostPartitioning(PxBaseTask* /*processLostTouchTask*/,
+												PxvNphaseImplementationContext* /*nPhaseContext*/, PxU32 /*maxPatchesPerCM*/, PxU32 /*maxArticulationLinks*/, PxReal /*dt*/, const PxVec3& /*gravity*/, PxBitMapPinned& /*changedHandleMap*/)	{}
 
-	virtual void						processPatches(PxsContactManager** /*lostFoundPatchManagers*/, PxU32 /*nbLostFoundPatchManagers*/, PxsContactManagerOutputCounts* /*outCounts*/)	{}
+	virtual void						processPatches(	Cm::FlushPool& /*flushPool*/, PxBaseTask* /*continuation*/,
+														PxsContactManager** /*lostFoundPatchManagers*/, PxU32 /*nbLostFoundPatchManagers*/, PxsContactManagerOutputCounts* /*outCounts*/)	{}
 
 	/**
 	\brief This method copy gpu solver body data to cpu body core
@@ -278,11 +278,6 @@ protected:
 	\brief The minimum number of articulations required to generate a solver task chain.
 	*/
 	PxU32						mSolverArticBatchSize;
-
-	/**
-	\brief The current friction model being used
-	*/
-	PxFrictionType::Enum		mFrictionType;
 
 	/**
 	\brief Structure to encapsulate contact stream allocations. Used by GPU solver to reference pre-allocated pinned host memory

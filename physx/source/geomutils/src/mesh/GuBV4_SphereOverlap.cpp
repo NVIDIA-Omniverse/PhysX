@@ -184,7 +184,7 @@ static PX_FORCE_INLINE void setupSphereParams(ParamsT* PX_RESTRICT params, const
 
 PxIntBool BV4_OverlapSphereAny(const Sphere& sphere, const BV4Tree& tree, const PxMat44* PX_RESTRICT worldm_Aligned)
 {
-	const SourceMesh* PX_RESTRICT mesh =static_cast<const SourceMesh*>(tree.mMeshInterface);
+	const SourceMesh* PX_RESTRICT mesh = static_cast<const SourceMesh*>(tree.mMeshInterface);
 
 	SphereParams Params;
 	setupSphereParams(&Params, sphere, &tree, worldm_Aligned, mesh);

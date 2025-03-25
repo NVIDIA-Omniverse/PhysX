@@ -73,8 +73,8 @@ PX_FLAGS_OPERATORS(PxPrismaticJointFlag::Enum, PxU16)
  \brief A prismatic joint permits relative translational movement between two bodies along
  an axis, but no relative rotational movement.
 
- the axis on each body is defined as the line containing the origin of the joint frame and
- extending along the x-axis of that frame
+ The axis on each body is defined as the line containing the origin of the joint frame and
+ extending along the x-axis of that frame.
 
  \image html prismJoint.png
 

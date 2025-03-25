@@ -185,9 +185,6 @@ protected:
 											PxU32(getConcreteType()) == PxU32(PxTypeInfo<T>::eFastTypeId) : isKindOf(PxTypeInfo<T>::name());
 									}
 
-private:
-	friend				void		getBinaryMetaData_PxBase(PxOutputStream& stream);
-
 protected:
 						PxType		mConcreteType;			// concrete type identifier - see PxConcreteType.
 						PxBaseFlags	mBaseFlags;				// internal flags

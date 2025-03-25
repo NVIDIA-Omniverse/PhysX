@@ -366,7 +366,7 @@ void setupFinalizeExtSolverContacts(
 
 		const PxContactPoint* contactBase0 = buffer + c.contactPatches[c.correlationListHeads[i]].start;
 
-		const PxReal coefficient = (contactBase0->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION && frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
+		const PxReal coefficient = (frictionPatch.anchorCount == 2) ? 0.5f : 1.f;
 
 		const PxReal staticFriction = contactBase0->staticFriction * coefficient;
 		const PxReal dynamicFriction = contactBase0->dynamicFriction * coefficient;

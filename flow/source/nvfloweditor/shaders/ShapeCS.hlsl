@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #include "ShapeParams.h"
 
@@ -35,77 +36,77 @@ RWTexture2D<float4> colorOut;
 
 bool raySphereIntersection(float3 o, float3 d, float3 c, float r, inout float t)
 {
-	bool ret = false;
-	float3 l = c - o;
-	float s = dot(l, d);
-	float l2 = dot(l, l);
-	float r2 = r * r;
-	if (s >= 0.f || l2 <= r2)
-	{
-		float s2 = s * s;
-		float m2 = l2 - s2;
-		if (m2 <= r2)
-		{
-			float q = sqrt(r2 - m2);
-			if (l2 > r2)
-			{
-				t = s - q;
-			}
-			else
-			{
-				t = s + q;
-			}
-			ret = t > 0.f;
-		}
-	}
-	return ret;
+    bool ret = false;
+    float3 l = c - o;
+    float s = dot(l, d);
+    float l2 = dot(l, l);
+    float r2 = r * r;
+    if (s >= 0.f || l2 <= r2)
+    {
+        float s2 = s * s;
+        float m2 = l2 - s2;
+        if (m2 <= r2)
+        {
+            float q = sqrt(r2 - m2);
+            if (l2 > r2)
+            {
+                t = s - q;
+            }
+            else
+            {
+                t = s + q;
+            }
+            ret = t > 0.f;
+        }
+    }
+    return ret;
 }
 
 [numthreads(8, 8, 1)]
 void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-	int2 tidx = int2(dispatchThreadID.xy);
+    int2 tidx = int2(dispatchThreadID.xy);
 
-	float2 pixelCenter = float2(tidx) + 0.5f;
-	float2 inUV = pixelCenter * float2(paramsIn.widthInv, paramsIn.heightInv);
+    float2 pixelCenter = float2(tidx) + 0.5f;
+    float2 inUV = pixelCenter * float2(paramsIn.widthInv, paramsIn.heightInv);
 
-	float w00 = (1.f - inUV.x) * (1.f - inUV.y);
-	float w10 = (inUV.x) * (1.f - inUV.y);
-	float w01 = (1.f - inUV.x) * (inUV.y);
-	float w11 = (inUV.x) * (inUV.y);
+    float w00 = (1.f - inUV.x) * (1.f - inUV.y);
+    float w10 = (inUV.x) * (1.f - inUV.y);
+    float w01 = (1.f - inUV.x) * (inUV.y);
+    float w11 = (inUV.x) * (inUV.y);
 
-	float3 rayDir = normalize(w00 * paramsIn.rayDir00.xyz + w10 * paramsIn.rayDir10.xyz + w01 * paramsIn.rayDir01.xyz + w11 * paramsIn.rayDir11.xyz);
-	float3 rayOrigin = w00 * paramsIn.rayOrigin00.xyz + w10 * paramsIn.rayOrigin10.xyz + w01 * paramsIn.rayOrigin01.xyz + w11 * paramsIn.rayOrigin11.xyz;
+    float3 rayDir = normalize(w00 * paramsIn.rayDir00.xyz + w10 * paramsIn.rayDir10.xyz + w01 * paramsIn.rayDir01.xyz + w11 * paramsIn.rayDir11.xyz);
+    float3 rayOrigin = w00 * paramsIn.rayOrigin00.xyz + w10 * paramsIn.rayOrigin10.xyz + w01 * paramsIn.rayOrigin01.xyz + w11 * paramsIn.rayOrigin11.xyz;
 
-	float globalDepth = paramsIn.clearDepth;
-	float4 globalColor = paramsIn.clearColor;
+    float globalDepth = paramsIn.clearDepth;
+    float4 globalColor = paramsIn.clearColor;
 
-	for (uint sphereIdx = 0u; sphereIdx < paramsIn.numSpheres; sphereIdx++)
-	{
-		float4 spherePositionRadius = spherePositionRadiusIn[sphereIdx];
-		float hitT = -1.f;
-		if (raySphereIntersection(rayOrigin, rayDir, spherePositionRadius.xyz, spherePositionRadius.w, hitT))
-		{
-			float4 worldPos = float4(rayDir * hitT + rayOrigin, 1.f);
+    for (uint sphereIdx = 0u; sphereIdx < paramsIn.numSpheres; sphereIdx++)
+    {
+        float4 spherePositionRadius = spherePositionRadiusIn[sphereIdx];
+        float hitT = -1.f;
+        if (raySphereIntersection(rayOrigin, rayDir, spherePositionRadius.xyz, spherePositionRadius.w, hitT))
+        {
+            float4 worldPos = float4(rayDir * hitT + rayOrigin, 1.f);
 
-			float4 clipPos = mul(worldPos, paramsIn.view);
-			clipPos = mul(clipPos, paramsIn.projection);
-			
-			float depth = clipPos.z / clipPos.w;
+            float4 clipPos = mul(worldPos, paramsIn.view);
+            clipPos = mul(clipPos, paramsIn.projection);
 
-			bool isVisible = bool(paramsIn.isReverseZ) ? (depth > globalDepth) : (depth < globalDepth);
-			if (isVisible)
-			{
-				float3 n = normalize(worldPos.xyz - spherePositionRadius.xyz);
+            float depth = clipPos.z / clipPos.w;
 
-				float4 color = float4(abs(n), 1.f);
+            bool isVisible = bool(paramsIn.isReverseZ) ? (depth > globalDepth) : (depth < globalDepth);
+            if (isVisible)
+            {
+                float3 n = normalize(worldPos.xyz - spherePositionRadius.xyz);
 
-				globalDepth = depth;
-				globalColor = color;
-			}
-		}
-	}
+                float4 color = float4(abs(n), 1.f);
 
-	depthOut[tidx] = globalDepth;
-	colorOut[tidx] = globalColor;
+                globalDepth = depth;
+                globalColor = color;
+            }
+        }
+    }
+
+    depthOut[tidx] = globalDepth;
+    colorOut[tidx] = globalColor;
 }

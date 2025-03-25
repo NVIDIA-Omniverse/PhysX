@@ -122,6 +122,7 @@ void ShapeSimBase::reinsertBroadPhase()
 
 		scene.unregisterShapeFromNphase(getCore(), getElementID());
 	}
+	PxU32 indexFrom = getElementID();
 
 	// Call ShapeSim dtor
 	{
@@ -143,7 +144,7 @@ void ShapeSimBase::reinsertBroadPhase()
 
 	// Call ShapeSim ctor
 	{
-		initSubsystemsDependingOnElementID();
+		initSubsystemsDependingOnElementID(indexFrom);
 	}
 
 	// Scene::addShape
@@ -151,7 +152,7 @@ void ShapeSimBase::reinsertBroadPhase()
 		scene.getSimulationController()->addPxgShape(this, getPxsShapeCore(), getActorNodeIndex(), getElementID());
 
 		// PT: TODO: anything else needed here?
-		scene.registerShapeInNphase(&getRbSim().getRigidCore(), getCore(), getElementID());
+		scene.registerShapeInNphase(&getRbSim().getRigidCore(), getCore(), getElementID()); //  register in narrowphase  getElementID() - transformcacheID. so I guess we must know at this point the definite index 
 	}
 }
 
@@ -173,7 +174,7 @@ PX_FORCE_INLINE bool ShapeSimBase::internalRemoveFromBroadPhase(bool wakeOnLostT
 	return res;
 }
 
-void ShapeSimBase::initSubsystemsDependingOnElementID()
+void ShapeSimBase::initSubsystemsDependingOnElementID(PxU32 indexFrom)
 {
 	Scene& scScene = getScene();
 
@@ -185,9 +186,9 @@ void ShapeSimBase::initSubsystemsDependingOnElementID()
 
 	PxsTransformCache& cache = scScene.getLowLevelContext()->getTransformCache();
 	cache.initEntry(index);
-	cache.setTransformCache(absPos, 0, index);
+	cache.setTransformCache(absPos, 0, index, indexFrom);
 
-	boundsArray.updateBounds(absPos, getCore().getGeometryUnion().getGeometry(), index);
+	boundsArray.updateBounds(absPos, getCore().getGeometryUnion().getGeometry(), index, indexFrom);
 
 	{
 		PX_PROFILE_ZONE("API.simAddShapeToBroadPhase", scScene.getContextId());
@@ -311,8 +312,8 @@ void ShapeSimBase::updateCached(PxU32 transformCacheFlags, PxBitMapPinned* shape
 	Scene& scene = getScene();
 	const PxU32 index = getElementID();
 
-	scene.getLowLevelContext()->getTransformCache().setTransformCache(absPose, transformCacheFlags, index);
-	scene.getBoundsArray().updateBounds(absPose, getCore().getGeometryUnion().getGeometry(), index);
+	scene.getLowLevelContext()->getTransformCache().setTransformCache(absPose, transformCacheFlags, index, index);
+	scene.getBoundsArray().updateBounds(absPose, getCore().getGeometryUnion().getGeometry(), index, index);
 	if (shapeChangedMap && isInBroadPhase())
 		shapeChangedMap->growAndSet(index);
 }

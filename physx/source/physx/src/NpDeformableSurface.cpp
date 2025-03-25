@@ -110,13 +110,38 @@ PxBounds3 NpDeformableSurface::getWorldBounds(float inflation) const
 
 	PX_SIMD_GUARD;
 
-	const PxBounds3 bounds = sim->getBounds();
+	const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
+
 	PX_ASSERT(bounds.isValid());
 
 	// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.
 	const PxVec3 center = bounds.getCenter();
 	const PxVec3 inflatedExtents = bounds.getExtents() * inflation;
 	return PxBounds3::centerExtents(center, inflatedExtents);
+}
+
+void NpDeformableSurface::setActorFlag(PxActorFlag::Enum flag, bool val)
+{
+	PX_CHECK_AND_RETURN(flag == PxActorFlag::eDISABLE_GRAVITY || !val, "PxDeformableSurface only supports PxActorFlag::eDISABLE_GRAVITY!");
+
+	PxActorFlags flags = mCore.getActorFlags();
+	if(val)
+		flags.raise(flag);
+	else
+		flags.clear(flag);
+
+	mCore.setActorFlags(flags);
+	NpActorTemplate<PxDeformableSurface>::setActorFlag(flag, val);
+}
+
+void NpDeformableSurface::setActorFlags(PxActorFlags inFlags)
+{
+	PX_CHECK_AND_RETURN(inFlags & PxActorFlag::eVISUALIZATION, "PxDeformableSurface doesn't supports PxActorFlag::eVISUALIZATION!");
+	PX_CHECK_AND_RETURN(inFlags & PxActorFlag::eSEND_SLEEP_NOTIFIES, "PxDeformableSurface doesn't supports PxActorFlag::eSEND_SLEEP_NOTIFIES!");
+	PX_CHECK_AND_RETURN(inFlags & PxActorFlag::eDISABLE_SIMULATION, "PxDeformableSurface doesn't supports PxActorFlag::eDISABLE_SIMULATION!");
+
+	mCore.setActorFlags(inFlags);
+	NpActorTemplate<PxDeformableSurface>::setActorFlags(inFlags);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -160,20 +185,20 @@ PxReal NpDeformableSurface::getLinearDamping() const
 	return mCore.getLinearDamping();
 }
 
-void NpDeformableSurface::setMaxVelocity(const PxReal v)
+void NpDeformableSurface::setMaxLinearVelocity(const PxReal v)
 {
 	NpScene* npScene = getNpScene();
 	NP_WRITE_CHECK(npScene);
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxVelocity() not allowed while simulation is running. Call will be ignored.")
 
-	mCore.setMaxVelocity(v);
+	mCore.setMaxLinearVelocity(v);
 	UPDATE_PVD_PROPERTY
 }
 
-PxReal NpDeformableSurface::getMaxVelocity() const
+PxReal NpDeformableSurface::getMaxLinearVelocity() const
 {
-	return mCore.getMaxVelocity();
+	return mCore.getMaxLinearVelocity();
 }
 
 void NpDeformableSurface::setMaxDepenetrationVelocity(const PxReal v)
@@ -181,15 +206,16 @@ void NpDeformableSurface::setMaxDepenetrationVelocity(const PxReal v)
 	NpScene* npScene = getNpScene();
 	NP_WRITE_CHECK(npScene);
 
+	PX_CHECK_AND_RETURN(v > 0.0f, "PxDeformableBody::setMaxDepenetrationVelocity(): value must be greater than zero.");
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxDepenetrationVelocity() not allowed while simulation is running. Call will be ignored.")
 
-	mCore.setMaxDepenetrationVelocity(v);
+	mCore.setMaxPenetrationBias(-v);
 	UPDATE_PVD_PROPERTY
 }
 
 PxReal NpDeformableSurface::getMaxDepenetrationVelocity() const
 {
-	return mCore.getMaxDepenetrationVelocity();
+	return -mCore.getMaxPenetrationBias();
 }
 
 void NpDeformableSurface::setSelfCollisionFilterDistance(const PxReal v)

@@ -134,23 +134,23 @@ ElementSimInteraction* NPhaseCore::createRbElementInteraction(const FilterInfo& 
 {
 	ElementSimInteraction* pair = NULL;
 
-	if((finfo.filterFlags & PxFilterFlag::eSUPPRESS) == false)
+	if((finfo.getFilterFlags() & PxFilterFlag::eSUPPRESS) == false)
 	{
 		if(!isTriggerPair)
 		{
 			PX_ASSERT(contactManager);
 			PX_ASSERT(shapeInteraction);
-			pair = createShapeInteraction(s0, s1, finfo.pairFlags, contactManager, shapeInteraction);
+			pair = createShapeInteraction(s0, s1, finfo.mPairFlags, contactManager, shapeInteraction);
 		}
 		else
 		{
-			pair = createTriggerInteraction(s0, s1, finfo.pairFlags);
+			pair = createTriggerInteraction(s0, s1, finfo.mPairFlags);
 		}
 	}
 	else
 		pair = createElementInteractionMarker(s0, s1, interactionMarker);
 
-	if(finfo.hasPairID)
+	if(finfo.mHasPairID)
 	{
 		// Mark the pair as a filter callback pair
 		pair->raiseInteractionFlag(InteractionFlag::eIS_FILTER_PAIR);
@@ -163,12 +163,16 @@ void NPhaseCore::managerNewTouch(ShapeInteraction& interaction)
 {
 	//(1) if the pair hasn't already been assigned, look it up!
 
+	// PT: new design: don't create ActorPair instances for non-report pairs
+	if(!interaction.isReportPair())
+		return;
+
 	ActorPair* actorPair = interaction.getActorPair();
 
 	if(!actorPair)
 	{
-		ShapeSim& s0 = static_cast<ShapeSim&>(interaction.getElement0());
-		ShapeSim& s1 = static_cast<ShapeSim&>(interaction.getElement1());
+		ShapeSimBase& s0 = interaction.getShape0();
+		ShapeSimBase& s1 = interaction.getShape1();
 		actorPair = findActorPair(&s0, &s1, interaction.isReportPair());
 		actorPair->incRefCount(); //It's being referenced by a new pair...
 		interaction.setActorPair(*actorPair);
@@ -299,9 +303,16 @@ ElementInteractionMarker* NPhaseCore::createElementInteractionMarker(ElementSim&
 
 ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBool isReportPair)
 {
+	// PT: new design: don't create ActorPair instances for non-report pairs
+	if(!isReportPair)
+		return NULL;
+
 	PX_ASSERT(!(s0->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
 		   && !(s1->getFlags() & PxShapeFlag::eTRIGGER_SHAPE));
-	
+
+	ActorSim& actorSim0 = s0->getActor();
+	ActorSim& actorSim1 = s1->getActor();
+
 	ActorSim* aLess = &s0->getActor();
 	ActorSim* aMore = &s1->getActor();
 
@@ -311,13 +322,53 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 	const BodyPairKey key(aLess->getActorID(), aMore->getActorID());
 
 	ActorPair*& actorPair = mActorPairMap[key];
-	
+
 	if(actorPair == NULL)
 	{
 		if(!isReportPair)
+		{
 			actorPair = mActorPairPool.construct();
+		}
 		else
-			actorPair = mActorPairReportPool.construct(s0->getActor(), s1->getActor());
+		{
+			// PT: new design: don't create ActorPair instances for non-report pairs
+			// PT: we now use the touch status of the SIPs to recreate the one from the missing ActorPair
+
+			ActorPairReport* actorPairReport = mActorPairReportPool.construct(actorSim0, actorSim1);
+
+			PxU32 size = aLess->getActorInteractionCount();
+			Interaction** interactions = aLess->getActorInteractions();
+		
+			// PT: emulate convert call on missing non-report actor pair
+			PxU32 nbTouch = 0;
+			while(size--)
+			{
+				Interaction* interaction = *interactions++;
+				if((&interaction->getActorSim0() == aMore) || (&interaction->getActorSim1() == aMore))
+				{
+					PX_ASSERT(((&interaction->getActorSim0() == aLess) || (&interaction->getActorSim1() == aLess)));
+
+					if(interaction->getType() == InteractionType::eOVERLAP)
+					{
+						ShapeInteraction* si = static_cast<ShapeInteraction*>(interaction);
+
+						if(si->hasTouch() && !si->getActorPair())
+						{
+							nbTouch++;
+
+							actorPairReport->incRefCount(); //It's being referenced by a new pair...
+							si->setActorPair(*actorPairReport);
+						}
+					}
+				}
+			}
+
+			// PT: TODO: maybe improve this
+			for(PxU32 i=0;i<nbTouch;i++)
+				actorPairReport->incTouchCount();
+
+			actorPair = actorPairReport;
+		}
 	}
 
 	if(!isReportPair || actorPair->isReportPair())
@@ -327,7 +378,7 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 		PxU32 size = aLess->getActorInteractionCount();
 		Interaction** interactions = aLess->getActorInteractions();
 		
-		ActorPairReport* actorPairReport = mActorPairReportPool.construct(s0->getActor(), s1->getActor());
+		ActorPairReport* actorPairReport = mActorPairReportPool.construct(actorSim0, actorSim1);
 		actorPairReport->convert(*actorPair);
 
 		while(size--)
@@ -356,8 +407,8 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 
 // PT: this is called from various places. In some of them like Sc::Scene::lostTouchReports() there is an explicit lock (mNPhaseCore->lockReports())
 // so there is no need to lock like in createActorPairContactReportData(). In some others however it is quite unclear and perhaps a lock is missing.
-static PX_FORCE_INLINE void destroyActorPairReport(	ActorPairReport& aPair, PxPool<ActorPairContactReportData>& actorPairContactReportDataPool,
-													PxPool<ActorPairReport>& actorPairReportPool)
+static PX_FORCE_INLINE void destroyActorPairReport(	ActorPairReport& aPair, ActorPairContactReportDataPool& actorPairContactReportDataPool,
+													ActorPairReportPool& actorPairReportPool)
 {
 	PX_ASSERT(aPair.isReportPair());
 	
@@ -379,10 +430,12 @@ ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, Interact
 	ElementSim& elementB = pair->getElement1();
 
 	// Wake up the actors of the pair
-	if((pair->getActorSim0().getActorType() == PxActorType::eRIGID_DYNAMIC) && !(static_cast<BodySim&>(pair->getActorSim0()).isActive()))
-		pair->getActorSim0().internalWakeUp();
-	if((pair->getActorSim1().getActorType() == PxActorType::eRIGID_DYNAMIC) && !(static_cast<BodySim&>(pair->getActorSim1()).isActive()))
-		pair->getActorSim1().internalWakeUp();
+	ActorSim& actor0 = pair->getActorSim0();
+	ActorSim& actor1 = pair->getActorSim1();
+	if((actor0.getActorType() == PxActorType::eRIGID_DYNAMIC) && !(static_cast<BodySim&>(actor0).isActive()))
+		actor0.internalWakeUp();
+	if((actor1.getActorType() == PxActorType::eRIGID_DYNAMIC) && !(static_cast<BodySim&>(actor1).isActive()))
+		actor1.internalWakeUp();
 
 	// Since the FilterPair struct might have been re-used in the newly created interaction, we need to clear
 	// the filter pair marker of the old interaction to avoid that the FilterPair gets deleted by the releaseElementPair()
@@ -407,12 +460,12 @@ ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, Interact
 			}
 		case InteractionType::eOVERLAP:
 			{
-			result = createShapeInteraction(static_cast<ShapeSim&>(elementA), static_cast<ShapeSim&>(elementB), filterInfo.pairFlags, NULL, NULL);
+			result = createShapeInteraction(static_cast<ShapeSim&>(elementA), static_cast<ShapeSim&>(elementB), filterInfo.mPairFlags, NULL, NULL);
 			break;
 			}
 		case InteractionType::eTRIGGER:
 			{
-			result = createTriggerInteraction(static_cast<ShapeSim&>(elementA), static_cast<ShapeSim&>(elementB), filterInfo.pairFlags);
+			result = createTriggerInteraction(static_cast<ShapeSim&>(elementA), static_cast<ShapeSim&>(elementB), filterInfo.mPairFlags);
 			break;
 			}
 		case InteractionType::eCONSTRAINTSHADER:
@@ -422,7 +475,7 @@ ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, Interact
 			break;
 	};
 
-	if(filterInfo.hasPairID)
+	if(filterInfo.mHasPairID)
 	{
 		PX_ASSERT(result);
 		// If a filter callback pair is going to get killed, then the FilterPair struct should already have
@@ -809,8 +862,8 @@ void NPhaseCore::processPersistentContactEvents(PxsContactManagerOutputIterator&
 			// for performance reasons.
 			//KS - filter based on edge activity!
 
-			const ActorSim& actorSim0= pair->getShape0().getActor();
-			const ActorSim& actorSim1 = pair->getShape1().getActor();
+			const ActorSim& actorSim0 = pair->getActor0();
+			const ActorSim& actorSim1 = pair->getActor1();
 
 			if (actorSim0.isActive() || ((!actorSim1.isStaticRigid()) && actorSim1.isActive()))
 				pair->processUserNotification(PxPairFlag::eNOTIFY_TOUCH_PERSISTS, 0, false, 0, false, outputs);
@@ -986,8 +1039,8 @@ void NPhaseCore::lostTouchReports(ShapeInteraction* si, PxU32 flags, ElementSim*
 
 	if(si->hasTouch() || (!si->hasKnownTouchState()))
 	{
-		ActorSim& b0 = si->getShape0().getActor();
-		ActorSim& b1 = si->getShape1().getActor();
+		ActorSim& b0 = si->getActor0();
+		ActorSim& b1 = si->getActor1();
 
 		if(flags & PairReleaseFlag::eWAKE_ON_LOST_TOUCH)
 		{

@@ -36,7 +36,6 @@ namespace Ext
 {
 	void RegisterExtensionsSerializers(PxSerializationRegistry& sr);
 	void UnregisterExtensionsSerializers(PxSerializationRegistry& sr);
-	void GetExtensionsBinaryMetaData(PxOutputStream& stream);
 }
 }
 

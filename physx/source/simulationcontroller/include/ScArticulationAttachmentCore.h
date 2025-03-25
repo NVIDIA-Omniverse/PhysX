@@ -43,7 +43,6 @@ namespace Sc
 // PX_SERIALIZATION
 															ArticulationAttachmentCore(const PxEMPTY) :  mTendonSim(NULL) {}
 						void								preExportDataReset() { }
-		static			void								getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 
 		ArticulationAttachmentCore() : mLowLimit(PX_MAX_F32), mHighLimit(-PX_MAX_F32), mRestLength(0.f)

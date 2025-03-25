@@ -80,19 +80,19 @@ namespace physx
 			mUsedSize = PxMax(mUsedSize, index + 1u);
 		}
 
-		PX_FORCE_INLINE void setTransformCache(const PxTransform& transform, const PxU32 flags, const PxU32 index)
+		PX_FORCE_INLINE void setTransformCache(const PxTransform& transform, PxU32 flags, PxU32 index, PxU32 /*indexFrom*/)
 		{
 			mTransformCache[index].transform = transform;
 			mTransformCache[index].flags = flags;
 			mHasAnythingChanged = true;
 		}
 
-		PX_FORCE_INLINE const PxsCachedTransform& getTransformCache(const PxU32 index) const
+		PX_FORCE_INLINE const PxsCachedTransform& getTransformCache(PxU32 index) const
 		{
 			return mTransformCache[index];
 		}
 
-		PX_FORCE_INLINE PxsCachedTransform& getTransformCache(const PxU32 index)
+		PX_FORCE_INLINE PxsCachedTransform& getTransformCache(PxU32 index)
 		{
 			return mTransformCache[index];
 		}
@@ -130,8 +130,10 @@ namespace physx
 		PX_FORCE_INLINE	void setChangedState()		{ mHasAnythingChanged = true;	}
 		PX_FORCE_INLINE	bool hasChanged()	const	{ return mHasAnythingChanged;	}
 
-	private:
+	protected:
 		PxCachedTransformArrayPinned	mTransformCache;
+
+	private:
 		PxU32							mUsedSize;
 		bool							mHasAnythingChanged;
 	};

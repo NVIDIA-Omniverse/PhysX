@@ -64,8 +64,8 @@ namespace Ext
 		void putEntry(SharedQueueEntry& entry);
 
 	private:
-		SharedQueueEntry*					mTaskEntryPool;
-		PxSList							mTaskEntryPtrPool;
+		SharedQueueEntry*	mTaskEntryPool;
+		PxSList				mTaskEntryPtrPool;
 	};
 
 #if PX_VC

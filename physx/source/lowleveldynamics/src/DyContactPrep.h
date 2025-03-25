@@ -78,11 +78,7 @@ Method prototype for create finalize solver contact
 
 typedef	bool (*PxcCreateFinalizeSolverContactMethod)(CREATE_FINALIZE_SOLVER_CONTACT_METHOD_ARGS);
 
-extern PxcCreateFinalizeSolverContactMethod createFinalizeMethods[3];
-
 typedef	SolverConstraintPrepState::Enum (*PxcCreateFinalizeSolverContactMethod4)(CREATE_FINALIZE_SOLVER_CONTACT_METHOD_ARGS_4);
-
-extern PxcCreateFinalizeSolverContactMethod4 createFinalizeMethods4[3];
 
 bool createFinalizeSolverContacts(	PxSolverContactDesc& contactDesc,
 									PxsContactManagerOutput& output,

@@ -38,28 +38,15 @@ namespace physx
 {
 	namespace Gu
 	{
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
-		static PxVec3d V3_To_V3d(const PxVec3& v)
-		{
-			return PxVec3d(PxF64(v.x), PxF64(v.y), PxF64(v.z));
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE
-		static PxVec3 V3d_To_V3(const PxVec3d& v)
-		{
-			return PxVec3(PxF32(v.x), PxF32(v.y), PxF32(v.z));
-		}
-
 		// The reference implementation of GJK-EPA algorithm
-		// the implementation uses doubles for maximum accuracy
 		namespace RefGjkEpa
 		{
 			template <typename Support>
 			struct Convex
 			{
-				static const PxU32 MAX_VERTS = 64;
+				static const PxU32 MAX_VERTS = 32;
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
+				PX_CUDA_CALLABLE
 				Convex(const Support& s, const PxTransform& p)
 					:
 					mS(s), mPose(p), mNumVerts(0)
@@ -67,20 +54,33 @@ namespace physx
 					const PxVec3 X(1, 0, 0), Y(0, 1, 0), Z(0, 0, 1);
 					const PxBounds3 bounds(PxVec3(mS.supportLocal(-X).x, mS.supportLocal(-Y).y, mS.supportLocal(-Z).z),
 						PxVec3(mS.supportLocal(X).x, mS.supportLocal(Y).y, mS.supportLocal(Z).z));
-					PxReal maxExtent = PxMax(bounds.getDimensions().maxElement(), FLT_EPSILON);
-					mAccuracy = maxExtent * 0.01f;
+					PxReal maxExtent = bounds.getDimensions().maxElement();
+					mAccuracy = PxMax(maxExtent * 0.01f, FLT_EPSILON);
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxF64 getAccuracy() const
+				PX_CUDA_CALLABLE PX_INLINE
+				PxReal getAccuracy() const
+					{ return mAccuracy; }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxBounds3 getBounds() const
 				{
-					return PxF64(mAccuracy);
+					const PxVec3 X(mPose.q.getInvBasisVector0()),
+								 Y(mPose.q.getInvBasisVector1()),
+								 Z(mPose.q.getInvBasisVector2());
+
+					return PxBounds3(PxVec3(mPose.transform(mS.supportLocal(-X)).x,
+											mPose.transform(mS.supportLocal(-Y)).y,
+											mPose.transform(mS.supportLocal(-Z)).z),
+									 PxVec3(mPose.transform(mS.supportLocal(X)).x,
+											mPose.transform(mS.supportLocal(Y)).y,
+											mPose.transform(mS.supportLocal(Z)).z));
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxU8 supportIndex(const PxVec3d& dir)
+				PX_CUDA_CALLABLE
+				PxU8 supportIndex(const PxVec3& dir)
 				{
-					PxVec3 d = V3d_To_V3(dir);
+					PxVec3 d = dir;
 					PxVec3 v = mPose.transform(mS.supportLocal(mPose.rotateInv(d)));
 					PxU32 closest = MAX_VERTS;
 					const PxReal WELD_DIST_SQ = mAccuracy * mAccuracy;
@@ -109,14 +109,16 @@ namespace physx
 					return PxU8(mNumVerts - 1);
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxVec3d supportVertex(PxU8 index) const
-				{
-					PX_ASSERT(index < mNumVerts);
-					return V3_To_V3d(mVerts[index]);
-				}
+				PX_CUDA_CALLABLE PX_INLINE
+				const PxVec3& supportVertex(PxU8 index) const
+					{ PX_ASSERT(index < mNumVerts); return mVerts[index]; }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				const PxTransform& getPose() const
+					{ return mPose; }
 
 			private:
+
 				const Support& mS;
 				const PxTransform& mPose;
 				PxVec3 mVerts[MAX_VERTS];
@@ -124,551 +126,576 @@ namespace physx
 				PxF32 mAccuracy;
 			};
 
+			template <typename Support>
 			struct GjkDistance
 			{
-				struct Vert
-				{
-					PxVec3d p;
-					PxF64 s;
-					PxU8 aI, bI;
-
-					PX_CUDA_CALLABLE PX_FORCE_INLINE
-					static Vert make(const PxVec3d& p, PxF64 s, PxU8 aI, PxU8 bI)
-						{ Vert v; v.p = p; v.s = s; v.aI = aI; v.bI = bI; return v; }
-				};
-
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				GjkDistance()
+				PX_CUDA_CALLABLE
+				GjkDistance(Convex<Support>& convexA, Convex<Support>& convexB)
 					:
-					mNum(0)
-				{}
-
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				bool addPoint(const PxVec3d& p, PxU8 aI, PxU8 bI)
+					mConvexA(convexA), mConvexB(convexB),
+					mNumVerts(0), mNumBestVerts(0), mIteration(0), mClosest(FLT_MAX)
 				{
-					for (PxU32 i = 0; i < mNum; ++i)
+					mVerts[0] = mVerts[1] = mVerts[2] = mVerts[3] = Vert::make(PxVec3(0), 0, 0, 0);
+					PxVec3 dir = mConvexB.getBounds().getCenter() - mConvexA.getBounds().getCenter();
+					if (dir.normalize() < FLT_EPSILON) dir = PxVec3(1, 0, 0);
+					addPoint(dir);
+				}
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxReal getAccuracy() const
+					{ return PxMin(mConvexA.getAccuracy(), mConvexB.getAccuracy()); }
+
+				PX_CUDA_CALLABLE
+				// adds a new point (the difference of the shapes support points in a given direction)
+				// to the simplex. returns the projection of the difference of the support points on
+				// the direction. positive values mean a gap, negative - an overlap. FLT_MAX signals
+				// to finalize the algorithm. mIteration > MAX_ITERATIONS indicate that the algorithm
+				// got stuck. most likely adding several same points over and over, but unable to
+				// finish because of the floating point precision problems
+				PxReal addPoint(const PxVec3& dir)
+				{
+					if (++mIteration > MAX_ITERATIONS)
+						return FLT_MAX;
+
+					const PxU8 aI = mConvexA.supportIndex(dir), bI = mConvexB.supportIndex(-dir);
+					const PxVec3 p = mConvexA.supportVertex(aI) - mConvexB.supportVertex(bI);
+
+					for (PxU32 i = 0; i < mNumVerts; ++i)
 					{
 						const Vert& v = mVerts[i];
 						if (v.aI == aI && v.bI == bI)
-							return false;
+							return FLT_MAX;
 					}
 
-					mVerts[mNum++] = Vert::make(p, 0.0, aI, bI);
+					mVerts[mNumVerts++] = Vert::make(p, 0.0f, aI, bI);
 
-					return true;
+					return p.dot(-dir);
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxVec3d computeClosest()
+				PX_CUDA_CALLABLE
+				void computeClosest()
 				{
-					switch (mNum)
+					Vert verts[4]; verts[0] = mVerts[0]; verts[1] = mVerts[1]; verts[2] = mVerts[2]; verts[3] = mVerts[3];
+					verts[0].s = verts[1].s = verts[2].s = verts[3].s = 0;
+					PxU32 numVerts = mNumVerts;
+
+					switch (numVerts)
 					{
 					case 1:
 					{
-						mVerts[0].s = 1.0;
+						verts[0].s = 1.0f;
 						break;
 					}
 					case 2:
 					{
-						const PxVec3d a = mVerts[0].p, b = mVerts[1].p;
-						const PxVec3d ba = a - b;
-						const PxF64 sba = ba.dot(-b);
+						const PxVec3 a = verts[0].p, b = verts[1].p;
+						const PxVec3 ba = a - b;
+						const PxReal sba = ba.dot(-b);
 						if (sba <= 0)
 						{
-							mVerts[0] = mVerts[1];
-							mVerts[0].s = 1.0;
-							mNum = 1;
+							verts[0] = verts[1];
+							verts[0].s = 1.0f;
+							numVerts = 1;
 							break;
 						}
-						mVerts[0].s = sba / ba.magnitudeSquared();
-						mVerts[1].s = 1.0 - mVerts[0].s;
+						verts[0].s = sba / ba.magnitudeSquared();
+						verts[1].s = 1.0f - verts[0].s;
 						break;
 					}
 					case 3:
 					{
-						const PxVec3d a = mVerts[0].p, b = mVerts[1].p, c = mVerts[2].p;
-						const PxVec3d ca = a - c, cb = b - c;
-						const PxF64 sca = ca.dot(-c), scb = cb.dot(-c);
+						const PxVec3 a = verts[0].p, b = verts[1].p, c = verts[2].p;
+						const PxVec3 ca = a - c, cb = b - c;
+						const PxReal sca = ca.dot(-c), scb = cb.dot(-c);
 						if (sca <= 0 && scb <= 0)
 						{
-							mVerts[0] = mVerts[2];
-							mVerts[0].s = 1.0;
-							mNum = 1;
+							verts[0] = verts[2];
+							verts[0].s = 1.0f;
+							numVerts = 1;
 							break;
 						}
-						const PxVec3d abc = (b - a).cross(c - a);
-						const PxF64 iabc = 1.0 / abc.magnitudeSquared();
-						const PxVec3d pabc = abc * abc.dot(a) * iabc;
-						const PxF64 tca = abc.dot((c - pabc).cross(a - pabc));
+						const PxVec3 abc = (b - a).cross(c - a);
+						const PxReal iabc = 1.0f / abc.magnitudeSquared();
+						const PxVec3 pabc = abc * abc.dot(a) * iabc;
+						const PxReal tca = abc.dot((c - pabc).cross(a - pabc));
 						if (sca > 0 && tca <= 0)
 						{
-							mVerts[1] = mVerts[2];
-							mVerts[0].s = sca / ca.magnitudeSquared();
-							mVerts[1].s = 1.0 - mVerts[0].s;
-							mNum = 2;
+							verts[1] = verts[2];
+							verts[0].s = sca / ca.magnitudeSquared();
+							verts[1].s = 1.0f - verts[0].s;
+							numVerts = 2;
 							break;
 						}
-						const PxF64 tbc = abc.dot((b - pabc).cross(c - pabc));
+						const PxReal tbc = abc.dot((b - pabc).cross(c - pabc));
 						if (scb > 0 && tbc <= 0)
 						{
-							mVerts[0] = mVerts[1];
-							mVerts[1] = mVerts[2];
-							mVerts[0].s = scb / cb.magnitudeSquared();
-							mVerts[1].s = 1.0 - mVerts[0].s;
-							mNum = 2;
+							verts[0] = verts[1];
+							verts[1] = verts[2];
+							verts[0].s = scb / cb.magnitudeSquared();
+							verts[1].s = 1.0f - verts[0].s;
+							numVerts = 2;
 							break;
 						}
-						mVerts[0].s = tbc * iabc;
-						mVerts[1].s = tca * iabc;
-						mVerts[2].s = 1.0 - mVerts[0].s - mVerts[1].s;
-						if (abc.dot(a) > 0) PxSwap(mVerts[0], mVerts[1]); // ???
+						verts[0].s = tbc * iabc;
+						verts[1].s = tca * iabc;
+						verts[2].s = 1.0f - verts[0].s - verts[1].s;
+						if (abc.dot(a) > 0) PxSwap(verts[0], verts[1]);
 						break;
 					}
 					case 4:
 					{
-						const PxVec3d a = mVerts[0].p, b = mVerts[1].p, c = mVerts[2].p, d = mVerts[3].p;
-						const PxVec3d da = a - d, db = b - d, dc = c - d;
-						const PxF64 sda = da.dot(-d), sdb = db.dot(-d), sdc = dc.dot(-d);
+						const PxVec3 a = verts[0].p, b = verts[1].p, c = verts[2].p, d = verts[3].p;
+						const PxVec3 da = a - d, db = b - d, dc = c - d;
+						const PxReal sda = da.dot(-d), sdb = db.dot(-d), sdc = dc.dot(-d);
 						if (sda <= 0 && sdb <= 0 && sdc <= 0)
 						{
-							mVerts[0] = mVerts[3];
-							mVerts[0].s = 1.0;
-							mNum = 1;
+							verts[0] = verts[3];
+							verts[0].s = 1.0f;
+							numVerts = 1;
 							break;
 						}
-						const PxVec3d dab = (a - d).cross(b - d);
-						const PxF64 idab = 1.0 / dab.magnitudeSquared();
-						const PxVec3d pdab = dab * dab.dot(d) * idab;
-						const PxVec3d dbc = (b - d).cross(c - d);
-						const PxF64 idbc = 1.0 / dbc.magnitudeSquared();
-						const PxVec3d pdbc = dbc * dbc.dot(d) * idbc;
-						const PxVec3d dca = (c - d).cross(a - d);
-						const PxF64 idca = 1.0 / dca.magnitudeSquared();
-						const PxVec3d pdca = dca * dca.dot(d) * idca;
-						const PxF64 tda = dab.dot((d - pdab).cross(a - pdab));
-						const PxF64 tad = dca.dot((a - pdca).cross(d - pdca));
+						const PxVec3 dab = (a - d).cross(b - d);
+						const PxReal idab = 1.0f / dab.magnitudeSquared();
+						const PxVec3 pdab = dab * dab.dot(d) * idab;
+						const PxVec3 dbc = (b - d).cross(c - d);
+						const PxReal idbc = 1.0f / dbc.magnitudeSquared();
+						const PxVec3 pdbc = dbc * dbc.dot(d) * idbc;
+						const PxVec3 dca = (c - d).cross(a - d);
+						const PxReal idca = 1.0f / dca.magnitudeSquared();
+						const PxVec3 pdca = dca * dca.dot(d) * idca;
+						const PxReal tda = dab.dot((d - pdab).cross(a - pdab));
+						const PxReal tad = dca.dot((a - pdca).cross(d - pdca));
 						if (sda > 0 && tda <= 0 && tad <= 0)
 						{
-							mVerts[1] = mVerts[3];
-							mVerts[0].s = sda / da.magnitudeSquared();
-							mVerts[1].s = 1.0 - mVerts[0].s;
-							mNum = 2;
+							verts[1] = verts[3];
+							verts[0].s = sda / da.magnitudeSquared();
+							verts[1].s = 1.0f - verts[0].s;
+							numVerts = 2;
 							break;
 						}
-						const PxF64 tdb = dbc.dot((d - pdbc).cross(b - pdbc));
-						const PxF64 tbd = dab.dot((b - pdab).cross(d - pdab));
+						const PxReal tdb = dbc.dot((d - pdbc).cross(b - pdbc));
+						const PxReal tbd = dab.dot((b - pdab).cross(d - pdab));
 						if (sdb > 0 && tdb <= 0 && tbd <= 0)
 						{
-							mVerts[0] = mVerts[1];
-							mVerts[1] = mVerts[3];
-							mVerts[0].s = sdb / db.magnitudeSquared();
-							mVerts[1].s = 1.0 - mVerts[0].s;
-							mNum = 2;
+							verts[0] = verts[1];
+							verts[1] = verts[3];
+							verts[0].s = sdb / db.magnitudeSquared();
+							verts[1].s = 1.0f - verts[0].s;
+							numVerts = 2;
 							break;
 						}
-						const PxF64 tcd = dbc.dot((c - pdbc).cross(d - pdbc));
-						const PxF64 tdc = dca.dot((d - pdca).cross(c - pdca));
+						const PxReal tcd = dbc.dot((c - pdbc).cross(d - pdbc));
+						const PxReal tdc = dca.dot((d - pdca).cross(c - pdca));
 						if (sdc > 0 && tdc <= 0 && tcd <= 0)
 						{
-							mVerts[0] = mVerts[2];
-							mVerts[1] = mVerts[3];
-							mVerts[0].s = sdc / dc.magnitudeSquared();
-							mVerts[1].s = 1.0 - mVerts[0].s;
-							mNum = 2;
+							verts[0] = verts[2];
+							verts[1] = verts[3];
+							verts[0].s = sdc / dc.magnitudeSquared();
+							verts[1].s = 1.0f - verts[0].s;
+							numVerts = 2;
 							break;
 						}
-						if (tda > 0 && tbd > 0 && dab.dot(d) < 0)
+						const PxVec3 abc = (b - a).cross(c - a);
+						if (tda > 0 && tbd > 0 && dab.dot(d) < 0 && abc.dot(dab) > 0)
 						{
-							mVerts[2] = mVerts[3];
-							mVerts[0].s = tbd * idab;
-							mVerts[1].s = tda * idab;
-							mVerts[2].s = 1.0 - mVerts[0].s - mVerts[1].s;
-							mNum = 3;
+							verts[2] = verts[3];
+							verts[0].s = tbd * idab;
+							verts[1].s = tda * idab;
+							verts[2].s = 1.0f - verts[0].s - verts[1].s;
+							numVerts = 3;
 							break;
 						}
-						if (tdb > 0 && tcd > 0 && dbc.dot(d) < 0)
+						if (tdb > 0 && tcd > 0 && dbc.dot(d) < 0 && abc.dot(dbc) > 0)
 						{
-							mVerts[0] = mVerts[1];
-							mVerts[1] = mVerts[2];
-							mVerts[2] = mVerts[3];
-							mVerts[0].s = tcd * idbc;
-							mVerts[1].s = tdb * idbc;
-							mVerts[2].s = 1.0 - mVerts[0].s - mVerts[1].s;
-							mNum = 3;
+							verts[0] = verts[1];
+							verts[1] = verts[2];
+							verts[2] = verts[3];
+							verts[0].s = tcd * idbc;
+							verts[1].s = tdb * idbc;
+							verts[2].s = 1.0f - verts[0].s - verts[1].s;
+							numVerts = 3;
 							break;
 						}
-						if (tdc > 0 && tad > 0 && dca.dot(d) < 0)
+						if (tdc > 0 && tad > 0 && dca.dot(d) < 0 && abc.dot(dca) > 0)
 						{
-							mVerts[1] = mVerts[3];
-							mVerts[0].s = tdc * idca;
-							mVerts[2].s = tad * idca;
-							mVerts[1].s = 1.0 - mVerts[0].s - mVerts[2].s;
-							mNum = 3;
+							verts[1] = verts[3];
+							verts[0].s = tdc * idca;
+							verts[2].s = tad * idca;
+							verts[1].s = 1.0f - verts[0].s - verts[2].s;
+							numVerts = 3;
 							break;
 						}
-						return PxVec3d(0);
+						break;
 					}
 					}
 
-					PxVec3d closest(0);
-					for (PxU32 i = 0; i < mNum; ++i)
-						closest += mVerts[i].p * mVerts[i].s;
+					PxVec3 closest = verts[0].p * verts[0].s + verts[1].p * verts[1].s + verts[2].p * verts[2].s + verts[3].p * verts[3].s;
 
-					return closest;
+					if (closest.magnitude() < mClosest.magnitude() - FLT_EPSILON)
+					{
+						mClosest = closest;
+						mVerts[0] = verts[0]; mVerts[1] = verts[1]; mVerts[2] = verts[2]; mVerts[3] = verts[3];
+						mNumVerts = numVerts;
+					}
+					else
+						--mNumVerts;
 				}
 
-				template <typename Support>
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				void computePoints(const Convex<Support>& a, const Convex<Support>& b, PxVec3d& pointA, PxVec3d& pointB)
+				PX_CUDA_CALLABLE PX_INLINE
+				PxReal getDist() const
+					{ return mClosest.magnitude(); }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxVec3 getDir() const
+					{ return -mClosest.getNormalized(); }
+
+				PX_CUDA_CALLABLE
+				void computePoints(PxVec3& pointA, PxVec3& pointB)
 				{
-					pointA = pointB = PxVec3d(0);
-					for (PxU32 i = 0; i < mNum; ++i)
+					PxVec3 pA(0), pB(0);
+					for (PxU32 i = 0; i < mNumVerts; ++i)
 					{
-						pointA += a.supportVertex(mVerts[i].aI) * mVerts[i].s;
-						pointB += b.supportVertex(mVerts[i].bI) * mVerts[i].s;
+						pA += mConvexA.supportVertex(mVerts[i].aI) * mVerts[i].s;
+						pB += mConvexB.supportVertex(mVerts[i].bI) * mVerts[i].s;
 					}
+					pointA = pA; pointB = pB;
 				}
 
 			private:
 
+				static const PxU32 MAX_ITERATIONS = 100;
+
+				struct Vert
+				{
+					PxVec3 p;
+					PxReal s;
+					PxU8 aI, bI;
+
+					PX_CUDA_CALLABLE PX_INLINE
+					static Vert make(const PxVec3& p, PxReal s, PxU8 aI, PxU8 bI)
+						{ Vert v; v.p = p; v.s = s; v.aI = aI; v.bI = bI; return v; }
+				};
+
+				Convex<Support>& mConvexA;
+				Convex<Support>& mConvexB;
+				PxU32 mNumVerts, mNumBestVerts, mIteration;
 				Vert mVerts[4];
-				PxU32 mNum;
+				PxVec3 mClosest;
 			};
 
 			template <typename Support>
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			static PxReal gjkDistance(const Support& a, const Support& b, const PxTransform& poseA, const PxTransform& poseB, PxReal maxDist, PxVec3& pointA, PxVec3& pointB, PxVec3& axis)
+			PX_CUDA_CALLABLE
+			static PxReal computeGjkDistance(const Support& a, const Support& b, const PxTransform& poseA, const PxTransform& poseB,
+				PxReal maxDist, PxVec3& pointA, PxVec3& pointB, PxVec3& axis)
 			{
-				GjkDistance gjk;
 				Convex<Support> convexA(a, poseA), convexB(b, poseB);
-				PxF64 epsDist = 0.001 * PxMin(convexA.getAccuracy(), convexB.getAccuracy());
+				GjkDistance<Support> gjk(convexA, convexB);
 
-				PxVec3d dir = -V3_To_V3d((poseA.p - poseB.p).magnitudeSquared() > FLT_EPSILON ? (poseA.p - poseB.p).getNormalized() : PxVec3(1, 0, 0));
-				PxF64 closestDist = DBL_MAX;
+				const PxReal distEps = 0.01f * gjk.getAccuracy();
 
-				PxU32 counter = 0;
 				while (true)
 				{
-					const PxU8 aI = convexA.supportIndex(dir), bI = convexB.supportIndex(-dir);
-					const PxVec3d aP = convexA.supportVertex(aI), bP = convexB.supportVertex(bI);
-					const PxVec3d p = aP - bP;
-					const PxF64 dist = p.dot(-dir);
+					gjk.computeClosest();
 
-					if (dist > PxF64(maxDist))
-						return FLT_MAX;
-
-					// QuickFix: the algorithm may get stuck trying to add same 3 points
-					// over and over. for now we just count the iterations and exit if
-					// we spin here for too long
-					if (++counter > 100 || dist >= closestDist - epsDist || !gjk.addPoint(p, aI, bI))
-					{
-						PxVec3d pA, pB;
-						gjk.computePoints(convexA, convexB, pA, pB);
-						pointA = V3d_To_V3(pA);
-						pointB = V3d_To_V3(pB);
-						axis = V3d_To_V3(-dir);
-						return PxF32(dist);
-					}
-
-					PxVec3d closest = gjk.computeClosest();
-					closestDist = closest.magnitude();
-
-					if (closestDist < 1e-6)
+					const PxReal closestDist = gjk.getDist();
+					if (closestDist < distEps)
 						return 0;
 
-					dir = -closest / closestDist;
+					const PxVec3 dir = gjk.getDir();
+					const PxReal proj = gjk.addPoint(dir);
+
+					if (proj >= closestDist - distEps)
+					{
+						PxVec3 pA, pB;
+						gjk.computePoints(pA, pB);
+						pointA = pA; pointB = pB;
+						axis = -dir;
+						return closestDist;
+					}
+
+					if (proj > maxDist)
+						return FLT_MAX;
 				}
 			}
 
+			template <typename Support>
 			struct EpaDepth
 			{
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				EpaDepth()
+				PX_CUDA_CALLABLE
+				EpaDepth(Convex<Support>& convexA, Convex<Support>& convexB)
 					:
-					mNumVerts(0), mNumFaces(0), mNumPlanes(0),
-					mClosest(Plane::make(PxVec4d(0, 0, 0, 0), 0, 0, 0))
-				{}
-
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxU8 findPlane(PxU8 v0, PxU8 v1, PxU8 v2)
+					mConvexA(convexA), mConvexB(convexB),
+					mNumVerts(0), mNumFaces(0),
+					mClosest(Face::make(PxVec4(PxZero), 0, 0, 0)),
+					mProj(-FLT_MAX)
 				{
-					PxF64 eps = 1e-6;
-					PxVec3d a = mVerts[v0].pos, b = mVerts[v1].pos, c = mVerts[v2].pos;
-
-					if (mNumVerts > 3)
-					{
-						for (PxI32 i = mNumPlanes - 1; i >= 0; --i)
-						{
-							const PxVec4d plane = mPlanes[i].plane;
-							if (PxAbs(plane.dot(PxVec4d(a, 1))) < eps &&
-								PxAbs(plane.dot(PxVec4d(b, 1))) < eps &&
-								PxAbs(plane.dot(PxVec4d(c, 1))) < eps)
-								return PxU8(i);
-						}
-					}
-
-					const PxVec3d abc = (b - a).cross(c - a);
-					const PxF64 labc = abc.magnitude();
-
-					if (labc < eps)
-						return 0xff;
-
-					const PxVec3d n = abc / labc;
-					const PxF64 d = n.dot(-a);
-					const PxVec4d plane(n, d);
-
-					PxF64 epsTest = 1e-5;
-					for (PxU32 i = 0; i < mNumVerts; ++i)
-						if (plane.dot(PxVec4d(mVerts[i].pos, 1)) > epsTest)
-							return 0xff;
-
-					mPlanes[mNumPlanes++] = Plane::make(plane, v0, v1, v2);
-
-					return PxU8(mNumPlanes - 1);
+					PxVec3 dir0 = mConvexB.getBounds().getCenter() - mConvexA.getBounds().getCenter();
+					if (dir0.normalize() < FLT_EPSILON) dir0 = PxVec3(1, 0, 0);
+					PxVec3 dir1, dir2; PxComputeBasisVectors(dir0, dir1, dir2);
+					addPoint(dir0); addPoint(-dir0); addPoint(dir1);
+					if (mNumVerts < 3) addPoint(-dir1);
+					if (mNumVerts < 3) addPoint(dir2);
+					if (mNumVerts < 3) addPoint(-dir2);
+					mProj = -FLT_MAX;
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				bool addPoint(const PxVec3d& p, PxU8 aI, PxU8 bI)
+				PX_CUDA_CALLABLE PX_INLINE
+				bool isValid() const
+					{ return mNumFaces > 0; }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxReal getAccuracy() const
+					{ return PxMin(mConvexA.getAccuracy(), mConvexB.getAccuracy()); }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxVec3 supportVertex(PxU8 aI, PxU8 bI)
+					{ return mConvexA.supportVertex(aI) - mConvexB.supportVertex(bI); }
+
+				PX_CUDA_CALLABLE
+				bool makePlane(PxU8 i0, PxU8 i1, PxU8 i2, PxVec4& plane)
 				{
-					if (mNumVerts > MAX_VERTS - 1)
+					const Vert v0 = mVerts[i0], v1 = mVerts[i1], v2 = mVerts[i2];
+					const PxVec3 a = supportVertex(v0.aI, v0.bI), b = supportVertex(v1.aI, v1.bI), c = supportVertex(v2.aI, v2.bI);
+					const PxVec3 abc = (b - a).cross(c - a) + (c - b).cross(a - b) + (a - c).cross(b - c);
+					const PxReal labc = abc.magnitude();
+
+					const PxReal normalEps = FLT_EPSILON;
+					if (labc < normalEps)
 						return false;
 
-					for (PxU32 i = 0; i < mNumVerts; ++i)
-						if (aI == mVerts[i].aI && bI == mVerts[i].bI)
-							return false;
+					const PxVec3 n = abc / labc;
+					const PxReal d = n.dot(-a);
 
-					Vert& v = mVerts[mNumVerts++];
-					v = Vert::make(p, aI, bI);
-
-					if (mNumVerts < 3)
-						return true;
-
-					if (mNumVerts == 3)
-					{
-						Face& f0 = mFaces[mNumFaces++];
-						f0 = Face::make(findPlane(0, 1, 2), 0, 1, 2);
-						Face& f1 = mFaces[mNumFaces++];
-						f1 = Face::make(findPlane(1, 0, 2), 1, 0, 2);
-
-						return true;
-					}
-
-					struct Edge
-					{
-						PxU8 v[2];
-						PX_CUDA_CALLABLE PX_FORCE_INLINE
-						static Edge make(PxU8 v0, PxU8 v1)
-							{ Edge e; e.v[0] = v0; e.v[1] = v1; return e; }
-					};
-					const PxF64 eps = 1e-6;
-					Edge edges[MAX_VERTS + MAX_FACES - 2]; // Euler's formula
-					PxU32 numEdges = 0;
-					for (PxI32 i = mNumPlanes - 1; i >= 0; --i)
-					{
-						const PxVec4d& plane = mPlanes[i].plane;
-						if (plane.dot(PxVec4d(p, 1)) < eps)
-							continue;
-
-						for (PxI32 j = mNumFaces - 1; j >= 0; --j)
-						{
-							Face& f = mFaces[j];
-							if (f.p == PxU8(i))
-							{
-								for (PxU32 k = 0; k < 3; ++k)
-								{
-									bool add = true;
-									const PxU8 v0 = f.v[k], v1 = f.v[(k + 1) % 3];
-									for (PxI32 l = numEdges - 1; l >= 0; --l)
-									{
-										const Edge& e = edges[l];
-										if (v0 == e.v[1] && v1 == e.v[0])
-										{
-											add = false;
-											edges[l] = edges[--numEdges];
-											break;
-										}
-									}
-									if (add)
-										edges[numEdges++] = Edge::make(v0, v1);
-								}
-								mFaces[j] = mFaces[--mNumFaces];
-							}
-							else if (f.p == mNumPlanes - 1)
-							{
-								f.p = PxU8(i);
-							}
-						}
-
-						mPlanes[i] = mPlanes[--mNumPlanes];
-					}
-
-					if (numEdges == 0)
-						return false;
-
-					if (mNumFaces > MAX_FACES - numEdges)
-						return false;
-
-					for (PxU32 i = 0; i < numEdges; ++i)
-					{
-						const Edge& e = edges[i];
-						Face& f = mFaces[mNumFaces++];
-						f = Face::make(findPlane(e.v[0], e.v[1], PxU8(mNumVerts - 1)), e.v[0], e.v[1], PxU8(mNumVerts - 1));
-						if (f.p == 0xff)
-							return false;
-					}
+					plane = PxVec4(n, d);
 
 					return true;
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				void computeClosest()
+				PX_CUDA_CALLABLE
+				// adds a new point (the difference of the shapes support points in a given direction)
+				// to the polytope. removes all faces below the new point, keeps the track of open edges
+				// created by the face removal, and then creates a fan of new faces each containing the
+				// new point and one of the open edges. returns the projection of the difference of the
+				// support points on the direction. FLT_MAX signals to finalize the algorithm.
+				PxReal addPoint(const PxVec3& dir)
 				{
-					PX_ASSERT(mNumPlanes > 0);
+					if (mNumVerts > MAX_VERTS - 1)
+						return FLT_MAX;
 
-					PxI32 closest = mNumPlanes - 1;
-					PxF64 closestW = mPlanes[closest].plane.w;
-					for (PxI32 i = closest - 1; i >= 0; --i)
+					const PxU8 aI = mConvexA.supportIndex(dir), bI = mConvexB.supportIndex(-dir);
+					const PxVec3 p = mConvexA.supportVertex(aI) - mConvexB.supportVertex(bI);
+
+					PxReal proj = p.dot(-dir);
+					if (proj > mProj)
 					{
-						if (mPlanes[i].plane.w > closestW)
+						mProj = proj;
+						mBest = mClosest;
+					}
+
+					for (PxU32 i = 0; i < mNumVerts; ++i)
+						if (aI == mVerts[i].aI && bI == mVerts[i].bI)
+							return FLT_MAX;
+
+					Vert& v = mVerts[mNumVerts++];
+					v = Vert::make(aI, bI);
+
+					if (mNumVerts < 3)
+						return 0;
+
+					if (mNumVerts == 3)
+					{
+						PxVec4 plane0, plane1;
+						if (!makePlane(0, 1, 2, plane0) || !makePlane(1, 0, 2, plane1))
+							return FLT_MAX;
+
+						mFaces[mNumFaces++] = Face::make(plane0, 0, 1, 2);
+						mFaces[mNumFaces++] = Face::make(plane1, 1, 0, 2);
+
+						return 0;
+					}
+
+					const PxReal testEps = 0.01f * getAccuracy();
+					Edge edges[MAX_EDGES];
+					PxU32 numEdges = 0;
+					for (PxI32 i = mNumFaces - 1; i >= 0; --i)
+					{
+						Face& f = mFaces[i];
+						if (f.plane.dot(PxVec4(p, 1)) > testEps)
 						{
-							closest = i;
-							closestW = mPlanes[closest].plane.w;
+							for (PxU32 j = 0; j < 3; ++j)
+							{
+								bool add = true;
+								const PxU8 v0 = f.v[j], v1 = f.v[(j + 1) % 3];
+								for (PxI32 k = numEdges - 1; k >= 0; --k)
+								{
+									const Edge& e = edges[k];
+									if (v0 == e.v[1] && v1 == e.v[0])
+									{
+										add = false;
+										edges[k] = edges[--numEdges];
+										break;
+									}
+								}
+								if (add)
+									edges[numEdges++] = Edge::make(v0, v1);
+							}
+							mFaces[i] = mFaces[--mNumFaces];
 						}
 					}
 
-					mClosest = mPlanes[closest];
+					if (numEdges == 0)
+						return FLT_MAX;
+
+					if (mNumFaces > MAX_FACES - numEdges)
+						return FLT_MAX;
+
+					for (PxU32 i = 0; i < numEdges; ++i)
+					{
+						const Edge& e = edges[i];
+						PxU8 i0 = e.v[0], i1 = e.v[1], i2 = PxU8(mNumVerts - 1);
+
+						PxVec4 plane;
+						if (!makePlane(i0, i1, i2, plane))
+							return FLT_MAX;
+
+						mFaces[mNumFaces++] = Face::make(plane, i0, i1, i2);
+					}
+
+					return proj;
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxF64 getDist() const
+				PX_CUDA_CALLABLE
+				void computeClosest()
 				{
-					return mClosest.plane.w;
+					PX_ASSERT(mNumFaces > 0);
+
+					PxU32 closest = PxU32(-1);
+					PxReal closestW = -FLT_MAX;
+					for (PxU32 i = 0; i < mNumFaces; ++i)
+					{
+						const PxReal w = mFaces[i].plane.w;
+						if (w > closestW)
+						{
+							closest = i;
+							closestW = w;
+						}
+					}
+
+					PX_ASSERT(closest != PxU32(-1));
+
+					mClosest = mFaces[closest];
+
+					if (mNumFaces == 2)
+						mBest = mClosest;
 				}
 
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				PxVec3d getDir() const
-				{
-					return mClosest.plane.getXYZ();
-				}
+				PX_CUDA_CALLABLE PX_INLINE
+				PxReal getDist() const
+					{ return mClosest.plane.w; }
 
-				template <typename Support>
-				PX_CUDA_CALLABLE PX_FORCE_INLINE
-				void computePoints(const Convex<Support>& convexA, const Convex<Support>& convexB, PxVec3d& pointA, PxVec3d& pointB)
+				PX_CUDA_CALLABLE PX_INLINE
+				PxVec3 getDir() const
+					{ return mClosest.plane.getXYZ(); }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxReal getBestDist() const
+					{ return mBest.plane.w; }
+
+				PX_CUDA_CALLABLE PX_INLINE
+				PxVec3 getBestDir() const
+					{ return mBest.plane.getXYZ(); }
+
+				PX_CUDA_CALLABLE
+				void computePoints(PxVec3& pointA, PxVec3& pointB)
 				{
-					const Vert va = mVerts[mClosest.v[0]], vb = mVerts[mClosest.v[1]], vc = mVerts[mClosest.v[2]];
-					const PxVec3d a = va.pos, b = vb.pos, c = vc.pos;
-					const PxVec3d abc = (b - a).cross(c - a);
-					const PxF64 iabc = 1.0 / abc.magnitudeSquared();
-					const PxVec3d pabc = abc * abc.dot(a) * iabc;
-					const PxF64 tbc = abc.dot((b - pabc).cross(c - pabc));
-					const PxF64 tca = abc.dot((c - pabc).cross(a - pabc));
-					const PxF64 tab = abc.dot((a - pabc).cross(b - pabc));
-					const PxF64 sa = tbc * iabc, sb = tca * iabc, sc = tab * iabc;
-					pointA = convexA.supportVertex(va.aI) * sa + convexA.supportVertex(vb.aI) * sb + convexA.supportVertex(vc.aI) * sc;
-					pointB = convexB.supportVertex(va.bI) * sa + convexB.supportVertex(vb.bI) * sb + convexB.supportVertex(vc.bI) * sc;
+					const Vert v0 = mVerts[mBest.v[0]], v1 = mVerts[mBest.v[1]], v2 = mVerts[mBest.v[2]];
+					const PxVec3 va0 = mConvexA.supportVertex(v0.aI), va1 = mConvexA.supportVertex(v1.aI), va2 = mConvexA.supportVertex(v2.aI);
+					const PxVec3 vb0 = mConvexB.supportVertex(v0.bI), vb1 = mConvexB.supportVertex(v1.bI), vb2 = mConvexB.supportVertex(v2.bI);
+					const PxVec3 a = va0 - vb0, b = va1 - vb1, c = va2 - vb2;
+					const PxVec3 abc = (b - a).cross(c - a);
+					const PxReal iabc = 1.0f / abc.magnitudeSquared();
+					const PxVec3 pabc = abc * abc.dot(a) * iabc;
+					const PxReal tbc = abc.dot((b - pabc).cross(c - pabc));
+					const PxReal tca = abc.dot((c - pabc).cross(a - pabc));
+					const PxReal tab = abc.dot((a - pabc).cross(b - pabc));
+					const PxReal sa = tbc * iabc, sb = tca * iabc, sc = tab * iabc;
+					pointA = va0 * sa + va1 * sb + va2 * sc;
+					pointB = vb0 * sa + vb1 * sb + vb2 * sc;
 				}
 
 			private:
 
-				static const PxU32 MAX_VERTS = 128;
+				static const PxU32 MAX_VERTS = 32;
 				static const PxU32 MAX_FACES = 2 * MAX_VERTS - 4;
+				static const PxU32 MAX_EDGES = MAX_VERTS + MAX_FACES - 2;
 
 				struct Vert
 				{
-					PxVec3d pos;
 					PxU8 aI, bI;
 
-					PX_CUDA_CALLABLE PX_FORCE_INLINE
-					static Vert make(const PxVec3d& pos, PxU8 aI, PxU8 bI)
-						{ Vert v; v.pos = pos; v.aI = aI; v.bI = bI; return v; }
-				};
-
-				struct Plane
-				{
-					PxVec4d plane;
-					PxU8 v[3];
-
-					PX_CUDA_CALLABLE PX_FORCE_INLINE
-					static Plane make(const PxVec4d& plane, PxU8 v0, PxU8 v1, PxU8 v2)
-						{ Plane p; p.plane = plane; p.v[0] = v0; p.v[1] = v1; p.v[2] = v2; return p; }
+					PX_CUDA_CALLABLE PX_INLINE
+					static Vert make(PxU8 aI, PxU8 bI)
+						{ Vert v; v.aI = aI; v.bI = bI; return v; }
 				};
 
 				struct Face
 				{
-					PxU8 p;
+					PxVec4 plane;
 					PxU8 v[3];
 
-					PX_CUDA_CALLABLE PX_FORCE_INLINE
-					static Face make(PxU8 p, PxU8 v0, PxU8 v1, PxU8 v2)
-						{ Face f; f.p = p; f.v[0] = v0; f.v[1] = v1; f.v[2] = v2; return f; }
+					PX_CUDA_CALLABLE PX_INLINE
+					static Face make(const PxVec4& plane, PxU8 v0, PxU8 v1, PxU8 v2)
+						{ Face f; f.plane = plane; f.v[0] = v0; f.v[1] = v1; f.v[2] = v2; return f; }
 				};
 
+				struct Edge
+				{
+					PxU8 v[2];
+
+					PX_CUDA_CALLABLE PX_INLINE
+					static Edge make(PxU8 v0, PxU8 v1)
+						{ Edge e; e.v[0] = v0; e.v[1] = v1; return e; }
+				};
+
+				Convex<Support>& mConvexA;
+				Convex<Support>& mConvexB;
 				Vert mVerts[MAX_VERTS];
 				Face mFaces[MAX_FACES];
-				Plane mPlanes[MAX_FACES];
-				PxU32 mNumVerts, mNumFaces, mNumPlanes;
-				Plane mClosest;
+				PxU32 mNumVerts, mNumFaces;
+				Face mClosest, mBest;
+				PxReal mProj;
 			};
 
 			template <typename Support>
-			PX_CUDA_CALLABLE PX_FORCE_INLINE
-			static PxReal epaDepth(const Support& a, const Support& b, const PxTransform& poseA, const PxTransform& poseB, PxVec3& pointA, PxVec3& pointB, PxVec3& axis)
+			PX_CUDA_CALLABLE
+			static PxReal computeEpaDepth(const Support& a, const Support& b, const PxTransform& poseA, const PxTransform& poseB,
+				PxVec3& pointA, PxVec3& pointB, PxVec3& axis)
 			{
-				const PxF64 eps = PxF64(FLT_EPSILON);
-
-				EpaDepth epa;
 				Convex<Support> convexA(a, poseA), convexB(b, poseB);
-				PxF64 epsDist = 0.001 * PxMin(convexA.getAccuracy(), convexB.getAccuracy());
+				EpaDepth<Support> epa(convexA, convexB);
+				if (!epa.isValid())
+					return FLT_MAX;
 
-				PxF64 closestDist = DBL_MAX;
-
-				PxVec3d dir = V3_To_V3d(poseB.p - poseA.p);
-				dir = dir.magnitude() > eps ? dir.getNormalized() : PxVec3d(1, 0, 0);
-
-				const PxU8 aI0 = convexA.supportIndex(dir), bI0 = convexB.supportIndex(-dir);
-				const PxVec3d aP0 = convexA.supportVertex(aI0), bP0 = convexB.supportVertex(bI0);
-				const PxVec3d p0 = aP0 - bP0;
-				epa.addPoint(p0, aI0, bI0);
-				const PxU8 aI1 = convexA.supportIndex(-dir), bI1 = convexB.supportIndex(dir);
-				const PxVec3d aP1 = convexA.supportVertex(aI1), bP1 = convexB.supportVertex(bI1);
-				const PxVec3d p1 = aP1 - bP1;
-				epa.addPoint(p1, aI1, bI1);
-				const PxVec3d p0p1 = p1 - p0;
-				dir = p0.cross(p0p1).cross(p0p1);
-				if (dir.magnitude() < eps) dir = PxVec3d(0, 1, 0).cross(p0p1);
-				if (dir.magnitude() < eps) dir = PxVec3d(0, 0, 1).cross(p0p1);
-				dir = dir.getNormalized();
+				const PxReal distEps = 0.01f * epa.getAccuracy();
 
 				while (true)
 				{
-					const PxU8 aI = convexA.supportIndex(dir), bI = convexB.supportIndex(-dir);
-					const PxVec3d aP = convexA.supportVertex(aI), bP = convexB.supportVertex(bI);
-					const PxVec3d p = aP - bP;
-					const PxF64 dist = p.dot(-dir);
-
-					if (dist >= closestDist - epsDist || !epa.addPoint(p, aI, bI))
-					{
-						// QuickFix: if the algorithm stops too early we may not have
-						// a nearest plane computed yet. we just skip contacts like
-						// this for now
-						if (epa.getDir().magnitudeSquared() < PxF64(FLT_EPSILON))
-							return FLT_MAX;
-
-						PxVec3d pA, pB;
-						epa.computePoints(convexA, convexB, pA, pB);
-						pointA = V3d_To_V3(pA);
-						pointB = V3d_To_V3(pB);
-						axis = V3d_To_V3(-dir);
-						return PxF32(dist);
-					}
-
 					epa.computeClosest();
 
-					closestDist = epa.getDist();
-					dir = epa.getDir();
-				}
+					const PxReal closestDist = epa.getDist();
+					const PxVec3 dir = epa.getDir();
 
-				return 0;
+					const PxReal proj = epa.addPoint(dir);
+
+					if (proj >= closestDist - distEps)
+					{
+						PxVec3 pA, pB;
+						epa.computePoints(pA, pB);
+						pointA = pA; pointB = pB;
+						axis = -epa.getBestDir();
+						return epa.getBestDist();
+					}
+				}
 			}
 		}
 	}

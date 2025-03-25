@@ -69,7 +69,7 @@ SET(SOURCE_DISTRO_FILE_LIST "")
 # Include all of the projects
 SET(SNIPPETS_LIST ArticulationRC BVHStructure CCD ContactModification ContactReport ContactReportCCD ConvexMeshCreate
 	CustomJoint CustomProfiler DeformableMesh FrustumQuery GearJoint GeometryQuery Gyroscopic HelloWorld ImmediateArticulation ImmediateMode Joint JointDrive MassProperties
-	MBP MimicJoint MultiPruners MultiThreading OmniPvd PathTracing PointDistanceQuery PrunerSerialization QuerySystemAllQueries QuerySystemCustomCompound RackJoint Serialization SplitFetchResults
+	MBP MimicJoint MultiPruners MultiThreading OmniPvd PathTracing PointDistanceQuery ProfilerConverter PrunerSerialization QuerySystemAllQueries QuerySystemCustomCompound RackJoint Serialization SplitFetchResults
 	SplitSim StandaloneBVH StandaloneBroadphase StandaloneQuerySystem Stepper ToleranceScale TriangleMeshCreate Triggers CustomGeometry CustomConvex CustomGeometryCollision CustomGeometryQueries FixedTendon SpatialTendon)
 LIST(APPEND SNIPPETS_LIST ${PLATFORM_SNIPPETS_LIST})
 
@@ -81,13 +81,13 @@ SET(GPU_SNIPPET_LIST
 	RBDirectGPUAPI DirectGPUAPIArticulation)
 
 #TODO, create a propper define for whether GPU features are enabled or not!
-IF ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND 
+IF (PX_GENERATE_GPU_PROJECTS AND 
     (NOT (CMAKE_CROSSCOMPILING OR CMAKE_GENERATOR_PLATFORM STREQUAL "NX64")))
     LIST(APPEND SNIPPETS_LIST ${GPU_SNIPPET_LIST})
 ENDIF()
 	
-SET(SNIPPETS_VEHICLE2_LIST Vehicle2DirectDrive Vehicle2FourWheelDrive Vehicle2TankDrive Vehicle2CustomSuspension Vehicle2Multithreading Vehicle2Truck Vehicle2CustomTire)
-LIST(APPEND SNIPPETS_VEHICLE2_LIST ${PLATFORM_SNIPPETS_VEHICLE2_LIST})
+SET(SNIPPETS_VEHICLE_LIST VehicleDirectDrive VehicleFourWheelDrive VehicleTankDrive VehicleCustomSuspension VehicleMultithreading VehicleTruck VehicleCustomTire)
+LIST(APPEND SNIPPETS_VEHICLE_LIST ${PLATFORM_SNIPPETS_VEHICLE_LIST})
 	
 IF(SNIPPET_RENDER_ENABLED)
 	INCLUDE(SnippetRender.cmake)
@@ -103,14 +103,14 @@ FOREACH(SNIPPET_NAME ${SNIPPETS_LIST})
 	SET_PROPERTY(TARGET Snippet${SNIPPET_NAME} PROPERTY FOLDER "Snippets")
 ENDFOREACH()
 
-# Compile vehicle2 snippets
-FOREACH(SNIPPET_NAME ${SNIPPETS_VEHICLE2_LIST})
-	INCLUDE(SnippetVehicle2Template.cmake)
+# Compile vehicle snippets
+FOREACH(SNIPPET_NAME ${SNIPPETS_VEHICLE_LIST})
+	INCLUDE(SnippetVehicleTemplate.cmake)
 	SET_PROPERTY(TARGET Snippet${SNIPPET_NAME} PROPERTY FOLDER "Snippets")
 ENDFOREACH()
 
 # For internal builds, make sure the GPU lib is built (but not linked!) before GPU snippets
-IF (NOT PUBLIC_RELEASE AND (PX_GENERATE_GPU_PROJECTS OR PX_GENERATE_GPU_PROJECTS_ONLY))
+IF (PX_GENERATE_GPU_PROJECTS OR PX_GENERATE_GPU_PROJECTS_ONLY)
 	FOREACH(SNIPPET_NAME ${GPU_SNIPPET_LIST})
 		ADD_DEPENDENCIES(Snippet${SNIPPET_NAME} PhysXGpu)
 	ENDFOREACH()

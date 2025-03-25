@@ -61,8 +61,8 @@ void Sc::ShapeInteraction::visualize(PxRenderOutput& out, PxsContactManagerOutpu
 {
 	if(mManager)  // sleeping pairs have no contact points -> do not visualize
 	{
-		Sc::ActorSim* actorSim0 = &getShape0().getActor();
-		Sc::ActorSim* actorSim1 = &getShape1().getActor();
+		Sc::ActorSim* actorSim0 = &getActor0();
+		Sc::ActorSim* actorSim1 = &getActor1();
 		if(!actorSim0->isNonRigid() && !actorSim1->isNonRigid())
 		{
 			PxU32 offset;

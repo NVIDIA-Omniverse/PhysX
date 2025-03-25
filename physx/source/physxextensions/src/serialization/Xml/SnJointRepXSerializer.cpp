@@ -60,14 +60,6 @@ namespace physx {
 	{
 		return PxDistanceJointCreate( physics, actor0, localFrame0, actor1, localFrame1 );
 	}
-
-	template<>
-	inline PxContactJoint*	createJoint<PxContactJoint>(PxPhysics& physics, 
-									 		  PxRigidActor* actor0, const PxTransform& localFrame0, 
-											  PxRigidActor* actor1, const PxTransform& localFrame1)
-	{
-		return PxContactJointCreate( physics, actor0, localFrame0, actor1, localFrame1 );
-	}
 	
 	template<>
 	inline PxFixedJoint* createJoint<PxFixedJoint>(PxPhysics& physics, 
@@ -136,7 +128,6 @@ namespace physx {
 	// explicit template instantiations
 	template struct PxJointRepXSerializer<PxFixedJoint>;
 	template struct PxJointRepXSerializer<PxDistanceJoint>;
-	template struct PxJointRepXSerializer<PxContactJoint>;
 	template struct PxJointRepXSerializer<PxD6Joint>;
 	template struct PxJointRepXSerializer<PxPrismaticJoint>;
 	template struct PxJointRepXSerializer<PxRevoluteJoint>;

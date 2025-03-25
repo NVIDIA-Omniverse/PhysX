@@ -113,6 +113,22 @@ void NpConstraint::setConstraintFunctions(PxConstraintConnector& n, const PxCons
 	}
 }
 
+PxConstraintGPUIndex NpConstraint::getGPUIndex() const
+{
+	NpScene* scene = getNpScene();
+
+	NP_READ_CHECK(scene);
+
+	if (scene)
+	{
+		PX_ASSERT(mCore.getSim());
+
+		return mCore.getSim()->getGPUIndex();
+	}
+
+	return PX_INVALID_CONSTRAINT_GPU_INDEX;
+}
+
 void NpConstraint::addConnectors(PxRigidActor* actor0, PxRigidActor* actor1)
 {
 	if(actor0)
@@ -238,9 +254,7 @@ void NpConstraint::setActors(PxRigidActor* actor0, PxRigidActor* actor1)
 	NpScene* newScene = ::getSceneFromActors(actor0, actor1);
 	NpScene* oldScene = getNpScene();
 
-	// PT: bypassing the calls to removeFromConstraintList / addToConstraintList creates issues like PX-2363, where
-	// various internal structures are not properly updated. Always going through the slower codepath fixes them.
-//	if(oldScene != newScene)
+	if(oldScene != newScene)
 	{
 		if(oldScene)
 			oldScene->removeFromConstraintList(*this);
@@ -250,8 +264,14 @@ void NpConstraint::setActors(PxRigidActor* actor0, PxRigidActor* actor1)
 		if(newScene)
 			newScene->addToConstraintList(*this);
 	}
-//	else
-//		scSetBodies(mCore, NpActor::getNpActor(actor0), NpActor::getNpActor(actor1));
+	else
+	{
+		// If the constraint remains in the same scene, only a "light" update should be
+		// needed. This is especially important in the context of direct GPU API, to make
+		// sure the GPU index stays the same (users might have it cached).
+
+		scSetBodies(mCore, NpActor::getNpActor(actor0), NpActor::getNpActor(actor1));
+	}
 
 	UPDATE_PVD_PROPERTY
 }

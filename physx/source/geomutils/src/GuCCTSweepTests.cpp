@@ -316,7 +316,7 @@ float localMinDist = 1.0f;
 				// PT: TODO: optimize this.... already computed in triBoxSweepTestBoxSpace...
 				currentTriangle.denormalizedNormal(bestTriNormal);
 
-				if(hitFlags & PxHitFlag::eMESH_ANY)
+				if(hitFlags & PxHitFlag::eANY_HIT)
 					break;
 			}
 		}

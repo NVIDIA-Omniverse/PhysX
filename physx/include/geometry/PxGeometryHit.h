@@ -62,7 +62,6 @@ struct PxHitFlag
 		eANY_HIT					= (1<<5),	//!< Report any first hit. Used for geometries that contain more than one primitive. For meshes,
 												//!< if neither eMESH_MULTIPLE nor eANY_HIT is specified, a single closest hit will be reported.
 		eMESH_MULTIPLE				= (1<<6),	//!< Report all hits for meshes rather than just the first. Not applicable to sweep queries.
-		eMESH_ANY					= eANY_HIT,	//!< \deprecated Deprecated, please use eANY_HIT instead.
 		eMESH_BOTH_SIDES			= (1<<7),	//!< Report hits with back faces of mesh triangles. Also report hits for raycast
 												//!< originating on mesh surface and facing away from the surface normal. Not applicable to sweep queries.
 												//!< Please refer to the user guide for heightfield-specific differences.

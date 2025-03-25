@@ -57,8 +57,6 @@ namespace Sn {
 		//binary
 		void						registerSerializer(PxType type, PxSerializer& serializer);
 		PxSerializer*               unregisterSerializer(PxType type);
-		void						registerBinaryMetaDataCallback(PxBinaryMetaDataCallback callback);	
-		void						getBinaryMetaData(PxOutputStream& stream) const;
 		const PxSerializer*			getSerializer(PxType type) const;
 		const char*			        getSerializerName(PxU32 index) const;
 		PxType                      getSerializerType(PxU32 index) const;
@@ -77,7 +75,6 @@ namespace Sn {
 		PxPhysics&										mPhysics;
 		SerializerMap									mSerializers;
 		RepXSerializerMap								mRepXSerializers;
-		PxArray<PxBinaryMetaDataCallback>				mMetaDataCallbacks;	
 	};
 
 	void  sortCollection(Cm::Collection& collection, SerializationRegistry& sr, bool isRepx);

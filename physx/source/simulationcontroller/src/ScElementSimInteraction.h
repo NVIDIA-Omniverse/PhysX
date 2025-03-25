@@ -39,8 +39,8 @@ namespace Sc
 	class ElementSimInteraction : public Interaction
 	{
 	public:
-		PX_FORCE_INLINE	ElementSim&	getElement0()						const	{ return mElement0;						}
-		PX_FORCE_INLINE	ElementSim&	getElement1()						const	{ return mElement1;						}
+		PX_FORCE_INLINE	ElementSim&	getElement0()	const	{ return mElement0;	}
+		PX_FORCE_INLINE	ElementSim&	getElement1()	const	{ return mElement1;	}
 
 	protected:
 		PX_INLINE					ElementSimInteraction(ElementSim& element0, ElementSim& element1, InteractionType::Enum type, PxU8 flags);
@@ -48,9 +48,11 @@ namespace Sc
 
 		ElementSimInteraction& operator=(const ElementSimInteraction&);
 
-						ElementSim&	mElement0;
-						ElementSim&	mElement1;
-						PxU32		mFlags;		// PT: moved there in padding bytes, from ShapeInteraction
+						ElementSim&		mElement0;
+						ElementSim&		mElement1;
+						PxU32			mFlags;		// PT: moved there in padding bytes, from ShapeInteraction
+	public:
+						IG::EdgeIndex	mEdgeIndex;	// PT: moved there in padding bytes, from ShapeInteraction
 	};
 
 } // namespace Sc

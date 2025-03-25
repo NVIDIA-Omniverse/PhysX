@@ -107,8 +107,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "common/PxTypeInfo.h"
 #include "common/PxStringTable.h"
 #include "common/PxSerializer.h"
-#include "common/PxMetaData.h"
-#include "common/PxMetaDataFlags.h"
 #include "common/PxSerialFramework.h"
 #include "common/PxInsertionCallback.h"
 
@@ -215,26 +213,10 @@ Alternatively, one can instead directly #include a subset of the below files.
 
 //Serialization
 #include "extensions/PxSerialization.h"
-#include "extensions/PxBinaryConverter.h"
 #include "extensions/PxRepXSerializer.h"
 
 //Vehicle Simulation
 #include "vehicle2/PxVehicleAPI.h"
-#include "vehicle/PxVehicleComponents.h"
-#include "vehicle/PxVehicleDrive.h"
-#include "vehicle/PxVehicleDrive4W.h"
-#include "vehicle/PxVehicleDriveTank.h"
-#include "vehicle/PxVehicleSDK.h"
-#include "vehicle/PxVehicleShaders.h"
-#include "vehicle/PxVehicleTireFriction.h"
-#include "vehicle/PxVehicleUpdate.h"
-#include "vehicle/PxVehicleUtil.h"
-#include "vehicle/PxVehicleUtilControl.h"
-#include "vehicle/PxVehicleUtilSetup.h"
-#include "vehicle/PxVehicleUtilTelemetry.h"
-#include "vehicle/PxVehicleWheels.h"
-#include "vehicle/PxVehicleNoDrive.h"
-#include "vehicle/PxVehicleDriveNW.h"
 
 //Connecting the SDK to Visual Debugger
 #include "pvd/PxPvdSceneClient.h"

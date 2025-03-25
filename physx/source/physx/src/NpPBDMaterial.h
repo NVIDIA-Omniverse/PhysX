@@ -50,7 +50,6 @@ namespace physx
 										NpPBDMaterial(PxBaseFlags baseFlags) : PxPBDMaterial(baseFlags), mMaterial(PxEmpty) {}
 		virtual		void				resolveReferences(PxDeserializationContext& context);
 		static		NpPBDMaterial*		createObject(PxU8*& address, PxDeserializationContext& context);
-		static		void				getBinaryMetaData(PxOutputStream& stream);
 
 		void							preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 		void							exportExtraData(PxSerializationContext&) {}

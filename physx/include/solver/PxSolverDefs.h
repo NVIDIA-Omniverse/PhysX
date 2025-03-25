@@ -326,8 +326,6 @@ struct PxArticulationDriveType
 	{
 		eFORCE = 0,			//!< The output of the implicit spring drive controller is a force/torque.
 		eACCELERATION = 1,	//!< The output of the implicit spring drive controller is a joint acceleration (use this to get (spatial)-inertia-invariant behavior of the drive).
-		eTARGET = 2,		//!< \deprecated Will be removed in a future version; use stiffness = 1e+25f and damping = 0.f to obtain identical behavior. Sets the drive gains internally to track a target position almost kinematically (i.e. with very high drive gains).
-		eVELOCITY = 3,		//!< \deprecated Will be removed in a future version; use stiffness = 0.f and damping = 1e+25f to obtain identical behavior. Sets the drive gains internally to track a target velocity almost kinematically (i.e. with very high drive gains).
 		eNONE = 4
 	};
 };
@@ -366,6 +364,48 @@ struct PxArticulationLimit
 	<b>Default:</b> 0.0f<br>
 	*/
 	PxReal high;
+};
+
+
+/**
+\brief Data structure to store friction parameters.
+
+\see PxArticulationJointReducedCoordinate::setFrictionParams, PxArticulationReducedCoordinate
+*/
+struct PxJointFrictionParams
+{
+	PxJointFrictionParams(){}
+
+	PxJointFrictionParams(const PxReal staticFrictionEffort_, const PxReal dynamicFrictionEffort_, const PxReal viscousFrictionCoefficient_)
+	: staticFrictionEffort(staticFrictionEffort_)
+	, dynamicFrictionEffort(dynamicFrictionEffort_)
+	, viscousFrictionCoefficient(viscousFrictionCoefficient_)
+	{
+	}
+
+	/**
+	\brief Coulomb static friction effort. For linear motion effort refers to force, for rotational - to torque.
+
+	<b>Range:</b> [0, PX_MAX_F32]<br>
+	<b>Default:</b> 0.0f<br>
+	*/
+	PxReal staticFrictionEffort;
+
+	/**
+	\brief Coulomb dynamic friction effort. For linear motion effort refers to force, for rotational - to torque.
+
+	<b>Range:</b> [0, PX_MAX_F32]<br>
+	<b>Default:</b> 0.0f<br>
+	*/
+	PxReal dynamicFrictionEffort;
+
+	/**
+	\brief Viscous friction coefficient. viscousFrictionForce(Torque) = -viscousFrictionCoefficient * speed. 
+
+	<b>Range:</b> [0, PX_MAX_F32]<br>
+	<b>Default:</b> 0.0f<br>
+	*/
+	PxReal viscousFrictionCoefficient;
 };
 
 /**

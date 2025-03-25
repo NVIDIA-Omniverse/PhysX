@@ -37,28 +37,78 @@
 
 namespace physx
 {
-	// PT: TODO: optimize struct size
+	// PT: TODO: mNextPatch is almost always null so it would make sense to store that cold data somewhere else, e.g:
+	// - use one bit to mark the general case where mNextPatch is null
+	// - store non-null mNextPatch in a hashmap indexed by mUniqueIndex (no need to reserve the full memory for it)
+	//
+	// The only annoying bit is that the mechanism needed to actually walk the linked list (i.e. the hashmap) needs to be
+	// available in processPartitionEdges below, so that's more GPU stuff exposed to the CPU code. But I guess we crossed
+	// that line a while ago when the heads of the LLs moved to the low-level island manager anyway. And in fact we could
+	// put the two in the same structure eventually, like a PartitionEdgeManager.
+	//
+	// In any case the benefit of the change would be a smaller PartitionEdge. Going further, the nodes can be retrieved from
+	// the edge index, so if mNextPatch also disappears then only the unique ID remains, which.... can be derived from
+	// the PartitionEdge address?! So it would be just the "edge index" with some bits encoded in it, just 4 bytes.
+	//
+	// This is per-edge data so we could also merge this with CPUExternalData, which already contains the node indices, and
+	// has an implicit unique index as the index into mEdgeNodeIndices. But maybe we cannot because there can be multiple
+	// PartitionEdge for the same source edge (hence the linked list).
+	//
+	// Another idea would be to store the edge index instead. You would need access to the edge manager in CPU code but no
+	// hashmap or new structure is needed.
+
 	struct PartitionEdge
 	{
-		IG::EdgeIndex mEdgeIndex;	//! The edge index into the island manager. Used to identify the contact manager/constraint
-		PxNodeIndex mNode0;			//! The node index for node 0. Can be obtained from the edge index alternatively
-		PxNodeIndex mNode1;			//! The node idnex for node 1. Can be obtained from the edge index alternatively
-		bool mInfiniteMass0;		//! Whether body 0 is kinematic
-		bool mArticulation0;		//! Whether body 0 is an articulation link
-		bool mInfiniteMass1;		//! Whether body 1 is kinematic
-		bool mArticulation1;		//! Whether body 1 is an articulation link
+		enum Enum
+		{
+			HAS_INFINITE_MASS0	= (1<<0),
+			HAS_INFINITE_MASS1	= (1<<1),
+			HAS_THRESHOLD		= (1<<2),
+			IS_CONTACT			= (1<<3),
+			SPECIAL_HANDLED		= (1<<4),
 
-		PartitionEdge* mNextPatch;	//! for the contact manager has more than 1 patch, we have next patch's edge and previous patch's edge to connect to this edge
+			NB_BITS	= 5
+		};
 
-		PxU32 mUniqueIndex;			//! a unique ID for this edge
+		PxNodeIndex		mNode0;			//! The node index for node 0. Can be obtained from the edge index alternatively
+		PxNodeIndex		mNode1;			//! The node index for node 1. Can be obtained from the edge index alternatively
+		PartitionEdge*	mNextPatch;		//! for the contact manager has more than 1 patch, we have next patch's edge and previous patch's edge to connect to this edge
+		private:
+		IG::EdgeIndex	mEdgeIndex;		//! The edge index into the island manager. Used to identify the contact manager/constraint
+		public:
+		PxU32			mUniqueIndex;	//! a unique ID for this edge
+
+		PX_FORCE_INLINE	IG::EdgeIndex	getEdgeIndex()		const	{ return mEdgeIndex >> NB_BITS;	}
+
+		PX_FORCE_INLINE	PxU32			isArticulation0()	const	{ return mNode0.isArticulation();	}
+		PX_FORCE_INLINE	PxU32			isArticulation1()	const	{ return mNode1.isArticulation();	}
+
+		PX_FORCE_INLINE	PxU32			hasInfiniteMass0()	const	{ return mEdgeIndex & HAS_INFINITE_MASS0;	}
+		PX_FORCE_INLINE	PxU32			hasInfiniteMass1()	const	{ return mEdgeIndex & HAS_INFINITE_MASS1;	}
+
+		PX_FORCE_INLINE	void			setInfiniteMass0()			{ mEdgeIndex |= HAS_INFINITE_MASS0;	}
+		PX_FORCE_INLINE	void			setInfiniteMass1()			{ mEdgeIndex |= HAS_INFINITE_MASS1;	}
+
+		PX_FORCE_INLINE	void			setHasThreshold()			{ mEdgeIndex |= HAS_THRESHOLD;			}
+		PX_FORCE_INLINE	PxU32			hasThreshold()		const	{ return mEdgeIndex & HAS_THRESHOLD;	}
+
+		PX_FORCE_INLINE	void			setIsContact()				{ mEdgeIndex |= IS_CONTACT;			}
+		PX_FORCE_INLINE	PxU32			isContact()			const	{ return mEdgeIndex & IS_CONTACT;	}
+
+		PX_FORCE_INLINE	void			setSpecialHandled()			{ mEdgeIndex |= SPECIAL_HANDLED;		}
+		PX_FORCE_INLINE	void			clearSpecialHandled()		{ mEdgeIndex &= ~SPECIAL_HANDLED;		}
+		PX_FORCE_INLINE	PxU32			isSpecialHandled()	const	{ return mEdgeIndex & SPECIAL_HANDLED;	}
 
 		//KS - This constructor explicitly does not set mUniqueIndex. It is filled in by the pool allocator and this constructor
 		//is called afterwards. We do not want to stomp the uniqueIndex value
-		PartitionEdge() : mEdgeIndex(IG_INVALID_EDGE), mInfiniteMass0(false), mArticulation0(false),
-			mInfiniteMass1(false), mArticulation1(false), mNextPatch(NULL)//, mUniqueIndex(IG_INVALID_EDGE)
+		PartitionEdge(IG::EdgeIndex index) :
+			mNextPatch(NULL),
+			mEdgeIndex(index << NB_BITS)
 		{
+			PX_ASSERT(!(index & 0xf8000000));	// PT: reserve 5 bits for internal flags
 		}
 	};
+	PX_COMPILE_TIME_ASSERT(sizeof(PartitionEdge)<=32);	// PT: 2 of them per cache-line
 
 	static PX_FORCE_INLINE void processPartitionEdges(const IG::GPUExternalData* gpuData, const PxcNpWorkUnit& unit)
 	{

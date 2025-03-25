@@ -108,7 +108,7 @@ static PxArticulationReducedCoordinate* createArticulation(PxArticulationJointRe
 	const PxTransform linkBTransform(PxVec3(5.0f, 0.0f, 0.0f));
 
 	//The inbound joint of linkA will be driven with a stiff drive.
-	PxArticulationLink* linkA =articulation->createLink(rootLink, PxTransform(PxIdentity));
+	PxArticulationLink* linkA = articulation->createLink(rootLink, PxTransform(PxIdentity));
 	linkA->setCfmScale(0.0f);
 	linkA->setLinearDamping(0.0f);
 	linkA->setAngularDamping(0.0f);
@@ -138,7 +138,7 @@ static PxArticulationReducedCoordinate* createArticulation(PxArticulationJointRe
 	linkAJoint->setFrictionCoefficient(0.0f);
 
 	//The inbound joint of linkB will be influenced only by the mimic joint.
-	PxArticulationLink* linkB =articulation->createLink(rootLink, PxTransform(PxIdentity));
+	PxArticulationLink* linkB = articulation->createLink(rootLink, PxTransform(PxIdentity));
 	linkB->setCfmScale(0.0f);
 	linkB->setLinearDamping(0.0f);
 	linkB->setAngularDamping(0.0f);

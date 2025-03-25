@@ -40,14 +40,14 @@ namespace physx
 
 namespace Sc
 {
-	class RigidSim;
+	class ActorSim;
 	class ShapeCore;
 
 	class ShapeSim : public ShapeSimBase
 	{
 		PX_NOCOPY(ShapeSim)
 		public:
-				ShapeSim(RigidSim&, ShapeCore& core);
+				ShapeSim(ActorSim&, ShapeCore& core);
 				~ShapeSim();
 	};
 

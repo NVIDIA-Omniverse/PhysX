@@ -93,7 +93,7 @@ public:
 		mStatus			(false),
 		mInitialOverlap	(false),
 		mIsDoubleSided	((hfUtil.getHeightFieldGeometry().heightFieldFlags & PxMeshGeometryFlag::eDOUBLE_SIDED) || (hitFlags & PxHitFlag::eMESH_BOTH_SIDES)),
-		mIsAnyHit		(hitFlags & PxHitFlag::eMESH_ANY)
+		mIsAnyHit		(hitFlags & PxHitFlag::eANY_HIT)
 	{
 	}
 

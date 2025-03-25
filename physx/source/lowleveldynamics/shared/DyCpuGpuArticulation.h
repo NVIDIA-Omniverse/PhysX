@@ -138,16 +138,6 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE ArticulationImplicitDriveDesc computeImplicitDr
 		driveDesc = computeImplicitDriveParamsAccelerationDrive(stiffness, damping, dt, simDt, recipUnitResponse, geomError, targetVelocity, isTGSSolver);
 	}
 	break;
-	case PxArticulationDriveType::eTARGET:
-	{
-		driveDesc = computeImplicitDriveParamsForceDrive(1e+25f, 0.0f, dt, simDt, unitResponse, geomError, targetVelocity, isTGSSolver);
-	}
-	break;
-	case PxArticulationDriveType::eVELOCITY:
-	{
-		driveDesc = computeImplicitDriveParamsForceDrive(0.0f, 1e+25f, dt, simDt, unitResponse, geomError, targetVelocity, isTGSSolver);
-	}
-	break;
 	case PxArticulationDriveType::eNONE:
 	{
 		PX_ASSERT(false);
@@ -155,6 +145,25 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE ArticulationImplicitDriveDesc computeImplicitDr
 	break;
 	}
 	return driveDesc;
+}
+
+/**
+\brief Compute the friction impulse. 
+\param[in] frictionImpulse is the accumulated frictiom impulse on the current simulation step.
+\param[in] staticFrictionImpulse is threshold to prevent motion of the joint.
+\param[in] dynamicFrictionImpulse is constant friction applied to moving joints .
+\param[in] viscousFrictionCoefficient is the coefficient of velocity dependent friction term.
+\param[in] jointVel is the current velocity of the joint.
+\return The friction impulse.
+*/
+PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeFrictionImpulse
+(PxReal frictionImpulse, const PxReal staticFrictionImpulse, const PxReal dynamicFrictionImpulse, const PxReal viscousFrictionCoefficient, const PxReal jointVel)
+{
+	if (PxAbs(frictionImpulse) > staticFrictionImpulse)
+		{
+			frictionImpulse = PxClamp(frictionImpulse, -dynamicFrictionImpulse - viscousFrictionCoefficient * PxAbs(jointVel), dynamicFrictionImpulse + viscousFrictionCoefficient * PxAbs(jointVel));
+		}
+	return frictionImpulse;
 }
 
 /**
@@ -577,4 +586,3 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void computeMimicJointImpulses
 } //namespace Dy
 } //namespace physx
 #endif //DY_ARTICULATION_CPUGPU_H
-

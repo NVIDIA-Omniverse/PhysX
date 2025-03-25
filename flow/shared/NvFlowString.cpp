@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2014-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -21,8 +24,6 @@
 // OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvFlowString.h"
@@ -33,304 +34,304 @@
 
 struct NvFlowStringPool
 {
-	NvFlowArray<NvFlowArray<char>, 16u> heaps;
+    NvFlowArray<NvFlowArray<char>, 16u> heaps;
 };
 
 NvFlowStringPool* NvFlowStringPoolCreate()
 {
-	return new NvFlowStringPool();
+    return new NvFlowStringPool();
 }
 
 void NvFlowStringPoolAllocate_newHeap(NvFlowStringPool* ptr, NvFlowUint64 allocSize)
 {
-	auto& currentHeap = ptr->heaps[ptr->heaps.allocateBack()];
+    auto& currentHeap = ptr->heaps[ptr->heaps.allocateBack()];
 
-	NvFlowUint64 heapSize = 4096u;	// default heap size
-	while (heapSize < allocSize)
-	{
-		heapSize *= 2u;
-	}
+    NvFlowUint64 heapSize = 4096u;    // default heap size
+    while (heapSize < allocSize)
+    {
+        heapSize *= 2u;
+    }
 
-	currentHeap.reserve(heapSize);
+    currentHeap.reserve(heapSize);
 }
 
 NvFlowUint64 NvFlowStringPool_alignment(NvFlowUint64 size)
 {
-	return 8u * ((size + 7u) / 8u);
+    return 8u * ((size + 7u) / 8u);
 }
 
 char* NvFlowStringPoolAllocate_internal(NvFlowStringPool* ptr, NvFlowUint64 size)
 {
-	NvFlowUint64 allocSize = NvFlowStringPool_alignment(size);
+    NvFlowUint64 allocSize = NvFlowStringPool_alignment(size);
 
-	if (ptr->heaps.size > 0u)
-	{
-		auto& currentHeap = ptr->heaps[ptr->heaps.size - 1u];
+    if (ptr->heaps.size > 0u)
+    {
+        auto& currentHeap = ptr->heaps[ptr->heaps.size - 1u];
 
-		if (currentHeap.size + allocSize <= currentHeap.capacity)
-		{
-			char* ret = currentHeap.data + currentHeap.size;
-			ret[size - 1] = 0;
-			currentHeap.size += allocSize;
-			return ret;
-		}
-	}
+        if (currentHeap.size + allocSize <= currentHeap.capacity)
+        {
+            char* ret = currentHeap.data + currentHeap.size;
+            ret[size - 1] = 0;
+            currentHeap.size += allocSize;
+            return ret;
+        }
+    }
 
-	NvFlowStringPoolAllocate_newHeap(ptr, allocSize);
+    NvFlowStringPoolAllocate_newHeap(ptr, allocSize);
 
-	return NvFlowStringPoolAllocate_internal(ptr, size);
+    return NvFlowStringPoolAllocate_internal(ptr, size);
 }
 
 char* NvFlowStringPoolAllocate(NvFlowStringPool* ptr, NvFlowUint64 size)
 {
-	return NvFlowStringPoolAllocate_internal(ptr, size + 1);
+    return NvFlowStringPoolAllocate_internal(ptr, size + 1);
 }
 
 void NvFlowStringPoolTempAllocate(NvFlowStringPool* ptr, char** p_str_data, NvFlowUint64* p_str_size)
 {
-	if (ptr->heaps.size > 0u)
-	{
-		auto& currentHeap = ptr->heaps[ptr->heaps.size - 1u];
+    if (ptr->heaps.size > 0u)
+    {
+        auto& currentHeap = ptr->heaps[ptr->heaps.size - 1u];
 
-		char* str_data = currentHeap.data + currentHeap.size;
-		NvFlowUint64 str_size = currentHeap.capacity - currentHeap.size;
-		if (str_size > 0)
-		{
-			str_data[str_size - 1] = 0;
-			str_size--;
-			*p_str_size = str_size;
-			*p_str_data = str_data;
-			return;
-		}
-	}
+        char* str_data = currentHeap.data + currentHeap.size;
+        NvFlowUint64 str_size = currentHeap.capacity - currentHeap.size;
+        if (str_size > 0)
+        {
+            str_data[str_size - 1] = 0;
+            str_size--;
+            *p_str_size = str_size;
+            *p_str_data = str_data;
+            return;
+        }
+    }
 
-	NvFlowStringPoolAllocate_newHeap(ptr, 8u);
+    NvFlowStringPoolAllocate_newHeap(ptr, 8u);
 
-	NvFlowStringPoolTempAllocate(ptr, p_str_data, p_str_size);
+    NvFlowStringPoolTempAllocate(ptr, p_str_data, p_str_size);
 }
 
 void NvFlowStringPoolTempAllocateCommit(NvFlowStringPool* ptr, char* str_data, NvFlowUint64 str_size)
 {
-	// to reverse the str_size-- in NvFlowStringPoolTempAllocate()
-	str_size++;
+    // to reverse the str_size-- in NvFlowStringPoolTempAllocate()
+    str_size++;
 
-	if (ptr->heaps.size > 0u)
-	{
-		auto& currentHeap = ptr->heaps[ptr->heaps.size - 1u];
+    if (ptr->heaps.size > 0u)
+    {
+        auto& currentHeap = ptr->heaps[ptr->heaps.size - 1u];
 
-		char* compStr_data = currentHeap.data + currentHeap.size;
-		NvFlowUint64 compStr_size = currentHeap.capacity - currentHeap.size;
-		if (str_data == compStr_data && str_size <= compStr_size)
-		{
-			NvFlowUint64 allocSize = NvFlowStringPool_alignment(str_size);
-			currentHeap.size += allocSize;
-		}
-	}
+        char* compStr_data = currentHeap.data + currentHeap.size;
+        NvFlowUint64 compStr_size = currentHeap.capacity - currentHeap.size;
+        if (str_data == compStr_data && str_size <= compStr_size)
+        {
+            NvFlowUint64 allocSize = NvFlowStringPool_alignment(str_size);
+            currentHeap.size += allocSize;
+        }
+    }
 }
 
 void NvFlowStringPoolDestroy(NvFlowStringPool* ptr)
 {
-	delete ptr;
+    delete ptr;
 }
 
 void NvFlowStringPoolReset(NvFlowStringPool* ptr)
 {
-	for (NvFlowUint64 heapIdx = 0u; heapIdx < ptr->heaps.size; heapIdx++)
-	{
-		ptr->heaps[heapIdx].size = 0u;
-	}
-	ptr->heaps.size = 0u;
+    for (NvFlowUint64 heapIdx = 0u; heapIdx < ptr->heaps.size; heapIdx++)
+    {
+        ptr->heaps[heapIdx].size = 0u;
+    }
+    ptr->heaps.size = 0u;
 }
 
 char* NvFlowStringPrintV(NvFlowStringPool* pool, const char* format, va_list args)
 {
-	va_list argsCopy;
-	va_copy(argsCopy, args);
+    va_list argsCopy;
+    va_copy(argsCopy, args);
 
-	NvFlowUint64 str_size = ~0llu;
-	char* str_data = nullptr;
-	NvFlowStringPoolTempAllocate(pool, &str_data, &str_size);
+    NvFlowUint64 str_size = ~0llu;
+    char* str_data = nullptr;
+    NvFlowStringPoolTempAllocate(pool, &str_data, &str_size);
 
-	NvFlowUint64 count = (NvFlowUint64)vsnprintf(str_data, str_size + 1, format, args);
+    NvFlowUint64 count = (NvFlowUint64)vsnprintf(str_data, str_size + 1, format, args);
 
-	if (count <= str_size)
-	{
-		str_size = count;
-		NvFlowStringPoolTempAllocateCommit(pool, str_data, str_size);
-	}
-	else
-	{
-		str_data = NvFlowStringPoolAllocate(pool, count);
-		str_size = count;
+    if (count <= str_size)
+    {
+        str_size = count;
+        NvFlowStringPoolTempAllocateCommit(pool, str_data, str_size);
+    }
+    else
+    {
+        str_data = NvFlowStringPoolAllocate(pool, count);
+        str_size = count;
 
-		count = vsnprintf(str_data, str_size + 1, format, argsCopy);
-	}
+        count = vsnprintf(str_data, str_size + 1, format, argsCopy);
+    }
 
-	va_end(argsCopy);
+    va_end(argsCopy);
 
-	return str_data;
+    return str_data;
 }
 
 char* NvFlowStringPrint(NvFlowStringPool* pool, const char* format, ...)
 {
-	va_list args;
-	va_start(args, format);
+    va_list args;
+    va_start(args, format);
 
-	char* str = NvFlowStringPrintV(pool, format, args);
+    char* str = NvFlowStringPrintV(pool, format, args);
 
-	va_end(args);
+    va_end(args);
 
-	return str;
+    return str;
 }
 
 /// ************************** File Utils *********************************************
 
 const char* NvFlowTextFileLoad(NvFlowStringPool* pool, const char* filename)
 {
-	FILE* file = nullptr;
+    FILE* file = nullptr;
 #if defined(_WIN32)
-	fopen_s(&file, filename, "r");
+    fopen_s(&file, filename, "r");
 #else
-	file = fopen(filename, "r");
+    file = fopen(filename, "r");
 #endif
 
-	if (file == nullptr)
-	{
-		return nullptr;
-	}
+    if (file == nullptr)
+    {
+        return nullptr;
+    }
 
-	NvFlowUint64 chunkSize = 4096u;
+    NvFlowUint64 chunkSize = 4096u;
 
-	NvFlowArray<const char*, 8u> chunks;
+    NvFlowArray<const char*, 8u> chunks;
 
-	size_t readBytes = 0u;
-	do
-	{
-		chunkSize *= 2u;
+    size_t readBytes = 0u;
+    do
+    {
+        chunkSize *= 2u;
 
-		char* chunkStr = NvFlowStringPoolAllocate(pool, chunkSize);
-		chunkStr[0] = '\0';
+        char* chunkStr = NvFlowStringPoolAllocate(pool, chunkSize);
+        chunkStr[0] = '\0';
 
-		readBytes = fread(chunkStr, 1u, chunkSize, file);
-		chunkStr[readBytes] = '\0';
+        readBytes = fread(chunkStr, 1u, chunkSize, file);
+        chunkStr[readBytes] = '\0';
 
-		chunks.pushBack(chunkStr);
+        chunks.pushBack(chunkStr);
 
-	} while(readBytes == chunkSize);
+    } while(readBytes == chunkSize);
 
-	fclose(file);
+    fclose(file);
 
-	const char* text_data = (chunks.size == 1u) ? chunks[0u] : NvFlowStringConcatN(pool, chunks.data, chunks.size);
+    const char* text_data = (chunks.size == 1u) ? chunks[0u] : NvFlowStringConcatN(pool, chunks.data, chunks.size);
 
-	//NvFlowUint64 strLength = NvFlowStringLength(text_data);
-	//printf("NvFlowTextureFileLoad(%s) %llu bytes in %llu chunks\n", filename, strLength, chunks.size);
+    //NvFlowUint64 strLength = NvFlowStringLength(text_data);
+    //printf("NvFlowTextureFileLoad(%s) %llu bytes in %llu chunks\n", filename, strLength, chunks.size);
 
-	return text_data;
+    return text_data;
 }
 
 void NvFlowTextFileStore(const char* text_data, const char* filename)
 {
-	FILE* file = nullptr;
+    FILE* file = nullptr;
 #if defined(_WIN32)
-	fopen_s(&file, filename, "w");
+    fopen_s(&file, filename, "w");
 #else
-	file = fopen(filename, "w");
+    file = fopen(filename, "w");
 #endif
 
-	if (file == nullptr)
-	{
-		return;
-	}
+    if (file == nullptr)
+    {
+        return;
+    }
 
-	NvFlowUint64 text_size = NvFlowStringLength(text_data);
-	fwrite(text_data, 1u, text_size, file);
+    NvFlowUint64 text_size = NvFlowStringLength(text_data);
+    fwrite(text_data, 1u, text_size, file);
 
-	fclose(file);
+    fclose(file);
 }
 
 NvFlowBool32 NvFlowTextFileTestOpen(const char* filename)
 {
-	FILE* file = nullptr;
+    FILE* file = nullptr;
 #if defined(_WIN32)
-	fopen_s(&file, filename, "r");
+    fopen_s(&file, filename, "r");
 #else
-	file = fopen(filename, "r");
+    file = fopen(filename, "r");
 #endif
-	if (file)
-	{
-		fclose(file);
-		return NV_FLOW_TRUE;
-	}
-	return NV_FLOW_FALSE;
+    if (file)
+    {
+        fclose(file);
+        return NV_FLOW_TRUE;
+    }
+    return NV_FLOW_FALSE;
 }
 
 void NvFlowTextFileRemove(const char* name)
 {
-	remove(name);
+    remove(name);
 }
 
 void NvFlowTextFileRename(const char* oldName, const char* newName)
 {
-	rename(oldName, newName);
+    rename(oldName, newName);
 }
 
 NvFlowBool32 NvFlowTextFileDiffAndWriteIfModified(const char* filenameDst, const char* filenameTmp)
 {
-	FILE* fileTmp = nullptr;
-	FILE* fileDst = nullptr;
-	bool match = true;
+    FILE* fileTmp = nullptr;
+    FILE* fileDst = nullptr;
+    bool match = true;
 
 #if defined(_WIN32)
-	fopen_s(&fileDst, filenameDst, "r");
+    fopen_s(&fileDst, filenameDst, "r");
 #else
-	fileDst = fopen(filenameDst, "r");
+    fileDst = fopen(filenameDst, "r");
 #endif
-	if (fileDst)
-	{
+    if (fileDst)
+    {
 #if defined(_WIN32)
-		fopen_s(&fileTmp, filenameTmp, "r");
+        fopen_s(&fileTmp, filenameTmp, "r");
 #else
-		fileTmp = fopen(filenameTmp, "r");
+        fileTmp = fopen(filenameTmp, "r");
 #endif
-		if (fileTmp)
-		{
-			while (1)
-			{
-				int a = fgetc(fileTmp);
-				int b = fgetc(fileDst);
+        if (fileTmp)
+        {
+            while (1)
+            {
+                int a = fgetc(fileTmp);
+                int b = fgetc(fileDst);
 
-				if (a == EOF && b == EOF)
-				{
-					break;
-				}
-				else if (a != b)
-				{
-					match = false;
-					break;
-				}
-			}
+                if (a == EOF && b == EOF)
+                {
+                    break;
+                }
+                else if (a != b)
+                {
+                    match = false;
+                    break;
+                }
+            }
 
-			fclose(fileTmp);
-		}
-		else
-		{
-			match = false;
-		}
-		fclose(fileDst);
-	}
-	else
-	{
-		match = false;
-	}
+            fclose(fileTmp);
+        }
+        else
+        {
+            match = false;
+        }
+        fclose(fileDst);
+    }
+    else
+    {
+        match = false;
+    }
 
-	if (!match)
-	{
-		remove(filenameDst);
-		rename(filenameTmp, filenameDst);
-	}
+    if (!match)
+    {
+        remove(filenameDst);
+        rename(filenameTmp, filenameDst);
+    }
 
-	// always cleanup temp file
-	remove(filenameTmp);
+    // always cleanup temp file
+    remove(filenameTmp);
 
-	return !match;
+    return !match;
 }

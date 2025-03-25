@@ -229,10 +229,38 @@ struct PxArticulationGPUAPIMaxCounts
 };
 
 /**
+\brief This flag specifies the type of data to get when calling #PxDirectGPUAPI::getD6JointData().
+*/
+class PxD6JointGPUAPIReadType
+{
+public:
+	enum Enum
+	{
+		/**
+		\brief The joint forces applied by the solver.
+
+		The forces are in world space. 1 PxVec3 per joint.
+		
+		\note Replaces calls to PxConstraint::getForce() which will not work properly anymore if direct GPU API is used.
+		*/
+		eJOINT_FORCE,
+
+		/**
+		\brief The joint torques applied by the solver.
+
+		The torques are in world space. 1 PxVec3 per joint.
+		
+		\note Replaces calls to PxConstraint::getForce() which will not work properly anymore if direct GPU API is used.
+		*/
+		eJOINT_TORQUE
+	};
+};
+
+/**
 \brief PxDirectGPUAPI exposes an API that enables batched direct access to GPU data for a PxScene.
 
-The functions in this class allow batched direct access to GPU data for PxRigidDynamic, PxArticulationReducedCoordinate 
-and PxShape types. This allows interoperation with GPU post- and preprocessing for users and allows the user 
+The functions in this class allow batched direct access to GPU data for PxRigidDynamic, PxArticulationReducedCoordinate, 
+PxShape and PxD6Joint types. This allows interoperation with GPU post- and preprocessing for users and allows the user 
 to implement more efficient CPU-GPU data copies based on the specific needs of the application.
 
 Using this direct-API will disable the existing CPU-based API for all the data exposed in the direct-API. For any API function
@@ -267,8 +295,8 @@ public:
 	\brief Copies the simulation state for a set of PxRigidDynamic actors into a user-provided GPU data buffer.
 
 	\param[out] data User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the dataType options in PxRigidDynamicGPUAPIReadType.
-	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the PxRigidDynamic objects that are part of this get operation. \see PxRigidDynamic::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data requested for the PxRigidDynamic with its GPU index at position x in the gpuIndices array will be located at position x in the data array.
-	\param[in] dataType The type of data to get. \see PxRigidDynamicGPUAPIReadType.
+	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the PxRigidDynamic objects that are part of this get operation. See #PxRigidDynamic::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data requested for the PxRigidDynamic with its GPU index at position x in the gpuIndices array will be located at position x in the data array.
+	\param[in] dataType The type of data to get. See #PxRigidDynamicGPUAPIReadType.
 	\param[in] nbElements The number of rigid bodies to be copied.
 	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately.
 	\param[in] finishEvent User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.
@@ -282,8 +310,8 @@ public:
 	\brief Sets the simulation state for a set of PxRigidDynamic actors from a user-provided GPU data buffer.
 
 	\param[in] data User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the dataType options in PxRigidDynamicGPUAPIWriteType.
-	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the PxRigidDynamic objects that are part of this set operation. \see PxRigidDynamic::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data for the PxRigidDynamic with its GPU index at position x in the gpuIndices array needs to be located at position x in the data array.
-	\param[in] dataType The type of data to set. \see PxRigidDynamicGPUAPIWriteType.
+	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the PxRigidDynamic objects that are part of this set operation. See #PxRigidDynamic::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data for the PxRigidDynamic with its GPU index at position x in the gpuIndices array needs to be located at position x in the data array.
+	\param[in] dataType The type of data to set. See #PxRigidDynamicGPUAPIWriteType.
 	\param[in] nbElements The number of rigid bodies to be set.
 	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately.
 	\param[in] finishEvent User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.
@@ -296,8 +324,8 @@ public:
 	\brief Gets the simulation state for a set of articulations, i.e. PxArticulationReducedCoordinate objects and copies into a user-provided GPU data buffer.
 
 	\param[out] data User-provided GPU data buffer that is appropriately sized for the data being requested. The sizing is explained in detail below.
-	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this get operation. \see PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the PxArticulationReducedCoordinate with its GPU index at position x in the gpuIndices array will have its data block located at position x in the data array.
-	\param[in] dataType The type of data to get. \see PxArticulationGPUAPIReadType.
+	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this get operation. See #PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the PxArticulationReducedCoordinate with its GPU index at position x in the gpuIndices array will have its data block located at position x in the data array.
+	\param[in] dataType The type of data to get. See #PxArticulationGPUAPIReadType.
 	\param[in] nbElements The number of articulations to copy data from.
 	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately.
 	\param[in] finishEvent User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.
@@ -318,8 +346,8 @@ public:
 	\brief Sets the simulation state for a set of articulations, i.e. PxArticulationReducedCoordinate objects from a user-provided GPU data buffer.
 
 	\param[in] data User-provided GPU data buffer that is appropriately sized for the data to be set. The sizing is explained in detail below.
-	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this set operation. \see PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the PxArticulationReducedCoordinate with its GPU index at position x in the gpuIndices array needs to have its data block located at position x in the data array.
-	\param[in] dataType The type of data to set. \see PxArticulationGPUAPIWriteType.
+	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this set operation. See #PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the PxArticulationReducedCoordinate with its GPU index at position x in the gpuIndices array needs to have its data block located at position x in the data array.
+	\param[in] dataType The type of data to set. See #PxArticulationGPUAPIWriteType.
 	\param[in] nbElements The number of articulations to set data for.
 	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately.
 	\param[in] finishEvent User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.
@@ -340,7 +368,7 @@ public:
 	\brief performs a compute operation on a set of articulations, i.e. PxArticulationReducedCoordinate objects.
 
 	\param[in,out] data User-provided GPU data buffer that is appropriately sized for the operation to be performed. Depending on the operation, can be input or output data.
-	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this compute operation. \see PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex).
+	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this compute operation. See #PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex).
 	\param[in] operation The operation to perform. See PxArticulationGPUAPIComputeType::Enum.
 	\param[in] nbElements The number of articulations to perform this compute operation on.
 	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the computation immediately.
@@ -371,7 +399,7 @@ public:
 	/**
 	\brief Evaluate sample point distances and gradients on SDF shapes in local space. Local space is the space in which the mesh's raw vertex positions are represented.
 	\param[out] localGradientAndSignedDistanceConcatenated User-provided GPU buffer where the evaluated gradients and distances in SDF local space get stored. It has the same structure as localSamplePointsConcatenated. The PxVec4 elements contain the gradient and the distance (gradX, gradY, gradZ, distance).
-	\param[in] shapeIndices User-provided GPU index buffer containing elements of PxShapeGPUIndex. This buffer contains the GPU indices of the PxShape objects that are part of this operation. \see PxShape::getGPUIndex(). The size of this buffer (in bytes) needs to be nbElements * sizeof(PxShapeGPUIndex). The shapes must be triangle mesh shapes with SDFs.
+	\param[in] shapeIndices User-provided GPU index buffer containing elements of PxShapeGPUIndex. This buffer contains the GPU indices of the PxShape objects that are part of this operation. See #PxShape::getGPUIndex(). The size of this buffer (in bytes) needs to be nbElements * sizeof(PxShapeGPUIndex). The shapes must be triangle mesh shapes with SDFs.
 	\param[in] localSamplePointsConcatenated User-provided GPU buffer containing the sample point locations for every shape in the shapes' local space. The buffer stride is maxPointCount.
 	\param[in] samplePointCountPerShape User-provided GPU buffer containing the number of sample points for every shape.
 	\param[in] nbElements The number of shapes to be queried.
@@ -405,13 +433,30 @@ public:
 
 	Get the maximal articulation index and component counts for a PxScene. This is a helper function to ease the derivation of the correct data layout
 	for the articulation functions in PxDirectGPUAPI. Specifically, this function will return maxLinks, maxDofs, maxFixedTendons, maxFixedTendonJoints,
-	maxSpatialTendons and maxSpatialTendonAttachments for a scene. \see PxArticulationGPUAPIMaxCounts.
+	maxSpatialTendons and maxSpatialTendonAttachments for a scene. See #PxArticulationGPUAPIMaxCounts.
 
 	\see PxDirectGPUAPI::getArticulationData, PxDirectGPUAPI::setArticulationData, PxDirectGPUAPI::computeArticulationData
 
 	\return PxArticulationGPUAPIMaxCounts the max counts across the scene for all articulation indices and components.
 	*/
 	virtual PxArticulationGPUAPIMaxCounts getArticulationGPUAPIMaxCounts()	const = 0;
+
+	/**
+	\brief Copies the simulation state for a set of PxD6Joint instances into a user-provided GPU data buffer.
+
+	\param[out] data User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the options in #PxD6JointGPUAPIReadType.
+	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxD6JointGPUIndex. This buffer contains the GPU indices of the PxD6Joint objects that are part of this get operation
+	           (see #PxD6Joint::getGPUIndex()). The size of this buffer needs to be nbElements * sizeof(PxD6JointGPUIndex). The data requested for the PxD6Joint with its GPU index at position x in the
+			   gpuIndices array will be located at position x in the data array.
+	\param[in] dataType The type of data to get (see #PxD6JointGPUAPIReadType).
+	\param[in] nbElements The number of provided GPU indices and as such the number of data entries that will be written to the provided GPU data buffer.
+	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately.
+	\param[in] finishEvent User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.
+
+	\return bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.
+	
+	*/
+	virtual bool getD6JointData(void* data, const PxD6JointGPUIndex* gpuIndices, PxD6JointGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent = NULL, CUevent finishEvent = NULL) const = 0;
 };
 
 #if !PX_DOXYGEN

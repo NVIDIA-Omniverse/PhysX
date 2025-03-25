@@ -47,7 +47,6 @@ public:
 						void					resolveReferences(PxDeserializationContext& context);
 	    virtual	        void					requiresObjects(PxProcessPxBaseCallback& c);
 		static			NpAggregate*			createObject(PxU8*& address, PxDeserializationContext& context);
-		static			void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 												NpAggregate(PxU32 maxActors, PxU32 maxShapes, PxAggregateFilterHint filterHint);
 		virtual									~NpAggregate();

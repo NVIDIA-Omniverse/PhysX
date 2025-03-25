@@ -52,7 +52,6 @@ class NpArticulationLinkArray : public PxInlineArray<NpArticulationLink*, 4>  //
 public:
 // PX_SERIALIZATION
 	NpArticulationLinkArray(const PxEMPTY) : PxInlineArray<NpArticulationLink*, 4> (PxEmpty) {}
-	static	void	getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 	NpArticulationLinkArray() : PxInlineArray<NpArticulationLink*, 4>("articulationLinkArray") {}
 };
@@ -69,7 +68,6 @@ public:
 	virtual		void						requiresObjects(PxProcessPxBaseCallback& c);
 	virtual		bool						isSubordinate()  const	 { return true; } 
 	static		NpArticulationLink*			createObject(PxU8*& address, PxDeserializationContext& context);
-	static		void						getBinaryMetaData(PxOutputStream& stream);		
 //~PX_SERIALIZATION
 											NpArticulationLink(const PxTransform& bodyPose, PxArticulationReducedCoordinate& root, NpArticulationLink* parent);
 	virtual									~NpArticulationLink();

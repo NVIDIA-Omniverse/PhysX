@@ -54,7 +54,6 @@ namespace physx
 	// explicit template instantiations declarations
 	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxD6Joint>;
 	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxDistanceJoint>;
-	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxContactJoint>;
 	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxFixedJoint>;
 	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxPrismaticJoint>;
 	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxRevoluteJoint>;

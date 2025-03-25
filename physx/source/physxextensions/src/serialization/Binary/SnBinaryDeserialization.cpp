@@ -36,7 +36,6 @@
 
 #include "SnFile.h"
 #include "SnSerializationContext.h"
-#include "SnConvX_Align.h"
 #include "serialization/SnSerializationRegistry.h"
 #include "serialization/SnSerialUtils.h"
 #include "CmCollection.h"

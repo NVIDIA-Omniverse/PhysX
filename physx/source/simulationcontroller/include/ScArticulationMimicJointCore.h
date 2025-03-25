@@ -46,7 +46,6 @@ public:
 
 // PX_SERIALIZATION	
 	ArticulationMimicJointCore(const PxEMPTY) :mSim(NULL) {}
-	static void getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 
 

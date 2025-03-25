@@ -63,7 +63,6 @@ namespace Ext
 										RevoluteJoint(PxBaseFlags baseFlags) : RevoluteJointT(baseFlags) {}
 				void					resolveReferences(PxDeserializationContext& context);
 		static	RevoluteJoint*			createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<RevoluteJoint>(address, context);	}
-		static	void					getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 										RevoluteJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxRevoluteJoint

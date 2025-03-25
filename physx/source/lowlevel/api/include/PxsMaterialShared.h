@@ -49,8 +49,6 @@ namespace physx
 
 		PxMaterialT*	mMaterial;		// PT: TODO: eventually this could just be a base PxBaseMaterial class instead of a templated param
 		PxU16			mMaterialIndex; //handle assign by the handle manager
-
-		static			void		getBinaryMetaData(PxOutputStream& stream);
 	};
 
 } //namespace phyxs
