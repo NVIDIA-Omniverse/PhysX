@@ -89,6 +89,7 @@ SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Wstrict-aliasing=2 -W
     -Wno-inconsistent-missing-override \
     -Wno-inconsistent-missing-destructor-override \
     -Wno-unused-function \
+    -Wno-inconsistent-missing-override \
 ")
 
 # Set to true to enable multi-threading - works but is difficult to use
@@ -227,7 +228,7 @@ ELSE()
 	SET_PROPERTY(TARGET PhysXFoundation PROPERTY FOLDER "PhysX SDK")
 
 
-	SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXCooking PhysXExtensions PhysXVehicle PhysXVehicle2)
+	SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXCooking PhysXExtensions PhysXVehicle2)
 
 
 	INSTALL(
