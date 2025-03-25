@@ -3,6 +3,8 @@
   <platform targetPlatform="jni-macAarch64" compiler="xcode" />
   <CMakeSwitches>
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libraries" />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="False" comment="Generate the GPU projects, if possible." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
     <cmakeSwitch name="NV_FORCE_64BIT_SUFFIX" value="True" comment="Force a 64 bit suffix for platforms that don't register properly." />
   </CMakeSwitches>
   <CMakeParams>

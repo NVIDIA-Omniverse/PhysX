@@ -5,6 +5,8 @@
     <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
     <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="False" comment="Generate the OmniPVD project" />
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="False" comment="Generate static libraries" />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
     <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="True" comment="Use the statically linked windows CRT" />
     <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="Use the debug version of the CRT" />
     <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Float point precise math" />

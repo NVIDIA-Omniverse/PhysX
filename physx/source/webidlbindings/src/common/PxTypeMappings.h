@@ -24,10 +24,6 @@ typedef physx::PxReal* PxRealPtr;
 typedef physx::PxMaterial* PxMaterialPtr;
 typedef physx::PxActor* PxActorPtr;
 typedef physx::PxShape* PxShapePtr;
-typedef physx::PxVehicleWheels* PxVehicleWheelsPtr;
-
-// template classes are not supported by webidl binder, as a hack we can use typedefs
-typedef physx::PxFixedSizeLookupTable<physx::PxVehicleEngineData::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES> PxEngineTorqueLookupTable;
 
 typedef physx::PxOverlapBufferN<10> PxOverlapBuffer10;
 typedef physx::PxRaycastBufferN<10> PxRaycastBuffer10;
@@ -79,9 +75,6 @@ typedef PxArrayExt<physx::PxContactPairPoint> PxArray_PxContactPairPoint;
 typedef PxArrayExt<physx::PxHeightFieldSample> PxArray_PxHeightFieldSample;
 typedef PxArrayExt<physx::PxRaycastHit> PxArray_PxRaycastHit;
 typedef PxArrayExt<physx::PxSweepHit> PxArray_PxSweepHit;
-typedef PxArrayExt<physx::PxVehicleDrivableSurfaceType> PxArray_PxVehicleDrivableSurfaceType;
-typedef PxArrayExt<physx::PxWheelQueryResult> PxArray_PxWheelQueryResult;
-typedef PxArrayExt<PxVehicleWheelsPtr> PxArray_PxVehicleWheels;
 
 typedef PxArrayExt<physx::PxReal> PxArray_PxReal;
 typedef PxArrayExt<physx::PxU8> PxArray_PxU8;
@@ -97,9 +90,6 @@ typedef PxArrayExt<physx::PxContactPairPoint> Vector_PxContactPairPoint;
 typedef PxArrayExt<physx::PxHeightFieldSample> Vector_PxHeightFieldSample;
 typedef PxArrayExt<physx::PxRaycastHit> Vector_PxRaycastHit;
 typedef PxArrayExt<physx::PxSweepHit> Vector_PxSweepHit;
-typedef PxArrayExt<physx::PxVehicleDrivableSurfaceType> Vector_PxVehicleDrivableSurfaceType;
-typedef PxArrayExt<physx::PxWheelQueryResult> Vector_PxWheelQueryResult;
-typedef PxArrayExt<PxVehicleWheelsPtr> Vector_PxVehicleWheels;
 
 typedef PxArrayExt<physx::PxReal> Vector_PxReal;
 typedef PxArrayExt<physx::PxU8> Vector_PxU8;

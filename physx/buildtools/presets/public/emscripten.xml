@@ -4,7 +4,9 @@
   <CMakeSwitches>
     <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
     <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="False" comment="Generate the OmniPVD project" />
-    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />    
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="False" comment="Generate the GPU projects, if possible." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
   </CMakeSwitches>
   <CMakeParams>
     <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/emscripten/PhysX" comment="Install path relative to PhysX SDK root" />

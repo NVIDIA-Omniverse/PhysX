@@ -25,7 +25,7 @@
 ## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
-# Build PhysXVehicle
+# Build PhysXVehicle2
 #
 
 # Use generator expressions to set config specific preprocessor definitions
