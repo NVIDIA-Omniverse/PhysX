@@ -87,6 +87,7 @@ SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Weverything\
     -Wno-invalid-offsetof \
     -Wno-switch-default \
     -Wno-unused-but-set-variable \
+    -Wno-shadow-field-in-constructor \
 ")
 
 SET(GCC_WARNINGS "-Wall -Werror \
