@@ -2688,7 +2688,7 @@ interface PxTetrahedronMeshDesc {
     void PxTetrahedronMeshDesc();
     void PxTetrahedronMeshDesc([Ref] PxArray_PxVec3 meshVertices, [Ref] PxArray_PxU32 meshTetIndices, optional PxTetrahedronMeshFormatEnum meshFormat, optional unsigned short numberOfTetsPerHexElement);
     boolean isValid();
-    [Value] attribute PxTypedStridedData_PxU16 materialIndices;
+    [Value] attribute PxTypedBoundedData_PxU16 materialIndices;
     [Value] attribute PxBoundedData points;
     [Value] attribute PxBoundedData tetrahedrons;
     [Value] attribute PxMeshFlags flags;
@@ -2818,7 +2818,7 @@ interface PxTriangleMeshAnalysisResults {
 [Prefix="physx::"]
 interface PxTriangleMeshDesc {
     void PxTriangleMeshDesc();
-    [Const, Value] attribute PxTypedStridedData_PxU16Const materialIndices;
+    [Const, Value] attribute PxTypedBoundedData_PxU16Const materialIndices;
 };
 PxTriangleMeshDesc implements PxSimpleTriangleMesh;
 
@@ -2858,12 +2858,12 @@ interface PxTriggerPairFlags {
     void clear(PxTriggerPairFlagEnum flag);
 };
 
-interface PxTypedStridedData_PxU16 {
+interface PxTypedBoundedData_PxU16 {
     attribute unsigned long stride;
     [Value] attribute PxU16Ptr data;
 };
 
-interface PxTypedStridedData_PxU16Const {
+interface PxTypedBoundedData_PxU16Const {
     attribute unsigned long stride;
     [Const, Value] attribute PxU16ConstPtr data;
 };

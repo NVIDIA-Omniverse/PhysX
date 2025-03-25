@@ -29,8 +29,8 @@ typedef physx::PxOverlapBufferN<10> PxOverlapBuffer10;
 typedef physx::PxRaycastBufferN<10> PxRaycastBuffer10;
 typedef physx::PxSweepBufferN<10> PxSweepBuffer10;
 
-typedef physx::PxTypedStridedData<physx::PxU16> PxTypedStridedData_PxU16;
-typedef physx::PxTypedStridedData<const physx::PxU16> PxTypedStridedData_PxU16Const;
+typedef physx::PxTypedBoundedData<physx::PxU16> PxTypedBoundedData_PxU16;
+typedef physx::PxTypedBoundedData<const physx::PxU16> PxTypedBoundedData_PxU16Const;
 
 /**
  * PxArrayExt extends PxArray to get a slightly more Java(-script) friendly interface with get() and set() methods.
