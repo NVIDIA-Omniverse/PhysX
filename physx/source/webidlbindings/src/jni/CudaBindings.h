@@ -1,7 +1,10 @@
 #ifndef CUDA_BINDINGS_H
 #define CUDA_BINDINGS_H
 
-#if !(defined(__EMSCRIPTEN__) || defined(__APPLE__) || defined(__ANDROID__))
+// CUDA support is always disabled since PhysX 5.6.0 because apparently this now requires an
+// extra CUDA toolkit which is annoying to set up (especially in GitHub workflow)
+#if FALSE
+//#if !(defined(__EMSCRIPTEN__) || defined(__APPLE__) || defined(__ANDROID__))
 
 #include "cudamanager/PxCudaContext.h"
 #include "extensions/PxParticleExt.h"
