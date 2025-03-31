@@ -29,6 +29,11 @@ cd flow
 ```
 To run Flow editor: `_build/linux-x86_64/release/nvfloweditor` (release), `_build/linux-x86_64/debug/nvfloweditor` (debug) 
 
+Note: If build fails, might need to install xrandr-dev. On Ubuntu:
+```sh
+sudo apt install libxrandr-dev
+```
+
 ## Documentation
 
 The documentation is available on [GitHub Pages](https://nvidia-omniverse.github.io/PhysX/flow/index.html).
