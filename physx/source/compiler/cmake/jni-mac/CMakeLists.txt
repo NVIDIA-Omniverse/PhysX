@@ -88,6 +88,9 @@ SET(PHYSX_CXX_FLAGS "${OSX_BITNESS} ${ARCH_SIMD_FLAG} -std=c++11 -fno-rtti -fno-
     -Wno-inconsistent-missing-override \
     -Wno-inconsistent-missing-destructor-override \
     -Wno-unused-function \
+    -Wno-missing-include-dirs \
+    -Wno-switch-default \
+    -Wno-format \
 " CACHE INTERNAL "PhysX CXX")
 
 SET(CMAKE_SHARED_LINKER_FLAGS_CHECKED "")
