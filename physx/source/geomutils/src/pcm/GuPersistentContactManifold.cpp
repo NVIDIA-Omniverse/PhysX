@@ -1023,7 +1023,7 @@ void PersistentContactManifold::reduceBatchContacts(const PersistentContact* man
 	//keep the deepest point, candidateIndex will be the same as index
 	for(PxU32 i = 1; i<numPoints; ++i)
 	{
-		//at the begining candidates and indices will be the same
+		//at the beginning candidates and indices will be the same
 		candidates[i] = PxU8(i);
 	
 		const FloatV pen = V4GetW(manifoldPoints[i].mLocalNormalPen);
@@ -1711,7 +1711,7 @@ PxU32 SinglePersistentContactManifold::reduceContacts(MeshPersistentContact* man
 	//keep the deepest point
 	for(PxU32 i = 1; i<numPoints; ++i)
 	{
-		//at the begining candidates and indices will be the same
+		//at the beginning candidates and indices will be the same
 		candidates[i] = PxU8(i);
 
 		const FloatV pen = V4GetW(manifoldPoints[i].mLocalNormalPen);
