@@ -1276,14 +1276,14 @@ PX_FORCE_INLINE Vec4V V4Min(const Vec4V a, const Vec4V b)
 PX_FORCE_INLINE FloatV V4ExtractMax(const Vec4V a)
 {
 	const PxF32 t0 = (a.x >= a.y) ? a.x : a.y;
-	const PxF32 t1 = (a.z >= a.w) ? a.x : a.w;
+	const PxF32 t1 = (a.z >= a.w) ? a.z : a.w;
 	return t0 >= t1 ? t0 : t1;
 }
 
 PX_FORCE_INLINE FloatV V4ExtractMin(const Vec4V a)
 {
 	const PxF32 t0 = (a.x <= a.y) ? a.x : a.y;
-	const PxF32 t1 = (a.z <= a.w) ? a.x : a.w;
+	const PxF32 t1 = (a.z <= a.w) ? a.z : a.w;
 	return t0 <= t1 ? t0 : t1;
 }
 
