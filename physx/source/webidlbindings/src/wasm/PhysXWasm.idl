@@ -1621,6 +1621,10 @@ interface PxJoint {
     float getInvMassScale0();
     void setInvMassScale1(float invMassScale);
     float getInvMassScale1();
+    void setInvInertiaScale0(float invInertiaScale);
+    float getInvInertiaScale0();
+    void setInvInertiaScale1(float invInertiaScale);
+    float getInvInertiaScale1();
     PxConstraint getConstraint();
     void setName([Const] DOMString name);
     [Const] DOMString getName();
@@ -1951,6 +1955,22 @@ interface PxPvdInstrumentationFlags {
     boolean isSet(PxPvdInstrumentationFlagEnum flag);
     void raise(PxPvdInstrumentationFlagEnum flag);
     void clear(PxPvdInstrumentationFlagEnum flag);
+};
+
+[Prefix="physx::", NoDelete]
+interface PxPvdSceneClient {
+    void setScenePvdFlag(PxPvdSceneFlagEnum flag, boolean value);
+    void setScenePvdFlags([Ref] PxPvdSceneFlags flags);
+    [Value] PxPvdSceneFlags getScenePvdFlags();
+    void updateCamera(DOMString name, [Const, Ref] PxVec3 origin, [Const, Ref] PxVec3 up, [Const, Ref] PxVec3 target);
+};
+
+[Prefix="physx::"]
+interface PxPvdSceneFlags {
+    void PxPvdSceneFlags(octet flags);
+    boolean isSet(PxPvdSceneFlagEnum flag);
+    void raise(PxPvdSceneFlagEnum flag);
+    void clear(PxPvdSceneFlagEnum flag);
 };
 
 [Prefix="physx::", NoDelete]
@@ -2331,6 +2351,7 @@ interface PxScene {
     [Value] PxSceneLimits getLimits();
     [Ref] PxPhysics getPhysics();
     unsigned long getTimestamp();
+    PxPvdSceneClient getScenePvdClient();
     attribute VoidPtr userData;
 };
 PxScene implements PxSceneSQSystem;
@@ -4238,6 +4259,12 @@ enum PxPvdInstrumentationFlagEnum {
     "PxPvdInstrumentationFlagEnum::ePROFILE",
     "PxPvdInstrumentationFlagEnum::eMEMORY",
     "PxPvdInstrumentationFlagEnum::eALL"
+};
+
+enum PxPvdSceneFlagEnum {
+    "PxPvdSceneFlagEnum::eTRANSMIT_CONTACTS",
+    "PxPvdSceneFlagEnum::eTRANSMIT_SCENEQUERIES",
+    "PxPvdSceneFlagEnum::eTRANSMIT_CONSTRAINTS"
 };
 
 enum PxQueryFlagEnum {

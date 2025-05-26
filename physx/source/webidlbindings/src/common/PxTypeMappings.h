@@ -153,6 +153,7 @@ typedef physx::PxPairFilteringMode::Enum PxPairFilteringModeEnum;
 typedef physx::PxPairFlag::Enum PxPairFlagEnum;
 typedef physx::PxPrismaticJointFlag::Enum PxPrismaticJointFlagEnum;
 typedef physx::PxPruningStructureType::Enum PxPruningStructureTypeEnum;
+typedef physx::PxPvdSceneFlag::Enum PxPvdSceneFlagEnum;
 typedef physx::PxQueryFlag::Enum PxQueryFlagEnum;
 typedef physx::PxQueryHitType::Enum PxQueryHitType;
 typedef physx::PxRevoluteJointFlag::Enum PxRevoluteJointFlagEnum;
