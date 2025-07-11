@@ -1,0 +1,833 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxSolverConstraintDesc &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxSolverConstraintDesc';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSolverConstraintPrepDesc" href="structPxSolverConstraintPrepDesc.html" />
+    <link rel="prev" title="PxSolverBodyData" href="structPxSolverBodyData.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxSolverCons...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxsolverconstraintdesc">
+<h1>PxSolverConstraintDesc<a class="headerlink" href="#pxsolverconstraintdesc" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#pxsolverdefs-8h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv422PxSolverConstraintDesc">
+<span id="_CPPv322PxSolverConstraintDesc"></span><span id="_CPPv222PxSolverConstraintDesc"></span><span id="PxSolverConstraintDesc"></span><span class="target" id="structpxsolverconstraintdesc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></span><a class="headerlink" href="#_CPPv422PxSolverConstraintDesc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constraint descriptor used inside the solver. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc14ConstraintTypeE">
+<span id="_CPPv3N22PxSolverConstraintDesc14ConstraintTypeE"></span><span id="_CPPv2N22PxSolverConstraintDesc14ConstraintTypeE"></span><span class="target" id="structpxsolverconstraintdesc_1aa0a51c38561792f72763a9e214eaa150"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ConstraintType</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc14ConstraintTypeE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc14ConstraintType19eCONTACT_CONSTRAINTE">
+<span id="_CPPv3N22PxSolverConstraintDesc14ConstraintType19eCONTACT_CONSTRAINTE"></span><span id="_CPPv2N22PxSolverConstraintDesc14ConstraintType19eCONTACT_CONSTRAINTE"></span><span class="target" id="structpxsolverconstraintdesc_1aa0a51c38561792f72763a9e214eaa150af07aa2676bc3a0f445124a369d76178d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTACT_CONSTRAINT</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc14ConstraintType19eCONTACT_CONSTRAINTE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Defines this pair is a contact constraint. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc14ConstraintType17eJOINT_CONSTRAINTE">
+<span id="_CPPv3N22PxSolverConstraintDesc14ConstraintType17eJOINT_CONSTRAINTE"></span><span id="_CPPv2N22PxSolverConstraintDesc14ConstraintType17eJOINT_CONSTRAINTE"></span><span class="target" id="structpxsolverconstraintdesc_1aa0a51c38561792f72763a9e214eaa150a964367059d7c0c8b31ee93cd614a1aac"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eJOINT_CONSTRAINT</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc14ConstraintType17eJOINT_CONSTRAINTE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Defines this pair is a joint constraint. </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc5bodyAE">
+<span id="_CPPv3N22PxSolverConstraintDesc5bodyAE"></span><span id="_CPPv2N22PxSolverConstraintDesc5bodyAE"></span><span id="PxSolverConstraintDesc::bodyA__PxSolverBodyP"></span><span class="target" id="structpxsolverconstraintdesc_1a917f6a5b6829c4c6f8f44182628e4e2e"></span><a class="reference internal" href="structPxSolverBody.html#_CPPv412PxSolverBody" title="PxSolverBody"><span class="n"><span class="pre">PxSolverBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyA</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc5bodyAE" title="Link to this definition">#</a><br /></dt>
+<dd><p>bodyA pointer </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc8tgsBodyAE">
+<span id="_CPPv3N22PxSolverConstraintDesc8tgsBodyAE"></span><span id="_CPPv2N22PxSolverConstraintDesc8tgsBodyAE"></span><span id="PxSolverConstraintDesc::tgsBodyA__PxTGSSolverBodyVelP"></span><span class="target" id="structpxsolverconstraintdesc_1a4e75c52e5f71af359af9b62c3f709564"></span><a class="reference internal" href="structPxTGSSolverBodyVel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">tgsBodyA</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc8tgsBodyAE" title="Link to this definition">#</a><br /></dt>
+<dd><p>bodyA pointer </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc13articulationAE">
+<span id="_CPPv3N22PxSolverConstraintDesc13articulationAE"></span><span id="_CPPv2N22PxSolverConstraintDesc13articulationAE"></span><span id="PxSolverConstraintDesc::articulationA__voidP"></span><span class="target" id="structpxsolverconstraintdesc_1a49b01c99bef5411f422bb4f542996ef0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">articulationA</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc13articulationAE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Articulation pointer for body A. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDescUt1_9E">
+<span id="_CPPv3N22PxSolverConstraintDescUt1_9E"></span><span class="target" id="structpxsolverconstraintdesc_1a54c03d87d3c8a790ac1f5698084b23a5"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">[anonymous]</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDescUt1_9E" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc5bodyBE">
+<span id="_CPPv3N22PxSolverConstraintDesc5bodyBE"></span><span id="_CPPv2N22PxSolverConstraintDesc5bodyBE"></span><span id="PxSolverConstraintDesc::bodyB__PxSolverBodyP"></span><span class="target" id="structpxsolverconstraintdesc_1a6144adf5b9396847a54da7d7c17a770f"></span><a class="reference internal" href="structPxSolverBody.html#_CPPv412PxSolverBody" title="PxSolverBody"><span class="n"><span class="pre">PxSolverBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyB</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc5bodyBE" title="Link to this definition">#</a><br /></dt>
+<dd><p>BodyB pointer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc8tgsBodyBE">
+<span id="_CPPv3N22PxSolverConstraintDesc8tgsBodyBE"></span><span id="_CPPv2N22PxSolverConstraintDesc8tgsBodyBE"></span><span id="PxSolverConstraintDesc::tgsBodyB__PxTGSSolverBodyVelP"></span><span class="target" id="structpxsolverconstraintdesc_1a25fc01cac6b0554cac348a5c47430dc0"></span><a class="reference internal" href="structPxTGSSolverBodyVel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">tgsBodyB</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc8tgsBodyBE" title="Link to this definition">#</a><br /></dt>
+<dd><p>BodyB pointer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc13articulationBE">
+<span id="_CPPv3N22PxSolverConstraintDesc13articulationBE"></span><span id="_CPPv2N22PxSolverConstraintDesc13articulationBE"></span><span id="PxSolverConstraintDesc::articulationB__voidP"></span><span class="target" id="structpxsolverconstraintdesc_1a6649fd8f4a0dc1d08bcff1127fa2d23e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">articulationB</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc13articulationBE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Articulation pointer for body B. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDescUt2_11E">
+<span id="_CPPv3N22PxSolverConstraintDescUt2_11E"></span><span class="target" id="structpxsolverconstraintdesc_1aad5b810602ce5cfffdafaf1747bd07ef"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">[anonymous]</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDescUt2_11E" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc14bodyADataIndexE">
+<span id="_CPPv3N22PxSolverConstraintDesc14bodyADataIndexE"></span><span id="_CPPv2N22PxSolverConstraintDesc14bodyADataIndexE"></span><span id="PxSolverConstraintDesc::bodyADataIndex__PxU32"></span><span class="target" id="structpxsolverconstraintdesc_1a75d8cc26a512bd1e1a1e1a965decfa83"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyADataIndex</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc14bodyADataIndexE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Body A’s index into the SolverBodyData array. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc14bodyBDataIndexE">
+<span id="_CPPv3N22PxSolverConstraintDesc14bodyBDataIndexE"></span><span id="_CPPv2N22PxSolverConstraintDesc14bodyBDataIndexE"></span><span id="PxSolverConstraintDesc::bodyBDataIndex__PxU32"></span><span class="target" id="structpxsolverconstraintdesc_1a0e7c10b35dcc40b914857957fa64beb2"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyBDataIndex</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc14bodyBDataIndexE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Body B’s index into the SolverBodyData array. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc10linkIndexAE">
+<span id="_CPPv3N22PxSolverConstraintDesc10linkIndexAE"></span><span id="_CPPv2N22PxSolverConstraintDesc10linkIndexAE"></span><span id="PxSolverConstraintDesc::linkIndexA__PxU32"></span><span class="target" id="structpxsolverconstraintdesc_1a1db4374ab0aa47ddc04caac3d0d3981c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linkIndexA</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc10linkIndexAE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link index defining which link in Articulation A this constraint affects. If not an articulation, must be PxSolverConstraintDesc::RIGID_BODY. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc10linkIndexBE">
+<span id="_CPPv3N22PxSolverConstraintDesc10linkIndexBE"></span><span id="_CPPv2N22PxSolverConstraintDesc10linkIndexBE"></span><span id="PxSolverConstraintDesc::linkIndexB__PxU32"></span><span class="target" id="structpxsolverconstraintdesc_1ad4ec6a964b8de21e3e96aefc2c356cb1"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linkIndexB</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc10linkIndexBE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link index defining which link in Articulation B this constraint affects. If not an articulation, must be PxSolverConstraintDesc::RIGID_BODY. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc10constraintE">
+<span id="_CPPv3N22PxSolverConstraintDesc10constraintE"></span><span id="_CPPv2N22PxSolverConstraintDesc10constraintE"></span><span id="PxSolverConstraintDesc::constraint__PxU8P"></span><span class="target" id="structpxsolverconstraintdesc_1a7a577215addd09b9e092aae536157161"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">constraint</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc10constraintE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to the constraint rows to be solved. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc9writeBackE">
+<span id="_CPPv3N22PxSolverConstraintDesc9writeBackE"></span><span id="_CPPv2N22PxSolverConstraintDesc9writeBackE"></span><span id="PxSolverConstraintDesc::writeBack__voidP"></span><span class="target" id="structpxsolverconstraintdesc_1ae9b299864d3b98e18fcfc6a089bb7f79"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">writeBack</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc9writeBackE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to the writeback structure results for this given constraint are to be written to. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc17writeBackFrictionE">
+<span id="_CPPv3N22PxSolverConstraintDesc17writeBackFrictionE"></span><span id="_CPPv2N22PxSolverConstraintDesc17writeBackFrictionE"></span><span id="PxSolverConstraintDesc::writeBackFriction__voidP"></span><span class="target" id="structpxsolverconstraintdesc_1ac9d816a656ef8a7866c7310bcc45876c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">writeBackFriction</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc17writeBackFrictionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Pointer to writeback contact friction impulses. Points to a PxVec3* buffer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc9progressAE">
+<span id="_CPPv3N22PxSolverConstraintDesc9progressAE"></span><span id="_CPPv2N22PxSolverConstraintDesc9progressAE"></span><span id="PxSolverConstraintDesc::progressA__PxU16"></span><span class="target" id="structpxsolverconstraintdesc_1a19fd51fc04395eca5104a11849196bf2"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">progressA</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc9progressAE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Internal progress counter. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc9progressBE">
+<span id="_CPPv3N22PxSolverConstraintDesc9progressBE"></span><span id="_CPPv2N22PxSolverConstraintDesc9progressBE"></span><span id="PxSolverConstraintDesc::progressB__PxU16"></span><span class="target" id="structpxsolverconstraintdesc_1a493de79d9444e08309c687f18f491811"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">progressB</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc9progressBE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Internal progress counter. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc14constraintTypeE">
+<span id="_CPPv3N22PxSolverConstraintDesc14constraintTypeE"></span><span id="_CPPv2N22PxSolverConstraintDesc14constraintTypeE"></span><span id="PxSolverConstraintDesc::constraintType__PxU16"></span><span class="target" id="structpxsolverconstraintdesc_1afa25914e914594e793f9cc444841551c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">constraintType</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc14constraintTypeE" title="Link to this definition">#</a><br /></dt>
+<dd><p>type of constraint. Union member active until constraint prepping, afterwards memory used for constraint length </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc22constraintLengthOver16E">
+<span id="_CPPv3N22PxSolverConstraintDesc22constraintLengthOver16E"></span><span id="_CPPv2N22PxSolverConstraintDesc22constraintLengthOver16E"></span><span id="PxSolverConstraintDesc::constraintLengthOver16__PxU16"></span><span class="target" id="structpxsolverconstraintdesc_1a417fed9862da2ced60f98353fea74ace"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">constraintLengthOver16</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc22constraintLengthOver16E" title="Link to this definition">#</a><br /></dt>
+<dd><p>constraintLength/16, max constraint length is 1MB. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDescUt2_13E">
+<span id="_CPPv3N22PxSolverConstraintDescUt2_13E"></span><span class="target" id="structpxsolverconstraintdesc_1accada341b49a29a9851b22581ffc853e"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">[anonymous]</span></span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDescUt2_13E" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSolverConstraintDesc10RIGID_BODYE">
+<span id="_CPPv3N22PxSolverConstraintDesc10RIGID_BODYE"></span><span id="_CPPv2N22PxSolverConstraintDesc10RIGID_BODYE"></span><span id="PxSolverConstraintDesc::RIGID_BODY__PxU16C"></span><span class="target" id="structpxsolverconstraintdesc_1a6c216b6bddfd7cadf84b76aa31400592"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RIGID_BODY</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0xffff</span></span><a class="headerlink" href="#_CPPv4N22PxSolverConstraintDesc10RIGID_BODYE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxSolverBodyData.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxSolverBodyData</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxSolverConstraintPrepDesc.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxSolverConstraintPrepDesc</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv422PxSolverConstraintDesc"><code class="docutils literal notranslate"><span class="pre">PxSolverConstraintDesc</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc14ConstraintTypeE"><code class="docutils literal notranslate"><span class="pre">ConstraintType</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc14ConstraintType19eCONTACT_CONSTRAINTE"><code class="docutils literal notranslate"><span class="pre">eCONTACT_CONSTRAINT</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc14ConstraintType17eJOINT_CONSTRAINTE"><code class="docutils literal notranslate"><span class="pre">eJOINT_CONSTRAINT</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc5bodyAE"><code class="docutils literal notranslate"><span class="pre">bodyA</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc8tgsBodyAE"><code class="docutils literal notranslate"><span class="pre">tgsBodyA</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc13articulationAE"><code class="docutils literal notranslate"><span class="pre">articulationA</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDescUt1_9E"><code class="docutils literal notranslate"><span class="pre">@9</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc5bodyBE"><code class="docutils literal notranslate"><span class="pre">bodyB</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc8tgsBodyBE"><code class="docutils literal notranslate"><span class="pre">tgsBodyB</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc13articulationBE"><code class="docutils literal notranslate"><span class="pre">articulationB</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDescUt2_11E"><code class="docutils literal notranslate"><span class="pre">@11</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc14bodyADataIndexE"><code class="docutils literal notranslate"><span class="pre">bodyADataIndex</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc14bodyBDataIndexE"><code class="docutils literal notranslate"><span class="pre">bodyBDataIndex</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc10linkIndexAE"><code class="docutils literal notranslate"><span class="pre">linkIndexA</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc10linkIndexBE"><code class="docutils literal notranslate"><span class="pre">linkIndexB</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc10constraintE"><code class="docutils literal notranslate"><span class="pre">constraint</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc9writeBackE"><code class="docutils literal notranslate"><span class="pre">writeBack</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc17writeBackFrictionE"><code class="docutils literal notranslate"><span class="pre">writeBackFriction</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc9progressAE"><code class="docutils literal notranslate"><span class="pre">progressA</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc9progressBE"><code class="docutils literal notranslate"><span class="pre">progressB</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc14constraintTypeE"><code class="docutils literal notranslate"><span class="pre">constraintType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc22constraintLengthOver16E"><code class="docutils literal notranslate"><span class="pre">constraintLengthOver16</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDescUt2_13E"><code class="docutils literal notranslate"><span class="pre">@13</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxSolverConstraintDesc10RIGID_BODYE"><code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

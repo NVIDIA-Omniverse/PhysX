@@ -1,0 +1,1019 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Typedefs &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/typedefs';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Deprecated list" href="deprecated.html" />
+    <link rel="prev" title="PxCreateParticleVolumeBufferHelper" href="function_PxParticleExt_8h_1abd8ab6fb014642410e9e5cf0db466fa1.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Typedefs</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="typedefs">
+<h1>Typedefs<a class="headerlink" href="#typedefs" title="Link to this heading">#</a></h1>
+<div class="dl-as-table docutils container">
+<dl class="simple">
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1af9f5bd81658f866613785b3a0bb7d7d9.html#pxcudatypes_8h_1af9f5bd81658f866613785b3a0bb7d7d9"><span class="std std-ref">CUcontext</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1acd81b70eb9968392bb5cdf582af8eab4.html#pxcudatypes_8h_1acd81b70eb9968392bb5cdf582af8eab4"><span class="std std-ref">CUdevice</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1a5e264ce2ad6a38761e7e04921ef771de.html#pxcudatypes_8h_1a5e264ce2ad6a38761e7e04921ef771de"><span class="std std-ref">CUdeviceptr</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#pxcudatypes_8h_1a6d740185cf0953636d4ae37f68d7559b"><span class="std std-ref">CUevent</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1aba6128b948022f495706d93bc2cea9c8.html#pxcudatypes_8h_1aba6128b948022f495706d93bc2cea9c8"><span class="std std-ref">CUfunction</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1ac0c4e1704647178d9c5ba3be46517dcd.html#pxcudatypes_8h_1ac0c4e1704647178d9c5ba3be46517dcd"><span class="std std-ref">CUgraphicsResource</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef.html#pxcudatypes_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef"><span class="std std-ref">CUmodule</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#pxcudatypes_8h_1ab946c7f02e09efd788a204718015d88a"><span class="std std-ref">CUstream</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#omnipvddefines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff"><span class="std std-ref">OmniPvdAttributeHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#omnipvddefines_8h_1a23f8f52ad95030a18e5cdce74935ba85"><span class="std std-ref">OmniPvdClassHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#omnipvddefines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82"><span class="std std-ref">OmniPvdContextHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html#omnipvddefines_8h_1a2cc00fc14cd4f8857bebefe109e301d4"><span class="std std-ref">OmniPvdEnumValueType</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html#omnipvddefines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b"><span class="std std-ref">OmniPvdLogFunction</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#omnipvddefines_8h_1a32cfff849166e6e0a6d68ee522decd2d"><span class="std std-ref">OmniPvdObjectHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdDefines_8h_1a966078853c0d3490de3cc5869469da01.html#omnipvddefines_8h_1a966078853c0d3490de3cc5869469da01"><span class="std std-ref">OmniPvdVersionType</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxConstraintDesc_8h_1aa03d6d79255886721c3e1a946b5a805f.html#pxconstraintdesc_8h_1aa03d6d79255886721c3e1a946b5a805f"><span class="std std-ref">Px1DConstraintFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxActor_8h_1a468ad85db838378f0c58cfd02a96949b.html#pxactor_8h_1a468ad85db838378f0c58cfd02a96949b"><span class="std std-ref">PxActorFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxActorFlag.html#structpxactorflag"><span class="std std-ref">PxActorFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxScene_8h_1ae76639de8e4ab9d5e155f72b394812d2.html#pxscene_8h_1ae76639de8e4ab9d5e155f72b394812d2"><span class="std std-ref">PxActorTypeFlags</span></a></dt><dd><p>Collection of set bits defined in <a class="reference internal" href="structPxActorTypeFlag.html#structpxactortypeflag"><span class="std std-ref">PxActorTypeFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1a4d0184965c0a910f5c96cb69c0690f5c.html#pxqueryreport_8h_1a4d0184965c0a910f5c96cb69c0690f5c"><span class="std std-ref">PxAgain</span></a></dt><dd><p>Describes query behavior after returning a partial query result via a callback.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxAggregate_8h_1a6c0599a93edeb15d6b32e26fc3806d91.html#pxaggregate_8h_1a6c0599a93edeb15d6b32e26fc3806d91"><span class="std std-ref">PxAggregateFilterHint</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxArticulationFlag_8h_1a21e073830d6a0f416901fb683b1536c4.html#pxarticulationflag_8h_1a21e073830d6a0f416901fb683b1536c4"><span class="std std-ref">PxArticulationCacheFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxImmediateMode_8h_1aa4d883a28073281912ebad8bfe70d92e.html#pximmediatemode_8h_1aa4d883a28073281912ebad8bfe70d92e"><span class="std std-ref">PxArticulationCookie</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSolverDefs_8h_1a40a321fce7bcb9669d32fca769d2958a.html#pxsolverdefs_8h_1a40a321fce7bcb9669d32fca769d2958a"><span class="std std-ref">PxArticulationFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#pxsimpletypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3"><span class="std std-ref">PxArticulationGPUIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxImmediateMode_8h_1aa6c21f764f6ca3aeed69495b178ceddf.html#pximmediatemode_8h_1aa6c21f764f6ca3aeed69495b178ceddf"><span class="std std-ref">PxArticulationHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxArticulationReducedCoordinate_8h_1ad8023a12d4f2e3a7a4a61d31731a69f5.html#pxarticulationreducedcoordinate_8h_1ad8023a12d4f2e3a7a4a61d31731a69f5"><span class="std std-ref">PxArticulationKinematicFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSolverDefs_8h_1a4d2907efdef5e5b7b1becd1ab59c2405.html#pxsolverdefs_8h_1a4d2907efdef5e5b7b1becd1ab59c2405"><span class="std std-ref">PxArticulationMotions</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxResidual_8h_1a887112c3747e7c6a785b92e9f7b70a03.html#pxresidual_8h_1a887112c3747e7c6a785b92e9f7b70a03"><span class="std std-ref">PxArticulationResidual</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#pxbase_8h_1a1e3721588799f5fbb18d76e4aab7d018"><span class="std std-ref">PxBaseFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBitAndData_8h_1a14fb75b9ecfe655e045173ff85283d8b.html#pxbitanddata_8h_1a14fb75b9ecfe655e045173ff85283d8b"><span class="std std-ref">PxBitAndByte</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBitAndData_8h_1a798a4f4d0f93249b14d5e92a7a02fe3a.html#pxbitanddata_8h_1a798a4f4d0f93249b14d5e92a7a02fe3a"><span class="std std-ref">PxBitAndDword</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBitAndData_8h_1a00aa289135639a9f08827f478e4a9c70.html#pxbitanddata_8h_1a00aa289135639a9f08827f478e4a9c70"><span class="std std-ref">PxBitAndWord</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBitMap_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7.html#pxbitmap_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7"><span class="std std-ref">PxBitMap</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBitMap_8h_1acb5b0e4b3d26ba7a3dc830a964fad81f.html#pxbitmap_8h_1acb5b0e4b3d26ba7a3dc830a964fad81f"><span class="std std-ref">PxBitMapPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1ade7b9de07bed712db27ab45b8d4b92a1.html#pxpinnedarray_8h_1ade7b9de07bed712db27ab45b8d4b92a1"><span class="std std-ref">PxBoundsArrayPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a937c23c09c1d2c5449cf3f7445cc5853.html#pxpinnedarray_8h_1a937c23c09c1d2c5449cf3f7445cc5853"><span class="std std-ref">PxBoundsArrayPinnedSafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBroadPhase_8h_1a8fa935f8cdd32ff5a37e0ceb520c7f58.html#pxbroadphase_8h_1a8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a></dt><dd><p>Broadphase filter group.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#pxbroadphase_8h_1a1ae85a90f4c8bc8fa0119101077273a8"><span class="std std-ref">PxBpIndex</span></a></dt><dd><p>Broadphase index. Indexes bounds, groups and distance arrays.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaContext_8h_1a7892007c984cd80699301b37c13f6b43.html#pxcudacontext_8h_1a7892007c984cd80699301b37c13f6b43"><span class="std std-ref">PxCUjit_option</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaContext_8h_1a8c470c7361a92c586cf69763dc3d37ad.html#pxcudacontext_8h_1a8c470c7361a92c586cf69763dc3d37ad"><span class="std std-ref">PxCUresult</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a2a53f988ec816d9354e933d64307ae6f.html#pxpinnedarray_8h_1a2a53f988ec816d9354e933d64307ae6f"><span class="std std-ref">PxCachedTransformArrayPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a1724d81422447141cd0a3fc79f6c91fa.html#pxpinnedarray_8h_1a1724d81422447141cd0a3fc79f6c91fa"><span class="std std-ref">PxCachedTransformArrayPinnedSafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxClient_8h_1acb0e5a85de6c250f2a54db46e3aa0a12.html#pxclient_8h_1acb0e5a85de6c250f2a54db46e3aa0a12"><span class="std std-ref">PxClientID</span></a></dt><dd><p>An ID to identify different clients for multiclient support.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxConstraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee.html#pxconstraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee"><span class="std std-ref">PxConstraintFlags</span></a></dt><dd><p>constraint flags</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7f0c70adf84461344f5c9906910f88a7.html#pxsimpletypes_8h_1a7f0c70adf84461344f5c9906910f88a7"><span class="std std-ref">PxConstraintGPUIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxConstraintDesc_8h_1a854b403b6a15bd6dda76b08539e30433.html#pxconstraintdesc_8h_1a854b403b6a15bd6dda76b08539e30433"><span class="std std-ref">PxConstraintSolverPrep</span></a></dt><dd><p>Solver constraint generation shader.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxConstraintDesc_8h_1aa85dd505b96db854d4ffdbe24fcb9089.html#pxconstraintdesc_8h_1aa85dd505b96db854d4ffdbe24fcb9089"><span class="std std-ref">PxConstraintVisualize</span></a></dt><dd><p>Solver constraint visualization function.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimulationEventCallback_8h_1ae73039b8bd7e7f4a606acfba4811291c.html#pxsimulationeventcallback_8h_1ae73039b8bd7e7f4a606acfba4811291c"><span class="std std-ref">PxContactPairFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxContactPairFlag.html#structpxcontactpairflag"><span class="std std-ref">PxContactPairFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimulationEventCallback_8h_1aa4275c674f70ce3f0be586339eb0b045.html#pxsimulationeventcallback_8h_1aa4275c674f70ce3f0be586339eb0b045"><span class="std std-ref">PxContactPairHeaderFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxContactPairHeaderFlag.html#structpxcontactpairheaderflag"><span class="std std-ref">PxContactPairHeaderFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxControllerBehavior_8h_1ac727cde912827a0304f5ac182a0a0b1c.html#pxcontrollerbehavior_8h_1ac727cde912827a0304f5ac182a0a0b1c"><span class="std std-ref">PxControllerBehaviorFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxControllerBehaviorFlag.html#structpxcontrollerbehaviorflag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxController_8h_1a3cb7e2aaf5144c3ed9bbf504c2fd66db.html#pxcontroller_8h_1a3cb7e2aaf5144c3ed9bbf504c2fd66db"><span class="std std-ref">PxControllerCollisionFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxControllerCollisionFlag.html#structpxcontrollercollisionflag"><span class="std std-ref">PxControllerCollisionFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxControllerManager_8h_1a2404e3aa455180820b7fa4900d75f18e.html#pxcontrollermanager_8h_1a2404e3aa455180820b7fa4900d75f18e"><span class="std std-ref">PxControllerDebugRenderFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxControllerDebugRenderFlag.html#structpxcontrollerdebugrenderflag"><span class="std std-ref">PxControllerDebugRenderFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxConvexMeshDesc_8h_1a36d3375ae49e62c3842c3fbe0c620651.html#pxconvexmeshdesc_8h_1a36d3375ae49e62c3842c3fbe0c620651"><span class="std std-ref">PxConvexFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxConvexFlag.html#structpxconvexflag"><span class="std std-ref">PxConvexFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxConvexMeshGeometry_8h_1a913cfc3a0f052fb2ea2818e1a31131c2.html#pxconvexmeshgeometry_8h_1a913cfc3a0f052fb2ea2818e1a31131c2"><span class="std std-ref">PxConvexMeshGeometryFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxConvexMeshGeometryFlag.html#structpxconvexmeshgeometryflag"><span class="std std-ref">PxConvexMeshGeometryFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCudaContextManager_8h_1ae45706a37c92d27de3ec53e8dd914719.html#pxcudacontextmanager_8h_1ae45706a37c92d27de3ec53e8dd914719"><span class="std std-ref">PxCudaInteropRegisterFlags</span></a></dt><dd><p>collection of set bits defined in NxCudaInteropRegisterFlag.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxD6Joint_8h_1adabf6cf5b61c51816897119d793d16b7.html#pxd6joint_8h_1adabf6cf5b61c51816897119d793d16b7"><span class="std std-ref">PxD6JointDriveFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7274a2c89b6ae312635129126b70b750.html#pxsimpletypes_8h_1a7274a2c89b6ae312635129126b70b750"><span class="std std-ref">PxD6JointGPUIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxLockedData_8h_1a90395861aa5abb531d3dd02790bc2b18.html#pxlockeddata_8h_1a90395861aa5abb531d3dd02790bc2b18"><span class="std std-ref">PxDataAccessFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxDataAccessFlag.html#structpxdataaccessflag"><span class="std std-ref">PxDataAccessFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDeformableBodyFlag_8h_1a59e9c423976f10297209217415055653.html#pxdeformablebodyflag_8h_1a59e9c423976f10297209217415055653"><span class="std std-ref">PxDeformableBodyFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1ab87b206a8daed7d3a9f07293de0ab7b7.html#pxphysxcommonconfig_8h_1ab87b206a8daed7d3a9f07293de0ab7b7"><span class="std std-ref">PxDeformableMaterialTableIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDeformableSurfaceFlag_8h_1a68c68b824a78f1e593f88148bfe81fe1.html#pxdeformablesurfaceflag_8h_1a68c68b824a78f1e593f88148bfe81fe1"><span class="std std-ref">PxDeformableSurfaceDataFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDeformableSurfaceFlag_8h_1a1709795da2092f9d939a254784213115.html#pxdeformablesurfaceflag_8h_1a1709795da2092f9d939a254784213115"><span class="std std-ref">PxDeformableSurfaceFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDeformableVolumeFlag_8h_1a16699d11e57bccc4bd38bcde9cb47324.html#pxdeformablevolumeflag_8h_1a16699d11e57bccc4bd38bcde9cb47324"><span class="std std-ref">PxDeformableVolumeDataFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDeformableVolumeFlag_8h_1a842e50792ed130801ae4bb1e0fde0417.html#pxdeformablevolumeflag_8h_1a842e50792ed130801ae4bb1e0fde0417"><span class="std std-ref">PxDeformableVolumeFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDeletionListener_8h_1afb4c5337ad84e1f9eeaa8d3d33caa819.html#pxdeletionlistener_8h_1afb4c5337ad84e1f9eeaa8d3d33caa819"><span class="std std-ref">PxDeletionEventFlags</span></a></dt><dd><p>Collection of set bits defined in <a class="reference internal" href="structPxDeletionEventFlag.html#structpxdeletioneventflag"><span class="std std-ref">PxDeletionEventFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDistanceJoint_8h_1ae24713c38834275bb67d41f03bcd28b5.html#pxdistancejoint_8h_1ae24713c38834275bb67d41f03bcd28b5"><span class="std std-ref">PxDistanceJointFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxActor_8h_1af665154f3f66f7c4f65ca9015db8ee87.html#pxactor_8h_1af665154f3f66f7c4f65ca9015db8ee87"><span class="std std-ref">PxDominanceGroup</span></a></dt><dd><p>Group index which allows to specify 1- or 2-way interaction.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxExtended_8h_1afbd2fb84a13cdeb156b671e895d165b9.html#pxextended_8h_1afbd2fb84a13cdeb156b671e895d165b9"><span class="std std-ref">PxExtended</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxExtended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5.html#pxextended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5"><span class="std std-ref">PxExtendedVec3</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#pxsimpletypes_8h_1a0e5a962f81b1f679072e2fdb67c3af39"><span class="std std-ref">PxF32</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1accbaaeabdac7f3574caadb25c783e96f.html#pxsimpletypes_8h_1accbaaeabdac7f3574caadb25c783e96f"><span class="std std-ref">PxF64</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFEMMaterial_8h_1a795faa2a6f2f44a53732b69162850f21.html#pxfemmaterial_8h_1a795faa2a6f2f44a53732b69162850f21"><span class="std std-ref">PxFEMMaterial</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1a5243c1bcb1d89211d250682abb0d70cf.html#pxphysxcommonconfig_8h_1a5243c1bcb1d89211d250682abb0d70cf"><span class="std std-ref">PxFEMMaterialTableIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFEMSoftBodyMaterial_8h_1a7328e26637faae4bfa2cefd2c94c710b.html#pxfemsoftbodymaterial_8h_1a7328e26637faae4bfa2cefd2c94c710b"><span class="std std-ref">PxFEMSoftBodyMaterial</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFEMSoftBodyMaterial_8h_1afb214852ddac927ffa1d69106d3e1e8b.html#pxfemsoftbodymaterial_8h_1afb214852ddac927ffa1d69106d3e1e8b"><span class="std std-ref">PxFEMSoftBodyMaterialModel</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxDefaultStreams_8h_1a8e55355887d57086f097b0248b7ea768.html#pxdefaultstreams_8h_1a8e55355887d57086f097b0248b7ea768"><span class="std std-ref">PxFileHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFiltering_8h_1a675117fb97324a28d3b982b47430ea02.html#pxfiltering_8h_1a675117fb97324a28d3b982b47430ea02"><span class="std std-ref">PxFilterFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxFilterFlag.html#structpxfilterflag"><span class="std std-ref">PxFilterFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFiltering_8h_1a7b0c5783657e45e3fd752adfe3c1d069.html#pxfiltering_8h_1a7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a></dt><dd><p>Structure which gets passed into the collision filtering shader and/or callback providing additional information on objects of a collision pair.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a6377833ffb381e2cd69910971dc22682.html#pxpinnedarray_8h_1a6377833ffb381e2cd69910971dc22682"><span class="std std-ref">PxFloatArrayPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a76019265d1bee90eaa41f762fa97ed49.html#pxpinnedarray_8h_1a76019265d1bee90eaa41f762fa97ed49"><span class="std std-ref">PxFloatArrayPinnedSafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxHeightFieldFlag_8h_1a93b547b1968a59b2d23c91aab533e2c8.html#pxheightfieldflag_8h_1a93b547b1968a59b2d23c91aab533e2c8"><span class="std std-ref">PxHeightFieldFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxHeightFieldFlag.html#structpxheightfieldflag"><span class="std std-ref">PxHeightFieldFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7e7ee1e36fd2eee807d53763addb76cd.html#pxsimpletypes_8h_1a7e7ee1e36fd2eee807d53763addb76cd"><span class="std std-ref">PxI16</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#pxsimpletypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f"><span class="std std-ref">PxI32</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a3e32e0264fae3ef69fc38c749ac1cc7b.html#pxsimpletypes_8h_1a3e32e0264fae3ef69fc38c749ac1cc7b"><span class="std std-ref">PxI64</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1ad605a812a7fbaf12edd328c81a748e90.html#pxsimpletypes_8h_1ad605a812a7fbaf12edd328c81a748e90"><span class="std std-ref">PxI8</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1acd2d108e14abbb27874baacb276c2efe.html#pxpinnedarray_8h_1acd2d108e14abbb27874baacb276c2efe"><span class="std std-ref">PxInt16ArrayPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a7b62ec3c2e6c1e5f82df617f2606889d.html#pxpinnedarray_8h_1a7b62ec3c2e6c1e5f82df617f2606889d"><span class="std std-ref">PxInt16ArrayPinnedSafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a60b199464643df238c74409f13b7e2fc.html#pxpinnedarray_8h_1a60b199464643df238c74409f13b7e2fc"><span class="std std-ref">PxInt32ArrayPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1ad75c50bbd75c0437f6ae7d4e9f8351a9.html#pxpinnedarray_8h_1ad75c50bbd75c0437f6ae7d4e9f8351a9"><span class="std std-ref">PxInt32ArrayPinnedSafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1a61cde5a386d22d7c478f96eb6847b85c.html#pxpinnedarray_8h_1a61cde5a386d22d7c478f96eb6847b85c"><span class="std std-ref">PxInt8ArrayPinned</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1aea49b48126f7db908fe874c9d57b31c6.html#pxpinnedarray_8h_1aea49b48126f7db908fe874c9d57b31c6"><span class="std std-ref">PxInt8ArrayPinnedSafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afe69b4e42388471a93aa2b4c8b2b3537.html#pxsimpletypes_8h_1afe69b4e42388471a93aa2b4c8b2b3537"><span class="std std-ref">PxIntBool</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61.html#pxmat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61"><span class="std std-ref">PxMat33</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMat33_8h_1a00ff839c56bf5793c3fdbcd6902fd57a.html#pxmat33_8h_1a00ff839c56bf5793c3fdbcd6902fd57a"><span class="std std-ref">PxMat33d</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMat34_8h_1a03d28fab79443174dd6286b30d569355.html#pxmat34_8h_1a03d28fab79443174dd6286b30d569355"><span class="std std-ref">PxMat34</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMat34_8h_1a3e538c38c2b8447ed67b71ad3882e94d.html#pxmat34_8h_1a3e538c38c2b8447ed67b71ad3882e94d"><span class="std std-ref">PxMat34d</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMat44_8h_1a95751c2e7256308fbd285e798495f8ee.html#pxmat44_8h_1a95751c2e7256308fbd285e798495f8ee"><span class="std std-ref">PxMat44</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMat44_8h_1ac77e8359939fc1b8ccc5df8d906ea6e4.html#pxmat44_8h_1ac77e8359939fc1b8ccc5df8d906ea6e4"><span class="std std-ref">PxMat44d</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMaterial_8h_1aacd9cb0f0e89fbbc09fec759b254d109.html#pxmaterial_8h_1aacd9cb0f0e89fbbc09fec759b254d109"><span class="std std-ref">PxMaterialFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxMaterialFlag.html#structpxmaterialflag"><span class="std std-ref">PxMaterialFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1ac816bc62a68a52f01bf21f963295e822.html#pxphysxcommonconfig_8h_1ac816bc62a68a52f01bf21f963295e822"><span class="std std-ref">PxMaterialTableIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTriangleMesh_8h_1aec23462a84179db8a8ea77e5115d5fb1.html#pxsimpletrianglemesh_8h_1aec23462a84179db8a8ea77e5115d5fb1"><span class="std std-ref">PxMeshFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxMeshFlag.html#structpxmeshflag"><span class="std std-ref">PxMeshFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTriangleMeshGeometry_8h_1ab335a00d0493a23fed5423bc3ea9e463.html#pxtrianglemeshgeometry_8h_1ab335a00d0493a23fed5423bc3ea9e463"><span class="std std-ref">PxMeshGeometryFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxMeshGeometryFlag.html#structpxmeshgeometryflag"><span class="std std-ref">PxMeshGeometryFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCooking_8h_1a0a0051ee56690c138fac87d780cca9b4.html#pxcooking_8h_1a0a0051ee56690c138fac87d780cca9b4"><span class="std std-ref">PxMeshPreprocessingFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxMutex_8h_1a368c18aaf1240f41ac9d2569f0d16678.html#pxmutex_8h_1a368c18aaf1240f41ac9d2569f0d16678"><span class="std std-ref">PxMutex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxControllerObstacles_8h_1ab7f9098f8fe489c3ca261f53db7efea2.html#pxcontrollerobstacles_8h_1ab7f9098f8fe489c3ca261f53db7efea2"><span class="std std-ref">PxObstacleHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1a54a708942a891f3321c2427d5c160750.html#pxqueryreport_8h_1a54a708942a891f3321c2427d5c160750"><span class="std std-ref">PxOverlapBuffer</span></a></dt><dd><p>Overlap query buffer.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1a9baa3a8cad31bbb8ef666fe01b3afeb7.html#pxqueryreport_8h_1a9baa3a8cad31bbb8ef666fe01b3afeb7"><span class="std std-ref">PxOverlapCallback</span></a></dt><dd><p>Overlap query callback.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxGeometryQueryContext_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6.html#pxgeometryquerycontext_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6"><span class="std std-ref">PxOverlapThreadContext</span></a></dt><dd><p>A per-thread context passed to low-level overlap functions.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFiltering_8h_1acacbeccf757e60dbf45089ef382681d9.html#pxfiltering_8h_1acacbeccf757e60dbf45089ef382681d9"><span class="std std-ref">PxPairFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxPairFlag.html#structpxpairflag"><span class="std std-ref">PxPairFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxParticleSystemFlag_8h_1a40ee49464d092e80c734711ba65feb25.html#pxparticlesystemflag_8h_1a40ee49464d092e80c734711ba65feb25"><span class="std std-ref">PxParticleBufferFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPBDParticleSystem_8h_1a477a6cb9995a5ccd7992beae5e8cdf89.html#pxpbdparticlesystem_8h_1a477a6cb9995a5ccd7992beae5e8cdf89"><span class="std std-ref">PxParticleFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPBDParticleSystem_8h_1a525ccc423d7db7ccbabae3a62ca93f4b.html#pxpbdparticlesystem_8h_1a525ccc423d7db7ccbabae3a62ca93f4b"><span class="std std-ref">PxParticleLockFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxParticleSystemFlag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4.html#pxparticlesystemflag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4"><span class="std std-ref">PxParticlePhaseFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1ab8cb035f6ad68545052c61d3552fbd3b.html#pxpinnedarray_8h_1ab8cb035f6ad68545052c61d3552fbd3b"><span class="std std-ref">PxPinnedArray</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPinnedArray_8h_1ae332bc5551c2908fe96233a4cba2d8ca.html#pxpinnedarray_8h_1ae332bc5551c2908fe96233a4cba2d8ca"><span class="std std-ref">PxPinnedArraySafe</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPrismaticJoint_8h_1af683a32f0fc263a83be447fac2879dac.html#pxprismaticjoint_8h_1af683a32f0fc263a83be447fac2879dac"><span class="std std-ref">PxPrismaticJointFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPvd_8h_1a4e8b7695b7145523688243b39da116c9.html#pxpvd_8h_1a4e8b7695b7145523688243b39da116c9"><span class="std std-ref">PxPvdInstrumentationFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxPvdInstrumentationFlag.html#structpxpvdinstrumentationflag"><span class="std std-ref">PxPvdInstrumentationFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPvdSceneClient_8h_1a23ddab69994886fb588a139635bff64b.html#pxpvdsceneclient_8h_1a23ddab69994886fb588a139635bff64b"><span class="std std-ref">PxPvdSceneFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxPvdSceneFlag.html#structpxpvdsceneflag"><span class="std std-ref">PxPvdSceneFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#pxquat_8h_1ad2b837fa8365f179d52b48e5aa5bc264"><span class="std std-ref">PxQuat</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQuat_8h_1a1dfc1f8213a28b8e36d5008cb15fd50b.html#pxquat_8h_1a1dfc1f8213a28b8e36d5008cb15fd50b"><span class="std std-ref">PxQuatd</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryFiltering_8h_1aacf083b040f6c841644782282171bd61.html#pxqueryfiltering_8h_1aacf083b040f6c841644782282171bd61"><span class="std std-ref">PxQueryFlags</span></a></dt><dd><p>Flags typedef for the set of bits defined in <a class="reference internal" href="structPxQueryFlag.html#structpxqueryflag"><span class="std std-ref">PxQueryFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1ab21a68ce9e5a18aa742111920b75a84c.html#pxqueryreport_8h_1ab21a68ce9e5a18aa742111920b75a84c"><span class="std std-ref">PxRaycastBuffer</span></a></dt><dd><p>Raycast query buffer.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1a4dbe8142d799492bd8e7c5ec70bfac41.html#pxqueryreport_8h_1a4dbe8142d799492bd8e7c5ec70bfac41"><span class="std std-ref">PxRaycastCallback</span></a></dt><dd><p>Raycast query callback.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxGeometryQueryContext_8h_1a32eecbfe79ecd6524f3238b98d3889de.html#pxgeometryquerycontext_8h_1a32eecbfe79ecd6524f3238b98d3889de"><span class="std std-ref">PxRaycastThreadContext</span></a></dt><dd><p>A per-thread context passed to low-level raycast functions.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#pxsimpletypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352"><span class="std std-ref">PxReal</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxRevoluteJoint_8h_1a064759e7f7a48b93670218bb400355e8.html#pxrevolutejoint_8h_1a064759e7f7a48b93670218bb400355e8"><span class="std std-ref">PxRevoluteJointFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxRigidBody_8h_1a0759d7f23b4fa7e24cd69c51d3efe5bf.html#pxrigidbody_8h_1a0759d7f23b4fa7e24cd69c51d3efe5bf"><span class="std std-ref">PxRigidBodyFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxRigidBodyFlag.html#structpxrigidbodyflag"><span class="std std-ref">PxRigidBodyFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a81c06417f3e249c64200a4ce643446f9.html#pxsimpletypes_8h_1a81c06417f3e249c64200a4ce643446f9"><span class="std std-ref">PxRigidDynamicGPUIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxRigidDynamic_8h_1a5ff75d3f2ba94c58e7f8f928b11ebb8d.html#pxrigiddynamic_8h_1a5ff75d3f2ba94c58e7f8f928b11ebb8d"><span class="std std-ref">PxRigidDynamicLockFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSList_8h_1a57cb8fa79252dd5dd29aa6eb33553426.html#pxslist_8h_1a57cb8fa79252dd5dd29aa6eb33553426"><span class="std std-ref">PxSList</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQuerySystem_8h_1a460c669588757253a2caecdfdc1fafe3.html#pxscenequerysystem_8h_1a460c669588757253a2caecdfdc1fafe3"><span class="std std-ref">PxSQBuildStepHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQuerySystem_8h_1a1f27391144cd450192f6c2df38f14abd.html#pxscenequerysystem_8h_1a1f27391144cd450192f6c2df38f14abd"><span class="std std-ref">PxSQCompoundHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQuerySystem_8h_1a1065613e3046a090d4d0acae03c8425f.html#pxscenequerysystem_8h_1a1065613e3046a090d4d0acae03c8425f"><span class="std std-ref">PxSQPrunerHandle</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneDesc_8h_1a54a626a9a6d80543048bffc654814704.html#pxscenedesc_8h_1a54a626a9a6d80543048bffc654814704"><span class="std std-ref">PxSceneFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxSceneFlag.html#structpxsceneflag"><span class="std std-ref">PxSceneFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQueryExt_8h_1a871e9d89cdf9bbab58883b5f0822b5c3.html#pxscenequeryext_8h_1a871e9d89cdf9bbab58883b5f0822b5c3"><span class="std std-ref">PxSceneQueryCache</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQueryExt_8h_1af9d442ec851f833a9276ddb7ea46dd23.html#pxscenequeryext_8h_1af9d442ec851f833a9276ddb7ea46dd23"><span class="std std-ref">PxSceneQueryFilterCallback</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQueryExt_8h_1a4d19f53556b8b6114e8a359d326c6d10.html#pxscenequeryext_8h_1a4d19f53556b8b6114e8a359d326c6d10"><span class="std std-ref">PxSceneQueryFilterData</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQueryExt_8h_1a8a87a0175a8d5014472d5e9eabef59d7.html#pxscenequeryext_8h_1a8a87a0175a8d5014472d5e9eabef59d7"><span class="std std-ref">PxSceneQueryFlag</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQueryExt_8h_1a2ddebd682bdb0bdb1db7ba113a93afe4.html#pxscenequeryext_8h_1a2ddebd682bdb0bdb1db7ba113a93afe4"><span class="std std-ref">PxSceneQueryFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSceneQueryExt_8h_1a55259fcecc0dd432e8c97f80a1425aad.html#pxscenequeryext_8h_1a55259fcecc0dd432e8c97f80a1425aad"><span class="std std-ref">PxSceneQueryHit</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxResidual_8h_1a3342f8cd8f3479002ca686e24caa9972.html#pxresidual_8h_1a3342f8cd8f3479002ca686e24caa9972"><span class="std std-ref">PxSceneResidual</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSerialFramework_8h_1ab2ccfb663643cd2d66b59908189d88cd.html#pxserialframework_8h_1ab2ccfb663643cd2d66b59908189d88cd"><span class="std std-ref">PxSerialObjectId</span></a></dt><dd><p>ID type for <a class="reference internal" href="classPxBase.html#classpxbase"><span class="std std-ref">PxBase</span></a> objects in a <a class="reference internal" href="classPxCollection.html#classpxcollection"><span class="std std-ref">PxCollection</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxShape_8h_1a18053d8127ddb5ed5609e4c748b6ad0d.html#pxshape_8h_1a18053d8127ddb5ed5609e4c748b6ad0d"><span class="std std-ref">PxShapeFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxShapeFlag.html#structpxshapeflag"><span class="std std-ref">PxShapeFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aead54aeb211f662449da2d7adb4b45eb.html#pxsimpletypes_8h_1aead54aeb211f662449da2d7adb4b45eb"><span class="std std-ref">PxShapeGPUIndex</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxFiltering_8h_1a235380b2a5b3cc89a4cd89d089d72b33.html#pxfiltering_8h_1a235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a></dt><dd><p>Filter method to specify how a pair of potentially colliding objects should be processed.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSoftBody_8h_1ac7843d59871ff4c2e54bc2915bf26f8c.html#pxsoftbody_8h_1ac7843d59871ff4c2e54bc2915bf26f8c"><span class="std std-ref">PxSoftBody</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMesh_8h_1a76140eaa305758891f9ef5045877c5ff.html#pxtetrahedronmesh_8h_1a76140eaa305758891f9ef5045877c5ff"><span class="std std-ref">PxSoftBodyAuxData</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMesh_8h_1abde68cbbe1e3e79c5c6aa573a8b58ed9.html#pxtetrahedronmesh_8h_1abde68cbbe1e3e79c5c6aa573a8b58ed9"><span class="std std-ref">PxSoftBodyCollisionData</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSoftBodyFlag_8h_1ac13bb6c0c4b24d30f2194d6086db519c.html#pxsoftbodyflag_8h_1ac13bb6c0c4b24d30f2194d6086db519c"><span class="std std-ref">PxSoftBodyDataFlag</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSoftBodyFlag_8h_1add3a45b27dc0d355c7f650c3538d80fa.html#pxsoftbodyflag_8h_1add3a45b27dc0d355c7f650c3538d80fa"><span class="std std-ref">PxSoftBodyDataFlags</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSoftBodyExt_8h_1ab5d0f93b15e881d67395a72750a7fb14.html#pxsoftbodyext_8h_1ab5d0f93b15e881d67395a72750a7fb14"><span class="std std-ref">PxSoftBodyExt</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSoftBody_8h_1af332ca492bb90a9411342c9427b2b908.html#pxsoftbody_8h_1af332ca492bb90a9411342c9427b2b908"><span class="std std-ref">PxSoftBodyFlag</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSoftBody_8h_1aab043e09829b4a6478937e1370064057.html#pxsoftbody_8h_1aab043e09829b4a6478937e1370064057"><span class="std std-ref">PxSoftBodyFlags</span></a></dt><dd><p>Deprecated.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMesh_8h_1a97f92f7d7f498ac59df9667a612ecd3c.html#pxtetrahedronmesh_8h_1a97f92f7d7f498ac59df9667a612ecd3c"><span class="std std-ref">PxSoftBodyMesh</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMesh_8h_1af227146cf59966bb9dc5de3a0dcc1e04.html#pxtetrahedronmesh_8h_1af227146cf59966bb9dc5de3a0dcc1e04"><span class="std std-ref">PxSoftBodySimulationData</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMeshDesc_8h_1a34f4c81196a3b3fffbef7f7a877aa8dc.html#pxtetrahedronmeshdesc_8h_1a34f4c81196a3b3fffbef7f7a877aa8dc"><span class="std std-ref">PxSoftBodySimulationDataDesc</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSphericalJoint_8h_1a4e2440ba605d9e05614c938fcb2e6fcb.html#pxsphericaljoint_8h_1a4e2440ba605d9e05614c938fcb2e6fcb"><span class="std std-ref">PxSphericalJointFlags</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxCoreUtilityTypes_8h_1a68ab4b7374d22f7be49c295f3bc1f0b2.html#pxcoreutilitytypes_8h_1a68ab4b7374d22f7be49c295f3bc1f0b2"><span class="std std-ref">PxStridedData</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1aecfed2b83a930b922b3d95e22ff30665.html#pxqueryreport_8h_1aecfed2b83a930b922b3d95e22ff30665"><span class="std std-ref">PxSweepBuffer</span></a></dt><dd><p>Sweep query buffer.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxQueryReport_8h_1a6f93f556cef747d50f643499928dd865.html#pxqueryreport_8h_1a6f93f556cef747d50f643499928dd865"><span class="std std-ref">PxSweepCallback</span></a></dt><dd><p>Sweep query callback.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxGeometryQueryContext_8h_1a793ad7e47a6be07f1927afaa61d023ed.html#pxgeometryquerycontext_8h_1a793ad7e47a6be07f1927afaa61d023ed"><span class="std std-ref">PxSweepThreadContext</span></a></dt><dd><p>A per-thread context passed to low-level sweep functions.</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSync_8h_1aef475b410db53bdddeae9ed381f9dc80.html#pxsync_8h_1aef475b410db53bdddeae9ed381f9dc80"><span class="std std-ref">PxSync</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTaskManager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#pxtaskmanager_8h_1a69740c6443f7230cf7bce20ecec3c257"><span class="std std-ref">PxTaskID</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMeshAnalysisResult_8h_1a9a98503e5fbb06a9602ce2124f63484a.html#pxtetrahedronmeshanalysisresult_8h_1a9a98503e5fbb06a9602ce2124f63484a"><span class="std std-ref">PxTetrahedronMeshAnalysisResults</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTetrahedronMesh_8h_1a346c39a79a6e61767f14c9890da32d42.html#pxtetrahedronmesh_8h_1a346c39a79a6e61767f14c9890da32d42"><span class="std std-ref">PxTetrahedronMeshFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxTetrahedronMeshFlag.html#structpxtetrahedronmeshflag"><span class="std std-ref">PxTetrahedronMeshFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxThread_8h_1a9f11017b3d9e1b3702b3c7b8fb5f865f.html#pxthread_8h_1a9f11017b3d9e1b3702b3c7b8fb5f865f"><span class="std std-ref">PxThread</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#pxtransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa"><span class="std std-ref">PxTransform</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTransform_8h_1a37e855c6a01046a392b1a0e8b913b9a2.html#pxtransform_8h_1a37e855c6a01046a392b1a0e8b913b9a2"><span class="std std-ref">PxTransform32</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTransform_8h_1a9186b8677b8731b7357931bf4bd80796.html#pxtransform_8h_1a9186b8677b8731b7357931bf4bd80796"><span class="std std-ref">PxTransformd</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1a19403877bf7ce42d7240e4e4c758c016.html#pxphysxcommonconfig_8h_1a19403877bf7ce42d7240e4e4c758c016"><span class="std std-ref">PxTriangleID</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTriangleMeshAnalysisResult_8h_1aff2fd41516e5add87407d4f406d0ce33.html#pxtrianglemeshanalysisresult_8h_1aff2fd41516e5add87407d4f406d0ce33"><span class="std std-ref">PxTriangleMeshAnalysisResults</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxTriangleMesh_8h_1a9bff69ddd57aac22aad966a4b30983e7.html#pxtrianglemesh_8h_1a9bff69ddd57aac22aad966a4b30983e7"><span class="std std-ref">PxTriangleMeshFlags</span></a></dt><dd><p>collection of set bits defined in <a class="reference internal" href="structPxTriangleMeshFlag.html#structpxtrianglemeshflag"><span class="std std-ref">PxTriangleMeshFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimulationEventCallback_8h_1ae5d4ef1b3321702c4431da8fe72b8f7f.html#pxsimulationeventcallback_8h_1ae5d4ef1b3321702c4431da8fe72b8f7f"><span class="std std-ref">PxTriggerPairFlags</span></a></dt><dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="structPxTriggerPairFlag.html#structpxtriggerpairflag"><span class="std std-ref">PxTriggerPairFlag</span></a> .</p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#pxbase_8h_1ac1fb4b256a5d900d394e89db170a2b79"><span class="std std-ref">PxType</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#pxsimpletypes_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4"><span class="std std-ref">PxU16</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#pxsimpletypes_8h_1acce5749db3dcfb916e98c253374264ed"><span class="std std-ref">PxU32</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#pxsimpletypes_8h_1afa6be92d904a227b2d07298034476b3a"><span class="std std-ref">PxU64</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#pxsimpletypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27"><span class="std std-ref">PxU8</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec2_8h_1a93b3bd57c939e655e5612b0fbe4c020d.html#pxvec2_8h_1a93b3bd57c939e655e5612b0fbe4c020d"><span class="std std-ref">PxVec2</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec2_8h_1a33d9558cc59c60de9876a99d4c74ac1a.html#pxvec2_8h_1a33d9558cc59c60de9876a99d4c74ac1a"><span class="std std-ref">PxVec2d</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#pxvec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20"><span class="std std-ref">PxVec3</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec3_8h_1a3ffc2dc1fa8a4957b79f40c2deeb6da7.html#pxvec3_8h_1a3ffc2dc1fa8a4957b79f40c2deeb6da7"><span class="std std-ref">PxVec3d</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec3_8h_1ae19453ec87b14571419b155915cd2553.html#pxvec3_8h_1ae19453ec87b14571419b155915cd2553"><span class="std std-ref">PxVec3p</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#pxvec4_8h_1a7346068a75502045a7c8f65e7dcee471"><span class="std std-ref">PxVec4</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_PxVec4_8h_1af3af9056633ae331153a7cb8d6f8fe20.html#pxvec4_8h_1af3af9056633ae331153a7cb8d6f8fe20"><span class="std std-ref">PxVec4d</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1af6bb76d188e20abc0b5ffd96953e3582.html#omnipvdlibraryfunctions_8h_1af6bb76d188e20abc0b5ffd96953e3582"><span class="std std-ref">createOmniPvdFileReadStreamFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1af9e32ef9884ef002e59a6f75862f9adf.html#omnipvdlibraryfunctions_8h_1af9e32ef9884ef002e59a6f75862f9adf"><span class="std std-ref">createOmniPvdFileWriteStreamFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1ae51831db3fa818d8045b9479319cf72e.html#omnipvdlibraryfunctions_8h_1ae51831db3fa818d8045b9479319cf72e"><span class="std std-ref">createOmniPvdMemoryStreamFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1a196166c9d5ef3789a553a29440edf67b.html#omnipvdlibraryfunctions_8h_1a196166c9d5ef3789a553a29440edf67b"><span class="std std-ref">createOmniPvdReaderFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1a9c39a84d61cfdc0b65322f75603935e6.html#omnipvdlibraryfunctions_8h_1a9c39a84d61cfdc0b65322f75603935e6"><span class="std std-ref">createOmniPvdWriterFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1a8a1e6d1c0bb11a8ed6508de7e979cea3.html#omnipvdlibraryfunctions_8h_1a8a1e6d1c0bb11a8ed6508de7e979cea3"><span class="std std-ref">destroyOmniPvdFileReadStreamFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1a85b00d8076a293941144259864f5d1e5.html#omnipvdlibraryfunctions_8h_1a85b00d8076a293941144259864f5d1e5"><span class="std std-ref">destroyOmniPvdFileWriteStreamFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1ad66806ce01e0bd7c16488948403a9c26.html#omnipvdlibraryfunctions_8h_1ad66806ce01e0bd7c16488948403a9c26"><span class="std std-ref">destroyOmniPvdMemoryStreamFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1a339b4f4016c2bf602e5567b837970817.html#omnipvdlibraryfunctions_8h_1a339b4f4016c2bf602e5567b837970817"><span class="std std-ref">destroyOmniPvdReaderFp</span></a></dt><dd><p></p>
+</dd>
+<dt><a class="reference internal" href="typedef_OmniPvdLibraryFunctions_8h_1abbc4d4317c6cbe899e65a8d9c271c80b.html#omnipvdlibraryfunctions_8h_1abbc4d4317c6cbe899e65a8d9c271c80b"><span class="std std-ref">destroyOmniPvdWriterFp</span></a></dt><dd><p></p>
+</dd>
+</dl>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="function_PxParticleExt_8h_1abd8ab6fb014642410e9e5cf0db466fa1.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxCreateParticleVolumeBufferHelper</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="deprecated.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Deprecated list</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

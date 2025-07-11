@@ -1,0 +1,1086 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxArticulationCache &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxArticulationCache';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxArticulationCacheFlag" href="classPxArticulationCacheFlag.html" />
+    <link rel="prev" title="PxArticulationAxis" href="structPxArticulationAxis.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxArticulationCache</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxarticulationcache">
+<h1>PxArticulationCache<a class="headerlink" href="#pxarticulationcache" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxArticulationReducedCoordinate.h.html#pxarticulationreducedcoordinate-8h"><span class="std std-ref">include/PxArticulationReducedCoordinate.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxArticulationCache">
+<span id="_CPPv319PxArticulationCache"></span><span id="_CPPv219PxArticulationCache"></span><span id="PxArticulationCache"></span><span class="target" id="classpxarticulationcache"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationCache</span></span></span><a class="headerlink" href="#_CPPv419PxArticulationCache" title="Link to this definition">#</a><br /></dt>
+<dd><p>Data structure used to read and write internal articulation data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag"><span class="std std-ref">PxArticulationCacheFlag</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a91dbffa36e174bb723ca23db74096ed7"><span class="std std-ref">PxArticulationReducedCoordinate::createCache</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1ad1778a50f8d3ad6e3eeaaebac265d1ee"><span class="std std-ref">PxArticulationReducedCoordinate::applyCache</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a39ffe3fbc9ddb64fcf74b7c72345cd96"><span class="std std-ref">PxArticulationReducedCoordinate::copyInternalStateToCache</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache19PxArticulationCacheEv">
+<span id="_CPPv3N19PxArticulationCache19PxArticulationCacheEv"></span><span id="_CPPv2N19PxArticulationCache19PxArticulationCacheEv"></span><span id="PxArticulationCache::PxArticulationCache"></span><span class="target" id="classpxarticulationcache_1a750cf6f5d426723b6d6cf731bd290ea5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationCache</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxArticulationCache19PxArticulationCacheEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache7releaseEv">
+<span id="_CPPv3N19PxArticulationCache7releaseEv"></span><span id="_CPPv2N19PxArticulationCache7releaseEv"></span><span id="PxArticulationCache::release"></span><span class="target" id="classpxarticulationcache_1a75e7125f62125bba418e2a90f0d3b5a5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxArticulationCache7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Releases an articulation cache. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a91dbffa36e174bb723ca23db74096ed7"><span class="std std-ref">PxArticulationReducedCoordinate::createCache</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1ad1778a50f8d3ad6e3eeaaebac265d1ee"><span class="std std-ref">PxArticulationReducedCoordinate::applyCache</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a39ffe3fbc9ddb64fcf74b7c72345cd96"><span class="std std-ref">PxArticulationReducedCoordinate::copyInternalStateToCache</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache14externalForcesE">
+<span id="_CPPv3N19PxArticulationCache14externalForcesE"></span><span id="_CPPv2N19PxArticulationCache14externalForcesE"></span><span id="PxArticulationCache::externalForces__PxSpatialForceP"></span><span class="target" id="classpxarticulationcache_1a6bcc917d32fa1a60a671283e0a907e5c"></span><a class="reference internal" href="structPxSpatialForce.html#_CPPv414PxSpatialForce" title="PxSpatialForce"><span class="n"><span class="pre">PxSpatialForce</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">externalForces</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache14externalForcesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>External forces acting on the articulation links for inverse dynamics computation. </p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Indexing follows the low-level link indices, see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>.</p></li>
+<li><p>The forces are with respect to the center of mass of the link.</p></li>
+<li><p>This field cannot be used to apply forces to links during the next <a class="reference internal" href="classPxScene.html#classpxscene_1a2d154a207b905e73d7771a6c1160d8aa"><span class="std std-ref">PxScene::simulate()</span></a> call. Use <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1a22b0a1ef0b6c5656a6063c5c38f5679c"><span class="std std-ref">PxRigidBody::addForce</span></a> and related functions instead.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a95e6f19bc92d7003e4d735a26b6ebb46"><span class="std std-ref">PxArticulationReducedCoordinate::computeGeneralizedExternalForce</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13denseJacobianE">
+<span id="_CPPv3N19PxArticulationCache13denseJacobianE"></span><span id="_CPPv2N19PxArticulationCache13denseJacobianE"></span><span id="PxArticulationCache::denseJacobian__PxRealP"></span><span class="target" id="classpxarticulationcache_1a215d7bc2b910aef6ba6e594843d136bc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">denseJacobian</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13denseJacobianE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Dense Jacobian data. </p>
+<p><ul class="simple">
+<li><p>N = nbRows * nbCols = (6 * getNbLinks()) * (6 + getDofs()) -&gt; size includes possible floating-base DOFs regardless of <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> flag.</p></li>
+<li><p>The links, i.e. rows are in order of the low-level link indices (minus one if <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is true), see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>. The corresponding spatial velocities are stacked [vx; vy; vz; wx; wy; wz], where vx and wx refer to the linear and rotational velocity in world X.</p></li>
+<li><p>The DOFs, i.e. column indices correspond to the low-level DOF indices, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a08a58ac2a98d339c0fcab0e69f6761e0"><span class="std std-ref">PxArticulationReducedCoordinate::computeDenseJacobian</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache10massMatrixE">
+<span id="_CPPv3N19PxArticulationCache10massMatrixE"></span><span id="_CPPv2N19PxArticulationCache10massMatrixE"></span><span id="PxArticulationCache::massMatrix__PxRealP"></span><span class="target" id="classpxarticulationcache_1a40849b1b079c9b0e517fb7eaea488ccf"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">massMatrix</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache10massMatrixE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The generalized mass matrix used in inverse dynamics algorithms. </p>
+<p><ul class="simple">
+<li><p>N = (getDofs() + 6) * (getDofs() + 6) -&gt; size includes possible floating-base DOFs regardless of <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> flag.</p></li>
+<li><p>If <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is true, the terms corresponding to the root DoFs are included in the top left block of the matrix. For these terms, column indices correspond to linear acceleration first then angular acceleration, row indices correspond to force first then torque. The bottom right block of the matrix corresponds to the joint DoFs terms, column indices correspond to joint acceleration, row indices correspond to joint force.</p></li>
+<li><p>If <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is false, only the terms corresponding to the joint DoFs are included, column indices correspond to joint acceleration, row indices correspond to joint force.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+<li><p>The mass matrix is indexed [nCols * row + column].</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a1dd0cd4ec6a074d866a6763ec52969ba"><span class="std std-ref">PxArticulationReducedCoordinate::computeMassMatrix</span></a>, <a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a92e7a37bc7b058364398265b80996607"><span class="std std-ref">PxArticulationReducedCoordinate::computeGeneralizedMassMatrix</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13coriolisForceE">
+<span id="_CPPv3N19PxArticulationCache13coriolisForceE"></span><span id="_CPPv2N19PxArticulationCache13coriolisForceE"></span><span id="PxArticulationCache::coriolisForce__PxRealP"></span><span class="target" id="classpxarticulationcache_1a2eb41ae1e1f02e0677f7eb471dcf3e99"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">coriolisForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13coriolisForceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The Coriolis and centrifugal compensation forces used in inverse dynamics algorithms. </p>
+<p><ul class="simple">
+<li><p>N = getDofs() + 6 -&gt; size includes possible floating-base DOFs regardless of <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> flag.</p></li>
+<li><p>If <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is true, the terms corresponding to the root DoFs are included at the start of the array (force then torque), followed by the joint DoFs terms.</p></li>
+<li><p>If <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is false, only the terms corresponding to the joint DoFs are included.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a347d35f0d88f171d54875966ee38adfc"><span class="std std-ref">PxArticulationReducedCoordinate::computeCoriolisCompensation</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache24gravityCompensationForceE">
+<span id="_CPPv3N19PxArticulationCache24gravityCompensationForceE"></span><span id="_CPPv2N19PxArticulationCache24gravityCompensationForceE"></span><span id="PxArticulationCache::gravityCompensationForce__PxRealP"></span><span class="target" id="classpxarticulationcache_1a250991f7cb82a6a727b7199b3dd76a9b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">gravityCompensationForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache24gravityCompensationForceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The gravity compensation forces used in inverse dynamics algorithms. </p>
+<p><ul class="simple">
+<li><p>N = getDofs() + 6 -&gt; size includes possible floating-base DOFs regardless of <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> flag.</p></li>
+<li><p>If <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is true, the terms corresponding to the root DoFs are included at the start of the array (force then torque), followed by the joint DoFs terms.</p></li>
+<li><p>If <a class="reference internal" href="structPxArticulationFlag.html#structpxarticulationflag_1a89b0e25f041302ae04e5cc0b509a7609a625f41920c4a20ea5317fdc939a74674"><span class="std std-ref">PxArticulationFlag::eFIX_BASE</span></a> is false, only the terms corresponding to the joint DoFs are included.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1af80b9eb73dbf97028b8c5a01f823bf70"><span class="std std-ref">PxArticulationReducedCoordinate::computeGravityCompensation</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache24centroidalMomentumMatrixE">
+<span id="_CPPv3N19PxArticulationCache24centroidalMomentumMatrixE"></span><span id="_CPPv2N19PxArticulationCache24centroidalMomentumMatrixE"></span><span id="PxArticulationCache::centroidalMomentumMatrix__PxRealP"></span><span class="target" id="classpxarticulationcache_1af9d8990da2fe7ef0448adf8b8309636f"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">centroidalMomentumMatrix</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache24centroidalMomentumMatrixE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The centroidal momentum matrix that maps velocities to centroidal momentum. </p>
+<p><ul class="simple">
+<li><p>N = 6 * (getDofs() + 6).</p></li>
+<li><p>Each row includes first the term related to the DOF of the root (linear, then angular), then the joint DOF following the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+<li><p>The centroidal momentum includes first the linear and then the angular contribution.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a9bafcb33ca7089ee236f34de6f7894c6"><span class="std std-ref">PxArticulationReducedCoordinate::computeCentroidalMomentumMatrix</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache22centroidalMomentumBiasE">
+<span id="_CPPv3N19PxArticulationCache22centroidalMomentumBiasE"></span><span id="_CPPv2N19PxArticulationCache22centroidalMomentumBiasE"></span><span id="PxArticulationCache::centroidalMomentumBias__PxRealP"></span><span class="target" id="classpxarticulationcache_1abcf8e86f7120c38cdd592f3e9417e6d8"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">centroidalMomentumBias</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache22centroidalMomentumBiasE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The centroidal momentum bias force. </p>
+<p>This is a second-order term to calculate the derivative of the centroidal momentum.</p>
+<p><ul class="simple">
+<li><p>N = 6.</p></li>
+<li><p>The centroidal momentum includes first the linear and then the angular contribution.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a9bafcb33ca7089ee236f34de6f7894c6"><span class="std std-ref">PxArticulationReducedCoordinate::computeCentroidalMomentumMatrix</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13jointVelocityE">
+<span id="_CPPv3N19PxArticulationCache13jointVelocityE"></span><span id="_CPPv2N19PxArticulationCache13jointVelocityE"></span><span id="PxArticulationCache::jointVelocity__PxRealP"></span><span class="target" id="classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointVelocity</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13jointVelocityE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The articulation joint DOF velocities. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read/write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa72e87b13f72f29c3192f75f1ec3fd763"><span class="std std-ref">PxArticulationCacheFlag::eVELOCITY</span></a>.</p></li>
+<li><p>The indexing follows the internal DOF index order. Therefore, the application should calculate the DOF data indices by summing the joint DOFs in the order of the links’ low-level indices (see the manual Section “Cache Indexing” for a snippet for this calculation): <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Low</span><span class="o">-</span><span class="n">level</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="n">index</span><span class="o">:</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getLinkIndex</span><span class="p">()</span>
+</pre></div>
+</div>
+ <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Link</span><span class="w"> </span><span class="n">inbound</span><span class="w"> </span><span class="n">joint</span><span class="w"> </span><span class="n">DOF</span><span class="o">:</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">0</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">1</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">2</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">1</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getInboundJointDof</span><span class="p">()</span>
+</pre></div>
+</div>
+ <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Low</span><span class="o">-</span><span class="n">level</span><span class="w"> </span><span class="n">DOF</span><span class="w"> </span><span class="n">index</span><span class="o">:</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="o">-</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">0</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">3</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">|</span>
+</pre></div>
+</div>
+ The root link always has low-level index 0 and always has zero inbound joint DOFs. The link DOF indexing follows the order in <a class="reference internal" href="structPxArticulationAxis.html#structpxarticulationaxis_1a5c835f1d727bfc738d1fc7a7595d7395"><span class="std std-ref">PxArticulationAxis::Enum</span></a>. For example, assume that low-level link 2 has an inbound spherical joint with two DOFs: eSWING1 and eSWING2. The corresponding low-level joint DOF indices are therefore 1 for eSWING1 and 2 for eSWING2. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache17jointAccelerationE">
+<span id="_CPPv3N19PxArticulationCache17jointAccelerationE"></span><span id="_CPPv2N19PxArticulationCache17jointAccelerationE"></span><span id="PxArticulationCache::jointAcceleration__PxRealP"></span><span class="target" id="classpxarticulationcache_1a515142b078989bf5034c5a97b6978c1b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointAcceleration</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache17jointAccelerationE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The articulation joint DOF accelerations. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aaebf1dc2f7092b87e5f953e88a44cc907"><span class="std std-ref">PxArticulationCacheFlag::eACCELERATION</span></a>.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+<li><p>Delta joint DOF velocities can be computed from acceleration * dt. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13jointPositionE">
+<span id="_CPPv3N19PxArticulationCache13jointPositionE"></span><span id="_CPPv2N19PxArticulationCache13jointPositionE"></span><span id="PxArticulationCache::jointPosition__PxRealP"></span><span class="target" id="classpxarticulationcache_1a64e8f0b09d6860f91d7a830c11bdddc9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointPosition</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13jointPositionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The articulation joint DOF positions. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read/write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa124f3eb48bb13cb9e674e343519f0e5f"><span class="std std-ref">PxArticulationCacheFlag::ePOSITION</span></a>.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+<li><p>For spherical joints, the joint position for each axis on the joint must be in range [-Pi, Pi]. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache10jointForceE">
+<span id="_CPPv3N19PxArticulationCache10jointForceE"></span><span id="_CPPv2N19PxArticulationCache10jointForceE"></span><span id="PxArticulationCache::jointForce__PxRealP"></span><span class="target" id="classpxarticulationcache_1a952f509c174636c1c11e8c61bda30eaa"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache10jointForceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The articulation joint DOF forces. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read/Write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa8e618e74ae8418aabdbe5877198584c1"><span class="std std-ref">PxArticulationCacheFlag::eFORCE</span></a>.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>.</p></li>
+<li><p>Applied joint forces persist and are applied each frame until changed. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache20jointTargetPositionsE">
+<span id="_CPPv3N19PxArticulationCache20jointTargetPositionsE"></span><span id="_CPPv2N19PxArticulationCache20jointTargetPositionsE"></span><span id="PxArticulationCache::jointTargetPositions__PxRealP"></span><span class="target" id="classpxarticulationcache_1a0d43f4f0509496703a0401e2ba146ea4"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointTargetPositions</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache20jointTargetPositionsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The articulation joint drive target positions. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa5d165e4892fa2088df35edb30776852f"><span class="std std-ref">PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS</span></a>.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache21jointTargetVelocitiesE">
+<span id="_CPPv3N19PxArticulationCache21jointTargetVelocitiesE"></span><span id="_CPPv2N19PxArticulationCache21jointTargetVelocitiesE"></span><span id="PxArticulationCache::jointTargetVelocities__PxRealP"></span><span class="target" id="classpxarticulationcache_1abcb7117c92107307b83f45b5f49ee102"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointTargetVelocities</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache21jointTargetVelocitiesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The articulation joint drive target velocities. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa42c22082f8245a32dda98d05ee81de26"><span class="std std-ref">PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES</span></a>.</p></li>
+<li><p>The indexing follows the internal DOF index order, see <a class="reference internal" href="#classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"><span class="std std-ref">PxArticulationCache::jointVelocity</span></a>. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache12linkVelocityE">
+<span id="_CPPv3N19PxArticulationCache12linkVelocityE"></span><span id="_CPPv2N19PxArticulationCache12linkVelocityE"></span><span id="PxArticulationCache::linkVelocity__PxSpatialVelocityP"></span><span class="target" id="classpxarticulationcache_1a91adda674694b0f628a07e4ca89bcec5"></span><a class="reference internal" href="structPxSpatialVelocity.html#_CPPv417PxSpatialVelocity" title="PxSpatialVelocity"><span class="n"><span class="pre">PxSpatialVelocity</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkVelocity</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache12linkVelocityE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link spatial velocity. </p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Read using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aab220c19b6bfebba999ee6a40926318af"><span class="std std-ref">PxArticulationCacheFlag::eLINK_VELOCITY</span></a>.</p></li>
+<li><p>The indexing follows the internal link indexing, see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>.</p></li>
+<li><p>The velocity is with respect to the link’s center of mass but represented in world space.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1aafdbdab1865112b15201aeabb23877b4"><span class="std std-ref">PxRigidBody::getCMassLocalPose</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache16linkAccelerationE">
+<span id="_CPPv3N19PxArticulationCache16linkAccelerationE"></span><span id="_CPPv2N19PxArticulationCache16linkAccelerationE"></span><span id="PxArticulationCache::linkAcceleration__PxSpatialVelocityP"></span><span class="target" id="classpxarticulationcache_1ac67f33a6b89001467a31fd4a3f4afa23"></span><a class="reference internal" href="structPxSpatialVelocity.html#_CPPv417PxSpatialVelocity" title="PxSpatialVelocity"><span class="n"><span class="pre">PxSpatialVelocity</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkAcceleration</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache16linkAccelerationE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link classical acceleration. </p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Read using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa6e6b377a9fc4a41006ebcf9fcf004f70"><span class="std std-ref">PxArticulationCacheFlag::eLINK_ACCELERATION</span></a>.</p></li>
+<li><p>The indexing follows the internal link indexing, see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>.</p></li>
+<li><p>The acceleration is with respect to the link’s center of mass.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1ab51ab4c2ab36f1b409a1aa0468f0fe71"><span class="std std-ref">PxArticulationReducedCoordinate::getLinkAcceleration</span></a>, <a class="reference internal" href="classPxRigidDynamic.html#classpxrigidbody_1aafdbdab1865112b15201aeabb23877b4"><span class="std std-ref">PxRigidBody::getCMassLocalPose</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache22linkIncomingJointForceE">
+<span id="_CPPv3N19PxArticulationCache22linkIncomingJointForceE"></span><span id="_CPPv2N19PxArticulationCache22linkIncomingJointForceE"></span><span id="PxArticulationCache::linkIncomingJointForce__PxSpatialForceP"></span><span class="target" id="classpxarticulationcache_1a264a1e45dbecc7b8fe020e4428f37e12"></span><a class="reference internal" href="structPxSpatialForce.html#_CPPv414PxSpatialForce" title="PxSpatialForce"><span class="n"><span class="pre">PxSpatialForce</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkIncomingJointForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache22linkIncomingJointForceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link incoming joint force, i.e. </p>
+<p>the total force transmitted from the parent link to this link.</p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Read using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aac8a85939573d7e2413f2a8c1bce5baf7"><span class="std std-ref">PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE</span></a>.</p></li>
+<li><p>The indexing follows the internal link indexing, see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>.</p></li>
+<li><p>The force is reported in the child joint frame of the link’s incoming joint.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html#classpxarticulationjointreducedcoordinate_1a72efffac1b14fbab97fe9dab4a228e9c"><span class="std std-ref">PxArticulationJointReducedCoordinate::getChildPose</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The root link reports a zero spatial force. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache9linkForceE">
+<span id="_CPPv3N19PxArticulationCache9linkForceE"></span><span id="_CPPv2N19PxArticulationCache9linkForceE"></span><span id="PxArticulationCache::linkForce__PxVec3P"></span><span class="target" id="classpxarticulationcache_1acc23879ff343c2ed282397ee55d30037"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache9linkForceE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link force, i.e. </p>
+<p>an external force applied to the link’s center of mass.</p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa8570e53a657bdec7b02d46ca78539539"><span class="std std-ref">PxArticulationCacheFlag::eLINK_FORCE</span></a>.</p></li>
+<li><p>The indexing follows the internal link indexing, see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>.</p></li>
+<li><p>The force is given in world space. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache10linkTorqueE">
+<span id="_CPPv3N19PxArticulationCache10linkTorqueE"></span><span id="_CPPv2N19PxArticulationCache10linkTorqueE"></span><span id="PxArticulationCache::linkTorque__PxVec3P"></span><span class="target" id="classpxarticulationcache_1a9984ef072f469ed3f18db780342b0d61"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkTorque</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache10linkTorqueE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Link torque, i.e. </p>
+<p>an external torque applied to the link.</p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa25c49f0a8600a8b89e3dd2bce6ca386a"><span class="std std-ref">PxArticulationCacheFlag::eLINK_TORQUE</span></a>.</p></li>
+<li><p>The indexing follows the internal link indexing, see <a class="reference internal" href="classPxArticulationLink.html#classpxarticulationlink_1a0686545a15b3556524d0d6914a804a4c"><span class="std std-ref">PxArticulationLink::getLinkIndex</span></a>.</p></li>
+<li><p>The torque is given in world space. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache12rootLinkDataE">
+<span id="_CPPv3N19PxArticulationCache12rootLinkDataE"></span><span id="_CPPv2N19PxArticulationCache12rootLinkDataE"></span><span id="PxArticulationCache::rootLinkData__PxArticulationRootLinkDataP"></span><span class="target" id="classpxarticulationcache_1ae0431d9e6e127c49cf7cc53532b4b393"></span><a class="reference internal" href="structPxArticulationRootLinkData.html#_CPPv426PxArticulationRootLinkData" title="PxArticulationRootLinkData"><span class="n"><span class="pre">PxArticulationRootLinkData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">rootLinkData</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache12rootLinkDataE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Root link transform, velocities, and accelerations. </p>
+<p><ul class="simple">
+<li><p>N = 1.</p></li>
+<li><p>Read/write using <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aa3fb2862ff078b7fb749374f36f42d6e1"><span class="std std-ref">PxArticulationCacheFlag::eROOT_TRANSFORM</span></a> and <a class="reference internal" href="classPxArticulationCacheFlag.html#classpxarticulationcacheflag_1a05d4d9e362e158961f000323c727333aabdfcd097d254d41b3033c43e56f7c828"><span class="std std-ref">PxArticulationCacheFlag::eROOT_VELOCITIES</span></a> (accelerations are read-only).</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxArticulationRootLinkData.html#structpxarticulationrootlinkdata"><span class="std std-ref">PxArticulationRootLinkData</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache17coefficientMatrixE">
+<span id="_CPPv3N19PxArticulationCache17coefficientMatrixE"></span><span id="_CPPv2N19PxArticulationCache17coefficientMatrixE"></span><span id="PxArticulationCache::coefficientMatrix__PxRealP"></span><span class="target" id="classpxarticulationcache_1a9df694963228f4ae0c9e58ca9d6bff02"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">coefficientMatrix</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache17coefficientMatrixE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constraint coefficient matrix. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000027"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The API related to loop joints will be removed in a future version once a replacement is made available.</p>
+</dd></dl>
+
+</p>
+<p><ul class="simple">
+<li><p>N = getCoefficentMatrixSize().</p></li>
+<li><p>The user needs to allocate memory and set this member to the allocated memory.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a0eb36b4e092c322893c811f1e7c85b4d"><span class="std std-ref">PxArticulationReducedCoordinate::computeCoefficientMatrix</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache6lambdaE">
+<span id="_CPPv3N19PxArticulationCache6lambdaE"></span><span id="_CPPv2N19PxArticulationCache6lambdaE"></span><span id="PxArticulationCache::lambda__PxRealP"></span><span class="target" id="classpxarticulationcache_1aa90b660a293d6ce7984d49e8be270465"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">lambda</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache6lambdaE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Constraint lambda values (impulses applied by the respective constraints). </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000028"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The API related to loop joints will be removed in a future version once a replacement is made available.</p>
+</dd></dl>
+
+</p>
+<p><ul class="simple">
+<li><p>N = getNbLoopJoints().</p></li>
+<li><p>The user needs to allocate memory and set this member to the allocated memory.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxArticulationReducedCoordinate.html#classpxarticulationreducedcoordinate_1a06a554a20844b28a9251e60ca69ebac5"><span class="std std-ref">PxArticulationReducedCoordinate::computeLambda</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13scratchMemoryE">
+<span id="_CPPv3N19PxArticulationCache13scratchMemoryE"></span><span id="_CPPv2N19PxArticulationCache13scratchMemoryE"></span><span id="PxArticulationCache::scratchMemory__voidP"></span><span class="target" id="classpxarticulationcache_1a237505e945f16c9afddb3c431f9d6a7b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">scratchMemory</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13scratchMemoryE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The scratch memory is used for internal calculations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache16scratchAllocatorE">
+<span id="_CPPv3N19PxArticulationCache16scratchAllocatorE"></span><span id="_CPPv2N19PxArticulationCache16scratchAllocatorE"></span><span id="PxArticulationCache::scratchAllocator__voidP"></span><span class="target" id="classpxarticulationcache_1ac5356bfc4c7b57dec9bdd33c698ae96c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">scratchAllocator</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache16scratchAllocatorE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The scratch allocator is used for internal calculations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache7versionE">
+<span id="_CPPv3N19PxArticulationCache7versionE"></span><span id="_CPPv2N19PxArticulationCache7versionE"></span><span id="PxArticulationCache::version__PxU32"></span><span class="target" id="classpxarticulationcache_1af8becefcb89c7a26df4372809e31b343"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">version</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache7versionE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The cache version used internally to check compatibility with the articulation, i.e. detect if the articulation configuration changed after the cache was created. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxArticulationAxis.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxArticulationAxis</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxArticulationCacheFlag.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxArticulationCacheFlag</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv419PxArticulationCache"><code class="docutils literal notranslate"><span class="pre">PxArticulationCache</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache19PxArticulationCacheEv"><code class="docutils literal notranslate"><span class="pre">PxArticulationCache()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache14externalForcesE"><code class="docutils literal notranslate"><span class="pre">externalForces</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache13denseJacobianE"><code class="docutils literal notranslate"><span class="pre">denseJacobian</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache10massMatrixE"><code class="docutils literal notranslate"><span class="pre">massMatrix</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache13coriolisForceE"><code class="docutils literal notranslate"><span class="pre">coriolisForce</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache24gravityCompensationForceE"><code class="docutils literal notranslate"><span class="pre">gravityCompensationForce</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache24centroidalMomentumMatrixE"><code class="docutils literal notranslate"><span class="pre">centroidalMomentumMatrix</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache22centroidalMomentumBiasE"><code class="docutils literal notranslate"><span class="pre">centroidalMomentumBias</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache13jointVelocityE"><code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache17jointAccelerationE"><code class="docutils literal notranslate"><span class="pre">jointAcceleration</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache13jointPositionE"><code class="docutils literal notranslate"><span class="pre">jointPosition</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache10jointForceE"><code class="docutils literal notranslate"><span class="pre">jointForce</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache20jointTargetPositionsE"><code class="docutils literal notranslate"><span class="pre">jointTargetPositions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache21jointTargetVelocitiesE"><code class="docutils literal notranslate"><span class="pre">jointTargetVelocities</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache12linkVelocityE"><code class="docutils literal notranslate"><span class="pre">linkVelocity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache16linkAccelerationE"><code class="docutils literal notranslate"><span class="pre">linkAcceleration</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache22linkIncomingJointForceE"><code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache9linkForceE"><code class="docutils literal notranslate"><span class="pre">linkForce</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache10linkTorqueE"><code class="docutils literal notranslate"><span class="pre">linkTorque</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache12rootLinkDataE"><code class="docutils literal notranslate"><span class="pre">rootLinkData</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache17coefficientMatrixE"><code class="docutils literal notranslate"><span class="pre">coefficientMatrix</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache6lambdaE"><code class="docutils literal notranslate"><span class="pre">lambda</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache13scratchMemoryE"><code class="docutils literal notranslate"><span class="pre">scratchMemory</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache16scratchAllocatorE"><code class="docutils literal notranslate"><span class="pre">scratchAllocator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxArticulationCache7versionE"><code class="docutils literal notranslate"><span class="pre">version</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

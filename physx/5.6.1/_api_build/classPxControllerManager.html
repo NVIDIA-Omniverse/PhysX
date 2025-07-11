@@ -1,0 +1,972 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxControllerManager &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxControllerManager';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxControllerNonWalkableMode" href="structPxControllerNonWalkableMode.html" />
+    <link rel="prev" title="PxControllerHit" href="structPxControllerHit.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxControllerManager</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxcontrollermanager">
+<h1>PxControllerManager<a class="headerlink" href="#pxcontrollermanager" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxControllerManager.h.html#pxcontrollermanager-8h"><span class="std std-ref">include/characterkinematic/PxControllerManager.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxControllerManager">
+<span id="_CPPv319PxControllerManager"></span><span id="_CPPv219PxControllerManager"></span><span id="PxControllerManager"></span><span class="target" id="classpxcontrollermanager"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerManager</span></span></span><a class="headerlink" href="#_CPPv419PxControllerManager" title="Link to this definition">#</a><br /></dt>
+<dd><p>Manages an array of character controllers. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxController.html#classpxcontroller"><span class="std std-ref">PxController</span></a> <a class="reference internal" href="classPxBoxController.html#classpxboxcontroller"><span class="std std-ref">PxBoxController</span></a> <a class="reference internal" href="classPxCapsuleController.html#classpxcapsulecontroller"><span class="std std-ref">PxCapsuleController</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager7releaseEv">
+<span id="_CPPv3N19PxControllerManager7releaseEv"></span><span id="_CPPv2N19PxControllerManager7releaseEv"></span><span id="PxControllerManager::release"></span><span class="target" id="classpxcontrollermanager_1a9aa7bd9fd20e8559488cb1866dfe5822"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager7releaseEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Releases the controller manager. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This will release all associated controllers and obstacle contexts.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function is required to be called to release foundation usage. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxControllerManager8getSceneEv">
+<span id="_CPPv3NK19PxControllerManager8getSceneEv"></span><span id="_CPPv2NK19PxControllerManager8getSceneEv"></span><span id="PxControllerManager::getSceneC"></span><span class="target" id="classpxcontrollermanager_1a23e6d8244223b5a96d0854aa96bcc9d3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxScene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxControllerManager8getSceneEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the scene the manager is adding the controllers to. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The associated physics scene. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxControllerManager16getNbControllersEv">
+<span id="_CPPv3NK19PxControllerManager16getNbControllersEv"></span><span id="_CPPv2NK19PxControllerManager16getNbControllersEv"></span><span id="PxControllerManager::getNbControllersC"></span><span class="target" id="classpxcontrollermanager_1ad1d6b4793e98229d31627a96c279171d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbControllers</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxControllerManager16getNbControllersEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of controllers that are being managed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of controllers. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager13getControllerE5PxU32">
+<span id="_CPPv3N19PxControllerManager13getControllerE5PxU32"></span><span id="_CPPv2N19PxControllerManager13getControllerE5PxU32"></span><span id="PxControllerManager::getController__PxU32"></span><span class="target" id="classpxcontrollermanager_1abf29c2d06fe3dddccbd037b0aae80a87"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxController.html#_CPPv412PxController" title="PxController"><span class="n"><span class="pre">PxController</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getController</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager13getControllerE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieve one of the controllers in the manager. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> – the index of the controller to return </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The controller with the specified index. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager16createControllerERK16PxControllerDesc">
+<span id="_CPPv3N19PxControllerManager16createControllerERK16PxControllerDesc"></span><span id="_CPPv2N19PxControllerManager16createControllerERK16PxControllerDesc"></span><span id="PxControllerManager::createController__PxControllerDescCR"></span><span class="target" id="classpxcontrollermanager_1ae97c6a4f5c0f3513fdace1741a45d979"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxController.html#_CPPv412PxController" title="PxController"><span class="n"><span class="pre">PxController</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createController</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxControllerDesc.html#_CPPv416PxControllerDesc" title="PxControllerDesc"><span class="n"><span class="pre">PxControllerDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager16createControllerERK16PxControllerDesc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a new character controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxController.html#classpxcontroller"><span class="std std-ref">PxController</span></a> <a class="reference internal" href="classPxController.html#classpxcontroller_1a0ed314c5bf5dd95f9f340de15efb5776"><span class="std std-ref">PxController.release()</span></a> <a class="reference internal" href="classPxControllerDesc.html#classpxcontrollerdesc"><span class="std std-ref">PxControllerDesc</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The controllers descriptor </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The new controller</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager16purgeControllersEv">
+<span id="_CPPv3N19PxControllerManager16purgeControllersEv"></span><span id="_CPPv2N19PxControllerManager16purgeControllersEv"></span><span id="PxControllerManager::purgeControllers"></span><span class="target" id="classpxcontrollermanager_1a78043dd98d6ff9c6fec577fb367a3a1f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">purgeControllers</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager16purgeControllersEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Releases all the controllers that are being managed. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager15getRenderBufferEv">
+<span id="_CPPv3N19PxControllerManager15getRenderBufferEv"></span><span id="_CPPv2N19PxControllerManager15getRenderBufferEv"></span><span id="PxControllerManager::getRenderBuffer"></span><span class="target" id="classpxcontrollermanager_1a1fb700566eff28929892435de895d45b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxRenderBuffer.html#_CPPv414PxRenderBuffer" title="PxRenderBuffer"><span class="n"><span class="pre">PxRenderBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getRenderBuffer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager15getRenderBufferEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieves debug data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxcontrollermanager_1a6748551f35cb6eee1048e810f09fb9b9"><span class="std std-ref">PxControllerManager.setDebugRenderingFlags()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The render buffer filled with debug-render data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager22setDebugRenderingFlagsE28PxControllerDebugRenderFlags">
+<span id="_CPPv3N19PxControllerManager22setDebugRenderingFlagsE28PxControllerDebugRenderFlags"></span><span id="_CPPv2N19PxControllerManager22setDebugRenderingFlagsE28PxControllerDebugRenderFlags"></span><span id="PxControllerManager::setDebugRenderingFlags__PxControllerDebugRenderFlags"></span><span class="target" id="classpxcontrollermanager_1a6748551f35cb6eee1048e810f09fb9b9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDebugRenderingFlags</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxControllerManager_8h_1a2404e3aa455180820b7fa4900d75f18e.html#_CPPv428PxControllerDebugRenderFlags" title="PxControllerDebugRenderFlags"><span class="n"><span class="pre">PxControllerDebugRenderFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager22setDebugRenderingFlagsE28PxControllerDebugRenderFlags" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets debug rendering flags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classpxcontrollermanager_1a1fb700566eff28929892435de895d45b"><span class="std std-ref">PxControllerManager.getRenderBuffer()</span></a> PxControllerDebugRenderFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> The debug rendering flags (combination of PxControllerDebugRenderFlags)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxControllerManager21getNbObstacleContextsEv">
+<span id="_CPPv3NK19PxControllerManager21getNbObstacleContextsEv"></span><span id="_CPPv2NK19PxControllerManager21getNbObstacleContextsEv"></span><span id="PxControllerManager::getNbObstacleContextsC"></span><span class="target" id="classpxcontrollermanager_1a328d22226d7cddc2ad141a94b229a83d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbObstacleContexts</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxControllerManager21getNbObstacleContextsEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of obstacle contexts that are being managed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of obstacle contexts. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager18getObstacleContextE5PxU32">
+<span id="_CPPv3N19PxControllerManager18getObstacleContextE5PxU32"></span><span id="_CPPv2N19PxControllerManager18getObstacleContextE5PxU32"></span><span id="PxControllerManager::getObstacleContext__PxU32"></span><span class="target" id="classpxcontrollermanager_1a012be7daf143caa20c6edb5bb9feeb56"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxObstacleContext.html#_CPPv417PxObstacleContext" title="PxObstacleContext"><span class="n"><span class="pre">PxObstacleContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getObstacleContext</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager18getObstacleContextE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Retrieve one of the obstacle contexts in the manager. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> – The index of the obstacle context to retrieve. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The obstacle context with the specified index. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager21createObstacleContextEv">
+<span id="_CPPv3N19PxControllerManager21createObstacleContextEv"></span><span id="_CPPv2N19PxControllerManager21createObstacleContextEv"></span><span id="PxControllerManager::createObstacleContext"></span><span class="target" id="classpxcontrollermanager_1a4cfb41765a3e5e085388237f58f5df32"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxObstacleContext.html#_CPPv417PxObstacleContext" title="PxObstacleContext"><span class="n"><span class="pre">PxObstacleContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createObstacleContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager21createObstacleContextEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates an obstacle context. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxObstacleContext.html#classpxobstaclecontext"><span class="std std-ref">PxObstacleContext</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New obstacle context</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager19computeInteractionsE5PxF32P26PxControllerFilterCallback">
+<span id="_CPPv3N19PxControllerManager19computeInteractionsE5PxF32P26PxControllerFilterCallback"></span><span id="_CPPv2N19PxControllerManager19computeInteractionsE5PxF32P26PxControllerFilterCallback"></span><span id="PxControllerManager::computeInteractions__PxF32.PxControllerFilterCallbackP"></span><span class="target" id="classpxcontrollermanager_1a68b50621423ec866d69fdbef95d43ae6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeInteractions</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">elapsedTime</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="classPxControllerFilterCallback.html#_CPPv426PxControllerFilterCallback" title="PxControllerFilterCallback"><span class="n"><span class="pre">PxControllerFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cctFilterCb</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager19computeInteractionsE5PxF32P26PxControllerFilterCallback" title="Link to this definition">#</a><br /></dt>
+<dd><p>Computes character-character interactions. </p>
+<p>This function is an optional helper to properly resolve interactions between characters, in case they overlap (which can happen for gameplay reasons, etc).</p>
+<p>You should call this once per frame, before your <a class="reference internal" href="classPxController.html#classpxcontroller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController::move()</span></a> calls. The function will not move the characters directly, but it will compute overlap information for each character that will be used in the next move() call.</p>
+<p>You need to provide a proper time value here so that interactions are resolved in a way that do not depend on the framerate.</p>
+<p>If you only have one character in the scene, or if you can guarantee your characters will never overlap, then you do not need to call this function.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Releasing the manager will automatically release all the associated obstacle contexts.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elapsedTime</strong> – <strong>[in]</strong> Elapsed time since last call </p></li>
+<li><p><strong>cctFilterCb</strong> – <strong>[in]</strong> Filtering callback for CCT-vs-CCT interactions </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager15setTessellationEbf">
+<span id="_CPPv3N19PxControllerManager15setTessellationEbf"></span><span id="_CPPv2N19PxControllerManager15setTessellationEbf"></span><span id="PxControllerManager::setTessellation__b.float"></span><span class="target" id="classpxcontrollermanager_1a801c7a25dc888d307bfee0e119e43724"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setTessellation</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em>, <em class="sig-param"><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">maxEdgeLength</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager15setTessellationEbf" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables or disables runtime tessellation. </p>
+<p>Large triangles can create accuracy issues in the sweep code, which in turn can lead to characters not sliding smoothly against geometries, or even penetrating them. This feature allows one to reduce those issues by tessellating large triangles at runtime, before performing sweeps against them. The amount of tessellation is controlled by the ‘maxEdgeLength’ parameter. Any triangle with at least one edge length greater than the maxEdgeLength will get recursively tessellated, until resulting triangles are small enough.</p>
+<p>This features only applies to triangle meshes, convex meshes, heightfields and boxes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> True/false to enable/disable runtime tessellation. </p></li>
+<li><p><strong>maxEdgeLength</strong> – <strong>[in]</strong> Max edge length allowed before tessellation kicks in. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager24setOverlapRecoveryModuleEb">
+<span id="_CPPv3N19PxControllerManager24setOverlapRecoveryModuleEb"></span><span id="_CPPv2N19PxControllerManager24setOverlapRecoveryModuleEb"></span><span id="PxControllerManager::setOverlapRecoveryModule__b"></span><span class="target" id="classpxcontrollermanager_1a7b82dfa1f30ab934fa287f1e3aabf3cf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setOverlapRecoveryModule</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager24setOverlapRecoveryModuleEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables or disables the overlap recovery module. </p>
+<p>The overlap recovery module can be used to depenetrate CCTs from static objects when an overlap is detected. This can happen in three main cases:<ul class="simple">
+<li><p>when the CCT is directly spawned or teleported in another object</p></li>
+<li><p>when the CCT algorithm fails due to limited FPU accuracy</p></li>
+<li><p>when the “up vector” is modified, making the rotated CCT shape overlap surrounding objects</p></li>
+</ul>
+</p>
+<p>When activated, the CCT module will automatically try to resolve the penetration, and move the CCT to a safe place where it does not overlap other objects anymore. This only concerns static objects, dynamic objects are ignored by the recovery module.</p>
+<p>When the recovery module is not activated, it is possible for the CCTs to go through static objects. By default, the recovery module is enabled.</p>
+<p>The recovery module currently works with all geometries except heightfields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>flag</strong> – <strong>[in]</strong> True/false to enable/disable overlap recovery module. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager16setPreciseSweepsEb">
+<span id="_CPPv3N19PxControllerManager16setPreciseSweepsEb"></span><span id="_CPPv2N19PxControllerManager16setPreciseSweepsEb"></span><span id="PxControllerManager::setPreciseSweeps__b"></span><span class="target" id="classpxcontrollermanager_1aaa88f335b64ec33775ec73fb532c920f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPreciseSweeps</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager16setPreciseSweepsEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables or disables the precise sweeps. </p>
+<p>Precise sweeps are more accurate, but also potentially slower than regular sweeps.</p>
+<p>By default, precise sweeps are enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>flag</strong> – <strong>[in]</strong> True/false to enable/disable precise sweeps. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager39setPreventVerticalSlidingAgainstCeilingEb">
+<span id="_CPPv3N19PxControllerManager39setPreventVerticalSlidingAgainstCeilingEb"></span><span id="_CPPv2N19PxControllerManager39setPreventVerticalSlidingAgainstCeilingEb"></span><span id="PxControllerManager::setPreventVerticalSlidingAgainstCeiling__b"></span><span class="target" id="classpxcontrollermanager_1aaa9553cd92772fcfc583aff5678f7ef0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPreventVerticalSlidingAgainstCeiling</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager39setPreventVerticalSlidingAgainstCeilingEb" title="Link to this definition">#</a><br /></dt>
+<dd><p>Enables or disables vertical sliding against ceilings. </p>
+<p>Geometry is seen as “ceilings” when the following condition is met: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">dot</span><span class="w"> </span><span class="n">product</span><span class="p">(</span><span class="n">contact</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="n">direction</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">0.0f</span>
+</pre></div>
+</div>
+ This flag controls whether characters should slide vertically along the geometry in that case.</p>
+<p>By default, sliding is allowed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>flag</strong> – <strong>[in]</strong> True/false to enable/disable sliding. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager11shiftOriginERK6PxVec3">
+<span id="_CPPv3N19PxControllerManager11shiftOriginERK6PxVec3"></span><span id="_CPPv2N19PxControllerManager11shiftOriginERK6PxVec3"></span><span id="PxControllerManager::shiftOrigin__PxVec3CR"></span><span class="target" id="classpxcontrollermanager_1a6cbb06688c15bed0838ee051127905f8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">shiftOrigin</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shift</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxControllerManager11shiftOriginERK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Shift the origin of the character controllers and obstacle objects by the specified vector. </p>
+<p>The positions of all character controllers, obstacle objects and the corresponding data structures will get adjusted to reflect the shifted origin location (the shift vector will get subtracted from all character controller and obstacle object positions).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is the user’s responsibility to keep track of the summed total origin shift and adjust all input/output to/from PhysXCharacterKinematic accordingly.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This call will not automatically shift the PhysX scene and its objects. You need to call <a class="reference internal" href="classPxScene.html#classpxscene_1a3cb2b6b3b72cefb94fa9e64ca09660f6"><span class="std std-ref">PxScene::shiftOrigin()</span></a> separately to keep the systems in sync.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>shift</strong> – <strong>[in]</strong> Translation vector to shift the origin by. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManager19PxControllerManagerEv">
+<span id="_CPPv3N19PxControllerManager19PxControllerManagerEv"></span><span id="_CPPv2N19PxControllerManager19PxControllerManagerEv"></span><span id="PxControllerManager::PxControllerManager"></span><span class="target" id="classpxcontrollermanager_1a801a75dc7e874c8f65e13baa5aaf6a04"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerManager</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxControllerManager19PxControllerManagerEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerManagerD0Ev">
+<span id="_CPPv3N19PxControllerManagerD0Ev"></span><span id="_CPPv2N19PxControllerManagerD0Ev"></span><span id="PxControllerManager::~PxControllerManager"></span><span class="target" id="classpxcontrollermanager_1a931109408845159d19f7bf78cc6e2649"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxControllerManager</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxControllerManagerD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxControllerHit.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxControllerHit</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxControllerNonWalkableMode.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxControllerNonWalkableMode</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv419PxControllerManager"><code class="docutils literal notranslate"><span class="pre">PxControllerManager</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager7releaseEv"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxControllerManager8getSceneEv"><code class="docutils literal notranslate"><span class="pre">getScene()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxControllerManager16getNbControllersEv"><code class="docutils literal notranslate"><span class="pre">getNbControllers()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager13getControllerE5PxU32"><code class="docutils literal notranslate"><span class="pre">getController()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager16createControllerERK16PxControllerDesc"><code class="docutils literal notranslate"><span class="pre">createController()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager16purgeControllersEv"><code class="docutils literal notranslate"><span class="pre">purgeControllers()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager15getRenderBufferEv"><code class="docutils literal notranslate"><span class="pre">getRenderBuffer()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager22setDebugRenderingFlagsE28PxControllerDebugRenderFlags"><code class="docutils literal notranslate"><span class="pre">setDebugRenderingFlags()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK19PxControllerManager21getNbObstacleContextsEv"><code class="docutils literal notranslate"><span class="pre">getNbObstacleContexts()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager18getObstacleContextE5PxU32"><code class="docutils literal notranslate"><span class="pre">getObstacleContext()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager21createObstacleContextEv"><code class="docutils literal notranslate"><span class="pre">createObstacleContext()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager19computeInteractionsE5PxF32P26PxControllerFilterCallback"><code class="docutils literal notranslate"><span class="pre">computeInteractions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager15setTessellationEbf"><code class="docutils literal notranslate"><span class="pre">setTessellation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager24setOverlapRecoveryModuleEb"><code class="docutils literal notranslate"><span class="pre">setOverlapRecoveryModule()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager16setPreciseSweepsEb"><code class="docutils literal notranslate"><span class="pre">setPreciseSweeps()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager39setPreventVerticalSlidingAgainstCeilingEb"><code class="docutils literal notranslate"><span class="pre">setPreventVerticalSlidingAgainstCeiling()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager11shiftOriginERK6PxVec3"><code class="docutils literal notranslate"><span class="pre">shiftOrigin()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManager19PxControllerManagerEv"><code class="docutils literal notranslate"><span class="pre">PxControllerManager()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N19PxControllerManagerD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxControllerManager()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,762 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxHitFlag &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/structPxHitFlag';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxHullPolygon" href="structPxHullPolygon.html" />
+    <link rel="prev" title="PxHitCallback" href="structPxHitCallback.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxHitFlag</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxhitflag">
+<h1>PxHitFlag<a class="headerlink" href="#pxhitflag" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxGeometryHit.h.html#pxgeometryhit-8h"><span class="std std-ref">include/geometry/PxGeometryHit.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv49PxHitFlag">
+<span id="_CPPv39PxHitFlag"></span><span id="_CPPv29PxHitFlag"></span><span id="PxHitFlag"></span><span class="target" id="structpxhitflag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHitFlag</span></span></span><a class="headerlink" href="#_CPPv49PxHitFlag" title="Link to this definition">#</a><br /></dt>
+<dd><p>Scene query and geometry query behavior flags. </p>
+<p>PxHitFlags are used for 3 different purposes:</p>
+<p>1) To request hit fields to be filled in by scene queries (such as hit position, normal, face index or UVs). 2) Once query is completed, to indicate which fields are valid (note that a query may produce more valid fields than requested). 3) To specify additional options for the narrow phase and mid-phase intersection routines.</p>
+<p>All these flags apply to both scene queries and geometry queries (<a class="reference internal" href="classPxGeometryQuery.html#classpxgeometryquery"><span class="std std-ref">PxGeometryQuery</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxRaycastHit.html#structpxraycasthit"><span class="std std-ref">PxRaycastHit</span></a> <a class="reference internal" href="structPxSweepHit.html#structpxsweephit"><span class="std std-ref">PxSweepHit</span></a> <a class="reference internal" href="structPxOverlapHit.html#structpxoverlaphit"><span class="std std-ref">PxOverlapHit</span></a> <a class="reference internal" href="classPxSceneSQSystem.html#classpxscenequerysystembase_1a2368b237019491867c70b9002df6fb70"><span class="std std-ref">PxScene.raycast</span></a> <a class="reference internal" href="classPxSceneSQSystem.html#classpxscenequerysystembase_1a9384aae12d3ef33f4db300cfe0c91c6a"><span class="std std-ref">PxScene.sweep</span></a> <a class="reference internal" href="classPxSceneSQSystem.html#classpxscenequerysystembase_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene.overlap</span></a> <a class="reference internal" href="classPxGeometryQuery.html#classpxgeometryquery"><span class="std std-ref">PxGeometryQuery</span></a> PxFindFaceIndex </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4EnumE">
+<span id="_CPPv3N9PxHitFlag4EnumE"></span><span id="_CPPv2N9PxHitFlag4EnumE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4EnumE" title="Link to this definition">#</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum9ePOSITIONE">
+<span id="_CPPv3N9PxHitFlag4Enum9ePOSITIONE"></span><span id="_CPPv2N9PxHitFlag4Enum9ePOSITIONE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64a21e4769575db55be01d8f91e06c59b1a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePOSITION</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="Link to this definition">#</a><br /></dt>
+<dd><p>“position” member of <a class="reference internal" href="structPxQueryHit.html#structpxqueryhit"><span class="std std-ref">PxQueryHit</span></a> is valid </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum7eNORMALE">
+<span id="_CPPv3N9PxHitFlag4Enum7eNORMALE"></span><span id="_CPPv2N9PxHitFlag4Enum7eNORMALE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64a5972f664c2fbe85c992fb9aaba46a5cf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNORMAL</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="Link to this definition">#</a><br /></dt>
+<dd><p>“normal” member of <a class="reference internal" href="structPxQueryHit.html#structpxqueryhit"><span class="std std-ref">PxQueryHit</span></a> is valid </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum3eUVE">
+<span id="_CPPv3N9PxHitFlag4Enum3eUVE"></span><span id="_CPPv2N9PxHitFlag4Enum3eUVE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64aac585040db8a8a2839de7104a81a370c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUV</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum3eUVE" title="Link to this definition">#</a><br /></dt>
+<dd><p>“u” and “v” barycentric coordinates of <a class="reference internal" href="structPxQueryHit.html#structpxqueryhit"><span class="std std-ref">PxQueryHit</span></a> are valid. Not applicable to sweep queries. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE">
+<span id="_CPPv3N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE"></span><span id="_CPPv2N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64a7ec4e2f321d4fe4e3d02c4e4b532cc9b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eASSUME_NO_INITIAL_OVERLAP</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Performance hint flag for sweeps when it is known upfront there’s no initial overlap. NOTE: using this flag may cause undefined results if shapes are initially overlapping. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum8eANY_HITE">
+<span id="_CPPv3N9PxHitFlag4Enum8eANY_HITE"></span><span id="_CPPv2N9PxHitFlag4Enum8eANY_HITE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64a172dbdee60e60d7f8d5e74792abc2f16"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eANY_HIT</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum8eANY_HITE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Report any first hit. Used for geometries that contain more than one primitive. For meshes, if neither eMESH_MULTIPLE nor eANY_HIT is specified, a single closest hit will be reported. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE">
+<span id="_CPPv3N9PxHitFlag4Enum14eMESH_MULTIPLEE"></span><span id="_CPPv2N9PxHitFlag4Enum14eMESH_MULTIPLEE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64ade0c4ad4267c954d51e99905e69a399e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_MULTIPLE</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Report all hits for meshes rather than just the first. Not applicable to sweep queries. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE">
+<span id="_CPPv3N9PxHitFlag4Enum16eMESH_BOTH_SIDESE"></span><span id="_CPPv2N9PxHitFlag4Enum16eMESH_BOTH_SIDESE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64aaff8ff06630f9388c0ff8f20b7bbd9d3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_BOTH_SIDES</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Report hits with back faces of mesh triangles. Also report hits for raycast originating on mesh surface and facing away from the surface normal. Not applicable to sweep queries. Please refer to the user guide for heightfield-specific differences. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE">
+<span id="_CPPv3N9PxHitFlag4Enum14ePRECISE_SWEEPE"></span><span id="_CPPv2N9PxHitFlag4Enum14ePRECISE_SWEEPE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64af903d9ed69a9b2d397ca289752aaeef1"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePRECISE_SWEEP</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Use more accurate but slower narrow phase sweep tests. May provide better compatibility with PhysX 3.2 sweep behavior. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum4eMTDE">
+<span id="_CPPv3N9PxHitFlag4Enum4eMTDE"></span><span id="_CPPv2N9PxHitFlag4Enum4eMTDE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64ad01fd75af43a6dffeafafb40489ac7b9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMTD</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum4eMTDE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Report the minimum translation depth, normal and contact point. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum11eFACE_INDEXE">
+<span id="_CPPv3N9PxHitFlag4Enum11eFACE_INDEXE"></span><span id="_CPPv2N9PxHitFlag4Enum11eFACE_INDEXE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64a7193a2accbac7b56c15ba83461b716c8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFACE_INDEX</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum11eFACE_INDEXE" title="Link to this definition">#</a><br /></dt>
+<dd><p>“face index” member of <a class="reference internal" href="structPxQueryHit.html#structpxqueryhit"><span class="std std-ref">PxQueryHit</span></a> is valid </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum8eDEFAULTE">
+<span id="_CPPv3N9PxHitFlag4Enum8eDEFAULTE"></span><span id="_CPPv2N9PxHitFlag4Enum8eDEFAULTE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64afbdec54374d753fed4682d855aac7270"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDEFAULT</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE">
+<span id="_CPPv3N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE"></span><span id="_CPPv2N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE"></span><span class="target" id="structpxhitflag_1a44c173f6ddf0522ffbd8fa3c585e6b64a96f3049caa29758b18308a37e97370f1"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMODIFIABLE_FLAGS</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Only this subset of flags can be modified by pre-filter. </p>
+<p>Other modifications will be discarded. </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxHitCallback.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxHitCallback</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxHullPolygon.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxHullPolygon</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv49PxHitFlag"><code class="docutils literal notranslate"><span class="pre">PxHitFlag</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4EnumE"><code class="docutils literal notranslate"><span class="pre">Enum</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum9ePOSITIONE"><code class="docutils literal notranslate"><span class="pre">ePOSITION</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum7eNORMALE"><code class="docutils literal notranslate"><span class="pre">eNORMAL</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum3eUVE"><code class="docutils literal notranslate"><span class="pre">eUV</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE"><code class="docutils literal notranslate"><span class="pre">eASSUME_NO_INITIAL_OVERLAP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum8eANY_HITE"><code class="docutils literal notranslate"><span class="pre">eANY_HIT</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE"><code class="docutils literal notranslate"><span class="pre">eMESH_MULTIPLE</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE"><code class="docutils literal notranslate"><span class="pre">eMESH_BOTH_SIDES</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE"><code class="docutils literal notranslate"><span class="pre">ePRECISE_SWEEP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum4eMTDE"><code class="docutils literal notranslate"><span class="pre">eMTD</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum11eFACE_INDEXE"><code class="docutils literal notranslate"><span class="pre">eFACE_INDEX</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum8eDEFAULTE"><code class="docutils literal notranslate"><span class="pre">eDEFAULT</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE"><code class="docutils literal notranslate"><span class="pre">eMODIFIABLE_FLAGS</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

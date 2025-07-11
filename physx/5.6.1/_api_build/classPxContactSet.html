@@ -1,0 +1,1183 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxContactSet &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxContactSet';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxContactStreamIterator" href="structPxContactStreamIterator.html" />
+    <link rel="prev" title="PxContactRecorder" href="classPxContactRecorder.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxContactSet</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxcontactset">
+<h1>PxContactSet<a class="headerlink" href="#pxcontactset" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxContactModifyCallback.h.html#pxcontactmodifycallback-8h"><span class="std std-ref">include/PxContactModifyCallback.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxContactSet">
+<span id="_CPPv312PxContactSet"></span><span id="_CPPv212PxContactSet"></span><span id="PxContactSet"></span><span class="target" id="classpxcontactset"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactSet</span></span></span><a class="headerlink" href="#_CPPv412PxContactSet" title="Link to this definition">#</a><br /></dt>
+<dd><p>An array of contact points, as passed to contact modification. </p>
+<p>The word ‘set’ in the name does not imply that duplicates are filtered in any way. This initial set of contacts does potentially get reduced to a smaller set before being passed to the solver.</p>
+<p>You can use the accessors to read and write contact properties. The number of contacts is immutable, other than being able to disable contacts using <a class="reference internal" href="#classpxcontactset_1adcb9acc3b16547768ab53d8fdea331c8"><span class="std std-ref">ignore()</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="classPxContactModifyCallback.html#classpxcontactmodifycallback"><span class="std std-ref">PxContactModifyCallback</span></a>, <a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact"><span class="std std-ref">PxModifiableContact</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet8getPointE5PxU32">
+<span id="_CPPv3NK12PxContactSet8getPointE5PxU32"></span><span id="_CPPv2NK12PxContactSet8getPointE5PxU32"></span><span id="PxContactSet::getPoint__PxU32C"></span><span class="target" id="classpxcontactset_1a8946b750e5b03aca0019825dd13b33f5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPoint</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet8getPointE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the position of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxModifiableContact.point </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Position to the requested point in world space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet8setPointE5PxU32RK6PxVec3">
+<span id="_CPPv3N12PxContactSet8setPointE5PxU32RK6PxVec3"></span><span id="_CPPv2N12PxContactSet8setPointE5PxU32RK6PxVec3"></span><span id="PxContactSet::setPoint__PxU32.PxVec3CR"></span><span class="target" id="classpxcontactset_1aae26b593cc6cd4bc33b130c255ae306c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPoint</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet8setPointE5PxU32RK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the position of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxModifiableContact.point </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>p</strong> – <strong>[in]</strong> The new position in world space</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet9getNormalE5PxU32">
+<span id="_CPPv3NK12PxContactSet9getNormalE5PxU32"></span><span id="_CPPv2NK12PxContactSet9getNormalE5PxU32"></span><span id="PxContactSet::getNormal__PxU32C"></span><span class="target" id="classpxcontactset_1a476436e8e39918a6ae656d2d13630c59"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getNormal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet9getNormalE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the contact normal of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1a2ce4806497a2c518196111d81766f83e"><span class="std std-ref">PxModifiableContact.normal</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The requested normal in world space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet9setNormalE5PxU32RK6PxVec3">
+<span id="_CPPv3N12PxContactSet9setNormalE5PxU32RK6PxVec3"></span><span id="_CPPv2N12PxContactSet9setNormalE5PxU32RK6PxVec3"></span><span id="PxContactSet::setNormal__PxU32.PxVec3CR"></span><span class="target" id="classpxcontactset_1aa5d0e665cdfecb5c3817ba8c77518639"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setNormal</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet9setNormalE5PxU32RK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the contact normal of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1a2ce4806497a2c518196111d81766f83e"><span class="std std-ref">PxModifiableContact.normal</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Changing the normal can cause contact points to be ignored.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>n</strong> – <strong>[in]</strong> The new normal in world space</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet13getSeparationE5PxU32">
+<span id="_CPPv3NK12PxContactSet13getSeparationE5PxU32"></span><span id="_CPPv2NK12PxContactSet13getSeparationE5PxU32"></span><span id="PxContactSet::getSeparation__PxU32C"></span><span class="target" id="classpxcontactset_1aee925df0fa45bc6dc3796d49a3283398"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSeparation</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet13getSeparationE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the separation distance of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxcontact_1a1d45531c43034871f7c302e9f7c0a13f"><span class="std std-ref">PxModifiableContact.separation</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The separation. Negative implies penetration.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet13setSeparationE5PxU326PxReal">
+<span id="_CPPv3N12PxContactSet13setSeparationE5PxU326PxReal"></span><span id="_CPPv2N12PxContactSet13setSeparationE5PxU326PxReal"></span><span id="PxContactSet::setSeparation__PxU32.PxReal"></span><span class="target" id="classpxcontactset_1af4d9d285f9adc7d5010a26ad270933f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSeparation</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet13setSeparationE5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the separation of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxcontact_1a1d45531c43034871f7c302e9f7c0a13f"><span class="std std-ref">PxModifiableContact.separation</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>s</strong> – <strong>[in]</strong> The new separation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet17getTargetVelocityE5PxU32">
+<span id="_CPPv3NK12PxContactSet17getTargetVelocityE5PxU32"></span><span id="_CPPv2NK12PxContactSet17getTargetVelocityE5PxU32"></span><span id="PxContactSet::getTargetVelocity__PxU32C"></span><span class="target" id="classpxcontactset_1a962833b8a78feeba847597a1f3a72884"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTargetVelocity</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet17getTargetVelocityE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the target velocity of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxextendedcontact_1a83700fc9e50c65500d677ac6a08ce2c4"><span class="std std-ref">PxModifiableContact.targetVelocity</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The target velocity in world frame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3">
+<span id="_CPPv3N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3"></span><span id="_CPPv2N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3"></span><span id="PxContactSet::setTargetVelocity__PxU32.PxVec3CR"></span><span class="target" id="classpxcontactset_1a630d88993284e6207ad0e0dc784cae93"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setTargetVelocity</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the target velocity of a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxextendedcontact_1a83700fc9e50c65500d677ac6a08ce2c4"><span class="std std-ref">PxModifiableContact.targetVelocity</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The sign of the velocity needs to be flipped depending on the order of the actors in the pair. There is no guarantee about the consistency of the order from frame to frame.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>v</strong> – <strong>[in]</strong> The new velocity in world frame as seen from the second actor in the contact pair, i.e., the solver will try to achieve targetVel == (vel1 - vel2) </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet21getInternalFaceIndex0E5PxU32">
+<span id="_CPPv3NK12PxContactSet21getInternalFaceIndex0E5PxU32"></span><span id="_CPPv2NK12PxContactSet21getInternalFaceIndex0E5PxU32"></span><span id="PxContactSet::getInternalFaceIndex0__PxU32C"></span><span class="target" id="classpxcontactset_1a4cb9680c78c1f19004a13389b8c1ea53"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInternalFaceIndex0</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet21getInternalFaceIndex0E5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the face index with respect to the first shape of the pair for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxModifiableContact.internalFaceIndex0 </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At the moment, the first shape is never a tri-mesh, therefore this function always returns PXC_CONTACT_NO_FACE_INDEX</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The face index of the first shape </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet21getInternalFaceIndex1E5PxU32">
+<span id="_CPPv3NK12PxContactSet21getInternalFaceIndex1E5PxU32"></span><span id="_CPPv2NK12PxContactSet21getInternalFaceIndex1E5PxU32"></span><span id="PxContactSet::getInternalFaceIndex1__PxU32C"></span><span class="target" id="classpxcontactset_1af9e18c41f0cc829f92af84370a94741f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInternalFaceIndex1</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet21getInternalFaceIndex1E5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the face index with respect to the second shape of the pair for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxModifiableContact.internalFaceIndex1 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The face index of the second shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet13getMaxImpulseE5PxU32">
+<span id="_CPPv3NK12PxContactSet13getMaxImpulseE5PxU32"></span><span id="_CPPv2NK12PxContactSet13getMaxImpulseE5PxU32"></span><span id="PxContactSet::getMaxImpulse__PxU32C"></span><span class="target" id="classpxcontactset_1ae5ece9d8a18ba2ea7535c4ab45d7c3f3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxImpulse</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet13getMaxImpulseE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the maximum impulse for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxextendedcontact_1a3e72241eb626ae4d39b355ec44d7b37e"><span class="std std-ref">PxModifiableContact.maxImpulse</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The maximum impulse</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet13setMaxImpulseE5PxU326PxReal">
+<span id="_CPPv3N12PxContactSet13setMaxImpulseE5PxU326PxReal"></span><span id="_CPPv2N12PxContactSet13setMaxImpulseE5PxU326PxReal"></span><span id="PxContactSet::setMaxImpulse__PxU32.PxReal"></span><span class="target" id="classpxcontactset_1a96ed283ac7328f982c1d007d048c26a4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxImpulse</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet13setMaxImpulseE5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the maximum impulse for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxextendedcontact_1a3e72241eb626ae4d39b355ec44d7b37e"><span class="std std-ref">PxModifiableContact.maxImpulse</span></a>, <a class="reference internal" href="#classpxcontactset_1adcb9acc3b16547768ab53d8fdea331c8"><span class="std std-ref">ignore()</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Must be nonnegative. If set to zero, the contact point will be ignored</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>s</strong> – <strong>[in]</strong> The new maximum impulse</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet14getRestitutionE5PxU32">
+<span id="_CPPv3NK12PxContactSet14getRestitutionE5PxU32"></span><span id="_CPPv2NK12PxContactSet14getRestitutionE5PxU32"></span><span id="PxContactSet::getRestitution__PxU32C"></span><span class="target" id="classpxcontactset_1a8f5c0ab51d090cd50b05796474fd205a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRestitution</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet14getRestitutionE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the restitution coefficient for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1ab064ecd581b8e47f1e597356e7592694"><span class="std std-ref">PxModifiableContact.restitution</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The restitution coefficient</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet14setRestitutionE5PxU326PxReal">
+<span id="_CPPv3N12PxContactSet14setRestitutionE5PxU326PxReal"></span><span id="_CPPv2N12PxContactSet14setRestitutionE5PxU326PxReal"></span><span id="PxContactSet::setRestitution__PxU32.PxReal"></span><span class="target" id="classpxcontactset_1a90da0d1200c02866855a95ca0aba2f1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRestitution</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet14setRestitutionE5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the restitution coefficient for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1ab064ecd581b8e47f1e597356e7592694"><span class="std std-ref">PxModifiableContact.restitution</span></a></p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Valid ranges [0,1]</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>r</strong> – <strong>[in]</strong> The new restitution coefficient</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet17getStaticFrictionE5PxU32">
+<span id="_CPPv3NK12PxContactSet17getStaticFrictionE5PxU32"></span><span id="_CPPv2NK12PxContactSet17getStaticFrictionE5PxU32"></span><span id="PxContactSet::getStaticFriction__PxU32C"></span><span class="target" id="classpxcontactset_1af447b4914cf69e9416189cbf10f0c3aa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStaticFriction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet17getStaticFrictionE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the static friction coefficient for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1a2e0ca722e02b42c5dd09af72732ed91d"><span class="std std-ref">PxModifiableContact.staticFriction</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The friction coefficient (dimensionless)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet17setStaticFrictionE5PxU326PxReal">
+<span id="_CPPv3N12PxContactSet17setStaticFrictionE5PxU326PxReal"></span><span id="_CPPv2N12PxContactSet17setStaticFrictionE5PxU326PxReal"></span><span id="PxContactSet::setStaticFriction__PxU32.PxReal"></span><span class="target" id="classpxcontactset_1ae6e30e1de09b26cdc7da92ac4c1b771b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setStaticFriction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet17setStaticFrictionE5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the static friction coefficient for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1a2e0ca722e02b42c5dd09af72732ed91d"><span class="std std-ref">PxModifiableContact.staticFriction</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>f</strong> – <strong>[in]</strong> The new friction coefficient (dimensionless), range [0, inf]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet18getDynamicFrictionE5PxU32">
+<span id="_CPPv3NK12PxContactSet18getDynamicFrictionE5PxU32"></span><span id="_CPPv2NK12PxContactSet18getDynamicFrictionE5PxU32"></span><span id="PxContactSet::getDynamicFriction__PxU32C"></span><span class="target" id="classpxcontactset_1aac551e6952fca9c7875911ad24392552"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDynamicFriction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet18getDynamicFrictionE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Get the static friction coefficient for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1ac38e4614b09fbbf10d8044b0630a7ac3"><span class="std std-ref">PxModifiableContact.dynamicFriction</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The friction coefficient</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet18setDynamicFrictionE5PxU326PxReal">
+<span id="_CPPv3N12PxContactSet18setDynamicFrictionE5PxU326PxReal"></span><span id="_CPPv2N12PxContactSet18setDynamicFrictionE5PxU326PxReal"></span><span id="PxContactSet::setDynamicFriction__PxU32.PxReal"></span><span class="target" id="classpxcontactset_1a06d0ae7bfae148df6d908261706905ba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDynamicFriction</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em>, <em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet18setDynamicFrictionE5PxU326PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Alter the static dynamic coefficient for a specific contact point in the set. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="structPxModifiableContact.html#structpxmodifiablecontact_1ac38e4614b09fbbf10d8044b0630a7ac3"><span class="std std-ref">PxModifiableContact.dynamicFriction</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set </p></li>
+<li><p><strong>f</strong> – <strong>[in]</strong> The new friction coefficient</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet6ignoreE5PxU32">
+<span id="_CPPv3N12PxContactSet6ignoreE5PxU32"></span><span id="_CPPv2N12PxContactSet6ignoreE5PxU32"></span><span id="PxContactSet::ignore__PxU32"></span><span class="target" id="classpxcontactset_1adcb9acc3b16547768ab53d8fdea331c8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ignore</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet6ignoreE5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd><p>Ignore the contact point. </p>
+<p>
+If a contact point is ignored then no force will get applied at this point. This can be used to disable collision in certain areas of a shape, for example. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> Index of the point in the set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet4sizeEv">
+<span id="_CPPv3NK12PxContactSet4sizeEv"></span><span id="_CPPv2NK12PxContactSet4sizeEv"></span><span id="PxContactSet::sizeC"></span><span class="target" id="classpxcontactset_1a29b93ed811214644e0cd7bfaf7a41ecf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet4sizeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>The number of contact points in the set. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet16getInvMassScale0Ev">
+<span id="_CPPv3NK12PxContactSet16getInvMassScale0Ev"></span><span id="_CPPv2NK12PxContactSet16getInvMassScale0Ev"></span><span id="PxContactSet::getInvMassScale0C"></span><span class="target" id="classpxcontactset_1a4a7ca413dc5b49858812335c33b0f1e1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet16getInvMassScale0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the invMassScale of body 0. </p>
+<p>A value &lt; 1.0 makes this contact treat the body as if it had larger mass. A value of 0.f makes this contact treat the body as if it had infinite mass. Any value &gt; 1.f makes this contact treat the body as if it had smaller mass. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet16getInvMassScale1Ev">
+<span id="_CPPv3NK12PxContactSet16getInvMassScale1Ev"></span><span id="_CPPv2NK12PxContactSet16getInvMassScale1Ev"></span><span id="PxContactSet::getInvMassScale1C"></span><span class="target" id="classpxcontactset_1aace809e1ea82a9df279d5c51babe3204"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet16getInvMassScale1Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the invMassScale of body 1. </p>
+<p>A value &lt; 1.0 makes this contact treat the body as if it had larger mass. A value of 0.f makes this contact treat the body as if it had infinite mass. Any value &gt; 1.f makes this contact treat the body as if it had smaller mass. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet19getInvInertiaScale0Ev">
+<span id="_CPPv3NK12PxContactSet19getInvInertiaScale0Ev"></span><span id="_CPPv2NK12PxContactSet19getInvInertiaScale0Ev"></span><span id="PxContactSet::getInvInertiaScale0C"></span><span class="target" id="classpxcontactset_1a0e6ed1464e4f44eafb8d58f0c3dc249f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet19getInvInertiaScale0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the invInertiaScale of body 0. </p>
+<p>A value &lt; 1.0 makes this contact treat the body as if it had larger inertia. A value of 0.f makes this contact treat the body as if it had infinite inertia. Any value &gt; 1.f makes this contact treat the body as if it had smaller inertia. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet19getInvInertiaScale1Ev">
+<span id="_CPPv3NK12PxContactSet19getInvInertiaScale1Ev"></span><span id="_CPPv2NK12PxContactSet19getInvInertiaScale1Ev"></span><span id="PxContactSet::getInvInertiaScale1C"></span><span class="target" id="classpxcontactset_1a586c26d7f6be367ea916b1bd1b287700"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet19getInvInertiaScale1Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the invInertiaScale of body 1. </p>
+<p>A value &lt; 1.0 makes this contact treat the body as if it had larger inertia. A value of 0.f makes this contact treat the body as if it had infinite inertia. Any value &gt; 1.f makes this contact treat the body as if it had smaller inertia. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet16setInvMassScale0EK6PxReal">
+<span id="_CPPv3N12PxContactSet16setInvMassScale0EK6PxReal"></span><span id="_CPPv2N12PxContactSet16setInvMassScale0EK6PxReal"></span><span id="PxContactSet::setInvMassScale0__PxRealC"></span><span class="target" id="classpxcontactset_1a6137105e4c79a696bfce0a28b552a593"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvMassScale0</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet16setInvMassScale0EK6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the invMassScale of body 0. </p>
+<p>
+This can be set to any value in the range [0, PX_MAX_F32). A value &lt; 1.0 makes this contact treat the body as if it had larger mass. A value of 0.f makes this contact treat the body as if it had infinite mass. Any value &gt; 1.f makes this contact treat the body as if it had smaller mass. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> The new scale</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet16setInvMassScale1EK6PxReal">
+<span id="_CPPv3N12PxContactSet16setInvMassScale1EK6PxReal"></span><span id="_CPPv2N12PxContactSet16setInvMassScale1EK6PxReal"></span><span id="PxContactSet::setInvMassScale1__PxRealC"></span><span class="target" id="classpxcontactset_1a6f330f25fb97bb7fa37181167246b791"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvMassScale1</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet16setInvMassScale1EK6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the invMassScale of body 1. </p>
+<p>
+This can be set to any value in the range [0, PX_MAX_F32). A value &lt; 1.0 makes this contact treat the body as if it had larger mass. A value of 0.f makes this contact treat the body as if it had infinite mass. Any value &gt; 1.f makes this contact treat the body as if it had smaller mass. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> The new scale</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet19setInvInertiaScale0EK6PxReal">
+<span id="_CPPv3N12PxContactSet19setInvInertiaScale0EK6PxReal"></span><span id="_CPPv2N12PxContactSet19setInvInertiaScale0EK6PxReal"></span><span id="PxContactSet::setInvInertiaScale0__PxRealC"></span><span class="target" id="classpxcontactset_1a5669185e6c57327e56ef5536c07ff349"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvInertiaScale0</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet19setInvInertiaScale0EK6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the invInertiaScale of body 0. </p>
+<p>
+This can be set to any value in the range [0, PX_MAX_F32). A value &lt; 1.0 makes this contact treat the body as if it had larger inertia. A value of 0.f makes this contact treat the body as if it had infinite inertia. Any value &gt; 1.f makes this contact treat the body as if it had smaller inertia. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> The new scale</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet19setInvInertiaScale1EK6PxReal">
+<span id="_CPPv3N12PxContactSet19setInvInertiaScale1EK6PxReal"></span><span id="_CPPv2N12PxContactSet19setInvInertiaScale1EK6PxReal"></span><span id="PxContactSet::setInvInertiaScale1__PxRealC"></span><span class="target" id="classpxcontactset_1ad79dcc20d9dcd1f35b080f104f4c0731"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvInertiaScale1</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxContactSet19setInvInertiaScale1EK6PxReal" title="Link to this definition">#</a><br /></dt>
+<dd><p>Sets the invInertiaScale of body 1. </p>
+<p>
+This can be set to any value in the range [0, PX_MAX_F32). A value &lt; 1.0 makes this contact treat the body as if it had larger inertia. A value of 0.f makes this contact treat the body as if it had infinite inertia. Any value &gt; 1.f makes this contact treat the body as if it had smaller inertia. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> The new scale</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxContactSet8getPatchEv">
+<span id="_CPPv3NK12PxContactSet8getPatchEv"></span><span id="_CPPv2NK12PxContactSet8getPatchEv"></span><span id="PxContactSet::getPatchC"></span><span class="target" id="classpxcontactset_1a33d1d27dfa3488a1f05845054a220819"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="structPxContactPatch.html#_CPPv414PxContactPatch" title="PxContactPatch"><span class="n"><span class="pre">PxContactPatch</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxContactSet8getPatchEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet6mCountE">
+<span id="_CPPv3N12PxContactSet6mCountE"></span><span id="_CPPv2N12PxContactSet6mCountE"></span><span id="PxContactSet::mCount__PxU32"></span><span class="target" id="classpxcontactset_1afcc7a677fe3cf662ebab5a49f5a454b9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCount</span></span></span><a class="headerlink" href="#_CPPv4N12PxContactSet6mCountE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of contact points in the set. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxContactSet9mContactsE">
+<span id="_CPPv3N12PxContactSet9mContactsE"></span><span id="_CPPv2N12PxContactSet9mContactsE"></span><span id="PxContactSet::mContacts__PxModifiableContactP"></span><span class="target" id="classpxcontactset_1a614a3d5bbdfe9fccce114e0ce64913a8"></span><a class="reference internal" href="structPxModifiableContact.html#_CPPv419PxModifiableContact" title="PxModifiableContact"><span class="n"><span class="pre">PxModifiableContact</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mContacts</span></span></span><a class="headerlink" href="#_CPPv4N12PxContactSet9mContactsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>The contact points of the set. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxContactRecorder.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxContactRecorder</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="structPxContactStreamIterator.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxContactStreamIterator</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv412PxContactSet"><code class="docutils literal notranslate"><span class="pre">PxContactSet</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet8getPointE5PxU32"><code class="docutils literal notranslate"><span class="pre">getPoint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet8setPointE5PxU32RK6PxVec3"><code class="docutils literal notranslate"><span class="pre">setPoint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet9getNormalE5PxU32"><code class="docutils literal notranslate"><span class="pre">getNormal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet9setNormalE5PxU32RK6PxVec3"><code class="docutils literal notranslate"><span class="pre">setNormal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet13getSeparationE5PxU32"><code class="docutils literal notranslate"><span class="pre">getSeparation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet13setSeparationE5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">setSeparation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet17getTargetVelocityE5PxU32"><code class="docutils literal notranslate"><span class="pre">getTargetVelocity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3"><code class="docutils literal notranslate"><span class="pre">setTargetVelocity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet21getInternalFaceIndex0E5PxU32"><code class="docutils literal notranslate"><span class="pre">getInternalFaceIndex0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet21getInternalFaceIndex1E5PxU32"><code class="docutils literal notranslate"><span class="pre">getInternalFaceIndex1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet13getMaxImpulseE5PxU32"><code class="docutils literal notranslate"><span class="pre">getMaxImpulse()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet13setMaxImpulseE5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">setMaxImpulse()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet14getRestitutionE5PxU32"><code class="docutils literal notranslate"><span class="pre">getRestitution()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet14setRestitutionE5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">setRestitution()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet17getStaticFrictionE5PxU32"><code class="docutils literal notranslate"><span class="pre">getStaticFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet17setStaticFrictionE5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">setStaticFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet18getDynamicFrictionE5PxU32"><code class="docutils literal notranslate"><span class="pre">getDynamicFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet18setDynamicFrictionE5PxU326PxReal"><code class="docutils literal notranslate"><span class="pre">setDynamicFriction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet6ignoreE5PxU32"><code class="docutils literal notranslate"><span class="pre">ignore()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet4sizeEv"><code class="docutils literal notranslate"><span class="pre">size()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet16getInvMassScale0Ev"><code class="docutils literal notranslate"><span class="pre">getInvMassScale0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet16getInvMassScale1Ev"><code class="docutils literal notranslate"><span class="pre">getInvMassScale1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet19getInvInertiaScale0Ev"><code class="docutils literal notranslate"><span class="pre">getInvInertiaScale0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet19getInvInertiaScale1Ev"><code class="docutils literal notranslate"><span class="pre">getInvInertiaScale1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet16setInvMassScale0EK6PxReal"><code class="docutils literal notranslate"><span class="pre">setInvMassScale0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet16setInvMassScale1EK6PxReal"><code class="docutils literal notranslate"><span class="pre">setInvMassScale1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet19setInvInertiaScale0EK6PxReal"><code class="docutils literal notranslate"><span class="pre">setInvInertiaScale0()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet19setInvInertiaScale1EK6PxReal"><code class="docutils literal notranslate"><span class="pre">setInvInertiaScale1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK12PxContactSet8getPatchEv"><code class="docutils literal notranslate"><span class="pre">getPatch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet6mCountE"><code class="docutils literal notranslate"><span class="pre">mCount</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N12PxContactSet9mContactsE"><code class="docutils literal notranslate"><span class="pre">mContacts</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,788 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Custom Geometry &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/CustomGeometry';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Rigid Body Overview" href="RigidBodyOverview.html" />
+    <link rel="prev" title="Geometry" href="Geometry.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Custom Geometry</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="custom-geometry">
+<span id="customgeometry"></span><h1>Custom Geometry<a class="headerlink" href="#custom-geometry" title="Link to this heading">#</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<p>This section describes how to use PhysX’s Custom Geometry feature.</p>
+<p>The purpose of the Custom Geometry feature is to allow the creation of application specific collision
+geometries (e.g. a voxel map) that can seamlessly interact with the PhysX’s built-in geometry types.
+Any custom geometry is represented by the <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a> class in the PhysX SDK. The constructor of
+the class expects a reference to an object implementing the <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a> virtual interface.</p>
+<p>This is how an example of a custom geometry usage could look like:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">gVoxelMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span>
+<span class="n">gVoxelMapCallbacks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">VoxelMapCallbacks</span><span class="p">();</span>
+<span class="n">gVoxelMapGeometry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCustomGeometry</span><span class="p">(</span><span class="o">*</span><span class="n">gVoxelMapCallbacks</span><span class="p">);</span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">gVoxelMap</span><span class="p">,</span><span class="w"> </span><span class="n">gVoxelMapGeometry</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">gDefaultMaterial</span><span class="p">);</span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">gVoxelMap</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Every custom geometry type needs to implement all or some functions of the callbacks interface in order to
+enable the functionality required for the application.</p>
+<p>Note: Custom geometry only stores a reference to the callback object;
+multiple custom geometries can maintain a reference to the same callback object;
+managing a callback object’s lifetime is the user’s responsibility.</p>
+</section>
+<section id="custom-geometry-callbacks">
+<h2>Custom Geometry Callbacks<a class="headerlink" href="#custom-geometry-callbacks" title="Link to this heading">#</a></h2>
+<p>A custom callbacks class inherited from the <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a> interface will need to
+implement 9 virtual functions, serving to provide following functionality:</p>
+<section id="custom-type">
+<h3>Custom Type<a class="headerlink" href="#custom-type" title="Link to this heading">#</a></h3>
+<p>PhysX doesn’t use Custom Geometry’s Custom Type, but it may be useful for users to identify a custom
+geometry object if they have more than one type of custom geometry in their application. The function
+<a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks13getCustomTypeEv" title="PxCustomGeometry::Callbacks::getCustomType"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::getCustomType()</span></code></a> returns a custom type unique to each implementation.
+The custom type is set using the macros DECLARE_CUSTOM_GEOMETRY_TYPE and IMPLEMENT_CUSTOM_GEOMETRY_TYPE.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// VoxelMap.h</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">VoxelMapCallbacks</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxCustomGeometry</span><span class="o">::</span><span class="n">Callbacks</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">DECLARE_CUSTOM_GEOMETRY_TYPE</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">};</span>
+
+<span class="c1">// VoxelMap.cpp</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;VoxelMap.h&quot;</span>
+
+<span class="n">IMPLEMENT_CUSTOM_GEOMETRY_TYPE</span><span class="p">(</span><span class="n">VoxelMapCallbacks</span><span class="p">)</span>
+
+<span class="p">...</span>
+
+<span class="c1">// Test if custom geometry is a voxel map</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">gCustomGeometry</span><span class="p">.</span><span class="n">getCustomType</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">VoxelMapCallbacks</span><span class="o">::</span><span class="n">TYPE</span><span class="p">())</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="collision-detection">
+<h3>Collision Detection<a class="headerlink" href="#collision-detection" title="Link to this heading">#</a></h3>
+<p>To enable collision detection for a custom geometry, the following virtual functions need to be implemented:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBounds3</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::getLocalBounds</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks14getLocalBoundsERK10PxGeometry" title="PxCustomGeometry::Callbacks::getLocalBounds"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::getLocalBounds()</span></code></a> is used to determine overlapping bounds in BroadPhase.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::generateContacts</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">meshContactMargin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxContactBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">contactBuffer</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks16generateContactsERK10PxGeometryRK10PxGeometryRK11PxTransformRK11PxTransformK6PxRealK6PxRealK6PxRealR15PxContactBuffer" title="PxCustomGeometry::Callbacks::generateContacts"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::generateContacts()</span></code></a> is used for exact contact points computation in NarrowPhase.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::usePersistentContactManifold</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxReal</span><span class="o">&amp;</span><span class="w"> </span><span class="n">breakingThreshold</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks28usePersistentContactManifoldERK10PxGeometryR6PxReal" title="PxCustomGeometry::Callbacks::usePersistentContactManifold"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::usePersistentContactManifold()</span></code></a> should return true if the geometry has complex
+structure and may generate many (more than 32) contact points.</p>
+<p>Note: Cutom Geometry is CPU-only yet, and thus can not interact with the GPU-only features like deformable bodies or particles.</p>
+</section>
+<section id="scene-queries">
+<h3>Scene Queries<a class="headerlink" href="#scene-queries" title="Link to this heading">#</a></h3>
+<p>These 4 functions will allow the geometry to participate in scene queries:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBounds3</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::getLocalBounds</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks14getLocalBoundsERK10PxGeometry" title="PxCustomGeometry::Callbacks::getLocalBounds"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::getLocalBounds()</span></code></a> is used for preliminary testing.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::raycast</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxHits</span><span class="p">,</span><span class="w"> </span><span class="n">PxGeomRaycastHit</span><span class="o">*</span><span class="w"> </span><span class="n">rayHits</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">stride</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxRaycastThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks7raycastERK6PxVec3RK6PxVec3RK10PxGeometryRK11PxTransform6PxReal10PxHitFlags5PxU32P16PxGeomRaycastHit5PxU32P22PxRaycastThreadContext" title="PxCustomGeometry::Callbacks::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::raycast()</span></code></a> is used for raycast queries against the geometry.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::overlap</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxOverlapThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks7overlapERK10PxGeometryRK11PxTransformRK10PxGeometryRK11PxTransformP22PxOverlapThreadContext" title="PxCustomGeometry::Callbacks::overlap"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::overlap()</span></code></a> is used for overlap queries against the geometry.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::sweep</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"> </span><span class="n">PxGeomSweepHit</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sweepHit</span><span class="p">,</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">inflation</span><span class="p">,</span><span class="w"> </span><span class="n">PxSweepThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformRK10PxGeometryRK11PxTransformR14PxGeomSweepHit10PxHitFlagsK6PxRealP20PxSweepThreadContext" title="PxCustomGeometry::Callbacks::sweep"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::sweep()</span></code></a> is used for sweep queries against the geometry.</p>
+</section>
+<section id="debug-visualization">
+<h3>Debug Visualization<a class="headerlink" href="#debug-visualization" title="Link to this heading">#</a></h3>
+<p>Users can implement this function to have their custom geometry drawn in PhysX’s debug visualization.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::visualize</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"> </span><span class="n">PxRenderOutput</span><span class="o">&amp;</span><span class="w"> </span><span class="n">out</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">absPose</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxBounds3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cullbox</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks9visualizeERK10PxGeometryR14PxRenderOutputRK11PxTransformRK9PxBounds3" title="PxCustomGeometry::Callbacks::visualize"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::visualize()</span></code></a> is used for debug visualization of the geometry.</p>
+</section>
+<section id="mass-properties-computation">
+<h3>Mass Properties Computation<a class="headerlink" href="#mass-properties-computation" title="Link to this heading">#</a></h3>
+<p>To enable automatic dynamic rigid body mass computation.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::computeMassProperties</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxMassProperties</span><span class="o">&amp;</span><span class="w"> </span><span class="n">massProperties</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks21computeMassPropertiesERK10PxGeometryR16PxMassProperties" title="PxCustomGeometry::Callbacks::computeMassProperties"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::computeMassProperties()</span></code></a> for the geometry that can be used with dynamic rigid bodies.</p>
+</section>
+</section>
+<section id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Link to this heading">#</a></h2>
+<p>PhysXExtensions module’s PxCustomGeometryExt API provides two pre-made custom geometry callbacks classes.</p>
+<section id="pre-made-callbacks-classes">
+<h3>Pre-made callbacks classes<a class="headerlink" href="#pre-made-callbacks-classes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxCustomGeometryExt.html#_CPPv4N19PxCustomGeometryExt17CylinderCallbacksE" title="PxCustomGeometryExt::CylinderCallbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometryExt::CylinderCallbacks</span></code></a> for cylinder collision geometry</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxCustomGeometryExt.html#_CPPv4N19PxCustomGeometryExt13ConeCallbacksE" title="PxCustomGeometryExt::ConeCallbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometryExt::ConeCallbacks</span></code></a> for cone collision geometry</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Geometry.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Geometry</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="RigidBodyOverview.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Rigid Body Overview</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-geometry-callbacks">Custom Geometry Callbacks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-type">Custom Type</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#collision-detection">Collision Detection</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scene-queries">Scene Queries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#debug-visualization">Debug Visualization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mass-properties-computation">Mass Properties Computation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#extensions">Extensions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-made-callbacks-classes">Pre-made callbacks classes</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

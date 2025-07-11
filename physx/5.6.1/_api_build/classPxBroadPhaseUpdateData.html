@@ -1,0 +1,782 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxBroadPhaseUpdateData &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxBroadPhaseUpdateData';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxBroadcast" href="classPxBroadcast.html" />
+    <link rel="prev" title="PxBroadPhaseType" href="structPxBroadPhaseType.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxBroadPhase...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxbroadphaseupdatedata">
+<h1>PxBroadPhaseUpdateData<a class="headerlink" href="#pxbroadphaseupdatedata" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxBroadPhase.h.html#pxbroadphase-8h"><span class="std std-ref">include/PxBroadPhase.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv422PxBroadPhaseUpdateData">
+<span id="_CPPv322PxBroadPhaseUpdateData"></span><span id="_CPPv222PxBroadPhaseUpdateData"></span><span id="PxBroadPhaseUpdateData"></span><span class="target" id="classpxbroadphaseupdatedata"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></span><a class="headerlink" href="#_CPPv422PxBroadPhaseUpdateData" title="Link to this definition">#</a><br /></dt>
+<dd><p>Broadphase data update structure. </p>
+<p>This structure is used to update the low-level broadphase (<a class="reference internal" href="classPxBroadPhase.html#classpxbroadphase"><span class="std std-ref">PxBroadPhase</span></a>). All added, updated and removed objects must be batched and submitted at once to the broadphase.</p>
+<p>Broadphase objects have bounds, a filtering group, and a distance. With the low-level broadphase the data must be externally managed by the clients of the broadphase API, and passed to the update function.</p>
+<p>The provided bounds are non-inflated “base” bounds that can be further extended by the broadphase using the passed distance value. These can be contact offsets, or dynamically updated distance values for e.g. speculative contacts. Either way they are optional and can be left to zero. The broadphase implementations efficiently combine the base bounds with the per-object distance values at runtime.</p>
+<p>The per-object filtering groups are used to discard some pairs directly within the broadphase, which is more efficient than reporting the pairs and culling them in a second pass.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBpFilterGroup PxBpIndex <a class="reference internal" href="classPxBounds3.html#classpxbounds3"><span class="std std-ref">PxBounds3</span></a> <a class="reference internal" href="classPxBroadPhase.html#classpxbroadphase_1a742f01a5a3583bd2e9d1133403d74f68"><span class="std std-ref">PxBroadPhase::update</span></a></p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataEPK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBounds3PK15PxBpFilterGroupPKf5PxU32">
+<span id="_CPPv3N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataEPK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBounds3PK15PxBpFilterGroupPKf5PxU32"></span><span id="_CPPv2N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataEPK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBounds3PK15PxBpFilterGroupPKf5PxU32"></span><span id="PxBroadPhaseUpdateData::PxBroadPhaseUpdateData__PxBpIndexCP.PxU32.PxBpIndexCP.PxU32.PxBpIndexCP.PxU32.PxBounds3CP.PxBpFilterGroupCP.floatCP.PxU32"></span><span class="target" id="classpxbroadphaseupdatedata_1a8d7b9577a0a27263cadac607aad3f4b3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_CPPv49PxBpIndex" title="PxBpIndex"><span class="n"><span class="pre">PxBpIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">created</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbCreated</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_CPPv49PxBpIndex" title="PxBpIndex"><span class="n"><span class="pre">PxBpIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">updated</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbUpdated</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_CPPv49PxBpIndex" title="PxBpIndex"><span class="n"><span class="pre">PxBpIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">removed</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbRemoved</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">bounds</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a8fa935f8cdd32ff5a37e0ceb520c7f58.html#_CPPv415PxBpFilterGroup" title="PxBpFilterGroup"><span class="n"><span class="pre">PxBpFilterGroup</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">groups</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">distances</span></span></em>,</dd>
+<dd><em class="sig-param"><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataEPK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBounds3PK15PxBpFilterGroupPKf5PxU32" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataERK22PxBroadPhaseUpdateData">
+<span id="_CPPv3N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataERK22PxBroadPhaseUpdateData"></span><span id="_CPPv2N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataERK22PxBroadPhaseUpdateData"></span><span id="PxBroadPhaseUpdateData::PxBroadPhaseUpdateData__PxBroadPhaseUpdateDataCR"></span><span class="target" id="classpxbroadphaseupdatedata_1a0b371bfc8d541a186b492cac85863e87"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataERK22PxBroadPhaseUpdateData" title="PxBroadPhaseUpdateData::PxBroadPhaseUpdateData"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataERK22PxBroadPhaseUpdateData" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateDataaSERK22PxBroadPhaseUpdateData">
+<span id="_CPPv3N22PxBroadPhaseUpdateDataaSERK22PxBroadPhaseUpdateData"></span><span id="_CPPv2N22PxBroadPhaseUpdateDataaSERK22PxBroadPhaseUpdateData"></span><span id="PxBroadPhaseUpdateData::assign-operator__PxBroadPhaseUpdateDataCR"></span><span class="target" id="classpxbroadphaseupdatedata_1a402a1ebe5e955790cfb9e2fda583cdcb"></span><a class="reference internal" href="#_CPPv422PxBroadPhaseUpdateData" title="PxBroadPhaseUpdateData"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv422PxBroadPhaseUpdateData" title="PxBroadPhaseUpdateData"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateDataaSERK22PxBroadPhaseUpdateData" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData8mCreatedE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData8mCreatedE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData8mCreatedE"></span><span id="PxBroadPhaseUpdateData::mCreated__PxBpIndexCP"></span><span class="target" id="classpxbroadphaseupdatedata_1a988ea4d692f6250c828743ea2ca1f98a"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_CPPv49PxBpIndex" title="PxBpIndex"><span class="n"><span class="pre">PxBpIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mCreated</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData8mCreatedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Indices of created objects. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData10mNbCreatedE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData10mNbCreatedE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData10mNbCreatedE"></span><span id="PxBroadPhaseUpdateData::mNbCreated__PxU32C"></span><span class="target" id="classpxbroadphaseupdatedata_1a14ecdf37e71846065e2b6856906943b6"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNbCreated</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData10mNbCreatedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of created objects. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData8mUpdatedE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData8mUpdatedE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData8mUpdatedE"></span><span id="PxBroadPhaseUpdateData::mUpdated__PxBpIndexCP"></span><span class="target" id="classpxbroadphaseupdatedata_1ae82ae475ae8465bd5d41a4e17ac05d33"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_CPPv49PxBpIndex" title="PxBpIndex"><span class="n"><span class="pre">PxBpIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mUpdated</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData8mUpdatedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Indices of updated objects. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData10mNbUpdatedE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData10mNbUpdatedE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData10mNbUpdatedE"></span><span id="PxBroadPhaseUpdateData::mNbUpdated__PxU32C"></span><span class="target" id="classpxbroadphaseupdatedata_1a8aa4271d3ab6d57729295c754a7b543c"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNbUpdated</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData10mNbUpdatedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of updated objects. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData8mRemovedE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData8mRemovedE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData8mRemovedE"></span><span id="PxBroadPhaseUpdateData::mRemoved__PxBpIndexCP"></span><span class="target" id="classpxbroadphaseupdatedata_1a8c7261bdbca877d996d985126c89320f"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_CPPv49PxBpIndex" title="PxBpIndex"><span class="n"><span class="pre">PxBpIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mRemoved</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData8mRemovedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Indices of removed objects. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData10mNbRemovedE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData10mNbRemovedE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData10mNbRemovedE"></span><span id="PxBroadPhaseUpdateData::mNbRemoved__PxU32C"></span><span class="target" id="classpxbroadphaseupdatedata_1ad6ef87d6b50a53bb8d9b2e3afbacd5a2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNbRemoved</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData10mNbRemovedE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Number of removed objects. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData7mBoundsE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData7mBoundsE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData7mBoundsE"></span><span id="PxBroadPhaseUpdateData::mBounds__PxBounds3CP"></span><span class="target" id="classpxbroadphaseupdatedata_1aa5a7a94b802a6ca42bd73a364cb509ba"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mBounds</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData7mBoundsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>(Persistent) array of bounds. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData7mGroupsE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData7mGroupsE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData7mGroupsE"></span><span id="PxBroadPhaseUpdateData::mGroups__PxBpFilterGroupCP"></span><span class="target" id="classpxbroadphaseupdatedata_1ac1cef0924fd39b23da529bc79b2d44f7"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBroadPhase_8h_1a8fa935f8cdd32ff5a37e0ceb520c7f58.html#_CPPv415PxBpFilterGroup" title="PxBpFilterGroup"><span class="n"><span class="pre">PxBpFilterGroup</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mGroups</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData7mGroupsE" title="Link to this definition">#</a><br /></dt>
+<dd><p>(Persistent) array of groups. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData10mDistancesE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData10mDistancesE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData10mDistancesE"></span><span id="PxBroadPhaseUpdateData::mDistances__floatCP"></span><span class="target" id="classpxbroadphaseupdatedata_1ab9060954d4b0741c0157d9ecdbd9b9e9"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mDistances</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData10mDistancesE" title="Link to this definition">#</a><br /></dt>
+<dd><p>(Persistent) array of distances. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxBroadPhaseUpdateData9mCapacityE">
+<span id="_CPPv3N22PxBroadPhaseUpdateData9mCapacityE"></span><span id="_CPPv2N22PxBroadPhaseUpdateData9mCapacityE"></span><span id="PxBroadPhaseUpdateData::mCapacity__PxU32C"></span><span class="target" id="classpxbroadphaseupdatedata_1a10e57d6bf4adea01f97fd6120c83f361"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCapacity</span></span></span><a class="headerlink" href="#_CPPv4N22PxBroadPhaseUpdateData9mCapacityE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Capacity of bounds / groups / distance buffers. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="structPxBroadPhaseType.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxBroadPhaseType</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxBroadcast.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxBroadcast</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv422PxBroadPhaseUpdateData"><code class="docutils literal notranslate"><span class="pre">PxBroadPhaseUpdateData</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataEPK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBpIndex5PxU32PK9PxBounds3PK15PxBpFilterGroupPKf5PxU32"><code class="docutils literal notranslate"><span class="pre">PxBroadPhaseUpdateData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData22PxBroadPhaseUpdateDataERK22PxBroadPhaseUpdateData"><code class="docutils literal notranslate"><span class="pre">PxBroadPhaseUpdateData()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateDataaSERK22PxBroadPhaseUpdateData"><code class="docutils literal notranslate"><span class="pre">operator=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData8mCreatedE"><code class="docutils literal notranslate"><span class="pre">mCreated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData10mNbCreatedE"><code class="docutils literal notranslate"><span class="pre">mNbCreated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData8mUpdatedE"><code class="docutils literal notranslate"><span class="pre">mUpdated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData10mNbUpdatedE"><code class="docutils literal notranslate"><span class="pre">mNbUpdated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData8mRemovedE"><code class="docutils literal notranslate"><span class="pre">mRemoved</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData10mNbRemovedE"><code class="docutils literal notranslate"><span class="pre">mNbRemoved</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData7mBoundsE"><code class="docutils literal notranslate"><span class="pre">mBounds</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData7mGroupsE"><code class="docutils literal notranslate"><span class="pre">mGroups</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData10mDistancesE"><code class="docutils literal notranslate"><span class="pre">mDistances</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N22PxBroadPhaseUpdateData9mCapacityE"><code class="docutils literal notranslate"><span class="pre">mCapacity</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

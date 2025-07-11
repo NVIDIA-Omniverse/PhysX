@@ -1,0 +1,1182 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxSolverDefs.h &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/program_listing_file_include_solver_PxSolverDefs.h';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxArticulationFlags" href="typedef_PxSolverDefs_8h_1a40a321fce7bcb9669d32fca769d2958a.html" />
+    <link rel="prev" title="PxSolverDefs.h" href="file_include_solver_PxSolverDefs.h.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="file_include_solver_PxSolverDefs.h.html" class="nav-link">PxSolverDefs.h</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxSolverDefs.h</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxsolverdefs-h">
+<h1>PxSolverDefs.h<a class="headerlink" href="#pxsolverdefs-h" title="Link to this heading">#</a></h1>
+<p>Fully qualified name: <code class="docutils literal notranslate"><span class="pre">include/solver/PxSolverDefs.h</span></code></p>
+<p>File members: <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#pxsolverdefs-8h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_SOLVER_DEFS_H</span>
+<span class="cp">#define PX_SOLVER_DEFS_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysXConfig.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxVec3.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxMat33.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxTransform.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxConstraintDesc.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;geomutils/PxContactPoint.h&quot;</span>
+
+<span class="cp">#if PX_VC</span>
+<span class="cp">#pragma warning(push)</span>
+<span class="cp">#pragma warning(disable : 4324) </span><span class="c1">// structure was padded due to alignment</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span>
+<span class="p">{</span>
+<span class="cp">#endif</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverBodyVel</span><span class="p">;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxSolverBody</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PX_ALIGN</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">)</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">               </span><span class="n">maxSolverNormalProgress</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">               </span><span class="n">maxSolverFrictionProgress</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">              </span><span class="n">angularState</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">               </span><span class="n">solverProgress</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxSolverBody</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">(</span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="n">maxSolverNormalProgress</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">maxSolverFrictionProgress</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">angularState</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">solverProgress</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverBody</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">((</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxSolverBody</span><span class="p">,</span><span class="w"> </span><span class="n">angularState</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">15</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxSolverBodyData</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PX_ALIGN</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">);</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">invMass</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">angularVelocity</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">reportThreshold</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxMat33</span><span class="w">         </span><span class="n">sqrtInvInertia</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">penBiasClamp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">           </span><span class="n">nodeIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">maxContactImpulse</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxTransform</span><span class="w">     </span><span class="n">body2World</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">           </span><span class="n">pad</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">projectVelocity</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">ang</span><span class="p">)</span><span class="w">    </span><span class="k">const</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">angularVelocity</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ang</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverBodyData</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">15</span><span class="p">));</span>
+<span class="c1">// PT: ensure that sqrtInvInertia is not the last member of PxSolverBodyData, i.e. it is safe to load 4 bytes after sqrtInvInertia</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxSolverBodyData</span><span class="p">,</span><span class="w"> </span><span class="n">sqrtInvInertia</span><span class="p">)</span><span class="o">+</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverBodyData</span><span class="o">::</span><span class="n">sqrtInvInertia</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverBodyData</span><span class="p">));</span>
+
+<span class="c1">//----------------------------------</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxConstraintBatchHeader</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">startIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">   </span><span class="n">stride</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">   </span><span class="n">constraintType</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">PX_ALIGN_PREFIX</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxSolverConstraintDesc</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU16</span><span class="w"> </span><span class="n">RIGID_BODY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xffff</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">ConstraintType</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eCONTACT_CONSTRAINT</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eJOINT_CONSTRAINT</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">union</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w">       </span><span class="n">bodyA</span><span class="p">;</span>
+<span class="w">        </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">tgsBodyA</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">void</span><span class="o">*</span><span class="w">               </span><span class="n">articulationA</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">union</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w">       </span><span class="n">bodyB</span><span class="p">;</span>
+<span class="w">        </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">tgsBodyB</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">void</span><span class="o">*</span><span class="w">               </span><span class="n">articulationB</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">bodyADataIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">bodyBDataIndex</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">linkIndexA</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">linkIndexB</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU8</span><span class="o">*</span><span class="w">   </span><span class="n">constraint</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w">   </span><span class="n">writeBack</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w">   </span><span class="n">writeBackFriction</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU16</span><span class="w">   </span><span class="n">progressA</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">   </span><span class="n">progressB</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">union</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">PxU16</span><span class="w">   </span><span class="n">constraintType</span><span class="p">;</span>
+<span class="w">        </span><span class="n">PxU16</span><span class="w">   </span><span class="n">constraintLengthOver16</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span><span class="n">PX_ALIGN_SUFFIX</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverConstraintDesc</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxSolverConstraintPrepDescBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">BodyState</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eDYNAMIC_BODY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eSTATIC_BODY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eKINEMATIC_BODY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eARTICULATION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">PxConstraintInvMassScale</span><span class="w"> </span><span class="n">invMassScales</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">body0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">body1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">data0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">data1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">bodyFrame0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">bodyFrame1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// PT: these two use 4 bytes each but we only need 4 bits (or even just 2 bits) for a type</span>
+<span class="w">    </span><span class="n">BodyState</span><span class="w"> </span><span class="n">bodyState0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">BodyState</span><span class="w"> </span><span class="n">bodyState1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// PT: the following pointers have been moved here from derived structures to fill padding bytes</span>
+<span class="w">    </span><span class="k">union</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// PT: moved from PxSolverConstraintPrepDesc</span>
+<span class="w">        </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">writeback</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// PT: moved from PxSolverContactDesc</span>
+<span class="w">        </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">shapeInteraction</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="p">)</span><span class="o">&lt;=</span><span class="mi">128</span><span class="p">);</span>
+<span class="c1">// PT: ensure that we can safely read 4 bytes after the bodyFrames</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="p">,</span><span class="w"> </span><span class="n">bodyFrame0</span><span class="p">)</span><span class="o">+</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="o">::</span><span class="n">bodyFrame0</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="p">));</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="p">,</span><span class="w"> </span><span class="n">bodyFrame1</span><span class="p">)</span><span class="o">+</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="o">::</span><span class="n">bodyFrame1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxSolverConstraintPrepDescBase</span><span class="p">));</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxSolverConstraintPrepDesc</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDescBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PX_ALIGN</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">Px1DConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">rows</span><span class="p">);</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numRows</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">linBreakForce</span><span class="p">,</span><span class="w"> </span><span class="n">angBreakForce</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">minResponseThreshold</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">disablePreprocessing</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">improvedSlerp</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">driveLimitsAreForces</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">extendedLimits</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">disableConstraint</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxVec3p</span><span class="w"> </span><span class="n">body0WorldOffset</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxSolverContactDesc</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDescBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">frictionPtr</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPoint</span><span class="o">*</span><span class="w"> </span><span class="n">contacts</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numContacts</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU8</span><span class="w"> </span><span class="n">frictionCount</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasMaxImpulse</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">disableStrongFriction</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasForceThresholds</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">restDistance</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxCCDSeparation</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">contactForces</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startFrictionPatchIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numFrictionPatches</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startContactPatchIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">numContactPatches</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">axisConstraintCount</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">offsetSlop</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxConstraintAllocator</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">reserveConstraintData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">byteSize</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="nf">reserveFrictionData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">byteSize</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxConstraintAllocator</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationAxis</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eTWIST</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eSWING1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eSWING2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eZ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eCOUNT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="p">)</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationMotion</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eLOCKED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eLIMITED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eFREE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">PxArticulationMotion</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PxArticulationMotions</span><span class="p">;</span>
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">PxArticulationMotion</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="p">)</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationJointType</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eFIX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="n">ePRISMATIC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eREVOLUTE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eREVOLUTE_UNWRAPPED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eSPHERICAL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eUNDEFINED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationFlag</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eFIX_BASE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">),</span>
+<span class="w">        </span><span class="n">eDRIVE_LIMITS_ARE_FORCES</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">1</span><span class="p">),</span>
+<span class="w">        </span><span class="n">eDISABLE_SELF_COLLISION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">PxArticulationFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PxArticulationFlags</span><span class="p">;</span>
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">PxArticulationFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="p">)</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationDriveType</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">eFORCE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eACCELERATION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="n">eNONE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationLimit</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxArticulationLimit</span><span class="p">(){}</span>
+
+<span class="w">    </span><span class="n">PxArticulationLimit</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">low_</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">high_</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">low</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">low_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">high</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">high_</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">low</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">high</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxPerformanceEnvelope</span>
+<span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// PX_SERIALIZATION</span>
+<span class="w">    </span><span class="n">PxPerformanceEnvelope</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxEMPTY</span><span class="o">&amp;</span><span class="p">){}</span>
+<span class="w">    </span><span class="c1">// ~PX_SERIALIZATION</span>
+
+<span class="w">    </span><span class="n">PxPerformanceEnvelope</span><span class="p">(</span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxEffort_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxActuatorVelocity_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">velocityDependentResistance_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">speedEffortGradient_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">maxEffort</span><span class="p">(</span><span class="n">maxEffort_</span><span class="p">),</span>
+<span class="w">        </span><span class="n">maxActuatorVelocity</span><span class="p">(</span><span class="n">maxActuatorVelocity_</span><span class="p">),</span>
+<span class="w">        </span><span class="n">velocityDependentResistance</span><span class="p">(</span><span class="n">velocityDependentResistance_</span><span class="p">),</span>
+<span class="w">        </span><span class="n">speedEffortGradient</span><span class="p">(</span><span class="n">speedEffortGradient_</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{}</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxEffort</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxActuatorVelocity</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">velocityDependentResistance</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">speedEffortGradient</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxJointFrictionParams</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxJointFrictionParams</span><span class="p">(){}</span>
+
+<span class="w">    </span><span class="n">PxJointFrictionParams</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">staticFrictionEffort_</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dynamicFrictionEffort_</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">viscousFrictionCoefficient_</span><span class="p">)</span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="n">staticFrictionEffort</span><span class="p">(</span><span class="n">staticFrictionEffort_</span><span class="p">)</span>
+<span class="w">    </span><span class="p">,</span><span class="w"> </span><span class="n">dynamicFrictionEffort</span><span class="p">(</span><span class="n">dynamicFrictionEffort_</span><span class="p">)</span>
+<span class="w">    </span><span class="p">,</span><span class="w"> </span><span class="n">viscousFrictionCoefficient</span><span class="p">(</span><span class="n">viscousFrictionCoefficient_</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">staticFrictionEffort</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dynamicFrictionEffort</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">viscousFrictionCoefficient</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationDrive</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// PX_SERIALIZATION</span>
+<span class="w">    </span><span class="n">PxArticulationDrive</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxEMPTY</span><span class="o">&amp;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="n">envelope</span><span class="p">(</span><span class="n">PxEmpty</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="c1">//~PX_SERIALIZATION</span>
+
+<span class="w">    </span><span class="n">PxArticulationDrive</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="w">    </span><span class="n">PxArticulationDrive</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">stiffness_</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">damping_</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxForce_</span><span class="p">,</span>
+<span class="w">                        </span><span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">driveType_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">eFORCE</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">stiffness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stiffness_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">damping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">damping_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">maxForce</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxForce_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">driveType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">driveType_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">envelope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPerformanceEnvelope</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PxArticulationDrive</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">stiffness_</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">damping_</span><span class="p">,</span>
+<span class="w">                        </span><span class="k">const</span><span class="w"> </span><span class="n">PxPerformanceEnvelope</span><span class="w"> </span><span class="n">envelope_</span><span class="p">,</span>
+<span class="w">                        </span><span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">driveType_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">eFORCE</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">stiffness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stiffness_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">damping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">damping_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">driveType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">driveType_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">envelope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envelope_</span><span class="p">;</span>
+<span class="w">        </span><span class="n">maxForce</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">stiffness</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">damping</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxForce</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxPerformanceEnvelope</span><span class="w"> </span><span class="n">envelope</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">driveType</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverBodyVel</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PX_ALIGN</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">)</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">;</span><span class="w">    </span><span class="c1">//12</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">           </span><span class="n">maxDynamicPartition</span><span class="p">;</span><span class="w">    </span><span class="c1">//14 Used to accumulate the max partition of dynamic interactions</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">           </span><span class="n">nbStaticInteractions</span><span class="p">;</span><span class="w">   </span><span class="c1">//16 Used to accumulate the number of static interactions</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">angularVelocity</span><span class="p">;</span><span class="w">        </span><span class="c1">//28</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">           </span><span class="n">partitionMask</span><span class="p">;</span><span class="w">          </span><span class="c1">//32 Used in partitioning as a bit-field</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">deltaAngDt</span><span class="p">;</span><span class="w">             </span><span class="c1">//44</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">maxAngVel</span><span class="p">;</span><span class="w">              </span><span class="c1">//48</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">deltaLinDt</span><span class="p">;</span><span class="w">             </span><span class="c1">//60</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">           </span><span class="n">lockFlags</span><span class="p">;</span><span class="w">              </span><span class="c1">//62</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w">            </span><span class="n">isKinematic</span><span class="p">;</span><span class="w">            </span><span class="c1">//63</span>
+<span class="w">    </span><span class="n">PxU8</span><span class="w">            </span><span class="n">pad</span><span class="p">;</span><span class="w">                    </span><span class="c1">//64</span>
+
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">projectVelocity</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">ang</span><span class="p">)</span><span class="w">    </span><span class="k">const</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">angularVelocity</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ang</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+
+<span class="c1">//Needed only by prep, integration and 1D constraints</span>
+<span class="c1">//Solver body state at time = simulationTime + simStepDt*posIter/nbPosIters</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverBodyTxInertia</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">//Accumulated change to quaternion that has accumulated since solver started.</span>
+<span class="w">    </span><span class="n">PxQuat</span><span class="w"> </span><span class="n">deltaBody2WorldQ</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">//Absolute body position at t</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">body2WorldP</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">//RotMatrix * I0^(-1/2) * RotMatrixTranspose</span>
+<span class="w">    </span><span class="n">PxMat33</span><span class="w"> </span><span class="n">sqrtInvInertia</span><span class="p">;</span>
+<span class="p">};</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxTGSSolverBodyTxInertia</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">15</span><span class="p">));</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverBodyData</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PX_ALIGN</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">)</span><span class="w"> </span><span class="n">originalLinearVelocity</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxContactImpulse</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">originalAngularVelocity</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">penBiasClamp</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invMass</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nodeIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">reportThreshold</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">pad</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="nf">projectVelocity</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">linear</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">angular</span><span class="p">)</span><span class="w"> </span><span class="k">const</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">originalLinearVelocity</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">originalAngularVelocity</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">angular</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverConstraintPrepDescBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxConstraintInvMassScale</span><span class="w"> </span><span class="n">invMassScales</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">body0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">body1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyTxInertia</span><span class="o">*</span><span class="w"> </span><span class="n">body0TxI</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyTxInertia</span><span class="o">*</span><span class="w"> </span><span class="n">body1TxI</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">bodyData0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">bodyData1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">bodyFrame0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">bodyFrame1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// PT: these two use 4 bytes each but we only need 4 bits (or even just 2 bits) for a type</span>
+<span class="w">    </span><span class="n">PxSolverContactDesc</span><span class="o">::</span><span class="n">BodyState</span><span class="w"> </span><span class="n">bodyState0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxSolverContactDesc</span><span class="o">::</span><span class="n">BodyState</span><span class="w"> </span><span class="n">bodyState1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// PT: the following pointers have been moved here from derived structures to fill padding bytes</span>
+<span class="w">    </span><span class="k">union</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// PT: moved from PxTGSSolverConstraintPrepDesc</span>
+<span class="w">        </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">writeback</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// PT: moved from PxTGSSolverContactDesc</span>
+<span class="w">        </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">shapeInteraction</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="c1">// PT: ensure that we can safely read 4 bytes after the bodyFrames</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxTGSSolverConstraintPrepDescBase</span><span class="p">,</span><span class="w"> </span><span class="n">bodyFrame0</span><span class="p">)</span><span class="o">+</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxTGSSolverConstraintPrepDescBase</span><span class="o">::</span><span class="n">bodyFrame0</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxTGSSolverConstraintPrepDescBase</span><span class="p">));</span>
+<span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxTGSSolverConstraintPrepDescBase</span><span class="p">,</span><span class="w"> </span><span class="n">bodyFrame1</span><span class="p">)</span><span class="o">+</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxTGSSolverConstraintPrepDescBase</span><span class="o">::</span><span class="n">bodyFrame1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxTGSSolverConstraintPrepDescBase</span><span class="p">));</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverConstraintPrepDesc</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxTGSSolverConstraintPrepDescBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Px1DConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">rows</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numRows</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">linBreakForce</span><span class="p">,</span><span class="w"> </span><span class="n">angBreakForce</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">minResponseThreshold</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">disablePreprocessing</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">improvedSlerp</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">driveLimitsAreForces</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">extendedLimits</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">disableConstraint</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxVec3p</span><span class="w"> </span><span class="n">body0WorldOffset</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxVec3p</span><span class="w"> </span><span class="n">cA2w</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxVec3p</span><span class="w"> </span><span class="n">cB2w</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTGSSolverContactDesc</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxTGSSolverConstraintPrepDescBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">frictionPtr</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPoint</span><span class="o">*</span><span class="w"> </span><span class="n">contacts</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numContacts</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU8</span><span class="w"> </span><span class="n">frictionCount</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasMaxImpulse</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">disableStrongFriction</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasForceThresholds</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">restDistance</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxCCDSeparation</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">contactForces</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startFrictionPatchIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numFrictionPatches</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startContactPatchIndex</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">numContactPatches</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">axisConstraintCount</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxImpulse</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">torsionalPatchRadius</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">minTorsionalPatchRadius</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">offsetSlop</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_VC</span>
+<span class="cp">#pragma warning(pop)</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="file_include_solver_PxSolverDefs.h.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxSolverDefs.h</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="typedef_PxSolverDefs_8h_1a40a321fce7bcb9669d32fca769d2958a.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxArticulationFlags</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,809 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Migrating From PhysX SDK 5.1 to 5.2 &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=bbec3584"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/MigrationTo52';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.6.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Migrating From PhysX SDK 5.2 to 5.3" href="MigrationTo53.html" />
+    <link rel="prev" title="Migrating From PhysX SDK 4.0 to 5.1" href="MigrationTo51.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jul 22, 2025"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Migrating...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="migrating-from-physx-sdk-5-1-to-5-2">
+<span id="migrationto52"></span><h1>Migrating From PhysX SDK 5.1 to 5.2<a class="headerlink" href="#migrating-from-physx-sdk-5-1-to-5-2" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p>This guide highlights all significant parts of the API that have changed in the last release. An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.</p></li>
+</ul>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>The API for the filter callback changed slightly. The pairID parameter in PxSimulationFilterCallback::pairFound(), PxSimulationFilterCallback::pairLost() and PxSimulationFilterCallback::statusChange() is now a PxU64 instead of a PxU32. Please adjust your code accordingly. Make sure your filter callback implementation can be safely called from multiple threads.</p></li>
+<li><p>PxBVHStructure has been removed. Use PxBVH.</p></li>
+<li><p>PxBVHStructureDesc has been removed. Use PxBVHDesc.</p></li>
+<li><p>PxPhysics::createBVHStructure() has been removed, replace with PxPhysics::createBVH().</p></li>
+<li><p>PxPhysics::getNbBVHStructures() has been removed, replace with PxPhysics::getNbBVHs().</p></li>
+<li><p>The signature for PxPhysics::createAggregate() has changed. Use maxShape = PX_MAX_U32 for the new parameter to get the same behavior as before.</p></li>
+<li><p>PxSceneFlag::eSUPPRESS_READBACK is now immutable. Any code changing the flag after scene creation will not work anymore.</p></li>
+<li><p>PxMassModificationProps was deprecated and has been removed. The replacement is PxConstraintInvMassScale.</p></li>
+<li><p>PxRegisterImmediateArticulations, PxRegisterArticulationsReducedCoordinate, PxRegisterHeightFields, PxCreateBasePhysics have been removed. Articulations and heightfields are now always enabled.</p></li>
+<li><p>Deprecated passthrough functions in PxShape such as <cite>getGeometryType()</cite> and the specialized <cite>get&lt;geomType&gt;Geometry()</cite> were removed. Calls to these functions should be replaced by accessing the underlying geometry directly with <cite>getGeometry()</cite>.</p></li>
+</ul>
+</section>
+<section id="cooking">
+<h2>Cooking<a class="headerlink" href="#cooking" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>The deprecated PxCooking class has been removed. Use the standalone “immediate cooking” functions instead (e.g. PxCookBVH, PxCreateBVH…). Generally speaking just replace “PxCooking::Function()” with “PxFunction()”.</p></li>
+</ul>
+</section>
+<section id="articulations">
+<h2>Articulations<a class="headerlink" href="#articulations" title="Link to this heading">#</a></h2>
+<ul>
+<li><p>The PxArticulationJointReducedCoordinate limit and drive setters and getters with individual parameters were deprecated and have now been removed. Using the parameter struct versions instead is straightforward:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// replace</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setLimit</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">);</span>
+
+<span class="c1">// with</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setLimitParams</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationLimit</span><span class="p">(</span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">));</span>
+
+<span class="c1">// and instead of</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">;</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">getLimit</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">);</span>
+<span class="c1">// use</span>
+<span class="n">PxArticulationLimit</span><span class="w"> </span><span class="n">limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">joint</span><span class="o">-&gt;</span><span class="n">getLimitParams</span><span class="p">(</span><span class="n">axis</span><span class="p">);</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">low</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">limit</span><span class="p">.</span><span class="n">low</span><span class="p">;</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">high</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">limit</span><span class="p">.</span><span class="n">high</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The drive getters and setters are replaced analogously.</p>
+</li>
+</ul>
+</section>
+<section id="joints">
+<h2>Joints<a class="headerlink" href="#joints" title="Link to this heading">#</a></h2>
+<ul>
+<li><p>The joint projection feature was deprecated and has now been removed. There is no direct replacement, so the corresponding code in your project should be removed. A potential alternative to this feature is to increase the number of (position) solver iterations for jointed objects that previously used projection.</p></li>
+<li><p>The joint contact distance feature was deprecated and has now been removed. The corresponding code in your project should be removed. Joint limits are now always active, which can potentially come with a minor performance hit, but increased joint robustness.</p></li>
+<li><p>The D6 joint’s twist drive was using the wrong actor’s axis (B instead of A). This has been fixed, and it could affect joint setups in existing scenes. To fix this in existing content it might be enough to flip the joint frames of involved actors, but this may not be possible depending on which other features (joint limits, etc) have been setup for the same joint. In the worst case it might be necessary to re-tune these joints.</p></li>
+<li><p>Some internal joint functions now use PxTransform32 instead of PxTransform. The code for custom joints might need to be updated. For example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//PxTransform cA2w, cB2w;       // before</span>
+<span class="n">PxTransform32</span><span class="w"> </span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">;</span><span class="w">       </span><span class="c1">// after</span>
+<span class="n">joint</span><span class="o">::</span><span class="n">computeJointFrames</span><span class="p">(</span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">body0Transform</span><span class="p">,</span><span class="w"> </span><span class="n">body1Transform</span><span class="p">);</span>
+
+<span class="c1">//PxTransform cA2w, cB2w;       // before</span>
+<span class="n">PxTransform32</span><span class="w"> </span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">;</span><span class="w">       </span><span class="c1">// after</span>
+<span class="n">joint</span><span class="o">::</span><span class="n">ConstraintHelper</span><span class="w"> </span><span class="nf">ch</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">,</span><span class="w"> </span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">,</span><span class="w"> </span><span class="n">body0WorldOffset</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">bA2w</span><span class="p">,</span><span class="w"> </span><span class="n">bB2w</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="vehicles">
+<h2>Vehicles<a class="headerlink" href="#vehicles" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>PxVehiclePhysXRoadGeometryQueryParams::filterData has been renamed to defaultFilterData since there is now the new member filterDataEntries in that struct to give the option to define wheel specific filter data. It is important to set filterDataEntries=NULL to match the behavior of the previous SDK version (in which case defaultFilterData will be used for all wheels). As a consequence, the method PxVehiclePhysXRoadGeometryQueryUpdate() has been adjusted too (see PxVehiclePhysXRoadGeometrySceneQueryComponent::update() for an example of how the parameters are now passed into that method).</p></li>
+</ul>
+</section>
+<section id="immediate-mode">
+<h2>Immediate mode<a class="headerlink" href="#immediate-mode" title="Link to this heading">#</a></h2>
+<ul>
+<li><p>The following deprecated types have been removed and should be replaced with these other types:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>PxFeatherstoneArticulationJointData (deprecated, replace it with PxArticulationJointDataRC)</p></li>
+<li><p>PxFeatherstoneArticulationLinkData (deprecated, replace it with PxArticulationLinkDataRC)</p></li>
+<li><p>PxFeatherstoneArticulationData (deprecated, replace it with PxArticulationDataRC)</p></li>
+<li><p>PxMutableLinkData (deprecated, replace it with PxArticulationLinkMutableDataRC)</p></li>
+<li><p>PxLinkData (deprecated, replace it with PxArticulationLinkDerivedDataRC)</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="scene-queries">
+<h2>Scene queries<a class="headerlink" href="#scene-queries" title="Link to this heading">#</a></h2>
+<ul>
+<li><p>Deprecated PxBVH::raycast(), PxBVH::sweep() and PxBVH::overlap() functions have been removed. Use the new versions with callbacks.</p></li>
+<li><p>The signature for PxQueryFilterCallback::postFilter() has changed. It is possible that existing PxQueryFilterCallback objects that did not implement this postFilter function will stop compiling. In that case, simply add the following function to your callback:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="n">PxQueryHitType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="nf">postFilter</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxFilterData</span><span class="o">&amp;</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxQueryHit</span><span class="o">&amp;</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidActor</span><span class="o">*</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PxQueryHitType</span><span class="o">::</span><span class="n">eBLOCK</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p>The deprecated PxGeometryQuery::getWorldBounds() function has been removed. Please use PxGeometryQuery::computeGeomBounds() instead.</p></li>
+<li><p>A deprecated PxGeometryQuery::raycast() function has been removed. Please use the other function with the same name but a different signature.</p></li>
+</ul>
+</section>
+<section id="soft-bodies">
+<h2>Soft Bodies<a class="headerlink" href="#soft-bodies" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>PxBuffer has been removed. The Softbody interface now exposes direct access to all the GPU data buffers, and it is the user`s responsibility to copy the data from host to device and vice-versa. Examples for the usage of the new interface are provided in the soft body snippets and the soft body extensions (PxSoftBodyExt.h).</p></li>
+</ul>
+</section>
+<section id="serialization-binary-platform-conversion">
+<h2>Serialization, Binary Platform Conversion<a class="headerlink" href="#serialization-binary-platform-conversion" title="Link to this heading">#</a></h2>
+<p>The PhysX serialization feature is being reduced to the current needs of Omniverse Physics.</p>
+<section id="xml-repx-serialization">
+<h3>Xml/RepX Serialization<a class="headerlink" href="#xml-repx-serialization" title="Link to this heading">#</a></h3>
+<p>Xml and RepX Serialization is useful as a version agnostic way of serializing PhysX objects. This format was mainly used to create repro cases and tests. The PhysX Visual Debugger (PVD) - version 2 and 3 - employed RepX/Xml serialization for its internal communication format as well as for providing dumps of the physics state that could be loaded back into the PhysX SDK.</p>
+<p>Going forward, the RepX/Xml format is replaced by the <em>USD Physics</em> format.
+PVD 2/3 are being deprecated and replaced by <a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/physx/5.1.3/docs/OmniVisualDebugger.html">Omni PVD</a>, which is going to rely on the USD Physics format for PhysX state dumps that can be loaded into PhysX using Omniverse Physics.</p>
+<dl class="simple">
+<dt>Deprecated classes and functions:</dt><dd><ul class="simple">
+<li><p>PxSerializationRegistry::registerRepXSerializer()</p></li>
+<li><p>PxSerializationRegistry::unregisterRepXSerializer()</p></li>
+<li><p>PxSerializationRegistry::getRepXSerializer()</p></li>
+<li><p>PxRepXSerializer</p></li>
+<li><p>PxCreateRepXObject()</p></li>
+<li><p>PX_NEW_REPX_SERIALIZER, PX_DELETE_REPX_SERIALIZER</p></li>
+<li><p>PxRepXObject</p></li>
+<li><p>PxRepXInstantiationArgs</p></li>
+<li><p>PxSerialization::PxXmlMiscParameter</p></li>
+<li><p>PxSerialization::createCollectionFromXml()</p></li>
+<li><p>PxSerialization::serializeCollectionToXml()</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="binary-platform-conversion">
+<h3>Binary Platform Conversion<a class="headerlink" href="#binary-platform-conversion" title="Link to this heading">#</a></h3>
+<p>Binary conversion is used to re-target the binary data from one platform to another and to support deterministic binary serialization. Going forward binary data needs to be generated on the platform it is consumed on. Along with binary conversion, the binary meta data is being deprecated as well.
+The dedicated deterministic serialization functionality is being replaced by the regular binary serialization which is targeted to become deterministic itself.</p>
+<dl class="simple">
+<dt>Deprecated classes and functions:</dt><dd><ul class="simple">
+<li><p>PxBinaryConverter</p></li>
+<li><p>PxConverterReportMode</p></li>
+<li><p>PxGetPhysicsBinaryMetaData()</p></li>
+<li><p>PxSerialization::serializeCollectionToBinaryDeterministic()</p></li>
+<li><p>PxSerialization::dumpBinaryMetaData()</p></li>
+<li><p>PxSerialization::createBinaryConverter()</p></li>
+<li><p>PxBinaryMetaDataCallback</p></li>
+<li><p>PxSerializationRegistry::registerBinaryMetaDataCallback()</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="MigrationTo51.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Migrating From PhysX SDK 4.0 to 5.1</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="MigrationTo53.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Migrating From PhysX SDK 5.2 to 5.3</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation">Simulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cooking">Cooking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulations">Articulations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#joints">Joints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vehicles">Vehicles</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#immediate-mode">Immediate mode</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scene-queries">Scene queries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#soft-bodies">Soft Bodies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#serialization-binary-platform-conversion">Serialization, Binary Platform Conversion</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xml-repx-serialization">Xml/RepX Serialization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#binary-platform-conversion">Binary Platform Conversion</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2025, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 22, 2025.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
