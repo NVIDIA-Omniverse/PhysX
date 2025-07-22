@@ -804,6 +804,8 @@ namespace physx
 		Finally, joint velocities updated with applyCache(PxArticulationCacheFlag::eVELOCITY) will produce the same outcome as calling 
 		PxArticulationJointReducedCoordinate::setJointVelocity() followed by PxArticulationReducedCoordinate::updateKinematic(PxArticulationKinematicFlag::eVELOCITY).
 
+		\note This method should not be used if the direct GPU API is enabled. See #PxDirectGPUAPI for the details.
+
 		\see PxArticulationCache, PxArticulationCacheFlags, createCache, copyInternalStateToCache, PxScene::applyArticulationData
 		*/
 		virtual		void					applyCache(PxArticulationCache& cache, const PxArticulationCacheFlags flags, bool autowake = true) = 0;
@@ -815,6 +817,8 @@ namespace physx
 		\param[in] flags Indicate which data to copy from the articulation to the cache.
 
 		\note This call may only be made on articulations that are in a scene, and may not be made during simulation.
+
+		\note This method should not be used if the direct GPU API is enabled. See #PxDirectGPUAPI for the details.
 
 		\see PxArticulationCache, PxArticulationCacheFlags, createCache, applyCache
 		*/
@@ -1224,6 +1228,8 @@ namespace physx
 		\note PxArticulationCache::rootLinkData similarly allows the root link pose to be updated and potentially offers better performance 
 		if the root link pose is to be updated along with other state variables. 
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getRootGlobalPose, updateKinematic, PxArticulationCache, applyCache
 		*/
 		virtual		void					setRootGlobalPose(const PxTransform& pose, bool autowake = true) = 0;
@@ -1238,6 +1244,8 @@ namespace physx
 
 		\note PxArticulationCache::rootLinkData similarly allows the root link pose to be queried and potentially offers better performance if the root
 		link pose is to be queried along with other state variables. 
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setRootGlobalPose, PxArticulationCache, copyInternalStateToCache
 		*/
@@ -1260,6 +1268,8 @@ namespace physx
 		\note PxArticulationCache::rootLinkData similarly allows the root link linear velocity to be updated and potentially offers better performance 
 		if the root link linear velocity is to be updated along with other state variables. 
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see updateKinematic, getRootLinearVelocity, setRootAngularVelocity, getRootAngularVelocity, PxRigidBody::getCMassLocalPose, PxArticulationCache, applyCache
 		*/
 		virtual		void					setRootLinearVelocity(const PxVec3& linearVelocity, bool autowake = true) = 0;
@@ -1276,6 +1286,8 @@ namespace physx
 
 		\note PxArticulationCache::rootLinkData similarly allows the root link linear velocity to be queried and potentially offers better performance 
 		if the root link linear velocity is to be queried along with other state variables. 
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setRootLinearVelocity, setRootAngularVelocity, getRootAngularVelocity, PxRigidBody::getCMassLocalPose, PxArticulationCache, applyCache
 		*/
@@ -1297,6 +1309,8 @@ namespace physx
 		\note PxArticulationCache::rootLinkData similarly allows the root link angular velocity to be updated and potentially offers better performance 
 		if the root link angular velocity is to be updated along with other state variables. 
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see updateKinematic, getRootAngularVelocity, setRootLinearVelocity, getRootLinearVelocity, PxArticulationCache, applyCache
 		*/
 		virtual		void					setRootAngularVelocity(const PxVec3& angularVelocity, bool autowake = true) = 0;
@@ -1311,6 +1325,8 @@ namespace physx
 
 		\note PxArticulationCache::rootLinkData similarly allows the root link angular velocity to be queried and potentially offers better performance 
 		if the root link angular velocity is to be queried along with other state variables. 
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setRootAngularVelocity, setRootLinearVelocity, getRootLinearVelocity, PxArticulationCache, applyCache
 		*/
@@ -1329,6 +1345,8 @@ namespace physx
 		\note This call may only be made on articulations that are in a scene. It is not allowed to use this method while the simulation
 		is running.  The exceptions to this rule are a split simulation during #PxScene::collide() and up to #PxScene::advance(); 
 		in PxContactModifyCallback; and in contact report callbacks.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see PxArticulationLink::getLinkIndex, PxRigidBody::getCMassLocalPose
 		*/

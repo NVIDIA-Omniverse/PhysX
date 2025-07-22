@@ -3041,6 +3041,66 @@ template<> struct PxEnumTraits< physx::PxHeightFieldFlag::Enum > { PxEnumTraits(
 		const PxArticulationLimitGeneratedInfo* getInfo() { return &Info; }
 	};
 
+	struct PxPerformanceEnvelope;
+	struct PxPerformanceEnvelopeGeneratedValues
+	{
+		PxReal MaxEffort;
+		PxReal MaxActuatorVelocity;
+		PxReal VelocityDependentResistance;
+		PxReal SpeedEffortGradient;
+		 PX_PHYSX_CORE_API PxPerformanceEnvelopeGeneratedValues( const PxPerformanceEnvelope* inSource );
+	};
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPerformanceEnvelope, MaxEffort, PxPerformanceEnvelopeGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPerformanceEnvelope, MaxActuatorVelocity, PxPerformanceEnvelopeGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPerformanceEnvelope, VelocityDependentResistance, PxPerformanceEnvelopeGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPerformanceEnvelope, SpeedEffortGradient, PxPerformanceEnvelopeGeneratedValues)
+	struct PxPerformanceEnvelopeGeneratedInfo
+
+	{
+		static const char* getClassName() { return "PxPerformanceEnvelope"; }
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPerformanceEnvelope_MaxEffort, PxPerformanceEnvelope, PxReal, PxReal > MaxEffort;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPerformanceEnvelope_MaxActuatorVelocity, PxPerformanceEnvelope, PxReal, PxReal > MaxActuatorVelocity;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPerformanceEnvelope_VelocityDependentResistance, PxPerformanceEnvelope, PxReal, PxReal > VelocityDependentResistance;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPerformanceEnvelope_SpeedEffortGradient, PxPerformanceEnvelope, PxReal, PxReal > SpeedEffortGradient;
+
+		PX_PHYSX_CORE_API PxPerformanceEnvelopeGeneratedInfo();
+		template<typename TReturnType, typename TOperator>
+		TReturnType visitType( TOperator inOperator ) const
+		{
+			return inOperator( reinterpret_cast<PxPerformanceEnvelope*>(NULL) );
+		}
+		template<typename TOperator>
+		void visitBases( TOperator inOperator )
+		{
+			PX_UNUSED(inOperator);
+		}
+		template<typename TOperator>
+		PxU32 visitBaseProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
+		{
+			PX_UNUSED(inOperator);
+			PX_UNUSED(inStartIndex);
+			return inStartIndex;
+		}
+		static PxU32 instancePropertyCount() { return 4; }
+		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
+		template<typename TOperator>
+		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
+		{
+			PX_UNUSED(inOperator);
+			PX_UNUSED(inStartIndex);
+			inOperator( MaxEffort, inStartIndex + 0 );; 
+			inOperator( MaxActuatorVelocity, inStartIndex + 1 );; 
+			inOperator( VelocityDependentResistance, inStartIndex + 2 );; 
+			inOperator( SpeedEffortGradient, inStartIndex + 3 );; 
+			return 4 + inStartIndex;
+		}
+	};
+	template<> struct PxClassInfoTraits<PxPerformanceEnvelope>
+	{ 
+		PxPerformanceEnvelopeGeneratedInfo Info;
+		const PxPerformanceEnvelopeGeneratedInfo* getInfo() { return &Info; }
+	};
+
 	struct PxJointFrictionParams;
 	struct PxJointFrictionParamsGeneratedValues
 	{
@@ -3111,12 +3171,14 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 		PxReal Stiffness;
 		PxReal Damping;
 		PxReal MaxForce;
+		PxPerformanceEnvelope Envelope;
 		PxArticulationDriveType::Enum DriveType;
 		 PX_PHYSX_CORE_API PxArticulationDriveGeneratedValues( const PxArticulationDrive* inSource );
 	};
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, Stiffness, PxArticulationDriveGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, Damping, PxArticulationDriveGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, MaxForce, PxArticulationDriveGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, Envelope, PxArticulationDriveGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, DriveType, PxArticulationDriveGeneratedValues)
 	struct PxArticulationDriveGeneratedInfo
 
@@ -3125,6 +3187,7 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_Stiffness, PxArticulationDrive, PxReal, PxReal > Stiffness;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_Damping, PxArticulationDrive, PxReal, PxReal > Damping;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_MaxForce, PxArticulationDrive, PxReal, PxReal > MaxForce;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_Envelope, PxArticulationDrive, PxPerformanceEnvelope, PxPerformanceEnvelope > Envelope;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_DriveType, PxArticulationDrive, PxArticulationDriveType::Enum, PxArticulationDriveType::Enum > DriveType;
 
 		PX_PHYSX_CORE_API PxArticulationDriveGeneratedInfo();
@@ -3145,7 +3208,7 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 			PX_UNUSED(inStartIndex);
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 4; }
+		static PxU32 instancePropertyCount() { return 5; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
 		template<typename TOperator>
 		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
@@ -3155,8 +3218,9 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 			inOperator( Stiffness, inStartIndex + 0 );; 
 			inOperator( Damping, inStartIndex + 1 );; 
 			inOperator( MaxForce, inStartIndex + 2 );; 
-			inOperator( DriveType, inStartIndex + 3 );; 
-			return 4 + inStartIndex;
+			inOperator( Envelope, inStartIndex + 3 );; 
+			inOperator( DriveType, inStartIndex + 4 );; 
+			return 5 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxArticulationDrive>

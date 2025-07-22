@@ -49,6 +49,7 @@
 #include "triangleMesh.cuh"
 
 #include "GuConvexSupport.h"
+#include "GuConvexSupport.cpp"
 #include "GuRefGjkEpa.h"
 
 #include "bv32Traversal.cuh"
@@ -726,7 +727,7 @@ namespace physx
 						bool sameNormal = p.normal.dot(minDistNormal) > SAME_NORMAL;
 						PxU32 sameNormalMask = allMask & __ballot_sync(FULL_MASK, sameNormal);
 
-						// selest up to 4 best points forming the largest quad
+						// select up to 4 best points forming the largest quad
 						PxU32 deepest;
 						PxU32 bestPointsMask = reducePoints(p.point.p, p.point.d, minDistNormal, sameNormalMask, deepest);
 						PxU32 count = __popc(bestPointsMask);

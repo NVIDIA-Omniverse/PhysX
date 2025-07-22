@@ -75,9 +75,15 @@ public:
 					dirtySoftBodies[i] = NULL;
 				}
 			}
+		}
 
-			if (mVolumeVolumeFilterPairs)
-				PX_FREE(mVolumeVolumeFilterPairs);
+		if(mVolumeVolumeFilterPairs)
+		{
+			// TODO: Move all Pxg level data into Pxg layer!
+			mVolumeVolumeFilterPairs->clear();
+			mVolumeVolumeFilterPairs->shrink();
+			PX_FREE(mVolumeVolumeFilterPairs);
+			mVolumeVolumeFilterPairs = NULL;
 		}
 	}
 

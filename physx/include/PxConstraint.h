@@ -56,7 +56,7 @@ struct PxConstraintFlag
 		eBROKEN						= 1<<0,		//!< whether the constraint is broken
 		eCOLLISION_ENABLED			= 1<<3,		//!< whether contacts should be generated between the objects this constraint constrains
 		eVISUALIZATION				= 1<<4,		//!< whether this constraint should be visualized, if constraint visualization is turned on
-		eDRIVE_LIMITS_ARE_FORCES	= 1<<5,		//!< limits for drive strength are forces rather than impulses
+		eDRIVE_LIMITS_ARE_FORCES	= 1<<5,		//!< \deprecated Will be removed in a future version and the limits will always be forces. limits for drive strength are forces rather than impulses
 		eIMPROVED_SLERP				= 1<<7,		//!< perform preprocessing for improved accuracy on D6 Slerp Drive (this flag will be removed in a future release when preprocessing is no longer required)
 		eDISABLE_PREPROCESSING		= 1<<8,		//!< suppress constraint preprocessing, intended for use with rowResponseThreshold. May result in worse solver accuracy for ill-conditioned constraints.
 		eENABLE_EXTENDED_LIMITS		= 1<<9,		//!< enables extended limit ranges for angular limits (e.g., limit values > PxPi or < -PxPi)

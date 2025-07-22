@@ -231,6 +231,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 				PxU32 dofId = dofs[i].mDofIds[threadIndexInWarp];
 				{
 					const PxReal maxForce = dofs[i].mConstraintData.mMaxForce[threadIndexInWarp];
+					const PxReal maxEffort = dofs[i].mConstraintData.mMaxEffort[threadIndexInWarp];
 
 					PxReal stiffness = dofs[i].mConstraintData.mDriveStiffness[threadIndexInWarp];
 					PxReal damping = dofs[i].mConstraintData.mDamping[threadIndexInWarp];
@@ -313,7 +314,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 					}
 
 					//Set up drive...
-					if (maxForce > 0.f && (stiffness > 0.f || damping > 0.f))
+					if ((maxForce > 0.0f || maxEffort > 0.0f) && (stiffness > 0.0f || damping > 0.0f))
 					{
 						const PxReal targetVelocity = dofs[i].mConstraintData.mDriveTargetVel[threadIndexInWarp];
 						const PxArticulationDriveType::Enum type = PxArticulationDriveType::Enum(dofs[i].mConstraintData.mDriveType[threadIndexInWarp]);
@@ -324,15 +325,15 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 									unitResponse, recipResponse,
 									error, targetVelocity,
 									isTGSSolver));
-						dofs[i].mConstraintData.mConstraintMaxForce[threadIndexInWarp] = maxForce * maxForceScale;
-					}
+						dofs[i].mConstraintData.mConstraintMaxImpulse[threadIndexInWarp] = maxForce * maxForceScale;
+						}
 					else
 					{
 						//Zero drives...
 						dofs[i].mConstraintData.setImplicitDriveDesc(threadIndexInWarp, ArticulationImplicitDriveDesc(PxZero));
-						dofs[i].mConstraintData.mConstraintMaxForce[threadIndexInWarp] = 0.f;
+						dofs[i].mConstraintData.mConstraintMaxImpulse[threadIndexInWarp] = 0.f;
 					}
-					dofs[i].mConstraintData.mDriveForce[threadIndexInWarp] = 0.f;
+					dofs[i].mConstraintData.mDriveImpulse[threadIndexInWarp] = 0.f;
 					storeSpatialVector(dofs[i].mConstraintData.mDeltaVA, deltaVA, threadIndexInWarp);
 					storeSpatialVector(dofs[i].mConstraintData.mDeltaVB, deltaVB, threadIndexInWarp);
 					storeSpatialVector(dofs[i].mConstraintData.mRow0, axis0, threadIndexInWarp);
@@ -1574,7 +1575,14 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 
 	if (globalThreadIndex < nbArticulations)
 	{
-		PxgArticulation& articulation = scDesc->articulations[globalThreadIndex];
+		// use remap because of reinsertion of articulations
+		const PxgBodySim* const PX_RESTRICT gBodySim = scDesc->mBodySimBufferDeviceData;
+		const PxNodeIndex* const PX_RESTRICT gIslandNodeIndex = scDesc->islandNodeIndices;
+		const PxU32 articulationOffset = scDesc->articulationOffset;
+		const PxU32 nodeIndex = gIslandNodeIndex[globalThreadIndex + articulationOffset].index();
+		const PxgBodySim& bodySim = gBodySim[nodeIndex];
+		PxgArticulation& articulation = scDesc->articulations[bodySim.articulationRemapId];
+		
 		if(residualReportingEnabled)
 		{
 			articulation.internalResidualAccumulator.reset();
@@ -1720,19 +1728,26 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 						// PT: preload as much data as we can
 						const Cm::UnAlignedSpatialVector row0 = loadSpatialVector(thisDof.mConstraintData.mRow0, threadIdx.x);
 						const Cm::UnAlignedSpatialVector row1 = loadSpatialVector(thisDof.mConstraintData.mRow1, threadIdx.x);
-						const PxReal maxDriveForce = thisDof.mConstraintData.mConstraintMaxForce[threadIdx.x];
-						const PxReal driveForce = thisDof.mConstraintData.mDriveForce[threadIdx.x];
+						const PxReal maxDriveForce = thisDof.mConstraintData.mConstraintMaxImpulse[threadIdx.x];
+						PxReal appliedDriveImpulse = thisDof.mConstraintData.mDriveImpulse[threadIdx.x];
 						const PxReal recipResponse = thisDof.mConstraintData.mRecipResponse[threadIdx.x];
 						const PxReal response = thisDof.mConstraintData.mResponse[threadIdx.x];
 						const PxReal maxFrictionForce = thisDof.mConstraintData.mMaxFrictionForce[threadIdx.x];
 						const Cm::UnAlignedSpatialVector deltaVA = loadSpatialVector(thisDof.mConstraintData.mDeltaVA, threadIdx.x);
 						const Cm::UnAlignedSpatialVector deltaVB = loadSpatialVector(thisDof.mConstraintData.mDeltaVB, threadIdx.x);
 
-						const PxReal effectiveDt = isTGS && isExternalForceEveryStep && !isVelIter ? dt : scDesc->dt;
+						const bool perSubset = isTGS && isExternalForceEveryStep && !isVelIter;
+						const PxReal effectiveDt = perSubset ? dt : scDesc->dt;
 
 						const PxReal staticFrictionImpulse = thisDof.mConstraintData.mStaticFrictionEffort[threadIdx.x] * effectiveDt;
 						const PxReal dynamicFrictionImpulse = thisDof.mConstraintData.mDynamicFrictionEffort[threadIdx.x] * effectiveDt;
 						const PxReal viscousFrictionCoefficient = thisDof.mConstraintData.mViscousFrictionCoefficient[threadIdx.x] * effectiveDt;
+
+						const PxReal maxImpulse = thisDof.mConstraintData.mMaxEffort[threadIdx.x] * effectiveDt;
+						const PxReal speedImpulseGradient = thisDof.mConstraintData.mSpeedEffortGradient[threadIdx.x] / effectiveDt;
+						const PxReal velocityDependentResistance = thisDof.mConstraintData.mVelocityDependentResistance[threadIdx.x] * effectiveDt;
+						const PxReal externalJointImpulse = articulation.jointForce[jointOffset+dof] * effectiveDt;
+						const PxReal maxActuatorVelocity = thisDof.mConstraintData.mMaxActuatorVelocity[threadIdx.x];
 
 						if (!(isTGS && isVelIter))
 							implicitDriveDesc = thisDof.mConstraintData.getImplicitDriveDesc(threadIdx.x);
@@ -1760,15 +1775,40 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 						}
 
 						PxReal driveDeltaF = 0.0f;
+
+						if (maxImpulse > 0.0f)
 						{
-							const PxReal unclampedForce = (isTGS && isVelIter) ? driveForce :
-									computeDriveImpulse(driveForce, jointV, jointDeltaP, elapsedTime,
+							appliedDriveImpulse = perSubset ? 0.0f: appliedDriveImpulse;
+
+							const PxReal unclampedImpulse = (isTGS && isVelIter)
+								? appliedDriveImpulse
+								: computeDriveImpulse(appliedDriveImpulse, jointV, jointDeltaP, elapsedTime, implicitDriveDesc);
+							
+							const PxReal clampedImpulse = clampDriveImpulse(
+								jointV,
+								appliedDriveImpulse + externalJointImpulse,
+								unclampedImpulse + externalJointImpulse,
+								response,
+								maxActuatorVelocity,
+								maxImpulse,
+								speedImpulseGradient,
+								velocityDependentResistance
+							) - externalJointImpulse;
+
+							driveDeltaF = clampedImpulse - appliedDriveImpulse; // to keep track of accumulated impulse for velIter in TGS with isExternalForceEveryStep
+							thisDof.mConstraintData.mDriveImpulse[threadIdx.x] += driveDeltaF;
+						}
+
+						else
+						{
+							const PxReal unclampedForce = (isTGS && isVelIter) ? appliedDriveImpulse :
+									computeDriveImpulse(appliedDriveImpulse, jointV, jointDeltaP, elapsedTime,
 										implicitDriveDesc);
 
 							const PxReal clampedForce = PxClamp(unclampedForce, -maxDriveForce, maxDriveForce);
-							driveDeltaF = (clampedForce - driveForce);
+									driveDeltaF = (clampedForce - appliedDriveImpulse);
 
-							thisDof.mConstraintData.mDriveForce[threadIdx.x] = clampedForce;
+							thisDof.mConstraintData.mDriveImpulse[threadIdx.x] = clampedForce;
 						}
 						jointV += driveDeltaF * response;
 

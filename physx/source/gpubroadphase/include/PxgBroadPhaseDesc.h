@@ -51,6 +51,8 @@ namespace physx
 		struct VolumeData;
 	}
 
+	typedef PxU64	regionOverlapType;
+
 	struct PxgBroadPhaseDesc
 	{
 		PxU32*					updateData_createdHandles;				// PT: copy of updateData buffer in device memory
@@ -75,7 +77,6 @@ namespace physx
 		PxgIntegerAABB*			newIntegerBounds;						// PT: computed by translateAABBsLaunch kernel.
 		PxU32*					updateData_groups;						// PT: copy of updateData buffer in device memory TODO: type could be better
 		PxU32*					updateData_envIDs;						// PT: copy of updateData buffer in device memory
-		PxU32					updateData_BoxesCapacity;				// PT: was "numBounds". This is ONLY used in the translateAABBsLaunch kernel.
 
 		PxgIntegerAABB*			oldIntegerBounds;
 		PxgSapBox1D*			boxSapBox1D[3];
@@ -109,9 +110,9 @@ namespace physx
 		PxU32*					orderedActiveRegionHandles;	//! An ordered list of active handles
 		PxU32*					orderedStartRegionHandles;	//! An ordered list of start handles 
 
-		PxU32*					blockOverlapChecksRegion;
-		PxU32*					overlapChecksRegion;		//this variable is to store the exclusive scan add overlap checks for each objects
-		PxU32					overlapChecksTotalRegion;	//this variable is to store the total number of overlap checks for all objects
+		regionOverlapType*		blockOverlapChecksRegion;
+		regionOverlapType*		overlapChecksRegion;		//this variable is to store the exclusive scan add overlap checks for each objects
+		regionOverlapType		overlapChecksTotalRegion;	//this variable is to store the total number of overlap checks for all objects
 
 		PxgHandleRegion*		overlapChecksHandleRegiones;
 

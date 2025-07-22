@@ -518,14 +518,21 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 				dofBlock.mConstraintData.mArmature[threadIndexInWarp] = joint.armature[dofId];
 				dofBlock.mConstraintData.mDriveTargetPos[threadIndexInWarp] = jTargetPos[i];
 				dofBlock.mConstraintData.mLimits_LowLimitX_highLimitY[threadIndexInWarp] = make_float2(joint.limits[dofId].low, joint.limits[dofId].high);
-				
-				dofBlock.mConstraintData.mMaxForce[threadIndexInWarp] = joint.drives[dofId].maxForce;
+			
 				//old friction
 				dofBlock.mConstraintData.mFrictionCoefficient[threadIndexInWarp] = joint.frictionCoefficient;
 				//new friction
 				dofBlock.mConstraintData.mStaticFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].staticFrictionEffort;
 				dofBlock.mConstraintData.mDynamicFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].dynamicFrictionEffort;
 				dofBlock.mConstraintData.mViscousFrictionCoefficient[threadIndexInWarp] = joint.frictionParams[dofId].viscousFrictionCoefficient;
+				//old drive
+				dofBlock.mConstraintData.mMaxForce[threadIndexInWarp] = joint.drives[dofId].maxForce;
+				//new drive
+				dofBlock.mConstraintData.mMaxEffort[threadIndexInWarp] = joint.drives[dofId].envelope.maxEffort;
+				dofBlock.mConstraintData.mMaxActuatorVelocity[threadIndexInWarp] = joint.drives[dofId].envelope.maxActuatorVelocity;
+				dofBlock.mConstraintData.mVelocityDependentResistance[threadIndexInWarp] = joint.drives[dofId].envelope.velocityDependentResistance;
+				dofBlock.mConstraintData.mSpeedEffortGradient[threadIndexInWarp] = joint.drives[dofId].envelope.speedEffortGradient;
+
 				dofBlock.mConstraintData.mDriveType[threadIndexInWarp] = joint.drives[dofId].driveType;
 
 				dofBlock.mConstraintData.mMaxJointVelocity[threadIndexInWarp] = joint.maxJointVelocity[dofId];
@@ -690,13 +697,20 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 					dofBlock.mConstraintData.mTargetPosBias[threadIndexInWarp] = 0.0f;
 					dofBlock.mConstraintData.mArmature[threadIndexInWarp] = joint.armature[dofId];
 					dofBlock.mConstraintData.mLimits_LowLimitX_highLimitY[threadIndexInWarp] = make_float2(joint.limits[dofId].low, joint.limits[dofId].high);
-					dofBlock.mConstraintData.mMaxForce[threadIndexInWarp] = joint.drives[dofId].maxForce;
+					
 					dofBlock.mConstraintData.mFrictionCoefficient[threadIndexInWarp] = frictionCoefficient;
-
 
 					dofBlock.mConstraintData.mStaticFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].staticFrictionEffort;
 					dofBlock.mConstraintData.mDynamicFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].dynamicFrictionEffort;
 					dofBlock.mConstraintData.mViscousFrictionCoefficient[threadIndexInWarp] = joint.frictionParams[dofId].viscousFrictionCoefficient;
+
+				
+					dofBlock.mConstraintData.mMaxForce[threadIndexInWarp] = joint.drives[dofId].maxForce;
+
+					dofBlock.mConstraintData.mMaxEffort[threadIndexInWarp] = joint.drives[dofId].envelope.maxEffort;
+					dofBlock.mConstraintData.mMaxActuatorVelocity[threadIndexInWarp] = joint.drives[dofId].envelope.maxActuatorVelocity;
+					dofBlock.mConstraintData.mVelocityDependentResistance[threadIndexInWarp] = joint.drives[dofId].envelope.velocityDependentResistance;
+					dofBlock.mConstraintData.mSpeedEffortGradient[threadIndexInWarp] = joint.drives[dofId].envelope.speedEffortGradient;
 
 					dofBlock.mConstraintData.mDriveType[threadIndexInWarp] = joint.drives[dofId].driveType;
 

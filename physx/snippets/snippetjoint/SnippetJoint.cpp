@@ -82,6 +82,7 @@ static PxJoint* createBreakableFixed(PxRigidActor* a0, const PxTransform& t0, Px
 static PxJoint* createDampedD6(PxRigidActor* a0, const PxTransform& t0, PxRigidActor* a1, const PxTransform& t1)
 {
 	PxD6Joint* j = PxD6JointCreate(*gPhysics, a0, t0, a1, t1);
+	j->setAngularDriveConfig(PxD6AngularDriveConfig::eSLERP);
 	j->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
 	j->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
 	j->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);

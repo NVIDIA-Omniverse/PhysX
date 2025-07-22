@@ -41,6 +41,10 @@
 #include "CmRenderBuffer.h"
 #include "CmIDPool.h"
 
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+	#include "internal/device/PhysXIndicator.h"
+#endif
+
 #include "NpSceneQueries.h"
 #include "NpSceneAccessor.h"
 #include "NpPruningStructure.h"
@@ -461,6 +465,12 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							checkPositionSanity(const PxRigidActor& a, const PxTransform& pose, const char* fnName) const;
 #endif
 
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+					void							updatePhysXIndicator();
+#else
+	PX_FORCE_INLINE	void							updatePhysXIndicator() {}
+#endif
+
 					void							scAddAggregate(NpAggregate&);
 					void							scRemoveAggregate(NpAggregate&);
 
@@ -631,6 +641,9 @@ private:
 #endif
 
 					PxBounds3						mSanityBounds;
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+					PhysXIndicator					mPhysXIndicator;
+#endif
 
 					PxSync							mPhysicsDone;		// physics thread signals this when update ready
 					PxSync							mCollisionDone;		// physics thread signals this when all collisions ready

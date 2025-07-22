@@ -239,18 +239,8 @@ PX_FORCE_INLINE __device__ void prepareFEMContacts(PxgFemRigidConstraintBlock& c
 		}
 	}
 
-	// fmaxf because biasClamps are negative
 	PxReal maxPenBias = fmaxf(penBiasClampRigid, penBiasClampFEM);
-	PxReal error;
-	if(isTGS)
-	{
-		error = pen + delta.dot(normal);
-	}
-	else
-	{
-		PxReal scaledBias = pen >= 0.0f ? pen : fmaxf(maxPenBias / invDt, pen);
-		error = scaledBias + delta.dot(normal);
-	}
+	PxReal error = pen + delta.dot(normal);
 
 	// KS - TODO - split these into 5 separate vectors to promote coalesced memory accesses!
 	constraint.normal_errorW[threadIndexInWarp] = make_float4(normal.x, normal.y, normal.z, error);
@@ -258,7 +248,6 @@ PX_FORCE_INLINE __device__ void prepareFEMContacts(PxgFemRigidConstraintBlock& c
 	constraint.raXnF0_resp[threadIndexInWarp] = raXnF0_resp;
 	constraint.raXnF1_resp[threadIndexInWarp] = raXnF1_resp;
 	constraint.fricTan0_invMass0[threadIndexInWarp] = make_float4(t0.x, t0.y, t0.z, invMass0);
-
 	constraint.maxPenBias[threadIndexInWarp] = maxPenBias;
 	constraint.barycentric[threadIndexInWarp] = barycentric;
 }
@@ -267,262 +256,41 @@ PX_FORCE_INLINE __device__ void prepareFEMContacts(PxgFemRigidConstraintBlock& c
 template <typename Vec>
 struct FEMCollision
 {
+	bool isTGS = true;
+
 	// Rigid body
-	PxU32 globalRigidBodyId;
-	PxReal rigidBodyReferenceCount = -1.0f;
-	PxReal rigidBodyFriction;
+	PxU32 rigidBodyReferenceCount = 1;
+	PxReal rigidBodyFriction = 0.0f;
 	PxI32 frictionCombineMode;
 
 	// Deformable body
-	PxReal deformableFriction;
+	PxReal deformableFriction = 0.0f;
 	PxVec3 deformableLinDelta;
-	Vec deformableVertexInvMasses = Vec(-1.0f); // With mass-splitting.
+	Vec deformableVertexInvMasses; // After mass-splitting.
 
-	// Purely virtual functions
+	// Constraint
+	PxVec3 normal = PxVec3(0.0f);
+	PxVec3 tangent = PxVec3(0.0f);
+	PxVec3 raXn = PxVec3(0.0f); 
+	PxVec3 raXt = PxVec3(0.0f);
+	PxReal deltaLambdaN = 0.0f;
+	PxReal deltaLambdaT = 0.0f;
+	PxReal accumulatedDeltaLambdaN = 0.0f;
+
 	PX_FORCE_INLINE __device__ bool initialize(const float4& fricTan0_invMass0, PxgFemRigidConstraintBlock& constraint,
-											   float4& appliedForceRef, PxNodeIndex rigidId, PxgVelocityReader& velocityReader, PxReal dt,
-											   const Vec& bc, bool countReferenceOnly);
-	PX_FORCE_INLINE __device__ float4 computeRigidChange(PxVec3& deltaLinVel0, PxVec3& deltaAngVel0, PxReal rigidInvMass,
-														 const PxNodeIndex& rigidId);
-	PX_FORCE_INLINE __device__ float4 computeFEMChange(PxVec3& deltaPos, PxReal dt);
-
-	PX_FORCE_INLINE __device__ PxReal getCombinedFriction()
+											   PxReal appliedForceRef, PxNodeIndex rigidId, PxgVelocityReader& velocityReader, PxReal dt,
+											   const Vec& bc, bool wasActive, bool checkOnlyActivity)
 	{
-		return PxsCombinePxReal(rigidBodyFriction, deformableFriction, frictionCombineMode);
-	}
-
-	// Shared functions
-	PX_FORCE_INLINE __device__ void readRigidBody(const PxgPrePrepDesc* const prePrepDesc, const PxNodeIndex& rigidId, PxReal rigidInvMass,
-												  PxU32 numSolverBodies, const PxU32* const rigidBodyReferenceCounts,
-												  const PxsMaterialData* rigidMaterial)
-	{
-		// Following PxgVelocityReader style to read rigid body indices.
-		const PxU32 solverBodyIdx = rigidId.isStaticBody() ? 0 : prePrepDesc->solverBodyIndices[rigidId.index()];
-
-		globalRigidBodyId = 0;
-		rigidBodyReferenceCount = 1.0f;
-
-		if(solverBodyIdx)
-		{
-			// Placing articulation indices at the end of rigid body indices to distinguish between rigid body reference counts and
-			// articulation reference counts.
-			globalRigidBodyId = rigidId.isArticulation() ? numSolverBodies + solverBodyIdx : solverBodyIdx;
-		}
-
-		// Query the reference count for the rigid body.
-		if(rigidBodyReferenceCounts && !rigidId.isStaticBody() && rigidInvMass != 0.f)
-		{
-			rigidBodyReferenceCount = static_cast<PxReal>(rigidBodyReferenceCounts[globalRigidBodyId]);
-		}
-
-		rigidBodyReferenceCount = PxMax(rigidBodyReferenceCount, 1.0f);
-
-		if(rigidMaterial != NULL)
-		{
-			rigidBodyFriction = rigidMaterial->dynamicFriction;
-			frictionCombineMode = rigidMaterial->fricCombineMode;
-		}
-		else
-		{
-			rigidBodyFriction = 0.0f;
-			frictionCombineMode = PxCombineMode::eMAX;
-		}
-	}
-
-	PX_FORCE_INLINE __device__ void writeRigidBody(float4* rigidDeltaVel, const PxVec3& deltaLinVel0, const PxVec3& deltaAngVel0,
-												   bool isActive, PxU32 workIndex0, PxU32 workIndex1)
-	{
-		const PxU32 count = isActive ? 1.0f : 0.0f;
-		rigidDeltaVel[workIndex0] = make_float4(deltaLinVel0.x, deltaLinVel0.y, deltaLinVel0.z, count);
-		rigidDeltaVel[workIndex1] = make_float4(deltaAngVel0.x, deltaAngVel0.y, deltaAngVel0.z, 0.f);
-	}
-
-	PX_FORCE_INLINE __device__ void readCloth(const PxgFEMCloth& cloth, PxU32 elementId, const float4& bc,
-											  const PxsDeformableSurfaceMaterialData* const materials, bool countReferenceOnly)
-	{
-		// Note: PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_SURFACE_VTX
-		if(elementId == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			deformableVertexInvMasses = PxVec3(0.0f);
-			return;
-		}
-
-		float4* clothPosDeltas = cloth.mAccumulatedDeltaPos;
-
-		float4 clothDelta;
-		PxVec3 deformableVertexReferenceCount(1.0f);
-
-		if(bc.w == 0) // Cloth triangle
-		{
-			const PxU16 globalMaterialIndex = cloth.mMaterialIndices[elementId];
-			deformableFriction = materials ? materials[globalMaterialIndex].dynamicFriction : 0.0f;
-
-			const uint4 triVertId = cloth.mTriangleVertexIndices[elementId];
-			const float4 pd0 = clothPosDeltas[triVertId.x];
-			const float4 pd1 = clothPosDeltas[triVertId.y];
-			const float4 pd2 = clothPosDeltas[triVertId.z];
-			clothDelta = pd0 * bc.x + pd1 * bc.y + pd2 * bc.z;
-
-			deformableVertexInvMasses = PxVec3(pd0.w, pd1.w, pd2.w);
-
-			if(!countReferenceOnly)
-			{
-				// Query the reference count for the cloth.
-				deformableVertexReferenceCount.x = cloth.mDeltaPos[triVertId.x].w;
-				deformableVertexReferenceCount.y = cloth.mDeltaPos[triVertId.y].w;
-				deformableVertexReferenceCount.z = cloth.mDeltaPos[triVertId.z].w;
-
-				// Just in case the reference count is zero.
-				deformableVertexReferenceCount.x = PxMax(deformableVertexReferenceCount.x, 1.0f);
-				deformableVertexReferenceCount.y = PxMax(deformableVertexReferenceCount.y, 1.0f);
-				deformableVertexReferenceCount.z = PxMax(deformableVertexReferenceCount.z, 1.0f);
-
-				// Mass-splitting
-				deformableVertexInvMasses = deformableVertexInvMasses.multiply(deformableVertexReferenceCount);
-			}
-		}
-		else // Cloth vertex
-		{
-			deformableFriction = materials ? cloth.mDynamicFrictions[elementId] : 0.0f;
-			clothDelta = clothPosDeltas[elementId];
-			deformableVertexInvMasses = PxVec3(clothDelta.w, 0.0f, 0.0f);
-
-			if(!countReferenceOnly)
-			{
-				// Query the reference count for the cloth.
-				deformableVertexReferenceCount.x = cloth.mDeltaPos[elementId].w;
-
-				// Just in case the reference count is zero.
-				deformableVertexReferenceCount.x = PxMax(deformableVertexReferenceCount.x, 1.0f);
-
-				// Mass-splitting
-				deformableVertexInvMasses.x *= deformableVertexReferenceCount.x;
-			}
-		}
-
-		deformableLinDelta = PxVec3(clothDelta.x, clothDelta.y, clothDelta.z);
-	}
-
-	PX_FORCE_INLINE __device__ void writeCloth(PxgFEMCloth& cloth, PxU32 elementId, const float4& bc, PxVec3 deltaPos)
-	{
-		if(bc.w == 0.f) // Cloth triangle
-		{
-			const uint4 triVertInds = cloth.mTriangleVertexIndices[elementId];
-			const float* bcPtr = reinterpret_cast<const float*>(&bc.x);
-			const PxU32* triVertices = reinterpret_cast<const PxU32*>(&triVertInds.x);
-
-#pragma unroll
-			for(PxU32 it = 0; it < 3; ++it)
-			{
-				if(deformableVertexInvMasses[it] > 0.0f && PxAbs(bcPtr[it]) > 1e-6f)
-				{
-					const PxVec3 dP = deltaPos * (deformableVertexInvMasses[it] * bcPtr[it]);
-					atomicAdd(&cloth.mDeltaPos[triVertices[it]].x, dP.x);
-					atomicAdd(&cloth.mDeltaPos[triVertices[it]].y, dP.y);
-					atomicAdd(&cloth.mDeltaPos[triVertices[it]].z, dP.z);
-				}
-			}
-		}
-		else // Cloth vertex
-		{
-			const PxVec3 dP = deltaPos * deformableVertexInvMasses.x;
-
-			atomicAdd(&cloth.mDeltaPos[elementId].x, dP.x);
-			atomicAdd(&cloth.mDeltaPos[elementId].y, dP.y);
-			atomicAdd(&cloth.mDeltaPos[elementId].z, dP.z);
-		}
-	}
-
-	PX_FORCE_INLINE __device__ void readSoftBody(const PxgSoftBody& softbody, PxU32 tetId, const float4& bc,
-												 const PxsDeformableVolumeMaterialData* const materials, bool countReferenceOnly)
-	{
-		if(tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			deformableVertexInvMasses = PxVec4(0.0f);
-			return;
-		}
-
-		float4* posDeltas = softbody.mSimDeltaPos;
-
-		const PxU16 globalMaterialIndex = softbody.mMaterialIndices[tetId];
-		deformableFriction = materials ? materials[globalMaterialIndex].dynamicFriction : 0.0f;
-
-		const uint4 tetrahedronId = softbody.mSimTetIndices[tetId];
-		const float4 pd0 = posDeltas[tetrahedronId.x];
-		const float4 pd1 = posDeltas[tetrahedronId.y];
-		const float4 pd2 = posDeltas[tetrahedronId.z];
-		const float4 pd3 = posDeltas[tetrahedronId.w];
-
-		float4 softBodyDelta = pd0 * bc.x + pd1 * bc.y + pd2 * bc.z + pd3 * bc.w;
-		deformableLinDelta = PxVec3(softBodyDelta.x, softBodyDelta.y, softBodyDelta.z);
-
-		const PxVec4 invMasses(pd0.w, pd1.w, pd2.w, pd3.w);
-
-		deformableVertexInvMasses = PxVec4(pd0.w, pd1.w, pd2.w, pd3.w);
-
-		if(!countReferenceOnly)
-		{
-			PxVec4 deformableVertexReferenceCount;
-
-			// Query the reference count for soft body.
-			deformableVertexReferenceCount.x = PxMax(softbody.mSimDelta[tetrahedronId.x].w, 1.0f);
-			deformableVertexReferenceCount.y = PxMax(softbody.mSimDelta[tetrahedronId.y].w, 1.0f);
-			deformableVertexReferenceCount.z = PxMax(softbody.mSimDelta[tetrahedronId.z].w, 1.0f);
-			deformableVertexReferenceCount.w = PxMax(softbody.mSimDelta[tetrahedronId.w].w, 1.0f);
-
-			// Mass-splitting
-			deformableVertexInvMasses = deformableVertexInvMasses.multiply(deformableVertexReferenceCount);
-		}
-	}
-
-	PX_FORCE_INLINE __device__ void writeSoftBody(const PxgSoftBody& softbody, PxU32 tetId, const float4& bc, PxVec3 deltaPos)
-	{
-		const float* bcPtr = reinterpret_cast<const float*>(&bc.x);
-		const uint4 tetrahedronId = softbody.mSimTetIndices[tetId];
-		const PxU32* tetVertices = reinterpret_cast<const PxU32*>(&tetrahedronId.x);
-
-#pragma unroll
-		for(PxU32 it = 0; it < 4; ++it)
-		{
-			if(deformableVertexInvMasses[it] > 0.0f && PxAbs(bcPtr[it]) > 1e-6f)
-			{
-				const PxVec3 dP = deltaPos * (deformableVertexInvMasses[it] * bcPtr[it]);
-				atomicAdd(&softbody.mSimDelta[tetVertices[it]].x, dP.x);
-				atomicAdd(&softbody.mSimDelta[tetVertices[it]].y, dP.y);
-				atomicAdd(&softbody.mSimDelta[tetVertices[it]].z, dP.z);
-			}
-		}
-	}
-};
-
-template <typename Vec>
-struct FEMCollisionTGS : public FEMCollision<Vec>
-{
-	PxReal deltaLambdaT;
-	PxReal deltaLambdaN;
-	PxVec3 tanDir;
-	float4 appliedForce;
-	PxVec3 normal;
-	PxVec3 raXn, raXt;
-
-	// Returns whether this collision pair generates collision impulses.
-	PX_FORCE_INLINE __device__ bool initialize(const float4& fricTan0_invMass0, PxgFemRigidConstraintBlock& constraint,
-											   float4& appliedForceRef, PxNodeIndex rigidId, PxgVelocityReader& velocityReader, PxReal dt,
-											   const Vec& bc, bool countReferenceOnly)
-	{
-		// Read rigid body and cloth/softbody before calling initialize.
-		assert(FEMCollision<Vec>::rigidBodyReferenceCount >= 0 && FEMCollision<Vec>::deformableVertexInvMasses.x >= 0);
-
 		// PxgFemRigidConstraintBlock is packed with arrays with size 32.
 		assert(blockDim.x % 32 == 0 && blockDim.y == 1 && blockDim.z == 1);
 
 		// PBD way of appying constraints
 		const PxU32 threadIndexInWarp = threadIdx.x & 31;
 
-		appliedForce = appliedForceRef;
+		accumulatedDeltaLambdaN = appliedForceRef;
 
-		PxgVelocityPackTGS rigidStateVec;
-		velocityReader.readVelocitiesTGS(rigidId, rigidStateVec);
+		const PxReal threshold = 1.0e-14f;
+		const PxReal invDt = 1.0f / dt;
 
 		const float4 raXn_resp = constraint.raXn_resp[threadIndexInWarp];
 		const float4 normal_biasW = constraint.normal_errorW[threadIndexInWarp];
@@ -538,282 +306,334 @@ struct FEMCollisionTGS : public FEMCollision<Vec>
 
 		raXn = PxVec3(raXn_resp.x, raXn_resp.y, raXn_resp.z);
 
-		const float normalVel = rigidStateVec.linVel.dot(normal) + rigidStateVec.angVel.dot(raXn);
+		PxReal CN;
+		PxReal normalVel;
+		PxVec3 relLinDelta;
+		PxVec3 angDelta(0.0f);
+		PxVec3 linVel;
+		PxVec3 angVel;
 
-		const PxVec3 relLinDelta = rigidStateVec.linDelta - FEMCollision<Vec>::deformableLinDelta;
-
-		const PxReal dtInv = 1.0f / dt;
-
-		// Collision constraint in normal direction
-		const PxReal errorDtInv = (initPen + relLinDelta.dot(normal) + rigidStateVec.angDelta.dot(raXn)) * dtInv;
-
-		// fmaxf because maxPenBias is negative
-		const PxReal errorBiased = errorDtInv < 0.0f ? fmaxf(maxPenBias, errorDtInv) : errorDtInv;
-		const PxReal CN = errorBiased + normalVel;
-
-		const PxReal threshold = 1.0e-14f;
-		const bool isActive = PxAbs(CN) > threshold;
-
-		if(countReferenceOnly)
+		if(isTGS)
 		{
-			// Exit early by checking if there is any impulse.
+			PxgVelocityPackTGS rigidStateVec;
+			velocityReader.readVelocitiesTGS(rigidId, rigidStateVec);
+
+			linVel = rigidStateVec.linVel;
+			angVel = rigidStateVec.angVel;
+
+			normalVel = linVel.dot(normal) + angVel.dot(raXn);
+			relLinDelta = rigidStateVec.linDelta - deformableLinDelta;
+			angDelta = rigidStateVec.angDelta;
+
+			const PxReal error = (initPen + relLinDelta.dot(normal) + angDelta.dot(raXn)) * invDt;
+
+			// maxPenBias is negative.
+			const PxReal errorBiased = PxMax(maxPenBias, error);
+
+			CN = errorBiased + normalVel;
+		}
+		else
+		{
+			PxgVelocityPackPGS rigidStateVec;
+			velocityReader.readVelocitiesPGS(rigidId, rigidStateVec);
+
+			linVel = rigidStateVec.linVel;
+			angVel = rigidStateVec.angVel;
+
+			normalVel = linVel.dot(normal) + angVel.dot(raXn);
+			relLinDelta = -deformableLinDelta;
+
+			const PxReal error = (initPen + relLinDelta.dot(normal)) * invDt;
+
+			// maxPenBias is negative.
+			const PxReal errorBiased = PxMax(maxPenBias, error);
+
+			CN = errorBiased + normalVel;
+		}
+
+		const bool isActive = wasActive || CN < 0.0f;
+		deltaLambdaN = 0.0f;
+
+		if(checkOnlyActivity)
+		{
 			return isActive;
 		}
 
 		if(!isActive)
 		{
-			deltaLambdaT = 0.0f;
-			raXt = PxVec3(0.0f);
-			tanDir = PxVec3(0.0f);
 			return false;
 		}
 
 		// Deformable body term in the denominator of the impulse calculation. Also, refer to delta lambda in the XPBD paper.
-		const PxReal deformableInvMass_massSplitting = bc.multiply(bc).dot(FEMCollision<Vec>::deformableVertexInvMasses);
+		const PxReal deformableInvMass_massSplitting = bc.multiply(bc).dot(deformableVertexInvMasses);
 
-		const PxReal unitResponse = FEMCollision<Vec>::rigidBodyReferenceCount * raXn_resp.w + deformableInvMass_massSplitting;
+		const PxReal rigidRefCount = static_cast<PxReal>(rigidBodyReferenceCount);
+		const PxReal unitResponse = rigidRefCount * raXn_resp.w + deformableInvMass_massSplitting;
+		const PxReal invDenom = (unitResponse > 0.0f) ? (1.0f / unitResponse) : 0.0f;
 
-		const PxReal denomInv = (unitResponse > 0.0f) ? (1.0f / unitResponse) : 0.0f;
-
-		deltaLambdaN = PxMax(-CN * denomInv, -appliedForce.x);
-
-		appliedForce.x += deltaLambdaN;
+		deltaLambdaN = PxMax(-CN * invDenom, -accumulatedDeltaLambdaN);
+		accumulatedDeltaLambdaN += deltaLambdaN;
 
 		// Friction constraint in the tangent direction.
 		const PxVec3 raXnF0 = PxVec3(raXnF0_resp.x, raXnF0_resp.y, raXnF0_resp.z);
 		const PxVec3 raXnF1 = PxVec3(raXnF1_resp.x, raXnF1_resp.y, raXnF1_resp.z);
 
-		const float tanVel0 = rigidStateVec.linVel.dot(fric0) + rigidStateVec.angVel.dot(raXnF0);
-		const float tanVel1 = rigidStateVec.linVel.dot(fric1) + rigidStateVec.angVel.dot(raXnF1);
+		const float tanVel0 = linVel.dot(fric0) + angVel.dot(raXnF0);
+		const float tanVel1 = linVel.dot(fric1) + angVel.dot(raXnF1);
 
-		const PxReal CT0 = (fric0.dot(relLinDelta) + rigidStateVec.angDelta.dot(raXnF0)) * dtInv + tanVel0;
-		const PxReal CT1 = (fric1.dot(relLinDelta) + rigidStateVec.angDelta.dot(raXnF1)) * dtInv + tanVel1;
+		const PxReal CT0 = (fric0.dot(relLinDelta) + angDelta.dot(raXnF0)) * invDt + tanVel0;
+		const PxReal CT1 = (fric1.dot(relLinDelta) + angDelta.dot(raXnF1)) * invDt + tanVel1;
 		const PxVec3 relTanDelta = CT0 * fric0 + CT1 * fric1;
 		const PxReal tanMagSq = relTanDelta.magnitudeSquared();
 
 		if(tanMagSq > threshold)
 		{
 			const PxReal CT = PxSqrt(tanMagSq);
-			const PxReal tanMagInv = 1.f / CT;
-			tanDir = relTanDelta * tanMagInv;
+			const PxReal invTanMag = 1.0f / CT;
+			tangent = relTanDelta * invTanMag;
 
-			const PxReal frac0 = tanDir.dot(fric0);
-			const PxReal frac1 = tanDir.dot(fric1);
+			const PxReal frac0 = tangent.dot(fric0);
+			const PxReal frac1 = tangent.dot(fric1);
 			raXt = frac0 * raXnF0 + frac1 * raXnF1;
 
 			// Using two precomputed orthonormal tangent directions.
-			const PxReal unitResponseT0 = FEMCollision<Vec>::rigidBodyReferenceCount * raXnF0_resp.w + deformableInvMass_massSplitting;
-			const PxReal tanDenomInv0 = (unitResponseT0 > 0.0f) ? (1.0f / unitResponseT0) : 0.0f;
+			const PxReal unitResponseT0 = rigidRefCount * raXnF0_resp.w + deformableInvMass_massSplitting;
+			const PxReal invTanDenom0 = (unitResponseT0 > 0.0f) ? (1.0f / unitResponseT0) : 0.0f;
 
-			const PxReal unitResponseT1 = FEMCollision<Vec>::rigidBodyReferenceCount * raXnF1_resp.w + deformableInvMass_massSplitting;
-			const PxReal tanDenomInv1 = (unitResponseT1 > 0.0f) ? (1.0f / unitResponseT1) : 0.0f;
+			const PxReal unitResponseT1 = rigidRefCount * raXnF1_resp.w + deformableInvMass_massSplitting;
+			const PxReal invTanDenom1 = (unitResponseT1 > 0.0f) ? (1.0f / unitResponseT1) : 0.0f;
 
-			PxReal deltaLambdaT0 = CT0 * tanDenomInv0;
-			PxReal deltaLambdaT1 = CT1 * tanDenomInv1;
+			PxReal deltaLambdaT0 = CT0 * invTanDenom0;
+			PxReal deltaLambdaT1 = CT1 * invTanDenom1;
 
 			deltaLambdaT = PxSqrt(deltaLambdaT0 * deltaLambdaT0 + deltaLambdaT1 * deltaLambdaT1);
-			deltaLambdaT = -PxMin(deltaLambdaT, FEMCollision<Vec>::getCombinedFriction() * PxAbs(deltaLambdaN));
+			deltaLambdaT = -PxMin(deltaLambdaT, getCombinedFriction() * PxAbs(deltaLambdaN));
 
-			assert(deltaLambdaT <= 0.f);
+			assert(deltaLambdaT <= 0.0f);
+		}
+
+		return true;
+	}
+
+	PX_FORCE_INLINE __device__ PxReal computeRigidChange(PxVec3& deltaLinVel0, PxVec3& deltaAngVel0, const PxNodeIndex& rigidId,
+														 PxReal rigidInvMass)
+	{
+		const PxReal rigidRefCount = static_cast<PxReal>(rigidBodyReferenceCount);
+
+		deltaAngVel0 = rigidId.isArticulation() ? raXn * deltaLambdaN + raXt * deltaLambdaT
+												: (raXn * deltaLambdaN + raXt * deltaLambdaT) * rigidRefCount;
+
+		deltaLinVel0 = (normal * deltaLambdaN + tangent * deltaLambdaT) * rigidInvMass * rigidRefCount;
+
+		return accumulatedDeltaLambdaN;
+	}
+
+	PX_FORCE_INLINE __device__ PxReal computeFEMChange(PxVec3& deltaPos, PxReal dt)
+	{
+		deltaPos = -(deltaLambdaN * normal + deltaLambdaT * tangent) * dt;
+		return accumulatedDeltaLambdaN;
+	}
+
+	PX_FORCE_INLINE __device__ PxReal getCombinedFriction()
+	{
+		return PxsCombinePxReal(rigidBodyFriction, deformableFriction, frictionCombineMode);
+	}
+
+	PX_FORCE_INLINE __device__ int getGlobalRigidBodyId(const PxgPrePrepDesc* const prePrepDesc, const PxNodeIndex& rigidId,
+														PxU32 numSolverBodies)
+	{
+		// Following PxgVelocityReader style to read rigid body indices.
+		if(rigidId.isStaticBody())
+		{
+			return -1;
+		}
+
+		const PxU32 solverBodyIdx = prePrepDesc->solverBodyIndices[rigidId.index()];
+
+		// Placing articulation indices at the end of rigid body indices to distinguish between rigid body reference counts and
+		// articulation reference counts.
+		return rigidId.isArticulation() ? static_cast<int>(numSolverBodies + solverBodyIdx) : static_cast<int>(solverBodyIdx);
+	}
+
+	PX_FORCE_INLINE __device__ void readRigidBody(const PxNodeIndex& rigidId, int globalRigidBodyId, PxReal rigidInvMass,
+												  const PxU32* const rigidBodyReferenceCounts, const PxsMaterialData* rigidMaterial)
+	{
+		rigidBodyReferenceCount = 1;
+
+		// Query the reference count for the rigid body.
+		if(rigidBodyReferenceCounts && globalRigidBodyId != -1 && rigidInvMass != 0.0f)
+		{
+			rigidBodyReferenceCount = rigidBodyReferenceCounts[globalRigidBodyId];
+		}
+
+		if(rigidMaterial != NULL)
+		{
+			rigidBodyFriction = rigidMaterial->dynamicFriction;
+			frictionCombineMode = rigidMaterial->fricCombineMode;
 		}
 		else
 		{
-			deltaLambdaT = 0.0f;
-			raXt = PxVec3(0.0f);
-			tanDir = PxVec3(0.0f);
+			rigidBodyFriction = 0.0f;
+			frictionCombineMode = PxCombineMode::eMAX;
 		}
-
-		return isActive;
 	}
 
-	PX_FORCE_INLINE __device__ float4 computeRigidChange(PxVec3& deltaLinVel0, PxVec3& deltaAngVel0, PxReal rigidInvMass,
-														 const PxNodeIndex& rigidId)
+	PX_FORCE_INLINE __device__ void writeRigidBody(float4* rigidDeltaVel, const PxVec3& deltaLinVel0, const PxVec3& deltaAngVel0,
+												   PxU32 workIndex0, PxU32 workIndex1, PxReal count)
 	{
-		if(deltaLambdaN != 0.0f && rigidInvMass != 0.0f)
-		{
-			// Due to momocity, raXn and raXt are multiplied by sqrt(referenceCount) for rigid bodies.
-			deltaAngVel0 = rigidId.isArticulation()
-							   ? raXn * deltaLambdaN + raXt * deltaLambdaT
-							   : (raXn * deltaLambdaN + raXt * deltaLambdaT) * PxSqrt(FEMCollision<Vec>::rigidBodyReferenceCount);
-
-			deltaLinVel0 = (normal * deltaLambdaN + tanDir * deltaLambdaT) * rigidInvMass * FEMCollision<Vec>::rigidBodyReferenceCount;
-		}
-		else
-		{
-			deltaAngVel0 = PxVec3(0.0f);
-			deltaLinVel0 = PxVec3(0.0f);
-		}
-
-		return appliedForce;
+		rigidDeltaVel[workIndex0] = make_float4(deltaLinVel0.x, deltaLinVel0.y, deltaLinVel0.z, count);
+		rigidDeltaVel[workIndex1] = make_float4(deltaAngVel0.x, deltaAngVel0.y, deltaAngVel0.z, 0.f);
 	}
 
-	PX_FORCE_INLINE __device__ float4 computeFEMChange(PxVec3& deltaPos, PxReal dt)
+	PX_FORCE_INLINE __device__ PxVec3 readCloth(const PxgFEMCloth& cloth, PxU32 elementId, const float4& bc,
+												const PxsDeformableSurfaceMaterialData* const materials, bool countReferenceOnly)
 	{
-		if(deltaLambdaN != 0.f)
-			deltaPos = -(deltaLambdaN * normal + deltaLambdaT * tanDir) * dt;
-		else
-			deltaPos = PxVec3(0.0f);
-
-		return appliedForce;
-	}
-};
-
-template <typename Vec>
-struct FEMCollisionPGS : public FEMCollision<Vec>
-{
-	float4 appliedForce;
-	PxReal requiredF0Force;
-	PxReal requiredF1Force;
-	PxReal totalForce0;
-	PxReal totalForce1;
-	PxReal ratio;
-	PxReal deltaF;
-	PxVec3 fric0, fric1;
-	PxVec3 normal;
-	PxVec3 raXn, raXnF0, raXnF1;
-
-	// Note that friction is differently formulated from TGS, currently. See FEMCollisionTGS.
-	PX_FORCE_INLINE __device__ bool initialize(const float4& fricTan0_invMass0, PxgFemRigidConstraintBlock& constraint,
-											   float4& appliedForceRef, PxNodeIndex rigidId, PxgVelocityReader& velocityReader, PxReal dt,
-											   const Vec& bc, bool countReferenceOnly)
-	{
-		// Read rigid body and cloth/softbody before calling initialize.
-		assert(FEMCollision<Vec>::rigidBodyReferenceCount >= 0 && FEMCollision<Vec>::deformableVertexInvMasses.x >= 0);
-
-		const PxU32 threadIndexInWarp = threadIdx.x & 31;
-
-		appliedForce = appliedForceRef;
-
-		PxgVelocityPackPGS vel0;
-		velocityReader.readVelocitiesPGS(rigidId, vel0);
-
-		const float4 raXn_resp = constraint.raXn_resp[threadIndexInWarp];
-		const float4 normal_errorW = constraint.normal_errorW[threadIndexInWarp];
-
-		const float4 raXnF0_resp = constraint.raXnF0_resp[threadIndexInWarp];
-		const float4 raXnF1_resp = constraint.raXnF1_resp[threadIndexInWarp];
-
-		normal = PxVec3(normal_errorW.x, normal_errorW.y, normal_errorW.z);
-
-		fric0 = PxVec3(fricTan0_invMass0.x, fricTan0_invMass0.y, fricTan0_invMass0.z);
-		fric1 = normal.cross(fric0);
-
-		const float error = normal_errorW.w - FEMCollision<Vec>::deformableLinDelta.dot(normal);
-		raXn = PxVec3(raXn_resp.x, raXn_resp.y, raXn_resp.z);
-
-		const PxReal tanDelta0 = -FEMCollision<Vec>::deformableLinDelta.dot(fric0);
-		const PxReal tanDelta1 = -FEMCollision<Vec>::deformableLinDelta.dot(fric1);
-
-		raXnF0 = PxVec3(raXnF0_resp.x, raXnF0_resp.y, raXnF0_resp.z);
-
-		raXnF1 = PxVec3(raXnF1_resp.x, raXnF1_resp.y, raXnF1_resp.z);
-
-		// Compute the normal velocity of the constraint.
-		const float normalVel = vel0.linVel.dot(normal) + vel0.angVel.dot(raXn);
-		const float tanVel0 = vel0.linVel.dot(fric0) + vel0.angVel.dot(raXnF0);
-		const float tanVel1 = vel0.linVel.dot(fric1) + vel0.angVel.dot(raXnF1);
-
-		const PxReal dtInv = 1.0f / dt;
-
-		const PxReal deformableInvMass_massSplitting = bc.multiply(bc).dot(FEMCollision<Vec>::deformableVertexInvMasses);
-
-		const PxReal unitResponse = FEMCollision<Vec>::rigidBodyReferenceCount * raXn_resp.w + deformableInvMass_massSplitting;
-		const PxReal denomInv = (unitResponse > 0.0f) ? (1.0f / unitResponse) : 0.0f;
-
-		// KS - clamp the maximum force
-		// Normal force can only be +ve!
-		deltaF = PxMax(-appliedForce.x, (-error * dtInv - normalVel) * denomInv);
-
-		const PxReal threshold = 1.0e-14f;
-		const bool isActive = PxAbs(deltaF) > threshold;
-		if(countReferenceOnly)
+		// Note: PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_SURFACE_VTX
+		if(elementId == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
 		{
-			// Exit early by checking if there is any impulse.
-			return isActive;
+			deformableVertexInvMasses = PxVec3(0.0f);
+			return deformableVertexInvMasses;
 		}
 
-		if(!isActive)
+		const float4* const PX_RESTRICT clothPosDeltas = cloth.mAccumulatedDeltaPos;
+		float4 clothDelta;
+
+		if(bc.w == 0) // Cloth triangle
 		{
-			requiredF0Force = 0.0f;
-			requiredF1Force = 0.0f;
-			ratio = 0.0f;
-			return false;
+			const uint4 triVertId = cloth.mTriangleVertexIndices[elementId];
+			const float4 pd0 = clothPosDeltas[triVertId.x];
+			const float4 pd1 = clothPosDeltas[triVertId.y];
+			const float4 pd2 = clothPosDeltas[triVertId.z];
+
+			clothDelta = pd0 * bc.x + pd1 * bc.y + pd2 * bc.z;
+			deformableVertexInvMasses = PxVec3(pd0.w, pd1.w, pd2.w);
+
+			if(!countReferenceOnly)
+			{
+				const PxU16 globalMaterialIndex = cloth.mMaterialIndices[elementId];
+				deformableFriction = materials ? materials[globalMaterialIndex].dynamicFriction : 0.0f;
+
+				// Query the reference count for the cloth.
+				PxVec3 deformableVertexReferenceCount;
+				deformableVertexReferenceCount.x = cloth.mDeltaPos[triVertId.x].w;
+				deformableVertexReferenceCount.y = cloth.mDeltaPos[triVertId.y].w;
+				deformableVertexReferenceCount.z = cloth.mDeltaPos[triVertId.z].w;
+
+				// Mass-splitting
+				deformableVertexInvMasses = deformableVertexInvMasses.multiply(deformableVertexReferenceCount);
+			}
+		}
+		else // Cloth vertex
+		{
+			clothDelta = clothPosDeltas[elementId];
+			deformableVertexInvMasses = PxVec3(clothDelta.w, 0.0f, 0.0f);
+
+			if(!countReferenceOnly)
+			{
+				deformableFriction = materials ? cloth.mDynamicFrictions[elementId] : 0.0f;
+
+				// Query the reference count for the cloth.
+				const PxReal deformableVertexReferenceCount = cloth.mDeltaPos[elementId].w;
+
+				// Mass-splitting
+				deformableVertexInvMasses.x *= deformableVertexReferenceCount;
+			}
 		}
 
-		appliedForce.x += deltaF;
+		deformableLinDelta = PxVec3(clothDelta.x, clothDelta.y, clothDelta.z);
 
-		// Track maximum normal force
-		appliedForce.y = PxMax(appliedForce.x, appliedForce.y);
-
-		// const PxReal friction = (takeMaxForFriction ? appliedForce.y : appliedForce.x) * frictionCoefficient;
-		const PxReal friction = appliedForce.y * FEMCollision<Vec>::getCombinedFriction();
-
-		const PxReal unitResponseT0 = FEMCollision<Vec>::rigidBodyReferenceCount * raXnF0_resp.w + deformableInvMass_massSplitting;
-		const PxReal tanDenomInv0 = (unitResponseT0 > 0.0f) ? (1.0f / unitResponseT0) : 0.0f;
-
-		const PxReal unitResponseT1 = FEMCollision<Vec>::rigidBodyReferenceCount * raXnF1_resp.w + deformableInvMass_massSplitting;
-		const PxReal tanDenomInv1 = (unitResponseT1 > 0.0f) ? (1.0f / unitResponseT1) : 0.0f;
-
-		requiredF0Force = (-tanDelta0 * dtInv - tanVel0) * tanDenomInv0;
-		requiredF1Force = (-tanDelta1 * dtInv - tanVel1) * tanDenomInv1;
-
-		totalForce0 = requiredF0Force + appliedForce.z;
-		totalForce1 = requiredF1Force + appliedForce.w;
-
-		const PxReal totalForce = PxSqrt(totalForce0 * totalForce0 + totalForce1 * totalForce1);
-		ratio = PxMin(1.f, totalForce >= 1e-8f ? friction / totalForce : 0.f);
-
-		return isActive;
+		return deformableVertexInvMasses;
 	}
 
-	PX_FORCE_INLINE __device__ float4 computeRigidChange(PxVec3& deltaLinVel0, PxVec3& deltaAngVel0, PxReal rigidInvMass,
-														 const PxNodeIndex& rigidId)
+	PX_FORCE_INLINE __device__ void writeCloth(PxgFEMCloth& cloth, PxU32 elementId, const float4& bc, PxVec3 deltaPos)
 	{
-		// RequiredForce is always positive!
-		PxReal deltaFr0 = (requiredF0Force * ratio) - appliedForce.z;
-		PxReal deltaFr1 = (requiredF1Force * ratio) - appliedForce.w;
-		appliedForce.z += deltaFr0;
-		appliedForce.w += deltaFr1;
-
-		if((deltaF != 0.f || deltaFr0 != 0.f || deltaFr1 != 0.f) && rigidInvMass > 0.0f) // if rigid is kinematic or static, deltaVel must
-																						 // remain zero
+		if(bc.w == 0.f) // Cloth triangle
 		{
-			// Due to momocity, raXn and raXt are multiplied by sqrt(referenceCount) for rigid bodies.
-			deltaAngVel0 = rigidId.isArticulation() ? raXn * deltaF + raXnF0 * deltaFr0 + raXnF1 * deltaFr1
-													: (raXn * deltaF + raXnF0 * deltaFr0 + raXnF1 * deltaFr1) *
-														  PxSqrt(FEMCollision<Vec>::rigidBodyReferenceCount);
+			const float* bcPtr = reinterpret_cast<const float*>(&bc.x);
+			const uint4 triVertInds = cloth.mTriangleVertexIndices[elementId];
+			const PxU32* triVertices = reinterpret_cast<const PxU32*>(&triVertInds.x);
 
-			deltaLinVel0 =
-				((normal * deltaF) + fric0 * deltaFr0 + fric1 * deltaFr1) * rigidInvMass * FEMCollision<Vec>::rigidBodyReferenceCount;
+#pragma unroll
+			for(PxU32 it = 0; it < 3; ++it)
+			{
+				if(deformableVertexInvMasses[it] > 0.0f)
+				{
+					const PxVec3 dP = deltaPos * (deformableVertexInvMasses[it] * bcPtr[it]);
+					atomicAdd(&cloth.mDeltaPos[triVertices[it]].x, dP.x);
+					atomicAdd(&cloth.mDeltaPos[triVertices[it]].y, dP.y);
+					atomicAdd(&cloth.mDeltaPos[triVertices[it]].z, dP.z);
+				}
+			}
 		}
-		else
+		else // Cloth vertex
 		{
-			deltaAngVel0 = PxVec3(0.0f);
-			deltaLinVel0 = PxVec3(0.0f);
+			if(deformableVertexInvMasses.x > 0.0f)
+			{
+				const PxVec3 dP = deltaPos * deformableVertexInvMasses.x;
+				atomicAdd(&cloth.mDeltaPos[elementId].x, dP.x);
+				atomicAdd(&cloth.mDeltaPos[elementId].y, dP.y);
+				atomicAdd(&cloth.mDeltaPos[elementId].z, dP.z);
+			}
 		}
-
-		return appliedForce;
 	}
 
-	PX_FORCE_INLINE __device__ float4 computeFEMChange(PxVec3& deltaPos, PxReal dt)
+	PX_FORCE_INLINE __device__ PxVec4 readSoftBody(const PxgSoftBody& softbody, PxU32 tetId, const float4& bc,
+												 const PxsDeformableVolumeMaterialData* const materials, bool checkOnlyActivity)
 	{
-		PxReal deltaFr0 = (totalForce0 * ratio) - appliedForce.z;
-		PxReal deltaFr1 = (totalForce1 * ratio) - appliedForce.w;
-
-		if(deltaF != 0.f || deltaFr0 != 0.f || deltaFr1 != 0.f)
+		if(tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
 		{
-			const PxVec3 deltaNorVel = -(normal * deltaF);
-			const PxVec3 deltaFricVel = -(fric0 * deltaFr0 + fric1 * deltaFr1);
-
-			deltaPos = (deltaNorVel + deltaFricVel) * dt;
+			deformableVertexInvMasses = PxVec4(0.0f);
+			return deformableVertexInvMasses;
 		}
-		else
-			deltaPos = PxVec3(0.0f);
 
-		appliedForce.z += deltaFr0;
-		appliedForce.w += deltaFr1;
+		const float4* const PX_RESTRICT posDeltas = softbody.mSimDeltaPos;
 
-		return appliedForce;
+		const uint4 tetrahedronId = softbody.mSimTetIndices[tetId];
+		const float4 pd0 = posDeltas[tetrahedronId.x];
+		const float4 pd1 = posDeltas[tetrahedronId.y];
+		const float4 pd2 = posDeltas[tetrahedronId.z];
+		const float4 pd3 = posDeltas[tetrahedronId.w];
+		
+		const float4 softBodyDelta = pd0 * bc.x + pd1 * bc.y + pd2 * bc.z + pd3 * bc.w;
+		deformableLinDelta = PxVec3(softBodyDelta.x, softBodyDelta.y, softBodyDelta.z);
+		deformableVertexInvMasses = PxVec4(pd0.w, pd1.w, pd2.w, pd3.w);
+
+		if(!checkOnlyActivity)
+		{
+			const PxU16 globalMaterialIndex = softbody.mMaterialIndices[tetId];
+			deformableFriction = materials ? materials[globalMaterialIndex].dynamicFriction : 0.0f;
+
+			// Query the reference count for soft body.
+			PxVec4 deformableVertexReferenceCount;
+			deformableVertexReferenceCount.x = softbody.mSimDelta[tetrahedronId.x].w;
+			deformableVertexReferenceCount.y = softbody.mSimDelta[tetrahedronId.y].w;
+			deformableVertexReferenceCount.z = softbody.mSimDelta[tetrahedronId.z].w;
+			deformableVertexReferenceCount.w = softbody.mSimDelta[tetrahedronId.w].w;
+
+			// Mass-splitting
+			deformableVertexInvMasses = deformableVertexInvMasses.multiply(deformableVertexReferenceCount);
+		}
+
+		return deformableVertexInvMasses;
+	}
+
+	PX_FORCE_INLINE __device__ void writeSoftBody(const PxgSoftBody& softbody, PxU32 tetId, const float4& bc, PxVec3 deltaPos)
+	{
+		const float* bcPtr = reinterpret_cast<const float*>(&bc.x);
+		const uint4 tetrahedronId = softbody.mSimTetIndices[tetId];
+		const PxU32* tetVertices = reinterpret_cast<const PxU32*>(&tetrahedronId.x);
+
+#pragma unroll
+		for(PxU32 it = 0; it < 4; ++it)
+		{
+			if(deformableVertexInvMasses[it] > 0.0f)
+			{
+				const PxVec3 dP = deltaPos * (deformableVertexInvMasses[it] * bcPtr[it]);
+				atomicAdd(&softbody.mSimDelta[tetVertices[it]].x, dP.x);
+				atomicAdd(&softbody.mSimDelta[tetVertices[it]].y, dP.y);
+				atomicAdd(&softbody.mSimDelta[tetVertices[it]].z, dP.z);
+			}
+		}
 	}
 };
 

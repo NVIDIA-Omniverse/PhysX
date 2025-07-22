@@ -1831,6 +1831,9 @@ static __device__ void convexTriangleContactGen(
 #if PX_DEBUG
 	ConvexTriContacts* PX_RESTRICT cvxTriContacts = *cvxTriContactsPtr;
 	assert((size_t)&cvxTriContacts[convexTriPairOffset] < (size_t)&orderedCvxTriInterm[0]);
+	// This assertion must be inside PX_DEBUG because cvxTriContacts is only defined in debug builds.
+	// Fixes custom builds that have assertions enabled but PX_DEBUG undefined.
+	assert((size_t)&cvxTriNI[convexTriPairOffset] < (size_t)&cvxTriContacts[0]);
 #endif
 
 	// Writing other intermediate outputs
@@ -1876,9 +1879,6 @@ static __device__ void convexTriangleContactGen(
 	normalIndex.normal = minNormal;
 	normalIndex.index = delayContactMask + (nbOutputContacts << ConvexTriNormalAndIndex::NbContactsShift) + remapCpuTriangleIdx;
 	ConvexTriNormalAndIndex_WriteWarp(cvxTriNI + convexTriPairOffset, normalIndex);
-
-	// assert for correct stack memory allocation
-	assert((size_t)&cvxTriNI[convexTriPairOffset] < (size_t)&cvxTriContacts[0]);
 }
 
 #endif

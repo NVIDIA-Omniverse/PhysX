@@ -223,6 +223,7 @@ namespace physx
 		to #PxSceneDesc::wakeCounterResetValue if the counter value is below the reset value.
 
 		\note This call is not allowed while the simulation is running.
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\note For spherical joints, target must be in range [-Pi, Pi].
 
@@ -240,7 +241,9 @@ namespace physx
 		\brief Returns the joint drive position target for the given axis.
 
 		\param[in] axis The target axis.
-		
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\return The target position.
 
 		\see PxArticulationAxis, setDriveTarget
@@ -259,6 +262,8 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see PxArticulationAxis, getDriveVelocity
 
 		<b>Default:</b> 0.0
@@ -269,6 +274,8 @@ namespace physx
 		\brief Returns the joint drive velocity target for the given axis.
 
 		\param[in] axis The target axis.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\return The target velocity.
 
@@ -422,6 +429,8 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\note For PxArticulationJointType::eSPHERICAL, jointPos must be in range [-Pi, Pi].
 		\note For PxArticulationJointType::eREVOLUTE, jointPos must be in range [-2*Pi, 2*Pi].
 		\note For PxArticulationJointType::eREVOLUTE_UNWRAPPED, jointPos must be in range [-PX_MAX_REAL, PX_MAX_REAL].
@@ -449,6 +458,8 @@ namespace physx
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see PxArticulationAxis, setJointPosition, PxArticulationCache::jointPosition
 		*/
 		virtual		PxReal				getJointPosition(PxArticulationAxis::Enum axis) const = 0;
@@ -464,6 +475,8 @@ namespace physx
 		\param[in] jointVel The joint velocity in linear units (equivalent to scene units) per second for a translational axis, or radians per second for a rotational axis.
 
 		\note This call is not allowed while the simulation is running.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see PxArticulationAxis, getJointVelocity, PxArticulationCache::jointVelocity, PxArticulationReducedCoordinate::updateKinematic
 
@@ -482,6 +495,8 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see PxArticulationAxis, setJointVelocity, PxArticulationCache::jointVelocity
 		*/

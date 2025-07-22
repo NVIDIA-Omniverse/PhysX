@@ -137,9 +137,10 @@ namespace Dy
 	struct ArticulationInternalConstraint : public ArticulationInternalConstraintBase
 	{	
 		ArticulationImplicitDriveDesc implicitDriveDesc;
-		PxReal driveMaxForce;
-		PxReal driveForce;						
-
+		PxPerformanceEnvelope envelope;
+		PxReal externalJointForce;
+		PxReal driveImpulse;	
+		PxReal driveMaxImpulse;						
 		PxReal dynamicFrictionEffort;
 		PxReal staticFrictionEffort;
 		PxReal viscousFrictionCoefficient;
@@ -157,6 +158,7 @@ namespace Dy
 		{
 			return implicitDriveDesc;
 		}
+		PxReal padding[3];
 	};
 	PX_COMPILE_TIME_ASSERT(0 == (sizeof(ArticulationInternalConstraint) & 0x0f));
 

@@ -136,9 +136,10 @@ public:
 	Create GPU broadphase.
 	*/
 	virtual Bp::BroadPhase* createGpuBroadPhase(
+		const PxGpuBroadPhaseDesc& desc,
 		PxsKernelWranglerManager* gpuKernelWrangler,
 		PxCudaContextManager* cudaContextManager,
-		const PxU32 gpuComputeVersion,
+		PxU32 gpuComputeVersion,
 		const PxGpuDynamicsMemoryConfig& config,
 		PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID) = 0;
 

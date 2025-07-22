@@ -352,9 +352,7 @@ TARGET_INCLUDE_DIRECTORIES(PhysX
 	PRIVATE ${PHYSX_SOURCE_DIR}/common/src
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/physx/src
-	PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/device
 	PRIVATE ${PHYSX_SOURCE_DIR}/physxgpu/include
-
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/geomutils/include
 	PRIVATE ${PHYSX_SOURCE_DIR}/geomutils/src
@@ -394,9 +392,14 @@ TARGET_INCLUDE_DIRECTORIES(PhysX
 	PRIVATE ${PHYSX_SOURCE_DIR}/gpucommon/include
 	PRIVATE ${PHYSX_SOURCE_DIR}/gpucommon/src/CUDA
 
-  PRIVATE ${PHYSX_SOURCE_DIR}/omnipvd
-  PRIVATE ${PHYSX_ROOT_DIR}/pvdruntime/include
+	PRIVATE ${PHYSX_SOURCE_DIR}/omnipvd
+	PRIVATE ${PHYSX_ROOT_DIR}/pvdruntime/include
 )
+
+# Conditionally add the internal device directory when not in public release mode
+IF(NOT PUBLIC_RELEASE)
+    TARGET_INCLUDE_DIRECTORIES(PhysX PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/internal/device)
+ENDIF()
 
 TARGET_COMPILE_DEFINITIONS(PhysX
 

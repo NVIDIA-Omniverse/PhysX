@@ -40,6 +40,8 @@ namespace Ext
 {
 	struct D6JointData : public JointData
 	{
+		static constexpr PxU32 sDriveEntryCapacity = 6;
+
 		PxD6Motion::Enum		motion[6]; 
 		PxJointLinearLimit		distanceLimit;
 		PxJointLinearLimitPair	linearLimitX;
@@ -49,7 +51,7 @@ namespace Ext
 		PxJointLimitCone		swingLimit;
 		PxJointLimitPyramid		pyramidSwingLimit;
 
-		PxD6JointDrive			drive[PxD6Drive::eCOUNT];
+		PxD6JointDrive			drive[sDriveEntryCapacity];
 
 		PxTransform				drivePosition;
 		PxVec3					driveLinearVelocity;
@@ -73,6 +75,8 @@ namespace Ext
 		bool					mUseConeLimit;
 		bool					mUsePyramidLimits;
 
+		PxU8					angularDriveConfig;  // stores the angular drive config (PxD6AngularDriveConfig::Enum)
+
 	private:
 		D6JointData(const PxJointLinearLimit& distance,
 					const PxJointLinearLimitPair& linearX,
@@ -91,7 +95,8 @@ namespace Ext
 		mUseDistanceLimit	(false),
 		mUseNewLinearLimits	(false),
 		mUseConeLimit		(false),
-		mUsePyramidLimits	(false)
+		mUsePyramidLimits	(false),
+		angularDriveConfig	(PxD6AngularDriveConfig::eLEGACY)
 		{}
 	};
 
@@ -106,6 +111,10 @@ namespace Ext
 		static	D6Joint*				createObject(PxU8*& address, PxDeserializationContext& context)	{ return createJointObject<D6Joint>(address, context);	}
 //~PX_SERIALIZATION
 										D6Joint(const PxTolerancesScale& scale, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
+#if PX_SUPPORT_OMNI_PVD
+		virtual							~D6Joint();
+#endif
+
 		// PxD6Joint
 		virtual	void					setMotion(PxD6Axis::Enum index, PxD6Motion::Enum t)	PX_OVERRIDE;
 		virtual	PxD6Motion::Enum		getMotion(PxD6Axis::Enum index)	const	PX_OVERRIDE;
@@ -129,6 +138,8 @@ namespace Ext
 		virtual	void					setDriveVelocity(const PxVec3& linear, const PxVec3& angular, bool autowake = true)	PX_OVERRIDE;
 		virtual	void					getDriveVelocity(PxVec3& linear, PxVec3& angular)	const	PX_OVERRIDE;
 		virtual PxD6JointGPUIndex		getGPUIndex() const PX_OVERRIDE;
+		virtual void					setAngularDriveConfig(PxD6AngularDriveConfig::Enum) PX_OVERRIDE;
+		virtual PxD6AngularDriveConfig::Enum getAngularDriveConfig() const PX_OVERRIDE;
 		//~PxD6Joint
 
 		// PxConstraintConnector
@@ -139,8 +150,12 @@ namespace Ext
 #endif
 		//~PxConstraintConnector
 
+#if PX_SUPPORT_OMNI_PVD
+		friend void omniPvdInitJoint<D6Joint>(D6Joint& joint);
+#endif
+
 	private:
-		bool active(const PxD6Drive::Enum index) const
+		PX_FORCE_INLINE bool isDriveActive(PxU32 index) const
 		{
 			const PxD6JointDrive& d = data().drive[index];
 			return d.stiffness!=0 || d.damping != 0;

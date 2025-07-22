@@ -288,13 +288,14 @@ PxgSoftBodyBuffer::PxgSoftBodyBuffer(PxgHeapMemoryAllocatorManager* heapMemoryMa
 
 PxgFEMClothBuffer::PxgFEMClothBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
 	triangleMeshData(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	prevPosition_InvMass(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	deltaPos(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	accumulatedDeltaPos(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	accumulatedDeltaVel(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	prevAccumulatedDeltaPos(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	prevPositionInContactOffset(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	prevPositionInRestOffset(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	materialIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	dynamicfrictions(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	trianglesWithActiveEdges(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	triangleVertexIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	orderedNonSharedTriangleVertexIndices_triIndex(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	orderedSharedTriangleLambdas(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
@@ -452,6 +453,8 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mGMMaxJacobiTetrahedrons(0),
 	mGMMaxJacobiVertices(0), 
 	mMaxNbClothVerts(0),
+	mMaxNbClothTriangles(0),
+	mMaxNbClothTrianglesWithActiveEdges(0),
 	mMaxNbNonSharedTriangles(0),
 	mMaxNbNonSharedTriPartitions(0),
 	mMaxNbNonSharedTrianglesPerPartition(0),
@@ -1774,14 +1777,14 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 
 		const PxU32 triangleMeshByteSize = newTriangleMeshByteSizePool[i];
 
-		buffer->prevPosition_InvMass.allocateElements(numVerts, PX_FL);
-
 		buffer->deltaPos.allocateElements(numVerts, PX_FL);
 		buffer->accumulatedDeltaPos.allocateElements(numVerts, PX_FL);
 		buffer->accumulatedDeltaVel.allocateElements(numVerts, PX_FL);
-		buffer->prevAccumulatedDeltaPos.allocateElements(numVerts, PX_FL);
+		buffer->prevPositionInContactOffset.allocateElements(numVerts, PX_FL);
+		buffer->prevPositionInRestOffset.allocateElements(numVerts, PX_FL);
 
 		buffer->triangleMeshData.allocate(triangleMeshByteSize, PX_FL);
+		buffer->trianglesWithActiveEdges.allocateElements(newFEMCloth.mNbTrianglesWithActiveEdges, PX_FL);
 		buffer->triangleVertexIndices.allocateElements(numTriangles, PX_FL);
 
 		PxU32 remapOutputSize = PxMax(newFEMClothData.mSharedTriPairRemapOutputSize, newFEMClothData.mNonSharedTriPairRemapOutputSize);
@@ -1799,7 +1802,8 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 		mCudaContext->memsetD32Async(buffer->deltaPos.getDevicePtr(), 0, (sizeof(float4) * numVerts) / sizeof(PxU32), bpStream);
 		mCudaContext->memsetD32Async(buffer->accumulatedDeltaPos.getDevicePtr(), 0, (sizeof(float4) * numVerts) / sizeof(PxU32), bpStream);
 		mCudaContext->memsetD32Async(buffer->accumulatedDeltaVel.getDevicePtr(), 0, (sizeof(float4) * numVerts) / sizeof(PxU32), bpStream);
-		mCudaContext->memsetD32Async(buffer->prevAccumulatedDeltaPos.getDevicePtr(), 0, (sizeof(float4) * numVerts) / sizeof(PxU32), bpStream);
+		mCudaContext->memsetD32Async(buffer->prevPositionInContactOffset.getDevicePtr(), 0, (sizeof(float4) * numVerts) / sizeof(PxU32), bpStream);
+		mCudaContext->memsetD32Async(buffer->prevPositionInRestOffset.getDevicePtr(), 0, (sizeof(float4)* numVerts) / sizeof(PxU32), bpStream);
 
 		// DMA data to GPU
 		if (numNonSharedTriangles)
@@ -1834,6 +1838,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 		}
 
 		mCudaContext->memcpyHtoDAsync(buffer->triangleMeshData.getDevicePtr(), newFEMCloth.mTriMeshData, triangleMeshByteSize, bpStream);
+		mCudaContext->memcpyHtoDAsync(buffer->trianglesWithActiveEdges.getDevicePtr(), newFEMCloth.mTrianglesWithActiveEdges, newFEMCloth.mNbTrianglesWithActiveEdges * sizeof(PxU32), bpStream);
 		mCudaContext->memcpyHtoDAsync(buffer->triangleVertexIndices.getDevicePtr(), newFEMCloth.mTriangleVertexIndices, numTriangles * sizeof(uint4), bpStream);
 
 		mCudaContext->memcpyHtoDAsync(buffer->materialIndices.getDevicePtr(), newFEMCloth.mMaterialIndices, numTriangles * sizeof(PxU16), bpStream);
@@ -1846,8 +1851,10 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 		femCloth.mVelocity_InvMass = reinterpret_cast<float4*>(dyDeformableSurfaceCore.velocity);
 		femCloth.mRestPosition = reinterpret_cast<float4*>(dyDeformableSurfaceCore.restPosition);
 
-		femCloth.mPrevPosition_InvMass = buffer->prevPosition_InvMass.getTypedPtr();
+		femCloth.mPrevPositionInContactOffset = buffer->prevPositionInContactOffset.getTypedPtr();
+		femCloth.mPrevPositionInRestOffset = buffer->prevPositionInRestOffset.getTypedPtr();
 
+		femCloth.mTrianglesWithActiveEdges = buffer->trianglesWithActiveEdges.getTypedPtr();
 		femCloth.mTriangleVertexIndices = buffer->triangleVertexIndices.getTypedPtr();
 
 		if (numNonSharedTriangles)
@@ -1892,7 +1899,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 		femCloth.mDeltaPos = buffer->deltaPos.getTypedPtr();
 		femCloth.mAccumulatedDeltaPos = buffer->accumulatedDeltaPos.getTypedPtr(); 
 		femCloth.mAccumulatedDeltaVel = buffer->accumulatedDeltaVel.getTypedPtr();
-		femCloth.mPrevAccumulatedDeltaPos = buffer->prevAccumulatedDeltaPos.getTypedPtr();
+
 		femCloth.mPackedNodeBounds = buffer->packedNodeBounds.getTypedPtr();
 
 		femCloth.mMaterialIndices = buffer->materialIndices.getTypedPtr();
@@ -1910,6 +1917,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 		femCloth.mNbVerts = newFEMCloth.mNbVerts;
 		femCloth.mNbTriangles = newFEMCloth.mNbTriangles;
 		femCloth.mNbNonSharedTriangles = newFEMCloth.mNbNonSharedTriangles;
+		femCloth.mNbTrianglesWithActiveEdges = newFEMCloth.mNbTrianglesWithActiveEdges;
 
 		femCloth.mNbTrianglePairs = newFEMCloth.mNbTrianglePairs;
 		femCloth.mNbSharedTrianglePairs = newFEMCloth.mNbSharedTrianglePairs;
@@ -1949,6 +1957,8 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 		femClothElementIndexPool[gpuRemapIndex] = newFEMClothElememtIndexPool[i];
 
 		mMaxNbClothVerts = PxMax(numVerts, mMaxNbClothVerts);
+		mMaxNbClothTriangles = PxMax(numTriangles, mMaxNbClothTriangles);
+		mMaxNbClothTrianglesWithActiveEdges = PxMax(newFEMCloth.mNbTrianglesWithActiveEdges, mMaxNbClothTrianglesWithActiveEdges);
 
 		mMaxNbNonSharedTriPartitions = PxMax(newFEMCloth.mNbNonSharedTriPartitions, mMaxNbNonSharedTriPartitions);
 

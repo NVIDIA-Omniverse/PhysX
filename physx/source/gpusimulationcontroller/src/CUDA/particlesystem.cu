@@ -2518,7 +2518,7 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 
 extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 	PxgParticleSystem*							particleSystems,
-	PxgFemContactInfo*							sortedContactsInfo,
+	PxgFemOtherContactInfo*						sortedContactsInfo,
 	PxU32*										numContacts,
 	PxU32*										blockOffsets,
 	PxU32*										offsets
@@ -2558,7 +2558,7 @@ extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 		PxU64 particleId;
 		if (workIndex < tNumContacts)
 		{
-			PxgFemContactInfo& contactInfo = sortedContactsInfo[workIndex];
+			PxgFemOtherContactInfo& contactInfo = sortedContactsInfo[workIndex];
 
 			//first pairInd is particle system
 			particleId = contactInfo.pairInd0; //include particle system id
@@ -2571,7 +2571,7 @@ extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 			if (workIndex > 0 && threadIdx.x == 0)
 			{
 				// first thread in block must load neighbor particle 
-				PxgFemContactInfo& contactInfo2 = sortedContactsInfo[workIndex - 1];
+				PxgFemOtherContactInfo& contactInfo2 = sortedContactsInfo[workIndex - 1];
 				sParticleId[0] = contactInfo2.pairInd0;
 			}
 		}
@@ -2642,7 +2642,7 @@ extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 }
 
 extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
-	PxgFemContactInfo*				sortedContactInfo,		//input
+	PxgFemOtherContactInfo*			sortedContactInfo,		//input
 	PxU32*							numContacts,			//input
 	PxU32*							blockOffsets,			//input
 	PxU32*							offsets,				//input
@@ -2688,7 +2688,7 @@ extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
 		{
 			//printf("tNumContacts %i\n", tNumContacts);
 
-			PxgFemContactInfo& contact = sortedContactInfo[workIndex];
+			PxgFemOtherContactInfo& contact = sortedContactInfo[workIndex];
 			//first pairInd is particle system
 			particleId = contact.pairInd0; //include particle system id
 
@@ -2700,7 +2700,7 @@ extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
 			if (workIndex > 0 && threadIdx.x == 0)
 			{
 				// first thread in block must load neighbor particle 
-				PxgFemContactInfo& contact = sortedContactInfo[workIndex - 1];
+				PxgFemOtherContactInfo& contact = sortedContactInfo[workIndex - 1];
 				sParticleId[0] = contact.pairInd0;
 			}
 		}
@@ -2760,7 +2760,7 @@ extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
 
 extern "C" __global__ void ps_accumulateFEMParticleDeltaVLaunch(
 	PxgParticleSystem*				particleSystems,		//output
-	PxgFemContactInfo*				sortedContactInfo,		//input
+	PxgFemOtherContactInfo*			sortedContactInfo,		//input
 	PxU32*							totalNumPairs,			//input
 	PxU32*							rangeStart,				//input
 	PxU32*							rangeEnd,				//input
@@ -2808,7 +2808,7 @@ extern "C" __global__ void ps_accumulateFEMParticleDeltaVLaunch(
 		accumulatedDeltaP.y *= recipCount;
 		accumulatedDeltaP.z *= recipCount;
 
-		PxgFemContactInfo& contactInfo = sortedContactInfo[startIndex];
+		PxgFemOtherContactInfo& contactInfo = sortedContactInfo[startIndex];
 		PxU64 pairInd0 = contactInfo.pairInd0;
 		const PxU32 tParticleSystemId = PxGetParticleSystemId(pairInd0);
 		const PxU32 tParticleId = PxGetParticleIndex(pairInd0);

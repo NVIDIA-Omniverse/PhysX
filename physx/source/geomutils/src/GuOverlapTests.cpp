@@ -48,6 +48,9 @@
 #include "GuConvexGeometry.h"
 #include "GuConvexSupport.h"
 #include "GuRefGjkEpa.h"
+#include "geometry/PxHeightFieldGeometry.h"
+#include "GuHeightFieldUtil.h"
+#include "GuEntityReport.h"
 
 using namespace physx;
 using namespace Cm;
@@ -410,6 +413,24 @@ static bool GeomOverlapCallback_PlaneConvex(GU_OVERLAP_FUNC_PARAMS)
 	return (minimum <= -shapeSpacePlane.d);
 }
 
+static bool GeomOverlapCallback_PlaneConvexCore(GU_OVERLAP_FUNC_PARAMS)
+{
+	PX_ASSERT(geom0.getType()==PxGeometryType::ePLANE);
+	PX_ASSERT(geom1.getType()==PxGeometryType::eCONVEXCORE);
+	PX_UNUSED(threadContext);
+	PX_UNUSED(cache);
+	PX_UNUSED(geom0);
+
+	const PxPlane plane = getPlane(pose0);
+	const PxConvexCoreGeometry& convexCore = static_cast<const PxConvexCoreGeometry&>(geom1);
+	Gu::ConvexShape shape; Gu::makeConvexShape(convexCore, pose1, shape);
+
+	PxVec3 closestPoint = shape.support(-plane.n);
+	PxReal closestDist = plane.distance(closestPoint);
+
+	return closestDist <= 0;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Capsule-vs-shape
@@ -600,6 +621,7 @@ static bool GeomOverlapCallback_NotSupported(GU_OVERLAP_FUNC_PARAMS)
 bool GeomOverlapCallback_SphereMesh			(GU_OVERLAP_FUNC_PARAMS);
 bool GeomOverlapCallback_CapsuleMesh		(GU_OVERLAP_FUNC_PARAMS);
 bool GeomOverlapCallback_BoxMesh			(GU_OVERLAP_FUNC_PARAMS);
+bool GeomOverlapCallback_ConvexCoreMesh		(GU_OVERLAP_FUNC_PARAMS);
 bool GeomOverlapCallback_ConvexMesh			(GU_OVERLAP_FUNC_PARAMS);
 bool GeomOverlapCallback_MeshMesh			(GU_OVERLAP_FUNC_PARAMS);
 bool GeomOverlapCallback_SphereHeightfield	(GU_OVERLAP_FUNC_PARAMS);
@@ -639,6 +661,73 @@ static bool GeomOverlapCallback_ConvexCoreGeometry(GU_OVERLAP_FUNC_PARAMS)
 	return dist <= shape0.margin + shape1.margin + FLT_EPSILON;
 }
 
+bool GeomOverlapCallback_ConvexCoreHeightfield(GU_OVERLAP_FUNC_PARAMS)
+{
+	PX_ASSERT(geom0.getType()==PxGeometryType::eCONVEXCORE);
+	PX_ASSERT(geom1.getType()==PxGeometryType::eHEIGHTFIELD);
+	PX_UNUSED(cache);	
+	PX_UNUSED(threadContext);
+
+	const PxConvexCoreGeometry& convexGeom = static_cast<const PxConvexCoreGeometry&>(geom0);
+	const PxHeightFieldGeometry& hfGeom = static_cast<const PxHeightFieldGeometry&>(geom1);
+
+	struct ConvexCoreOverlapReport : Gu::OverlapReport
+	{
+		const Gu::ConvexShape& mConvex;
+		const PxTransform& mTransform;
+		const Gu::HeightFieldUtil mHfUtil;
+		const PxTransform& mHFPose;
+		PxIntBool mOverlap;
+
+		ConvexCoreOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose, const Gu::ConvexShape& convex, const PxTransform& transform)
+			: mConvex(convex), mTransform(transform), mHfUtil(hfGeom_), mHFPose(hfPose), mOverlap(PxIntFalse) {}
+
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		{
+			while(nb--)
+			{
+				const PxU32 triangleIndex = *indices++;
+
+				PxTrianglePadded currentTriangle;
+				mHfUtil.getTriangle(mHFPose, currentTriangle, NULL, NULL, triangleIndex, false, false);
+
+				Gu::ConvexShape tri;
+				tri.coreType = Gu::ConvexCore::Type::ePOINTS;
+				tri.pose = PxTransform(PxIdentity);
+				Gu::ConvexCore::PointsCore& core = *reinterpret_cast<Gu::ConvexCore::PointsCore*>(tri.coreData);
+				core.points = currentTriangle.verts;
+				core.numPoints = 3;
+				core.stride = sizeof(PxVec3);
+				core.S = PxVec3(1);
+				core.R = PxQuat(PxIdentity);
+				tri.margin = 0.0f;
+
+				PxVec3 point0, point1, axis;
+				PxReal dist = Gu::RefGjkEpa::computeGjkDistance(mConvex, tri, mConvex.pose, tri.pose, mConvex.margin + tri.margin, point0, point1, axis);
+				if(dist <= mConvex.margin + tri.margin + FLT_EPSILON)
+				{
+					mOverlap = PxIntTrue;
+					return false;
+				}
+			}
+			return true;
+		}	
+	};
+
+	Gu::ConvexShape convexShape;
+	Gu::makeConvexShape(convexGeom, pose0, convexShape);
+
+	if (!convexShape.isValid())
+		return false;
+
+	ConvexCoreOverlapReport report(hfGeom, pose1, convexShape, pose0);
+
+	PxBounds3 bounds = Gu::computeBounds(convexGeom, pose0);
+	report.mHfUtil.overlapAABBTriangles(bounds, report, 4);
+
+	return report.mOverlap!=PxIntFalse;
+}
+
 GeomOverlapTable gGeomOverlapMethodTable[] = 
 {
 	//PxGeometryType::eSPHERE
@@ -662,7 +751,7 @@ GeomOverlapTable gGeomOverlapMethodTable[] =
 		GeomOverlapCallback_NotSupported,		//PxGeometryType::ePLANE
 		GeomOverlapCallback_PlaneCapsule,		//PxGeometryType::eCAPSULE
 		GeomOverlapCallback_PlaneBox,			//PxGeometryType::eBOX
-		GeomOverlapCallback_NotSupported,		//PxGeometryType::eCONVEXCORE
+		GeomOverlapCallback_PlaneConvexCore,	//PxGeometryType::eCONVEXCORE
 		GeomOverlapCallback_PlaneConvex,		//PxGeometryType::eCONVEXMESH
 		GeomOverlapCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomOverlapCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
@@ -701,7 +790,7 @@ GeomOverlapTable gGeomOverlapMethodTable[] =
 		GeomOverlapCallback_CustomGeometry,		//PxGeometryType::eCUSTOM
 	},
 
-	//PxGeometryType::eCONVEX
+	//PxGeometryType::eCONVEXCORE
 	{
 		0,										//PxGeometryType::eSPHERE
 		0,										//PxGeometryType::ePLANE
@@ -711,9 +800,9 @@ GeomOverlapTable gGeomOverlapMethodTable[] =
 		GeomOverlapCallback_ConvexCoreGeometry,	//PxGeometryType::eCONVEXMESH
 		GeomOverlapCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomOverlapCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
-		GeomOverlapCallback_NotSupported,		//PxGeometryType::eTRIANGLEMESH
-		GeomOverlapCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
-		GeomOverlapCallback_NotSupported,		//PxGeometryType::eCUSTOM
+		GeomOverlapCallback_ConvexCoreMesh,		//PxGeometryType::eTRIANGLEMESH
+		GeomOverlapCallback_ConvexCoreHeightfield,//PxGeometryType::eHEIGHTFIELD
+		GeomOverlapCallback_CustomGeometry,		//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::eCONVEXMESH

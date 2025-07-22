@@ -310,21 +310,23 @@ public:
 	virtual		void				setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags) = 0;
 	
 	/**
-	\brief Retrieves the linear velocity of an actor.
+	\brief Retrieves the actor's center-of-mass linear velocity.
 
 	\note It is not allowed to use this method while the simulation is running (except during PxScene::collide(),
 	in PxContactModifyCallback or in contact report callbacks).
 
-	\note The linear velocity is reported with respect to the rigid dynamic's center of mass and not the actor frame origin.
+	\note The linear velocity is reported with respect to the actor's center of mass and not the actor frame origin.
 
-	\return The linear velocity of the actor.
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
+	\return The actor's center-of-mass linear velocity.
 
 	\see PxRigidDynamic.setLinearVelocity() getAngularVelocity()
 	*/
 	virtual		PxVec3			getLinearVelocity()		const = 0;
 
 	/**
-	\brief Sets the linear velocity of the actor.
+	\brief Sets the actor's center-of-mass linear velocity.
 
 	Note that if you continuously set the velocity of an actor yourself,
 	forces such as gravity or friction will not be able to manifest themselves, because forces directly
@@ -337,9 +339,11 @@ public:
 
 	\note It is invalid to use this method if PxActorFlag::eDISABLE_SIMULATION is set.
 
-	\note The linear velocity is applied with respect to the rigid dynamic's center of mass and not the actor frame origin.
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
-	\param[in] linVel New linear velocity of actor. <b>Range:</b> velocity vector
+	\note The linear velocity is applied with respect to the actor's center of mass and not the actor frame origin.
+
+	\param[in] linVel New center-of-mass linear velocity of the actor. <b>Range:</b> velocity vector
 	\param[in] autowake Whether to wake the object up if it is asleep. If true and the current wake counter value is
 	smaller than #PxSceneDesc::wakeCounterResetValue it will get increased to the reset value.
 
@@ -352,6 +356,8 @@ public:
 
 	\note It is not allowed to use this method while the simulation is running (except during PxScene::collide(),
 	in PxContactModifyCallback or in contact report callbacks).
+
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 	\return The angular velocity of the actor.
 
@@ -371,6 +377,8 @@ public:
 	new velocity is non-zero.
 
 	\note It is invalid to use this method if PxActorFlag::eDISABLE_SIMULATION is set.
+
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 	\param[in] angVel New angular velocity of actor. <b>Range:</b> angular velocity vector
 	\param[in] autowake Whether to wake the object up if it is asleep. If true and the current wake counter value is

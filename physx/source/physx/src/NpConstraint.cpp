@@ -125,8 +125,12 @@ PxConstraintGPUIndex NpConstraint::getGPUIndex() const
 
 		return mCore.getSim()->getGPUIndex();
 	}
+	else
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Constraint::getGPUIndex(): constraint has to be part of a scene to return a valid index.");
 
-	return PX_INVALID_CONSTRAINT_GPU_INDEX;
+		return PX_INVALID_CONSTRAINT_GPU_INDEX;
+	}
 }
 
 void NpConstraint::addConnectors(PxRigidActor* actor0, PxRigidActor* actor1)

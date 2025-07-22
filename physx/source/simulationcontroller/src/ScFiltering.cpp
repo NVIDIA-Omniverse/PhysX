@@ -31,6 +31,7 @@
 #include "ScTriggerInteraction.h"
 #include "ScConstraintCore.h"
 #include "ScArticulationSim.h"
+#include "geometry/PxTriangleMesh.h"
 
 using namespace physx;
 using namespace Sc;
@@ -392,6 +393,18 @@ static bool filterRbCollisionPairShared(	FilterInfo& filterInfo, bool& isNonRigi
 
 	if(filterJointedBodies(rbActor0, rbActor1))
 		return createFilterInfo(filterInfo, PxFilterFlag::eSUPPRESS);
+
+	if (!isNonRigid)
+	{
+		if (s0.getGeometryType() == PxGeometryType::eTRIANGLEMESH &&
+			s1.getGeometryType() == PxGeometryType::eTRIANGLEMESH)
+		{
+			const PxTriangleMeshGeometry& m0 = static_cast<const PxTriangleMeshGeometry&>(s0.getCore().getGeometry());
+			const PxTriangleMeshGeometry& m1 = static_cast<const PxTriangleMeshGeometry&>(s1.getCore().getGeometry());
+			if (m0.triangleMesh->getSDF() == NULL && m1.triangleMesh->getSDF() == NULL)
+				return createFilterInfo(filterInfo, PxFilterFlag::eKILL);
+		}
+	}
 
 	const PxFilterObjectType::Enum filterType0 = PxGetFilterObjectType(filterAttr0);
 	const PxFilterObjectType::Enum filterType1 = PxGetFilterObjectType(filterAttr1);

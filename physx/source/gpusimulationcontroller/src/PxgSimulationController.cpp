@@ -595,7 +595,7 @@ namespace physx
 	{
 		const PxgArticulationCore* artiCore = mDynamicContext->getArticulationCore();
 
-		return artiCore->getArticulationData(data, gpuIndices, dataType, nbElements, startEvent, finishEvent, mMaxLinks, mMaxDofs);
+		return artiCore->getArticulationData(data, gpuIndices, dataType, nbElements, startEvent, finishEvent, mMaxLinks, mMaxDofs, mMaxFixedTendons, mMaxTendonJoints, mMaxSpatialTendons, mMaxAttachments);
 	}
 
 	bool PxgSimulationController::setArticulationData(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent)
@@ -1785,10 +1785,8 @@ namespace physx
 			const PxU32 nbTriangles = triangleMesh->getNbTrianglesFast();
 			const PxU32 nbVerts = triangleMesh->getNbVerticesFast();
 
-			gpuFEMCloth.mPrevPosition_InvMass =
-		        reinterpret_cast<float4*>(alloc->allocate(sizeof(float4) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
-		    gpuFEMCloth.mTriangleVertexIndices =
-		        reinterpret_cast<uint4*>(alloc->allocate(sizeof(uint4) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+			gpuFEMCloth.mTriangleVertexIndices =
+				reinterpret_cast<uint4*>(alloc->allocate(sizeof(uint4) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			gpuFEMCloth.mMaterialIndices = reinterpret_cast<PxU16*>(
 				alloc->allocate(sizeof(PxU16) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
@@ -1808,16 +1806,16 @@ namespace physx
 			PxArray<uint4> trianglePairVertexIndices;
 
 			// initial "unordered" triangle and triangle-pair data
-			const PxU32 nbTrianglePairs = PxgFEMClothUtil::initialTriangleData(gpuFEMCloth, trianglePairTriangleIndices,
-																			   trianglePairVertexIndices, triangleMesh,
-																			   materialHandles, materials, nbMaterials);
+			const PxU32 nbTrianglePairs =
+				PxgFEMClothUtil::initialTriangleData(gpuFEMCloth, trianglePairTriangleIndices, trianglePairVertexIndices, triangleMesh,
+													 materialHandles, materials, nbMaterials, alloc);
 
 			PxArray<PxU32> sharedTrianglePairs;
 			PxArray<PxU32> nonSharedTriangles;
 			PxArray<PxU32> nonSharedTrianglePairs;
 
 			PxgFEMClothUtil::categorizeClothConstraints(sharedTrianglePairs, nonSharedTriangles, nonSharedTrianglePairs, gpuFEMCloth,
-														trianglePairTriangleIndices, trianglePairVertexIndices);
+														trianglePairTriangleIndices);
 
 			const PxU32 nbNonSharedTriangles = nonSharedTriangles.size();
 			const PxU32 nbSharedTrianglePairs = sharedTrianglePairs.size();

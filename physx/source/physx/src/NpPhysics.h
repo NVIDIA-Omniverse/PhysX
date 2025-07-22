@@ -46,6 +46,10 @@
 #include <string.h>
 #endif
 
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+#include "internal/device/PhysXIndicator.h"
+#endif
+
 #include "PsPvd.h"
 
 #if PX_SUPPORT_OMNI_PVD
@@ -221,6 +225,15 @@ public:
 
 				void		releaseSceneInternal(PxScene&);
 
+#if PX_SUPPORT_GPU_PHYSX
+				void		registerPhysXIndicatorGpuClient();
+				void		unregisterPhysXIndicatorGpuClient();
+#else
+	PX_FORCE_INLINE void	registerPhysXIndicatorGpuClient() {}
+	PX_FORCE_INLINE void	unregisterPhysXIndicatorGpuClient() {}
+#endif
+
+
 	PX_INLINE	NpScene*	getScene(PxU32 i) const { return mSceneArray[i]; }
 	PX_INLINE	PxU32		getNumScenes() const { return mSceneArray.size(); }
 
@@ -311,6 +324,11 @@ private:
 
 				PxFoundation&							mFoundation;
 
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+				PhysXIndicator							mPhysXIndicator;
+				PxU32									mNbRegisteredGpuClients;
+				PxMutex									mPhysXIndicatorMutex;
+#endif
 #if PX_SUPPORT_PVD	
 				physx::pvdsdk::PsPvd*  mPvd;
                 Vd::PvdPhysicsClient*   mPvdPhysicsClient;

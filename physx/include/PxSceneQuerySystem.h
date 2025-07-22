@@ -191,7 +191,7 @@ namespace physx
 		\note	If a shape from the scene is already overlapping with the query shape in its starting position,
 				the hit is returned unless eASSUME_NO_INITIAL_OVERLAP was specified.
 
-		\param[in] geometry		Geometry of object to sweep (supported types are: box, sphere, capsule, convex).
+		\param[in] geometry		Geometry of object to sweep (supported types are: box, sphere, capsule, convex core, convex mesh).
 		\param[in] pose			Pose of the sweep object.
 		\param[in] unitDir		Normalized direction of the sweep.
 		\param[in] distance		Sweep distance. Needs to be in [0, inf) range and >0 if eASSUME_NO_INITIAL_OVERLAP was specified. Will be clamped to PX_MAX_SWEEP_DISTANCE.
@@ -221,7 +221,7 @@ namespace physx
 	
 		\note Filtering: returning eBLOCK from user filter for overlap queries will cause a warning (see #PxQueryHitType).
 
-		\param[in] geometry		Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex).
+		\param[in] geometry		Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex core, convex mesh).
 		\param[in] pose			Pose of the object.
 		\param[out] hitCall		Overlap hit buffer or callback object used to report overlap hits.
 		\param[in] filterData	Filtering data and simple logic. See #PxQueryFilterData #PxQueryFilterCallback

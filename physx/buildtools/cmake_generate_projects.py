@@ -13,43 +13,89 @@ def cmakeExt():
     return ''
 
 
-def filterPreset(presetName):
+def filterPreset(presetPath):
+    # If this is a file path, extract the actual preset name from XML or filename
+    if os.path.isfile(presetPath):
+        try:
+            presetXml = xml.etree.ElementTree.parse(presetPath).getroot()
+            presetName = presetXml.get('name')
+        except:
+            # Fall back to just using the basename without extension if XML parsing fails
+            basename = os.path.basename(presetPath)
+            presetName = os.path.splitext(basename)[0]
+    else:
+        # If not a file path, assume it's already a preset name
+        presetName = presetPath
+    
+    # Platform-specific filtering
     winPresetFilter = ['win','switch','crosscompile']
     if sys.platform == 'win32':
+        # On Windows, include presets that contain win, switch, or crosscompile 
+        # (but not windows-crosscompile)
         if any((presetName.find(elem) != -1 and 'windows-crosscompile' not in presetName) for elem in winPresetFilter):
             return True
     else:
-        if all((presetName.find(elem) == -1 or 'windows-crosscompile' in presetName) for elem in winPresetFilter):
+        # On non-Windows, include Linux presets and windows-crosscompile
+        # Check for Linux or other Unix/macOS presets (those not containing Windows-specific terms)
+        # Special case: include windows-crosscompile, which is for cross-compiling Windows targets
+        if 'linux' in presetName.lower() or 'mac' in presetName.lower() or 'windows-crosscompile' in presetName:
+            return True
+        if all(presetName.find(elem) == -1 for elem in ['win', 'switch']):
             return True
     return False
 
 def noPresetProvided(physx_root_dir):
     global input
     print('Preset parameter required, available presets:')
-    internal_presets = os.path.join(physx_root_dir, "buildtools", "presets", "*.xml")
-    public_presets = os.path.join(physx_root_dir, "buildtools", "presets", "public", "*.xml")
+    presets_dir = os.path.join(physx_root_dir, "buildtools", "presets")
+    internal_presets = os.path.join(presets_dir, "*.xml")
+    public_presets = os.path.join(presets_dir, "public", "*.xml")
+    
+    # Get all XML files in the presets directory
+    internal_preset_files = glob.glob(internal_presets)
+    
+    # Check if we have any non-directory XML files directly in presets folder
     presetfiles = []
-    for file in glob.glob(internal_presets):
-        presetfiles.append(file)
+    for file in internal_preset_files:
+        if not os.path.isdir(file):  # Make sure it's a file, not a directory
+            basename = os.path.basename(file)
+            dirname = os.path.dirname(file)
+            if os.path.basename(dirname) != "public":  # Skip files in public subdirectory
+                presetfiles.append(file)
+    
+    # If no XML files in main presets directory, we're in public distribution
+    # So use the files from public directory
+    if len(presetfiles) == 0:
+        print("No presets in main folder, using public presets")
+        presetfiles = glob.glob(public_presets)
 
     if len(presetfiles) == 0:
-        for file in glob.glob(public_presets):
-            presetfiles.append(file)
+        print("Error: No preset files found. Make sure the directory structure is correct.")
+        exit(1)
 
     counter = 0
     presetList = []
     for preset in presetfiles:
         if filterPreset(preset):
-            presetXml = xml.etree.ElementTree.parse(preset).getroot()
-            if(preset.find('user') == -1):
-                print('(' + str(counter) + ') ' + presetXml.get('name') +
-                    ' <--- ' + presetXml.get('comment'))
-                presetList.append(presetXml.get('name'))
-            else:
-                print('(' + str(counter) + ') ' + presetXml.get('name') +
-                    '.user <--- ' + presetXml.get('comment'))
-                presetList.append(presetXml.get('name') + '.user')
-            counter = counter + 1
+            try:
+                presetXml = xml.etree.ElementTree.parse(preset).getroot()
+                if preset.find('user') == -1:
+                    print('(' + str(counter) + ') ' + presetXml.get('name') +
+                        ' <--- ' + presetXml.get('comment'))
+                    presetList.append(presetXml.get('name'))
+                else:
+                    print('(' + str(counter) + ') ' + presetXml.get('name') +
+                        '.user <--- ' + presetXml.get('comment'))
+                    presetList.append(presetXml.get('name') + '.user')
+                counter = counter + 1
+            except Exception as e:
+                print(f"Warning: Could not parse preset file {preset}: {e}")
+                continue
+    
+    if counter == 0:
+        print("Error: No valid presets found for this platform.")
+        exit(1)
+        
     # Fix Python 2.x.
     try:
         input = raw_input

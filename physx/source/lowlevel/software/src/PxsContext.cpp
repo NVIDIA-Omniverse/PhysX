@@ -261,7 +261,6 @@ void PxsContext::createTransformCache(PxVirtualAllocatorCallback& allocatorCallb
 	mTransformCache = PX_NEW(PxsTransformCache)(allocatorCallback);
 }
 
-
 PxsContactManager* PxsContext::createContactManager(PxsContactManager* contactManager, bool useCCD)
 {
 	PxsContactManager* cm = contactManager? contactManager : mContactManagerPool.get();

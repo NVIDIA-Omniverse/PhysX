@@ -58,6 +58,8 @@
 #include "GuVecConvexHull.h"
 #include "GuPCMShapeConvex.h"
 #include "GuPCMContactConvexCommon.h"
+#include "GuConvexSupport.h"
+#include "GuConvexGeometry.h"
 
 using namespace physx;
 using namespace Gu;
@@ -283,6 +285,30 @@ PxReal PxGeometryQuery::pointDistance(const PxVec3& point, const PxGeometry& geo
 				*closestPoint = cp;
 			return sqDistance;
 		}
+		case PxGeometryType::eCONVEXCORE:
+		{
+			const PxConvexCoreGeometry& convexGeom = static_cast<const PxConvexCoreGeometry&>(geom);
+
+			// Create a point support
+			Gu::ConvexShape pointShape;
+			pointShape.coreType = Gu::ConvexCore::Type::ePOINT;
+			pointShape.pose = PxTransform(PxIdentity);
+			pointShape.margin = 0.0f;
+
+			// Create convex core shape
+			Gu::ConvexShape convexShape;
+			Gu::makeConvexShape(convexGeom, pose, convexShape);
+			PX_ASSERT(convexShape.isValid());
+
+			// Compute distance using GJK
+			PxVec3 pointA, pointB, axis;
+			const PxReal distance = Gu::RefGjkEpa::computeGjkDistance(pointShape, convexShape, PxTransform(PxIdentity), pose, FLT_MAX, pointA, pointB, axis);
+
+			if(closestPoint)
+				*closestPoint = pointB;
+
+			return distance * distance;
+		}
 		case PxGeometryType::eTRIANGLEMESH:
 		{
 			const PxTriangleMeshGeometry& meshGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
@@ -452,8 +478,49 @@ bool PxGeometryQuery::generateTriangleContacts(const PxGeometry& geom, const PxT
 
 			break;
 		}
+		case PxGeometryType::eCONVEXCORE:
+		{
+			const PxConvexCoreGeometry& convex = static_cast<const PxConvexCoreGeometry&>(geom);
+
+			Gu::ConvexShape convexShape;
+			Gu::makeConvexShape(convex, pose, convexShape);
+			PX_ASSERT(convexShape.isValid());
+
+			// Create the triangle shape as a points-based convex shape
+			Gu::ConvexShape triShape;
+			triShape.coreType = Gu::ConvexCore::Type::ePOINTS;
+			triShape.pose = PxTransform(PxIdentity);
+			triShape.margin = meshContactMargin;
+			// Initialize the points core data
+			Gu::ConvexCore::PointsCore triCore;
+			triCore.points = triangleVertices;
+			triCore.numPoints = 3;
+			triCore.stride = sizeof(PxVec3);
+			triCore.S = PxVec3(1.0f);
+			triCore.R = PxQuat(PxIdentity);
+			// Copy the core data into the shape's core data buffer
+			PX_ASSERT(sizeof(triCore) <= Gu::ConvexCore::MAX_CORE_SIZE);
+			PxMemCopy(triShape.coreData, &triCore, sizeof(triCore));
+
+			PxVec3 normal, points[Gu::MAX_CONVEX_CONTACTS];
+			PxReal dists[Gu::MAX_CONVEX_CONTACTS];
+			if (PxU32 count = Gu::generateContacts(convexShape, triShape, contactDistance + meshContactMargin, normal, points, dists))
+			{
+				for (PxU32 i = 0; i < count; ++i)
+				{
+					PxContactPoint contact;
+					contact.point = points[i];
+					contact.normal = normal;
+					contact.separation = dists[i];
+					contact.internalFaceIndex1 = triangleIndex;
+					contactBuffer.contact(contact);
+				}
+			}
+
+			break;
+		}
 		default:
-			PX_ASSERT(0); // Unsupported gepmetry type
+			PX_ASSERT(0); // Unsupported geometry type
 			break;
 	}
 

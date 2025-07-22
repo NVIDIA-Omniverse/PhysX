@@ -98,6 +98,9 @@ NpPhysics::NpPhysics(const PxTolerancesScale& scale, const PxvOffsetTable& pxvOf
 	mPhysics					(scale, pxvOffsetTable),
 	mDeletionListenersExist		(false),
 	mFoundation					(foundation)
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+	, mNbRegisteredGpuClients	(0)
+#endif	
 {
 	PX_UNUSED(trackOutstandingAllocations);
 
@@ -1011,6 +1014,29 @@ PxPruningStructure* NpPhysics::createPruningStructure(PxRigidActor*const* actors
 	}
 	return ps;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+void NpPhysics::registerPhysXIndicatorGpuClient()
+{
+	PxMutex::ScopedLock lock(mPhysXIndicatorMutex);
+
+	++mNbRegisteredGpuClients;
+
+	mPhysXIndicator.setIsGpu(mNbRegisteredGpuClients>0);
+}
+
+void NpPhysics::unregisterPhysXIndicatorGpuClient()
+{
+	PxMutex::ScopedLock lock(mPhysXIndicatorMutex);
+
+	if (mNbRegisteredGpuClients)
+		--mNbRegisteredGpuClients;
+
+	mPhysXIndicator.setIsGpu(mNbRegisteredGpuClients>0);
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

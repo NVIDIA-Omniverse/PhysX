@@ -112,7 +112,7 @@ void Collection::add(PxCollection& _collection)
 	Collection& collection = static_cast<Collection&>(_collection);
 	PX_CHECK_AND_RETURN(this != &collection, "PxCollection::add(PxCollection&) called with itself!");
 
-	mObjects.reserve(mObjects.capacity() + collection.mObjects.size());
+	mObjects.reserve(mObjects.size() + collection.mObjects.size());
 	const ObjectToIdMap::Entry* e = collection.mObjects.getEntries();
 	for (PxU32 i = 0; i < collection.mObjects.size(); ++i)
 	{

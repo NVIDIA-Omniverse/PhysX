@@ -1184,6 +1184,28 @@ PX_PHYSX_CORE_API PxArticulationLimitGeneratedValues::PxArticulationLimitGenerat
 {
 	PX_UNUSED(inSource);
 }
+inline PxReal getPxPerformanceEnvelopeMaxEffort( const PxPerformanceEnvelope* inOwner ) { return inOwner->maxEffort; }
+inline void setPxPerformanceEnvelopeMaxEffort( PxPerformanceEnvelope* inOwner, PxReal inData) { inOwner->maxEffort = inData; }
+inline PxReal getPxPerformanceEnvelopeMaxActuatorVelocity( const PxPerformanceEnvelope* inOwner ) { return inOwner->maxActuatorVelocity; }
+inline void setPxPerformanceEnvelopeMaxActuatorVelocity( PxPerformanceEnvelope* inOwner, PxReal inData) { inOwner->maxActuatorVelocity = inData; }
+inline PxReal getPxPerformanceEnvelopeVelocityDependentResistance( const PxPerformanceEnvelope* inOwner ) { return inOwner->velocityDependentResistance; }
+inline void setPxPerformanceEnvelopeVelocityDependentResistance( PxPerformanceEnvelope* inOwner, PxReal inData) { inOwner->velocityDependentResistance = inData; }
+inline PxReal getPxPerformanceEnvelopeSpeedEffortGradient( const PxPerformanceEnvelope* inOwner ) { return inOwner->speedEffortGradient; }
+inline void setPxPerformanceEnvelopeSpeedEffortGradient( PxPerformanceEnvelope* inOwner, PxReal inData) { inOwner->speedEffortGradient = inData; }
+PX_PHYSX_CORE_API PxPerformanceEnvelopeGeneratedInfo::PxPerformanceEnvelopeGeneratedInfo()
+	: MaxEffort( "MaxEffort", setPxPerformanceEnvelopeMaxEffort, getPxPerformanceEnvelopeMaxEffort )
+	, MaxActuatorVelocity( "MaxActuatorVelocity", setPxPerformanceEnvelopeMaxActuatorVelocity, getPxPerformanceEnvelopeMaxActuatorVelocity )
+	, VelocityDependentResistance( "VelocityDependentResistance", setPxPerformanceEnvelopeVelocityDependentResistance, getPxPerformanceEnvelopeVelocityDependentResistance )
+	, SpeedEffortGradient( "SpeedEffortGradient", setPxPerformanceEnvelopeSpeedEffortGradient, getPxPerformanceEnvelopeSpeedEffortGradient )
+{}
+PX_PHYSX_CORE_API PxPerformanceEnvelopeGeneratedValues::PxPerformanceEnvelopeGeneratedValues( const PxPerformanceEnvelope* inSource )
+		:MaxEffort( inSource->maxEffort )
+		,MaxActuatorVelocity( inSource->maxActuatorVelocity )
+		,VelocityDependentResistance( inSource->velocityDependentResistance )
+		,SpeedEffortGradient( inSource->speedEffortGradient )
+{
+	PX_UNUSED(inSource);
+}
 inline PxReal getPxJointFrictionParamsStaticFrictionEffort( const PxJointFrictionParams* inOwner ) { return inOwner->staticFrictionEffort; }
 inline void setPxJointFrictionParamsStaticFrictionEffort( PxJointFrictionParams* inOwner, PxReal inData) { inOwner->staticFrictionEffort = inData; }
 inline PxReal getPxJointFrictionParamsDynamicFrictionEffort( const PxJointFrictionParams* inOwner ) { return inOwner->dynamicFrictionEffort; }
@@ -1208,18 +1230,22 @@ inline PxReal getPxArticulationDriveDamping( const PxArticulationDrive* inOwner 
 inline void setPxArticulationDriveDamping( PxArticulationDrive* inOwner, PxReal inData) { inOwner->damping = inData; }
 inline PxReal getPxArticulationDriveMaxForce( const PxArticulationDrive* inOwner ) { return inOwner->maxForce; }
 inline void setPxArticulationDriveMaxForce( PxArticulationDrive* inOwner, PxReal inData) { inOwner->maxForce = inData; }
+inline PxPerformanceEnvelope getPxArticulationDriveEnvelope( const PxArticulationDrive* inOwner ) { return inOwner->envelope; }
+inline void setPxArticulationDriveEnvelope( PxArticulationDrive* inOwner, PxPerformanceEnvelope inData) { inOwner->envelope = inData; }
 inline PxArticulationDriveType::Enum getPxArticulationDriveDriveType( const PxArticulationDrive* inOwner ) { return inOwner->driveType; }
 inline void setPxArticulationDriveDriveType( PxArticulationDrive* inOwner, PxArticulationDriveType::Enum inData) { inOwner->driveType = inData; }
 PX_PHYSX_CORE_API PxArticulationDriveGeneratedInfo::PxArticulationDriveGeneratedInfo()
 	: Stiffness( "Stiffness", setPxArticulationDriveStiffness, getPxArticulationDriveStiffness )
 	, Damping( "Damping", setPxArticulationDriveDamping, getPxArticulationDriveDamping )
 	, MaxForce( "MaxForce", setPxArticulationDriveMaxForce, getPxArticulationDriveMaxForce )
+	, Envelope( "Envelope", setPxArticulationDriveEnvelope, getPxArticulationDriveEnvelope )
 	, DriveType( "DriveType", setPxArticulationDriveDriveType, getPxArticulationDriveDriveType )
 {}
 PX_PHYSX_CORE_API PxArticulationDriveGeneratedValues::PxArticulationDriveGeneratedValues( const PxArticulationDrive* inSource )
 		:Stiffness( inSource->stiffness )
 		,Damping( inSource->damping )
 		,MaxForce( inSource->maxForce )
+		,Envelope( inSource->envelope )
 		,DriveType( inSource->driveType )
 {
 	PX_UNUSED(inSource);

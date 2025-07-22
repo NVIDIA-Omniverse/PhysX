@@ -240,6 +240,8 @@ namespace physx
 
 		// FEM-cloth
 		PX_FORCE_INLINE PxU32 getMaxClothVerts() { return mMaxNbClothVerts; }
+		PX_FORCE_INLINE PxU32 getMaxClothTriangles() { return mMaxNbClothTriangles; }
+		PX_FORCE_INLINE PxU32 getMaxClothTrianglesWithActiveEdges() { return mMaxNbClothTrianglesWithActiveEdges; }
 
 		PX_FORCE_INLINE PxU32 getMaxNonSharedTrianglePartitions() { return mMaxNbNonSharedTriPartitions; }
 		PX_FORCE_INLINE PxU32 getMaxNonSharedTrianglesPerPartition() { return mMaxNbNonSharedTrianglesPerPartition; }
@@ -542,7 +544,8 @@ namespace physx
 		PxU32			mGMMaxJacobiVertices;
 
 		PxU32			mMaxNbClothVerts;
-
+		PxU32			mMaxNbClothTriangles;
+		PxU32			mMaxNbClothTrianglesWithActiveEdges;
 		PxU32			mMaxNbNonSharedTriangles;
 
 		PxU32			mMaxNbNonSharedTriPartitions;

@@ -85,7 +85,7 @@ namespace physx
 			const PxReal biasCoefficient, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
 			CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled = false);
 
-		//These two methods is for articulation vs soft body interation
+		//These two methods are for articulation vs soft body interaction
 		void outputVelocity(CUdeviceptr sharedDesc, CUstream solverStream, bool isTGS);
 		void pushImpulse(CUstream solverStream);
 
@@ -120,7 +120,7 @@ namespace physx
 
 		void synchronizedStreams(CUstream bpStream, CUstream npStream);
 
-		bool getArticulationData(void* data, const PxArticulationGPUIndex* gpuIndices, PxArticulationGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent, const PxU32 maxLinks, const PxU32 maxDofs) const;
+		bool getArticulationData(void* data, const PxArticulationGPUIndex* gpuIndices, PxArticulationGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent, PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialAttachments) const;
 		bool setArticulationData(const void* data, const PxArticulationGPUIndex* gpuIndices, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent, PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialAttachments);
 		bool computeArticulationData(void* data, const PxArticulationGPUIndex* gpuIndices, PxArticulationGPUAPIComputeType::Enum operation, PxU32 nbElements,
 									PxU32 maxLinks, PxU32 maxDofs, CUevent startEvent, CUevent finishEvent);
@@ -147,7 +147,10 @@ namespace physx
 		bool setTendonStates(const void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxTendons, PxArticulationGPUAPIWriteType::Enum dataType);
 		bool setSpatialTendonAttachmentStates(const void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments);
 		bool setFixedTendonJointStates(const void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints);
-		
+		bool getTendonStates(void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxTendons, PxArticulationGPUAPIReadType::Enum dataType) const;
+		bool getSpatialTendonAttachmentStates(void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments) const;
+		bool getFixedTendonJointStates(void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints) const;
+
 		PxgArticulationCoreDesc*			mArticulationCoreDesc;
 		PxgArticulationOutputDesc*			mArticulationOutputDesc;
 

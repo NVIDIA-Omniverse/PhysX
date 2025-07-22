@@ -126,11 +126,11 @@ void PxSetJointGlobalFrame(PxJoint& joint, const PxVec3* wsAnchor, const PxVec3*
 
 #if PX_SUPPORT_OMNI_PVD
 
-void physx::Ext::omniPvdSetBaseJointParams(PxJoint& joint, PxJointConcreteType::Enum cType)
+void physx::Ext::omniPvdSetBaseJointParams(const PxJoint& joint, PxJointConcreteType::Enum cType)
 {
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	PxJoint& j = static_cast<PxJoint&>(joint);
+	const PxJoint& j = static_cast<const PxJoint&>(joint);
 	PxRigidActor* actors[2]; j.getActors(actors[0], actors[1]);
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor0, j, actors[0])
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor1, j, actors[1])

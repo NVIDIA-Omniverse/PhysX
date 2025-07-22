@@ -156,6 +156,8 @@ PxD6JointDrive getPxD6Joint_Drive( const PxD6Joint* inObj, PxD6Drive::Enum inInd
 void setPxD6Joint_DrivePosition( PxD6Joint* inObj, const PxTransform & inArg){ inObj->setDrivePosition( inArg ); }
 PxTransform getPxD6Joint_DrivePosition( const PxD6Joint* inObj ) { return inObj->getDrivePosition(); }
 const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return inObj->getConcreteTypeName(); }
+void setPxD6Joint_AngularDriveConfig( PxD6Joint* inObj, PxD6AngularDriveConfig::Enum inArg){ inObj->setAngularDriveConfig( inArg ); }
+PxD6AngularDriveConfig::Enum getPxD6Joint_AngularDriveConfig( const PxD6Joint* inObj ) { return inObj->getAngularDriveConfig(); }
  PxD6JointGeneratedInfo::PxD6JointGeneratedInfo()
 	: Motion( "Motion", setPxD6Joint_Motion, getPxD6Joint_Motion)
 	, TwistAngle( "TwistAngle", getPxD6Joint_TwistAngle)
@@ -170,6 +172,7 @@ const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return in
 	, Drive( "Drive", setPxD6Joint_Drive, getPxD6Joint_Drive)
 	, DrivePosition( "DrivePosition", setPxD6Joint_DrivePosition, getPxD6Joint_DrivePosition)
 	, ConcreteTypeName( "ConcreteTypeName", getPxD6Joint_ConcreteTypeName)
+	, AngularDriveConfig( "AngularDriveConfig", setPxD6Joint_AngularDriveConfig, getPxD6Joint_AngularDriveConfig)
 {}
  PxD6JointGeneratedValues::PxD6JointGeneratedValues( const PxD6Joint* inSource )
 		:PxJointGeneratedValues( inSource )
@@ -184,6 +187,7 @@ const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return in
 		,PyramidSwingLimit( getPxD6Joint_PyramidSwingLimit( inSource ) )
 		,DrivePosition( getPxD6Joint_DrivePosition( inSource ) )
 		,ConcreteTypeName( getPxD6Joint_ConcreteTypeName( inSource ) )
+		,AngularDriveConfig( getPxD6Joint_AngularDriveConfig( inSource ) )
 {
 	PX_UNUSED(inSource);
 		for ( PxU32 idx = 0; idx < static_cast<PxU32>( physx::PxD6Axis::eCOUNT ); ++idx )

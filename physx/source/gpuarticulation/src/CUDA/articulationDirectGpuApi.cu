@@ -89,7 +89,7 @@ static PX_FORCE_INLINE __device__ void updateKinematicInternal(
 
 	const SpatialSubspaceMatrix* const PX_RESTRICT motionMatrix = articulation.motionMatrix;
 
-	//each thread deal with a joint
+	//each thread deals with a joint
 	for (PxU32 linkID = 1 + threadIndexInWarp; linkID < linkCount; linkID += WARP_SIZE)
 	{
 		const ArticulationJointCoreData& jointDatum = jointData[linkID];
@@ -261,7 +261,7 @@ static PX_FORCE_INLINE __device__ void updateKinematicInternal(
 
 	const PxTransform* PX_RESTRICT linkBody2Actors = articulation.linkBody2Actors;
 
-	//each thread deal with a link
+	//each thread deals with a link
 	for (PxU32 linkID = threadIndexInWarp; linkID < linkCount; linkID += WARP_SIZE)
 	{
 		const PxNodeIndex linkNodeIndex(bodySimIndex, linkID);
@@ -869,6 +869,52 @@ extern "C" __global__ void setArtiTendonState(
 	}
 }
 
+extern "C" __global__ void getArtiTendonState(
+	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
+	void* PX_RESTRICT data,
+	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
+	const PxU32 nbElements,
+	const PxU32 maxTendons,
+	const PxArticulationGPUAPIReadType::Enum operation
+)
+{
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+	const PxU32 groupIndex = globalThreadIndex / maxTendons;
+	const PxU32 tendonIndex = globalThreadIndex % maxTendons;
+
+	if (groupIndex < nbElements)
+	{
+		const PxArticulationGPUIndex articulationIndex = gpuIndices[groupIndex];
+		const PxgArticulation& articulation = scDesc->articulations[articulationIndex];
+
+		switch (operation)
+		{
+			case (PxArticulationGPUAPIReadType::eSPATIAL_TENDON):
+			{
+				const PxU32 numSpatialTendons = articulation.data.numSpatialTendons;
+				if (tendonIndex < numSpatialTendons)
+				{
+					PxGpuSpatialTendonData* dstData = &(reinterpret_cast<PxGpuSpatialTendonData*>(data)[groupIndex * maxTendons]);
+					dstData[tendonIndex] = articulation.spatialTendonParams[tendonIndex];
+				}
+				break;
+			}
+			case (PxArticulationGPUAPIReadType::eFIXED_TENDON):
+			{
+				const PxU32 numFixedTendons = articulation.data.numFixedTendons;
+				if (tendonIndex < numFixedTendons)
+				{
+					PxGpuFixedTendonData* dstData = &(reinterpret_cast<PxGpuFixedTendonData*>(data)[groupIndex * maxTendons]);
+					dstData[tendonIndex] = articulation.fixedTendonParams[tendonIndex];
+				}
+				break;
+			}
+			default:
+				assert(false);
+		}
+	}
+}
+
 extern "C" __global__ void setArtiSpatialTendonAttachmentState(
 	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
 	const PxGpuTendonAttachmentData* PX_RESTRICT data,
@@ -920,6 +966,54 @@ extern "C" __global__ void setArtiSpatialTendonAttachmentState(
 	}
 }
 
+extern "C" __global__ void getArtiSpatialTendonAttachmentState(
+	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
+	PxGpuTendonAttachmentData* PX_RESTRICT data,
+	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
+	const PxU32 nbElements,
+	const PxU32 maxTendons
+)
+{
+	const PxU32 maxTendonAttachments = scDesc->mMaxAttachmentPerArticulation;
+	const PxU32 maxSpatialTendons = scDesc->mMaxSpatialTendonsPerArticulation;
+
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+	const PxU32 groupIndex = globalThreadIndex / maxTendons;
+	const PxU32 elementIndex = globalThreadIndex % maxTendons;
+	const PxU32 tendonIndex = elementIndex / maxTendonAttachments;
+	const PxU32 attachmentIndex = elementIndex % maxTendonAttachments;
+
+	if (groupIndex < nbElements)
+	{
+		const PxArticulationGPUIndex articulationIndex = gpuIndices[groupIndex];
+		const PxgArticulation& articulation = scDesc->articulations[articulationIndex];
+
+		const PxU32 numSpatialTendons = articulation.data.numSpatialTendons;
+
+		if (tendonIndex < numSpatialTendons)
+		{
+			const PxgArticulationTendon& tendon = articulation.spatialTendons[tendonIndex];
+
+			PxGpuTendonAttachmentData* dstData = &data[groupIndex * maxSpatialTendons * maxTendonAttachments];
+			const PxGpuTendonAttachmentData* attachData = reinterpret_cast<const PxGpuTendonAttachmentData*>(tendon.mModElements);
+			const PxU32 numTendonAttachments = tendon.mNbElements;
+
+			if (attachmentIndex < numTendonAttachments)
+			{
+				//PxGpuTendonAttachmentData is 32 byte
+				PX_COMPILE_TIME_ASSERT(sizeof(PxGpuTendonAttachmentData) == 32);
+				const PxU32 numIteration = sizeof(PxGpuTendonAttachmentData) / sizeof(uint4);
+				uint4* tData = reinterpret_cast<uint4*>(&dstData[attachmentIndex]);
+				const uint4* aData = reinterpret_cast<const uint4*>(&attachData[attachmentIndex]);
+				for (PxU32 i = 0; i < numIteration; ++i)
+				{
+					tData[i] = aData[i];
+				}
+			}
+		}
+	}
+}
+
 extern "C" __global__ void setArtiFixedTendonJointState(
 	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
 	const PxGpuTendonJointCoefficientData* PX_RESTRICT data,
@@ -964,6 +1058,52 @@ extern "C" __global__ void setArtiFixedTendonJointState(
 				const uint4 tData = reinterpret_cast<const uint4&>(srcData[tendonJointIndex]);
 				uint4& coefData = reinterpret_cast<uint4&>(coefficientData[tendonJointIndex]);
 				coefData = tData;
+			}
+		}
+	}
+}
+
+extern "C" __global__ void getArtiFixedTendonJointState(
+	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
+	PxGpuTendonJointCoefficientData* PX_RESTRICT data,
+	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
+	const PxU32 nbElements
+)
+{
+	const PxU32 maxFixedTendons = scDesc->mMaxFixedTendonsPerArticulation;
+	const PxU32 maxTendonJoints = scDesc->mMaxTendonJointPerArticulation;
+	const PxU32 maxTendons = maxFixedTendons * maxTendonJoints;
+
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+	const PxU32 groupIndex = globalThreadIndex / maxTendons;
+	const PxU32 elementIndex = globalThreadIndex % maxTendons;
+	const PxU32 tendonIndex = elementIndex / maxTendonJoints;
+	const PxU32 tendonJointIndex = elementIndex % maxTendonJoints;
+
+	if (groupIndex < nbElements)
+	{
+		const PxArticulationGPUIndex articulationIndex = gpuIndices[groupIndex];
+		const PxgArticulation& articulation = scDesc->articulations[articulationIndex];
+
+		const PxgArticulationTendon* fixedTendons = articulation.fixedTendons;
+		const PxU32 numFixedTendonJoints = articulation.data.numFixedTendons;
+
+		if (tendonIndex < numFixedTendonJoints)
+		{
+			const PxgArticulationTendon& tendon = fixedTendons[tendonIndex];
+
+			PxGpuTendonJointCoefficientData* dstData = &data[groupIndex * maxFixedTendons * maxTendonJoints];
+
+			const PxGpuTendonJointCoefficientData* coefficientData = reinterpret_cast<const PxGpuTendonJointCoefficientData*>(tendon.mModElements);
+			const PxU32 numTendonJoints = tendon.mNbElements;
+
+			if (tendonJointIndex < numTendonJoints)
+			{
+				//PxGpuTendonJointCoefficientData is 16 byte
+				PX_COMPILE_TIME_ASSERT(sizeof(PxGpuTendonJointCoefficientData) == 16);
+				uint4& tData = reinterpret_cast<uint4&>(dstData[tendonJointIndex]);
+				const uint4& coefData = reinterpret_cast<const uint4&>(coefficientData[tendonJointIndex]);
+				tData = coefData;
 			}
 		}
 	}

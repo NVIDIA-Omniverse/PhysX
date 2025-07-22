@@ -1,6 +1,73 @@
-# v5.6.0-107.0
+# v5.6.1-107.3
 
-With this release, we make the complete GPU source code available under the BSD-3 license. We no longer provide binaries for GPU acceleration and users have to build the GPU binaries from source; in order to do so, please note the additional build instructions in the platform readmes linked below.
+## General
+
+### Fixed
+
+* PxHashSet would crash after adding ~300 million entries to the set due to internal PxU32 overflows. This has been fixed.
+* The documentation build tool had a regression that made the search not find terms properly.
+
+### Added
+
+* Update NVCC compiler options to generate SASS for Blackwell.
+
+## Articulations
+
+### Deprecated
+
+* Deprecated PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES. Joint dofs configured to use PxPerformanceEnvelope will already ignore the flag and assume they are configured for forces/torques.
+
+### Added
+
+* A new motor model for clamping total joint effort (force or torque). The total joint effort is comprised of drive effort and joint effort applied through articulation cache by the user. Please see PxPerformanceEnvelope for clamping details.
+* New direct GPU API getters for PxArticulationGPUAPIReadType::eFIXED_TENDON, PxArticulationGPUAPIReadType::eFIXED_TENDON_JOINT, PxArticulationGPUAPIReadType::eSPATIAL_TENDON, and PxArticulationGPUAPIReadType::eSPATIAL_TENDON_ATTACHMENT.
+* PxArticulationFixedTendon, PxArticulationTendonJoint, PxArticulationSpatialTendon, and PxArticulationAttachment's parameter getters now report errors if called when PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled.
+
+### Fixed
+
+* When running on GPU, the link incoming joint force was not being reported correctly in certain scenarios (PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE, PxArticulationGPUAPIReadType::eLINK_INCOMING_JOINT_FORCE).
+
+## Joints
+
+### Deprecated
+
+* PxD6Drive::eSWING has been deprecated. Furthermore, the angular joint drive precedence system (PxD6Drive::eSLERP taking precedence over PxD6Drive::eSWING/eTWIST) has been deprecated too. The recommended approach is now to first define the desired angular drive model before setting any drive parameters. The new API PxD6Joint::setAngularDriveConfig() can be used for this purpose. The recommended workflow is as follows:
+  * To use PxD6Drive::eSLERP, first call PxD6Joint::setAngularDriveConfig(PxD6AngularDriveConfig::eSLERP) (PxD6Drive::eSWING/eTWIST/eSWING1/eSWING2 can not be used in this config).
+  * To use PxD6Drive::eTWIST/eSWING1/eSWING2, first call PxD6Joint::setAngularDriveConfig(PxD6AngularDriveConfig::eSWING_TWIST) (PxD6Drive::eSWING/eSLERP can not be used in this config).
+  * PxD6Drive::eSWING should not be used anymore. The configuration of the previous bullet point can be used instead together with setting identical drive parameters for PxD6Drive::eSWING1/eSWING2.
+
+### Added
+
+* PxD6Joint::setAngularDriveConfig() has been added to configure whether angular drives should use the slerp model or twist/swing1/swing2.
+* It is now possible to set different parameters for drives along the swing1 and swing2 axes (see new entries PxD6Drive::eSWING1 and PxD6Drive::eSWING2). Note that it is necessary to configure the D6 joint via PxD6Joint::setAngularDriveConfig(PxD6AngularDriveConfig::eSWING_TWIST) to enable this functionality.
+
+### Fixed
+
+* When running with Direct GPU API enabled (PxSceneFlag::eENABLE_DIRECT_GPU_API), D6 joints were not able to break if the force exceeded the break threshold. The joints do break now but there is a potential performance penalty if the scene has breakable D6 joints.
+
+## Deformable Body
+
+### Fixed
+
+* Deformable Volume collision filter deallocation resulted in memory leaks.
+* Deformable-rigid dynamic friction resolution has received wrong rigid dynamic friction values.
+
+## Rigid Body
+
+### Fixed
+
+* A rare crash in PxConvexCoreGeometry contact generation in Gu::FaceClipper::makePlanes() function has been fixed.
+* A bug when PxPhysics::createMaterial() allowed to create materials with invalid restitution values. The accepted values now are [0, 1] for restitution and (-PX_MAX_REAL, 0) if it's the compliant contact stiffness.
+* Pairs of triangle mesh colliders (where both have no SDF) are filtered out from the collision pipeline, avoiding a crash when e.g. kinematic triangle meshes collide.
+* A regression in the GPU geometry code that could cause ghost contacts between a sphere and a triangle mesh has been fixed.
+
+## Scene Queries
+
+### Added
+
+* `PxConvexCoreGeometry` is now supported as the query geometry in `sweep()` and `overlap()` scene queries.
+
+# v5.6.0-107.0
 
 ## Supported Platforms
 
@@ -35,12 +102,14 @@ With this release, we make the complete GPU source code available under the BSD-
 * Added SnippetProfilerConverter to convert profiler data to a file format that can be viewed in Chrome.
 * The task system now supports high-priority tasks, which are used by the CPU broadphase (PxBroadPhaseType::ePABP). This can sometimes give small performance gains and smoother performance profiles. If not using the default PhysX CPU dispatcher, support for high-priority tasks should be replicated in user-provided CPU dispatchers to take advantage of this change.
 * Added setName/getName functions to PxArticulationJointReducedCoordinate class.
+* The PxGpuBroadPhaseDesc structure has been added, to let users tweak the GPU broadphase data. This is mostly useful when using environment IDs in colocated reinforcement learning cases.
 
 ## Rigid Body
 
 ### Fixed
 
 * A bug leading to a potential performance issue in the PxBroadPhaseType::ePABP broadphase has been fixed. A pair buffer was constantly resizing each frame for no reason.
+* The GPU broadphase could overflow internal 32bit counters with large colocated environments (reinforcement learning cases). This has been fixed.
 * Switching dynamic/kinematic at runtime when direct GPU API was in use was causing errors and was disabled for that reason in 106.5. The bug was fixed and the feature is enabled again.
 
 ### Removed

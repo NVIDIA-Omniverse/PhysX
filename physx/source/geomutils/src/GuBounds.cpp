@@ -585,6 +585,15 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 		}
 		break;
 
+		case PxGeometryType::eCONVEXCORE:
+		{
+			PxBounds3 bounds; Gu::computeBounds(bounds, g, t, inflation, SQ_PRUNER_INFLATION);
+			mPrunerInflatedAABB.minimum = bounds.minimum;
+			mPrunerInflatedAABB.maximum = bounds.maximum;
+			mGuBox.extents = mPrunerBoxGeomExtents = bounds.getExtents();
+		}
+		break;
+
 		case PxGeometryType::eCONVEXMESH:
 		{
 			const PxConvexMeshGeometry& shape = static_cast<const PxConvexMeshGeometry&>(g);

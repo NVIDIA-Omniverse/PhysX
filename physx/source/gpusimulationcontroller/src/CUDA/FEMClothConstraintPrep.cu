@@ -45,6 +45,7 @@
 #include "PxsDeformableSurfaceMaterialCore.h"
 #include "utils.cuh"
 #include "deformableUtils.cuh"
+#include "deformableCollision.cuh"
 
 using namespace physx;
 
@@ -71,13 +72,12 @@ extern "C" __global__ void cloth_rigidContactPrepareLaunch(
 	float4*							contacts_restW,
 	float4*							normalPens,
 	float4*							barycentrics,
-	PxgFemContactInfo*				contactInfos,
+	const PxgFemOtherContactInfo*	contactInfos,
 	PxU32*							numContacts,
 	PxgFemRigidConstraintBlock*		primitiveConstraints,
 	PxgPrePrepDesc*					preDesc,
 	PxgConstraintPrepareDesc*		prepareDesc,
-	float4* 						rigidLambdaNs, 
-	float4* 						clothLambdaNs,
+	PxReal* 						rigidLambdaNs, 
 	const PxReal					invDt,
 	PxgSolverSharedDescBase*		sharedDesc,
 	bool isTGS
@@ -97,10 +97,9 @@ extern "C" __global__ void cloth_rigidContactPrepareLaunch(
 		if(workIndex >= tNumContacts)
 			return;
 
-		rigidLambdaNs[workIndex] = make_float4(0.f, 0.f, 0.f, 0.f);
-		clothLambdaNs[workIndex] = make_float4(0.f, 0.f, 0.f, 0.f);
+		rigidLambdaNs[workIndex] = 0.0f;
 
-		PxgFemContactInfo contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo contactInfo = contactInfos[workIndex];
 		PxgFemRigidConstraintBlock& constraint = primitiveConstraints[workIndex / 32];
 
 		PxU64 pairInd0 = contactInfo.pairInd0;
@@ -149,26 +148,21 @@ extern "C" __global__ void cloth_rigidContactPrepareLaunch(
 
 
 //!
-//! \brief    : prep cloth vs. cloth collision
+//! \brief    : prep cloth vs. cloth collision.
 //!
 
 extern "C" __global__ 
 void cloth_clothContactPrepareLaunch(
 	PxgFEMCloth*						clothes,
-	float4*								contacts,
-	float4*								normalRestDistSq,
-	float4*								barycentrics0,
-	float4*								barycentrics1,
-	PxgFemContactInfo*					contactInfos,
+	PxgFemFemContactInfo*				contactInfos,
 	PxU32*								numContacts,
 	PxU32								maxContacts,
-	PxgClothConstraintBlock*			constraints,
 	PxsDeformableSurfaceMaterialData*	clothMaterials,
 	const PxU8*							updateContactPairs
 )
 {
 	// Early exit if contact pairs are not updated.
-	if (*updateContactPairs == 0)
+	if(*updateContactPairs == 0)
 		return;
 
 	const PxU32 tNumContacts = PxMin(*numContacts, maxContacts);
@@ -176,46 +170,101 @@ void cloth_clothContactPrepareLaunch(
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
 
 	const PxU32 idx = threadIdx.x;
-	const PxU32 threadIndexInWarp = threadIdx.x & 31;
 
 	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
 
-		if (workIndex == 0) // Clamp the cloth contact count.
+		if(workIndex == 0) // Clamp the cloth contact count.
+		{
 			*numContacts = tNumContacts;
+		}
 
 		if(workIndex >= tNumContacts)
+		{
 			return;
+		}
 
-		PxgFemContactInfo contactInfo = contactInfos[workIndex];
-		PxgClothConstraintBlock& constraint = constraints[workIndex / 32];
+		PxgFemFemContactInfo contactInfo = contactInfos[workIndex];
+		if(contactInfo.isValidPair()) // For different cloths, contactInfo is already set to valid.
+		{
+			continue;
+		}
 
-		// First actor: cloth vertex (currently)
 		const PxU32 pairInd0 = PxU32(contactInfo.pairInd0);
 		PxgFEMCloth& cloth0 = clothes[PxGetClothId(pairInd0)];
 		const PxU32 elementId0 = PxGetClothElementIndex(pairInd0);
-		const PxReal clothFriction0 = cloth0.mDynamicFrictions[elementId0];
 
-		// Second actor: cloth triangle
 		PxU32 pairInd1 = PxU32(contactInfo.pairInd1);
 		PxgFEMCloth& cloth1 = clothes[PxGetClothId(pairInd1)];
 		const PxU32 elementId1 = PxGetClothElementIndex(pairInd1);
-		const PxReal clothFriction1 = clothMaterials[cloth1.mMaterialIndices[elementId1]].dynamicFriction;
-		//const float4 barycentric1 = barycentrics1[workIndex];
 
-		const float4 normal_restDistSq = normalRestDistSq[workIndex];
-		const PxReal distSqInRestPos = normal_restDistSq.w;
+		if(contactInfo.isEdgeEdgePair()) // Edge-edge collision
+		{
+			// Edge0
+			PxU32 e0_localIndex0 = contactInfo.getAuxInd0();
+			PxU32 e0_localIndex1 = (e0_localIndex0 + 1) % 3;
 
+			const uint4 triVertInd0 = cloth0.mTriangleVertexIndices[elementId0];
+			const PxU32* vertexIndices0 = reinterpret_cast<const PxU32*>(&triVertInd0);
+			const PxU32 e0_v0 = vertexIndices0[e0_localIndex0];
+			const PxU32 e0_v1 = vertexIndices0[e0_localIndex1];
 
-		// Ensure collision constraints do not interfere with the cloth's internal energy constraints during self-collision by shrinking
-		// rest distances when necessary.
-		const PxReal restDistance = (distSqInRestPos == PX_MAX_REAL || pairInd0 != pairInd1)
-										? cloth0.mRestDistance + cloth1.mRestDistance
-										: PxMin(cloth0.mRestDistance + cloth1.mRestDistance, PxSqrt(distSqInRestPos));
+			// Edge1
+			PxU32 e1_localIndex0 = contactInfo.getAuxInd1();
+			PxU32 e1_localIndex1 = (e1_localIndex0 + 1) % 3;
 
-		// Friction: the average of the two cloth friction values is currently used.
-		constraint.friction_restDist[threadIndexInWarp] = make_float2(0.5f * (clothFriction0 + clothFriction1), restDistance);
+			const uint4 triVertInd1 = cloth1.mTriangleVertexIndices[elementId1];
+			const PxU32* vertexIndices1 = reinterpret_cast<const PxU32*>(&triVertInd1);
+			const PxU32 e1_v0 = vertexIndices1[e1_localIndex0];
+			const PxU32 e1_v1 = vertexIndices1[e1_localIndex1];
+
+			// Compute the exact rest distance for filtering.
+			// Mark pairs as valid if their rest distance exceeds the filter threshold.
+			const PxVec3 r0 = PxLoad3(cloth0.mRestPosition[e0_v0]);
+			const PxVec3 r1 = PxLoad3(cloth0.mRestPosition[e0_v1]);
+			const PxVec3 r2 = PxLoad3(cloth1.mRestPosition[e1_v0]);
+			const PxVec3 r3 = PxLoad3(cloth1.mRestPosition[e1_v1]);
+
+			// Linear blending coefficients for edge0 and edge1, respectively.
+			PxReal s, t;
+			PxReal restDistSq;
+
+			// Computationally more expensive than closestPtLineLine.
+			closestPtEdgeEdge(r0, r1, r2, r3, s, t, restDistSq);
+
+			// Apply exact (non-approximated) rest distance filtering.
+			if(restDistSq > cloth0.mSelfCollisionFilterDistance * cloth0.mSelfCollisionFilterDistance)
+			{
+				contactInfo.markValid();
+				contactInfos[workIndex] = contactInfo;
+			}
+		}
+		else // Vertex-triangle collision
+		{
+			const uint4 triVertId1 = cloth1.mTriangleVertexIndices[elementId1];
+			PxVec4T<PxU32> vertIndices(elementId0, triVertId1.x, triVertId1.y, triVertId1.z);
+
+			// Compute the exact rest distance for filtering.
+			// Mark pairs as valid if their rest distance exceeds the filter threshold.
+			const PxVec3 r0 = PxLoad3(cloth0.mRestPosition[vertIndices[0]]);
+			const PxVec3 r1 = PxLoad3(cloth1.mRestPosition[vertIndices[1]]);
+			const PxVec3 r2 = PxLoad3(cloth1.mRestPosition[vertIndices[2]]);
+			const PxVec3 r3 = PxLoad3(cloth1.mRestPosition[vertIndices[3]]);
+
+			const PxVec3 r12 = r2 - r1;
+			const PxVec3 r13 = r3 - r1;
+
+			// Apply exact (non-approximated) rest distance filtering.
+			const PxVec3 closest = Gu::closestPtPointTriangle2(r0, r1, r2, r3, r12, r13);
+
+			const PxReal restDistSq = (r0 - closest).magnitudeSquared();
+			if(restDistSq > cloth0.mSelfCollisionFilterDistance * cloth0.mSelfCollisionFilterDistance)
+			{
+				contactInfo.markValid();
+				contactInfos[workIndex] = contactInfo;
+			}
+		}
 	}
 }
 
@@ -237,7 +286,7 @@ extern "C" __global__ void cloth_particleContactPrepareLaunch(
 	float4*							contacts,
 	float4*							normalPens,
 	float4*							barycentrics,
-	PxgFemContactInfo*				contactInfos,
+	PxgFemOtherContactInfo*			contactInfos,
 	PxU32*							numContacts,
 	PxgFEMParticleConstraintBlock*	spConstraints, //soft body particle constraint
 	float2*							softBodyAppliedForces,
@@ -264,7 +313,7 @@ extern "C" __global__ void cloth_particleContactPrepareLaunch(
 		softBodyAppliedForces[workIndex] = make_float2(0.f, 0.f);
 		particleAppliedForces[workIndex] = make_float2(0.f, 0.f);
 
-		PxgFemContactInfo contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo contactInfo = contactInfos[workIndex];
 		PxgFEMParticleConstraintBlock& constraint = spConstraints[workIndex / 32];
 
 		PxU64 pairInd0 = contactInfo.pairInd0;

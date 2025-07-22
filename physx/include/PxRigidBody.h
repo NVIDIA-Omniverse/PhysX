@@ -522,6 +522,8 @@ public:
 
 	\note It is invalid to use this method if the actor has not been added to a scene already or if PxActorFlag::eDISABLE_SIMULATION is set.
 
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 	\note The force modes PxForceMode::eIMPULSE and PxForceMode::eVELOCITY_CHANGE can not be applied to articulation links.
 
 	\note if this is called on an articulation link, only the link is updated, not the entire articulation.
@@ -554,6 +556,8 @@ public:
 	using PxForceMode::eACCELERATION and PxForceMode::eVELOCITY_CHANGE respectively.
 	
 	\note It is invalid to use this method if the actor has not been added to a scene already or if PxActorFlag::eDISABLE_SIMULATION is set.
+
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 	\note The force modes PxForceMode::eIMPULSE and PxForceMode::eVELOCITY_CHANGE can not be applied to articulation links.
 	
@@ -589,6 +593,8 @@ public:
 
 	\note The force modes PxForceMode::eIMPULSE and PxForceMode::eVELOCITY_CHANGE can not be applied to articulation links.
 
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 	\note It is invalid to use this method if the actor has not been added to a scene already or if PxActorFlag::eDISABLE_SIMULATION is set.
 
 	\param[in] mode The mode to use when clearing the force/impulse(see #PxForceMode)
@@ -610,6 +616,8 @@ public:
 
 	\note The force modes PxForceMode::eIMPULSE and PxForceMode::eVELOCITY_CHANGE can not be applied to articulation links.
 
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 	\note It is invalid to use this method if the actor has not been added to a scene already or if PxActorFlag::eDISABLE_SIMULATION is set.
 
 	\param[in] mode The mode to use when clearing the force/impulse(see #PxForceMode).
@@ -624,6 +632,8 @@ public:
 	::PxForceMode determines if the cleared torque is to be conventional or impulsive.
 
 	\note The force modes PxForceMode::eIMPULSE and PxForceMode::eVELOCITY_CHANGE can not be applied to articulation links.
+
+	\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 	\note It is invalid to use this method if the actor has not been added to a scene already or if PxActorFlag::eDISABLE_SIMULATION is set.
 

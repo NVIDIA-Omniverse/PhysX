@@ -2090,6 +2090,11 @@ void Sc::Scene::updateDynamics(PxBaseTask* /*continuation*/)
 
 	if(isUsingGpuDynamicsOrBp())
 	{
+		if (getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
+		{
+			mDynamicsContext->setActiveBreakableConstraintCount(mActiveBreakableConstraints.size());
+		}
+
 		mDynamicsContext->update(	flushPool, &mUpdateSimulationController, &mUpdateDynamicsPostPartitioning, &mProcessLostContactsTask,
 									nphase,	maxPatchCount, mMaxNbArticulationLinks, mDt, mGravity, mAABBManager->getChangedAABBMgActorHandleMap());
 	}

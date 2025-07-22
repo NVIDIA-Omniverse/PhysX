@@ -184,7 +184,7 @@ namespace Gu
 			closest = GJKCPairDoSimplex(Q, A, B, support, size);
 			
 			dist = V3Length(closest);
-			v = V3ScaleInv(closest, dist);
+			v = V3ScaleInv(closest, FMax(dist, FEps()));
 			bNotDegenerated = FIsGrtr(prevDist, dist);
 			bNotTerminated = BAnd(FIsGrtr(dist, eps), bNotDegenerated);
 		}while(BAllEqTTTT(bNotTerminated));

@@ -85,7 +85,7 @@ if exist "%Install2022Dir%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.t
 )
 
 :ADDITIONAL_PARAMS_MISSING
-call %PM_PYTHON% %PHYSX_ROOT_DIR%buildtools/cmake_generate_projects.py %1
+call "%PM_PYTHON%" "%PHYSX_ROOT_DIR%buildtools/cmake_generate_projects.py" %1
 if %ERRORLEVEL% neq 0 (
   set /p DUMMY=Hit ENTER to continue...
   exit /b %errorlevel%

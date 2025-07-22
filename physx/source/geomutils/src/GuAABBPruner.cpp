@@ -250,12 +250,20 @@ bool AABBPruner::overlap(const ShapeData& queryVolume, PrunerOverlapCallback& pc
 			}
 			break;
 
+			case PxGeometryType::eCONVEXCORE:
+			{
+				const DefaultOBBAABBTest test(queryVolume);
+				again = AABBTreeOverlap<true, OBBAABBTest, AABBTree, BVHNode, OverlapCallbackAdapter>()(mPool.getCurrentAABBTreeBounds(), *mAABBTree, test, pcb);
+			}
+			break;
+
 			case PxGeometryType::eCONVEXMESH:
 			{
 				const DefaultOBBAABBTest test(queryVolume);
 				again = AABBTreeOverlap<true, OBBAABBTest, AABBTree, BVHNode, OverlapCallbackAdapter>()(mPool.getCurrentAABBTreeBounds(), *mAABBTree, test, pcb);
 			}
 			break;
+
 		default:
 			PX_ALWAYS_ASSERT_MESSAGE("unsupported overlap query volume geometry type");
 		}

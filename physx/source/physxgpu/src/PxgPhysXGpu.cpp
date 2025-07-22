@@ -150,13 +150,13 @@ PxsKernelWranglerManager* PxgPhysXGpu::getGpuKernelWranglerManager(PxCudaContext
 
 //----------------------------------------------------------------------------//
 
-Bp::BroadPhase* PxgPhysXGpu::createGpuBroadPhase(PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-	const PxU32 gpuComputeVersion, const PxGpuDynamicsMemoryConfig& config, 
+Bp::BroadPhase* PxgPhysXGpu::createGpuBroadPhase(const PxGpuBroadPhaseDesc& desc, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
+	PxU32 gpuComputeVersion, const PxGpuDynamicsMemoryConfig& config, 
 	PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID)
 {
 	if (gpuComputeVersion == 0)
 	{
-		return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBroadPhaseSap), "PxgCudaBroadPhaseSap"), PxgCudaBroadPhaseSap)(
+		return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBroadPhaseSap), "PxgCudaBroadPhaseSap"), PxgCudaBroadPhaseSap)(desc,
 			static_cast<PxgCudaKernelWranglerManager*>(gpuKernelWrangler), cudaContextManager, config, static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), contextID);
 	}
 	else

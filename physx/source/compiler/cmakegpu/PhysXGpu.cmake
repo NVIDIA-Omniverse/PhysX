@@ -30,6 +30,13 @@
 
 SET(PHYSX_SOURCE_DIR ${PHYSX_ROOT_DIR}/source)
 
+# Conditionally set the device source directory based on PUBLIC_RELEASE
+IF(PUBLIC_RELEASE)
+    SET(DEVICE_INCLUDE_DIR ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
+ELSE()
+    SET(DEVICE_INCLUDE_DIR ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include)
+ENDIF()
+
 # Include here after the directories are defined so that the platform specific file can use the variables.
 include(${PHYSX_ROOT_DIR}/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/PhysXGpu.cmake)
 
@@ -88,6 +95,13 @@ TARGET_INCLUDE_DIRECTORIES(PhysXGpu
 	PRIVATE ${PHYSX_SOURCE_DIR}/cudamanager/include
 	PRIVATE ${PHYSX_SOURCE_DIR}/physxgpu/include
 )
+
+# Add CUDA manager include directory
+IF(PUBLIC_RELEASE)
+    TARGET_INCLUDE_DIRECTORIES(PhysXGpu PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
+ELSE()
+    TARGET_INCLUDE_DIRECTORIES(PhysXGpu PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include)
+ENDIF()
 
 SET_TARGET_PROPERTIES(PhysXGpu PROPERTIES
 	OUTPUT_NAME PhysXGpu

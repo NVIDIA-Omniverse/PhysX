@@ -325,6 +325,14 @@ void NpArticulationJointReducedCoordinate::setDriveParams(PxArticulationAxis::En
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setDriveParams() not allowed while simulation is running. Call will be ignored.")
 
+	PX_CHECK_AND_RETURN(
+		drive.envelope.maxActuatorVelocity >= 0.0f &&
+		drive.envelope.maxEffort >= 0.0f &&
+		drive.envelope.velocityDependentResistance >= 0.0f &&
+		drive.envelope.speedEffortGradient >= 0.0f,
+		"All envelope parameters must be non-negative."
+	);
+	
 	scSetDrive(axis, drive);
 
 #if PX_SUPPORT_OMNI_PVD
@@ -343,6 +351,22 @@ void NpArticulationJointReducedCoordinate::setDriveParams(PxArticulationAxis::En
 	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 		maxforces[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).maxForce;
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxForce, joint, maxforces, PxArticulationAxis::eCOUNT);
+	PxReal maxefforts[PxArticulationAxis::eCOUNT];
+	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
+		maxefforts[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).envelope.maxEffort;
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxEffort, joint, maxefforts, PxArticulationAxis::eCOUNT);
+	PxReal maxactuatorvelocities[PxArticulationAxis::eCOUNT];
+	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
+		maxactuatorvelocities[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).envelope.maxActuatorVelocity;
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxActuatorVelocity, joint, maxactuatorvelocities, PxArticulationAxis::eCOUNT);
+	PxReal velocitydependentresistances[PxArticulationAxis::eCOUNT];
+	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
+		velocitydependentresistances[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).envelope.velocityDependentResistance;
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveVelocityDependentResistance, joint, velocitydependentresistances, PxArticulationAxis::eCOUNT);
+	PxReal speedeffortgradients[PxArticulationAxis::eCOUNT];
+	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
+	speedeffortgradients[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).envelope.speedEffortGradient;
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveSpeedEffortGradient, joint, speedeffortgradients, PxArticulationAxis::eCOUNT);
 	PxArticulationDriveType::Enum drivetypes[PxArticulationAxis::eCOUNT];
 	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 		drivetypes[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).driveType;

@@ -2111,7 +2111,10 @@ bool ImmGPUBP::init(const PxBroadPhaseDesc& desc)
 	if(!mHeapMemoryAllocationManager)
 		return false;
 
-	mBroadPhase = mPxGpu->createGpuBroadPhase(mGpuWranglerManagers, contextManager, gpuComputeVersion, gpuDynamicsConfig, mHeapMemoryAllocationManager, desc.mContextID);
+	// PT: we currently do not expose PxGpuBroadPhaseDesc for the standalone BP,
+	// as the API does not expose environment IDs there either.
+	PxGpuBroadPhaseDesc defaultGpuBPDesc;
+	mBroadPhase = mPxGpu->createGpuBroadPhase(defaultGpuBPDesc, mGpuWranglerManagers, contextManager, gpuComputeVersion, gpuDynamicsConfig, mHeapMemoryAllocationManager, desc.mContextID);
 	return mBroadPhase!=NULL;
 }
 #endif

@@ -59,6 +59,9 @@
 
 #if PX_WIN32 || PX_WIN64
 
+// Enable/disable NVIDIA secure load library code
+#define SECURE_LOAD_LIBRARY !PX_PUBLIC_RELEASE
+
 #include "foundation/windows/PxWindowsInclude.h"
 
 

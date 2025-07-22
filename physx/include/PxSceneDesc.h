@@ -539,7 +539,6 @@ public:
 	*/
 	PxPostSolveCallback* deformableVolumePostSolveCallback;
 
-
 	/**
 	\brief Shared global filter data which will get passed into the filter shader.
 
@@ -616,6 +615,17 @@ public:
 	\see PxBroadPhaseCallback PxScene.getBroadPhaseCallback() PxScene.setBroadPhaseCallback()
 	*/
 	PxBroadPhaseCallback*	broadPhaseCallback;
+
+	/**
+	\brief Optional GPU broad-phase descriptor.
+
+	This is only used for the GPU broadphase (PxBroadPhaseType::eGPU).
+
+	<b>Default:</b> NULL
+
+	\see PxBroadPhaseType
+	*/
+	PxGpuBroadPhaseDesc*	gpuBroadPhaseDesc;
 
 	/**
 	\brief Expected scene limits.
@@ -1001,6 +1011,7 @@ PX_INLINE PxSceneDesc::PxSceneDesc(const PxTolerancesScale& scale):
 
 	broadPhaseType					(PxBroadPhaseType::ePABP),
 	broadPhaseCallback				(NULL),
+	gpuBroadPhaseDesc				(NULL),
 
 	frictionType					(PxFrictionType::ePATCH),
 	solverType						(PxSolverType::ePGS),
@@ -1109,6 +1120,9 @@ PX_INLINE bool PxSceneDesc::isValid() const
 		if(flags & PxSceneFlag::eENABLE_CCD)
 			return false;
 	}
+
+	if(gpuBroadPhaseDesc && broadPhaseType != PxBroadPhaseType::eGPU)
+		return false;
 #endif
 
 	if(contactPairSlabSize == 0)

@@ -68,7 +68,7 @@ public:
 		, selfCollisionFilterDistance(0.1f)
 		, selfCollisionStressTolerance(0.9f)
 		//~PxFEMParameters
-		, maxLinearVelocity(1e32f) // see Sc::BodyCore::BodyCore
+		, maxLinearVelocity(PX_MAX_REAL) // see Sc::BodyCore::BodyCore
 		, maxPenetrationBias(-1e32f) // see PxsBodyCore::init
 		, solverIterationCounts(0)
 		, wakeCounter(0)

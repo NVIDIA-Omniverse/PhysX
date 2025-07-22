@@ -48,22 +48,121 @@ namespace physx
 	//soft body vs soft body : pairInd0 is soft body, pairInd1 is soft body
 	//soft body vs fem cloth : pairInd0 is soft body, pairInd1 is fem cloth
 	//fem cloth vs fem cloth : pairInd0 is fem cloth, pairInd1 is fem cloth
-	struct PX_ALIGN_PREFIX(16) PxgFemContactInfo
+	struct PX_ALIGN_PREFIX(16) PxgFemFemContactInfo
 	{
 		PxU64 pairInd0;
-		PxU64 pairInd1;
-	} 
-	PX_ALIGN_SUFFIX(16);
-	
-	struct PX_ALIGN_PREFIX(16) PxgFemVsRigidContactInfo
+		PxU32 pairInd1;
+		PxU32 auxInd; // Packed 32-bit auxiliary data
+
+		// Bit layout of auxInd (32 bits total):
+		//
+		//  | 31     | 30       | 29         | 28 - 14          | 13 - 0         |
+		//  | Valid  | PairType | InCollision| AuxInd1 (15 bits)| AuxInd0 (14b)  |
+		//
+		// - Bits [0-13]   : AuxInd0. First auxiliary index (14 bits, max value 16,383)
+		// - Bits [14-28]  : AuxInd1. Second auxiliary index (15 bits, max value 32,767)
+		// - Bit  [29]     : isInCollision flag (0 = not in contact, 1 = in contact)
+		// - Bit  [30]     : Pair type flag (0 = Vertex-Triangle, 1 = Edge-Edge)
+		// - Bit  [31]     : Validity flag (0 = Invalid, 1 = Valid)
+
+		// Bit layout masks and shifts for auxInd
+		static constexpr PxU32 AUX_IND0_BITS = 14;
+		static constexpr PxU32 AUX_IND1_BITS = 15;
+
+		static constexpr PxU32 AUX_IND0_MASK = (1u << AUX_IND0_BITS) - 1;					 // 0x00003FFF
+		static constexpr PxU32 AUX_IND1_MASK = ((1u << AUX_IND1_BITS) - 1) << AUX_IND0_BITS; // 0x1FFFC000
+		static constexpr PxU32 AUX_IND1_SHIFT = AUX_IND0_BITS;
+
+		static constexpr PxU32 CONTACT_FLAG_SHIFT = 29;
+		static constexpr PxU32 PAIR_TYPE_FLAG_SHIFT = 30;
+		static constexpr PxU32 VALIDITY_FLAG_SHIFT = 31;
+
+		static constexpr PxU32 CONTACT_FLAG_MASK = 1u << CONTACT_FLAG_SHIFT;
+		static constexpr PxU32 PAIR_TYPE_FLAG_MASK = 1u << PAIR_TYPE_FLAG_SHIFT;
+		static constexpr PxU32 VALIDITY_FLAG_MASK = 1u << VALIDITY_FLAG_SHIFT;
+
+		// Set auxiliary indices
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void setAuxInd0(PxU32 id) { auxInd = (auxInd & ~AUX_IND0_MASK) | (id & AUX_IND0_MASK); }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void setAuxInd1(PxU32 id)
+		{
+			auxInd = (auxInd & ~AUX_IND1_MASK) | ((id & ((1u << AUX_IND1_BITS) - 1)) << AUX_IND1_SHIFT);
+		}
+
+		// Get auxiliary indices
+		PX_FORCE_INLINE PX_CUDA_CALLABLE PxU32 getAuxInd0() const { return auxInd & AUX_IND0_MASK; }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE PxU32 getAuxInd1() const { return (auxInd >> AUX_IND1_SHIFT) & ((1u << AUX_IND1_BITS) - 1); }
+
+		// Mark validity
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markInvalid() { auxInd &= ~VALIDITY_FLAG_MASK; }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markValid() { auxInd |= VALIDITY_FLAG_MASK; }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markValidity(bool isValid)
+		{
+			auxInd = (auxInd & ~VALIDITY_FLAG_MASK) | (static_cast<PxU32>(isValid) << VALIDITY_FLAG_SHIFT);
+		}
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE bool isValidPair() const { return (auxInd & VALIDITY_FLAG_MASK) != 0; }
+
+		// Mark pair type
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markVertexTrianglePair() { auxInd &= ~PAIR_TYPE_FLAG_MASK; }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markEdgeEdgePair() { auxInd |= PAIR_TYPE_FLAG_MASK; }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE bool isVertexTrianglePair() const { return (auxInd & PAIR_TYPE_FLAG_MASK) == 0; }
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE bool isEdgeEdgePair() const { return (auxInd & PAIR_TYPE_FLAG_MASK) != 0; }
+
+		// Mark collision status (bit 29)
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markInCollision(bool inContact)
+		{
+			auxInd = (auxInd & ~CONTACT_FLAG_MASK) | (static_cast<PxU32>(inContact) << CONTACT_FLAG_SHIFT);
+		}
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE bool isInCollision() const { return (auxInd & CONTACT_FLAG_MASK) != 0; }
+
+	} PX_ALIGN_SUFFIX(16);
+
+	struct PX_ALIGN_PREFIX(16) PxgFemOtherContactInfo
 	{
-		PxU64 pairInd0; //Rigid
-		PxU32 pairInd1; //Fem id
-		PxU32 rigidMatInd;
+		PxU64 pairInd0; // Rigid/Particle
+		PxU32 pairInd1; // Fem id
+		PxU32 rigidMatInd_isInCollision;
+
+		// rigidMatInd_isInCollision encodes both rigid material index and collision state
+		// Bit layout of rigidMatInd_isInCollision (32 bits total):
+		//
+		//  | 31          | 30 - 0              |
+		//  |-------------|---------------------|
+		//  | isCollision | rigidMaterialIndex  |
+		//
+		// - Bits [0-30]   : rigidMaterialIndex (up to 2^31 materials)
+		// - Bit [31]      : isInCollision flag (0 = not in contact, 1 = in contact)
+
+		static constexpr PxU32 COLLISION_FLAG_BIT = 31;
+		static constexpr PxU32 COLLISION_FLAG_MASK = 1u << COLLISION_FLAG_BIT;
+		static constexpr PxU32 RIGID_MAT_INDEX_MASK = ~COLLISION_FLAG_MASK;
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void setRigidMaterialIndex(PxU32 matIndex)
+		{
+			rigidMatInd_isInCollision = (rigidMatInd_isInCollision & COLLISION_FLAG_MASK) | (matIndex & RIGID_MAT_INDEX_MASK);
+		}
+		PX_FORCE_INLINE PX_CUDA_CALLABLE void markInCollision(bool inContact)
+		{
+			if(inContact)
+				rigidMatInd_isInCollision |= COLLISION_FLAG_MASK;
+			else
+				rigidMatInd_isInCollision &= ~COLLISION_FLAG_MASK;
+		}
+
+		PX_FORCE_INLINE PX_CUDA_CALLABLE PxU32 getRigidMaterialIndex() const { return rigidMatInd_isInCollision & RIGID_MAT_INDEX_MASK; }
+		PX_FORCE_INLINE PX_CUDA_CALLABLE bool isInCollision() const { return (rigidMatInd_isInCollision & COLLISION_FLAG_MASK) != 0; }
 	}
 	PX_ALIGN_SUFFIX(16);
 
-	PX_COMPILE_TIME_ASSERT(sizeof(PxgFemContactInfo) == sizeof(PxgFemVsRigidContactInfo));
+	PX_COMPILE_TIME_ASSERT(sizeof(PxgFemFemContactInfo) == sizeof(PxgFemOtherContactInfo));
 
 	struct PxgFemRigidConstraintBlock
 	{
@@ -137,7 +236,7 @@ namespace physx
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getRigidContacts() { return mRigidContactPointBuf; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getRigidNormalPens() { return mRigidContactNormalPenBuf; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getRigidBarycentrics() { return mRigidContactBarycentricBuf; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemContactInfo>& getRigidContactInfos() { return mRigidContactInfoBuf; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemOtherContactInfo>& getRigidContactInfos() { return mRigidContactInfoBuf; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getRigidContactCount() { return mRigidTotalContactCountBuf; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getPrevRigidContactCount() { return mRigidPrevContactCountBuf; }
 
@@ -145,14 +244,16 @@ namespace physx
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getFemNormalPens() { return mFemContactNormalPenBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getFemBarycentrics0() { return mFemContactBarycentric0Buffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getFemBarycentrics1() { return mFemContactBarycentric1Buffer; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemContactInfo>& getFemContactInfos() { return mFemContactInfoBuffer; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getFemContactCount() { return mFemTotalContactCountBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemFemContactInfo>& getVolumeContactOrVTContactInfos() { return mVolumeContactOrVTContactInfoBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemFemContactInfo>& getEEContactInfos() { return mEEContactInfoBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getVolumeContactOrVTContactCount() { return mVolumeContactOrVTContactCountBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getEEContactCount() { return mEEContactCountBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getPrevFemContactCount() { return mPrevFemContactCountBuffer; }
 
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getParticleContacts() { return mParticleContactPointBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getParticleNormalPens() { return mParticleContactNormalPenBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<float4>& getParticleBarycentrics() { return mParticleContactBarycentricBuffer; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemContactInfo>& getParticleContactInfos() { return mParticleContactInfoBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgFemOtherContactInfo>& getParticleContactInfos() { return mParticleContactInfoBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getParticleContactCount() { return mParticleTotalContactCountBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getPrevParticleContactCount() { return mPrevParticleContactCountBuffer; }
 
@@ -168,14 +269,13 @@ namespace physx
 		
 		void accumulateRigidDeltas(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, 
 			PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			PxgDevicePointer<PxNodeIndex> rigidIdsd, PxgDevicePointer<PxU32> numIdsd, CUstream stream, CUevent waitEvent,
-			bool isTGS);
+			PxgDevicePointer<PxNodeIndex> rigidIdsd, PxgDevicePointer<PxU32> numIdsd, CUstream stream, bool isTGS);
 
 		//rigid body and fem contacts
 		PxgTypedCudaBuffer<float4>		mRigidContactPointBuf;				//float4
 		PxgTypedCudaBuffer<float4>		mRigidContactNormalPenBuf;			//float4
 		PxgTypedCudaBuffer<float4>		mRigidContactBarycentricBuf;		//float4
-		PxgTypedCudaBuffer<PxgFemContactInfo> mRigidContactInfoBuf;			//PxgFemContactInfo
+		PxgTypedCudaBuffer<PxgFemOtherContactInfo> mRigidContactInfoBuf;
 		PxgTypedCudaBuffer<PxU32>		mRigidTotalContactCountBuf;			//PxU32
 		PxgTypedCudaBuffer<PxU32>		mRigidPrevContactCountBuf;			//PxU32
 
@@ -183,10 +283,7 @@ namespace physx
 		PxgTypedCudaBuffer<float4>		mRigidSortedContactNormalPenBuf;
 		PxgTypedCudaBuffer<float4>		mRigidSortedContactBarycentricBuf;	//float4
 		PxgTypedCudaBuffer<PxU64>		mRigidSortedRigidIdBuf;
-		PxgTypedCudaBuffer<PxgFemContactInfo> mRigidSortedContactInfoBuf;	//PxgFemContactInfo
-
-		PxgTypedCudaBuffer<float4>		mRigidLambdaNBuf;
-		PxgTypedCudaBuffer<float4>		mFemLambdaNBuf;
+		PxgTypedCudaBuffer<PxgFemOtherContactInfo> mRigidSortedContactInfoBuf;
 
 		// Reference count of each rigid body that interacts with deformable objects.
 		// A single rigid body can have multiple reference counts when it is in contact with multiple triangles, tetrahedra, vertices, etc.
@@ -199,8 +296,10 @@ namespace physx
 		PxgTypedCudaBuffer<float4>		mFemContactNormalPenBuffer;			//float4
 		PxgTypedCudaBuffer<float4>		mFemContactBarycentric0Buffer;		//float4
 		PxgTypedCudaBuffer<float4>		mFemContactBarycentric1Buffer;		//float4
-		PxgTypedCudaBuffer<PxgFemContactInfo> mFemContactInfoBuffer;		//PxgFemContactInfo
-		PxgTypedCudaBuffer<PxU32>		mFemTotalContactCountBuffer;
+		PxgTypedCudaBuffer<PxgFemFemContactInfo> mVolumeContactOrVTContactInfoBuffer;
+		PxgTypedCudaBuffer<PxgFemFemContactInfo> mEEContactInfoBuffer;
+		PxgTypedCudaBuffer<PxU32>		mVolumeContactOrVTContactCountBuffer;
+		PxgTypedCudaBuffer<PxU32>		mEEContactCountBuffer;
 		PxgTypedCudaBuffer<PxU32>		mPrevFemContactCountBuffer;
 
 		PxgTypedCudaBuffer<PxReal>		mSpeculativeCCDContactOffset;
@@ -209,14 +308,14 @@ namespace physx
 		PxgTypedCudaBuffer<float4>		mParticleContactPointBuffer;		//float4
 		PxgTypedCudaBuffer<float4>		mParticleContactNormalPenBuffer;	//float4
 		PxgTypedCudaBuffer<float4>		mParticleContactBarycentricBuffer;	//float4
-		PxgTypedCudaBuffer<PxgFemContactInfo> mParticleContactInfoBuffer;
+		PxgTypedCudaBuffer<PxgFemOtherContactInfo> mParticleContactInfoBuffer;
 		PxgTypedCudaBuffer<PxU32>		mParticleTotalContactCountBuffer;
 		PxgTypedCudaBuffer<PxU32>		mPrevParticleContactCountBuffer;
 
 		PxgTypedCudaBuffer<float4>		mParticleSortedContactPointBuffer;
 		PxgTypedCudaBuffer<float4>		mParticleSortedContactBarycentricBuffer; //float4
 		PxgTypedCudaBuffer<float4>		mParticleSortedContactNormalPenBuffer;
-		PxgTypedCudaBuffer<PxgFemContactInfo> mParticleSortedContactInfoBuffer;
+		PxgTypedCudaBuffer<PxgFemOtherContactInfo> mParticleSortedContactInfoBuffer;
 
 
 		//contact prep buffer
@@ -225,8 +324,7 @@ namespace physx
 		PxgTypedCudaBuffer<PxgFEMParticleConstraintBlock> mParticleConstraintBuf;		//constraint prep for particle vs fem
 
 		//To do: ideally, we want to use two separate stream to solve the rigid body collision
-		PxgTypedCudaBuffer<float4>		mRigidAppliedRigidForcesBuf;	 //applied force for rigid body due to collision between fem and rigid body
-		PxgTypedCudaBuffer<float4>		mRigidAppliedFEMForcesBuf;		//applied force for fem due to collision between fem and rigid body
+		PxgTypedCudaBuffer<PxReal>		mRigidFEMAppliedForcesBuf;
 
 		PxgTypedCudaBuffer<float4>		mFemAppliedForcesBuf; //applied force for fem due to collision between fem and fem or self collision
 		
@@ -246,7 +344,8 @@ namespace physx
 
 		bool							mIsTGS;
 		PxU32*							mRigidContactCountPrevTimestep; //Pinned memory
-		PxU32*							mFemContactCountPrevTimestep; //Pinned memory
+		PxU32*							mVolumeContactorVTContactCountPrevTimestep; //Pinned memory
+		PxU32*							mEEContactCountPrevTimestep; //Pinned memory
 		PxU32*							mParticleContactCountPrevTimestep; //Pinned memory
 
 #if PX_ENABLE_SIM_STATS
@@ -264,7 +363,7 @@ namespace physx
 		float4* outPoint;
 		float4* outNormalPen;
 		float4* outBarycentric;
-		PxgFemContactInfo* outContactInfo;
+		PxgFemOtherContactInfo* outContactInfo;
 		PxU32* totalContactCount;
 
 		//Buffers for sorting. X either stands for Rigid or Particle
@@ -356,10 +455,11 @@ namespace physx
 
 			outPoint[index] = contact;
 			outNormalPen[index] = normalPen;
-			PxgFemVsRigidContactInfo* ptr = reinterpret_cast<PxgFemVsRigidContactInfo*>(&outContactInfo[index]);
+			PxgFemOtherContactInfo* ptr = reinterpret_cast<PxgFemOtherContactInfo*>(&outContactInfo[index]);
 			ptr->pairInd0 = pairInd0;
 			ptr->pairInd1 = pairInd1;
-			ptr->rigidMatInd = rigidBodyMaterialId;
+			ptr->setRigidMaterialIndex(rigidBodyMaterialId);
+			ptr->markInCollision(false);
 
 			return true;
 		}
@@ -389,10 +489,11 @@ namespace physx
 			if (result)
 			{
 				outBarycentric[index] = barycentric;
-				PxgFemVsRigidContactInfo* femRigidInfo = reinterpret_cast<PxgFemVsRigidContactInfo*>(outContactInfo);
+				PxgFemOtherContactInfo* femRigidInfo = reinterpret_cast<PxgFemOtherContactInfo*>(outContactInfo);
 				femRigidInfo[index].pairInd0 = pairInd0;
 				femRigidInfo[index].pairInd1 = pairInd1;
-				femRigidInfo[index].rigidMatInd = rigidMaterialIndex;
+				femRigidInfo[index].setRigidMaterialIndex(rigidMaterialIndex);
+				femRigidInfo[index].markInCollision(false);
 			}
 			return result;
 		}
@@ -407,10 +508,11 @@ namespace physx
 			outNormalPen[index] = normalPen;
 			outBarycentric[index] = barycentric;
 
-			PxgFemVsRigidContactInfo* femRigidInfo = reinterpret_cast<PxgFemVsRigidContactInfo*>(outContactInfo);
+			PxgFemOtherContactInfo* femRigidInfo = reinterpret_cast<PxgFemOtherContactInfo*>(outContactInfo);
 			femRigidInfo[index].pairInd0 = pairInd0;
 			femRigidInfo[index].pairInd1 = pairInd1;
-			femRigidInfo[index].rigidMatInd = rigidMaterialIndex;
+			femRigidInfo[index].setRigidMaterialIndex(rigidMaterialIndex);
+			femRigidInfo[index].markInCollision(false);
 
 			contactSortedByX[index] = contactSortedByRigid_;
 			contactIndexSortedByX[index] = index;

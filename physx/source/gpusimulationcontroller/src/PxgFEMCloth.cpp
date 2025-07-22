@@ -56,6 +56,11 @@ void queryRestConfigurationPerTriangle(float4& triangleRestPosInv, PxU32 vi0, Px
 // others
 void queryVertexIndicesAndTriangleIndexPairs(PxArray<uint4>& vertexIndicesAndTriangleIndexPair, PxU32 vi0, PxU32 vi1, PxU32 vi2, PxU32 ti);
 
+void encodeType0EdgeInformation(uint4* triangleIndices, PxU32 triIndex, bool isEdge0Authored, bool isEdge1Authored, bool isEdge2Authored);
+void queryTrianglesWithActiveEdges(PxArray<bool>& trianglesWithActiveEdges, uint4* triangleIndices, PxU32 nbVertices, PxU32 nbTriangles,
+								   const PxArray<PxU32>& innerTriangles, const PxArray<PxU32>& borderTriangles, PxU32 maxEdgesPerVertex);
+PxU32 getType0NumAuthoredEdgesInTriangle(PxU32 edgeAuthorship);
+
 /*******************************************************************************
  *
  *
@@ -104,9 +109,9 @@ PxU32 PxgFEMClothUtil::loadOutTriangleMesh(void* mem, const Gu::TriangleMesh* tr
 
 PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>& trianglePairTriangleIndices,
 										   PxArray<uint4>& trianglePairVertexIndices, const Gu::TriangleMesh* triangleMesh,
-										   const PxU16* materialHandles, PxsDeformableSurfaceMaterialData* materials, const PxU32 nbMaterials)
+										   const PxU16* materialHandles, PxsDeformableSurfaceMaterialData* materials,
+										   const PxU32 nbMaterials, PxsHeapMemoryAllocator* alloc)
 {
-	PX_UNUSED(nbMaterials);
 	const PxU32 nbTriangles = triangleMesh->getNbTrianglesFast();
 	const PxU32 nbVertices = triangleMesh->getNbVerticesFast();
 
@@ -119,9 +124,9 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 
 	PxMemZero(destDynamicFrictions, sizeof(float) * nbVertices);
 
-	uint4* triangleIndices = femCloth.mTriangleVertexIndices;
+	uint4* triangleVertexIndices = femCloth.mTriangleVertexIndices;
 
-	// copy triangle indices and query triangle pairs
+	// Copy triangle indices and query triangle pairs
 	PxArray<uint4> vertexIndicesAndTriangleIndexPair;
 	const PxU32 nbConservativeTrianglePairs = 3 * nbTriangles;
 	vertexIndicesAndTriangleIndexPair.reserve(nbConservativeTrianglePairs);
@@ -141,14 +146,15 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 			const PxU16 vInd1 = triangleInds[3 * i + 1];
 			const PxU16 vInd2 = triangleInds[3 * i + 2];
 
-			triangleIndices[i].x = vInd0;
-			triangleIndices[i].y = vInd1;
-			triangleIndices[i].z = vInd2;
+			triangleVertexIndices[i].x = vInd0;
+			triangleVertexIndices[i].y = vInd1;
+			triangleVertexIndices[i].z = vInd2;
+			triangleVertexIndices[i].w = 0; // Reserving the w-component to store edge information.
 
 			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2, nbMaterials,
 								destMaterialIndices, destDynamicFrictions);
-			queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleIndices[i].x, triangleIndices[i].y,
-													triangleIndices[i].z, i);
+			queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleVertexIndices[i].x,
+													triangleVertexIndices[i].y, triangleVertexIndices[i].z, i);
 		}
 	}
 	else
@@ -161,17 +167,18 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 			const PxU32 vInd1 = triangleInds[3 * i + 1];
 			const PxU32 vInd2 = triangleInds[3 * i + 2];
 
-			triangleIndices[i].x = vInd0;
-			triangleIndices[i].y = vInd1;
-			triangleIndices[i].z = vInd2;
+			triangleVertexIndices[i].x = vInd0;
+			triangleVertexIndices[i].y = vInd1;
+			triangleVertexIndices[i].z = vInd2;
+			triangleVertexIndices[i].w = 0; // Reserving the w-component to store edge information.
 
-			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2,
-			                    nbMaterials, destMaterialIndices, destDynamicFrictions);
-			queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleIndices[i].x,
-			                                        triangleIndices[i].y, triangleIndices[i].z, i);
+			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2, nbMaterials,
+								destMaterialIndices, destDynamicFrictions);
+			queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleVertexIndices[i].x,
+													triangleVertexIndices[i].y, triangleVertexIndices[i].z, i);
 		}
 	}
-	
+
 	for(PxU32 i = 0; i < nbVertices; ++i)
 	{
 		PxU32 nbRefs = 0;
@@ -199,53 +206,63 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 	PxSort(vertexIndicesAndTriangleIndexPair.begin(), vertexIndicesAndTriangleIndexPair.size(), indexPredicate);
 
 	PxU32 elementIndex = 0;
-	PxU32 numEdgePairs = 0;
-	bool queryEdgePairs = false;
+	PxU32 numBendPairs = 0;
+	bool isNewEdge = false;
 
-	PxArray<PxPair<PxU32, PxU32>> length_elementId;
-	length_elementId.reserve(nbConservativeTrianglePairs);
+	PxArray<PxU32> edgeVertices;
+	edgeVertices.reserve(6 * nbTriangles);
 
+	PxArray<PxU32> borderTriangles;
+	borderTriangles.reserve(nbTriangles);
+
+	PxArray<PxU32> innerTriangles;
+	innerTriangles.reserve(nbTriangles);
+
+	PxArray<PxU32> numEdgesPerVertex(nbVertices, 0);
+
+	PxU32 borderEdgeCount = 0;
 	for(PxU32 e = 1; e < vertexIndicesAndTriangleIndexPair.size(); ++e)
 	{
-		PxU32 prevE = e - 1;
+		const bool isLastIter = e == vertexIndicesAndTriangleIndexPair.size() - 1;
+		const PxU32 prevE = e - 1;
 
 		if(vertexIndicesAndTriangleIndexPair[prevE].x == vertexIndicesAndTriangleIndexPair[e].x &&
 		   vertexIndicesAndTriangleIndexPair[prevE].y == vertexIndicesAndTriangleIndexPair[e].y)
 		{
-			queryEdgePairs = false;
-			++numEdgePairs;
+			isNewEdge = false;
+			++numBendPairs;
 		}
 		else
 		{
-			if(numEdgePairs)
-			{
-				queryEdgePairs = true;
-			}
-			else
-			{
-				queryEdgePairs = false;
-			}
+			isNewEdge = true;
 		}
 
-		// handling non-manifold cases
-		if(queryEdgePairs || (e == vertexIndicesAndTriangleIndexPair.size() - 1 && numEdgePairs > 0))
+		// Handling non-manifold cases
+		if(numBendPairs > 0 && (isNewEdge || isLastIter))
 		{
-			PxU32 firstIndex = queryEdgePairs ? e - numEdgePairs - 1 : e - numEdgePairs;
-			PxU32 lastIndex = queryEdgePairs ? e - 1 : e;
+			PxU32 firstIndex = (isLastIter && !isNewEdge) ? e - numBendPairs : e - numBendPairs - 1;
+			PxU32 lastIndex = (isLastIter && !isNewEdge) ? e : e - 1;
+
+			const PxU32 vi2 = vertexIndicesAndTriangleIndexPair[lastIndex].x;
+			const PxU32 vi3 = vertexIndicesAndTriangleIndexPair[lastIndex].y;
+			const PxU32 lastT = vertexIndicesAndTriangleIndexPair[lastIndex].w;
+
+			++numEdgesPerVertex[vi2];
+			++numEdgesPerVertex[vi3];
+
+			edgeVertices.pushBack(vi2);
+			edgeVertices.pushBack(vi3);
+			innerTriangles.pushBack(lastT);
+
 			for(PxU32 i = firstIndex; i < lastIndex; ++i)
 			{
 				for(PxU32 j = i + 1; j <= lastIndex; ++j)
 				{
-					const uint vi0 = vertexIndicesAndTriangleIndexPair[i].z;
-					const uint vi1 = vertexIndicesAndTriangleIndexPair[j].z;
-					const uint vi2 = vertexIndicesAndTriangleIndexPair[j].x;
-					const uint vi3 = vertexIndicesAndTriangleIndexPair[j].y;
+					const PxU32 vi0 = vertexIndicesAndTriangleIndexPair[i].z;
+					const PxU32 vi1 = vertexIndicesAndTriangleIndexPair[j].z;
 
-					uint ti0 = vertexIndicesAndTriangleIndexPair[i].w;
-					uint ti1 = vertexIndicesAndTriangleIndexPair[j].w;
-
-					const float sharedEdgeLength = (triangleMesh->getVerticesFast()[vi2] - triangleMesh->getVerticesFast()[vi3]).magnitudeSquared();
-					const PxU32 lengthPredicate = *reinterpret_cast<const PxU32*>(&sharedEdgeLength);
+					const PxU32 ti0 = vertexIndicesAndTriangleIndexPair[i].w;
+					const PxU32 ti1 = vertexIndicesAndTriangleIndexPair[j].w;
 
 					// This case should not happen: bending within the same triangle. However, in case triangle duplicates are not removed,
 					// extra branching is used.
@@ -253,14 +270,47 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 						continue;
 
 					trianglePairVertexIndices.pushBack(uint4{ vi0, vi1, vi2, vi3 });
-					trianglePairTriangleIndices.pushBack(uint2{ ti0, ti1});
-					length_elementId.pushBack(PxPair<PxU32, PxU32>(lengthPredicate, elementIndex));
+					trianglePairTriangleIndices.pushBack(uint2{ ti0, ti1 });
 					++elementIndex;
 				}
+
+				innerTriangles.pushBack(vertexIndicesAndTriangleIndexPair[i].w);
 			}
 
-			queryEdgePairs = false;
-			numEdgePairs = 0;
+			numBendPairs = 0;
+
+			if(isLastIter && isNewEdge) // Boundary edge
+			{
+				const PxU32 tempVi2 = vertexIndicesAndTriangleIndexPair[e].x;
+				const PxU32 tempVi3 = vertexIndicesAndTriangleIndexPair[e].y;
+				const PxU32 tempAuthoringTriangle = vertexIndicesAndTriangleIndexPair[e].w;
+
+				++numEdgesPerVertex[tempVi2];
+				++numEdgesPerVertex[tempVi3];
+				++borderEdgeCount;
+				borderTriangles.pushBack(tempAuthoringTriangle);
+			}
+		}
+		else if (isNewEdge)
+		{
+			// An edge can belong to multiple triangles, potentially resulting in the same edge being visited multiple times during triangle iteration.
+			// By assigning edge authorship to each triangle, we ensure that each edge is processed only once during iteration.
+			// Here, mark the authorship of outer (border) edges within the triangles.
+
+			for(PxU32 de = 0; de < (isLastIter ? 2u : 1u); ++de)
+			{
+				const PxU32 newE = prevE + de;
+				const PxU32 vi2 = vertexIndicesAndTriangleIndexPair[newE].x;
+				const PxU32 vi3 = vertexIndicesAndTriangleIndexPair[newE].y;
+				const PxU32 authoringTriangle = vertexIndicesAndTriangleIndexPair[newE].w;
+
+				++numEdgesPerVertex[vi2];
+				++numEdgesPerVertex[vi3];
+				++borderEdgeCount;
+				borderTriangles.pushBack(authoringTriangle);
+			}
+
+			numBendPairs = 0;
 		}
 	}
 
@@ -268,32 +318,110 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 	femCloth.mNbTriangles = nbTriangles;
 	femCloth.mNbTrianglePairs = elementIndex;
 
-#if 0 // Sort triangle-pair again based-on shared edge length.
-	PxSort(length_elementId.begin(), length_elementId.size());
-
-	PxArray<uint4> tempVertexIndices(trianglePairVertexIndices);
-	PxArray<uint2> tempTriangleIndices(trianglePairTriangleIndices);
-
-	// Saving them in descending order.
-	for (PxU32 i = 0; i < length_elementId.size(); ++i)
+	PxU32 maxEdgesPerVertex = 0;
+	for (PxU32 v = 0; v < nbVertices; ++v)
 	{
-		const PxU32 elementId = length_elementId[length_elementId.size() - 1 - i].second;
-		trianglePairVertexIndices[i] = tempVertexIndices[elementId];
-		trianglePairTriangleIndices[i] = tempTriangleIndices[elementId];
+		maxEdgesPerVertex = PxMax(numEdgesPerVertex[v], maxEdgesPerVertex);
 	}
-#else
-	PX_UNUSED(length_elementId);
-#endif
+
+	// Query triangles that should participate in PAIR0 edge encoding.
+	// This minimizes the number of triangles needed to cover all edges.
+	PxArray<bool> pair0_isActiveTriangle;
+	queryTrianglesWithActiveEdges(pair0_isActiveTriangle, triangleVertexIndices, nbVertices, nbTriangles, innerTriangles, borderTriangles,
+								  maxEdgesPerVertex);
+
+	PxArray<PxU32> pair0_trianglesWithActiveEdges;
+	pair0_trianglesWithActiveEdges.reserve(nbTriangles);
+
+	for(PxU32 pair = 0; pair < 2; ++pair)
+	{
+		const PxU32 vertex0Bit = (pair == 0) ? EdgeEncoding::TYPE0_VERTEX0_ACTIVE_POS : EdgeEncoding::TYPE1_VERTEX0_ACTIVE_POS;
+		const PxU32 vertex1Bit = (pair == 0) ? EdgeEncoding::TYPE0_VERTEX1_ACTIVE_POS : EdgeEncoding::TYPE1_VERTEX1_ACTIVE_POS;
+		const PxU32 vertex2Bit = (pair == 0) ? EdgeEncoding::TYPE0_VERTEX2_ACTIVE_POS : EdgeEncoding::TYPE1_VERTEX2_ACTIVE_POS;
+
+		const PxU32 edgeBasePos = (pair == 0) ? EdgeEncoding::TYPE0_EDGE_BASE_POS : EdgeEncoding::TYPE1_EDGE_BASE_POS;
+
+		// Track globally whether a vertex was already marked active
+		PxArray<bool> vertexMarked(nbVertices, false);
+
+		for(PxU32 t = 0; t < nbTriangles; ++t)
+		{
+			// Mark active vertices
+			{
+				uint4& tri = triangleVertexIndices[t];
+				PxU32& triW = tri.w;
+
+				const PxU32 v0 = tri.x;
+				const PxU32 v1 = tri.y;
+				const PxU32 v2 = tri.z;
+
+				// Edge 0 (v0-v1)
+				if(triW & (1U << (edgeBasePos + 0)))
+				{
+					if(!vertexMarked[v0])
+					{
+						triW |= (1U << vertex0Bit);
+						vertexMarked[v0] = true;
+					}
+					if(!vertexMarked[v1])
+					{
+						triW |= (1U << vertex1Bit);
+						vertexMarked[v1] = true;
+					}
+				}
+
+				// Edge 1 (v1-v2)
+				if (triW & (1U << (edgeBasePos + 1)))
+				{
+					if (!vertexMarked[v1])
+					{
+						triW |= (1U << vertex1Bit);
+						vertexMarked[v1] = true;
+					}
+					if (!vertexMarked[v2])
+					{
+						triW |= (1U << vertex2Bit);
+						vertexMarked[v2] = true;
+					}
+				}
+
+				// Edge 2 (v2-v0)
+				if (triW & (1U << (edgeBasePos + 2)))
+				{
+					if (!vertexMarked[v2])
+					{
+						triW |= (1U << vertex2Bit);
+						vertexMarked[v2] = true;
+					}
+					if (!vertexMarked[v0])
+					{
+						triW |= (1U << vertex0Bit);
+						vertexMarked[v0] = true;
+					}
+				}
+			}
+
+			// Saving pair0 active triangles
+			if (pair == 0 && pair0_isActiveTriangle[t])
+			{
+				pair0_trianglesWithActiveEdges.pushBack(t);
+			}
+		}
+	}
+	femCloth.mNbTrianglesWithActiveEdges = pair0_trianglesWithActiveEdges.size();
+
+	femCloth.mTrianglesWithActiveEdges = reinterpret_cast<PxU32*>(
+		alloc->allocate(sizeof(PxU32) * pair0_trianglesWithActiveEdges.size(), PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+
+	PxMemCopy(femCloth.mTrianglesWithActiveEdges, &pair0_trianglesWithActiveEdges[0], sizeof(PxU32)* pair0_trianglesWithActiveEdges.size());
 
 	return elementIndex;
 }
 
 void PxgFEMClothUtil::categorizeClothConstraints(PxArray<PxU32>& sharedTrianglePairs, PxArray<PxU32>& nonSharedTriangles,
 												 PxArray<PxU32>& nonSharedTrianglePairs, PxgFEMCloth& femCloth,
-												 const PxArray<uint2>& trianglePairTriangleIndices,
-												 const PxArray<uint4>& trianglePairVertexIndices)
+												 const PxArray<uint2>& trianglePairTriangleIndices)
 {
-	PX_UNUSED(trianglePairVertexIndices);
 	const PxU32 numTriangles = femCloth.mNbTriangles;
 	const PxU32 numTrianglePairs = trianglePairTriangleIndices.size();
 
@@ -337,8 +465,6 @@ void PxgFEMClothUtil::categorizeClothConstraints(PxArray<PxU32>& sharedTriangleP
 	sharedTrianglePairs.shrink();
 	nonSharedTrianglePairs.shrink();
 	nonSharedTriangles.shrink();
-
-	//printf("DEBUG PRINTING nonSharedTriangles: %i / %i \n", nonSharedTriangles.size(), numTriangles);
 }
 
 static void initialMaterialData(const PxU16* materialIndices, const PxU16* materialHandles, const PxsDeformableSurfaceMaterialData* materials,
@@ -638,6 +764,243 @@ void queryVertexIndicesAndTriangleIndexPairs(PxArray<uint4>& vertexIndicesAndTri
 	}
 }
 
+void queryTrianglesWithActiveEdges(PxArray<bool>& triangleUsed, uint4* triangleVertexIndices, PxU32 nbVertices, PxU32 nbTriangles,
+								   const PxArray<PxU32>& innerTriangles, const PxArray<PxU32>& borderTriangles, PxU32 maxEdgesPerVertex)
+{
+	triangleUsed.clear();
+	triangleUsed.resize(nbTriangles, false);
+
+	PxArray<PxArray<PxU32> > edgeList(nbVertices);
+	PxArray<PxU32> edgeCount(nbVertices, 0);
+
+	for(PxU32 i = 0; i < nbVertices; ++i)
+		edgeList[i].reserve(maxEdgesPerVertex);
+
+	// Process border triangles first
+	for(PxU32 i = 0; i < borderTriangles.size(); ++i)
+	{
+		const PxU32 triIdx = borderTriangles[i];
+		if(triangleUsed[triIdx])
+			continue;
+
+		const uint4& tri = triangleVertexIndices[triIdx];
+		bool edge0 = true, edge1 = true, edge2 = true;
+
+		// Check edge0
+		PxU32 a = tri.x < tri.y ? tri.x : tri.y;
+		PxU32 b = tri.x < tri.y ? tri.y : tri.x;
+		for(PxU32 j = 0; j < edgeCount[a]; ++j)
+		{
+			if(edgeList[a][j] == b)
+			{
+				edge0 = false;
+				break;
+			}
+		}
+
+		// Check edge1
+		a = tri.y < tri.z ? tri.y : tri.z;
+		b = tri.y < tri.z ? tri.z : tri.y;
+		for(PxU32 j = 0; j < edgeCount[a]; ++j)
+		{
+			if(edgeList[a][j] == b)
+			{
+				edge1 = false;
+				break;
+			}
+		}
+
+		// Check edge2
+		a = tri.z < tri.x ? tri.z : tri.x;
+		b = tri.z < tri.x ? tri.x : tri.z;
+		for(PxU32 j = 0; j < edgeCount[a]; ++j)
+		{
+			if(edgeList[a][j] == b)
+			{
+				edge2 = false;
+				break;
+			}
+		}
+
+		if(edge0 || edge1 || edge2)
+		{
+			triangleUsed[triIdx] = true;
+
+			if(edge0)
+			{
+				PxU32 vMin = tri.x < tri.y ? tri.x : tri.y;
+				PxU32 vMax = tri.x < tri.y ? tri.y : tri.x;
+				edgeList[vMin].pushBack(vMax);
+				++edgeCount[vMin];
+			}
+
+			if(edge1)
+			{
+				PxU32 vMin = tri.y < tri.z ? tri.y : tri.z;
+				PxU32 vMax = tri.y < tri.z ? tri.z : tri.y;
+				edgeList[vMin].pushBack(vMax);
+				++edgeCount[vMin];
+			}
+
+			if(edge2)
+			{
+				PxU32 vMin = tri.z < tri.x ? tri.z : tri.x;
+				PxU32 vMax = tri.z < tri.x ? tri.x : tri.z;
+				edgeList[vMin].pushBack(vMax);
+				++edgeCount[vMin];
+			}
+
+			encodeType0EdgeInformation(triangleVertexIndices, triIdx, edge0, edge1, edge2);
+		}
+	}
+
+	for(PxU32 gainLevel = 3; gainLevel >= 1; --gainLevel)
+	{
+		for(PxU32 i = 0; i < innerTriangles.size(); ++i)
+		{
+			const PxU32 triIdx = innerTriangles[i];
+			if(triangleUsed[triIdx])
+				continue;
+
+			const uint4& tri = triangleVertexIndices[triIdx];
+			bool edge0 = true, edge1 = true, edge2 = true;
+			PxU32 gain = 0;
+
+			// Check edge0
+			PxU32 a = tri.x < tri.y ? tri.x : tri.y;
+			PxU32 b = tri.x < tri.y ? tri.y : tri.x;
+			for(PxU32 j = 0; j < edgeCount[a]; ++j)
+				if(edgeList[a][j] == b)
+					edge0 = false;
+			if(edge0)
+				++gain;
+
+			// Check edge1
+			a = tri.y < tri.z ? tri.y : tri.z;
+			b = tri.y < tri.z ? tri.z : tri.y;
+			for(PxU32 j = 0; j < edgeCount[a]; ++j)
+				if(edgeList[a][j] == b)
+					edge1 = false;
+			if(edge1)
+				++gain;
+
+			// Check edge2
+			a = tri.z < tri.x ? tri.z : tri.x;
+			b = tri.z < tri.x ? tri.x : tri.z;
+			for(PxU32 j = 0; j < edgeCount[a]; ++j)
+				if(edgeList[a][j] == b)
+					edge2 = false;
+			if(edge2)
+				++gain;
+
+			if(gain >= gainLevel)
+			{
+				triangleUsed[triIdx] = true;
+
+				if(edge0)
+				{
+					PxU32 vMin = tri.x < tri.y ? tri.x : tri.y;
+					PxU32 vMax = tri.x < tri.y ? tri.y : tri.x;
+					edgeList[vMin].pushBack(vMax);
+					++edgeCount[vMin];
+				}
+
+				if(edge1)
+				{
+					PxU32 vMin = tri.y < tri.z ? tri.y : tri.z;
+					PxU32 vMax = tri.y < tri.z ? tri.z : tri.y;
+					edgeList[vMin].pushBack(vMax);
+					++edgeCount[vMin];
+				}
+
+				if(edge2)
+				{
+					PxU32 vMin = tri.z < tri.x ? tri.z : tri.x;
+					PxU32 vMax = tri.z < tri.x ? tri.x : tri.z;
+					edgeList[vMin].pushBack(vMax);
+					++edgeCount[vMin];
+				}
+
+				encodeType0EdgeInformation(triangleVertexIndices, triIdx, edge0, edge1, edge2);
+			}
+		}
+	}
+}
+
+void setType0EdgeSlot(PxU32& edgeAuthorship, PxU32 slotIndex, PxU32 edgeIndex)
+{
+	if(slotIndex == 0)
+	{
+		edgeAuthorship &= ~EdgeEncodingMask::TYPE0_FIRST_EDGE_MASK;
+		edgeAuthorship |= (edgeIndex << EdgeEncoding::TYPE0_FIRST_EDGE_POS);
+	}
+	else if(slotIndex == 1)
+	{
+		edgeAuthorship &= ~EdgeEncodingMask::TYPE0_SECOND_EDGE_MASK;
+		edgeAuthorship |= (edgeIndex << EdgeEncoding::TYPE0_SECOND_EDGE_POS);
+	}
+	else if(slotIndex == 2)
+	{
+		edgeAuthorship &= ~EdgeEncodingMask::TYPE0_THIRD_EDGE_MASK;
+		edgeAuthorship |= (edgeIndex << EdgeEncoding::TYPE0_THIRD_EDGE_POS);
+	}
+}
+
+void encodeType0EdgeInformation(uint4* triangleIndices, PxU32 triIndex, bool isEdge0Authored, bool isEdge1Authored, bool isEdge2Authored)
+{
+	PxU32& edgeAuthorship = triangleIndices[triIndex].w;
+
+	// Clear PAIR0 region (lower 16 bits only)
+	edgeAuthorship &= 0xFFFF0000;
+
+	PxU32 authoredCount = 0;
+
+	// --- Edge 0: (v0, v1) ---
+	if(isEdge0Authored)
+	{
+		// Set edge presence bit
+		edgeAuthorship |= (1U << EdgeEncoding::TYPE0_EDGE_BASE_POS);
+
+		// Set edge slot
+		setType0EdgeSlot(edgeAuthorship, authoredCount, 0);
+
+		++authoredCount;
+	}
+
+	// --- Edge 1: (v1, v2) ---
+	if(isEdge1Authored)
+	{
+		edgeAuthorship |= (1U << (EdgeEncoding::TYPE0_EDGE_BASE_POS + 1));
+
+		setType0EdgeSlot(edgeAuthorship, authoredCount, 1);
+
+		++authoredCount;
+	}
+
+	// --- Edge 2: (v2, v0) ---
+	if(isEdge2Authored)
+	{
+		edgeAuthorship |= (1U << (EdgeEncoding::TYPE0_EDGE_BASE_POS + 2));
+
+		setType0EdgeSlot(edgeAuthorship, authoredCount, 2);
+
+		++authoredCount;
+	}
+
+	// Clamp authored edge count
+	if(authoredCount > 3)
+		authoredCount = 3;
+
+	// Encode final authored count in PAIR0
+	edgeAuthorship &= ~EdgeEncodingMask::TYPE0_AUTH_COUNT_MASK;
+	edgeAuthorship |= (authoredCount << EdgeEncoding::TYPE0_AUTH_COUNT_POS);
+}
+
+PxU32 getType0NumAuthoredEdgesInTriangle(PxU32 edgeAuthorship)
+{
+	return (edgeAuthorship & EdgeEncodingMask::TYPE0_AUTH_COUNT_MASK) >> EdgeEncoding::TYPE0_AUTH_COUNT_POS;
+}
+
 void PxgFEMCloth::deallocate(PxsHeapMemoryAllocator *allocator)
 {
 	if (mNbNonSharedTriangles)
@@ -669,8 +1032,8 @@ void PxgFEMCloth::deallocate(PxsHeapMemoryAllocator *allocator)
 		allocator->deallocate(mNonSharedTriPairAccumulatedCopiesCP);
 	}
 
-	allocator->deallocate(mPrevPosition_InvMass);
 	allocator->deallocate(mTriMeshData);
+	allocator->deallocate(mTrianglesWithActiveEdges);
 	allocator->deallocate(mTriangleVertexIndices);
 
 	allocator->deallocate(mMaterialIndices);

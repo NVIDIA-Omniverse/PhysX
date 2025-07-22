@@ -379,7 +379,12 @@ bool PxgAABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Filter
 		{
 			// PT: schedule the aggregate for BP insertion here, if we just added its first shape
 			if (!aggregate.size)
+			{
 				addBPEntry(aggregate.mIndex);
+
+				// PT: for aggregates we retrieve the environment ID from the aggregate itself.
+				initEnvEntry(mEnvIDs, aggregate.mIndex, aggregate.mEnvID, mBoundsArray.size());
+			}
 			else
 			{
 				if (!mAddedHandleMap.test(aggregate.mIndex))
@@ -401,7 +406,8 @@ bool PxgAABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Filter
 		}
 
 		// PT: for aggregates we retrieve the environment ID from the aggregate itself.
-		initEnvEntry(mEnvIDs, aggregate.mIndex, aggregate.mEnvID, mBoundsArray.size());
+//		initEnvEntry(mEnvIDs, aggregate.mIndex, aggregate.mEnvID, mBoundsArray.size());
+		initEnvEntry(mEnvIDs, index, aggregate.mEnvID, mBoundsArray.size());
 
 		mAddedAggregatedBounds.pushBack(index);
 	}
