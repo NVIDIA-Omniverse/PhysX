@@ -242,9 +242,9 @@ public:
 								patches[k + 1].materialFlags = patches[k].materialFlags;
 								patches[k + 1].internalFlags = patches[k].internalFlags;
 								patches[k + 1].startContactIndex = PxTo8(j + startIndex);
-								patches[k + 1].nbContacts = PxTo8(patches[k].nbContacts - j);
+								patches[k + 1].nbContacts = PxTo16(patches[k].nbContacts - j);
 								//Fill in patch information now that final patches are available
-								patches[k].nbContacts = PxU8(j);
+								patches[k].nbContacts = PxU16(j);
 								break; // we're done with all contacts in patch k because the remaining were just transferrred to patch k+1
 							}
 						}
