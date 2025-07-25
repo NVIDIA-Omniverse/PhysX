@@ -810,12 +810,12 @@ void Sc::Scene::preallocateContactManagers(PxBaseTask* continuation)
 	{
 		if(filterTask->mNbToKeep || filterTask->mNbToSuppress)
 		{
-			// PT: we pre-compacted surviving pairs in each filtering task so a memcopy is enough here now.
+			// PT: we pre-compacted surviving pairs in each filtering task so a memmove is enough here now.
 			const PxU32 nb = filterTask->mNbToKeep + filterTask->mNbToSuppress;
 			if(pairs + createdOverlapCount != filterTask->mPairs)	// PT: always happens for first task, sometimes for all tasks if nothing was filtered
 			{
-				PxMemCopy(pairs + createdOverlapCount, filterTask->mPairs, sizeof(AABBOverlap) * nb);
-				PxMemCopy(fInfo + createdOverlapCount, filterTask->mFinfo, sizeof(FilterInfo) * nb);
+				PxMemMove(pairs + createdOverlapCount, filterTask->mPairs, sizeof(AABBOverlap) * nb);
+				PxMemMove(fInfo + createdOverlapCount, filterTask->mFinfo, sizeof(FilterInfo) * nb);
 			}
 			createdOverlapCount += nb;
 			batchSize += nb;
