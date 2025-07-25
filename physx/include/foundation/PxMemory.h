@@ -81,6 +81,7 @@ namespace physx
 	*/
 	PX_FORCE_INLINE void* PxMemCopy(void* dest, const void* src, PxU32 count)
 	{
+		PX_ASSERT((dest <= src && (char*)dest + count <= src) || (src <= dest && (char*)src + count <= dest));
 		// This is to avoid undefined behavior
 		return (count != 0) ? physx::intrinsics::memCopy(dest, src, count) : NULL;
 	}
