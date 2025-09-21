@@ -2081,8 +2081,8 @@ extern "C" __global__ void femAttachmentPrepareLaunch(
 	}
 }
 
-//solve rigid attachment, output rigid delta
-extern "C" __global__ void sb_solveOutputAttachmentRigidDeltaVLaunch(
+//solve rigid attachment
+extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
 	PxgSoftBody*								softbodies,
 	PxgFEMRigidAttachmentConstraint*			attachments,
 	const PxU32									numAttachments,
@@ -2101,126 +2101,36 @@ extern "C" __global__ void sb_solveOutputAttachmentRigidDeltaVLaunch(
 
 	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
 
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
+		if(workIndex >= numAttachments)
+		{
 			return;
+		}
 
 		const PxU32 index = workIndex / 32;
 		const PxU32 offset = workIndex & 31;
 
 		const PxgFEMRigidAttachmentConstraint& constraint = attachments[index];
 
-		//nodeIndex
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-
-		//TODO - need to figure out how to make this work for articulation links!
-		//Not writing rigidDeltaVel for statics, unlike for contacts
-		if (rigidId.isStaticBody())
-		{
-			continue;
-		}
-
-		const float4 velMultiplierXYZ_invMassW = constraint.velMultiplierXYZ_invMassW[offset];
-		if (velMultiplierXYZ_invMassW.w == 0.0f)
-		{
-			rigidDeltaVel[workIndex] = make_float4(0.0f);
-			rigidDeltaVel[workIndex + numAttachments] = make_float4(0.0f);
-			continue;
-		}
-
+		// Soft body info
 		const PxU32 elemId = constraint.elemId[offset];
 		const PxU32 softBodyId = PxGetSoftBodyId(elemId);
 		const PxU32 elemIdx = PxGetSoftBodyElementIndex(elemId);
 		const bool elemIsVertex = PxGetIsVertexType(constraint.baryOrType[offset]);
 
 		PxgSoftBody& softbody = softbodies[softBodyId];
-
 		const float4* velGM = softbody.mSimVelocity_InvMass;
-		
-		float4 vel;
-		if (elemIsVertex)
-		{
-			vel = velGM[elemIdx];
-		}
-		else
-		{
-			const float4 barycentric = constraint.baryOrType[offset];
-			const uint4* tetsGM = softbody.mSimTetIndices;
-			const uint4 tetInd = tetsGM[elemIdx];
-			const float4 v0 = velGM[tetInd.x];
-			const float4 v1 = velGM[tetInd.y];
-			const float4 v2 = velGM[tetInd.z];
-			const float4 v3 = velGM[tetInd.w];
-			vel = v0 * barycentric.x + v1 * barycentric.y + v2 * barycentric.z + v3 * barycentric.w;
-		}
 
-		PxVec3 linVel1(vel.x, vel.y, vel.z);
-
-		PxU32 bodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
-
-		PxgVelocityPackPGS vel0;
-		velocityReader.readVelocitiesPGS(rigidId, vel0);
-
-		PxVec3 deltaLinVel, deltaAngVel;
-		calculateAttachmentDeltaImpulsePGS(offset, constraint, vel0, linVel1, 1.f / dt, 0.5f, deltaLinVel, deltaAngVel);
-
-		rigidDeltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.f);
-		rigidDeltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.f);
-	}
-}
-
-
-
-//solve rigid attachment, output soft body delta
-extern "C" __global__ void sb_solveOutputAttachmentSoftDeltaVLaunch(
-	PxgSoftBody*								softbodies,
-	PxgFEMRigidAttachmentConstraint*			attachments,
-	const PxU32									numAttachments,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgArticulationCoreDesc*					artiCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
-	const PxReal								dt
-)
-{
-	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
-	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
-	const PxU32 idx = threadIdx.x;
-
-	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
-
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-	{
-
-		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
-			return;
-
-		const PxU32 index = workIndex / 32;
-		const PxU32 offset = workIndex & 31;
-
-		const PxgFEMRigidAttachmentConstraint& constraint = attachments[index];
-		const PxU32 elemId = constraint.elemId[offset];
-		const PxU32 softBodyId = PxGetSoftBodyId(elemId);
-		const PxU32 elemIdx = PxGetSoftBodyElementIndex(elemId);
-		const bool elemIsVertex = PxGetIsVertexType(constraint.baryOrType[offset]);
-
-		PxgSoftBody& softbody = softbodies[softBodyId];
-		
-		const float4* velGM = softbody.mSimVelocity_InvMass;
-		
-		//Output for the soft body - just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaV = reinterpret_cast<float4*>(softbody.mSimDelta);
-
+		float4 softbodyVel;
 		uint4 tetInd;
-		float4 vel;
+		float4 tetInvMass;
 		float4 barycentric;
-		if (elemIsVertex)
+
+		if(elemIsVertex)
 		{
-			vel = velGM[elemIdx];
+			softbodyVel = velGM[elemIdx];
 		}
 		else
 		{
@@ -2231,38 +2141,62 @@ extern "C" __global__ void sb_solveOutputAttachmentSoftDeltaVLaunch(
 			const float4 v1 = velGM[tetInd.y];
 			const float4 v2 = velGM[tetInd.z];
 			const float4 v3 = velGM[tetInd.w];
-			vel = v0 * barycentric.x + v1 * barycentric.y + v2 * barycentric.z + v3 * barycentric.w;
+			softbodyVel = v0 * barycentric.x + v1 * barycentric.y + v2 * barycentric.z + v3 * barycentric.w;
+
+			tetInvMass.x = v0.w;
+			tetInvMass.y = v1.w;
+			tetInvMass.z = v2.w;
+			tetInvMass.w = v3.w;
 		}
 
-		PxVec3 linVel1(vel.x, vel.y, vel.z);
-		const PxReal invMass1 = vel.w;
+		PxVec3 linVel1(softbodyVel.x, softbodyVel.y, softbodyVel.z);
 
-		//nodeIndex
+		// Rigid body info
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-
-		if (invMass1 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass rigid body. Won't work so skip!
+		if(rigidId.isStaticBody() && softbodyVel.w == 0.0f)
+		{
+			continue;
+		}
 
 		PxgVelocityPackPGS vel0;
 		velocityReader.readVelocitiesPGS(rigidId, vel0);
 
+		// Compute impulses
 		PxVec3 deltaLinVel, deltaAngVel;
-		const PxVec3 deltaImpulse = calculateAttachmentDeltaImpulsePGS(offset, constraint, vel0, linVel1, 1.f / dt, 0.5f, deltaLinVel, deltaAngVel);
+		const PxVec3 deltaImpulse =
+			calculateAttachmentDeltaImpulsePGS(offset, constraint, vel0, linVel1, 1.f / dt, 0.5f, deltaLinVel, deltaAngVel);
 
-		if (!deltaImpulse.isZero())
+		// Update rigid body
+		if(!rigidId.isStaticBody())
 		{
-			const PxVec3 deltaPos = (-deltaImpulse) * invMass1 * dt;
-
-			if (elemIsVertex)
+			const float4 velMultiplierXYZ_invMassW = constraint.velMultiplierXYZ_invMassW[offset];
+			if(velMultiplierXYZ_invMassW.w == 0.0f)
 			{
-				AtomicAdd(accumDeltaV[elemIdx], deltaPos, 1.f);
+				rigidDeltaVel[workIndex] = make_float4(0.0f);
+				rigidDeltaVel[workIndex + numAttachments] = make_float4(0.0f);
 			}
 			else
 			{
-				AtomicAdd(accumDeltaV[tetInd.x], deltaPos * barycentric.x, 1.f);
-				AtomicAdd(accumDeltaV[tetInd.y], deltaPos * barycentric.y, 1.f);
-				AtomicAdd(accumDeltaV[tetInd.z], deltaPos * barycentric.z, 1.f);
-				AtomicAdd(accumDeltaV[tetInd.w], deltaPos * barycentric.w, 1.f);
+				rigidDeltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.0f);
+				rigidDeltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.0f);
+			}
+		}
+
+		// Update soft body
+		if(!deltaImpulse.isZero())
+		{
+			const PxVec3 deltaPos = -deltaImpulse * dt;
+
+			if(elemIsVertex)
+			{
+				AtomicAdd(softbody.mSimDelta[elemIdx], deltaPos * softbodyVel.w, 1.f);
+			}
+			else
+			{
+				AtomicAdd(softbody.mSimDelta[tetInd.x], deltaPos * tetInvMass.x * barycentric.x, 1.f);
+				AtomicAdd(softbody.mSimDelta[tetInd.y], deltaPos * tetInvMass.y * barycentric.y, 1.f);
+				AtomicAdd(softbody.mSimDelta[tetInd.z], deltaPos * tetInvMass.z * barycentric.z, 1.f);
+				AtomicAdd(softbody.mSimDelta[tetInd.w], deltaPos * tetInvMass.w * barycentric.w, 1.f);
 			}
 		}
 	}
@@ -2271,8 +2205,8 @@ extern "C" __global__ void sb_solveOutputAttachmentSoftDeltaVLaunch(
 //////TGS//////////////
 
 
-//solve rigid attachment, output rigid delta
-extern "C" __global__ void sb_solveOutputAttachmentRigidDeltaVLaunchTGS(
+//solve rigid attachment
+extern "C" __global__ void sb_solveRigidSoftAttachmentLaunchTGS(
 	PxgSoftBody*								softbodies,
 	PxgFEMRigidAttachmentConstraint*			attachments,
 	const PxU32									numAttachments,
@@ -2287,133 +2221,41 @@ extern "C" __global__ void sb_solveOutputAttachmentRigidDeltaVLaunchTGS(
 )
 {
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-
 	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
 	const PxU32 idx = threadIdx.x;
 
 	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
 
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
-
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
+		if(workIndex >= numAttachments)
+		{
 			return;
+		}
 
 		const PxU32 index = workIndex / 32;
 		const PxU32 offset = workIndex & 31;
 
 		const PxgFEMRigidAttachmentConstraint& constraint = attachments[index];
+
+		// Soft body info
 		const PxU32 softBodyId = PxGetSoftBodyId(constraint.elemId[offset]);
 		const PxU32 elemIdx = PxGetSoftBodyElementIndex(constraint.elemId[offset]);
 		const bool elemIsVertex = PxGetIsVertexType(constraint.baryOrType[offset]);
-
-		//nodeIndex
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-
-		//TODO - need to figure out how to make this work for articulation links!
-		//Not writing rigidDeltaVel for statics, unlike for contacts
-		if (rigidId.isStaticBody())
-		{
-			continue;
-		}
-
-		const float4 velMultiplierXYZ_invMassW = constraint.velMultiplierXYZ_invMassW[offset];
-		if (velMultiplierXYZ_invMassW.w == 0.0f)
-		{
-			rigidDeltaVel[workIndex] = make_float4(0.0f);
-			rigidDeltaVel[workIndex + numAttachments] = make_float4(0.0f);
-			continue;
-		}
-
-		PxgSoftBody& softbody = softbodies[softBodyId];
-
-		const float4* deltaGM = softbody.mSimDeltaPos;
-
-		float4 delta;
-		if (elemIsVertex)
-		{
-			delta = deltaGM[elemIdx];
-		}
-		else
-		{
-			const float4 barycentric = constraint.baryOrType[offset];
-			const uint4* tetsGM = softbody.mSimTetIndices;
-			const uint4 tetInd = tetsGM[elemIdx];
-			const float4 d0 = deltaGM[tetInd.x];
-			const float4 d1 = deltaGM[tetInd.y];
-			const float4 d2 = deltaGM[tetInd.z];
-			const float4 d3 = deltaGM[tetInd.w];
-			delta = d0 * barycentric.x + d1 * barycentric.y + d2 * barycentric.z + d3 * barycentric.w;
-		}
-
-		PxVec3 linDelta1(delta.x, delta.y, delta.z);
-
-		PxgVelocityPackTGS vel0;
-		velocityReader.readVelocitiesTGS(rigidId, vel0);
-
-		PxVec3 deltaLinVel, deltaAngVel;
-		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, linDelta1, dt, biasCoefficient, isVelocityIteration, deltaLinVel, deltaAngVel);
 		
-		if (!deltaImpulse.isZero())
-		{
-			rigidDeltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.f);
-			rigidDeltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.f);
-		}
-	}
-}
-
-//solve rigid attachment, output soft body delta
-extern "C" __global__ void sb_solveOutputAttachmentSoftDeltaVLaunchTGS(
-	PxgSoftBody*								softbodies,
-	PxgFEMRigidAttachmentConstraint*			attachments,
-	const PxU32									numAttachments,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgArticulationCoreDesc*					artiCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
-	const PxReal								dt,
-	const PxReal								biasCoefficient,
-	bool										isVelocityIteration
-)
-{
-	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-
-	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
-	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
-	const PxU32 idx = threadIdx.x;
-
-	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
-	
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-	{
-
-		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
-			return;
-
-		const PxU32 index = workIndex / 32;
-		const PxU32 offset = workIndex & 31;
-
-		const PxgFEMRigidAttachmentConstraint& constraint = attachments[index];
-		const PxU32 softBodyId = PxGetSoftBodyId(constraint.elemId[offset]);
-		const PxU32 elemIdx = PxGetSoftBodyElementIndex(constraint.elemId[offset]);
-		const bool elemIsVertex = PxGetIsVertexType(constraint.baryOrType[offset]);
-
 		PxgSoftBody& softbody = softbodies[softBodyId];
-
 		const float4* deltaGM = softbody.mSimDeltaPos;
 
-		//Output for the soft body - just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaV = reinterpret_cast<float4*>(softbody.mSimDelta);
-
-		float4 delta;
+		float4 softbodyDelta;
 		uint4 tetInd;
+		float4 tetInvMass;
 		float4 barycentric;
-		if (elemIsVertex)
+
+		if(elemIsVertex)
 		{
-			delta = deltaGM[elemIdx];
+			softbodyDelta = deltaGM[elemIdx];
 		}
 		else
 		{
@@ -2424,39 +2266,61 @@ extern "C" __global__ void sb_solveOutputAttachmentSoftDeltaVLaunchTGS(
 			const float4 d1 = deltaGM[tetInd.y];
 			const float4 d2 = deltaGM[tetInd.z];
 			const float4 d3 = deltaGM[tetInd.w];
-			delta = d0 * barycentric.x + d1 * barycentric.y + d2 * barycentric.z + d3 * barycentric.w;
+			softbodyDelta = d0 * barycentric.x + d1 * barycentric.y + d2 * barycentric.z + d3 * barycentric.w;
+
+			tetInvMass.x = d0.w;
+			tetInvMass.y = d1.w;
+			tetInvMass.z = d2.w;
+			tetInvMass.w = d3.w;
 		}
+		PxVec3 linDelta1(softbodyDelta.x, softbodyDelta.y, softbodyDelta.z);
 
-
-		PxVec3 linDelta1(delta.x, delta.y, delta.z);
-		const PxReal invMass1 = delta.w;
-
-		//nodeIndex
+		// Rigid body info
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-
-		if (invMass1 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass rigid body. Won't work so skip!
+		if(rigidId.isStaticBody() && softbodyDelta.w == 0.0f)
+		{
+			continue;
+		}
 
 		PxgVelocityPackTGS vel0;
 		velocityReader.readVelocitiesTGS(rigidId, vel0);
-		
+
+		// Compute impulses
 		PxVec3 deltaLinVel, deltaAngVel;
-		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, linDelta1, dt, biasCoefficient, isVelocityIteration, deltaLinVel, deltaAngVel);
+		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, linDelta1, dt, biasCoefficient,
+																 isVelocityIteration, deltaLinVel, deltaAngVel);
 
-		if (!deltaImpulse.isZero())
+		// Update rigid body
+		if(!rigidId.isStaticBody())
 		{
-			const PxVec3 deltaPos = (-deltaImpulse) * invMass1;
-
-			if (elemIsVertex)
+			const float4 velMultiplierXYZ_invMassW = constraint.velMultiplierXYZ_invMassW[offset];
+			if(velMultiplierXYZ_invMassW.w == 0.0f)
 			{
-				AtomicAdd(accumDeltaV[elemIdx], deltaPos, 1.f);
+				rigidDeltaVel[workIndex] = make_float4(0.0f);
+				rigidDeltaVel[workIndex + numAttachments] = make_float4(0.0f);
 			}
 			else
 			{
-				AtomicAdd(accumDeltaV[tetInd.x], deltaPos * barycentric.x, 1.f);
-				AtomicAdd(accumDeltaV[tetInd.y], deltaPos * barycentric.y, 1.f);
-				AtomicAdd(accumDeltaV[tetInd.z], deltaPos * barycentric.z, 1.f);
-				AtomicAdd(accumDeltaV[tetInd.w], deltaPos * barycentric.w, 1.f);
+				rigidDeltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.0f);
+				rigidDeltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.0f);
+			}
+		}
+
+		// Update soft body
+		if(!deltaImpulse.isZero())
+		{
+			const PxVec3 deltaPos = -deltaImpulse * dt;
+
+			if(elemIsVertex)
+			{
+				AtomicAdd(softbody.mSimDelta[elemIdx], deltaPos * softbodyDelta.w, 1.0f);
+			}
+			else
+			{
+				AtomicAdd(softbody.mSimDelta[tetInd.x], deltaPos * barycentric.x * tetInvMass.x, 1.0f);
+				AtomicAdd(softbody.mSimDelta[tetInd.y], deltaPos * barycentric.y * tetInvMass.y, 1.0f);
+				AtomicAdd(softbody.mSimDelta[tetInd.z], deltaPos * barycentric.z * tetInvMass.z, 1.0f);
+				AtomicAdd(softbody.mSimDelta[tetInd.w], deltaPos * barycentric.w * tetInvMass.w, 1.0f);
 			}
 		}
 	}

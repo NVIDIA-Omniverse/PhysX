@@ -622,7 +622,7 @@ PxMaterial* NpFactory::createMaterial(PxReal staticFriction, PxReal dynamicFrict
 {
 	PX_CHECK_AND_RETURN_NULL(dynamicFriction >= 0.0f, "createMaterial: dynamicFriction must be >= 0.");
 	PX_CHECK_AND_RETURN_NULL(staticFriction >= 0.0f, "createMaterial: staticFriction must be >= 0.");
-	PX_CHECK_AND_RETURN_NULL(restitution >= 0.0f || restitution <= 1.0f, "createMaterial: restitution must be between 0 and 1.");
+	PX_CHECK_AND_RETURN_NULL(restitution <= 1.0f, "createMaterial: restitution must be <= 1.");
 
 	PxsMaterialData materialData;
 	materialData.staticFriction = staticFriction;

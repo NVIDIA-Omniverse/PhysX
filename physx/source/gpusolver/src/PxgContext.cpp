@@ -381,6 +381,7 @@ namespace physx
 		mIsExternalForcesEveryTgsIterationEnabled(false),
 		mEnableDirectGPUAPI(enableDirectGPUAPI),
 		mRecomputeArticulationBlockFormat(false),
+		mEnforceConstraintWriteBackToHostCopy(false),
 
 		mPreIntegrationTask	(*this),
 		mPrepTask			(*this),

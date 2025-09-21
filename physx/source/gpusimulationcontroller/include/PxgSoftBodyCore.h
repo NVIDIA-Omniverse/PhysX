@@ -126,7 +126,7 @@ namespace physx
 		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyNormalPens() { return mSCContactNormalPenBuffer; }
 		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyBarycentrics0() { return mSCContactBarycentricBuffer0; } //barycentric toward soft body contact
 		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyBarycentrics1() { return mSCContactBarycentricBuffer1; } //barycentric toward cloth contact
-		PxgTypedCudaBuffer<PxgFemContactInfo>& getClothVsSoftBodyContactInfos() { return mSCContactInfoBuffer; }
+		PxgTypedCudaBuffer<PxgFemFemContactInfo>& getClothVsSoftBodyContactInfos() { return mSCContactInfoBuffer; }
 		PxgTypedCudaBuffer<PxU32>& getClothVsSoftBodyContactCount() { return mSCTotalContactCountBuffer; }
 		PxgTypedCudaBuffer<PxU32>& getPrevClothVsSoftBodyContactCount() { return mPrevSCContactCountBuffer; }
 
@@ -184,13 +184,8 @@ namespace physx
 		void step(PxReal dt, CUstream stream, const PxU32 nbActiveSoftBodies, const PxVec3& gravity);
 
 
-		void solveRigidAttachmentRigidDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			CUstream solverStream, const PxReal dt);
-
-		void solveRigidAttachmentSoftBodyDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			const PxReal dt);
+		void solveRigidAttachment(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, 
+			PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, const PxReal dt);
 
 		void solveSoftBodyAttachmentDelta();
 
@@ -198,13 +193,8 @@ namespace physx
 
 		void solveClothAttachmentDelta();
 
-		void solveRigidAttachmentRigidDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			CUstream solverStream, const PxReal dt, const PxReal biasCoefficient, bool isVelocityIteration);
-
-		void solveRigidAttachmentSoftBodyDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			const PxReal dt, const PxReal biasCoefficient, bool isVelocityIteration);
+		void solveRigidAttachmentTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, 
+			PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, const PxReal dt, const PxReal biasCoefficient, bool isVelocityIteration);
 
 		//solve soft body vs particle contact and output to soft body delta buffer
 		void solveSPContactsOutputSoftBodyDelta(const PxReal dt, const PxReal biasCoefficient);
@@ -220,20 +210,7 @@ namespace physx
 
 		void queryRigidContactReferenceCount(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
 			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
-			PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, PxReal dt);
-
-		//solve soft body vs rigid body contact and output to soft body delta buffer
-		void solveRSContactsOutputSoftBodyDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			const PxReal dt);
-
-		void solveRSContactsOutputSoftBodyDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-			const PxReal dt);
-
-
-
-	
+			PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
 
 		//--------------------------------------------------------------------------------------
 
@@ -242,18 +219,17 @@ namespace physx
 		PxgTypedCudaBuffer<float4>		mSCContactNormalPenBuffer;
 		PxgTypedCudaBuffer<float4>		mSCContactBarycentricBuffer0;
 		PxgTypedCudaBuffer<float4>		mSCContactBarycentricBuffer1;
-		PxgTypedCudaBuffer<PxgFemContactInfo>					mSCContactInfoBuffer;
+		PxgTypedCudaBuffer<PxgFemFemContactInfo>	mSCContactInfoBuffer;
 		PxgTypedCudaBuffer<PxU32>		mSCTotalContactCountBuffer;
 		PxgTypedCudaBuffer<PxU32>		mPrevSCContactCountBuffer;
 		//contact prep buffer
-		PxgTypedCudaBuffer<PxgSoftBodySoftBodyConstraintBlock>		mSCConstraintBuf; //constraint prep for cloth vs soft body
+		PxgTypedCudaBuffer<PxgSoftBodySoftBodyConstraintBlock>	mSCConstraintBuf; //constraint prep for cloth vs soft body
 
 		//To do: ideally, we want to use two separate stream to solve the rigid body and soft body collision
 		PxgTypedCudaBuffer<PxReal>		mSCLambdaNBuf; // accumulated deltaLambdaN for collision between FEMCloth and soft body
 
 		CUevent							mBoundUpdateEvent;//this event is used to synchronize the broad phase stream(updateBound is running on broad phase stream) and mStream
-		CUevent							mSolveSoftBodyEvent; //this event is used to synchronize solve softbodies
-		CUevent							mSolveSoftBodyRigidEvent;
+		CUevent							mSolveRigidEvent;
 		CUevent							mConstraintPrepSoftBodyParticleEvent; //this event is used to synchronize constraint prep(soft body stream) and solve soft body vs particle system contacts (particle stream)
 		CUevent							mSolveSoftBodyParticleEvent; //this event is used to synchronize particle system contacts (particle stream) before we call applyExternalTetraDelta
 
@@ -269,7 +245,7 @@ namespace physx
 		float4* outNormalPen;
 		float4* outBarycentric0;
 		float4*	outBarycentric1;
-		PxgFemContactInfo* outContactInfo;
+		PxgFemFemContactInfo* outContactInfo;
 		PxU32* totalContactCount;
 		PxU32 maxContacts;
 
@@ -287,12 +263,12 @@ namespace physx
 			}
 			else
 			{
-				totalContactCount = softBodyCore->getFemContactCount().getTypedPtr();
+				totalContactCount = softBodyCore->getVolumeContactOrVTContactCount().getTypedPtr();
 				outPoint = softBodyCore->getFemContacts().getTypedPtr();
 				outNormalPen = softBodyCore->getFemNormalPens().getTypedPtr();
 				outBarycentric0 = softBodyCore->getFemBarycentrics0().getTypedPtr();
 				outBarycentric1 = softBodyCore->getFemBarycentrics1().getTypedPtr();
-				outContactInfo = softBodyCore->getFemContactInfos().getTypedPtr();
+				outContactInfo = softBodyCore->getVolumeContactOrVTContactInfos().getTypedPtr();
 				maxContacts = softBodyCore->mMaxContacts;
 			}
 		}

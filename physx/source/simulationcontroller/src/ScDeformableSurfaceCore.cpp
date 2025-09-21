@@ -85,7 +85,7 @@ void Sc::DeformableSurfaceCore::setLinearDamping(const PxReal v)
 
 void Sc::DeformableSurfaceCore::setMaxLinearVelocity(const PxReal v)
 {
-	mCore.maxLinearVelocity = v;
+	mCore.maxLinearVelocity = (v > 1e15f) ? PX_MAX_REAL : v;
 	mCore.dirty = true;
 }
 

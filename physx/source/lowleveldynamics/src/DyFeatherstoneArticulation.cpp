@@ -2600,8 +2600,11 @@ namespace Dy
 				constraints->viscousFrictionCoefficient = j.frictionParams[i].viscousFrictionCoefficient;
 
 				const bool hasDrive = (j.motion[i] != PxArticulationMotion::eLOCKED && j.drives[i].driveType != PxArticulationDriveType::eNONE);
-				constraints->driveForce = 0.0f;
-				constraints->driveMaxForce = j.drives[i].maxForce * maxForceScale;																
+				constraints->driveImpulse = 0.0f;
+				constraints->driveMaxImpulse = j.drives[i].maxForce * maxForceScale;
+				constraints->envelope = j.drives[i].envelope;
+				constraints->externalJointForce = data.getJointForces()[jointDatum.jointOffset + dofId];
+				
 				if(hasDrive)
 				{
 					constraints->setImplicitDriveDesc(
@@ -2679,9 +2682,11 @@ namespace Dy
 				constraints->viscousFrictionCoefficient = j.frictionParams[i].viscousFrictionCoefficient;
 												  
 
-				const bool hasDrive = (j.motion[i] != PxArticulationMotion::eLOCKED && j.drives[i].maxForce > 0.f && (j.drives[i].stiffness > 0.f || j.drives[i].damping > 0.f));
-				constraints->driveForce = 0.0f;
-				constraints->driveMaxForce = j.drives[i].maxForce * maxForceScale;
+				const bool hasDrive = (j.motion[i] != PxArticulationMotion::eLOCKED && (j.drives[i].envelope.maxEffort > 0.0f || j.drives[i].maxForce > 0.0f) && (j.drives[i].stiffness > 0.f || j.drives[i].damping > 0.f));
+				constraints->driveImpulse = 0.0f;
+				constraints->envelope = j.drives[i].envelope;
+				constraints->driveMaxImpulse = j.drives[i].maxForce * maxForceScale;
+				constraints->externalJointForce = data.getJointForces()[jointDatum.jointOffset + dofId];
 				if(hasDrive)
 				{
 					constraints->setImplicitDriveDesc(
@@ -4574,6 +4579,8 @@ namespace Dy
 			PxReal frictionDeltaF = 0.0f;
 
 			bool newFrictionModel = constraint.staticFrictionEffort !=  0.0f || constraint.viscousFrictionCoefficient !=  0.0f;
+			const bool isPerStep = (data.isTGS && data.isExternalForceEveryStep && !(data.isVelIter));
+			const PxReal effectiveTimestep = isPerStep ? data.stepDt : data.dt;
 
 			// deprecated friction model
 			if (!newFrictionModel)
@@ -4590,22 +4597,49 @@ namespace Dy
 			}
 
 			PxReal driveDeltaF = 0.0f;
+			
+			if (constraint.envelope.maxEffort > 0.0f)
 			{
-				const PxReal unclampedForce = (data.isTGS && data.isVelIter) ? constraint.driveForce : 
-					computeDriveImpulse(constraint.driveForce, jointV, jointPDelta, data.elapsedTime, constraint.getImplicitDriveDesc());
-				const PxReal clampedForce = PxClamp(unclampedForce, -constraint.driveMaxForce, constraint.driveMaxForce);
-				driveDeltaF = (clampedForce - constraint.driveForce);
-				constraint.driveForce = clampedForce;
+				const PxReal appliedDriveImpulse = isPerStep ? 0.0f : constraint.driveImpulse;
+				const PxReal maxImpulse = constraint.envelope.maxEffort * effectiveTimestep;
+				const PxReal speedImpulseGradient = constraint.envelope.speedEffortGradient / effectiveTimestep;
+				const PxReal velocityDependentResistance = constraint.envelope.velocityDependentResistance * effectiveTimestep;
+				const PxReal externalJointImpulse = constraint.externalJointForce * effectiveTimestep;
+
+				const PxReal unclampedImpulse = (data.isTGS && data.isVelIter)
+					? appliedDriveImpulse
+					: computeDriveImpulse(appliedDriveImpulse, jointV, jointPDelta, data.elapsedTime, constraint.getImplicitDriveDesc());
+
+				const PxReal clampedImpulse = clampDriveImpulse(
+					jointV,
+					appliedDriveImpulse + externalJointImpulse,
+					unclampedImpulse + externalJointImpulse,
+					constraint.response,
+					constraint.envelope.maxActuatorVelocity,
+					maxImpulse,
+					speedImpulseGradient,
+					velocityDependentResistance
+				) - externalJointImpulse;
+
+				driveDeltaF = clampedImpulse - appliedDriveImpulse;
+				constraint.driveImpulse += driveDeltaF;
+			}
+
+			else
+			{
+				const PxReal unclampedImpulse = (data.isTGS && data.isVelIter) ? constraint.driveImpulse : 
+					computeDriveImpulse(constraint.driveImpulse, jointV, jointPDelta, data.elapsedTime, constraint.getImplicitDriveDesc());
+				const PxReal clampedImpulse = PxClamp(unclampedImpulse, -constraint.driveMaxImpulse, constraint.driveMaxImpulse);
+				driveDeltaF = (clampedImpulse - constraint.driveImpulse);
+				constraint.driveImpulse = clampedImpulse;
 			}
 			jointV += driveDeltaF * constraint.response;
 		
 			if (newFrictionModel)
 			{
-				const bool isPerStep = (data.isTGS && data.isExternalForceEveryStep && !(data.isVelIter));
-				const PxReal effectiveFrictionTimestep = isPerStep ? data.stepDt : data.dt;
-				const PxReal staticFrictionImpulse = constraint.staticFrictionEffort * effectiveFrictionTimestep;
-				const PxReal dynamicFrictionImpulse = constraint.dynamicFrictionEffort * effectiveFrictionTimestep;
-				const PxReal viscousFrictionCoefficient = constraint.viscousFrictionCoefficient * effectiveFrictionTimestep;
+				const PxReal staticFrictionImpulse = constraint.staticFrictionEffort * effectiveTimestep;
+				const PxReal dynamicFrictionImpulse = constraint.dynamicFrictionEffort * effectiveTimestep;
+				const PxReal viscousFrictionCoefficient = constraint.viscousFrictionCoefficient * effectiveTimestep;
 				const PxReal accumulatedFrictionImpulse = isPerStep ? 0.0f : constraint.accumulatedFrictionImpulse;
 
 				const PxReal totalFrictionImpulse = computeFrictionImpulse(

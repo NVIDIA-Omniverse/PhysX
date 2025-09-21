@@ -68,7 +68,8 @@ namespace physx
 	struct PxTriangleMeshGeometryLL;
 	class PxgParticleSystemCore;
 
-	struct PxgFemContactInfo;
+	struct PxgFemFemContactInfo;
+	struct PxgFemOtherContactInfo;
 
 	namespace Gu
 	{
@@ -734,14 +735,23 @@ namespace physx
 
 		void compactLostFoundPairs(PxgGpuContactManagers& gpuManagers, const PxU32 numTests, PxU32* touchChangeFlags, PxsContactManagerOutput* cmOutputs);
 
-		void softbodyRigidContactApplyCollisionToSimMeshMapping(
+		void softbodyOtherContactApplyCollisionToSimMeshMapping(
 			PxgDevicePointer<float4> contactsd,
 			PxgDevicePointer<float4> barycentricsd,
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd,
-			PxgDevicePointer<PxReal> invMassesd,
+			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd,
 			PxgDevicePointer<PxU32> totalNumCountsd,
-			PxgDevicePointer<PxU32> prevNumCountsd
-		);
+			PxgDevicePointer<PxU32> prevNumCountsd);
+
+	public:
+
+		void softbodyFemContactApplyCollisionToSimMeshMapping(
+			PxgDevicePointer<float4> barycentrics0d,
+			PxgDevicePointer<float4> barycentrics1d,
+			PxgDevicePointer<PxgFemFemContactInfo> contactInfosd,
+			PxgDevicePointer<PxU32> totalNumCountsd,
+			PxgDevicePointer<PxU32> prevNumCountsd, bool isSelfCollision, bool isCloth);
+
+	private:
 
 		void adjustNpIndices(PxgNewContactManagers& newContactManagers, PxPinnedArray<PxgContactManagerInput>& itMainInputs,
 			PxPinnedArray<PxsContactManager*>& itCms, PxPinnedArray<const Sc::ShapeInteraction*>& itSIs,

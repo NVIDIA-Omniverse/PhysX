@@ -31,6 +31,12 @@
 SET(PHYSX_PLATFORM_INCLUDES
 )
 
+IF(NOT PUBLIC_RELEASE)
+	LIST(APPEND PHYSX_PLATFORM_INCLUDES
+		${PHYSX_SOURCE_DIR}/physx/src/internal/device
+	)
+ENDIF()
+
 SET(PHYSX_GPU_HEADERS
 	${PHYSX_ROOT_DIR}/include/gpu/PxGpu.h
     ${PHYSX_ROOT_DIR}/include/gpu/PxPhysicsGpu.h
@@ -54,6 +60,18 @@ SET(PHYSX_RESOURCE
 	${PHYSX_SOURCE_DIR}/compiler/windows/resource/resource.h
 )
 SOURCE_GROUP(resource FILES ${PHYSX_RESOURCE})
+
+IF(NOT PUBLIC_RELEASE)
+	SET(PHYSX_DEVICE_SOURCE
+		${PX_SOURCE_DIR}/internal/device/nvPhysXtoDrv.h
+		${PX_SOURCE_DIR}/internal/device/PhysXIndicator.h
+		${PX_SOURCE_DIR}/internal/device/windows/PhysXIndicatorWindows.cpp
+	)
+	SOURCE_GROUP(src\\device FILES ${PHYSX_DEVICE_SOURCE})
+ELSE()
+	SET(PHYSX_DEVICE_SOURCE
+	)
+ENDIF()
 
 SET(PHYSX_GPU_SOURCE
 	${PX_SOURCE_DIR}/gpu/PxGpu.cpp
@@ -83,6 +101,7 @@ SET(PHYSX_PLATFORM_SRC_FILES
 	${PHYSX_RESOURCE}
 	${PHYSX_COMMON_WINDOWS_HEADERS}
 	
+	${PHYSX_DEVICE_SOURCE}
 	${PHYSX_GPU_SOURCE}
 
 	${PHYSX_WINDOWS_SOURCE}

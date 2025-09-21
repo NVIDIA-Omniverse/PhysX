@@ -36,6 +36,7 @@
 
 namespace physx
 {
+	class PxConvexCoreGeometry;
 	class PxConvexMeshGeometry;
 	class PxCapsuleGeometry;
 	class PxTriangle;
@@ -68,7 +69,13 @@ namespace physx
 										const PxVec3& unitDir, PxReal distance,											\
 										PxGeomSweepHit& sweepHit, const PxHitFlags hitFlags, PxReal inflation, PxSweepThreadContext* threadContext
 
-	// PT: sweep parameters for convex
+	// VR: sweep parameters for convex core
+	#define GU_CONVEXCORE_SWEEP_FUNC_PARAMS		const PxGeometry& geom, const PxTransform& pose,						\
+												const PxConvexCoreGeometry& convexGeom, const PxTransform& convexPose,	\
+												const PxVec3& unitDir, PxReal distance,									\
+												PxGeomSweepHit& sweepHit, const PxHitFlags hitFlags, PxReal inflation, PxSweepThreadContext* threadContext
+
+	// PT: sweep parameters for convex mesh
 	#define GU_CONVEX_SWEEP_FUNC_PARAMS		const PxGeometry& geom, const PxTransform& pose,						\
 											const PxConvexMeshGeometry& convexGeom, const PxTransform& convexPose,	\
 											const PxVec3& unitDir, PxReal distance,									\
@@ -88,7 +95,12 @@ namespace physx
 		// \return		true if a hit was found, false otherwise
 		typedef bool (*SweepBoxFunc)		(GU_BOX_SWEEP_FUNC_PARAMS);
 
-		// PT: function pointer for Geom-indexed box sweep functions
+		// function pointer for Geom-indexed convex core sweep functions
+		// See GU_CONVEXCORE_SWEEP_FUNC_PARAMS for function parameters details.
+		// \return		true if a hit was found, false otherwise
+		typedef bool (*SweepConvexCoreFunc)		(GU_CONVEXCORE_SWEEP_FUNC_PARAMS);
+
+		// PT: function pointer for Geom-indexed convex mesh sweep functions
 		// See GU_CONVEX_SWEEP_FUNC_PARAMS for function parameters details.
 		// \return		true if a hit was found, false otherwise
 		typedef bool (*SweepConvexFunc)		(GU_CONVEX_SWEEP_FUNC_PARAMS);
@@ -96,15 +108,17 @@ namespace physx
 		// PT: typedef for bundles of all sweep functions, i.e. the function tables themselves (indexed by geom-type).
 		typedef SweepCapsuleFunc	GeomSweepCapsuleTable	[PxGeometryType::eGEOMETRY_COUNT];
 		typedef SweepBoxFunc		GeomSweepBoxTable		[PxGeometryType::eGEOMETRY_COUNT];
+		typedef SweepConvexCoreFunc	GeomSweepConvexCoreTable[PxGeometryType::eGEOMETRY_COUNT];
 		typedef SweepConvexFunc		GeomSweepConvexTable	[PxGeometryType::eGEOMETRY_COUNT];
 
 		struct GeomSweepFuncs
 		{
-			GeomSweepCapsuleTable	capsuleMap;
-			GeomSweepCapsuleTable	preciseCapsuleMap;
-			GeomSweepBoxTable		boxMap;
-			GeomSweepBoxTable		preciseBoxMap;
-			GeomSweepConvexTable	convexMap;
+			GeomSweepCapsuleTable		capsuleMap;
+			GeomSweepCapsuleTable		preciseCapsuleMap;
+			GeomSweepBoxTable			boxMap;
+			GeomSweepBoxTable			preciseBoxMap;
+			GeomSweepConvexCoreTable	convexCoreMap;
+			GeomSweepConvexTable		convexMap;
 		};
 		// PT: grabs all sweep function tables at once (for access by external non-Gu modules)
 		PX_PHYSX_COMMON_API const GeomSweepFuncs& getSweepFuncTable();

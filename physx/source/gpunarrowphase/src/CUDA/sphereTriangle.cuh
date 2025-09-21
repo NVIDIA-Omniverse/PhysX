@@ -50,83 +50,79 @@ __device__ static PxReal distancePointTriangleSquared(const PxVec3 p,
 {
 	faceContact = false;
 
-	const PxReal eps = 1.0e-5f;
-
 	// Check if P in vertex region outside A
 	const PxVec3 ab = b - a;
 	const PxVec3 ac = c - a;
 	const PxVec3 ap = p - a;
 	const PxReal d1 = ab.dot(ap);
 	const PxReal d2 = ac.dot(ap);
-	if (d1 < -eps && d2 < -eps)
+	if (d1 < 0.0f && d2 < 0.0f)
 	{
 		if(mask)
 			*mask = PxU32(ConvexTriIntermediateData::eV0);
 		generateContact = (!isEdgeNonconvex(adjIdxs.x)) || (!isEdgeNonconvex(adjIdxs.z));
 		closestP = a;
-		return (a-p).magnitudeSquared();	// Barycentric coords 1,0,0
+		return ap.magnitudeSquared();	// Barycentric coords 1,0,0
 	}
 	// Check if P in vertex region outside B
 	const PxVec3 bp = p - b;
 	const PxReal d3 = ab.dot(bp);
 	const PxReal d4 = ac.dot(bp);
-	if (d3 > eps && d4 - d3 < -eps)
+	if (d3 > 0.0f && d4 < d3)
 	{
 		if(mask)
 			*mask = PxU32(ConvexTriIntermediateData::eV1);
 		generateContact = (!isEdgeNonconvex(adjIdxs.x)) || (!isEdgeNonconvex(adjIdxs.y));
 		closestP = b;
-		return (b - p).magnitudeSquared();	// Barycentric coords 0,1,0
+		return bp.magnitudeSquared();	// Barycentric coords 0,1,0
 	}
 	// Check if P in vertex region outside C
 	const PxVec3 cp = p - c;
 	const PxReal d5 = ab.dot(cp);
 	const PxReal d6 = ac.dot(cp);
-	if (d6 > eps && d5 - d6 < -eps)
+	if (d6 > 0.0f && d5 < d6)
 	{
 		if (mask)
 			*mask = PxU32(ConvexTriIntermediateData::eV2);
 		generateContact = (!isEdgeNonconvex(adjIdxs.y)) || (!isEdgeNonconvex(adjIdxs.z));
 		closestP = c;
-		return (c - p).magnitudeSquared();	// Barycentric coords 0,0,1
+		return cp.magnitudeSquared();	// Barycentric coords 0,0,1
 	}
 
 	PxReal vc = d1 * d4 - d3 * d2;
 	PxReal vb = d5 * d2 - d1 * d6;
 	PxReal va = d3 * d6 - d5 * d4;
-	const PxReal denom = 1.0f / (va + vb + vc);
-	va = va * denom;
-	vb = vb * denom;
-	vc = vc * denom;
+
+	const float edgeTol = (va + vb + vc) * 1e-5;
 
 	// Check if P in edge region of AB, if so return projection of P onto AB
-	if (vc < -eps && d1 > eps && d3 < -eps)
+	if (vc < 0.0f && d1 >= 0.0f && d3 <= 0.0f)
 	{
 		if(mask)
 			*mask = PxU32(ConvexTriIntermediateData::eE01);
-		generateContact = !isEdgeNonconvex(adjIdxs.x);
+		generateContact = !isEdgeNonconvex(adjIdxs.x) || vc > -edgeTol;
 		const PxReal v = d1 / (d1 - d3);
 		closestP = a + v * ab;	// barycentric coords (1-v, v, 0)
 		return (closestP - p).magnitudeSquared();
 	}
 	
 	// Check if P in edge region of AC, if so return projection of P onto AC	
-	if (vb < -eps && d2 > eps && d6 < -eps)
+	if (vb < 0.0f && d2 >= 0.0f && d6 <= 0.0f)
 	{
 		if(mask)
 			*mask = PxU32(ConvexTriIntermediateData::eE02);
-		generateContact = !isEdgeNonconvex(adjIdxs.z);
+		generateContact = !isEdgeNonconvex(adjIdxs.z) || vb > -edgeTol;
 		const PxReal w = d2 / (d2 - d6);
 		closestP = a + w * ac;	// barycentric coords (1-w, 0, w)
 		return (closestP - p).magnitudeSquared();
 	}
 
 	// Check if P in edge region of BC, if so return projection of P onto BC	
-	if (va < -eps && (d4 - d3) > eps && (d5 - d6) > eps)
+	if (va < 0.0f && d4 >= d3 && d5 >= d6)
 	{
 		if(mask)
 			*mask = PxU32(ConvexTriIntermediateData::eE12);
-		generateContact = !isEdgeNonconvex(adjIdxs.y);
+		generateContact = !isEdgeNonconvex(adjIdxs.y) || va > -edgeTol;
 		const PxReal w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
 		closestP = b + w * (c - b);	// barycentric coords (0, 1-w, w)
 		return (closestP - p).magnitudeSquared();
@@ -139,7 +135,7 @@ __device__ static PxReal distancePointTriangleSquared(const PxVec3 p,
 		*mask = 0;
 
 	// P inside face region. Compute Q through its barycentric coords (u,v,w)	
-	closestP = a + ab * vb + ac * vc;
+	closestP = a + (ab * vb + ac * vc)/ (va + vb + vc);
 	return (closestP - p).magnitudeSquared();
 }
 

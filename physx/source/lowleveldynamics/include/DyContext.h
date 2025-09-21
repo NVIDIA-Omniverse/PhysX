@@ -182,6 +182,9 @@ public:
 
 	virtual PxsExternalAccelerationProvider& getExternalRigidAccelerations() { return mRigidExternalAccelerations; }
 
+	// Only used for Direct GPU API pipeline at the moment.
+	virtual void setActiveBreakableConstraintCount(PxU32 activeBreakableConstraintCount) { PX_UNUSED(activeBreakableConstraintCount); }
+
 protected:
 
 	Context(IG::SimpleIslandManager& islandManager, PxVirtualAllocatorCallback* allocatorCallback,

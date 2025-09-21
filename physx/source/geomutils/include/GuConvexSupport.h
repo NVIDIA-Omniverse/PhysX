@@ -429,10 +429,10 @@ namespace physx
 					const PxVec3 p1 = getPoint(index[1]), p2 = getPoint(index[2]);
 					const PxVec3 n0 = (p1 - p0).cross(p2 - p0).getNormalized();
 					PxReal dot0 = dir.dot(n0);
-					if (dot0 < 0)
-						dot0 = -dot0;
 					if (dot0 > dEps1)
 						faceNormal = n0;
+					else if (dot0 < -dEps1)
+						faceNormal = -n0;
 					else
 					{
 						const PxVec3 n1 = (p1 - p0).cross(dir).cross(p1 - p0).getNormalized();
@@ -568,8 +568,8 @@ namespace physx
 		// enclosing a corresponding set of points. then it creates a quad
 		// perpendicular to the direction and containing the reference point.
 		// and finally it clips the quad with the planes from both sets.
-		// MAX_CONTACTS vertices of the clipped poingon, forming the biggest
-		// poligon are returned.
+		// MAX_CONTACTS vertices of the clipped polygon, forming the biggest
+		// polygon are returned.
 		struct FaceClipper
 		{
 			PX_CUDA_CALLABLE PX_INLINE
@@ -579,6 +579,18 @@ namespace physx
 			{
 				mNumPoints0 = convex0.contactFace(-mAxis, mPoint0, mFaceNormal0, mFacePoints0);
 				mNumPoints1 = convex1.contactFace(mAxis, mPoint1, mFaceNormal1, mFacePoints1);
+			}
+
+			PX_CUDA_CALLABLE PX_INLINE
+			FaceClipper(const PxVec3* facePoints0, PxU32 numPoints0, const PxVec3* facePoints1, PxU32 numPoints1, const PxVec3& faceNormal0, const PxVec3& faceNormal1, const PxVec3& point0, const PxVec3& point1, const PxVec3& axis)
+				:
+				mPoint0(point0), mPoint1(point1), mAxis(axis), mFaceNormal0(faceNormal0), mFaceNormal1(faceNormal1), mNumPoints0(numPoints0), mNumPoints1(numPoints1)
+			{
+				for (PxU32 i = 0; i < mNumPoints0; ++i)
+					mFacePoints0[i] = facePoints0[i];
+
+				for (PxU32 i = 0; i < mNumPoints1; ++i)
+					mFacePoints1[i] = facePoints1[i];
 			}
 
 			PX_CUDA_CALLABLE
@@ -724,55 +736,41 @@ namespace physx
 
 				const PxVec3 axis = mAxis;
 				const PxReal eps = 1e-5f;
-				const PxReal eps2 = eps * eps;
-				PxU32 start = 0, stop = PxU32(-1);
-				while (true)
+
+				for (PxU32 i = 0; i < numPoints; ++i)
 				{
-					const PxVec3& s = facePoints[start];
-					for (PxU32 i = 0; i < numPoints; ++i)
+					const PxVec3& s = facePoints[i];
+					for (PxU32 j = i + 1; j < numPoints; ++j)
 					{
-						if (i == start)
-							continue;
-				
-						const PxVec3& e = facePoints[i];
+						const PxVec3& e = facePoints[j];
+
 						PxVec3 n = (e - s).cross(axis);
-						if (n.magnitudeSquared() < eps2)
+						if (n.magnitudeSquared() < eps * eps)
 							continue;
 
 						n.normalizeFast();
-				
-						bool edge = true;
-						for (PxU32 j = 0; j < numPoints; ++j)
+
+						PxU32 posCount = 0, negCount = 0;
+						for (PxU32 k = 0; k < numPoints; ++k)
 						{
-							if (j == i || j == start)
+							if (k == i || k == j)
 								continue;
-				
-							const PxVec3& v = facePoints[j];
-							if ((v - s).dot(n) > eps)
-							{
-								edge = false;
-								break;
-							}
+
+							const PxReal d = (facePoints[k] - s).dot(n);
+							if (d > eps)
+								posCount++;
+							else
+								negCount++;
 						}
 
-						if (edge)
-						{
-							planes[numPlanes++] = PxVec4(-n, n.dot(s));
+						if (posCount && negCount)
+							continue;
 
-							if (stop == PxU32(-1))
-								stop = start;
+						if (posCount)
+							n = -n;
 
-							start = i;
-
-							break;
-						}
+						planes[numPlanes++] = PxVec4(-n, n.dot(s));
 					}
-
-					if (stop == PxU32(-1))
-						++start;
-
-					if (start == stop)
-						break;
 				}
 			}
 
@@ -1163,41 +1161,8 @@ namespace physx
 
 		PX_CUDA_CALLABLE
 		// generates contacts between a plane and a convex
-		static PxU32 generateContacts(const PxPlane& plane0, const ConvexShape& convex1, const PxReal contactDist,
-			PxVec3& normal, PxVec3 points[MAX_CONVEX_CONTACTS], PxReal dists[MAX_CONVEX_CONTACTS])
-		{
-			normal = -plane0.n;
-
-			const PxVec3 point1 = convex1.support(normal);
-			const PxReal dist = plane0.distance(point1);
-
-			PxU32 numContacts = 0;
-
-			if (dist < contactDist)
-			{
-				PxVec3 faceNormal, facePoints[Gu::ConvexCore::MAX_FACE_POINTS];
-				const PxU32 numPoints = convex1.contactFace(normal, point1, faceNormal, facePoints);
-				
-				if (numPoints == 0)
-				{
-					const PxVec3 point = point1 + normal * dist * 0.5f;
-					points[numContacts] = point;
-					dists[numContacts] = dist;
-					++numContacts;
-				}
-
-				for (PxU32 i = 0; i < numPoints; ++i)
-				{
-					const PxVec3 p1 = facePoints[i];
-					const PxReal d = plane0.distance(p1);
-					points[numContacts] = p1 + normal * d * 0.5f;
-					dists[numContacts] = d;
-					++numContacts;
-				}
-			}
-
-			return numContacts;
-		}
+		PxU32 generateContacts(const PxPlane& plane0, const ConvexShape& convex1, const PxReal contactDist,
+			PxVec3& normal, PxVec3 points[MAX_CONVEX_CONTACTS], PxReal dists[MAX_CONVEX_CONTACTS]);
 
 		PX_CUDA_CALLABLE
 		// generates contacts between 2 convexes (cullDir is for triangle backface culling)
@@ -1240,11 +1205,6 @@ namespace physx
 		static PxU32 generateContacts(const ConvexShape& convex0, const ConvexShape& convex1, const PxReal contactDist,
 			PxVec3& normal, PxVec3 points[MAX_CONVEX_CONTACTS], PxReal dists[MAX_CONVEX_CONTACTS])
 			{ return generateContacts(convex0, convex1, contactDist, PxVec3(0), normal, points, dists); }
-
-		PX_CUDA_CALLABLE PX_INLINE
-		// suppress a warning about an unreferenced local symbol
-		PxU32 suppressUnhelpfulWarnings()
-			{ PxPlane p; ConvexShape cs; PxReal r(0); PxVec3 v; return generateContacts(p, cs, r, v, NULL, NULL); }
 	}
 }
 

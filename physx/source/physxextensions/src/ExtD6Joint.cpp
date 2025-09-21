@@ -56,7 +56,7 @@ D6Joint::D6Joint(const PxTolerancesScale& scale, PxRigidActor* actor0, const PxT
 	data->linearLimitY		= PxJointLinearLimitPair(scale);
 	data->linearLimitZ		= PxJointLinearLimitPair(scale);
 
-	for(PxU32 i=0;i<PxD6Drive::eCOUNT;i++)
+	for(PxU32 i=0;i<D6JointData::sDriveEntryCapacity;i++)
 		data->drive[i] = PxD6JointDrive();
 
 	data->drivePosition			= PxTransform(PxIdentity);
@@ -67,7 +67,51 @@ D6Joint::D6Joint(const PxTolerancesScale& scale, PxRigidActor* actor0, const PxT
 	data->mUseNewLinearLimits = false;
 	data->mUseConeLimit = false;
 	data->mUsePyramidLimits = false;
+
+	data->angularDriveConfig = PxD6AngularDriveConfig::eLEGACY;
 }
+
+#if PX_SUPPORT_OMNI_PVD
+
+PX_FORCE_INLINE static const PxD6JointDrive* omniPvdCreateDriveObjectHandle(PxD6Drive::Enum type, const D6JointData& jData)
+{
+	// creating fake object handles to work around an omni PVD issue where references to objects that
+	// get deleted/created (using the same memory address) are not working properly (the references point
+	// to old objects). In general, it is not important what the handles are, they just need to be unique.
+
+	PX_COMPILE_TIME_ASSERT(sizeof(jData.drive) >= PxD6Drive::eCOUNT);
+	// using the base address for joint drive data and adding the type value to get a unique ID for all
+	// drive types (note that we do not allocate memory for each drive type because some can not be active
+	// at the same time).
+
+	return reinterpret_cast<const PxD6JointDrive*>(reinterpret_cast<size_t>(jData.drive) + type);
+}
+
+#define EXT_OMNI_PVD_DESTROY_DRIVE_DATA(driveType, jointData)													\
+{																												\
+	const PxD6JointDrive* objectHandle = omniPvdCreateDriveObjectHandle(driveType, jointData);					\
+	OMNI_PVD_DESTROY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, *objectHandle)	\
+}
+
+D6Joint::~D6Joint()
+{
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
+	const D6JointData& jointData = data();
+
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eX, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eY, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eZ, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eSWING, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eTWIST, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eSLERP, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eSWING1, jointData)
+	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eSWING2, jointData)
+
+	OMNI_PVD_WRITE_SCOPE_END
+}
+
+#endif
 
 PxD6Motion::Enum D6Joint::getMotion(PxD6Axis::Enum index) const
 {	
@@ -102,38 +146,144 @@ PxReal D6Joint::getSwingZAngle()	const
 	return getSwingZAngle_Internal();
 }
 
-PxD6JointDrive D6Joint::getDrive(PxD6Drive::Enum index) const
-{	
-	return data().drive[index];	
+#if PX_CHECKED
+static bool isDriveTypeAllowed(PxD6Drive::Enum driveType, PxD6AngularDriveConfig::Enum driveConfig, const char* apiName)
+{
+	if (driveConfig == PxD6AngularDriveConfig::eSWING_TWIST)
+	{
+		if ((driveType <= PxD6Drive::eZ) || (driveType == PxD6Drive::eSWING1) || (driveType == PxD6Drive::eSWING2) || (driveType == PxD6Drive::eTWIST))
+			return true;
+		else
+		{
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "%s: with angular drive configuration PxD6AngularDriveConfig::eSWING_TWIST, "
+				"drive parameters for PxD6Drive::eSWING and ::eSLERP are not accessible.", apiName);
+		}
+	}
+	else if (driveConfig == PxD6AngularDriveConfig::eSLERP)
+	{
+		if ((driveType <= PxD6Drive::eZ) || (driveType == PxD6Drive::eSLERP))
+			return true;
+		else
+		{
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "%s: with angular drive configuration PxD6AngularDriveConfig::eSLERP, "
+				"drive parameters for PxD6Drive::eSWING, ::eTWIST, ::eSWING1 and ::eSWING2 are not accessible.", apiName);
+		}
+	}
+	else
+	{
+		PX_ASSERT(driveConfig == PxD6AngularDriveConfig::eLEGACY);
+
+		if ((driveType <= PxD6Drive::eZ) || (driveType == PxD6Drive::eSWING) || (driveType == PxD6Drive::eTWIST) || (driveType == PxD6Drive::eSLERP))
+			return true;
+		else
+		{
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "%s: with angular drive configuration PxD6AngularDriveConfig::eLEGACY, "
+				"drive parameters for PxD6Drive::eSWING1 and ::eSWING2 are not accessible.", apiName);
+		}
+	}
+
+	return false;
+}
+#endif
+
+static constexpr PxU32 gDriveXDataIndex = 0;
+PX_COMPILE_TIME_ASSERT(gDriveXDataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveYDataIndex = 1;
+PX_COMPILE_TIME_ASSERT(gDriveYDataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveZDataIndex = 2;
+PX_COMPILE_TIME_ASSERT(gDriveZDataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSwingDataIndex = 3;
+PX_COMPILE_TIME_ASSERT(gDriveSwingDataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveTwistDataIndex = 4;
+PX_COMPILE_TIME_ASSERT(gDriveTwistDataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSlerpDataIndex = 5;
+PX_COMPILE_TIME_ASSERT(gDriveSlerpDataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSwing1DataIndex = gDriveSwingDataIndex;  // PxD6Drive::eSWING1 maps to the data entry of PxD6Drive::eSWING
+PX_COMPILE_TIME_ASSERT(gDriveSwing1DataIndex < D6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSwing2DataIndex = gDriveSlerpDataIndex;  // PxD6Drive::eSWING2 maps to the data entry of PxD6Drive::eSLERP
+PX_COMPILE_TIME_ASSERT(gDriveSwing2DataIndex < D6JointData::sDriveEntryCapacity);
+
+// internally, PxD6Drive::eSWING1 and PxD6Drive::eSWING2 are mapped to indices
+// of drive parameters that are not used for PxD6AngularDriveConfig::eSWING_TWIST
+// such that the size of D6JointData does not have to be increased for no good
+// reason
+static constexpr PxU32 gDriveTypeToIndexMap[] = {
+	gDriveXDataIndex,
+	gDriveYDataIndex,
+	gDriveZDataIndex,
+	gDriveSwingDataIndex,
+	gDriveTwistDataIndex,
+	gDriveSlerpDataIndex,
+	gDriveSwing1DataIndex,  
+	gDriveSwing2DataIndex
+};
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eX] == gDriveXDataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eY] == gDriveYDataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eZ] == gDriveZDataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eSWING] == gDriveSwingDataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eTWIST] == gDriveTwistDataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eSLERP] == gDriveSlerpDataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eSWING1] == gDriveSwing1DataIndex);
+PX_COMPILE_TIME_ASSERT(gDriveTypeToIndexMap[PxD6Drive::eSWING2] == gDriveSwing2DataIndex);
+
+PX_FORCE_INLINE static PxU32 getDriveDataIndex(PxD6Drive::Enum driveType)
+{
+	return gDriveTypeToIndexMap[driveType];
 }
 
-void D6Joint::setDrive(PxD6Drive::Enum index, const PxD6JointDrive& d)
-{	
-	PX_CHECK_AND_RETURN(d.isValid(), "PxD6Joint::setDrive: drive is invalid"); 
+PxD6JointDrive D6Joint::getDrive(PxD6Drive::Enum driveType) const
+{
+#if PX_CHECKED
+	if (!isDriveTypeAllowed(driveType, static_cast<PxD6AngularDriveConfig::Enum>(data().angularDriveConfig), "PxD6Joint::getDrive"))
+		return PxD6JointDrive();
+#endif
 
-	data().drive[index] = d; 
+	const PxU32 dataIndex = getDriveDataIndex(driveType);
+	return data().drive[dataIndex];
+}
+
+#if PX_SUPPORT_OMNI_PVD
+
+PX_FORCE_INLINE static void omniPvdSetDriveData(const PxD6JointDrive& driveData, const PxD6JointDrive& objectHandle,
+	OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData)
+{
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, stiffness, objectHandle, driveData.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, damping, objectHandle, driveData.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, forceLimit, objectHandle, driveData.forceLimit)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, flags, objectHandle, driveData.flags)
+}
+
+#endif
+
+void D6Joint::setDrive(PxD6Drive::Enum driveType, const PxD6JointDrive& d)
+{
+	PX_CHECK_AND_RETURN(d.isValid(), "PxD6Joint::setDrive: drive is invalid");
+
+	D6JointData& jData = data();
+
+#if PX_CHECKED
+	if (!isDriveTypeAllowed(driveType, static_cast<PxD6AngularDriveConfig::Enum>(jData.angularDriveConfig), "PxD6Joint::setDrive"))
+		return;
+#endif
+
+	const PxU32 dataIndex = getDriveDataIndex(driveType);
+
+	jData.drive[dataIndex] = d; 
 	mRecomputeMotion = true; 
-	markDirty(); 
+	markDirty();
+
 #if PX_SUPPORT_OMNI_PVD
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	PxReal forceLimit[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
-		forceLimit[i] = getDrive(PxD6Drive::Enum(i)).forceLimit;
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveForceLimit, j, forceLimit, PxD6Axis::eCOUNT)
-	PxD6JointDriveFlags flags[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
-		flags[i] = getDrive(PxD6Drive::Enum(i)).flags;
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveFlags, j, flags, PxD6Axis::eCOUNT)
-	PxReal stiffness[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
-		stiffness[i] = getDrive(PxD6Drive::Enum(i)).stiffness;
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveStiffness, j, stiffness, PxD6Axis::eCOUNT)
-	PxReal damping[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
-		damping[i] = getDrive(PxD6Drive::Enum(i)).damping;
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveDamping, j, damping, PxD6Axis::eCOUNT)
+	const PxD6JointDrive* objectHandle = omniPvdCreateDriveObjectHandle(driveType, jData);
+	omniPvdSetDriveData(jData.drive[dataIndex], *objectHandle, pvdWriter, pvdRegData);
 
 	OMNI_PVD_WRITE_SCOPE_END
 #endif
@@ -359,6 +509,116 @@ PxD6JointGPUIndex D6Joint::getGPUIndex() const
 	return getConstraint()->getGPUIndex();
 }
 
+#if PX_SUPPORT_OMNI_PVD
+
+#define EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(joint, attrName, driveData, driveType, jointData)							\
+{																														\
+	const PxD6JointDrive* objectHandle = omniPvdCreateDriveObjectHandle(driveType, jointData);							\
+	omniPvdSetDriveData(driveData, *objectHandle, pvdWriter, pvdRegData);												\
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, attrName, joint, objectHandle)		\
+}
+
+PX_FORCE_INLINE static void omniPvdClearDriveData(const PxD6Joint& joint, PxD6AngularDriveConfig::Enum angularDriveConfig,
+	OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData)
+{
+	if (angularDriveConfig == PxD6AngularDriveConfig::eSWING_TWIST)
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing1, joint, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing2, joint, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveTwist, joint, OMNI_PVD_INVALID_HANDLE)
+	}
+	else if (angularDriveConfig == PxD6AngularDriveConfig::eSLERP)
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSlerp, joint, OMNI_PVD_INVALID_HANDLE)
+	}
+	else
+	{
+		PX_ASSERT(angularDriveConfig == PxD6AngularDriveConfig::eLEGACY);
+
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing, joint, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveTwist, joint, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSlerp, joint, OMNI_PVD_INVALID_HANDLE)
+	}
+}
+
+#endif
+
+void D6Joint::setAngularDriveConfig(PxD6AngularDriveConfig::Enum config)
+{
+	D6JointData& d = data();
+
+	if (config != d.angularDriveConfig)
+	{
+#if PX_SUPPORT_OMNI_PVD
+		const PxD6Joint& pxD6Joint = static_cast<const PxD6Joint&>(*this);
+
+		{
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
+			omniPvdClearDriveData(pxD6Joint, static_cast<PxD6AngularDriveConfig::Enum>(d.angularDriveConfig),
+				pvdWriter, pvdRegData);
+
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, angularDriveConfig, pxD6Joint, config)
+
+			OMNI_PVD_WRITE_SCOPE_END
+		}
+#endif
+
+		if (config == PxD6AngularDriveConfig::eSWING_TWIST)
+		{
+			d.drive[gDriveSwing1DataIndex] = PxD6JointDrive();
+			d.drive[gDriveSwing2DataIndex] = PxD6JointDrive();
+			d.drive[gDriveTwistDataIndex] = PxD6JointDrive();
+
+#if PX_SUPPORT_OMNI_PVD
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing1, d.drive[gDriveSwing1DataIndex], PxD6Drive::eSWING1, d)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing2, d.drive[gDriveSwing2DataIndex], PxD6Drive::eSWING2, d)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveTwist, d.drive[gDriveTwistDataIndex], PxD6Drive::eTWIST, d)
+			OMNI_PVD_WRITE_SCOPE_END
+#endif
+		}
+		else if (config == PxD6AngularDriveConfig::eSLERP)
+		{
+			d.drive[gDriveSlerpDataIndex] = PxD6JointDrive();
+
+#if PX_SUPPORT_OMNI_PVD
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSlerp, d.drive[gDriveSlerpDataIndex], PxD6Drive::eSLERP, d)
+			OMNI_PVD_WRITE_SCOPE_END
+#endif
+		}
+		else
+		{
+			PX_ASSERT(config == PxD6AngularDriveConfig::eLEGACY);
+
+			d.drive[gDriveSwingDataIndex] = PxD6JointDrive();
+			d.drive[gDriveTwistDataIndex] = PxD6JointDrive();
+			d.drive[gDriveSlerpDataIndex] = PxD6JointDrive();
+
+#if PX_SUPPORT_OMNI_PVD
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing, d.drive[gDriveSwingDataIndex], PxD6Drive::eSWING, d)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveTwist, d.drive[gDriveTwistDataIndex], PxD6Drive::eTWIST, d)
+			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSlerp, d.drive[gDriveSlerpDataIndex], PxD6Drive::eSLERP, d)
+			OMNI_PVD_WRITE_SCOPE_END
+#endif
+		}
+
+		d.angularDriveConfig = static_cast<PxU8>(config);
+
+		mRecomputeMotion = true;
+		markDirty();
+	}
+}
+
+PxD6AngularDriveConfig::Enum D6Joint::getAngularDriveConfig() const
+{
+	const D6JointData& d = data();
+
+	return static_cast<PxD6AngularDriveConfig::Enum>(d.angularDriveConfig);
+}
+
 void* D6Joint::prepareData()
 {
 	D6JointData& d = data();
@@ -380,24 +640,55 @@ void* D6Joint::prepareData()
 		}
 
 		// a linear direction isn't driven if it's locked
-		if(active(PxD6Drive::eX) && d.motion[PxD6Axis::eX]!=PxD6Motion::eLOCKED) d.driving |= 1<< PxD6Drive::eX;
-		if(active(PxD6Drive::eY) && d.motion[PxD6Axis::eY]!=PxD6Motion::eLOCKED) d.driving |= 1<< PxD6Drive::eY;
-		if(active(PxD6Drive::eZ) && d.motion[PxD6Axis::eZ]!=PxD6Motion::eLOCKED) d.driving |= 1<< PxD6Drive::eZ;
+		if (isDriveActive(gDriveXDataIndex) && d.motion[PxD6Axis::eX]!=PxD6Motion::eLOCKED)
+			d.driving |= 1 << PxD6Drive::eX;
 
-		// SLERP drive requires all angular dofs unlocked, and inhibits swing/twist
+		if (isDriveActive(gDriveYDataIndex) && d.motion[PxD6Axis::eY]!=PxD6Motion::eLOCKED)
+			d.driving |= 1 << PxD6Drive::eY;
+
+		if (isDriveActive(gDriveZDataIndex) && d.motion[PxD6Axis::eZ]!=PxD6Motion::eLOCKED)
+			d.driving |= 1 << PxD6Drive::eZ;
 
 		const bool swing1Locked = d.motion[PxD6Axis::eSWING1] == PxD6Motion::eLOCKED;
 		const bool swing2Locked = d.motion[PxD6Axis::eSWING2] == PxD6Motion::eLOCKED;
 		const bool twistLocked  = d.motion[PxD6Axis::eTWIST]  == PxD6Motion::eLOCKED;
 
-		if(active(PxD6Drive::eSLERP) && !swing1Locked && !swing2Locked && !twistLocked)
-			d.driving |= 1<<PxD6Drive::eSLERP;
+		if (d.angularDriveConfig == PxD6AngularDriveConfig::eSWING_TWIST)
+		{
+			if (isDriveActive(gDriveTwistDataIndex) && !twistLocked)
+				d.driving |= 1 << PxD6Drive::eTWIST;
+
+			if (isDriveActive(gDriveSwing1DataIndex) && !swing1Locked)
+				d.driving |= 1 << PxD6Drive::eSWING1;
+
+			if (isDriveActive(gDriveSwing2DataIndex) && !swing2Locked)
+				d.driving |= 1 << PxD6Drive::eSWING2;
+		}
+		else if (d.angularDriveConfig == PxD6AngularDriveConfig::eSLERP)
+		{
+			// SLERP drive requires all angular dofs unlocked
+
+			if (isDriveActive(gDriveSlerpDataIndex) && !swing1Locked && !swing2Locked && !twistLocked)
+			{
+				d.driving |= 1 << PxD6Drive::eSLERP;
+			}
+		}
 		else
 		{
-			if(active(PxD6Drive::eTWIST) && !twistLocked) 
-				d.driving |= 1<<PxD6Drive::eTWIST;
-			if(active(PxD6Drive::eSWING) && (!swing1Locked || !swing2Locked)) 
-				d.driving |= 1<< PxD6Drive::eSWING;
+			// SLERP drive requires all angular dofs unlocked, and inhibits swing/twist
+
+			if (isDriveActive(gDriveSlerpDataIndex) && !swing1Locked && !swing2Locked && !twistLocked)
+			{
+				d.driving |= 1 << PxD6Drive::eSLERP;
+			}
+			else
+			{
+				if (isDriveActive(gDriveTwistDataIndex) && !twistLocked)
+					d.driving |= 1 << PxD6Drive::eTWIST;
+
+				if (isDriveActive(gDriveSwingDataIndex) && (!swing1Locked || !swing2Locked))
+					d.driving |= 1 << PxD6Drive::eSWING;
+			}
 		}
 	}
 
@@ -776,11 +1067,17 @@ static PxU32 D6JointSolverPrep(Px1DConstraint* constraints,
 		{
 			// -driveVelocity because velTarget is child (body1) - parent (body0) and Jacobian is 1 for body0 and -1 for parent
 			if(driving & (1<<(PxD6Drive::eX+i)))
-				ch.linear(cA2w_m[i], -data.driveLinearVelocity[i], posErr[i], drives[PxD6Drive::eX+i]); 
+				ch.linear(cA2w_m[i], -data.driveLinearVelocity[i], posErr[i], drives[gDriveXDataIndex + i]);
+
+			PX_COMPILE_TIME_ASSERT(gDriveYDataIndex == (gDriveXDataIndex + 1));
+			PX_COMPILE_TIME_ASSERT(gDriveZDataIndex == (gDriveYDataIndex + 1));
+
+			PX_COMPILE_TIME_ASSERT(PxD6Drive::eY == (PxD6Drive::eX + 1));
+			PX_COMPILE_TIME_ASSERT(PxD6Drive::eZ == (PxD6Drive::eY + 1));
 		}
 	}
 
-	if(driving & ((1<<PxD6Drive::eSLERP)|(1<<PxD6Drive::eSWING)|(1<<PxD6Drive::eTWIST)))
+	if (driving & ((1 << PxD6Drive::eSLERP) | (1 << PxD6Drive::eSWING) | (1 << PxD6Drive::eTWIST) | (1 << PxD6Drive::eSWING1) | (1 << PxD6Drive::eSWING2)))
 	{
 		const PxQuat d2cA_q = cB2cA.q.dot(data.drivePosition.q)>0.0f ? data.drivePosition.q : -data.drivePosition.q; 
 
@@ -793,26 +1090,36 @@ static PxU32 D6JointSolverPrep(Px1DConstraint* constraints,
 
 			PxVec3 axis[3] = { PxVec3(1.0f, 0.0f, 0.0f), PxVec3(0.0f, 1.0f, 0.0f), PxVec3(0.0f, 0.0f, 1.0f) };
 				
-			if(drives[PxD6Drive::eSLERP].stiffness!=0.0f)
+			if (drives[gDriveSlerpDataIndex].stiffness != 0.0f)
 				joint::computeJacobianAxes(axis, cA2w.q * d2cA_q, cB2w.q);	// converges faster if there is only velocity drive
 
 			for(PxU32 i=0; i<3; i++)
-				ch.angular(axis[i], axis[i].dot(velTarget), -delta.getImaginaryPart()[i], drives[PxD6Drive::eSLERP], PxConstraintSolveHint::eSLERP_SPRING);
+				ch.angular(axis[i], axis[i].dot(velTarget), -delta.getImaginaryPart()[i], drives[gDriveSlerpDataIndex], PxConstraintSolveHint::eSLERP_SPRING);
 		}
 		else 
 		{
 			if(driving & (1<<PxD6Drive::eTWIST))
-				ch.angular(cA2w_m.column0, v.x, -2.0f * delta.x, drives[PxD6Drive::eTWIST]); 
+				ch.angular(cA2w_m.column0, v.x, -2.0f * delta.x, drives[gDriveTwistDataIndex]); 
 
 			if(driving & (1<<PxD6Drive::eSWING))
 			{
 				const PxVec3 err = delta.getBasisVector0();
 
 				if(!(locked & SWING1_FLAG))
-					ch.angular(aY, v.y, err.z, drives[PxD6Drive::eSWING]);
+					ch.angular(aY, v.y, err.z, drives[gDriveSwingDataIndex]);
 
 				if(!(locked & SWING2_FLAG))
-					ch.angular(aZ, v.z, -err.y, drives[PxD6Drive::eSWING]);
+					ch.angular(aZ, v.z, -err.y, drives[gDriveSwingDataIndex]);
+			}
+			else if (driving & ((1 << PxD6Drive::eSWING1) | (1 << PxD6Drive::eSWING2)))
+			{
+				const PxVec3 err = delta.getBasisVector0();
+
+				if (driving & (1 << PxD6Drive::eSWING1))
+					ch.angular(aY, v.y, err.z, drives[gDriveSwing1DataIndex]);
+
+				if (driving & (1 << PxD6Drive::eSWING2))
+					ch.angular(aZ, v.z, -err.y, drives[gDriveSwing2DataIndex]);
 			}
 		}
 	}
@@ -971,56 +1278,85 @@ void D6Joint::updateOmniPvdProperties() const
 	OMNI_PVD_WRITE_SCOPE_END
 }
 
+#define EXT_OMNI_PVD_CREATE_DRIVE_DATA(objectHandle, joint, attrName, driveData, driveType, jointData)			\
+	const PxD6JointDrive* objectHandle = omniPvdCreateDriveObjectHandle(driveType, jointData);					\
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, *objectHandle)		\
+	omniPvdSetDriveData(driveData, *objectHandle, pvdWriter, pvdRegData);										\
+
 template<>
 void physx::Ext::omniPvdInitJoint<D6Joint>(D6Joint& joint)
 {
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
+	const D6JointData& jData = joint.data();
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(joint);
 	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eD6);
+	omniPvdSetBaseJointParams(static_cast<const PxJoint&>(joint), PxJointConcreteType::eD6);
 
 	PxD6Motion::Enum motions[PxD6Axis::eCOUNT];
 	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
-		motions[i] = joint.getMotion(PxD6Axis::Enum(i));
+		motions[i] = jData.motion[i];
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, motions, j, motions, PxD6Axis::eCOUNT)
 
-	PxReal forceLimit[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
-		forceLimit[i] = joint.getDrive(PxD6Drive::Enum(i)).forceLimit;
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveForceLimit, j, forceLimit, PxD6Axis::eCOUNT)
+	//
+	// note: the assumption is that the drive data memory is persistent during the lifetime of a D6 joint
+	//
 
-	PxD6JointDriveFlags flags[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveXHandle, j, driveX, jData.drive[gDriveXDataIndex], PxD6Drive::eX, jData)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveYHandle, j, driveY, jData.drive[gDriveYDataIndex], PxD6Drive::eY, jData)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveZHandle, j, driveZ, jData.drive[gDriveZDataIndex], PxD6Drive::eZ, jData)
+
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveSwingHandle, j, driveSwing, jData.drive[gDriveSwingDataIndex], PxD6Drive::eSWING, jData)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveTwistHandle, j, driveTwist, jData.drive[gDriveTwistDataIndex], PxD6Drive::eTWIST, jData)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveSlerpHandle, j, driveSlerp, jData.drive[gDriveSlerpDataIndex], PxD6Drive::eSLERP, jData)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveSwing1Handle, j, driveSwing1, jData.drive[gDriveSwing1DataIndex], PxD6Drive::eSWING1, jData)
+	EXT_OMNI_PVD_CREATE_DRIVE_DATA(driveSwing2Handle, j, driveSwing2, jData.drive[gDriveSwing2DataIndex], PxD6Drive::eSWING2, jData)
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveX, j, driveXHandle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveY, j, driveYHandle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveZ, j, driveZHandle)
+
+	if (jData.angularDriveConfig == PxD6AngularDriveConfig::eSWING_TWIST)
 	{
-		flags[i] = joint.getDrive(PxD6Drive::Enum(i)).flags;
-	}
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveFlags, j, flags, PxD6Axis::eCOUNT)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing1, j, driveSwing1Handle)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing2, j, driveSwing2Handle)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveTwist, j, driveTwistHandle)
 
-	PxReal stiffness[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing, j, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSlerp, j, OMNI_PVD_INVALID_HANDLE)
+	}
+	else if (jData.angularDriveConfig == PxD6AngularDriveConfig::eSLERP)
 	{
-		stiffness[i] = joint.getDrive(PxD6Drive::Enum(i)).stiffness;
-	}
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveStiffness, j, stiffness, PxD6Axis::eCOUNT)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSlerp, j, driveSlerpHandle)
 
-	PxReal damping[PxD6Axis::eCOUNT];
-	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing, j, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing1, j, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing2, j, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveTwist, j, OMNI_PVD_INVALID_HANDLE)
+	}
+	else
 	{
-		damping[i] = joint.getDrive(PxD6Drive::Enum(i)).damping;
-	}
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveDamping, j, damping, PxD6Axis::eCOUNT)
+		PX_ASSERT(jData.angularDriveConfig == PxD6AngularDriveConfig::eLEGACY);
 
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, drivePosition, j, joint.getDrivePosition())
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing, j, driveSwingHandle)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveTwist, j, driveTwistHandle)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSlerp, j, driveSlerpHandle)
+
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing1, j, OMNI_PVD_INVALID_HANDLE)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveSwing2, j, OMNI_PVD_INVALID_HANDLE)
+	}
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, drivePosition, j, jData.drivePosition)
 	
-	PxVec3 driveLinVel, driveAngVel;
-	joint.getDriveVelocity(driveLinVel, driveAngVel);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveLinVelocity, j, driveLinVel)
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveAngVelocity, j, driveAngVel)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveLinVelocity, j, jData.driveLinearVelocity)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveAngVelocity, j, jData.driveAngularVelocity)
 
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, joint.getTwistAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, joint.getSwingYAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, joint.getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, joint.getTwistAngle_Internal())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, joint.getSwingYAngle_Internal())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, joint.getSwingZAngle_Internal())
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, angularDriveConfig, j, static_cast<PxD6AngularDriveConfig::Enum>(jData.angularDriveConfig))
 
 	OMNI_PVD_WRITE_SCOPE_END
 }

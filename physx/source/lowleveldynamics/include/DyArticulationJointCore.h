@@ -67,9 +67,14 @@ namespace physx
 		public:
 
 			// PX_SERIALIZATION
-			ArticulationJointCore(const PxEMPTY&) : jCalcUpdateFrames(false) 
+			ArticulationJointCore(const PxEMPTY&) : drives{ PxArticulationDrive(PxEmpty),
+				PxArticulationDrive(PxEmpty),
+				PxArticulationDrive(PxEmpty),
+				PxArticulationDrive(PxEmpty),
+				PxArticulationDrive(PxEmpty),
+				PxArticulationDrive(PxEmpty) }, jCalcUpdateFrames(false) 
 			{ 
-				PX_COMPILE_TIME_ASSERT(sizeof(PxArticulationMotions) == sizeof(PxU8)); 
+				PX_COMPILE_TIME_ASSERT(sizeof(PxArticulationMotions) == sizeof(PxU8));
 			}
 			//~PX_SERIALIZATION
 

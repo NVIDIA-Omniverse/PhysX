@@ -1038,7 +1038,7 @@ namespace physx
 		}
 	}
 
-	bool PxgArticulationCore::getArticulationData(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxArticulationGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent, PxU32 maxLinks, PxU32 maxDofs) const
+	bool PxgArticulationCore::getArticulationData(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxArticulationGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent, PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments) const
 	{
 		PxScopedCudaLock _lock(*mCudaContextManager);
 		bool success = true;
@@ -1089,6 +1089,26 @@ namespace physx
 			case PxArticulationGPUAPIReadType::eLINK_INCOMING_JOINT_FORCE:	//!< The link incoming joint forces including root link. 6 PxReals per link.
 			{
 				success = getLinkSpatialForceStates(data, gpuIndices, nbElements, maxLinks, dataType);
+				break;
+			}
+			case PxArticulationGPUAPIReadType::eFIXED_TENDON:				//!< Fixed tendon data.
+			{
+				success = getTendonStates(data, gpuIndices, nbElements, maxFixedTendons, dataType);
+				break;
+			}
+			case PxArticulationGPUAPIReadType::eFIXED_TENDON_JOINT:		//!< Fixed tendon joint data.
+			{
+				success = getFixedTendonJointStates(data, gpuIndices, nbElements, maxFixedTendons * maxTendonJoints);
+				break;
+			}
+			case PxArticulationGPUAPIReadType::eSPATIAL_TENDON:			//!< Spatial tendon data.
+			{
+				success = getTendonStates(data, gpuIndices, nbElements, maxSpatialTendons, dataType);
+				break;
+			}
+			case PxArticulationGPUAPIReadType::eSPATIAL_TENDON_ATTACHMENT:  //!< Spatial tendon attachment data.
+			{
+				success = getSpatialTendonAttachmentStates(data, gpuIndices, nbElements, maxSpatialTendons * maxSpatialTendonAttachments);
 				break;
 			}
 			default:
@@ -1509,6 +1529,31 @@ namespace physx
 		return result == CUDA_SUCCESS;
 	}
 
+	bool PxgArticulationCore::getTendonStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendons, PxArticulationGPUAPIReadType::Enum dataType) const
+	{
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_TENDON_STATE);
+
+		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
+
+		const PxU32 numBlocks = (nbElements * maxTendons + PxgArticulationCoreKernelBlockDim::ARTI_GET_TENDON_STATE - 1) / PxgArticulationCoreKernelBlockDim::ARTI_GET_TENDON_STATE;
+
+		KERNEL_PARAM_TYPE kernelParams[] =
+		{
+			CUDA_KERNEL_PARAM(coreDescptr),
+			CUDA_KERNEL_PARAM(data),
+			CUDA_KERNEL_PARAM(gpuIndices),
+			CUDA_KERNEL_PARAM(nbElements),
+			CUDA_KERNEL_PARAM(maxTendons),
+			CUDA_KERNEL_PARAM(dataType)
+		};
+
+		const CUresult result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, PxgArticulationCoreKernelBlockDim::ARTI_GET_TENDON_STATE, 1, 1, 0, mStream, EPILOG);
+
+		PX_ASSERT(result == CUDA_SUCCESS);
+
+		return result == CUDA_SUCCESS;
+	}
+
 	bool PxgArticulationCore::setSpatialTendonAttachmentStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments)
 	{
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_SPATIAL_TENDON_ATTACHMENT_STATE);
@@ -1534,6 +1579,31 @@ namespace physx
 		return (result == CUDA_SUCCESS);
 	}
 
+	bool PxgArticulationCore::getSpatialTendonAttachmentStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments) const
+	{
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_SPATIAL_TENDON_ATTACHMENT_STATE);
+
+		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
+
+		const PxU32 numThreadsPerElement = maxTendonsXmaxAttachments;
+		const PxU32 numBlocks = (nbElements * numThreadsPerElement + PxgArticulationCoreKernelBlockDim::ARTI_GET_SPATIAL_TENDON_ATTACHMENT_STATE - 1) / PxgArticulationCoreKernelBlockDim::ARTI_GET_SPATIAL_TENDON_ATTACHMENT_STATE;
+
+		KERNEL_PARAM_TYPE kernelParams[] =
+		{
+			CUDA_KERNEL_PARAM(coreDescptr),
+			CUDA_KERNEL_PARAM(data),
+			CUDA_KERNEL_PARAM(gpuIndices),
+			CUDA_KERNEL_PARAM(nbElements),
+			CUDA_KERNEL_PARAM(maxTendonsXmaxAttachments)
+		};
+
+		const CUresult result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, PxgArticulationCoreKernelBlockDim::ARTI_GET_SPATIAL_TENDON_ATTACHMENT_STATE, 1, 1, 0, mStream, EPILOG);
+
+		PX_ASSERT(result == CUDA_SUCCESS);
+
+		return (result == CUDA_SUCCESS);
+	}
+
 	bool PxgArticulationCore::setFixedTendonJointStates(const void* PX_RESTRICT data , const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints)
 	{
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_FIXED_TENDON_JOINT_STATE);
@@ -1552,6 +1622,30 @@ namespace physx
 		};
 
 		const CUresult result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, PxgArticulationCoreKernelBlockDim::ARTI_SET_FIXED_TENDON_JOINT_STATE, 1, 1, 0, mStream, EPILOG);
+
+		PX_ASSERT(result == CUDA_SUCCESS);
+
+		return (result == CUDA_SUCCESS);
+	}
+
+	bool PxgArticulationCore::getFixedTendonJointStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints) const
+	{
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_FIXED_TENDON_JOINT_STATE);
+
+		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
+
+		const PxU32 numThreadsPerElement = maxFixedTendonsXmaxTendonJoints;
+		const PxU32 numBlocks = (nbElements * numThreadsPerElement + PxgArticulationCoreKernelBlockDim::ARTI_GET_FIXED_TENDON_JOINT_STATE - 1) / PxgArticulationCoreKernelBlockDim::ARTI_GET_FIXED_TENDON_JOINT_STATE;
+
+		KERNEL_PARAM_TYPE kernelParams[] =
+		{
+			CUDA_KERNEL_PARAM(coreDescptr),
+			CUDA_KERNEL_PARAM(data),
+			CUDA_KERNEL_PARAM(gpuIndices),
+			CUDA_KERNEL_PARAM(nbElements)
+		};
+
+		const CUresult result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, PxgArticulationCoreKernelBlockDim::ARTI_GET_FIXED_TENDON_JOINT_STATE, 1, 1, 0, mStream, EPILOG);
 
 		PX_ASSERT(result == CUDA_SUCCESS);
 

@@ -361,16 +361,15 @@ class PxHashBase : private PxAllocator
 		uint32_t* newEntriesNext;
 		Entry* newEntries;
 		{
-			uint32_t newHashByteOffset = 0;
-			uint32_t newEntriesNextBytesOffset = newHashByteOffset + newHashSize * sizeof(uint32_t);
-			uint32_t newEntriesByteOffset = newEntriesNextBytesOffset + newEntriesCapacity * sizeof(uint32_t);
+			const uint64_t newEntriesNextBytesOffset = newHashSize * sizeof(uint32_t);
+			uint64_t newEntriesByteOffset = newEntriesNextBytesOffset + newEntriesCapacity * sizeof(uint32_t);
 			newEntriesByteOffset += (16 - (newEntriesByteOffset & 15)) & 15;
-			uint32_t newBufferByteSize = newEntriesByteOffset + newEntriesCapacity * sizeof(Entry);
+			const uint64_t newBufferByteSize = newEntriesByteOffset + newEntriesCapacity * sizeof(Entry);
 
 			newBuffer = reinterpret_cast<uint8_t*>(PxAllocator::allocate(newBufferByteSize, PX_FL));
 			PX_ASSERT(newBuffer);
 
-			newHash = reinterpret_cast<uint32_t*>(newBuffer + newHashByteOffset);
+			newHash = reinterpret_cast<uint32_t*>(newBuffer);
 			newEntriesNext = reinterpret_cast<uint32_t*>(newBuffer + newEntriesNextBytesOffset);
 			newEntries = reinterpret_cast<Entry*>(newBuffer + newEntriesByteOffset);
 		}

@@ -1063,11 +1063,10 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTetmeshGjkEpaGpu(
 		CUdeviceptr barycentricsd = softBodyCore->getRigidBarycentrics().getDevicePtr();
 		CUdeviceptr contactInfosd = softBodyCore->getRigidContactInfos().getDevicePtr();
 
-		softbodyRigidContactApplyCollisionToSimMeshMapping(
+		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
 			barycentricsd,
 			contactInfosd,
-			CUdeviceptr(NULL),
 			totalNumCountsd,
 			prevNumCountsd
 		);
@@ -3410,7 +3409,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 
 	PxgDevicePointer<float4> contactsd = softBodyCore->getParticleContacts().getTypedDevicePtr();
 	PxgDevicePointer<float4> barycentricsd = softBodyCore->getParticleBarycentrics().getTypedDevicePtr();
-	PxgDevicePointer<PxgFemContactInfo> contactInfosd = softBodyCore->getParticleContactInfos().getTypedDevicePtr();
+	PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = softBodyCore->getParticleContactInfos().getTypedDevicePtr();
 
 	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getParticleContactCount().getTypedDevicePtr();
 	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevParticleContactCount().getTypedDevicePtr();
@@ -3507,11 +3506,10 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 	{
 		PX_PROFILE_ZONE("PxgGpuNarrowphaseCore.testSDKParticleSoftbody.remap", 0);
         
-        softbodyRigidContactApplyCollisionToSimMeshMapping(
+        softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
 			barycentricsd,
 			contactInfosd,
-			CUdeviceptr(NULL),
 			totalNumCountsd,
 			prevNumCountsd
 		);
@@ -4081,11 +4079,10 @@ void PxgGpuNarrowphaseCore::testSDKParticleHeightfield(PxgGpuContactManagers& gp
 	}
 }
 
-void PxgGpuNarrowphaseCore::softbodyRigidContactApplyCollisionToSimMeshMapping(
+void PxgGpuNarrowphaseCore::softbodyOtherContactApplyCollisionToSimMeshMapping(
 	PxgDevicePointer<float4> contactsd,
 	PxgDevicePointer<float4> barycentricsd,
-	PxgDevicePointer<PxgFemContactInfo> contactInfosd,
-	PxgDevicePointer<PxReal> invMassesd,
+	PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd,
 	PxgDevicePointer<PxU32> totalNumCountsd,
 	PxgDevicePointer<PxU32> prevNumCountsd
 )
@@ -4098,7 +4095,7 @@ void PxgGpuNarrowphaseCore::softbodyRigidContactApplyCollisionToSimMeshMapping(
 	CUstream softbodyStream = softBodyCore->getStream();
 	CUresult result;
 
-	CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_RCS_CONTACT_REMAP_TO_SIM);
+	CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_OTHER_CONTACT_REMAP_TO_SIM);
 
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -4108,7 +4105,6 @@ void PxgGpuNarrowphaseCore::softbodyRigidContactApplyCollisionToSimMeshMapping(
 		PX_CUDA_KERNEL_PARAM(contactsd),
 		PX_CUDA_KERNEL_PARAM(barycentricsd),
 		PX_CUDA_KERNEL_PARAM(contactInfosd),
-		PX_CUDA_KERNEL_PARAM(invMassesd),
 		PX_CUDA_KERNEL_PARAM(totalNumCountsd),
 		PX_CUDA_KERNEL_PARAM(prevNumCountsd)
 	};
@@ -4119,16 +4115,59 @@ void PxgGpuNarrowphaseCore::softbodyRigidContactApplyCollisionToSimMeshMapping(
 	result = mCudaContext->launchKernel(sbContactRemapKernelFunction, numBlocks, 1, 1, WARP_SIZE, numWarpsPerBlock, 1, 0, softbodyStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 
 	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_rcs_contact_remap_to_simLaunch fail to launch kernel!!\n");
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_other_contact_remap_to_simLaunch fail to launch kernel!!\n");
+}
 
-#if GPU_NP_DEBUG
+void PxgGpuNarrowphaseCore::softbodyFemContactApplyCollisionToSimMeshMapping(
+	PxgDevicePointer<float4> barycentrics0d, PxgDevicePointer<float4> barycentrics1d,
+	PxgDevicePointer<PxgFemFemContactInfo> contactInfosd, PxgDevicePointer<PxU32> totalNumCountsd, PxgDevicePointer<PxU32> prevNumCountsd,
+	bool isSelfCollision, bool isCloth)
+{
+	PX_ASSERT(!isSelfCollision || !isCloth);
 
-	result = mCudaContext->streamSynchronize(softbodyStream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_rcs_contact_remap_to_simLaunch kernel fail!!!\n");
+	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
+	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
+	CUdeviceptr softBodiesd = simulationCore->getSoftBodyBuffer().getDevicePtr();
+	const PxU32 maxNumContacts = softBodyCore->mMaxContacts;
 
-	PX_ASSERT(result == CUDA_SUCCESS);
-#endif
+	CUstream softbodyStream = softBodyCore->getStream();
+	CUresult result;
+
+	CUfunction sbContactRemapKernelFunction =
+		mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_FEM_CONTACT_REMAP_TO_SIM);
+
+	PxCudaKernelParam kernelParams[] = {
+		PX_CUDA_KERNEL_PARAM(softBodiesd),
+		PX_CUDA_KERNEL_PARAM(barycentrics0d),
+		PX_CUDA_KERNEL_PARAM(barycentrics1d),
+		PX_CUDA_KERNEL_PARAM(contactInfosd),
+		PX_CUDA_KERNEL_PARAM(totalNumCountsd),
+		PX_CUDA_KERNEL_PARAM(prevNumCountsd),
+		PX_CUDA_KERNEL_PARAM(maxNumContacts)
+	};
+
+	PxU32 gridYDim = 2;
+	PxU32 numWarpsPerBlock = 4;
+	PxU32 numBlocks = 8192;
+	
+	if(isCloth)
+	{
+		gridYDim = 1;
+		numWarpsPerBlock = 16;
+		numBlocks = 1024;
+	}
+	else if(isSelfCollision)
+	{
+		numWarpsPerBlock = 16;
+		numBlocks = 1024;
+	}
+
+	// each warp deals with one test.
+	result = mCudaContext->launchKernel(sbContactRemapKernelFunction, numBlocks, gridYDim, 1, WARP_SIZE, numWarpsPerBlock, 1, 0,
+										softbodyStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
+
+	if(result != CUDA_SUCCESS)
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_fem_contact_remap_to_simLaunch fail to launch kernel!!\n");
 }
 
 //soft body with sphere/plane/capsule/box/convex
@@ -4340,11 +4379,10 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
 		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
 
-		softbodyRigidContactApplyCollisionToSimMeshMapping(
+		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
 			barycentricsd,
 			contactInfosd,
-			CUdeviceptr(NULL),
 			totalNumCountsd,
 			prevNumCountsd
 		);
@@ -4388,13 +4426,11 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 
 	PxgDevicePointer<float4> barycentrics0d = softBodyCore->getFemBarycentrics0().getTypedDevicePtr();
 	PxgDevicePointer<float4> barycentrics1d = softBodyCore->getFemBarycentrics1().getTypedDevicePtr();
-	PxgDevicePointer<PxgFemContactInfo> contactInfosd = softBodyCore->getFemContactInfos().getTypedDevicePtr();
-	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getFemContactCount().getTypedDevicePtr();
+	PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = softBodyCore->getVolumeContactOrVTContactInfos().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getVolumeContactOrVTContactCount().getTypedDevicePtr();
 	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevFemContactCount().getTypedDevicePtr();
 
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
-
-	const PxU32 maxNumContacts = softBodyCore->mMaxContacts;
 
 	PxgSoftBodyContactWriter writer(softBodyCore);
 
@@ -4478,40 +4514,8 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 #endif //GPU_NP_DEBUG
 	}
 
-	
-	{
-
-		CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SS_CONTACT_REMAP_TO_SIM);
-
-		PxCudaKernelParam kernelParams[] =
-		{
-
-			PX_CUDA_KERNEL_PARAM(softBodiesd),
-			PX_CUDA_KERNEL_PARAM(barycentrics0d),
-			PX_CUDA_KERNEL_PARAM(barycentrics1d),
-			PX_CUDA_KERNEL_PARAM(contactInfosd),
-			PX_CUDA_KERNEL_PARAM(totalNumCountsd),
-			PX_CUDA_KERNEL_PARAM(prevNumCountsd),
-			PX_CUDA_KERNEL_PARAM(maxNumContacts)
-		};
-
-		PxU32 numWarpsPerBlock = 4;
-		PxU32 numBlocks = 8192;
-		//each warp deal with one test. 
-		result = mCudaContext->launchKernel(sbContactRemapKernelFunction, numBlocks, 2, 1, WARP_SIZE, numWarpsPerBlock, 1, 0, softbodyStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-
-		if (result != CUDA_SUCCESS)
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_ss_contact_remap_to_simLaunch fail to launch kernel!!\n");
-
-#if GPU_NP_DEBUG
-
-		result = mCudaContext->streamSynchronize(softbodyStream);
-		if (result != CUDA_SUCCESS)
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_ss_contact_remap_to_simLaunch kernel fail!!!\n");
-
-		PX_ASSERT(result == CUDA_SUCCESS);
-#endif
-	}
+	softbodyFemContactApplyCollisionToSimMeshMapping(barycentrics0d, barycentrics1d, 
+		contactInfosd, totalNumCountsd, prevNumCountsd, false, false);
 }
 
 void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManagers,
@@ -4565,7 +4569,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 
 	PxgDevicePointer<float4> contactsd = softBodyCore->getClothVsSoftBodyContacts().getTypedDevicePtr();
 	PxgDevicePointer<float4> barycentricsd1 = softBodyCore->getClothVsSoftBodyBarycentrics1().getTypedDevicePtr();
-	PxgDevicePointer<PxgFemContactInfo> contactInfosd = softBodyCore->getClothVsSoftBodyContactInfos().getTypedDevicePtr();
+	PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = softBodyCore->getClothVsSoftBodyContactInfos().getTypedDevicePtr();
 	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getClothVsSoftBodyContactCount().getTypedDevicePtr();
 	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevClothVsSoftBodyContactCount().getTypedDevicePtr();
 
@@ -4823,20 +4827,8 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 		}
 	}
 
-	{
-
-		//PxU32 preNumContacts;
-		//mCudaContext->memcpyDtoH(&preNumContacts, totalNumCountsd, sizeof(PxU32));
-
-		softbodyRigidContactApplyCollisionToSimMeshMapping(
-			contactsd,
-			barycentricsd1,
-			contactInfosd,
-			CUdeviceptr(NULL),
-			totalNumCountsd,
-			prevNumCountsd
-		);
-	}
+	softbodyFemContactApplyCollisionToSimMeshMapping(contactsd, barycentricsd1, contactInfosd,
+		totalNumCountsd, prevNumCountsd, false, true);
 
 	stackAlloc.reset();
 	stackAlloc.mMutex.unlock();
@@ -4979,15 +4971,14 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 	{
 		PxgDevicePointer<float4> contactsd = softBodyCore->getRigidContacts().getTypedDevicePtr();
 		PxgDevicePointer<float4> barycentricsd = softBodyCore->getRigidBarycentrics().getTypedDevicePtr();
-		PxgDevicePointer<PxgFemContactInfo> contactInfosd = softBodyCore->getRigidContactInfos().getTypedDevicePtr();
+		PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = softBodyCore->getRigidContactInfos().getTypedDevicePtr();
 		PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getRigidContactCount().getTypedDevicePtr();
 		PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevRigidContactCount().getTypedDevicePtr();
 
-		softbodyRigidContactApplyCollisionToSimMeshMapping(
+		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
 			barycentricsd,
 			contactInfosd,
-			CUdeviceptr(NULL),
 			totalNumCountsd,
 			prevNumCountsd
 		);
@@ -5292,11 +5283,10 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
 		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
 
-		softbodyRigidContactApplyCollisionToSimMeshMapping(
+		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
 			barycentricsd,
 			contactInfosd,
-			CUdeviceptr(NULL),
 			totalNumCountsd,
 			prevNumCountsd
 		);
@@ -5591,11 +5581,10 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 	}
 
 	{
-        softbodyRigidContactApplyCollisionToSimMeshMapping(
+        softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
 			barycentricsd,
 			contactInfosd,
-			CUdeviceptr(NULL),
 			totalNumCountsd,
 			prevNumCountsd
 		);

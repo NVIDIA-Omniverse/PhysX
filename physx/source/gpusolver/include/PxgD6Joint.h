@@ -34,7 +34,7 @@
 
 namespace physx
 {
-	struct PxgD6Drive
+	struct PxgD6Drive  // equivalent of PxD6Drive
 	{
 		enum Enum
 		{
@@ -44,7 +44,9 @@ namespace physx
 			eSWING		= 3,		//!< drive of displacement from the X-axis
 			eTWIST		= 4,		//!< drive of the displacement around the X-axis
 			eSLERP		= 5,		//!< drive of all three angular degrees along a SLERP-path
-			eCOUNT		= 6
+			eSWING1		= 6,
+			eSWING2		= 7,
+			eCOUNT
 		};
 	};
 

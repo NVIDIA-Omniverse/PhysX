@@ -98,8 +98,7 @@ namespace physx
 		mCudaContext->streamCreateWithPriority(&mStream, CU_STREAM_NON_BLOCKING, leastPriority);
 
 		mCudaContext->eventCreate(&mBoundUpdateEvent, CU_EVENT_DISABLE_TIMING);
-		mCudaContext->eventCreate(&mSolveSoftBodyEvent, CU_EVENT_DISABLE_TIMING);
-		mCudaContext->eventCreate(&mSolveSoftBodyRigidEvent, CU_EVENT_DISABLE_TIMING);
+		mCudaContext->eventCreate(&mSolveRigidEvent, CU_EVENT_DISABLE_TIMING);
 		mCudaContext->eventCreate(&mConstraintPrepSoftBodyParticleEvent, CU_EVENT_DISABLE_TIMING);
 		mCudaContext->eventCreate(&mSolveSoftBodyParticleEvent, CU_EVENT_DISABLE_TIMING);
 
@@ -110,7 +109,7 @@ namespace physx
 		mSCContactNormalPenBuffer.allocate(contactSize, PX_FL);
 		mSCContactBarycentricBuffer0.allocate(contactSize, PX_FL);
 		mSCContactBarycentricBuffer1.allocate(contactSize, PX_FL);
-		mSCContactInfoBuffer.allocate(maxContacts * sizeof(PxgFemContactInfo), PX_FL);
+		mSCContactInfoBuffer.allocate(maxContacts * sizeof(PxgFemFemContactInfo), PX_FL);
 		mSCTotalContactCountBuffer.allocate(sizeof(PxU32), PX_FL);
 		mPrevSCContactCountBuffer.allocate(sizeof(PxU32), PX_FL);
 		mSCLambdaNBuf.allocate(maxContacts * sizeof(PxReal), PX_FL);
@@ -129,11 +128,8 @@ namespace physx
 		mCudaContext->eventDestroy(mBoundUpdateEvent);
 		mBoundUpdateEvent = NULL;
 
-		mCudaContext->eventDestroy(mSolveSoftBodyEvent);
-		mSolveSoftBodyEvent = NULL;
-
-		mCudaContext->eventDestroy(mSolveSoftBodyRigidEvent);
-		mSolveSoftBodyRigidEvent = NULL;
+		mCudaContext->eventDestroy(mSolveRigidEvent);
+		mSolveRigidEvent = NULL;
 
 		mCudaContext->eventDestroy(mConstraintPrepSoftBodyParticleEvent);
 		mConstraintPrepSoftBodyParticleEvent = NULL;
@@ -318,7 +314,7 @@ namespace physx
 	void PxgSoftBodyCore::resetContactCounts()
 	{
 		//total contact count for selfCollision and softbody vs softbody
-		CUdeviceptr totalSSContactCountsd = mFemTotalContactCountBuffer.getDevicePtr();
+		CUdeviceptr totalSSContactCountsd = mVolumeContactOrVTContactCountBuffer.getDevicePtr();
 		//CUdeviceptr prevSSContactsd = mPrevFemContactCountBuffer.getDevicePtr();
 
 		//total contact count for particle and soft body
@@ -347,7 +343,7 @@ namespace physx
 
 	void PxgSoftBodyCore::checkBufferOverflows()
 	{
-		PxU32 contactCountNeeded = PxMax(*mParticleContactCountPrevTimestep, PxMax(*mRigidContactCountPrevTimestep, *mFemContactCountPrevTimestep));
+		PxU32 contactCountNeeded = PxMax(*mParticleContactCountPrevTimestep, PxMax(*mRigidContactCountPrevTimestep, *mVolumeContactorVTContactCountPrevTimestep));
 		if (contactCountNeeded >= mMaxContacts) 
 		{
 			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "Deformable volume contact buffer overflow detected, please increase PxGpuDynamicsMemoryConfig::maxDeformableVolumeContacts to at least %u\n", contactCountNeeded);
@@ -391,7 +387,7 @@ namespace physx
 		PxU32* activeSoftBodiesd = reinterpret_cast<PxU32*>(core->getActiveSelfCollisionSoftBodyBuffer().getDevicePtr());
 
 
-		PxgDevicePointer<PxU32> totalNumContactsd = mFemTotalContactCountBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxU32> totalNumContactsd = mVolumeContactOrVTContactCountBuffer.getTypedDevicePtr();
 		PxgDevicePointer<PxU32> prevContactsd = mPrevFemContactCountBuffer.getTypedDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevContactsd, totalNumContactsd, sizeof(PxU32), mStream);
 
@@ -429,37 +425,10 @@ namespace physx
 		{
 			PxgDevicePointer<float4> barycentric0d = mFemContactBarycentric0Buffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> barycentric1d = mFemContactBarycentric1Buffer.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mFemContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = mVolumeContactOrVTContactInfoBuffer.getTypedDevicePtr();
 
-			CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SS_CONTACT_REMAP_TO_SIM);
-
-			PxCudaKernelParam kernelParams[] =
-			{
-				PX_CUDA_KERNEL_PARAM(softbodiesd),
-				PX_CUDA_KERNEL_PARAM(barycentric0d),
-				PX_CUDA_KERNEL_PARAM(barycentric1d),
-				PX_CUDA_KERNEL_PARAM(contactInfosd),
-				PX_CUDA_KERNEL_PARAM(totalNumContactsd),
-				PX_CUDA_KERNEL_PARAM(prevContactsd),
-				PX_CUDA_KERNEL_PARAM(mMaxContacts)
-			};
-
-			PxU32 numWarpsPerBlock = 16;
-			PxU32 numBlocks = 1024;
-			//each warp deal with one test. 
-			CUresult result = mCudaContext->launchKernel(sbContactRemapKernelFunction, numBlocks, 2, 1, WARP_SIZE, numWarpsPerBlock, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-
-			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_ss_contact_remap_to_simLaunch fail to launch kernel!!\n");
-
-	#if SB_GPU_DEBUG
-
-			result = mCudaContext->streamSynchronize(mStream);
-			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_ss_contact_remap_to_simLaunch kernel fail!!!\n");
-
-			PX_ASSERT(result == CUDA_SUCCESS);
-	#endif
+			mGpuContext->getNarrowphaseCore()->softbodyFemContactApplyCollisionToSimMeshMapping(barycentric0d, barycentric1d, contactInfosd, 
+				totalNumContactsd, prevContactsd, true, false);
 		}
 	}
 
@@ -717,11 +686,11 @@ namespace physx
 			PxgDevicePointer<float4> contactsd = mParticleContactPointBuffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> normPensd = mParticleContactNormalPenBuffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> barycentricsd = mParticleContactBarycentricBuffer.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemContactInfo> infosd = mParticleContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> infosd = mParticleContactInfoBuffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> sortedContactsd = mParticleSortedContactPointBuffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> sortedNormPensd = mParticleSortedContactNormalPenBuffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> sortedBarycentricsd = mParticleSortedContactBarycentricBuffer.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemContactInfo> sortedInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> sortedInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
 			PxgDevicePointer<PxU32> remapByParticleId = mContactRemapSortedByParticleBuf.getTypedDevicePtr();
 
 			CUfunction reorderFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_REORDER_PS_CONTACTS);
@@ -1068,7 +1037,7 @@ namespace physx
 	{
 		PxgDevicePointer<PxU32> totalContactCountsd = mRigidTotalContactCountBuf.getTypedDevicePtr();
 		{
-			const CUfunction solveOutputRigidDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_RIGID_DELTA);
+			const CUfunction solveOutputRigidDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_SOFT_COLLISION);
 
 			PxgSimulationCore* core = mSimController->getSimulationCore();
 			PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getDevicePtr());
@@ -1078,12 +1047,12 @@ namespace physx
 			CUdeviceptr materials = npCore->mGpuFEMMaterialManager.mGpuMaterialBuffer.getDevicePtr();
 			PxsMaterialData* rigidBodyMaterials = reinterpret_cast<PxsMaterialData*>(npCore->mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
 
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
 			PxgDevicePointer<PxgFemRigidConstraintBlock> constraintsd = mRigidConstraintBuf.getTypedDevicePtr();
 
 
 			PxgDevicePointer<float4> deltaVd = mRigidDeltaVelBuf.getTypedDevicePtr();
-			PxgDevicePointer<float4> appliedForced = mRigidAppliedRigidForcesBuf.getTypedDevicePtr();
+			PxgDevicePointer<PxReal> appliedForced = mRigidFEMAppliedForcesBuf.getTypedDevicePtr();
 			PxgDevicePointer<PxU32> femRigidContactCount = mFemRigidReferenceCount.getDevicePtr();
 
 			PxCudaKernelParam kernelParams[] =
@@ -1108,15 +1077,13 @@ namespace physx
 			PX_ASSERT(result == CUDA_SUCCESS);
 			PX_UNUSED(result);
 
-			mCudaContext->eventRecord(mSolveSoftBodyRigidEvent, solverStream);
-
-			mCudaContext->streamWaitEvent(solverStream, mSolveSoftBodyEvent);
+			mCudaContext->eventRecord(mSolveRigidEvent, solverStream);
 
 #if SB_GPU_DEBUG
 			result = mCudaContext->streamSynchronize(mStream);
 			PX_ASSERT(result == CUDA_SUCCESS);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputRigidDeltaVlaunch first pass kernel fail!\n");
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveRigidSoftCollisionLaunch first pass kernel fail!\n");
 
 			int bob = 0;
 			PX_UNUSED(bob);
@@ -1125,11 +1092,7 @@ namespace physx
 
 		//accumulate velocity delta for rigid body and impulse delta for articulation link
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
-							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, mSolveSoftBodyEvent, false);
-
-		//if the contact is between articulation and soft body, after accumulated all the related contact's
-		//impulse, we need to propagate the accumulated impulse to the articulation block solver
-		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
+							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, false);
 	}
 
 	void PxgSoftBodyCore::solveRSContactsOutputRigidDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
@@ -1140,11 +1103,8 @@ namespace physx
 #if SB_GPU_DEBUG
 		PX_PROFILE_ZONE("PxgSoftBodyCore.solveRigidContactOutputRigid", 0);
 #endif
-
-		PX_UNUSED(solverStream);
-		PX_UNUSED(dt);
 		{
-			const CUfunction solveOutputRigidDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_RIGID_DELTA_TGS);
+			const CUfunction solveOutputRigidDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_SOFT_COLLISION_TGS);
 
 			PxgSimulationCore* core = mSimController->getSimulationCore();
 			PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getDevicePtr());
@@ -1153,11 +1113,11 @@ namespace physx
 			CUdeviceptr materials = npCore->mGpuFEMMaterialManager.mGpuMaterialBuffer.getDevicePtr();
 			PxsMaterialData* rigidBodyMaterials = reinterpret_cast<PxsMaterialData*>(npCore->mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
 
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
 			PxgDevicePointer<PxgFemRigidConstraintBlock> constraintsd = mRigidConstraintBuf.getTypedDevicePtr();
 
 			PxgDevicePointer<float4> deltaVd = mRigidDeltaVelBuf.getTypedDevicePtr();
-			PxgDevicePointer<float4> appliedForced = mRigidAppliedRigidForcesBuf.getTypedDevicePtr();
+			PxgDevicePointer<PxReal> appliedForced = mRigidFEMAppliedForcesBuf.getTypedDevicePtr();
 			PxgDevicePointer<PxU32> femRigidContactCount = mFemRigidReferenceCount.getDevicePtr();
 
 			PxCudaKernelParam kernelParams[] =
@@ -1182,13 +1142,13 @@ namespace physx
 			PX_ASSERT(result == CUDA_SUCCESS);
 			PX_UNUSED(result);
 
-			mCudaContext->eventRecord(mSolveSoftBodyRigidEvent, solverStream);
+			mCudaContext->eventRecord(mSolveRigidEvent, solverStream);
 
 #if SB_GPU_DEBUG
 			result = mCudaContext->streamSynchronize(mStream);
 			PX_ASSERT(result == CUDA_SUCCESS);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputRigidDeltaVlaunch first pass kernel fail!\n");
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveRigidSoftCollisionLaunch first pass kernel fail!\n");
 
 			int bob = 0;
 			PX_UNUSED(bob);
@@ -1198,9 +1158,7 @@ namespace physx
 		//if the contact is between articulation and soft body, after accumulated all the related contact's
 		//impulse, we need to propagate the accumulated impulse to the articulation block solver
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
-							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, mSolveSoftBodyEvent, true);
-
-		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
+							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, true);
 	}
 
 
@@ -1434,7 +1392,7 @@ namespace physx
 			PxgGpuNarrowphaseCore* npCore = mGpuContext->getNarrowphaseCore();
 			CUdeviceptr materials = npCore->mGpuFEMMaterialManager.mGpuMaterialBuffer.getDevicePtr();
 
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
 			PxgDevicePointer<PxgFEMParticleConstraintBlock> constraintsd = mParticleConstraintBuf.getTypedDevicePtr();
 
 			PxgDevicePointer<float4> appliedForced = mParticleAppliedFEMForcesBuf.getTypedDevicePtr();
@@ -1505,7 +1463,7 @@ namespace physx
 
 		PxgDevicePointer<PxgParticleSystem> particlesystemsd = particleCore->getParticleSystemBuffer().getTypedDevicePtr();
 
-		PxgDevicePointer<PxgFemContactInfo> contactInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
 
 		PxgDevicePointer<float4> deltaVd = particleCore->getDeltaVelParticle();
 
@@ -1643,7 +1601,7 @@ namespace physx
 		PxgSimulationCore* core = mSimController->getSimulationCore();
 		PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getDevicePtr());
 	
-		PxgDevicePointer<PxU32> totalSSContactCountsd = mFemTotalContactCountBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxU32> totalSSContactCountsd = mVolumeContactOrVTContactCountBuffer.getTypedDevicePtr();
 
 		//solve self collision contacts or soft body vs soft body contacts
 		{
@@ -1658,7 +1616,7 @@ namespace physx
 			PxgGpuNarrowphaseCore* npCore = mGpuContext->getNarrowphaseCore();
 			CUdeviceptr materials = npCore->mGpuFEMMaterialManager.mGpuMaterialBuffer.getDevicePtr();
 
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mFemContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = mVolumeContactOrVTContactInfoBuffer.getTypedDevicePtr();
 			CUdeviceptr constraintsd = mFemConstraintBuf.getDevicePtr();
 
 			PxgDevicePointer<float4> appliedForced = mFemAppliedForcesBuf.getTypedDevicePtr();
@@ -1727,7 +1685,7 @@ namespace physx
 		//solve soft body vs cloth contacts
 		{
 			const CUfunction solveOutputSoftBodyDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_SOFT_CLOTH_BOTH_DELTA);
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mSCContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = mSCContactInfoBuffer.getTypedDevicePtr();
 			PxgDevicePointer<PxgSoftBodySoftBodyConstraintBlock> constraintsd = mSCConstraintBuf.getTypedDevicePtr();
 
 			PxgDevicePointer<PxReal> lambdaNs = mSCLambdaNBuf.getTypedDevicePtr();
@@ -1782,97 +1740,12 @@ namespace physx
 		}
 	}
 
-	void PxgSoftBodyCore::solveRSContactsOutputSoftBodyDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-		PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal dt) 
-	{
-		PX_UNUSED(prePrepDescd);
-		PX_UNUSED(solverCoreDescd);
-		PX_UNUSED(sharedDescd);
-
-
-		PxgSimulationCore* core = mSimController->getSimulationCore();
-		PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getDevicePtr());
-
-		//CUdeviceptr totalSSContactCountsd = mSSTotalContactCountBuffer.getDevicePtr();
-
-		//solve rigid body and soft body contacts
-		{
-			PxgDevicePointer<PxU32> totalRSContactCountsd = mRigidTotalContactCountBuf.getTypedDevicePtr();
-
-			const CUfunction solveOutputSoftBodyDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_SOFT_DELTA);
-
-			//PxgSimulationCore* core = mSimController->getSimulationCore();
-			//PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getTypedDevicePtr());
-
-			PxgGpuNarrowphaseCore* npCore = mGpuContext->getNarrowphaseCore();
-			CUdeviceptr materials = npCore->mGpuFEMMaterialManager.mGpuMaterialBuffer.getDevicePtr();
-			PxsMaterialData* rigidBodyMaterials = reinterpret_cast<PxsMaterialData*>(npCore->mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemRigidConstraintBlock> constraintsd = mRigidConstraintBuf.getTypedDevicePtr();
-
-			PxgDevicePointer<float4> appliedForced = mRigidAppliedFEMForcesBuf.getTypedDevicePtr();
-			PxgDevicePointer<float4> deltaVd = mRigidDeltaVelBuf.getTypedDevicePtr();
-			PxgDevicePointer<PxU32> femRigidContactCount = mFemRigidReferenceCount.getDevicePtr();
-
-			PxCudaKernelParam kernelParams[] =
-			{
-				PX_CUDA_KERNEL_PARAM(softbodiesd),
-				PX_CUDA_KERNEL_PARAM(contactInfosd),
-				PX_CUDA_KERNEL_PARAM(constraintsd),
-				PX_CUDA_KERNEL_PARAM(totalRSContactCountsd),
-				PX_CUDA_KERNEL_PARAM(prePrepDescd),
-				PX_CUDA_KERNEL_PARAM(solverCoreDescd),
-				PX_CUDA_KERNEL_PARAM(artiCoreDescd),
-				PX_CUDA_KERNEL_PARAM(sharedDescd),
-				PX_CUDA_KERNEL_PARAM(deltaVd),
-				PX_CUDA_KERNEL_PARAM(appliedForced),
-				PX_CUDA_KERNEL_PARAM(femRigidContactCount),
-				PX_CUDA_KERNEL_PARAM(dt),
-				PX_CUDA_KERNEL_PARAM(materials),
-				PX_CUDA_KERNEL_PARAM(rigidBodyMaterials)
-			};
-
-			CUresult result = mCudaContext->launchKernel(solveOutputSoftBodyDeltaKernelFunction, PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1, PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-			PX_ASSERT(result == CUDA_SUCCESS);
-			PX_UNUSED(result);
-
-			mCudaContext->eventRecord(mSolveSoftBodyEvent, mStream);
-
-#if SB_GPU_DEBUG
-		result = mCudaContext->streamSynchronize(mStream);
-		PX_ASSERT(result == CUDA_SUCCESS);
-		if (result != CUDA_SUCCESS)
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputSoftBodyDeltaVLaunch first pass kernel fail!\n");
-
-
-		/*PxU32* activeSoftbodies = mSimController->getBodySimManager().mActiveSoftbodies.begin();
-		PxArray<float4> deltaV;
-
-		for (PxU32 i = 0; i < nbActiveSoftbodies; ++i)
-		{
-			const PxU32 index = activeSoftbodies[i];
-			PxgSoftBody& softbody = softbodies[index];
-			const PxU32 numVerts = softbody.mNumVerts;
-
-			deltaV.reserve(numVerts);
-			deltaV.forceSize_Unsafe(numVerts);
-
-			mCudaContext->memcpyDtoH(deltaV.begin(), (CUdeviceptr)softbodies[i].mDelta, sizeof(float4)*numVerts);
-
-			int bob = 0;
-			PX_UNUSED(bob);
-		}*/
-			
-#endif
-		}
-	}
-
 	void PxgSoftBodyCore::queryRigidContactReferenceCount(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
 		PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
-		PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, PxReal dt)
+		PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt)
 	{
 		PxgDevicePointer<PxU32> femRigidContactCount = mFemRigidReferenceCount.getDevicePtr();
-		mCudaContext->memsetD32Async(femRigidContactCount.mPtr, 0, mFemRigidReferenceCount.getNbElements(), mStream);
+		mCudaContext->memsetD32Async(femRigidContactCount.mPtr, 0, mFemRigidReferenceCount.getNbElements(), solverStream);
 
 		PxgSimulationCore* core = mSimController->getSimulationCore();
 		PxgDevicePointer<PxgSoftBody> softbodiesd = core->getSoftBodyBuffer().getTypedDevicePtr();
@@ -1883,10 +1756,10 @@ namespace physx
 			mIsTGS ? mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_QUERY_RIGID_SOFT_REFERENCE_COUNT_TGS)
 				   : mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_QUERY_RIGID_SOFT_REFERENCE_COUNT);
 
-		PxgDevicePointer<PxgFemContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
+		PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
 		PxgDevicePointer<PxgFemRigidConstraintBlock> constraintsd = mRigidConstraintBuf.getTypedDevicePtr();
 
-		PxgDevicePointer<float4> lambdaNs = mRigidLambdaNBuf.getTypedDevicePtr();
+		PxgDevicePointer<PxReal> lambdaNs = mRigidFEMAppliedForcesBuf.getTypedDevicePtr();
 
 		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(softbodiesd),
 											 PX_CUDA_KERNEL_PARAM(contactInfosd),
@@ -1901,192 +1774,20 @@ namespace physx
 											 PX_CUDA_KERNEL_PARAM(femRigidContactCount) };
 
 		CUresult result = mCudaContext->launchKernel(kernelFunction, PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1,
-			PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION, 1, 1, 0, mStream, kernelParams,
+			PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION, 1, 1, 0, solverStream, kernelParams,
 			sizeof(kernelParams), 0, PX_FL);
 		PX_ASSERT(result == CUDA_SUCCESS);
 		PX_UNUSED(result);
 
 #if CLOTH_GPU_DEBUG
-		result = mCudaContext->streamSynchronize(mStream);
+		result = mCudaContext->streamSynchronize(solverStream);
 		PX_ASSERT(result == CUDA_SUCCESS);
 		if (result != CUDA_SUCCESS)
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_queryRigidSoftBodyContactReferenceCountLaunch kernel fail!\n");
 #endif
 	}
 
-	void PxgSoftBodyCore::solveRSContactsOutputSoftBodyDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-		PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal dt) 
-	{
-		PX_UNUSED(prePrepDescd);
-		PX_UNUSED(solverCoreDescd);
-		PX_UNUSED(sharedDescd);
-
-#if SB_GPU_DEBUG
-		PX_PROFILE_ZONE("PxgSoftBodyCore.solveRigidContactOutputSoft", 0);
-#endif
-
-		PxgSimulationCore* core = mSimController->getSimulationCore();
-		PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getDevicePtr());
-
-		//CUdeviceptr totalSSContactCountsd = mSSTotalContactCountBuffer.getDevicePtr();
-
-		//solve rigid body and soft body contacts
-		{
-			PxgDevicePointer<PxU32> totalRSContactCountsd = mRigidTotalContactCountBuf.getTypedDevicePtr();
-
-			const CUfunction solveOutputSoftBodyDeltaKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_SOFT_DELTA_TGS);
-
-			//PxgSimulationCore* core = mSimController->getSimulationCore();
-			//PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(core->getSoftBodyBuffer().getTypedDevicePtr());
-			PxgGpuNarrowphaseCore* npCore = mGpuContext->getNarrowphaseCore();
-			CUdeviceptr materials = npCore->mGpuFEMMaterialManager.mGpuMaterialBuffer.getDevicePtr();
-			PxsMaterialData* rigidBodyMaterials = reinterpret_cast<PxsMaterialData*>(npCore->mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemRigidConstraintBlock> constraintsd = mRigidConstraintBuf.getTypedDevicePtr();
-
-			PxgDevicePointer<float4> appliedForced = mRigidAppliedFEMForcesBuf.getTypedDevicePtr();
-			PxgDevicePointer<float4> deltaVd = mRigidDeltaVelBuf.getTypedDevicePtr();
-			PxgDevicePointer<PxU32> femRigidContactCount = mFemRigidReferenceCount.getDevicePtr();
-
-			PxCudaKernelParam kernelParams[] =
-			{
-				PX_CUDA_KERNEL_PARAM(softbodiesd),
-				PX_CUDA_KERNEL_PARAM(contactInfosd),
-				PX_CUDA_KERNEL_PARAM(constraintsd),
-				PX_CUDA_KERNEL_PARAM(totalRSContactCountsd),
-				PX_CUDA_KERNEL_PARAM(prePrepDescd),
-				PX_CUDA_KERNEL_PARAM(solverCoreDescd),
-				PX_CUDA_KERNEL_PARAM(artiCoreDescd),
-				PX_CUDA_KERNEL_PARAM(sharedDescd),
-				PX_CUDA_KERNEL_PARAM(deltaVd),
-				PX_CUDA_KERNEL_PARAM(appliedForced),
-				PX_CUDA_KERNEL_PARAM(femRigidContactCount),
-				PX_CUDA_KERNEL_PARAM(dt),
-				PX_CUDA_KERNEL_PARAM(materials),
-				PX_CUDA_KERNEL_PARAM(rigidBodyMaterials)
-			};
-
-			CUresult result = mCudaContext->launchKernel(solveOutputSoftBodyDeltaKernelFunction, PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1, PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-			PX_ASSERT(result == CUDA_SUCCESS);
-			PX_UNUSED(result);
-
-			mCudaContext->eventRecord(mSolveSoftBodyEvent, mStream);
-
-#if SB_GPU_DEBUG
-			result = mCudaContext->streamSynchronize(mStream);
-			PX_ASSERT(result == CUDA_SUCCESS);
-			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputSoftBodyDeltaVLaunch first pass kernel fail!\n");
-
-
-			/*PxU32* activeSoftbodies = mSimController->getBodySimManager().mActiveSoftbodies.begin();
-			PxArray<float4> deltaV;
-
-			for (PxU32 i = 0; i < nbActiveSoftbodies; ++i)
-			{
-			const PxU32 index = activeSoftbodies[i];
-			PxgSoftBody& softbody = softbodies[index];
-			const PxU32 numVerts = softbody.mNumVerts;
-
-			deltaV.reserve(numVerts);
-			deltaV.forceSize_Unsafe(numVerts);
-
-			mCudaContext->memcpyDtoH(deltaV.begin(), (CUdeviceptr)softbodies[i].mDelta, sizeof(float4)*numVerts);
-
-			int bob = 0;
-			PX_UNUSED(bob);
-			}*/
-
-#endif
-		}
-	}
-
-//	void PxgSoftBodyCore::accumulateRigidDeltas(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, 
-//		CUdeviceptr rigidIdsd, CUdeviceptr numIdsd, CUstream stream, bool useLocalRelax, const PxReal globalRelaxationCoefficient, const bool isTGS)
-//	{
-//		PX_UNUSED(rigidIdsd);
-//		PX_UNUSED(useLocalRelax);
-//
-//		{
-//			//CUdeviceptr contactInfosd = mRSSortedContactInfoBuffer.getDevicePtr();
-//			CUdeviceptr deltaVd = mRigidDeltaVelBuf.getDevicePtr();
-//			CUdeviceptr blockDeltaVd = mTempBlockDeltaVelBuf.getDevicePtr();
-//			CUdeviceptr blockRigidIdd = mTempBlockRigidIdBuf.getDevicePtr();
-//
-//			const CUfunction rigidFirstKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ACCUMULATE_DELTAVEL_RIGIDBODY_FIRST);
-//
-//			PxCudaKernelParam kernelParams[] =
-//			{
-//				//PX_CUDA_KERNEL_PARAM(contactInfosd),
-//				PX_CUDA_KERNEL_PARAM(rigidIdsd),
-//				PX_CUDA_KERNEL_PARAM(numIdsd),
-//				PX_CUDA_KERNEL_PARAM(deltaVd),
-//				PX_CUDA_KERNEL_PARAM(blockDeltaVd),
-//				PX_CUDA_KERNEL_PARAM(blockRigidIdd)
-//			};
-//
-//			CUresult result = mCudaContext->launchKernel(rigidFirstKernelFunction, PxgSoftBodyKernelGridDim::SB_ACCUMULATE_DELTA, 1, 1, PxgSoftBodyKernelBlockDim::SB_ACCUMULATE_DELTA, 1, 1, 0, stream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-//			PX_ASSERT(result == CUDA_SUCCESS);
-//			PX_UNUSED(result);
-//
-//#if SB_GPU_DEBUG
-//			result = mCudaContext->streamSynchronize(stream);
-//			PX_ASSERT(result == CUDA_SUCCESS);
-//			if (result != CUDA_SUCCESS)
-//				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU soft body accumulateDeltaVRigidFirstLaunch kernel fail!\n");
-//
-//			int bob = 0;
-//			PX_UNUSED(bob);
-//#endif
-//		}
-//
-//		mCudaContext->streamWaitEvent(stream, mSolveSoftBodyEvent);
-//
-//		{
-//			//CUdeviceptr contactInfosd = mRSSortedContactInfoBuffer.getDevicePtr();
-//			CUdeviceptr deltaVd = mRigidDeltaVelBuf.getDevicePtr();
-//			CUdeviceptr blockDeltaVd = mTempBlockDeltaVelBuf.getDevicePtr();
-//			CUdeviceptr blockRigidIdd = mTempBlockRigidIdBuf.getDevicePtr();
-//
-//			//mCudaContext->streamWaitEvent(solverStream, mSolveSoftBodyRigidEvent);
-//
-//			const CUfunction rigidSecondKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ACCUMULATE_DELTAVEL_RIGIDBODY_SECOND);
-//
-//			PxCudaKernelParam kernelParams[] =
-//			{
-//				//PX_CUDA_KERNEL_PARAM(contactInfosd),
-//				PX_CUDA_KERNEL_PARAM(rigidIdsd),
-//				PX_CUDA_KERNEL_PARAM(numIdsd),
-//				PX_CUDA_KERNEL_PARAM(deltaVd),
-//				PX_CUDA_KERNEL_PARAM(blockDeltaVd),
-//				PX_CUDA_KERNEL_PARAM(blockRigidIdd),
-//				PX_CUDA_KERNEL_PARAM(prePrepDescd),
-//				PX_CUDA_KERNEL_PARAM(solverCoreDescd),
-//				PX_CUDA_KERNEL_PARAM(artiCoreDescd),
-//				PX_CUDA_KERNEL_PARAM(sharedDescd),
-//				PX_CUDA_KERNEL_PARAM(useLocalRelax),
-//				PX_CUDA_KERNEL_PARAM(globalRelaxationCoefficient),
-//				PX_CUDA_KERNEL_PARAM(isTGS)
-//			};
-//
-//			CUresult result = mCudaContext->launchKernel(rigidSecondKernelFunction, PxgSoftBodyKernelGridDim::SB_ACCUMULATE_DELTA, 1, 1, PxgSoftBodyKernelBlockDim::SB_ACCUMULATE_DELTA, 1, 1, 0, stream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-//			PX_ASSERT(result == CUDA_SUCCESS);
-//			PX_UNUSED(result);
-//
-//#if SB_GPU_DEBUG
-//			result = mCudaContext->streamSynchronize(stream);
-//			PX_ASSERT(result == CUDA_SUCCESS);
-//			if (result != CUDA_SUCCESS)
-//				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU soft body accumulateDeltaVRigidSecondLaunch kernel fail!\n");
-//
-//			int bob = 0;
-//			PX_UNUSED(bob);
-//#endif
-//		}
-//	}
-
-
-	void PxgSoftBodyCore::solveRigidAttachmentRigidDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
+	void PxgSoftBodyCore::solveRigidAttachment(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 		PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, const PxReal dt) 
 	{
 		
@@ -2094,7 +1795,7 @@ namespace physx
 
 		const PxU32 nbRigidAttachments = simCore->getNbRigidSoftBodyAttachments();
 
-		if (nbRigidAttachments)
+		if(nbRigidAttachments)
 		{
 			PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(simCore->getSoftBodyBuffer().getDevicePtr());
 			
@@ -2102,7 +1803,7 @@ namespace physx
 			PxgDevicePointer<float4> deltaVd = mRigidDeltaVelBuf.getTypedDevicePtr();
 			
 			{
-				const CUfunction solvePCRigidKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_ATTACHMENT_RIGID_DELTA);
+				const CUfunction solvePCRigidKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_SOFT_ATTACHMENT);
 
 				PxCudaKernelParam kernelParams[] =
 				{
@@ -2126,21 +1827,11 @@ namespace physx
 				result = mCudaContext->streamSynchronize(solverStream);
 				if (result != CUDA_SUCCESS)
 					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU ps_solvePCOutputRigidDeltaVLaunch kernel fail!\n");
-
-			/*	
-				PxArray<PxVec4> deltaV;
-				deltaV.reserve(nbRigidAttachments);
-				deltaV.forceSize_Unsafe(nbRigidAttachments);
-
-				mCudaContext->memcpyDtoH(deltaV.begin(), deltaVd, sizeof(PxVec4) * nbRigidAttachments);
-
-				int bob = 0;
-				PX_UNUSED(bob);*/
 				
 #endif
 			}
 
-			mCudaContext->eventRecord(mSolveSoftBodyRigidEvent, solverStream);
+			mCudaContext->eventRecord(mSolveRigidEvent, solverStream);
 
 
 			PxgDevicePointer<PxNodeIndex> rigidAttachmentIds = simCore->getSoftBodyRigidAttachmentIds();
@@ -2149,12 +1840,11 @@ namespace physx
 			//we need to wait for mSolveSoftBodyEvent to indicate the kernel in solveRigidAttachmentSoftBodyDelta() finish reading
 			//solver body velocites before we update them
 			accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, rigidAttachmentIds, totalRigidAttachmentsd,
-								  solverStream, mSolveSoftBodyEvent, false);
-
+								  solverStream, false);
 		}
 	}
 
-	void PxgSoftBodyCore::solveRigidAttachmentRigidDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
+	void PxgSoftBodyCore::solveRigidAttachmentTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 		PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, const PxReal dt, const PxReal biasCoefficient,
 		bool isVelocityIteration)
 	{
@@ -2174,7 +1864,8 @@ namespace physx
 
 
 			{
-				const CUfunction solvePCRigidKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_ATTACHMENT_RIGID_DELTA_TGS);
+				const CUfunction solvePCRigidKernelFunction =
+					mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_SOFT_ATTACHMENT_TGS);
 
 				PxCudaKernelParam kernelParams[] =
 				{
@@ -2200,17 +1891,6 @@ namespace physx
 				result = mCudaContext->streamSynchronize(solverStream);
 				if (result != CUDA_SUCCESS)
 					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU ps_solvePCOutputRigidDeltaVLaunch kernel fail!\n");
-
-				/*
-				PxArray<PxVec4> deltaV;
-				deltaV.reserve(nbRigidAttachments);
-				deltaV.forceSize_Unsafe(nbRigidAttachments);
-
-				mCudaContext->memcpyDtoH(deltaV.begin(), deltaVd, sizeof(PxVec4) * nbRigidAttachments);
-
-				int bob = 0;
-				PX_UNUSED(bob);*/
-
 #endif
 			}
 
@@ -2218,71 +1898,10 @@ namespace physx
 			PxgDevicePointer<PxNodeIndex> rigidAttachmentIds = simCore->getSoftBodyRigidAttachmentIds();
 			PxgDevicePointer<PxU32> totalRigidAttachmentsd = simCore->getGpuSoftBodyRigidCounter();
 
-			mCudaContext->eventRecord(mSolveSoftBodyRigidEvent, solverStream);
+			mCudaContext->eventRecord(mSolveRigidEvent, solverStream);
 
 			accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, rigidAttachmentIds, totalRigidAttachmentsd,
-								  solverStream, mSolveSoftBodyEvent, true);
-		}
-	}
-
-
-	void PxgSoftBodyCore::solveRigidAttachmentSoftBodyDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-		PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal dt)
-	{
-
-		PxgSimulationCore* simCore = mSimController->getSimulationCore();
-
-		const PxU32 nbRigidAttachments = simCore->getNbRigidSoftBodyAttachments();
-
-		if (nbRigidAttachments)
-		{
-			PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(simCore->getSoftBodyBuffer().getDevicePtr());
-
-			PxgDevicePointer<PxgFEMRigidAttachmentConstraint> constraintsd = simCore->getSoftBodyRigidConstraints();
-
-
-			{
-				const CUfunction solvePCRigidKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_RIGID_ATTACHMENT_SOFT_DELTA);
-
-				PxCudaKernelParam kernelParams[] =
-				{
-					PX_CUDA_KERNEL_PARAM(softbodiesd),
-					PX_CUDA_KERNEL_PARAM(constraintsd),
-					PX_CUDA_KERNEL_PARAM(nbRigidAttachments),
-					PX_CUDA_KERNEL_PARAM(prePrepDescd),
-					PX_CUDA_KERNEL_PARAM(solverCoreDescd),
-					PX_CUDA_KERNEL_PARAM(artiCoreDescd),
-					PX_CUDA_KERNEL_PARAM(sharedDescd),
-					PX_CUDA_KERNEL_PARAM(dt)
-				};
-
-				const PxU32 numThreadsPerBlock = PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION;
-				const PxU32 numBlocks = PxgSoftBodyKernelGridDim::SB_UPDATEROTATION;
-				CUresult result = mCudaContext->launchKernel(solvePCRigidKernelFunction, numBlocks, 1, 1, numThreadsPerBlock, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-				PX_ASSERT(result == CUDA_SUCCESS);
-				PX_UNUSED(result);
-
-				mCudaContext->eventRecord(mSolveSoftBodyEvent, mStream);
-#if SB_GPU_DEBUG
-				result = mCudaContext->streamSynchronize(mStream);
-				if (result != CUDA_SUCCESS)
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputAttachmentSoftDeltaVLaunch kernel fail!\n");
-
-				/*
-					PxArray<PxVec4> deltaV;
-					deltaV.reserve(nbRigidAttachments);
-					deltaV.forceSize_Unsafe(nbRigidAttachments);
-
-					mCudaContext->memcpyDtoH(deltaV.begin(), deltaVd, sizeof(PxVec4) * nbRigidAttachments);
-
-					int bob = 0;
-					PX_UNUSED(bob);*/
-
-#endif
-			}
-
-			// This function is going to update the pos and vel for the FEM verts
-			//applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
+								  solverStream, true);
 		}
 	}
 
@@ -2406,73 +2025,6 @@ namespace physx
 					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputAttachmentSoftDeltaVLaunchTGS kernel fail!\n");
 #endif
 			}
-		}
-	}
-
-	void PxgSoftBodyCore::solveRigidAttachmentSoftBodyDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-		PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal dt, const PxReal biasCoefficient, bool isVelocityIteration) 
-	{
-#if SB_GPU_DEBUG
-		PX_PROFILE_ZONE("PxgSoftBodyCore.rigidAttachmentsSoftBodyDelta", 0);
-#endif
-		PxgSimulationCore* simCore = mSimController->getSimulationCore();
-
-		const PxU32 nbRigidAttachments = simCore->getNbRigidSoftBodyAttachments();
-
-		if (nbRigidAttachments)
-		{
-			PxgSoftBody* softbodiesd = reinterpret_cast<PxgSoftBody*>(simCore->getSoftBodyBuffer().getDevicePtr());
-
-			PxgDevicePointer<PxgFEMRigidAttachmentConstraint> constraintsd = simCore->getSoftBodyRigidConstraints();
-
-
-			{
-				const CUfunction solvePCRigidKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SOLVE_ATTACHMENT_SOFT_DELTA_TGS);
-
-				PxCudaKernelParam kernelParams[] =
-				{
-					PX_CUDA_KERNEL_PARAM(softbodiesd),
-					PX_CUDA_KERNEL_PARAM(constraintsd),
-					PX_CUDA_KERNEL_PARAM(nbRigidAttachments),
-					PX_CUDA_KERNEL_PARAM(prePrepDescd),
-					PX_CUDA_KERNEL_PARAM(solverCoreDescd),
-					PX_CUDA_KERNEL_PARAM(artiCoreDescd),
-					PX_CUDA_KERNEL_PARAM(sharedDescd),
-					PX_CUDA_KERNEL_PARAM(dt),
-					PX_CUDA_KERNEL_PARAM(biasCoefficient),
-					PX_CUDA_KERNEL_PARAM(isVelocityIteration)
-				};
-
-				const PxU32 numThreadsPerBlock = PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION;
-				const PxU32 numBlocks = PxgSoftBodyKernelGridDim::SB_UPDATEROTATION;
-				CUresult result = mCudaContext->launchKernel(solvePCRigidKernelFunction, numBlocks, 1, 1, numThreadsPerBlock, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-				PX_ASSERT(result == CUDA_SUCCESS);
-				PX_UNUSED(result);
-
-				mCudaContext->eventRecord(mSolveSoftBodyEvent, mStream);
-
-#if SB_GPU_DEBUG
-				result = mCudaContext->streamSynchronize(mStream);
-				if (result != CUDA_SUCCESS)
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveOutputAttachmentSoftDeltaVLaunch kernel fail!\n");
-
-				/*
-				PxArray<PxVec4> deltaV;
-				deltaV.reserve(nbRigidAttachments);
-				deltaV.forceSize_Unsafe(nbRigidAttachments);
-
-				mCudaContext->memcpyDtoH(deltaV.begin(), deltaVd, sizeof(PxVec4) * nbRigidAttachments);
-
-				int bob = 0;
-				PX_UNUSED(bob);*/
-
-#endif
-			}
-
-			// This function is going to update the pos and vel for the FEM verts
-			//This cannot be done here because it will be concurrent to solving the attachments from the
-			//perspective of the rigid body. Needs to go after the sync
-			//applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
 		}
 	}
 
@@ -2672,12 +2224,11 @@ namespace physx
 			PxgDevicePointer<float4> contactsd = mRigidSortedContactPointBuf.getTypedDevicePtr();
 			PxgDevicePointer<float4> normalpensd = mRigidSortedContactNormalPenBuf.getTypedDevicePtr();
 			PxgDevicePointer<float4> barycentricsd = mRigidSortedContactBarycentricBuf.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
 			PxgDevicePointer<PxU32> totalContactCountsd = mRigidTotalContactCountBuf.getTypedDevicePtr();
 
 			PxgDevicePointer<PxgFemRigidConstraintBlock> constraintsd = mRigidConstraintBuf.getTypedDevicePtr();
-			PxgDevicePointer<float4> rigidAppliedForced = mRigidAppliedRigidForcesBuf.getTypedDevicePtr();
-			PxgDevicePointer<float4> softbodyAppliedForced = mRigidAppliedFEMForcesBuf.getTypedDevicePtr();
+			PxgDevicePointer<PxReal> rigidAppliedForced = mRigidFEMAppliedForcesBuf.getTypedDevicePtr();
 
 			// Allocating femRigidContactCount based on the size of rigid bodies plus articulations.
 			if (mFemRigidReferenceCount.getNbElements() != numSolverBodies + numArticulations)
@@ -2699,7 +2250,6 @@ namespace physx
 				PX_CUDA_KERNEL_PARAM(prePrepDescd),
 				PX_CUDA_KERNEL_PARAM(prepDescd),
 				PX_CUDA_KERNEL_PARAM(rigidAppliedForced),
-				PX_CUDA_KERNEL_PARAM(softbodyAppliedForced),
 				PX_CUDA_KERNEL_PARAM(invDt),
 				PX_CUDA_KERNEL_PARAM(sharedDescd),
 				PX_CUDA_KERNEL_PARAM(isTGS)
@@ -2735,7 +2285,7 @@ namespace physx
 			PxgDevicePointer<PxgSoftBody> softbodiesd = simCore->getSoftBodyBuffer().getTypedDevicePtr();
 			PxgDevicePointer<PxgParticleSystem> particlesystemsd = particleCore->getParticleSystemBuffer().getTypedDevicePtr();
 
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = mParticleSortedContactInfoBuffer.getTypedDevicePtr();
 			PxgDevicePointer<PxU32> totalContactCountsd = mParticleTotalContactCountBuffer.getTypedDevicePtr();
 			{
 
@@ -2906,7 +2456,7 @@ namespace physx
 			PxgDevicePointer<float4> normalpensd = mSCContactNormalPenBuffer.getTypedDevicePtr();
 			PxgDevicePointer<float4> barycentric0d = mSCContactBarycentricBuffer0.getTypedDevicePtr();
 			PxgDevicePointer<float4> barycentric1d = mSCContactBarycentricBuffer1.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mSCContactInfoBuffer.getTypedDevicePtr();
+			PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = mSCContactInfoBuffer.getTypedDevicePtr();
 
 			PxgDevicePointer<PxU32> totalContactCountsd = mSCTotalContactCountBuffer.getTypedDevicePtr();
 
@@ -2966,100 +2516,54 @@ namespace physx
 	{
 		PxgSimulationCore* simCore = mSimController->getSimulationCore();
 		CUdeviceptr softbodiesd = simCore->getSoftBodyBuffer().getDevicePtr();
-//
-//		{
-//			CUdeviceptr contactAsd = getSoftVsSoftbodyAContacts().getDevicePtr();
-//			CUdeviceptr contactBsd = getSoftVsSoftbodyBContacts().getDevicePtr();
-//			CUdeviceptr normalPensd = getSoftVsSoftbodyNormalPens().getDevicePtr();
-//			CUdeviceptr barycentrics0d = getSoftVsSoftbodyBarycentrics0().getDevicePtr();
-//			CUdeviceptr barycentrics1d = getSoftVsSoftbodyBarycentrics1().getDevicePtr();
-//			CUdeviceptr contactInfosd = getSoftVsSoftbodyContactInfos().getDevicePtr();
-//			CUdeviceptr totalNumCountsd = getSoftVsSoftbodyContactCount().getDevicePtr();
-//
-//			CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SS_CONTACT_REMAP_TO_SIM);
-//
-//			PxCudaKernelParam kernelParams[] =
-//			{
-//
-//				PX_CUDA_KERNEL_PARAM(softbodiesd),
-//				PX_CUDA_KERNEL_PARAM(mCurrentPosIndex),
-//				PX_CUDA_KERNEL_PARAM(normalPensd),
-//				PX_CUDA_KERNEL_PARAM(contactAsd),
-//				PX_CUDA_KERNEL_PARAM(contactBsd),
-//				PX_CUDA_KERNEL_PARAM(barycentrics0d),
-//				PX_CUDA_KERNEL_PARAM(barycentrics1d),
-//				PX_CUDA_KERNEL_PARAM(contactInfosd),
-//				PX_CUDA_KERNEL_PARAM(totalNumCountsd),
-//			};
-//
-//			PxU32 numWarpsPerBlock = 16;
-//			PxU32 numBlocks = 1024;
-//			//each warp deal with one test. 
-//			CUresult result = mCudaContext->launchKernel(sbContactRemapKernelFunction, numBlocks, 2, 1, WARP_SIZE, numWarpsPerBlock, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-//
-//			if (result != CUDA_SUCCESS)
-//				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_primitiveContactGenLaunch fail to launch kernel!!\n");
-//
-//#if SB_GPU_DEBUG
-//
-//			result = mCudaContext->streamSynchronize(mStream);
-//			if (result != CUDA_SUCCESS)
-//				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_primitiveContactGenLaunch kernel fail!!!\n");
-//
-//			PX_ASSERT(result == CUDA_SUCCESS);
-//#endif
-//		}
-//
 
+		PxgDevicePointer<float4> contactsd = mFemContactPointBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> normalpensd = mFemContactNormalPenBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> barycentric0d = mFemContactBarycentric0Buffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> barycentric1d = mFemContactBarycentric1Buffer.getTypedDevicePtr();
+		PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = mVolumeContactOrVTContactInfoBuffer.getTypedDevicePtr();
+
+		PxgDevicePointer<PxU32> totalContactCountsd = mVolumeContactOrVTContactCountBuffer.getTypedDevicePtr();
+
+		CUdeviceptr constraintsd = mFemConstraintBuf.getDevicePtr();
+		PxgDevicePointer<float4> softbodyAppliedForced = mFemAppliedForcesBuf.getTypedDevicePtr();
+
+		const CUfunction softbodyContactPrepKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SS_CONTACTPREPARE);
+
+		PxCudaKernelParam kernelParams[] =
 		{
-			PxgDevicePointer<float4> contactsd = mFemContactPointBuffer.getTypedDevicePtr();
-			PxgDevicePointer<float4> normalpensd = mFemContactNormalPenBuffer.getTypedDevicePtr();
-			PxgDevicePointer<float4> barycentric0d = mFemContactBarycentric0Buffer.getTypedDevicePtr();
-			PxgDevicePointer<float4> barycentric1d = mFemContactBarycentric1Buffer.getTypedDevicePtr();
-			PxgDevicePointer<PxgFemContactInfo> contactInfosd = mFemContactInfoBuffer.getTypedDevicePtr();
+			PX_CUDA_KERNEL_PARAM(softbodiesd),
+			PX_CUDA_KERNEL_PARAM(contactsd),
+			PX_CUDA_KERNEL_PARAM(normalpensd),
+			PX_CUDA_KERNEL_PARAM(barycentric0d),
+			PX_CUDA_KERNEL_PARAM(barycentric1d),
+			PX_CUDA_KERNEL_PARAM(contactInfosd),
+			PX_CUDA_KERNEL_PARAM(totalContactCountsd),
+			PX_CUDA_KERNEL_PARAM(constraintsd),
+			PX_CUDA_KERNEL_PARAM(softbodyAppliedForced),
+			PX_CUDA_KERNEL_PARAM(mMaxContacts)
+		};
 
-			PxgDevicePointer<PxU32> totalContactCountsd = mFemTotalContactCountBuffer.getTypedDevicePtr();
-
-			CUdeviceptr constraintsd = mFemConstraintBuf.getDevicePtr();
-			PxgDevicePointer<float4> softbodyAppliedForced = mFemAppliedForcesBuf.getTypedDevicePtr();
-
-			const CUfunction softbodyContactPrepKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SS_CONTACTPREPARE);
-
-			PxCudaKernelParam kernelParams[] =
-			{
-				PX_CUDA_KERNEL_PARAM(softbodiesd),
-				PX_CUDA_KERNEL_PARAM(contactsd),
-				PX_CUDA_KERNEL_PARAM(normalpensd),
-				PX_CUDA_KERNEL_PARAM(barycentric0d),
-				PX_CUDA_KERNEL_PARAM(barycentric1d),
-				PX_CUDA_KERNEL_PARAM(contactInfosd),
-				PX_CUDA_KERNEL_PARAM(totalContactCountsd),
-				PX_CUDA_KERNEL_PARAM(constraintsd),
-				PX_CUDA_KERNEL_PARAM(softbodyAppliedForced),
-				PX_CUDA_KERNEL_PARAM(mMaxContacts)
-			};
-
-			CUresult result = mCudaContext->launchKernel(softbodyContactPrepKernelFunction, PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1, PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-			PX_ASSERT(result == CUDA_SUCCESS);
-			PX_UNUSED(result);
+		CUresult result = mCudaContext->launchKernel(softbodyContactPrepKernelFunction, PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1, PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
+		PX_ASSERT(result == CUDA_SUCCESS);
+		PX_UNUSED(result);
 
 #if SB_GPU_DEBUG
-			result = mCudaContext->streamSynchronize(mStream);
-			PX_ASSERT(result == CUDA_SUCCESS);
-			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveTetrahedron first pass kernel fail!\n");
+		result = mCudaContext->streamSynchronize(mStream);
+		PX_ASSERT(result == CUDA_SUCCESS);
+		if (result != CUDA_SUCCESS)
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU sb_solveTetrahedron first pass kernel fail!\n");
 
-			PxU32 numContacts;
-			mCudaContext->memcpyDtoH(&numContacts, totalContactCountsd, sizeof(PxU32));
+		PxU32 numContacts;
+		mCudaContext->memcpyDtoH(&numContacts, totalContactCountsd, sizeof(PxU32));
 
-			if (numContacts > 0)
-			{
-				int bob = 0;
-				PX_UNUSED(bob);
-			}
+		if (numContacts > 0)
+		{
+			int bob = 0;
+			PX_UNUSED(bob);
+		}
 
 #endif
-		}
 	}
 
 
@@ -3181,44 +2685,29 @@ namespace physx
 		PxgDevicePointer<PxU32> activeSoftBodiesd = core->getActiveSoftBodyBuffer().getTypedDevicePtr();
 		
 		solveCorotationalFEM(softbodies, softbodiesd, activeSoftBodiesd, nbActiveSoftbodies, dt, mStream, true, isFirstIteration);
-		
-		//Make mStream wait for solverStream
-		synchronizeStreams(mCudaContext, solverStream, mStream);
 
-		//solve rigid attachment at soft body stream
-		solveRigidAttachmentSoftBodyDeltaTGS(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt, biasCoefficient*dt, isVelocityIteration);
-
-		//solve rigid attachment at solver stream
-		solveRigidAttachmentRigidDeltaTGS(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt, biasCoefficient, isVelocityIteration);
-
-		//Make mStream wait for solverStream. We don't want to update 
-		mCudaContext->streamWaitEvent(mStream, mSolveSoftBodyRigidEvent);
-
-		applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
-
-		synchronizeStreams(mCudaContext, solverStream, mStream);
-
-		if(1)
+		// Interaction with rigid body
 		{
-			// query reference count
-			queryRigidContactReferenceCount(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt);
+			synchronizeStreams(mCudaContext, mStream, solverStream);
 
-			//solve rigid body vs soft body contacts
-			solveRSContactsOutputSoftBodyDeltaTGS(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt);
+			// Solve soft-rigid attachment constraints (runs on solverStream)
+			solveRigidAttachmentTGS(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt, biasCoefficient, isVelocityIteration);
+
+			mCudaContext->streamWaitEvent(mStream, mSolveRigidEvent);
+
+			applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
 
 			synchronizeStreams(mCudaContext, mStream, solverStream);
 
+			// Solve soft-rigid collision constraints (runs on solverStream)
+			queryRigidContactReferenceCount(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
 			solveRSContactsOutputRigidDeltaTGS(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
 
-			//soft body stream need to wait till soft body vs Rigid finish in the solver stream
-			mCudaContext->streamWaitEvent(mStream, mSolveSoftBodyRigidEvent);
+			mCudaContext->streamWaitEvent(mStream, mSolveRigidEvent);
 
-			//This function is going to update the pos and vel for the FEM verts
 			applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
-
 		}
 
-		if(1)
 		{
 			//solve soft body attachment at soft body stream
 			solveSoftBodyAttachmentDelta();
@@ -3348,39 +2837,26 @@ namespace physx
 
 		solveCorotationalFEM(softbodies, softbodiesd, activeSoftBodiesd, nbActiveSoftbodies, dt, mStream, false, isFirstIteration);
 
-		synchronizeStreams(mCudaContext, solverStream, mStream);
-
+		// Interaction with rigid body
 		{
-			
-			//solve rigid attachment at soft body stream
-			solveRigidAttachmentSoftBodyDelta(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt);
+			synchronizeStreams(mCudaContext, mStream, solverStream);
 
-			//solve rigid attachment at solver stream
-			solveRigidAttachmentRigidDelta(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
+			// Solve soft-rigid attachment constraints (runs on solverStream)
+			solveRigidAttachment(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
 
-			mCudaContext->streamWaitEvent(mStream, mSolveSoftBodyRigidEvent);
+			mCudaContext->streamWaitEvent(mStream, mSolveRigidEvent);
 
 			applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
-
-			synchronizeStreams(mCudaContext, solverStream, mStream);
-
-			// query reference count
-			queryRigidContactReferenceCount(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt);
-
-			//solve rigid body vs soft body contacts at soft body stream
-			solveRSContactsOutputSoftBodyDelta(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt);
 
 			synchronizeStreams(mCudaContext, mStream, solverStream);
 
-			//solve rigid body vs soft body contacts at solver stream
+			// Solve soft-rigid collision constraints (runs on solverStream)
+			queryRigidContactReferenceCount(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
 			solveRSContactsOutputRigidDelta(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
 
-			//soft body stream need to wait till soft body vs Rigid finish in the solver stream
-			mCudaContext->streamWaitEvent(mStream, mSolveSoftBodyRigidEvent);
+			mCudaContext->streamWaitEvent(mStream, mSolveRigidEvent);
 
-			//This function is going to update the pos and vel for the FEM verts
 			applyExternalTetraDeltaGM(nbActiveSoftbodies, dt, mStream);
-
 		}
 
 		{

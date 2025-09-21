@@ -27,6 +27,7 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "geometry/PxSphereGeometry.h"
+#include "geometry/PxConvexCoreGeometry.h"
 #include "GuMidphaseInterface.h"
 #include "CmScaling.h"
 #include "GuSphere.h"
@@ -38,6 +39,9 @@
 #include "GuGJK.h"
 #include "GuSweepSharedTests.h"
 #include "CmMatrix34.h"
+#include "GuBounds.h"
+#include "GuConvexSupport.h"
+#include "GuConvexGeometry.h"
 
 using namespace physx;
 using namespace Cm;
@@ -274,4 +278,77 @@ bool GeomOverlapCallback_MeshMesh(GU_OVERLAP_FUNC_PARAMS)
 
 	// PT: ...so we don't need a table like for the other ops, just go straight to BV4
 	return intersectMeshVsMesh_BV4(callback, *tm0, pose0, meshGeom0.scale, *tm1, pose1, meshGeom1.scale, PxMeshMeshQueryFlag::eDEFAULT, 0.0f);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool GeomOverlapCallback_ConvexCoreMesh(GU_OVERLAP_FUNC_PARAMS)
+{
+	PX_UNUSED(geom0);
+	PX_UNUSED(pose0);
+	PX_UNUSED(geom1);
+	PX_UNUSED(pose1);
+	PX_UNUSED(cache);
+	PX_UNUSED(threadContext);
+
+	struct Callback : MeshHitCallback<PxGeomRaycastHit>
+	{
+		Gu::ConvexShape convex;
+		PxMeshScale scale;
+		bool hit;
+
+		Callback(const PxConvexCoreGeometry& geom, const PxTransform& pose, const PxMeshScale& s)
+			:
+			MeshHitCallback<PxGeomRaycastHit>(CallbackMode::eMULTIPLE),
+			scale(s), hit(false)
+		{
+			Gu::makeConvexShape(geom, pose, convex);
+		}
+
+		virtual PxAgain processHit(const PxGeomRaycastHit& /*hit*/, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32*)
+		{
+			const PxVec3 verts[] = { v0, v1, v2 };
+
+			Gu::ConvexShape tri;
+			tri.coreType = Gu::ConvexCore::Type::ePOINTS;
+			tri.pose = PxTransform(PxIdentity);
+			Gu::ConvexCore::PointsCore& core = *reinterpret_cast<Gu::ConvexCore::PointsCore*>(tri.coreData);
+			core.points = verts;
+			core.numPoints = 3;
+			core.stride = sizeof(PxVec3);
+			core.S = scale.scale;
+			core.R = scale.rotation;
+			tri.margin = 0;
+
+			PxVec3 point0, point1, axis;
+			PxReal dist = Gu::RefGjkEpa::computeGjkDistance(convex, tri, convex.pose, tri.pose, convex.margin + tri.margin, point0, point1, axis);
+			hit = (dist <= convex.margin + tri.margin);
+
+			return !hit;
+		}
+	};
+
+	PX_ASSERT(geom0.getType() == PxGeometryType::eCONVEXCORE);
+	PX_ASSERT(geom1.getType() == PxGeometryType::eTRIANGLEMESH);
+
+	const PxConvexCoreGeometry& shapeConvex = static_cast<const PxConvexCoreGeometry&>(geom0);
+	const PxTriangleMeshGeometry& shapeMesh = static_cast<const PxTriangleMeshGeometry&>(geom1);
+	const TriangleMesh* meshData = _getMeshData(shapeMesh);
+
+	const PxTransform pose0in1 = pose1.transformInv(pose0);
+	const PxBounds3 bounds = Gu::computeBounds(geom0, PxTransform(PxIdentity));
+
+	Box queryBox;
+	queryBox.extents = bounds.getExtents();
+	queryBox.center = pose0in1.transform(bounds.getCenter());
+	queryBox.rot = PxMat33(pose0in1.q);
+
+	const FastVertex2ShapeScaling meshScaling(shapeMesh.scale);
+	meshScaling.transformQueryBounds(queryBox.center, queryBox.extents, queryBox.rot);
+
+	Callback callback(shapeConvex, pose0in1, shapeMesh.scale);
+
+	Midphase::intersectOBB(meshData, queryBox, callback, false);
+
+	return callback.hit;
 }

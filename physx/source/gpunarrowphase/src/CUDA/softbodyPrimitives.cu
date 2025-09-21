@@ -351,10 +351,11 @@ PX_FORCE_INLINE __device__ void writeContactNoBarycentricFullWarp(PxgFEMContactW
 
 			if (threadIdx.x == 0)
 			{
-				PxgFemVsRigidContactInfo* ptr = reinterpret_cast<PxgFemVsRigidContactInfo*>(&writer.outContactInfo[index]);
+				PxgFemOtherContactInfo* ptr = reinterpret_cast<PxgFemOtherContactInfo*>(&writer.outContactInfo[index]);
 				ptr->pairInd0 = pairInd0;
 				ptr->pairInd1 = pairInd1;
-				ptr->rigidMatInd = rigidBodyMaterialId;
+				ptr->setRigidMaterialIndex(rigidBodyMaterialId);
+				ptr->markInCollision(false);
 			}
 		}
 	}
@@ -1655,13 +1656,13 @@ void fem_reorderRigidContactsLaunch(
 	const float4* contacts,
 	const float4* normalpens,
 	const float4* barycentrics,
-	const PxgFemContactInfo* contactInfos,
+	const PxgFemOtherContactInfo* contactInfos,
 	const PxU32* numContacts,
 	const PxU32* remapByRigid,
 	float4* sortedContacts,
 	float4* sortedNormalPens,
 	float4* sortedBarycentrics,
-	PxgFemContactInfo* sortedContactInfos,
+	PxgFemOtherContactInfo* sortedContactInfos,
 	PxU64*	sortedRigidIds
 )
 {
@@ -1681,7 +1682,7 @@ void fem_reorderRigidContactsLaunch(
 		sortedNormalPens[index] = normalpens[remapIndex];
 		sortedBarycentrics[index] = barycentrics[remapIndex];
 
-		const PxgFemContactInfo contactInfo = contactInfos[remapIndex];
+		const PxgFemOtherContactInfo contactInfo = contactInfos[remapIndex];
 
 		PxU64 rigidId = contactInfo.pairInd0;
 		//assert(reinterpret_cast<const IG::NodeIndex&>(rigidId).isStaticBody());
@@ -1696,13 +1697,13 @@ void sb_reorderPSContactsLaunch(
 	const float4* contacts,
 	const float4* normalpens,
 	const float4* barycentrics,
-	const PxgFemContactInfo* contactInfos,
+	const PxgFemFemContactInfo* contactInfos,
 	const PxU32* numContacts,
 	const PxU32* remapByRigid,
 	float4* sortedContacts,
 	float4* sortedNormalPens,
 	float4* sortedBarycentrics,
-	PxgFemContactInfo* sortedContactInfos
+	PxgFemFemContactInfo* sortedContactInfos
 )
 {
 	const PxU32 totalNumContacts = *numContacts;
@@ -2130,13 +2131,12 @@ void sb_psContactGenLaunch(
 
 
 extern "C" __global__
-void sb_rcs_contact_remap_to_simLaunch(
+void sb_other_contact_remap_to_simLaunch(
 	const PxgSoftBody* PX_RESTRICT	softbodies,
 	const PxU32						maxNumContacts,
 	const float4*					point,
 	float4*							outBarycentric,								//output
-	PxgFemVsRigidContactInfo *		outContactInfo,								//output
-	float4* PX_RESTRICT				outInvMasses,								//output
+	PxgFemOtherContactInfo *		outContactInfo,								//output
 	PxU32*							totalContactCount,							//output
 	const PxU32*					prevContactCount
 )
@@ -2162,7 +2162,7 @@ void sb_rcs_contact_remap_to_simLaunch(
 	{
 		const PxVec3 contact = PxLoad3(point[contactIndex]);
 
-		PxgFemVsRigidContactInfo& contactInfo = outContactInfo[contactIndex];
+		PxgFemOtherContactInfo& contactInfo = outContactInfo[contactIndex];
 
 		const PxU32 pairInd1 = PxU32(contactInfo.pairInd1);
 		
@@ -2185,7 +2185,6 @@ void sb_rcs_contact_remap_to_simLaunch(
 		// result variables
 		PxU32 simTetInd = 0xffffffff;
 		float4 barycentric;
-		float4 invMasses;
 		PxReal sqDist = PX_MAX_F32;
 		bool valid = false;
 
@@ -2223,7 +2222,6 @@ void sb_rcs_contact_remap_to_simLaunch(
 						sqDist = tmpDist;
 						simTetInd = tmpSimTetInd;
 						computeTetBarycentric(a, b, c, d, tmpClosest, barycentric);
-						invMasses = make_float4(v0.w, v1.w, v2.w, v3.w);
 					}
 				}
 				else
@@ -2231,7 +2229,6 @@ void sb_rcs_contact_remap_to_simLaunch(
 					simTetInd = tmpSimTetInd;
 					barycentric = tmpBarycentric;
 					sqDist = 0.f;
-					invMasses = make_float4(v0.w, v1.w, v2.w, v3.w);
 				}
 			}
 
@@ -2246,9 +2243,6 @@ void sb_rcs_contact_remap_to_simLaunch(
 					PxU32 newPairInd = PxEncodeSoftBodyIndex(softbodyId, simTetInd);
 					outContactInfo[contactIndex].pairInd1 = newPairInd;
 					outBarycentric[contactIndex] = barycentric;
-
-					if(outInvMasses != NULL)
-						outInvMasses[contactIndex] = invMasses;
 				}
 
 				valid = true;
@@ -2272,9 +2266,6 @@ void sb_rcs_contact_remap_to_simLaunch(
 				PxU32 newPairInd = PxEncodeSoftBodyIndex(softbodyId, simTetInd);
 				outContactInfo[contactIndex].pairInd1 = newPairInd;
 				outBarycentric[contactIndex] = barycentric;
-
-				if(outInvMasses != NULL)
-					outInvMasses[contactIndex] = invMasses;
 			}
 		}
 	}
@@ -2283,11 +2274,11 @@ void sb_rcs_contact_remap_to_simLaunch(
 
 
 extern "C" __global__
-void sb_ss_contact_remap_to_simLaunch(
+void sb_fem_contact_remap_to_simLaunch(
 	const PxgSoftBody* PX_RESTRICT softbodies,
 	float4*						outBarycentric0,							//output
 	float4*						outBarycentric1,							//output
-	PxgFemContactInfo*			outContactInfo,								//output
+	PxgFemFemContactInfo*		outContactInfo,								//output
 	PxU32*						totalContactCount,							//output
 	PxU32*						prevContactCount,
 	const PxU32					maxNbContacts
@@ -2312,11 +2303,11 @@ void sb_ss_contact_remap_to_simLaunch(
 	//each warp do remap from contacts in collision mesh to simulation mesh
 	for (PxU32 contactIndex = globalWarpIdx + startOffset; contactIndex < numContacts; contactIndex += gridDim.x * blockDim.y)
 	{
-		PxgFemContactInfo contactInfo = outContactInfo[contactIndex];
+		PxgFemFemContactInfo contactInfo = outContactInfo[contactIndex];
 
 		PxU64 pairInd = contactInfo.pairInd1;
 		float4* remapBarycentric = outBarycentric1;
-		if (pairIndex == 0)
+		if (pairIndex == 1)
 		{
 			pairInd = contactInfo.pairInd0;
 			remapBarycentric = outBarycentric0;
@@ -2403,7 +2394,7 @@ void sb_ss_contact_remap_to_simLaunch(
 				if (idxInWarp == firstThreadIntersect)
 				{
 					PxU32 newPairInd = PxEncodeSoftBodyIndex(softbodyId, simTetInd);
-					if (pairIndex == 0)
+					if (pairIndex == 1)
 						outContactInfo[contactIndex].pairInd0 = newPairInd;
 					else
 						outContactInfo[contactIndex].pairInd1 = newPairInd;
@@ -2419,7 +2410,7 @@ void sb_ss_contact_remap_to_simLaunch(
 		if (__ballot_sync(FULL_MASK, hasTet) == 0)
 		{
 			PxU32 newPairInd = PxEncodeSoftBodyIndex(softbodyId, 0);
-			if (pairIndex == 0)
+			if (pairIndex == 1)
 				outContactInfo[contactIndex].pairInd0 = newPairInd;
 			else
 				outContactInfo[contactIndex].pairInd1 = newPairInd;
@@ -2440,7 +2431,7 @@ void sb_ss_contact_remap_to_simLaunch(
 
 				PxU32 newPairInd = PxEncodeSoftBodyIndex(softbodyId, simTetInd);
 
-				if (pairIndex == 0)
+				if (pairIndex == 1)
 					outContactInfo[contactIndex].pairInd0 = newPairInd;
 				else
 					outContactInfo[contactIndex].pairInd1 = newPairInd;

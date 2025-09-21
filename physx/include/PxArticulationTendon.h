@@ -68,6 +68,8 @@ namespace physx
 		\param[in] restLength The rest length of the spring.
 		<b>Default:</b> 0
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getRestLength(), isLeaf()
 		*/
 		virtual		void							setRestLength(const PxReal restLength) = 0;
@@ -76,6 +78,8 @@ namespace physx
 		\brief Gets the spring rest length for the sub-tendon from the root to this leaf attachment.
 
 		\return The rest length.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setRestLength()
 		*/
@@ -89,6 +93,8 @@ namespace physx
 		\param[in] parameters Struct with the low and high limit.
 		<b>Default:</b> (PX_MAX_F32, -PX_MAX_F32) (i.e. an invalid configuration that can only work if stiffness is zero)
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see PxArticulationTendonLimit, getLimitParameters(), isLeaf()
 		*/
 		virtual		void							setLimitParameters(const PxArticulationTendonLimit& parameters) = 0;
@@ -97,6 +103,8 @@ namespace physx
 		\brief Gets the low and high limit on the length of the sub-tendon from the root to this leaf attachment.
 
 		\return Struct with the low and high limit.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see PxArticulationTendonLimit, setLimitParameters()
 		*/
@@ -107,6 +115,8 @@ namespace physx
 
 		\param[in] offset The relative offset in the link actor frame.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getRelativeOffset()
 		*/
 		virtual		void							setRelativeOffset(const PxVec3& offset) = 0;
@@ -115,6 +125,8 @@ namespace physx
 		\brief Gets the attachment's relative offset in the link actor frame.
 
 		\return The relative offset in the link actor frame.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setRelativeOffset()
 		*/
@@ -125,6 +137,8 @@ namespace physx
 
 		\param[in] coefficient The scale that the distance between this attachment and its parent is multiplied by when summing up the spatial tendon's length.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getCoefficient()
 		*/
 		virtual		void							setCoefficient(const PxReal coefficient) = 0;
@@ -133,6 +147,8 @@ namespace physx
 		\brief Gets the attachment coefficient.
 
 		\return The scale that the distance between this attachment and its parent is multiplied by when summing up the spatial tendon's length.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setCoefficient()
 		*/
@@ -214,6 +230,8 @@ namespace physx
 		\note RecipCoefficient is commonly expected to be 1/coefficient, but it can be set to different values to tune behavior; for example, zero can be used to
 		have a joint axis only participate in the length computation of the tendon, but not have any tendon force applied to it.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getCoefficient()
 		*/
 		virtual		void							setCoefficient(const PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient) = 0;
@@ -224,6 +242,8 @@ namespace physx
 		\param[out] axis The degree of freedom that the tendon joint operates on.
 		\param[out] coefficient The scale that the axis' joint position is multiplied by when summing up the fixed tendon's length.
 		\param[in] recipCoefficient The scale that the tendon's response is multiplied by when applying to this tendon joint.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setCoefficient()
 		*/
@@ -290,6 +310,8 @@ namespace physx
 		\param[in] stiffness The spring stiffness.
 		<b>Default:</b> 0
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getStiffness()
 		*/
 		virtual		void							setStiffness(const PxReal stiffness) = 0;
@@ -298,6 +320,8 @@ namespace physx
 		\brief Gets the spring stiffness of the tendon.
 
 		\return The spring stiffness.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setStiffness()
 		*/
@@ -309,6 +333,8 @@ namespace physx
 		\param[in] damping The damping term.
 		<b>Default:</b> 0
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getDamping()
 		*/
 		virtual		void							setDamping(const PxReal damping) = 0;
@@ -317,6 +343,8 @@ namespace physx
 		\brief Gets the damping term acting both on the tendon length and tendon-length limits.
 
 		\return The damping term.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setDamping()
 		*/
@@ -330,6 +358,8 @@ namespace physx
 		\param[in] stiffness The limit stiffness term.
 		<b>Default:</b> 0
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getLimitStiffness()
 		*/
 		virtual		void							setLimitStiffness(const PxReal stiffness) = 0;
@@ -340,6 +370,8 @@ namespace physx
 		For spatial tendons, this parameter applies to all its leaf attachments / sub-tendons.
 
 		\return The limit stiffness term.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setLimitStiffness()
 		*/
@@ -355,6 +387,8 @@ namespace physx
 		\param[in] autowake If true and the articulation is in a scene, the call wakes up the articulation and increases the wake counter
 		to #PxSceneDesc::wakeCounterResetValue if the counter value is below the reset value.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getOffset()
 		*/
 		virtual		void							setOffset(const PxReal offset, bool autowake = true) = 0;
@@ -363,6 +397,8 @@ namespace physx
 		\brief Gets the length offset term for the tendon.
 
 		\return The offset term.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setOffset()
 		*/
@@ -530,6 +566,8 @@ namespace physx
 
 		\param[in] restLength The spring rest length of the tendon.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see getRestLength()
 		*/
 		virtual		void							setRestLength(const PxReal restLength) = 0;
@@ -538,6 +576,8 @@ namespace physx
 		\brief Gets the spring rest length of the tendon.
 
 		\return The spring rest length of the tendon.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see setRestLength()
 		*/
@@ -550,6 +590,8 @@ namespace physx
 
 		The limits, together with the damping and limit stiffness parameters, act on the accumulated length of the tendon.
 
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
+
 		\see PxArticulationTendonLimit getLimitParameters() setRestLength()
 		*/
 		virtual		void							setLimitParameters(const PxArticulationTendonLimit& parameter) = 0;
@@ -559,6 +601,8 @@ namespace physx
 		\brief Gets the low and high limit on the length of the tendon.
 
 		\return Struct with the low and high limit.
+
+		\note This method should not be used after the direct GPU API has been enabled and initialized. See #PxDirectGPUAPI for the details.
 
 		\see PxArticulationTendonLimit setLimitParameters()
 		*/

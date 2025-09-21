@@ -846,7 +846,9 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 #if PX_SUPPORT_GPU_PHYSX
 	else
 	{
-		broadPhase = PxvGetPhysXGpu(true)->createGpuBroadPhase(	mGpuWranglerManagers, mLLContext->getCudaContextManager(),
+		PxGpuBroadPhaseDesc defaultGpuBPDesc;
+		broadPhase = PxvGetPhysXGpu(true)->createGpuBroadPhase(	desc.gpuBroadPhaseDesc ? *desc.gpuBroadPhaseDesc : defaultGpuBPDesc,
+																mGpuWranglerManagers, mLLContext->getCudaContextManager(),
 																desc.gpuComputeVersion, desc.gpuDynamicsConfig,
 																mHeapMemoryAllocationManager, contextID);
 	}

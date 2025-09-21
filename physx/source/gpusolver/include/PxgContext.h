@@ -356,6 +356,8 @@ namespace physx
 		PX_FORCE_INLINE PxU8* getPatchStream(const PxU32 index) { return mPatchStreamAllocators[index]->mStart; }
 		PX_FORCE_INLINE PxU8* getContactStream(const PxU32 index) { return mContactStreamAllocators[index]->mStart; }
 
+		PX_FORCE_INLINE bool enforceConstraintWriteBackToHostCopy() const { return mEnforceConstraintWriteBackToHostCopy; }
+
 		//this method make sure we get PxgSimultionController instead of PxsSimulationController
 		PxgSimulationController*			getSimulationController();
 
@@ -373,6 +375,11 @@ namespace physx
 		virtual void						updatePostPartitioning(	PxBaseTask* lostTouchTask,
 																	PxvNphaseImplementationContext* nphase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt,
 																	const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
+
+		virtual void setActiveBreakableConstraintCount(PxU32 activeBreakableConstraintCount) PX_OVERRIDE
+		{
+			mEnforceConstraintWriteBackToHostCopy = (activeBreakableConstraintCount > 0);
+		}
 
 		//this is the pre-prepare code for block format joints loaded from the non-block format joints
 		void								doConstraintJointBlockPrePrepGPU();
@@ -570,6 +577,10 @@ namespace physx
 
 		const bool								mEnableDirectGPUAPI;
 		bool									mRecomputeArticulationBlockFormat;
+
+		// when Direct GPU API is enabled, the constraint writeback data might have to be copied to host to
+		// support breakable D6 joints
+		bool									mEnforceConstraintWriteBackToHostCopy;
 
 		PxgCpuPreIntegrationTask				mPreIntegrationTask;
 		PxgCpuPrepTask							mPrepTask;

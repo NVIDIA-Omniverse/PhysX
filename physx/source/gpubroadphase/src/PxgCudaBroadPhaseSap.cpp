@@ -92,10 +92,12 @@ using namespace physx;
 
 PX_IMPLEMENT_OUTPUT_ERROR
 
-PxgCudaBroadPhaseSap::PxgCudaBroadPhaseSap(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, const PxGpuDynamicsMemoryConfig& init, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID) :
+PxgCudaBroadPhaseSap::PxgCudaBroadPhaseSap(const PxGpuBroadPhaseDesc& desc, PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, const PxGpuDynamicsMemoryConfig& init, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID) :
 	Bp::BroadPhase						(),
 
 	mContextID							(contextID),
+
+	mDesc								(desc),
 
 	mNumOfBoxes							(0),
 	mUpdateData_CreatedHandleSize		(0),
@@ -345,8 +347,8 @@ void PxgCudaBroadPhaseSap::gpuDMAUp(const Bp::BroadPhaseUpdateData& updateData, 
 	mOrderedActiveRegionHandlesTotalBuf.allocate(totalNbProjectionRegions * sizeof(int), PX_FL);
 	mOrderedStartRegionHandlesTotalBuf.allocate(totalNbProjectionRegions * sizeof(int), PX_FL);
 
-	mOverlapChecksRegionBuf.allocate(64 * mNumOfBoxes * sizeof(int), PX_FL);
-	mBlockOverlapChecksRegionBuf.allocate(PxgBPKernelGridDim::BP_OUTPUT_OVERLAPCHECKS_HISTOGRAM * sizeof(int), PX_FL);
+	mOverlapChecksRegionBuf.allocate(64 * mNumOfBoxes * sizeof(regionOverlapType), PX_FL);
+	mBlockOverlapChecksRegionBuf.allocate(PxgBPKernelGridDim::BP_OUTPUT_OVERLAPCHECKS_HISTOGRAM * sizeof(regionOverlapType), PX_FL);
 	mOverlapChecksHandleRegionBuf.allocate(64 * mNumOfBoxes * sizeof(PxgHandleRegion), PX_FL);
 	mRegionRangeBuf.allocate(mUpdateData_BoxesCapacity * sizeof(PxgIntegerRegion), PX_FL);
 	mStartRegionAccumBuf.allocate(nbProjections * sizeof(int), PX_FL);
@@ -733,13 +735,6 @@ void PxgCudaBroadPhaseSap::initializeSapBoxKernel(const PxU32 numHandles, bool i
 	}
 }
 
-// PT:
-// In:
-//    bpDesc->updateData_fpBounds
-//    bpDesc->updateData_contactDistances
-//    bpDesc->updateData_BoxesCapacity
-// Out:
-//    bpDesc->newIntegerBounds
 void PxgCudaBroadPhaseSap::translateAABBsKernel()
 {
 	PX_PROFILE_ZONE("PxgCudaBroadPhaseSap.translateAABBsKernel", mContextID);
@@ -747,8 +742,24 @@ void PxgCudaBroadPhaseSap::translateAABBsKernel()
 	if(mUpdateData_BoxesCapacity == 0)
 		return;
 
-	CUdeviceptr bpDescd = mBPDescBuf.getDevicePtr();
-	KERNEL_PARAM_TYPE kernelParams[] = { CUDA_KERNEL_PARAM(bpDescd) };
+	const PxBounds3* updateData_fpBounds = reinterpret_cast<PxBounds3*>(mBoxFpBoundsBuf.getDevicePtr());
+	PxgIntegerAABB* newIntegerBounds = reinterpret_cast<PxgIntegerAABB*>(mNewIntegerBoundsBuf.getDevicePtr());
+	const PxReal* updateData_contactDistances = reinterpret_cast<PxReal*>(mBoxContactDistancesBuf.getDevicePtr());
+	const PxU32* updateData_envIDs = reinterpret_cast<PxU32*>(mBoxEnvIDsBuf.getDevicePtr());
+
+	KERNEL_PARAM_TYPE kernelParams[] = {
+		CUDA_KERNEL_PARAM(updateData_fpBounds),
+		CUDA_KERNEL_PARAM(newIntegerBounds),
+		CUDA_KERNEL_PARAM(updateData_contactDistances),
+		CUDA_KERNEL_PARAM(updateData_envIDs),
+		CUDA_KERNEL_PARAM(mUpdateData_BoxesCapacity),
+		CUDA_KERNEL_PARAM(mDesc.gpuBroadPhaseNbBitsShiftX),
+		CUDA_KERNEL_PARAM(mDesc.gpuBroadPhaseNbBitsShiftY),
+		CUDA_KERNEL_PARAM(mDesc.gpuBroadPhaseNbBitsShiftZ),
+		CUDA_KERNEL_PARAM(mDesc.gpuBroadPhaseNbBitsEnvIDX),
+		CUDA_KERNEL_PARAM(mDesc.gpuBroadPhaseNbBitsEnvIDY),
+		CUDA_KERNEL_PARAM(mDesc.gpuBroadPhaseNbBitsEnvIDZ)
+	};
 
 	const PxU32 aabbsPerBlock = PxgBPKernelBlockDim::BP_TRANSLATE_AABBS/8;
 	const PxU32 nbBlocks = (mUpdateData_BoxesCapacity + aabbsPerBlock-1)/aabbsPerBlock;	// PT: do we really need mBoxesCapacity here?
@@ -1023,7 +1034,6 @@ void PxgCudaBroadPhaseSap::updateDescriptor(PxgBroadPhaseDesc& desc)
 	desc.updateData_contactDistances = reinterpret_cast<PxReal*>(mBoxContactDistancesBuf.getDevicePtr());
 	desc.updateData_groups = reinterpret_cast<PxU32*>(mBoxGroupsBuf.getDevicePtr());
 	desc.updateData_envIDs = reinterpret_cast<PxU32*>(mBoxEnvIDsBuf.getDevicePtr());
-	desc.updateData_BoxesCapacity = mUpdateData_BoxesCapacity;
 
 	desc.numPreviousHandles = previousBoxes;
 	//desc.numHandles = mNumOfBoxes;
@@ -1084,8 +1094,8 @@ void PxgCudaBroadPhaseSap::updateDescriptor(PxgBroadPhaseDesc& desc)
 	desc.orderedActiveRegionHandles = reinterpret_cast<PxU32*>(mOrderedActiveRegionHandlesTotalBuf.getDevicePtr());
 	desc.orderedStartRegionHandles = reinterpret_cast<PxU32*>(mOrderedStartRegionHandlesTotalBuf.getDevicePtr());
 
-	desc.blockOverlapChecksRegion = reinterpret_cast<PxU32*>(mBlockOverlapChecksRegionBuf.getDevicePtr());
-	desc.overlapChecksRegion = reinterpret_cast<PxU32*>(mOverlapChecksRegionBuf.getDevicePtr());
+	desc.blockOverlapChecksRegion = reinterpret_cast<regionOverlapType*>(mBlockOverlapChecksRegionBuf.getDevicePtr());
+	desc.overlapChecksRegion = reinterpret_cast<regionOverlapType*>(mOverlapChecksRegionBuf.getDevicePtr());
 	desc.overlapChecksHandleRegiones = reinterpret_cast<PxgHandleRegion*>(mOverlapChecksHandleRegionBuf.getDevicePtr());
 	desc.regionRange = reinterpret_cast<PxgIntegerRegion*>(mRegionRangeBuf.getDevicePtr());
 	desc.startRegionAccum = reinterpret_cast<PxU32*>(mStartRegionAccumBuf.getDevicePtr());

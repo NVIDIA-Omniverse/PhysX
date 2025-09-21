@@ -63,7 +63,7 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 {
 												PX_NOCOPY(PxgCudaBroadPhaseSap)
 	public:
-												PxgCudaBroadPhaseSap(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, const PxGpuDynamicsMemoryConfig& init, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID);
+												PxgCudaBroadPhaseSap(const PxGpuBroadPhaseDesc& desc, PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, const PxGpuDynamicsMemoryConfig& init, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID);
 												~PxgCudaBroadPhaseSap();
 	// Bp::BroadPhase
 	virtual			PxBroadPhaseType::Enum		getType()				const		PX_OVERRIDE	{ return PxBroadPhaseType::eGPU; }
@@ -149,6 +149,8 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 
 					PxU64						mContextID;
 
+					PxGpuBroadPhaseDesc				mDesc;
+
 					// PT: from PxgBroadPhaseSap
 					PxU32							mNumOfBoxes;		//total number of boxes in the scene
 					PxU32							mUpdateData_CreatedHandleSize;
@@ -171,16 +173,16 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 					PxgTypedCudaBuffer<PxU32>       mUpdatedHandlesBuf;
 #endif
 
-					// PT: Description:                         |Comes from:                                |Passed to kernels as:
-					// -----------------------------------------|-------------------------------------------|------------------------------
+					//..................................................................// PT: Description:                         |Comes from:                                |Passed to kernels as:
+					//..................................................................//------------------------------------------|-------------------------------------------|------------------------------
 					PxgTypedCudaBuffer<PxBounds3>           mBoxFpBoundsBuf;            // box bounds in device memory              |BroadPhaseUpdateData::getAABBs()           |updateData_fpBounds
 					PxgTypedCudaBuffer<PxReal>              mBoxContactDistancesBuf;    // contact distances in device memory       |BroadPhaseUpdateData::getContactDistance() |updateData_contactDistances
 					PxgTypedCudaBuffer<PxU32>               mBoxGroupsBuf;              // box groups in device memory              |BroadPhaseUpdateData::getGroups            |updateData_groups
 					PxgTypedCudaBuffer<PxU32>               mBoxEnvIDsBuf;              // box env IDs in device memory             |BroadPhaseUpdateData::getEnvIDs            |updateData_envIDs
-					PxgTypedCudaBuffer<PxgIntegerAABB>      mNewIntegerBoundsBuf;       // integer bounds in device memory          |translateAABBsLaunch kernal                |newIntegerBounds
+					PxgTypedCudaBuffer<PxgIntegerAABB>      mNewIntegerBoundsBuf;       // integer bounds in device memory          |translateAABBsLaunch kernel                |newIntegerBounds
 					PxgTypedCudaBuffer<PxgIntegerAABB>      mOldIntegerBoundsBuf;       // integer bounds in device memory          |-                                          |oldIntegerBounds
 	
-					PxgCudaBufferN<3>           mBoxPtProjectionsBuf;       // integer bounds in device memory          |markCreatedPairsLaunch kernal              |boxProjections
+					PxgCudaBufferN<3>           mBoxPtProjectionsBuf;       // integer bounds in device memory          |markCreatedPairsLaunch kernel              |boxProjections
 					PxgCudaBufferN<3>           mBoxProjectionRanksBuf;
 					PxgCudaBufferN<6>           mBoxPtHandlesBuf;           //double buffer
 					PxgCudaBufferN<3>           mTempBoxPtProjectionBuf;
@@ -206,9 +208,9 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 					PxgTypedCudaBuffer<int>     mOrderedActiveRegionHandlesTotalBuf;
 					PxgTypedCudaBuffer<int>     mOrderedStartRegionHandlesTotalBuf;
 	
-					PxgTypedCudaBuffer<int>     mOverlapChecksRegionBuf;
-					PxgTypedCudaBuffer<int>     mBlockOverlapChecksRegionBuf;
-					PxU32                       mOverlapChecksTotalRegion;
+					PxgTypedCudaBuffer<regionOverlapType>	mOverlapChecksRegionBuf;
+					PxgTypedCudaBuffer<regionOverlapType>	mBlockOverlapChecksRegionBuf;
+					regionOverlapType						mOverlapChecksTotalRegion;
 	
 					PxgTypedCudaBuffer<PxgHandleRegion>  mOverlapChecksHandleRegionBuf;
 	

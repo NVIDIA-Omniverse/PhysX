@@ -489,6 +489,30 @@ PX_FORCE_INLINE PX_CUDA_CALLABLE void applyNeighborhoodOperator(const PxTransfor
 		cB2w.q = -cB2w.q;
 }
 
+static constexpr PxU32 gDriveXDataIndex = 0;
+PX_COMPILE_TIME_ASSERT(gDriveXDataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveYDataIndex = 1;
+PX_COMPILE_TIME_ASSERT(gDriveYDataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveZDataIndex = 2;
+PX_COMPILE_TIME_ASSERT(gDriveZDataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSwingDataIndex = 3;
+PX_COMPILE_TIME_ASSERT(gDriveSwingDataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveTwistDataIndex = 4;
+PX_COMPILE_TIME_ASSERT(gDriveTwistDataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSlerpDataIndex = 5;
+PX_COMPILE_TIME_ASSERT(gDriveSlerpDataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSwing1DataIndex = gDriveSwingDataIndex;  // PxgD6Drive::eSWING1 maps to the data entry of PxgD6Drive::eSWING
+PX_COMPILE_TIME_ASSERT(gDriveSwing1DataIndex < PxgD6JointData::sDriveEntryCapacity);
+
+static constexpr PxU32 gDriveSwing2DataIndex = gDriveSlerpDataIndex;  // PxgD6Drive::eSWING2 maps to the data entry of PxgD6Drive::eSLERP
+PX_COMPILE_TIME_ASSERT(gDriveSwing2DataIndex < PxgD6JointData::sDriveEntryCapacity);
+
 static __device__ PxU32 D6JointSolverPrep(Px1DConstraint* constraints, const PxgD6JointData& data, 
 											const PxTransform& bA2w, const PxTransform& bB2w,
 											bool useExtendedLimits,
@@ -535,11 +559,17 @@ static __device__ PxU32 D6JointSolverPrep(Px1DConstraint* constraints, const Pxg
 		{
 			// -driveVelocity because velTarget is child (body1) - parent (body0) and Jacobian is 1 for body0 and -1 for parent
 			if(driving & (1<<(PxgD6Drive::eX+i)))
-				g.linear(&constraints[constraintCount++], cA2w_m[i], -data.driveLinearVelocity[i], posErr[i], drives[PxgD6Drive::eX+i]); 
+				g.linear(&constraints[constraintCount++], cA2w_m[i], -data.driveLinearVelocity[i], posErr[i], drives[gDriveXDataIndex + i]);
+
+			PX_COMPILE_TIME_ASSERT(gDriveYDataIndex == (gDriveXDataIndex + 1));
+			PX_COMPILE_TIME_ASSERT(gDriveZDataIndex == (gDriveYDataIndex + 1));
+
+			PX_COMPILE_TIME_ASSERT(PxgD6Drive::eY == (PxgD6Drive::eX + 1));
+			PX_COMPILE_TIME_ASSERT(PxgD6Drive::eZ == (PxgD6Drive::eY + 1));
 		}
 	}
 
-	if(driving & ((1<<PxgD6Drive::eSLERP)|(1<<PxgD6Drive::eSWING)|(1<<PxgD6Drive::eTWIST)))
+	if(driving & ((1 << PxgD6Drive::eSLERP) | (1 << PxgD6Drive::eSWING) | (1 << PxgD6Drive::eTWIST) | (1 << PxgD6Drive::eSWING1) | (1 << PxgD6Drive::eSWING2)))
 	{
 		const PxQuat d2cA_q = cB2cA.q.dot(data.drivePosition.q)>0 ? data.drivePosition.q : -data.drivePosition.q; 
 
@@ -552,26 +582,36 @@ static __device__ PxU32 D6JointSolverPrep(Px1DConstraint* constraints, const Pxg
 
 			PxVec3 axis[3] = { PxVec3(1.f,0,0), PxVec3(0,1.f,0), PxVec3(0,0,1.f) };
 				
-			if(drives[PxgD6Drive::eSLERP].stiffness!=0)
+			if (drives[gDriveSlerpDataIndex].stiffness != 0)
 				computeJacobianAxes(axis, cA2w.q * d2cA_q, cB2w.q);	// converges faster if there is only velocity drive
 
 			for(PxU32 i = 0; i < 3; i++)
-				g.angular(&constraints[constraintCount++], axis[i], axis[i].dot(velTarget), -delta.getImaginaryPart()[i], drives[PxgD6Drive::eSLERP], PxConstraintSolveHint::eSLERP_SPRING);
+				g.angular(&constraints[constraintCount++], axis[i], axis[i].dot(velTarget), -delta.getImaginaryPart()[i], drives[gDriveSlerpDataIndex], PxConstraintSolveHint::eSLERP_SPRING);
 		}
 		else 
 		{
 			if(driving & (1<<PxgD6Drive::eTWIST))
-				g.angular(&constraints[constraintCount++], cA2w_m.column0, v.x, -2.0f * delta.x, drives[PxgD6Drive::eTWIST]); 
+				g.angular(&constraints[constraintCount++], cA2w_m.column0, v.x, -2.0f * delta.x, drives[gDriveTwistDataIndex]);
 
 			if(driving & (1<<PxgD6Drive::eSWING))
 			{
 				const PxVec3 err = delta.getBasisVector0();
 
 				if(!(locked & SWING1_FLAG))
-					g.angular(&constraints[constraintCount++], aY, v.y, err.z, drives[PxgD6Drive::eSWING]);
+					g.angular(&constraints[constraintCount++], aY, v.y, err.z, drives[gDriveSwingDataIndex]);
 
 				if(!(locked & SWING2_FLAG))
-					g.angular(&constraints[constraintCount++], aZ, v.z, -err.y, drives[PxgD6Drive::eSWING]);
+					g.angular(&constraints[constraintCount++], aZ, v.z, -err.y, drives[gDriveSwingDataIndex]);
+			}
+			else if (driving & ((1 << PxgD6Drive::eSWING1) | (1 << PxgD6Drive::eSWING2)))
+			{
+				const PxVec3 err = delta.getBasisVector0();
+
+				if (driving & (1 << PxgD6Drive::eSWING1))
+					g.angular(&constraints[constraintCount++], aY, v.y, err.z, drives[gDriveSwing1DataIndex]);
+
+				if (driving & (1 << PxgD6Drive::eSWING2))
+					g.angular(&constraints[constraintCount++], aZ, v.z, -err.y, drives[gDriveSwing2DataIndex]);
 			}
 		}
 	}

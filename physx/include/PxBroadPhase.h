@@ -131,6 +131,77 @@ namespace physx
 	};
 
 	/**
+	\brief Descriptor for the GPU broad-phase.
+
+	This struct contains parameters that are only relevant for the GPU broad-phase.
+
+	\see PxBroadPhaseType::eGPU
+	*/
+	struct PxGpuBroadPhaseDesc
+	{
+		PxGpuBroadPhaseDesc() :
+			gpuBroadPhaseNbBitsShiftX	(4),
+			gpuBroadPhaseNbBitsShiftY	(4),
+			gpuBroadPhaseNbBitsShiftZ	(4),
+			gpuBroadPhaseNbBitsEnvIDX	(0),
+			gpuBroadPhaseNbBitsEnvIDY	(0),
+			gpuBroadPhaseNbBitsEnvIDZ	(0)
+		{
+		}
+
+		// The GPU broadphase encodes bounds as integers, and then right-shifts the data by this amount of bits.
+		// This makes the bounds a bit larger, which avoids losing and recreating overlaps over and over when
+		// two objects are just touching. This effect is similar to what can be achieved with the contact distance
+		// parameter, and the amount by which the bounds are inflated depends on the distance from the bounds to
+		// the origin (as the bounds encoding does not use a regular float-to-integer conversion, but instead a
+		// reinterpretation of the float's bits). The default value in the GPU broadphase has always been 4 bits
+		// but it is safe to use 0 here for more accurate bounds.
+		PxU8	gpuBroadPhaseNbBitsShiftX;	//!< number of bits used for "snap to grid" on the X axis
+		PxU8	gpuBroadPhaseNbBitsShiftY;	//!< number of bits used for "snap to grid" on the Y axis
+		PxU8	gpuBroadPhaseNbBitsShiftZ;	//!< number of bits used for "snap to grid" on the Z axis
+
+		// The bits lost by the previous shifts (gpuBroadPhaseNbBitsShiftXYZ) can be replaced with bits of the
+		// environment IDs. This only makes sense when these parameters are used (see PxActor::setEnvironmentID
+		// and PxAggregate::setEnvironmentID). In this case a number of bits from the environment IDs are stored
+		// in the MSBs of encoded bounds. This has the effect of virtually spreading the bounds over 3D space,
+		// which reduces the number of internal overlaps inside the broad-phase. This is mainly useful in RL
+		// scenarios with "co-located" environments, but it can also provide performance gains with regular grid
+		// configurations, that also generate a lot of internal overlaps on all coordinate axes.
+		//
+		// Beware: when using this feature, each object of each environment should be assigned a proper environment
+		// ID. Objects shared between all environments (i.e. objects whose environment ID is PX_INVALID_U32) will
+		// otherwise be internally assigned bounds that cover the entire 3D space, creating a lot of overlaps and
+		// potential performance issues. This is only a concern when gpuBroadPhaseNbBitsEnvIDX/Y/Z are non zero,
+		// shared objects are fine otherwise.
+		PxU8	gpuBroadPhaseNbBitsEnvIDX;	//!< number of environment ID bits merged with the bounds on the X axis
+		PxU8	gpuBroadPhaseNbBitsEnvIDY;	//!< number of environment ID bits merged with the bounds on the Y axis
+		PxU8	gpuBroadPhaseNbBitsEnvIDZ;	//!< number of environment ID bits merged with the bounds on the Z axis
+
+		PX_INLINE	bool		isValid()	const
+		{
+			// This is used on 32bit data so it makes no sense to shift more than 32 bits.
+			// It also makes no sense to shift all the bits of source data.
+			if(	gpuBroadPhaseNbBitsShiftX > 31
+			||	gpuBroadPhaseNbBitsShiftY > 31
+			||	gpuBroadPhaseNbBitsShiftZ > 31)
+				return false;
+
+			if(	gpuBroadPhaseNbBitsEnvIDX > 31
+			||	gpuBroadPhaseNbBitsEnvIDY > 31
+			||	gpuBroadPhaseNbBitsEnvIDZ > 31)
+				return false;
+
+			// We can only store bits from environment IDs in bits shifted away from the source data.
+			// So we need to drop (shift) at least as many bits of the source data as we need for env IDs.
+			if(	gpuBroadPhaseNbBitsEnvIDX > gpuBroadPhaseNbBitsShiftX
+			||	gpuBroadPhaseNbBitsEnvIDY > gpuBroadPhaseNbBitsShiftY
+			||	gpuBroadPhaseNbBitsEnvIDZ > gpuBroadPhaseNbBitsShiftZ)
+				return false;
+			return true;
+		}
+	};
+
+	/**
 	\brief Broadphase descriptor.
 
 	This structure is used to create a standalone broadphase. It captures all the parameters needed to

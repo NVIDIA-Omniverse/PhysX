@@ -819,7 +819,7 @@ public:
 
 	\param	[in] staticFriction		The coefficient of static friction
 	\param	[in] dynamicFriction	The coefficient of dynamic friction
-	\param	[in] restitution		The coefficient of restitution
+	\param	[in] restitution		The coefficient of restitution (if in range [0,1]) or the spring stiffness for compliant contact (if in range (-PX_MAX_REAL, 0))
 
 	\see PxMaterial
 	*/

@@ -354,10 +354,14 @@ static __device__ void averageLinkImpulsesAndPropagate2(uint2* PX_RESTRICT isSla
 
 				const Cm::UnAlignedSpatialVector Z = loadSpatialVector(linkData.mScratchImpulse, threadIndexInWarp);
 				const Cm::UnAlignedSpatialVector parentScratchImpulse = loadSpatialVector(artiLinks[parent].mScratchImpulse, threadIndexInWarp);
+				const Cm::UnAlignedSpatialVector solverSpatialImpulse = loadSpatialVector(linkData.mSolverSpatialImpulse, threadIndexInWarp);
 
 				const Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW_0(PxVec3(child2Parentx, child2Parenty, child2Parentz),
 					dofData, Z,
 					dofCount, threadIndexInWarp);
+
+				//Accumulate the solver impulses applied to this link.
+				storeSpatialVector(linkData.mSolverSpatialImpulse, solverSpatialImpulse + Z, threadIndexInWarp);
 
 				//KS - we should be able to remove mImpulses once we are 100% certain that we will not have any deferredZ residuals 
 				storeSpatialVector(artiLinks[parent].mScratchImpulse, parentScratchImpulse + propagatedZ, threadIndexInWarp);

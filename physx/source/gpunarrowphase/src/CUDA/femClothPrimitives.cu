@@ -2852,20 +2852,13 @@ __device__ static inline void clothParticleCollision(
 
 		int32_t index = atomicAdd(writer.totalContactCount, 1);
 
-		//first 32 bits for particle system, second 32 bits for particle index
-		const PxU64 compressedParticleIndex = PxEncodeParticleIndex(particleSystemId, particleIndex);
-
-	
-
-
 		//printf("idx %i index %i\n", threadIdx.x, index);
 
-		//first 8 bits for soft body, second 24 bits for tetrahedron index
 		PxU64 pairInd0 = PxEncodeParticleIndex(particleSystemId, particleIndex);
 		PxU32 pairInd1 = PxEncodeClothIndex(clothId, triangleIdx);
 
 		writer.writeContact(index, make_float4(contact.x, contact.y, contact.z, 0.f), make_float4(-n.x, -n.y, -n.z, pen), tBarycentric,
-			pairInd0, pairInd1, compressedParticleIndex);
+			pairInd0, pairInd1, pairInd0);
 	}	
 }
 

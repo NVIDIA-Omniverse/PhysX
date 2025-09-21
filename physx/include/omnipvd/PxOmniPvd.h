@@ -43,7 +43,7 @@ class OmniPvdFileWriteStream;
 //   Minor version version indicates non-breaking changes such as the
 //   addition of a class or attribute on top of those already existing,
 //   hence additive changes.
-#define PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR 2
+#define PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR 3
 #define PX_PHYSICS_OVD_INTEGRATION_VERSION_MINOR 0
 
 #if !PX_DOXYGEN

@@ -49,6 +49,8 @@ namespace physx
 
 		PX_CUDA_CALLABLE PxgD6JointData(){}
 
+		static constexpr PxU32 sDriveEntryCapacity = 6;
+
 		PxgD6Motion::Enum			motion[6];
 		PxgJointLinearLimit			distanceLimit;
 		PxgJointLinearLimitPair		linearLimitX;
@@ -58,7 +60,7 @@ namespace physx
 		PxgJointLimitCone			swingLimit;
 		PxgJointLimitPyramid		pyramidSwingLimit;
 		
-		PxgD6JointDrive				drive[PxgD6Drive::eCOUNT];
+		PxgD6JointDrive				drive[sDriveEntryCapacity];
 
 		PxTransform					drivePosition;
 		PxVec3						driveLinearVelocity;
@@ -82,6 +84,8 @@ namespace physx
 		bool						mUseConeLimit;
 		bool						mUsePyramidLimits;
 
+		PxU8						angularDriveConfig;  // stores the angular drive config (PxD6AngularDriveConfig::Enum)
+
 		//Please don't add fields above this line since the layout must match D6JointData
 
 		// forestall compiler complaints about not being able to generate a constructor
@@ -103,7 +107,8 @@ namespace physx
 			mUseDistanceLimit(false),
 			mUseNewLinearLimits(false),
 			mUseConeLimit(false),
-			mUsePyramidLimits(false)
+			mUsePyramidLimits(false),
+			angularDriveConfig(0)
 		{}
 
 	};

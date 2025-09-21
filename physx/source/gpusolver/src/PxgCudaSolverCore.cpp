@@ -730,6 +730,14 @@ void PxgCudaSolverCore::gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 for
 		if(forceBufferLowerPartSize)
 			mCudaContext->memcpyDtoHAsync(forceBufferPool, mForceBuffer.getDevicePtr(), forceBufferLowerPartSize, mStream2);
 	}
+	else if (mGpuContext->enforceConstraintWriteBackToHostCopy())
+	{
+		if (writeBackSize)
+		{
+			//dma back constraint writeback
+			mCudaContext->memcpyDtoHAsync(reinterpret_cast<void*>(constraintWriteBack), mConstraintWriteBackBuffer.getDevicePtr(), writeBackSize*sizeof(Dy::ConstraintWriteback), mStream2);
+		}
+	}
 
 	if(hasForceThresholds)
 	{

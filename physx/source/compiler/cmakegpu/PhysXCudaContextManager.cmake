@@ -45,17 +45,33 @@ SET(CUDACONTEXTMANAGER_KERNELS
 )
 SOURCE_GROUP("src kernels" FILES ${CUDACONTEXTMANAGER_KERNELS})
 
-SET(CUDACONTEXTMANAGER_SOURCE
-	${LL_SOURCE_DIR}/src/CudaContextManager.cpp
-	${LL_SOURCE_DIR}/src/CudaKernelWrangler.cpp
-)
+IF(PUBLIC_RELEASE)
+    SET(CUDACONTEXTMANAGER_SOURCE
+        ${LL_SOURCE_DIR}/src/CudaContextManager.cpp
+        ${LL_SOURCE_DIR}/src/CudaKernelWrangler.cpp
+    )
 
-SET(CUDACONTEXTMANAGER_SOURCE_HEADERS
-	${LL_SOURCE_DIR}/include/CudaContextManager.h
-	${LL_SOURCE_DIR}/include/CudaKernelWrangler.h
-	${LL_SOURCE_DIR}/include/PhysXDeviceSettings.h
-	${LL_SOURCE_DIR}/include/PxgMemoryTracker.h
-)
+    SET(CUDACONTEXTMANAGER_SOURCE_HEADERS
+        ${LL_SOURCE_DIR}/include/CudaContextManager.h
+        ${LL_SOURCE_DIR}/include/CudaKernelWrangler.h
+        ${LL_SOURCE_DIR}/include/PxgMemoryTracker.h
+        ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include/PhysXDeviceSettings.h
+    )
+ELSE()
+    SET(CUDACONTEXTMANAGER_SOURCE
+        ${LL_SOURCE_DIR}/src/CudaContextManager.cpp
+        ${LL_SOURCE_DIR}/src/CudaKernelWrangler.cpp
+        ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/src/PhysXDeviceSettings.cpp
+    )
+
+    SET(CUDACONTEXTMANAGER_SOURCE_HEADERS
+        ${LL_SOURCE_DIR}/include/CudaContextManager.h
+        ${LL_SOURCE_DIR}/include/CudaKernelWrangler.h
+        ${LL_SOURCE_DIR}/include/PxgMemoryTracker.h
+        ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include/PhysXDevice.h
+        ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include/PhysXDeviceSettings.h
+    )
+ENDIF()
 
 SOURCE_GROUP("src\\src" FILES ${CUDACONTEXTMANAGER_SOURCE} ${CUDACONTEXTMANAGER_SOURCE_HEADERS})
 
@@ -81,6 +97,12 @@ TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager
 	PRIVATE ${PHYSX_SOURCE_DIR}/physxgpu/include
 )
 
+# Add CUDA manager include directory
+IF(PUBLIC_RELEASE)
+    TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
+ELSE()
+    TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include)
+ENDIF()
 
 TARGET_COMPILE_DEFINITIONS(PhysXCudaContextManager
 	PRIVATE ${CUDACONTEXTMANAGER_COMPILE_DEFS}

@@ -89,7 +89,7 @@ class PxsContext : public PxUserAllocated, public PxcNpContext
 {
 												PX_NOCOPY(PxsContext)
 public:
-												PxsContext(	const PxSceneDesc& desc, PxTaskManager*, Cm::FlushPool&, PxCudaContextManager*, PxU32 poolSlabSize, PxU64 contextID);
+												PxsContext(const PxSceneDesc& desc, PxTaskManager*, Cm::FlushPool&, PxCudaContextManager*, PxU32 poolSlabSize, PxU64 contextID);
 												~PxsContext();
 
 					void						createTransformCache(PxVirtualAllocatorCallback& allocatorCallback);

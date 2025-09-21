@@ -40,6 +40,7 @@ namespace physx
 class PxSphereGeometry;
 class PxCapsuleGeometry;
 class PxBoxGeometry;
+class PxConvexCoreGeometry;
 class PxConvexMeshGeometry;
 class PxContactBuffer;
 class PxConvexMesh;
@@ -70,8 +71,8 @@ public:
 		*/
 		SphereSupport(const PxSphereGeometry& geom);
 
-		virtual PxReal getMargin() const;
-		virtual PxVec3 supportLocal(const PxVec3& dir) const;
+		virtual PxReal getMargin() const PX_OVERRIDE PX_FINAL;
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE PX_FINAL;
 	};
 
 	/**
@@ -94,8 +95,8 @@ public:
 		*/
 		CapsuleSupport(const PxCapsuleGeometry& geom);
 
-		virtual PxReal getMargin() const;
-		virtual PxVec3 supportLocal(const PxVec3& dir) const;
+		virtual PxReal getMargin() const PX_OVERRIDE PX_FINAL;
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE PX_FINAL;
 	};
 
 	/**
@@ -119,8 +120,28 @@ public:
 		*/
 		BoxSupport(const PxBoxGeometry& box, PxReal margin = 0);
 
-		virtual PxReal getMargin() const;
-		virtual PxVec3 supportLocal(const PxVec3& dir) const;
+		virtual PxReal getMargin() const PX_OVERRIDE PX_FINAL;
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE PX_FINAL;
+	};
+
+	/**
+	\brief Pre-made support mapping for a convex core
+	*/
+	struct ConvexCoreSupport : PxGjkQuery::Support
+	{
+		PxU64 shapeData[10];
+
+		/**
+		\brief Default constructor
+		*/
+		ConvexCoreSupport();
+		/**
+		\brief Constructs a ConvexCoreSupport for a PxConvexCoreGeometry
+		*/
+		ConvexCoreSupport(const PxConvexCoreGeometry& geom, PxReal margin = 0);
+
+		virtual PxReal getMargin() const PX_OVERRIDE PX_FINAL;
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE PX_FINAL;
 	};
 
 	/**
@@ -146,8 +167,8 @@ public:
 		*/
 		ConvexMeshSupport(const PxConvexMeshGeometry& convexMesh, PxReal margin = 0);
 
-		virtual PxReal getMargin() const;
-		virtual PxVec3 supportLocal(const PxVec3& dir) const;
+		virtual PxReal getMargin() const PX_OVERRIDE PX_FINAL;
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE PX_FINAL;
 	};
 
 	/**
@@ -173,8 +194,8 @@ public:
 		*/
 		bool isValid() const;
 
-		virtual PxReal getMargin() const;
-		virtual PxVec3 supportLocal(const PxVec3& dir) const;
+		virtual PxReal getMargin() const PX_OVERRIDE PX_FINAL;
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE PX_FINAL;
 
 	private:
 		PxGeometryType::Enum mType;
@@ -183,6 +204,7 @@ public:
 			PxU8 sphere[sizeof(SphereSupport)];
 			PxU8 capsule[sizeof(CapsuleSupport)];
 			PxU8 box[sizeof(BoxSupport)];
+			PxU8 convexCore[sizeof(ConvexCoreSupport)];
 			PxU8 convexMesh[sizeof(ConvexMeshSupport)];
 		} mSupport;
 	};

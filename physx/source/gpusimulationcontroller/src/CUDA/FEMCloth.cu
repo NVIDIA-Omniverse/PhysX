@@ -56,7 +56,8 @@ void cloth_preIntegrateLaunch(
 	bool externalForcesEveryTgsIterationEnabled,
 	bool adaptiveCollisionPairUpdate, 
 	PxU8* updateContactPairs,
-	PxU32* totalFemContactCounts)
+	PxU32* VTContactCounts,
+	PxU32* EEContactCounts)
 {
 	const PxU32 id = activeIds[blockIdx.y];
 	PxgFEMCloth& femCloth = femCloths[id];
@@ -84,7 +85,8 @@ void cloth_preIntegrateLaunch(
 			// Reset cloth contact counts if adaptive updates are not used.
 			if (!adaptiveCollisionPairUpdate)
 			{
-				*totalFemContactCounts = 0;
+				*VTContactCounts = 0;
+				*EEContactCounts = 0;
 			}
 
 			// For TGS, updateContactPairs is updated in "cloth_stepLaunch"
@@ -110,12 +112,8 @@ void cloth_preIntegrateLaunch(
 			vel = vel * damping;
 		}
 
-		// Max velocity clamping
-		const PxReal maxVel = femCloth.mMaxLinearVelocity;
-		const PxReal velMagSq = vel.magnitudeSquared();
-
-		vel = (maxVel != PX_MAX_REAL && maxVel * maxVel < velMagSq) ? maxVel / PxSqrt(velMagSq) * vel : vel;
-		maxMagVelSq = vel.magnitudeSquared();
+		// If externalForcesEveryTgsIterationEnabled is true, also include the effect of gravity to make the bound more conservative.
+		maxMagVelSq = externalForcesEveryTgsIterationEnabled ? (vel + gravity * dt).magnitudeSquared() : vel.magnitudeSquared();
 
 		if(isTGS)
 		{
@@ -124,8 +122,16 @@ void cloth_preIntegrateLaunch(
 		}
 		else
 		{
-			float4* PX_RESTRICT prevPositions = femCloth.mPrevPosition_InvMass;
-			prevPositions[globalThreadIndex] = tPos;
+			// Determine maximum allowed displacement for a vertex - PGS:
+			// - If maxVel == MAX_REAL: no limit on displacement.
+			// - If maxVel < 0.0f: the maximum displacement is clamped to 0.8 * restDistance.
+			// - Otherwise: maximum displacement is based on the input maxVelocity and time step.
+			const PxReal maxVel = (femCloth.mMaxLinearVelocity == PX_MAX_REAL) ? PX_MAX_REAL
+								  : (femCloth.mMaxLinearVelocity < 0.0f)	   ? (0.8f * femCloth.mRestDistance / dt)
+																			   : femCloth.mMaxLinearVelocity;
+
+			const PxReal velMagSq = vel.magnitudeSquared();
+			vel = (maxVel != PX_MAX_REAL && maxVel * maxVel < velMagSq) ? maxVel / PxSqrt(velMagSq) * vel : vel;
 
 			const PxVec3 delta = vel * dt;
 
@@ -135,10 +141,12 @@ void cloth_preIntegrateLaunch(
 			PxVec3 oldPos(tPos.x, tPos.y, tPos.z);
 			PxVec3 pos = oldPos + delta;
 			positions[globalThreadIndex] = make_float4(pos.x, pos.y, pos.z, tPos.w);
+
+			femCloth.mPrevPositionInContactOffset[globalThreadIndex] = make_float4(pos.x, pos.y, pos.z, 1.0f);
 		}
 	}
 
-	// Query the maximum velocity and speculativeCCDContactOffset per cloth.
+	// Query maximum velocity and speculativeCCDContactOffset per cloth.
 	if(adaptiveCollisionPairUpdate)
 	{
 		if(warpIndex == 0) // Initialize shared memory to prevent reading garbage values.
@@ -157,9 +165,7 @@ void cloth_preIntegrateLaunch(
 
 			if (threadIdxInWarp == 0)
 			{
-				// If externalForcesEveryTgsIterationEnabled is true, also include the effect of gravity to make the bound more conservative.
-				maxMagInBlock = externalForcesEveryTgsIterationEnabled ? (PxSqrt(maxMagInBlock) + gravity.magnitude()) * dt
-																	   : PxSqrt(maxMagInBlock) * dt;
+				maxMagInBlock = PxSqrt(maxMagInBlock) * dt;
 				AtomicMax(&speculativeCCDContactOffset[id], maxMagInBlock);
 			}
 		}
@@ -173,9 +179,21 @@ void cloth_stepLaunch(
 	PxReal dt,
 	PxVec3 gravity,
 	bool externalForcesEveryTgsIterationEnabled,
+	bool adaptiveCollisionPairUpdate,
 	bool forceUpdateClothContactPairs,
-	PxU8* updateContactPairs)
+	PxU8* updateContactPairs,
+	PxU32* VTContactCount,
+	PxU32* EEContactCount)
 {
+	__shared__ PxU8 hasInvalidContacts; // Shared flag to check invalid contacts
+
+	if(threadIdx.x == 0)
+	{
+		hasInvalidContacts = 0;
+	}
+
+	__syncthreads();
+
 	const PxU32 id = activeId[blockIdx.y];
 	const PxgFEMCloth& femCloth = femCloths[id];
 
@@ -183,26 +201,44 @@ void cloth_stepLaunch(
 
 	float4* PX_RESTRICT velocities = femCloth.mVelocity_InvMass;
 	float4* PX_RESTRICT positions = femCloth.mPosition_InvMass;
-	float4* PX_RESTRICT prevPositions = femCloth.mPrevPosition_InvMass;
 	float4* PX_RESTRICT posDelta = femCloth.mAccumulatedDeltaPos;
+
+	float4* PX_RESTRICT prevPositionsInContactOffset = femCloth.mPrevPositionInContactOffset;
+	float4* PX_RESTRICT prevPositionsInRestOffset = femCloth.mPrevPositionInRestOffset;
 
 	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (globalThreadIndex == 0 && blockIdx.y == 0)
+	if(!adaptiveCollisionPairUpdate && globalThreadIndex == 0 && blockIdx.y == 0)
 	{
 		*updateContactPairs = static_cast<PxU8>(forceUpdateClothContactPairs);
+
+		if(forceUpdateClothContactPairs)
+		{
+			// Reset the contact count.
+			*VTContactCount = 0;
+			*EEContactCount = 0;
+		}
 	}
 
+	PxU8 invalidContact = 0; // Local flag for each thread
 	if(globalThreadIndex < nbVerts)
 	{
-		float4 tPos = positions[globalThreadIndex];
-		float4 tVel = velocities[globalThreadIndex];
-		PxVec3 vel = PxVec3(tVel.x, tVel.y, tVel.z);
-		PxVec3 oldPos(tPos.x, tPos.y, tPos.z);
+		const float4 tPos = positions[globalThreadIndex];
+		const float4 tVel = velocities[globalThreadIndex];
+		const float4 tAccumDelta = posDelta[globalThreadIndex];
 
-		if (externalForcesEveryTgsIterationEnabled)
+		const float4 prevPosInContactOffset4 = prevPositionsInContactOffset[globalThreadIndex];
+
+		PxReal isPrevPosSet;
+		PxVec3 prevPosInContactOffset = PxLoad3(prevPosInContactOffset4, isPrevPosSet);
+
+		PxVec3 vel(tVel.x, tVel.y, tVel.z);
+		PxVec3 pos(tPos.x, tPos.y, tPos.z);
+		PxVec3 accumDelta(tAccumDelta.x, tAccumDelta.y, tAccumDelta.z);
+
+		if(externalForcesEveryTgsIterationEnabled)
 		{
-			if (tPos.w != 0.f) 
+			if(tPos.w != 0.f)
 			{
 				if(!(femCloth.mActorFlags & PxActorFlag::eDISABLE_GRAVITY))
 				{
@@ -213,92 +249,87 @@ void cloth_stepLaunch(
 
 				vel *= damping;
 			}
-
-			// Max velocity clamping
-			const PxReal maxVel = femCloth.mMaxLinearVelocity;
-			const PxReal velMagSq = vel.magnitudeSquared();
-			vel = (maxVel != PX_MAX_REAL && maxVel * maxVel < velMagSq) ? maxVel / PxSqrt(velMagSq) * vel : vel;
-
-			velocities[globalThreadIndex] = make_float4(vel.x, vel.y, vel.z, tVel.w);
 		}
 
 		PxVec3 delta = vel * dt;
-		PxVec3 pos = oldPos + delta;
+		pos += delta;
+		accumDelta += delta;
 
-		prevPositions[globalThreadIndex] = tPos;
-		positions[globalThreadIndex] = make_float4(pos.x, pos.y, pos.z, tPos.w);
-		posDelta[globalThreadIndex] += make_float4(delta.x, delta.y, delta.z, 0.f);
+		// Determine maximum allowed displacement for a vertex - TGS:
+		// - If maxVel == PX_MAX_REAL: no limit on displacement.
+		// - If maxVel < 0.0f: clamp to 80% of rest distance.
+		// - Otherwise: maximum displacement is based on the input maxVelocity and time step.
+
+		if(femCloth.mMaxLinearVelocity < PX_MAX_REAL)
+		{
+			const PxReal invDt = 1.0f / dt;
+			const PxVec3 prevPosInRestOffset = PxLoad3(prevPositionsInRestOffset[globalThreadIndex]);
+
+			const PxReal maxDistance = (femCloth.mMaxLinearVelocity < 0.0f) ? 0.8f * femCloth.mRestDistance : femCloth.mMaxLinearVelocity * dt;
+			const PxReal maxDistanceSq = maxDistance * maxDistance;
+
+			const PxVec3 trajectory = pos - prevPosInRestOffset;
+			const PxReal displacementSq = trajectory.magnitudeSquared();
+
+			// Clamp trajectories.
+			if(isPrevPosSet == 1.0f && displacementSq > maxDistanceSq)
+			{
+				PxReal correctionScale = PxSqrt(maxDistanceSq / displacementSq);
+				PxVec3 correction = (correctionScale - 1.0f) * trajectory;
+
+				pos += correction;
+				accumDelta += correction;
+
+				correction *= invDt;
+				vel += correction;
+			}
+		}
+
+		float4 pos4 = make_float4(pos.x, pos.y, pos.z, tPos.w);
+
+		positions[globalThreadIndex] = pos4;
+		velocities[globalThreadIndex] = make_float4(vel.x, vel.y, vel.z, tVel.w);
+		posDelta[globalThreadIndex] = make_float4(accumDelta.x, accumDelta.y, accumDelta.z, tAccumDelta.w);
+
+		prevPositionsInRestOffset[globalThreadIndex] = pos4;
+		if(forceUpdateClothContactPairs)
+		{
+			pos4.w = 1.0f; // Mark prevPos as set.
+			prevPositionsInContactOffset[globalThreadIndex] = pos4;
+		}
+
+		// Check the validity of cloth contacts. If invalid, new contact pairs will be generated.
+		if(adaptiveCollisionPairUpdate)
+		{
+			if(isPrevPosSet == 1.0f) // prevPosInContactOffset is already set; process accordingly.
+			{
+				const PxReal deltaSq = (pos - prevPosInContactOffset).magnitudeSquared();
+				if(deltaSq > femCloth.mOriginalContactOffset * femCloth.mOriginalContactOffset) // A vertex has moved beyond the contact
+																								// offset. New contact pairs must be
+																								// generated.
+				{
+					invalidContact = 1;
+				}
+			}
+			else // prevPosInContactOffset is uninitialized. This is the first contact query in the simulation.
+			{
+				invalidContact = 1;
+			}
+		}
 	}
-}
 
-extern "C" __global__ 
-void cloth_rewindLaunch(
-	const PxgFEMCloth* PX_RESTRICT femCloths, 
-	const PxU32* activeId)
-{
-	const PxU32 id = activeId[blockIdx.y];
-	const PxgFEMCloth& femCloth = femCloths[id];
+	__syncthreads();
 
-	const PxU32 nbVerts = femCloth.mNbVerts;
-
-	const float4* PX_RESTRICT const prevPositions = femCloth.mPrevPosition_InvMass;
-	float4* PX_RESTRICT positions = femCloth.mPosition_InvMass;
-	float4* PX_RESTRICT accumDelta = femCloth.mAccumulatedDeltaPos;
-
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
-
-	if(globalThreadIndex < nbVerts)
+	if(invalidContact == 1)
 	{
-		const float4 curPos = positions[globalThreadIndex];
-		if(curPos.w == 0.0f)
-			return;
-
-		const float4 prevPos = prevPositions[globalThreadIndex];
-		const float4 deltaPos = curPos - prevPos;
-
-		// Rewind accumulated delta
-		accumDelta[globalThreadIndex] -= deltaPos;
-
-		// Rewind position
-		positions[globalThreadIndex] = prevPos;
+		hasInvalidContacts = 1;
 	}
-}
 
-extern "C" __global__
-void cloth_subStepLaunch(
-	const PxgFEMCloth* PX_RESTRICT femCloths,
-	const PxU32* activeId,
-	const PxReal nbCollisionSubstepsInv,
-	const PxReal dt)
-{
-	const PxU32 id = activeId[blockIdx.y];
-	const PxgFEMCloth& femCloth = femCloths[id];
+	__syncthreads();
 
-	const PxU32 nbVerts = femCloth.mNbVerts;
-
-	float4* PX_RESTRICT velocities = femCloth.mVelocity_InvMass;
-	float4* PX_RESTRICT positions = femCloth.mPosition_InvMass;
-	float4* PX_RESTRICT posDelta = femCloth.mAccumulatedDeltaPos;
-
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
-
-	if(globalThreadIndex < nbVerts)
+	if(adaptiveCollisionPairUpdate && hasInvalidContacts == 1 && threadIdx.x == 0)
 	{
-		const float4 curPos = positions[globalThreadIndex];
-
-		if(curPos.w == 0.0f)
-			return;
-
-		float4 vel = velocities[globalThreadIndex];
-		vel.w = 0.0f;
-
-		const float4 deltaPos = (nbCollisionSubstepsInv * vel) * dt;
-
-		// Accumulate delta
-		posDelta[globalThreadIndex] += deltaPos;
-
-		// Advance position
-		positions[globalThreadIndex] = curPos + deltaPos;
+		*updateContactPairs = 1; // Contact pairs may be invalid and need updating.
 	}
 }
 
@@ -485,7 +516,6 @@ void cloth_refitBoundLaunch(
 			resBound[idx] = value;
 		}
 	}
-
 }
 
 extern "C" __global__ 
@@ -568,15 +598,6 @@ void cloth_averageTrianglePairVertsLaunch(
 				float4 vel = velocities[groupThreadIdx] + delta * invDt;
 				float4 accumDelta = accumulatedDeltaPos[groupThreadIdx] + delta;
 
-				// Max velocity clamping
-				const PxReal maxVel = shFEMCloth.mMaxLinearVelocity;
-				if (maxVel != PX_MAX_REAL)
-				{
-					const PxReal dt = 1.0f / invDt;
-					const float4 prevPos = shFEMCloth.mPrevPosition_InvMass[groupThreadIdx];
-					velocityClamping(pos, vel, accumDelta, maxVel, dt, prevPos);
-				}
-
 				positions[groupThreadIdx] = pos;
 				velocities[groupThreadIdx] = vel;
 				accumulatedDeltaPos[groupThreadIdx] = accumDelta;
@@ -631,20 +652,6 @@ static __device__ inline void updateNonSharedTriangle(PxgFEMCloth& shFEMCloth,
 	accumDelta0 += delta0;
 	accumDelta1 += delta1;
 	accumDelta2 += delta2;
-
-	// Max velocity clamping
-	const PxReal maxVel = shFEMCloth.mMaxLinearVelocity;
-	if (maxVel != PX_MAX_REAL)
-	{
-		const float4 prevPos0 = shFEMCloth.mPrevPosition_InvMass[vertexIndex.x];
-		velocityClamping(x0, vel0, accumDelta0, maxVel, dt, prevPos0);
-
-		const float4 prevPos1 = shFEMCloth.mPrevPosition_InvMass[vertexIndex.y];
-		velocityClamping(x1, vel1, accumDelta1, maxVel, dt, prevPos1);
-
-		const float4 prevPos2 = shFEMCloth.mPrevPosition_InvMass[vertexIndex.z];
-		velocityClamping(x2, vel2, accumDelta2, maxVel, dt, prevPos2);
-	}
 
 	positions[vertexIndex.x] = x0;
 	positions[vertexIndex.y] = x1;
@@ -766,7 +773,7 @@ static __device__ inline void updateTrianglePairs(PxgFEMCloth& shFEMCloth, const
 	uint4 vertexIndex;
 	PxU32 nbTrianglePairs;
 
-	if (isShared)
+	if(isShared)
 	{
 		writeIndices = shFEMCloth.mSharedTriPairRemapOutputCP;
 		triPairAccumulatedCopies = shFEMCloth.mSharedTriPairAccumulatedCopiesCP;
@@ -1225,7 +1232,7 @@ void cloth_finalizeVelocitiesLaunch(
 	const PxReal dt,
 	const bool alwaysRunVelocityAveraging)
 {
-	__shared__ bool isAwake[PxgFEMClothKernelBlockDim::CLOTH_STEP/32];
+	__shared__ bool isAwake[PxgFEMClothKernelBlockDim::CLOTH_STEP / 32];
 	const PxU32 id = activeId[blockIdx.y];
 	PxgFEMCloth& femCloth = femCloths[id];
 
@@ -1233,40 +1240,30 @@ void cloth_finalizeVelocitiesLaunch(
 
 	float4* PX_RESTRICT vels = femCloth.mVelocity_InvMass;
 	float4* PX_RESTRICT posDelta = femCloth.mAccumulatedDeltaPos;
-	float4* PX_RESTRICT prevPosDelta = femCloth.mPrevAccumulatedDeltaPos;
 	float4* PX_RESTRICT positions = femCloth.mPosition_InvMass;
+	const PxReal sleepDamping = 1.f - PxMin(1.f, femCloth.mSettlingDamping * dt);
 
-	const PxReal sleepDamping = 1.f - PxMin(1.f, femCloth.mSettlingDamping*dt);
-
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x*blockIdx.x;
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
 
 	bool awake = false;
 
 	if(globalThreadIndex < nbVerts)
 	{
-		const PxReal settleTolerance = femCloth.mSettlingThreshold*dt;
-		const PxReal tolerance = femCloth.mSleepThreshold*dt;
-		const PxReal sleepDamping = 1.f - PxMin(1.f, femCloth.mSettlingDamping*dt);
+		const PxReal settleTolerance = femCloth.mSettlingThreshold * dt;
+		const PxReal tolerance = femCloth.mSleepThreshold * dt;
+		const PxReal sleepDamping = 1.f - PxMin(1.f, femCloth.mSettlingDamping * dt);
 
 		const float4 delta = posDelta[globalThreadIndex];
 		PxVec3 tDelta = PxLoad3(delta);
 		PxVec3 deltaVel = tDelta / dt;
 		float4 pos = positions[globalThreadIndex];
 
-		float4 prevDelta = prevPosDelta[globalThreadIndex];
-
-		// After updating collision pairs, vertex movement is delta - prevDelta.
-		// To maintain this difference as delta resets to zero in the next step, prevDelta is adjusted accordingly.
-		prevDelta -= delta;
-		prevDelta.w = 1.0f; // Mark prevDelta as set.
-		prevPosDelta[globalThreadIndex] = prevDelta;
-
-		if (pos.w != 0.0f) // skip kinematic and  infinite mass particles
+		if(pos.w != 0.0f) // skip kinematic and  infinite mass particles
 		{
 			PxReal velocityScaling = 1.0f;
 
 			const PxReal magSq = tDelta.magnitudeSquared();
-			if (magSq < settleTolerance*settleTolerance)
+			if(magSq < settleTolerance * settleTolerance)
 			{
 				awake = magSq >= tolerance * tolerance;
 
@@ -1277,14 +1274,14 @@ void cloth_finalizeVelocitiesLaunch(
 				awake = true;
 			}
 
-			if (alwaysRunVelocityAveraging || velocityScaling != 1.0f)
+			if(alwaysRunVelocityAveraging || velocityScaling != 1.0f)
 			{
 				float4 vel = vels[globalThreadIndex];
 				PxVec3 tVel = PxLoad3(vel);
 
 				PxReal deltaVelMagSqr = deltaVel.magnitudeSquared();
 				PxReal velMagSqr = tVel.magnitudeSquared();
-				if (alwaysRunVelocityAveraging && deltaVelMagSqr < tVel.magnitudeSquared())
+				if(alwaysRunVelocityAveraging && deltaVelMagSqr < tVel.magnitudeSquared())
 				{
 					tVel = tVel * PxSqrt(deltaVelMagSqr / velMagSqr);
 				}
@@ -1296,17 +1293,17 @@ void cloth_finalizeVelocitiesLaunch(
 
 	awake = __any_sync(FULL_MASK, awake);
 
-	if ((threadIdx.x & 31) == 0)
+	if((threadIdx.x & 31) == 0)
 		isAwake[threadIdx.x / 32] = awake;
 
 	__syncthreads();
 
-	if (threadIdx.x < 32)
+	if(threadIdx.x < 32)
 	{
 		awake = isAwake[threadIdx.x];
 		awake = __any_sync(FULL_MASK, awake);
 
-		if (awake)
+		if(awake)
 		{
 			atomicOr(&femCloth.mIsActive, 1u);
 		}

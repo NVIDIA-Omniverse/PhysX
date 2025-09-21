@@ -326,7 +326,7 @@ struct PxArticulationDriveType
 	{
 		eFORCE = 0,			//!< The output of the implicit spring drive controller is a force/torque.
 		eACCELERATION = 1,	//!< The output of the implicit spring drive controller is a joint acceleration (use this to get (spatial)-inertia-invariant behavior of the drive).
-		eNONE = 4
+		eNONE = 2
 	};
 };
 
@@ -366,6 +366,66 @@ struct PxArticulationLimit
 	PxReal high;
 };
 
+/**
+\brief Data structure to enforce static model of a DC motor.
+
+Performance envelope is composed of 2 constraints:
+1. effort-velocity curve: |Effort| <= maxEffort - velDependentResistance * |jointVelocity|
+2. velocity-effort curve: |JointVelocity| <= maxActuatorVelocity - speedEffortGradient * |Effort|
+where Effort refers to the sum of the articulation cache effort to the joint and the drive effort.
+*/
+struct PxPerformanceEnvelope
+{
+	
+	// PX_SERIALIZATION
+	PxPerformanceEnvelope(const PxEMPTY&){}
+	// ~PX_SERIALIZATION
+
+	PxPerformanceEnvelope(
+        PxReal maxEffort_ = 0.0f,
+        PxReal maxActuatorVelocity_ = 0.0f,
+        PxReal velocityDependentResistance_ = 0.0f,
+        PxReal speedEffortGradient_ = 0.0f
+    ) : maxEffort(maxEffort_),
+        maxActuatorVelocity(maxActuatorVelocity_),
+        velocityDependentResistance(velocityDependentResistance_),
+        speedEffortGradient(speedEffortGradient_)
+    {}
+
+    /**
+     \brief Max effort the actuator can produce at zero velocity. For linear actuators, effort refers to force; for rotational actuators, effort refers to torque.
+     
+    <b>Range:</b> [0, PX_MAX_F32]
+    <b>Default:</b> 0.0f
+    */
+    PxReal maxEffort;
+
+    /**
+    \brief The maximum velocity of the actuator at zero effort.
+    
+    <b>Range:</b> [0, PX_MAX_F32]
+    <b>Default:</b> 0.0f
+    */
+    PxReal maxActuatorVelocity;
+
+    /**
+    \brief The rate at which available effort decreases as velocity increases.
+    
+    This represents the slope of the effort-velocity curve.
+    <b>Range:</b> [0, PX_MAX_F32]
+    <b>Default:</b> 0.0f
+    */
+    PxReal velocityDependentResistance;
+
+    /**
+    \brief The rate at which maximum velocity decreases as effort increases.
+    
+    This represents the inverse slope of the velocity-effort curve.
+    <b>Range:</b> [0, PX_MAX_F32]
+    <b>Default:</b> 0.0f
+    */
+    PxReal speedEffortGradient;
+};
 
 /**
 \brief Data structure to store friction parameters.
@@ -415,14 +475,31 @@ struct PxJointFrictionParams
 */
 struct PxArticulationDrive
 {
-	PxArticulationDrive(){}
+	// PX_SERIALIZATION
+	PxArticulationDrive(const PxEMPTY&): envelope(PxEmpty) {}
+	//~PX_SERIALIZATION
 
-	PxArticulationDrive(const PxReal stiffness_, const PxReal damping_, const PxReal maxForce_, PxArticulationDriveType::Enum driveType_=PxArticulationDriveType::eFORCE)
+	PxArticulationDrive() {}
+
+	PxArticulationDrive(const PxReal stiffness_, const PxReal damping_, const PxReal maxForce_,
+						PxArticulationDriveType::Enum driveType_ = PxArticulationDriveType::eFORCE)
 	{
 		stiffness = stiffness_;
 		damping = damping_;
 		maxForce = maxForce_;
 		driveType = driveType_;
+		envelope = PxPerformanceEnvelope(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+
+	PxArticulationDrive(const PxReal stiffness_, const PxReal damping_,
+						const PxPerformanceEnvelope envelope_,
+						PxArticulationDriveType::Enum driveType_ = PxArticulationDriveType::eFORCE)
+	{
+		stiffness = stiffness_;
+		damping = damping_;
+		driveType = driveType_;
+		envelope = envelope_;
+		maxForce = 0.0f;
 	}
 	
 	/**
@@ -452,6 +529,7 @@ struct PxArticulationDrive
 	PxReal damping;
 	
 	/**
+	\deprecated Will be removed in a future version
 	\brief The drive force limit.
 
 	- The limit is enforced regardless of the drive type #PxArticulationDriveType.
@@ -463,6 +541,17 @@ struct PxArticulationDrive
 	\see PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES
 	*/
 	PxReal maxForce;
+
+	/**
+	\brief The performance envelope of a motor.
+	
+	When an envelope with a non-zero maxEffort is explicitly set (via constructor or otherwise), the envelope takes precedence over maxForce.
+ 	In such cases, the joint force is clamped according to the performance envelope. If the default envelope (with zero maxEffort) is used,
+	clamping is instead based on the maxForce parameter and the PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES flag.
+
+	\see PxPerformanceEnvelope
+	*/
+	PxPerformanceEnvelope envelope;
 	
 	/**
 	\brief The drive type.

@@ -488,9 +488,16 @@ namespace physx
 		PxReal						mHighImpulse[32];
 		PxReal						mLowImpulse[32];
 		PxReal						mMaxJointVelocity[32];
-		PxReal						mConstraintMaxForce[32];
+		
+		// drive 
+		PxReal						mDriveImpulse[32];
+		PxReal						mConstraintMaxImpulse[32];
 		PxReal						mMaxForce[32];
 		PxU32						mDriveType[32];
+		PxReal						mMaxEffort[32];
+		PxReal						mMaxActuatorVelocity[32];
+		PxReal						mVelocityDependentResistance[32];
+		PxReal						mSpeedEffortGradient[32];
 
 		PxReal						mDriveTargetPos[32];
 		PxReal						mArmature[32];
@@ -501,7 +508,6 @@ namespace physx
 		float						mDamping[32];
 		float						mDriveTargetVel[32];
 		float						mTargetPosBias[32];
-		PxReal						mDriveForce[32];
 
 		PxReal						mAccumulatedFrictionImpulse[32];
 

@@ -79,7 +79,6 @@ __device__ void computeTriangleBound2(const uint4* const PX_RESTRICT triIndices,
 	triangleBound = triBoundingBox(worldV0, worldV1, worldV2);
 }
 
-
 struct TriangleLeafBoundMinMaxTraverser
 {
 	femMidphaseScratch* PX_RESTRICT s_warpScratch;
@@ -658,196 +657,91 @@ void cloth_clothMidphaseGeneratePairsLaunch(
 		);
 }
 
-
-template<unsigned int WarpsPerBlock>
-__device__ static inline void cloth_selfCollisionMidphaseCore(
-	const PxU32* activeClothes,
-	const PxReal* PX_RESTRICT contactDistance,
-	const PxgFEMCloth* PX_RESTRICT clothes,
-	const PxU32 stackSizeBytes,
-	PxU8* PX_RESTRICT stackPtr,									//output
-	PxU32* PX_RESTRICT midphasePairsNum,						//output
-
-	femMidphaseScratch*	s_warpScratch
-)
+// Computes the squared distance between a vertex and a triangle in rest pose.
+// Approximates rest distances using vertex distances for better performance.
+__device__ PxReal distSqInRestPose(const float4* PX_RESTRICT restVerts, const float4* PX_RESTRICT restVertexBuffer, PxU32 restVertexIndex,
+								   const uint4 triIndex)
 {
-	const PxU32 cmIdx = blockIdx.y;
-
-	const PxU32 clothId = activeClothes[cmIdx];
-
-	const PxgFEMCloth* cloth = &clothes[clothId];
-
-	if (cloth->mBodyFlags & PxDeformableBodyFlag::eDISABLE_SELF_COLLISION)
-		return;
-
-	const PxU32 numTriangles = cloth->mNbTriangles;
-
-	//each block deal with one pair
-	//if (cmIdx < numTets)
+	if(!restVerts)
 	{
-
-		const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x*blockDim.y;
-
-		const PxU32 idx = threadIdx.x;
-
-		if (idx == 0)
-		{
-			s_warpScratch->meshVerts = cloth->mPosition_InvMass;
-			s_warpScratch->meshVertsIndices = cloth->mTriangleVertexIndices;
-			//s_warpScratch->tetmeshTetSurfaceHint[idx] = softbody->mTetMeshSurfaceHint;
-
-			PxU8* trimeshGeomPtr = reinterpret_cast<PxU8 *>(cloth->mTriMeshData);
-
-			//const uint4 nbVerts_nbTets_maxDepth_nbBv32TreeNodes = *reinterpret_cast<const uint4 *>(tetmeshGeomPtr);
-			trimeshGeomPtr += sizeof(uint4);
-
-			//s_warpScratch->nbPrimitives[idx] = nbVerts_nbTets_maxDepth_nbBv32TreeNodes.y;
-
-			Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
-			s_warpScratch->bv32PackedNodes = bv32PackedNodes;
-			/*tetmeshGeomPtr += sizeof(const Gu::BV32DataPacked)* nbVerts_nbTets_maxDepth_nbBv32TreeNodes.w;
-
-			tetmeshGeomPtr += sizeof(const Gu::BV32DataDepthInfo) * nbVerts_nbTets_maxDepth_nbBv32TreeNodes.z
-				+ sizeof(PxU32) * nbVerts_nbTets_maxDepth_nbBv32TreeNodes.w;*/
-
-		}
-
-		__syncthreads();
-
-		const PxU32 elementInd = cloth->mElementIndex;
-
-		const float4* restPosition = cloth->mRestPosition;
-
-		const PxReal contactDist = contactDistance[elementInd] * 2.f;
-
-		/*if (globalWarpIdx == 0 && threadIdx.x == 0)
-		{
-			printf("elementInd %i numTriangles %i\n", elementInd, numTriangles);
-		}*/
-
-		//const PxU32 nbTets = s_warpScratch->nbPrimitives[1];
-
-		const PxU32 NbWarps = blockDim.y*gridDim.x;
-
-		const uint4* triIndices = s_warpScratch->meshVertsIndices;
-		const float4* triVerts = s_warpScratch->meshVerts;
-
-		PxBounds3 triangleBound;
-
-		for (PxU32 triangleIdx = globalWarpIdx; triangleIdx < numTriangles; triangleIdx += NbWarps)
-		{
-			computeTriangleBound2(triIndices, triangleIdx, triVerts, triangleBound);
-
-			triangleBound.fattenFast(contactDist);
-
-
-			const PxReal sqContactDist = contactDist * contactDist;
-			uint4* tStackPtr = reinterpret_cast<uint4*>(stackPtr);
-			const PxU32 stackSize = stackSizeBytes / sizeof(uint4);
-
-			//Need to implement this leaf function for self collision
-			bv32TreeTraversal<const TriangleSelfCollisionLeafBoundMinMaxTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, TriangleSelfCollisionLeafBoundMinMaxTraverser(s_warpScratch, triangleBound,
-				cmIdx, stackSize, tStackPtr, midphasePairsNum, restPosition, triangleIdx, sqContactDist));
-		}
+		return PX_MAX_REAL;
 	}
+
+	const PxVec3 x1 = PxLoad3(restVerts[triIndex.x]);
+	const PxVec3 x2 = PxLoad3(restVerts[triIndex.y]);
+	const PxVec3 x3 = PxLoad3(restVerts[triIndex.z]);
+
+	const PxVec3 x0 = PxLoad3(restVertexBuffer[restVertexIndex]);
+
+	const PxReal d1 = (x1 - x0).magnitudeSquared();
+	const PxReal d2 = (x2 - x0).magnitudeSquared();
+	const PxReal d3 = (x3 - x0).magnitudeSquared();
+
+	return PxMin(PxMin(d1, d2), d3);
 }
 
-extern "C" __global__
-//__launch_bounds__(MIDPHASE_WARPS_PER_BLOCK * WARP_SIZE, 4)
-void cloth_selfCollisionMidphaseGeneratePairsLaunch(
-	const PxU32* activeClothes,
-	const PxReal* PX_RESTRICT contactDistance,
-	const PxgFEMCloth* PX_RESTRICT clothes,
-	const PxU32 stackSizeBytes,
-	PxU8* PX_RESTRICT stackPtr,							//output
-	PxU32* PX_RESTRICT midphasePairsNum					//output
-)
+// Computes the squared distance between two edges in rest pose.
+// Approximates rest distances using vertex distances for better performance.
+__device__ PxReal distSqInRestPose(const float4* PX_RESTRICT restVerts0, const float4* PX_RESTRICT restVerts1, PxU32 edge0_vertexIndex0,
+								   PxU32 edge0_vertexIndex1, PxU32 edge1_vertexIndex0, PxU32 edge1_vertexIndex1)
 {
-	__shared__ PxU32 scratchMem[MIDPHASE_WARPS_PER_BLOCK][FEM_MIDPHASE_SCRATCH_SIZE];
-
-	cloth_selfCollisionMidphaseCore<MIDPHASE_WARPS_PER_BLOCK>(
-		activeClothes,
-		contactDistance,
-		clothes,
-		stackSizeBytes,
-		stackPtr,
-		midphasePairsNum,
-		(femMidphaseScratch*)scratchMem[threadIdx.y]
-		);
-}
-
-__device__ PxReal distInRestPose(const float4* restVerts, const float4* restVertexBuffer, PxU32 restVertexIndex, const uint4 triIndex)
-{
-	if (restVerts)
+	if(!restVerts0)
 	{
-		const PxVec3 a = PxLoad3(restVerts[triIndex.x]);
-		const PxVec3 b = PxLoad3(restVerts[triIndex.y]);
-		const PxVec3 c = PxLoad3(restVerts[triIndex.z]);
-
-		const PxVec3 ab = b - a;
-		const PxVec3 ac = c - a;
-
-		PxVec3 restVertex = PxLoad3(restVertexBuffer[restVertexIndex]);
-		PxVec3 restClosest = Gu::closestPtPointTriangle2(restVertex, a, b, c, ab, ac);
-
-		PxVec3 restDir = restVertex - restClosest;
-		PxReal sqRestDist = restDir.dot(restDir);
-
-		return sqRestDist;
+		return PX_MAX_REAL;
 	}
-	return PX_MAX_REAL;
+
+	const PxVec3 e0_x0 = PxLoad3(restVerts0[edge0_vertexIndex0]);
+	const PxVec3 e0_x1 = PxLoad3(restVerts0[edge0_vertexIndex1]);
+
+	const PxVec3 e1_x0 = PxLoad3(restVerts1[edge1_vertexIndex0]);
+	const PxVec3 e1_x1 = PxLoad3(restVerts1[edge1_vertexIndex1]);
+
+	// Compute squared distances in parallel
+	const PxReal d0 = (e0_x0 - e1_x0).magnitudeSquared();
+	const PxReal d1 = (e0_x0 - e1_x1).magnitudeSquared();
+	const PxReal d2 = (e0_x1 - e1_x0).magnitudeSquared();
+	const PxReal d3 = (e0_x1 - e1_x1).magnitudeSquared();
+
+	return PxMin(PxMin(d0, d1), PxMin(d2, d3));
 }
 
+// Cloth0 vertices traverse the BVH of cloth1 triangles.
 struct ClothTreeVertexTraverser
 {
 	const PxU32 contactSize;
 	physx::PxU32 vertexIdx;
 	const PxReal contactDist;
-	const PxReal filterDistanceSq;
+	const PxReal filterDistSq;
 	const PxU32 clothId0;
 	const PxU32 clothId1;
-	const float4* vertices0;
 	const float4* restVerts0;
 	const uint4* triIndices;
 	PxVec3 vertex;
 	PxgNonRigidFilterPair* clothClothPairs;
 	const PxU32 numClothClothPairs;
-	float4* outPoint;                  // output
-	float4* outNormalRestDistSq;       // output
-	float4* outBarycentric0;           // output
-	float4* outBarycentric1;           // output
-	PxgFemContactInfo* outContactInfo; // output
-	PxU32* totalContactCount;          // output
+	PxgFemFemContactInfo* outContactInfo;	// output
+	PxU32* totalContactCount;			// output
 	const float4* vertices1;
 	const float4* restVerts1;
 
 	PX_FORCE_INLINE __device__ ClothTreeVertexTraverser(
-	    const PxU32 contactSize, const PxReal contactDist,
-	    const PxReal filterDistanceSq, const PxU32 clothId0, const PxU32 clothId1, const float4* vertices0,
-	    const float4* restVerts0, const uint4* triIndices, PxgNonRigidFilterPair* clothClothPairs,
-	    const PxU32 numClothClothPairs,
-	    float4* outPoint,                  // output
-	    float4* outNormalRestDistSq,       // output
-	    float4* outBarycentric0,           // output
-	    float4* outBarycentric1,           // output
-	    PxgFemContactInfo* outContactInfo, // output
-	    PxU32* totalContactCount,          // output
+		const PxU32 contactSize, const PxReal contactDist,
+		const PxReal filterDistSq, const PxU32 clothId0, const PxU32 clothId1,
+		const float4* restVerts0, const uint4* triIndices, PxgNonRigidFilterPair* clothClothPairs,
+		const PxU32 numClothClothPairs,
+		PxgFemFemContactInfo* outContactInfo,	// output
+		PxU32* totalContactCount,			// output
 		const float4* vertices1,
 		const float4* restVerts1)
 	: contactSize(contactSize)
 	, contactDist(contactDist)
-	, filterDistanceSq(filterDistanceSq)
+	, filterDistSq(filterDistSq)
 	, clothId0(clothId0)
 	, clothId1(clothId1)
-	, vertices0(vertices0)
 	, restVerts0(restVerts0)
 	, triIndices(triIndices)
 	, clothClothPairs(clothClothPairs)
 	, numClothClothPairs(numClothClothPairs)
-	, outPoint(outPoint)
-	, outNormalRestDistSq(outNormalRestDistSq)
-	, outBarycentric0(outBarycentric0)
-	, outBarycentric1(outBarycentric1)
 	, outContactInfo(outContactInfo)
 	, totalContactCount(totalContactCount)
 	, vertices1(vertices1)
@@ -858,7 +752,6 @@ struct ClothTreeVertexTraverser
 	PX_FORCE_INLINE __device__ void intersectPrimitiveFullWarp(PxU32 primitiveIndex, PxU32 idxInWarp)
 	{
 		PxReal s, t;
-		float4 normal_restDistSq;
 
 		bool intersect = false;
 		if(primitiveIndex != 0xFFFFFFFF)
@@ -866,61 +759,36 @@ struct ClothTreeVertexTraverser
 			const uint4 triIdx1 = triIndices[primitiveIndex];
 
 			// Check if the vertex is part of the triangle
-			if(clothId0 != clothId1 || !(vertexIdx == triIdx1.x || vertexIdx == triIdx1.y || vertexIdx == triIdx1.z))
+			if(clothId0 != clothId1 | !(vertexIdx == triIdx1.x | vertexIdx == triIdx1.y | vertexIdx == triIdx1.z))
 			{
-				// Currently using the original contact distance
-				const PxReal adjustedContactDist = contactDist;
-
-				const PxVec3 x1 = PxLoad3(vertices0[triIdx1.x]);
-				const PxVec3 x2 = PxLoad3(vertices0[triIdx1.y]);
-				const PxVec3 x3 = PxLoad3(vertices0[triIdx1.z]);
+				const PxVec3 x1 = PxLoad3(vertices1[triIdx1.x]);
+				const PxVec3 x2 = PxLoad3(vertices1[triIdx1.y]);
+				const PxVec3 x3 = PxLoad3(vertices1[triIdx1.z]);
 
 				PxBounds3 bounds;
 				bounds.minimum = x1;
 				bounds.maximum = x1;
 				bounds.include(x2);
 				bounds.include(x3);
-				bounds.fattenFast(adjustedContactDist);
-				if (bounds.contains(vertex))
+				bounds.fattenFast(contactDist);
+				if(bounds.contains(vertex))
 				{
-					bool generateContact = true;
-					const PxU32 clothVertMask0 = PxEncodeClothIndex(clothId0, vertexIdx);
-					const PxU32 clothVertFullMask0 = PxEncodeClothIndex(clothId0, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-					const PxU32 clothTriMask1 = PxEncodeClothIndex(clothId1, primitiveIndex);
-					const PxU32 clothTriFullMask1 = PxEncodeClothIndex(clothId1, PX_MAX_NB_DEFORMABLE_SURFACE_TRI);
+					// No filtering applied yet (e.g., attachment-based filtering is not considered).
 
-					// Check if the vertex index is in the attachment list.
-					if(find(clothClothPairs, numClothClothPairs, clothVertMask0, clothTriFullMask1) ||
-					   find(clothClothPairs, numClothClothPairs, clothVertFullMask0, clothTriMask1) ||
-					   find(clothClothPairs, numClothClothPairs, clothVertMask0, clothTriMask1))
-						generateContact = false;
+					const PxVec3 closestPt = closestPtPointTriangle(vertex, x1, x2, x3, s, t);
 
-					if(generateContact)
+					PxVec3 dir = vertex - closestPt;
+					const PxReal distSq = dir.magnitudeSquared();
+
+					if(distSq < contactDist * contactDist && distSq > 1.0e-14f)
 					{
-						const PxVec3 closestPt = closestPtPointTriangle(vertex, x1, x2, x3, s, t);
+						// Compute approximated rest distance for filtering
+						const PxReal tempRestDistSq = distSqInRestPose(restVerts0, restVerts1, vertexIdx, triIdx1);
 
-						PxVec3 dir = closestPt - vertex;
-						const PxReal sqDist = dir.magnitudeSquared();
-
-						if (sqDist < adjustedContactDist * adjustedContactDist && sqDist > 1.e-14f)
+						// Check if the objects are closer than the filter distance threshold.
+						if(tempRestDistSq > filterDistSq)
 						{
-							const PxReal restDistSq = distInRestPose(restVerts0, restVerts1, vertexIdx, triIdx1);
-
-							// Check if the objects are closer than the filter distance threshold.
-							if (restDistSq > filterDistanceSq)
-							{
-								PxReal dist = PxSqrt(sqDist);
-								dir = dir * (1.0f / dist);
-
-								PxVec3 normal = (x2 - x1).cross(x3 - x2).getNormalized();
-
-								const PxReal proj = normal.dot(dir);
-								if (clothId0 != clothId1 || PxAbs(proj) > 0.01f)
-								{
-									normal_restDistSq = make_float4(dir.x, dir.y, dir.z, restDistSq);
-									intersect = s > -1e-6f && t > -1e-6f && (s + t) <= 1.0f;
-								}
-							}
+							intersect = true;
 						}
 					}
 				}
@@ -929,17 +797,23 @@ struct ClothTreeVertexTraverser
 
 		const PxU32 index = globalScanExclusiveSingleWarp(intersect, totalContactCount);
 
-		if(intersect && index < contactSize)
+		if(intersect & index < contactSize)
 		{
-			PxU32 pairInd0 = PxEncodeClothIndex(clothId0, vertexIdx);
-			PxU32 pairInd1 = PxEncodeClothIndex(clothId1, primitiveIndex); // vert id
+			PxgFemFemContactInfo contactInfo;
 
-			outPoint[index] = make_float4(vertex.x, vertex.y, vertex.z, 0.f);
-			outNormalRestDistSq[index] = normal_restDistSq;
-			outBarycentric0[index] = make_float4(0.f, 0.f, 0.f, 1.f);
-			outBarycentric1[index] = make_float4(1.f - s - t, s, t, 0.f); // barycentric;
-			outContactInfo[index].pairInd0 = pairInd0;
-			outContactInfo[index].pairInd1 = pairInd1;
+			PxU32 pairInd0 = PxEncodeClothIndex(clothId0, vertexIdx);
+			PxU32 pairInd1 = PxEncodeClothIndex(clothId1, primitiveIndex);
+
+			contactInfo.pairInd0 = pairInd0;
+			contactInfo.pairInd1 = pairInd1;
+			contactInfo.markVertexTrianglePair();
+
+			// If the collision is between different cloths, mark it as valid immediately.
+			// For self-collision (same cloth), full validity check will be performed separately in "cloth_clothContactPrepareLaunch"
+			// using exact (non-approximated) rest distances and filtering distances for better performance.
+			contactInfo.markValidity(clothId0 != clothId1);
+
+			outContactInfo[index] = contactInfo;
 		}
 	}
 
@@ -955,84 +829,338 @@ struct ClothTreeVertexTraverser
 	}
 };
 
+// Cloth0 edges (pair0) traverse the BVH of Cloth1 edges (pair1).
+// Triangle BVH is used, as edges are encoded per triangle.
+
+struct ClothTreeEdgeTraverser
+{
+	const PxU32 contactSize;
+	const PxReal contactDist;
+	const PxReal filterDistSq;
+	const PxU32 clothId0;
+	const PxU32 clothId1;
+	const float4* restVerts0;
+	PxVec3 t0_points[3];							// set by setEdge0()
+	PxBounds3 t0_bounds;							// set by setEdge0()
+	PxU32 t0_index;									// set by setEdge0()
+	uint4 t0_triVertIndices0;						// set by setEdge0()
+	PxgFemFemContactInfo* outContactInfo;			// output
+	PxU32* totalContactCount;						// output
+	const float4* vertices1;
+	const float4* restVerts1;
+	const uint4* triVertIndices1;
+
+	PX_FORCE_INLINE __device__ ClothTreeEdgeTraverser(
+		const PxU32 contactSize, const PxReal contactDist,
+		const PxReal filterDistSq, const PxU32 clothId0, const PxU32 clothId1,
+		const float4* restVerts0,
+		PxgFemFemContactInfo* outContactInfo,		// output
+		PxU32* totalContactCount,				// output
+		const float4* vertices1,
+		const float4* restVerts1,
+		const uint4* triVertIndices1)
+		: contactSize(contactSize)
+		, contactDist(contactDist)
+		, filterDistSq(filterDistSq)
+		, clothId0(clothId0)
+		, clothId1(clothId1)
+		, restVerts0(restVerts0)
+		, outContactInfo(outContactInfo)
+		, totalContactCount(totalContactCount)
+		, vertices1(vertices1)
+		, restVerts1(restVerts1)
+		, triVertIndices1(triVertIndices1)
+	{
+	}
+
+	PX_FORCE_INLINE __device__ void setEdge0(const uint4 triVertIndices, const float4* PX_RESTRICT vertices, PxU32 triIdx)
+	{
+		t0_triVertIndices0 = triVertIndices;
+		t0_index = triIdx;
+
+		t0_points[0] = PxLoad3(vertices[triVertIndices.x]);
+		t0_points[1] = PxLoad3(vertices[triVertIndices.y]);
+		t0_points[2] = PxLoad3(vertices[triVertIndices.z]);
+
+		t0_bounds.minimum = t0_points[0];
+		t0_bounds.maximum = t0_points[0];
+		t0_bounds.include(t0_points[1]);
+		t0_bounds.include(t0_points[2]);
+		t0_bounds.fattenFast(contactDist);
+	}
+
+	PX_FORCE_INLINE __device__ void intersectPrimitiveFullWarp(PxU32 primitiveIndex, PxU32 idxInWarp)
+	{
+		// No filtering applied yet (e.g., attachment-based filtering is not considered).
+
+		uint2 localEdgeIndices[9]; // Up to three edges per triangle
+		PxU32 intersectCount = 0;
+
+		if(primitiveIndex != 0xFFFFFFFF & (clothId0 != clothId1 | t0_index > primitiveIndex))
+		{
+			const uint4 triVertexIdx1 = triVertIndices1[primitiveIndex];
+			const PxU32 edgeAuthorship1 = triVertexIdx1.w;
+
+			static const PxU32 nextE_lookup[3] = { 1, 2, 0 };
+			const PxU32 vIndices1[3] = { triVertexIdx1.x, triVertexIdx1.y, triVertexIdx1.z };
+
+			PxBounds3 t1_bounds;
+
+			const PxVec3 t1_points[3] = { PxLoad3(vertices1[vIndices1[0]]), PxLoad3(vertices1[vIndices1[1]]),
+										  PxLoad3(vertices1[vIndices1[2]]) };
+
+			t1_bounds.minimum = t1_points[0];
+			t1_bounds.maximum = t1_points[0];
+			t1_bounds.include(t1_points[1]);
+			t1_bounds.include(t1_points[2]);
+
+			if(t0_bounds.intersects(t1_bounds))
+			{
+				const PxReal contactDistSq = contactDist * contactDist;
+
+				const PxU32 t0_edgeAuthorship = t0_triVertIndices0.w;
+				const PxU32 vIndices0[3] = { t0_triVertIndices0.x, t0_triVertIndices0.y, t0_triVertIndices0.z };
+
+				// Iterate through edges of triangle 1
+				for(PxU32 e1 = 0; e1 < 3; ++e1)
+				{
+					const bool edgeActive = isType0EdgeActive(edgeAuthorship1, e1);
+					if(!edgeActive)
+					{
+						continue;
+					}
+
+					const PxU32 nextE1 = nextE_lookup[e1];
+					const PxU32 e1_v0 = vIndices1[e1];
+					const PxU32 e1_v1 = vIndices1[nextE1];
+
+					const PxVec3& e1_x0 = t1_points[e1];
+					const PxVec3& e1_x1 = t1_points[nextE1];
+
+#pragma unroll
+					// Iterate through edges of triangle 0
+					for(PxU32 e0 = 0; e0 < 3; ++e0)
+					{
+						const bool edge0Active = isType0EdgeActive(t0_edgeAuthorship, e0);
+						if(!edge0Active)
+						{
+							continue;
+						}
+
+						const PxU32 nextE0 = nextE_lookup[e0];
+
+						const PxU32 e0_v0 = vIndices0[e0];
+						const PxU32 e0_v1 = vIndices0[nextE0];
+
+						// Skip connected edges within the same cloth
+						if((clothId0 == clothId1) & ((e0_v0 == e1_v0) | (e0_v0 == e1_v1) | (e0_v1 == e1_v0) | (e0_v1 == e1_v1)))
+						{
+							continue;
+						}
+
+						const PxVec3& e0_x0 = t0_points[e0];
+						const PxVec3& e0_x1 = t0_points[nextE0];
+
+						PxReal s, t;
+						PxReal distSq;
+
+						closestPtLineLine(e0_x0, e0_x1, e1_x0, e1_x1, s, t, distSq);
+						const bool isOutside = ((s < DEFORMABLE_BARYCENTRIC_THRESHOLD) || (s > DEFORMABLE_ONE_MINUS_BARYCENTRIC_THRESHOLD) ||
+												(t < DEFORMABLE_BARYCENTRIC_THRESHOLD) || (t > DEFORMABLE_ONE_MINUS_BARYCENTRIC_THRESHOLD));
+
+						// Vertex-edge collisions are handled in the vertex-triangle query.
+						if(isOutside)
+						{
+							continue;
+						}
+
+						if(distSq < contactDistSq && distSq > 1.0e-14f)
+						{
+							// Compute approximated rest distance for filtering
+							const PxReal tempRestDistSq = distSqInRestPose(restVerts0, restVerts1, e0_v0, e0_v1, e1_v0, e1_v1);
+
+							if(tempRestDistSq > filterDistSq)
+							{
+								localEdgeIndices[intersectCount] = make_uint2(e0, e1);
+								++intersectCount;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Exit early if there is no intersection.
+		const PxU32 resultWarp = __ballot_sync(FULL_MASK, intersectCount > 0);
+		const PxU32 validCount = __popc(resultWarp);
+		if(validCount != 0)
+		{
+			// Add multiple elements per thread.
+			const PxU32 index = globalScanExclusiveSingleWarp(intersectCount, totalContactCount);
+			if(index < contactSize)
+			{
+				PxgFemFemContactInfo contactInfo;
+				const PxU32 pairInd0 = PxEncodeClothIndex(clothId0, t0_index);
+				const PxU32 pairInd1 = PxEncodeClothIndex(clothId1, primitiveIndex);
+				contactInfo.pairInd0 = pairInd0;
+				contactInfo.pairInd1 = pairInd1;
+				contactInfo.markEdgeEdgePair();
+
+				// If the collision is between different cloths, mark it as valid immediately.
+				// For self-collision (same cloth), full validity check will be performed separately in "cloth_clothContactPrepareLaunch"
+				// using exact (non-approximated) rest distances and filtering distances for better performance.
+				contactInfo.markValidity(clothId0 != clothId1);
+
+#pragma unroll
+				for(int localIndex = 0; localIndex < intersectCount; ++localIndex)
+				{
+					const uint2 auxIndices = localEdgeIndices[localIndex];
+					contactInfo.setAuxInd0(auxIndices.x);
+					contactInfo.setAuxInd1(auxIndices.y);
+
+					const PxU32 outIndex = index + localIndex;
+					outContactInfo[outIndex] = contactInfo;
+				}
+			}
+		}
+	}
+
+	PX_FORCE_INLINE __device__ bool intersectBoxFullWarp(bool hasBox, const PxVec3& min, const PxVec3& max) const
+	{
+		if(!hasBox)
+		{
+			return false;
+		}
+
+		PxBounds3 t1_bounds(min, max);
+		return t1_bounds.intersects(t0_bounds);
+	}
+};
+
 template<unsigned int WarpsPerBlock>
-__device__ static inline void cloth_vertexSelfCollisionMidphaseCore(
+__device__ static inline void cloth_selfCollisionMidphaseCoreVT(
 	const PxU32								maxContacts,
 	const PxU32*							activeClothes,
 	const PxReal* PX_RESTRICT				contactDistance,
 	const PxgFEMCloth* PX_RESTRICT			clothes,
 	PxgNonRigidFilterPair*					clothClothPairs,
 	const PxU32								numClothClothPairs,
-	float4*									outPoint,				//output
-	float4*									outNormalPen,			//output
-	float4*									outBarycentric0,		//output
-	float4*									outBarycentric1,		//output
-	PxgFemContactInfo*						outContactInfo,			//output
+	PxgFemFemContactInfo*					outContactInfo,			//output
 	PxU32*									totalContactCount,		//output
 	femMidphaseScratch*						s_warpScratch
 )
 {
 	const PxU32 cmIdx = blockIdx.y;
-
 	const PxU32 clothId = activeClothes[cmIdx];
-
 	const PxgFEMCloth* cloth = &clothes[clothId];
 
-	const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x * blockDim.y;
-
 	if(cloth->mBodyFlags & PxDeformableBodyFlag::eDISABLE_SELF_COLLISION)
+	{
 		return;
+	}
 
+	const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x * blockDim.y;
 	const PxU32 numVerts = cloth->mNbVerts;
 
+	if(globalWarpIdx >= numVerts)
 	{
-		const PxU32 idx = threadIdx.x;
-
-		if(idx == 0)
-		{
-			s_warpScratch->meshVerts = cloth->mPosition_InvMass;
-			s_warpScratch->meshVertsIndices = cloth->mTriangleVertexIndices;
-
-			PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(cloth->mTriMeshData);
-			trimeshGeomPtr += sizeof(uint4);
-
-			Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
-			s_warpScratch->bv32PackedNodes = bv32PackedNodes;
-		}
-
-		__syncthreads();
-
-		const PxU32 elementInd = cloth->mElementIndex;
-
-		const float4* restPosition = cloth->mRestPosition;
-
-		const PxReal contactDist = contactDistance[elementInd] * 2.f;
-
-		const PxReal filterDistance = cloth->mSelfCollisionFilterDistance;
-
-		const PxU32 NbWarps = blockDim.y * gridDim.x;
-
-		const float4* triVerts = s_warpScratch->meshVerts;
-
-		ClothTreeVertexTraverser traverser(maxContacts, contactDist, filterDistance * filterDistance, clothId,
-			clothId, s_warpScratch->meshVerts, restPosition,
-			s_warpScratch->meshVertsIndices, clothClothPairs,
-			numClothClothPairs, outPoint, outNormalPen, outBarycentric0,
-			outBarycentric1, outContactInfo, totalContactCount,
-			triVerts, restPosition);
-		for(PxU32 vertexIdx = globalWarpIdx; vertexIdx < numVerts; vertexIdx += NbWarps)
-		{
-			traverser.vertexIdx = vertexIdx;
-			traverser.vertex = PxLoad3(triVerts[vertexIdx]);
-
-			bv32TreeTraversal<ClothTreeVertexTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
-		}
+		return;
 	}
+
+	const PxU32 elementInd = cloth->mElementIndex;
+	const float4* restPosition = cloth->mRestPosition;
+	const PxReal contactDist = contactDistance[elementInd] * 2.f;
+	const PxReal filterDistance = cloth->mSelfCollisionFilterDistance;
+
+	if(threadIdx.x == 0)
+	{
+		s_warpScratch->meshVerts = cloth->mPosition_InvMass;
+		s_warpScratch->meshVertsIndices = cloth->mTriangleVertexIndices;
+
+		PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(cloth->mTriMeshData);
+		trimeshGeomPtr += sizeof(uint4);
+
+		Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
+		s_warpScratch->bv32PackedNodes = bv32PackedNodes;
+	}
+
+	__syncthreads();
+
+	const float4* triVerts = s_warpScratch->meshVerts;
+	if(globalWarpIdx < numVerts)
+	{
+		ClothTreeVertexTraverser traverser(maxContacts, contactDist, filterDistance * filterDistance, clothId, clothId, restPosition,
+										   s_warpScratch->meshVertsIndices, clothClothPairs, numClothClothPairs, outContactInfo,
+										   totalContactCount, s_warpScratch->meshVerts, restPosition);
+
+		traverser.vertexIdx = globalWarpIdx;
+		traverser.vertex = PxLoad3(triVerts[globalWarpIdx]);
+		bv32TreeTraversal<ClothTreeVertexTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
+	}
+}
+
+template<unsigned int WarpsPerBlock>
+__device__ static inline void cloth_selfCollisionMidphaseCoreEE(
+	const PxU32								maxContacts,
+	const PxU32* activeClothes,
+	const PxReal* PX_RESTRICT				contactDistance,
+	const PxgFEMCloth* PX_RESTRICT			clothes,
+	PxgNonRigidFilterPair* clothClothPairs,
+	const PxU32								numClothClothPairs,
+	PxgFemFemContactInfo* outContactInfo,			//output
+	PxU32* totalContactCount,		//output
+	femMidphaseScratch* s_warpScratch
+)
+{
+	const PxU32 cmIdx = blockIdx.y;
+	const PxU32 clothId = activeClothes[cmIdx];
+	const PxgFEMCloth* cloth = &clothes[clothId];
+
+	if(cloth->mBodyFlags & PxDeformableBodyFlag::eDISABLE_SELF_COLLISION)
+	{
+		return;
+	}
+
+	const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x * blockDim.y;
+	const PxU32 numTriangles = cloth->mNbTrianglesWithActiveEdges;
+
+	if(globalWarpIdx >= numTriangles)
+	{
+		return;
+	}
+
+	const PxU32 elementInd = cloth->mElementIndex;
+	const float4* restPosition = cloth->mRestPosition;
+	const PxReal contactDist = contactDistance[elementInd] * 2.f;
+	const PxReal filterDistance = cloth->mSelfCollisionFilterDistance;
+
+	if (threadIdx.x == 0)
+	{
+		s_warpScratch->meshVerts = cloth->mPosition_InvMass;
+		s_warpScratch->meshVertsIndices = cloth->mTriangleVertexIndices;
+
+		PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(cloth->mTriMeshData);
+		trimeshGeomPtr += sizeof(uint4);
+
+		Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
+		s_warpScratch->bv32PackedNodes = bv32PackedNodes;
+	}
+
+	__syncthreads();
+
+	ClothTreeEdgeTraverser traverser(maxContacts, contactDist, filterDistance * filterDistance, clothId, clothId, restPosition,
+									 outContactInfo, totalContactCount, s_warpScratch->meshVerts, restPosition,
+									 s_warpScratch->meshVertsIndices);
+
+	const PxU32 triIdx = cloth->mTrianglesWithActiveEdges[globalWarpIdx];
+	const uint4 triVertices = s_warpScratch->meshVertsIndices[triIdx];
+	traverser.setEdge0(triVertices, s_warpScratch->meshVerts, triIdx);
+	bv32TreeTraversal<ClothTreeEdgeTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
 }
 
 extern "C" __global__
 __launch_bounds__(MIDPHASE_WARPS_PER_BLOCK * WARP_SIZE, 16) //At least 16 blocks per multiprocessor helps with performance
-void cloth_selfCollisionVertexMidphaseGeneratePairsLaunch(
+void cloth_selfCollisionMidphaseVTLaunch(
 	const PxU32									maxContacts,
 	const PxU32*								activeClothes,
 	const PxReal* PX_RESTRICT					contactDistance,
@@ -1040,11 +1168,7 @@ void cloth_selfCollisionVertexMidphaseGeneratePairsLaunch(
 	PxgNonRigidFilterPair*						clothClothPairs,
 	const PxU32									numClothClothPairs,
 	const PxU8*									updateContactPairs,
-	float4*										outPoint,									//output
-	float4*										outNormalPen,								//output
-	float4*										outBarycentric0,							//output
-	float4*										outBarycentric1,							//output
-	PxgFemContactInfo*							outContactInfo,								//output
+	PxgFemFemContactInfo*						outContactInfo,								//output
 	PxU32*										totalContactCount							//output
 )
 {
@@ -1054,17 +1178,46 @@ void cloth_selfCollisionVertexMidphaseGeneratePairsLaunch(
 
 	__shared__ PxU32 scratchMem[MIDPHASE_WARPS_PER_BLOCK][FEM_MIDPHASE_SCRATCH_SIZE];
 
-	cloth_vertexSelfCollisionMidphaseCore<MIDPHASE_WARPS_PER_BLOCK>(
+	cloth_selfCollisionMidphaseCoreVT<MIDPHASE_WARPS_PER_BLOCK>(
 		maxContacts,
 		activeClothes,
 		contactDistance,
 		clothes,
 		clothClothPairs,
 		numClothClothPairs,
-		outPoint,
-		outNormalPen,
-		outBarycentric0,
-		outBarycentric1,
+		outContactInfo,
+		totalContactCount,
+		(femMidphaseScratch*)scratchMem[threadIdx.y]
+		);
+}
+
+extern "C" __global__
+__launch_bounds__(MIDPHASE_WARPS_PER_BLOCK * WARP_SIZE, 16) //At least 16 blocks per multiprocessor helps with performance
+void cloth_selfCollisionMidphaseEELaunch(
+	const PxU32									maxContacts,
+	const PxU32*								activeClothes,
+	const PxReal* PX_RESTRICT					contactDistance,
+	const PxgFEMCloth*	PX_RESTRICT				clothes,
+	PxgNonRigidFilterPair*						clothClothPairs,
+	const PxU32									numClothClothPairs,
+	const PxU8*									updateContactPairs,
+	PxgFemFemContactInfo*						outContactInfo,								//output
+	PxU32*										totalContactCount							//output
+)
+{
+	// Early exit if contact pairs are not updated.
+	if (*updateContactPairs == 0)
+		return;
+
+	__shared__ PxU32 scratchMem[MIDPHASE_WARPS_PER_BLOCK][FEM_MIDPHASE_SCRATCH_SIZE];
+
+	cloth_selfCollisionMidphaseCoreEE<MIDPHASE_WARPS_PER_BLOCK>(
+		maxContacts,
+		activeClothes,
+		contactDistance,
+		clothes,
+		clothClothPairs,
+		numClothClothPairs,
 		outContactInfo,
 		totalContactCount,
 		(femMidphaseScratch*)scratchMem[threadIdx.y]
@@ -1072,7 +1225,7 @@ void cloth_selfCollisionVertexMidphaseGeneratePairsLaunch(
 }
 
 template<unsigned int WarpsPerBlock>
-__device__ static inline void femClothClothVertexCollisionCore(
+__device__ static inline void femDifferentClothCollisionCoreVT(
 	const PxU32										maxContacts,
 	const PxReal									toleranceLength,
 	const PxgContactManagerInput* PX_RESTRICT		cmInputs,
@@ -1082,43 +1235,56 @@ __device__ static inline void femClothClothVertexCollisionCore(
 	const PxgFEMCloth* PX_RESTRICT					femClothes,
 	PxgNonRigidFilterPair*							clothClothPairs,
 	const PxU32										numClothClothPairs,
-	float4*											outPoint,			//output
-	float4*											outNormalPen,		//output
-	float4*											outBarycentric0,	//output
-	float4*											outBarycentric1,	//output
-	PxgFemContactInfo*								outContactInfo,		//output
+	PxgFemFemContactInfo*							outContactInfo,		//output
 	PxU32*											totalContactCount,	//output
 	femMidphaseScratch*								s_warpScratch
 )
 {
 	const PxU32 cmIdx = blockIdx.y;
-	// each block deal with one pair
+
+	const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x * blockDim.y;
+
+	PxgContactManagerInput npWorkItem;
+	PxgContactManagerInput_ReadWarp(npWorkItem, cmInputs, cmIdx);
+
+	PxgShape shape0;
+	PxgShape_ReadWarp(shape0, gpuShapes + npWorkItem.shapeRef0);
+
+	PxgShape shape1;
+	PxgShape_ReadWarp(shape1, gpuShapes + npWorkItem.shapeRef1);
+
+	assert(shape0.type == PxGeometryType::eTRIANGLEMESH && shape1.type == PxGeometryType::eTRIANGLEMESH);
+
+	const int clothId0 = shape0.particleOrSoftbodyId;
+	const int clothId1 = shape1.particleOrSoftbodyId;
+
+	const PxgFEMCloth* cloth0 = &femClothes[clothId0];
+	const PxgFEMCloth* cloth1 = &femClothes[clothId1];
+
+	const PxReal contactDist = contactDistance[npWorkItem.transformCacheRef0] + contactDistance[npWorkItem.transformCacheRef1];
+
+	const PxU32 numVertices0 = cloth0->mNbVerts;
+	const PxU32 numVertices1 = cloth1->mNbVerts;
+
+	// VT
+	if(globalWarpIdx < numVertices0 + numVertices1)
 	{
-		const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x * blockDim.y;
+		const bool isCloth0 = globalWarpIdx < numVertices0;
 
-		PxgContactManagerInput npWorkItem;
-		PxgContactManagerInput_ReadWarp(npWorkItem, cmInputs, cmIdx);
+		PxU32 vertexIndex = isCloth0 ? globalWarpIdx : globalWarpIdx - numVertices0;
+		const PxgFEMCloth* myCloth = isCloth0 ? cloth0 : cloth1;
+		const PxgFEMCloth* otherCloth = isCloth0 ? cloth1 : cloth0;
 
-		PxgShape shape0;
-		PxgShape_ReadWarp(shape0, gpuShapes + npWorkItem.shapeRef0);
-
-		PxgShape shape1;
-		PxgShape_ReadWarp(shape1, gpuShapes + npWorkItem.shapeRef1);
-
-		assert(shape0.type == PxGeometryType::eTRIANGLEMESH && shape1.type == PxGeometryType::eTRIANGLEMESH);
-
-		const PxU32 clothId0 = shape0.particleOrSoftbodyId;
-		const PxU32 clothId1 = shape1.particleOrSoftbodyId;
-
-		const PxgFEMCloth* cloth0 = &femClothes[clothId0];
-		const PxgFEMCloth* cloth1 = &femClothes[clothId1];
+		const int mask = static_cast<int>(!isCloth0);
+		const int myClothId = mask * (clothId1 - clothId0) + clothId0;
+		const int otherClothId = mask * (clothId0 - clothId1) + clothId1;
 
 		if(threadIdx.x == 0)
 		{
-			s_warpScratch->meshVerts = cloth1->mPosition_InvMass;
-			s_warpScratch->meshVertsIndices = cloth1->mTriangleVertexIndices;
+			s_warpScratch->meshVerts = otherCloth->mPosition_InvMass;
+			s_warpScratch->meshVertsIndices = otherCloth->mTriangleVertexIndices;
 
-			PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(cloth1->mTriMeshData);
+			PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(otherCloth->mTriMeshData);
 
 			trimeshGeomPtr += sizeof(uint4);
 
@@ -1128,76 +1294,98 @@ __device__ static inline void femClothClothVertexCollisionCore(
 
 		__syncthreads();
 
-		const PxReal contactDist = contactDistance[npWorkItem.transformCacheRef0] + contactDistance[npWorkItem.transformCacheRef1];
+		const float4* verts0 = myCloth->mPosition_InvMass;
+		ClothTreeVertexTraverser traverser(maxContacts, contactDist, 0.0f, myClothId, otherClothId, NULL, s_warpScratch->meshVertsIndices,
+										   clothClothPairs, numClothClothPairs, outContactInfo, totalContactCount, s_warpScratch->meshVerts,
+										   NULL);
 
-		PxU32 numVerts = cloth0->mNbVerts;
+		traverser.vertexIdx = vertexIndex;
+		traverser.vertex = PxLoad3(verts0[vertexIndex]);
+		bv32TreeTraversal<ClothTreeVertexTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
+	}
+}
 
-		const PxU32 NbWarps = blockDim.y * gridDim.x;
+template<unsigned int WarpsPerBlock>
+__device__ static inline void femDifferentClothCollisionCoreEE(
+	const PxU32										maxContacts,
+	const PxReal									toleranceLength,
+	const PxgContactManagerInput* PX_RESTRICT		cmInputs,
+	const PxsCachedTransform* PX_RESTRICT			transformCache,
+	const PxReal* PX_RESTRICT						contactDistance,
+	const PxgShape* PX_RESTRICT						gpuShapes,
+	const PxgFEMCloth* PX_RESTRICT					femClothes,
+	PxgNonRigidFilterPair* clothClothPairs,
+	const PxU32										numClothClothPairs,
+	PxgFemFemContactInfo* outContactInfo,		//output
+	PxU32* totalContactCount,				//output
+	femMidphaseScratch* s_warpScratch
+)
+{
+	const PxU32 cmIdx = blockIdx.y;
+	const PxU32 globalWarpIdx = threadIdx.y + blockIdx.x * blockDim.y;
 
-		const float4* verts0 = cloth0->mPosition_InvMass;
+	PxgContactManagerInput npWorkItem;
+	PxgContactManagerInput_ReadWarp(npWorkItem, cmInputs, cmIdx);
 
+	PxgShape shape0;
+	PxgShape_ReadWarp(shape0, gpuShapes + npWorkItem.shapeRef0);
+
+	PxgShape shape1;
+	PxgShape_ReadWarp(shape1, gpuShapes + npWorkItem.shapeRef1);
+
+	assert(shape0.type == PxGeometryType::eTRIANGLEMESH && shape1.type == PxGeometryType::eTRIANGLEMESH);
+
+	const int clothId0 = shape0.particleOrSoftbodyId;
+	const int clothId1 = shape1.particleOrSoftbodyId;
+
+	const PxgFEMCloth* cloth0 = &femClothes[clothId0];
+	const PxgFEMCloth* cloth1 = &femClothes[clothId1];
+
+	const PxReal contactDist = contactDistance[npWorkItem.transformCacheRef0] + contactDistance[npWorkItem.transformCacheRef1];
+
+	const PxU32 numTriangles0 = cloth0->mNbTrianglesWithActiveEdges;
+	const PxU32 numTriangles1 = cloth1->mNbTrianglesWithActiveEdges;
+
+	if(globalWarpIdx < PxMin(numTriangles0, numTriangles1))
+	{
+		const bool isCloth0 = numTriangles0 <= numTriangles1;
+
+		const PxgFEMCloth* myCloth = isCloth0 ? cloth0 : cloth1;
+		const PxgFEMCloth* otherCloth = isCloth0 ? cloth1 : cloth0;
+
+		const int mask = static_cast<int>(!isCloth0);
+		const int myClothId = mask * (clothId1 - clothId0) + clothId0;
+		const int otherClothId = mask * (clothId0 - clothId1) + clothId1;
+
+		if(threadIdx.x == 0)
 		{
-			ClothTreeVertexTraverser traverser(maxContacts, contactDist, 0.0f, clothId0, clothId1,
-				s_warpScratch->meshVerts, NULL, s_warpScratch->meshVertsIndices,
-				clothClothPairs, numClothClothPairs, outPoint, outNormalPen,
-				outBarycentric0, outBarycentric1, outContactInfo, totalContactCount,
-				verts0, NULL);
+			s_warpScratch->meshVerts = otherCloth->mPosition_InvMass;
+			s_warpScratch->meshVertsIndices = otherCloth->mTriangleVertexIndices;
 
-			for (PxU32 vertexIdx = globalWarpIdx; vertexIdx < numVerts; vertexIdx += NbWarps)
-			{
-				traverser.vertexIdx = vertexIdx;
-				traverser.vertex = PxLoad3(verts0[vertexIdx]);
+			PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(otherCloth->mTriMeshData);
 
-				bv32TreeTraversal<ClothTreeVertexTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes,
-					s_warpScratch->sBv32Nodes, traverser);
-			}
+			trimeshGeomPtr += sizeof(uint4);
+
+			Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
+			s_warpScratch->bv32PackedNodes = bv32PackedNodes;
 		}
 
-		if(1)
-		{
-			__syncthreads(); // wait for completion, then we flip the pairs such that we traverse the second cloth with
-			                 // verts from the first
+		__syncthreads();
 
-			if(threadIdx.x == 0)
-			{
-				s_warpScratch->meshVerts = cloth0->mPosition_InvMass;
-				s_warpScratch->meshVertsIndices = cloth0->mTriangleVertexIndices;
+		const float4* verts0 = myCloth->mPosition_InvMass;
+		ClothTreeEdgeTraverser traverser(maxContacts, contactDist, 0.0f, myClothId, otherClothId, NULL, outContactInfo, totalContactCount,
+										 s_warpScratch->meshVerts, NULL, s_warpScratch->meshVertsIndices);
 
-				PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(cloth0->mTriMeshData);
-
-				trimeshGeomPtr += sizeof(uint4);
-
-				Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
-				s_warpScratch->bv32PackedNodes = bv32PackedNodes;
-			}
-
-			__syncthreads();
-
-			numVerts = cloth1->mNbVerts;
-
-			verts0 = cloth1->mPosition_InvMass;
-
-			ClothTreeVertexTraverser traverser(
-				maxContacts, contactDist, 0.0f, clothId1, clothId0, s_warpScratch->meshVerts,
-				NULL, s_warpScratch->meshVertsIndices, clothClothPairs, numClothClothPairs, outPoint,
-				outNormalPen, outBarycentric0, outBarycentric1, outContactInfo, totalContactCount,
-				verts0, NULL);
-
-			for(PxU32 vertexIdx = globalWarpIdx; vertexIdx < numVerts; vertexIdx += NbWarps)
-			{
-				traverser.vertexIdx = vertexIdx;
-				traverser.vertex = PxLoad3(verts0[vertexIdx]);
-				
-				bv32TreeTraversal<ClothTreeVertexTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes,
-																		   traverser);
-			}
-		}
+		const PxU32 triIdx = myCloth->mTrianglesWithActiveEdges[globalWarpIdx];
+		const uint4 triVertices = myCloth->mTriangleVertexIndices[triIdx];
+		traverser.setEdge0(triVertices, verts0, triIdx);
+		bv32TreeTraversal<ClothTreeEdgeTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
 	}
 }
 
 extern "C" __global__
 __launch_bounds__(MIDPHASE_WARPS_PER_BLOCK * WARP_SIZE, 16) //At least 16 blocks per multiprocessor helps with performance
-void cloth_clothVertexCollisionLaunch(
+void cloth_differentClothCollisionVTLaunch(
 	const PxU32									maxContacts,
 	const PxReal								tolerenceLength,
 	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
@@ -1208,11 +1396,7 @@ void cloth_clothVertexCollisionLaunch(
 	PxgNonRigidFilterPair*						clothClothPairs,
 	const PxU32									numClothClothPairs,
 	const PxU8*									updateContactPairs,
-	float4*										outPoint,									//output
-	float4*										outNormalPen,								//output
-	float4*										outBarycentric0,							//output
-	float4*										outBarycentric1,							//output
-	PxgFemContactInfo*							outContactInfo,								//output
+	PxgFemFemContactInfo*						outContactInfo,								//output
 	PxU32*										totalContactCount							//output
 )
 {
@@ -1222,7 +1406,7 @@ void cloth_clothVertexCollisionLaunch(
 
 	__shared__ PxU32 scratchMem[MIDPHASE_WARPS_PER_BLOCK][FEM_MIDPHASE_SCRATCH_SIZE];
 
-	femClothClothVertexCollisionCore<MIDPHASE_WARPS_PER_BLOCK>(
+	femDifferentClothCollisionCoreVT<MIDPHASE_WARPS_PER_BLOCK>(
 		maxContacts,
 		tolerenceLength,
 		cmInputs,
@@ -1232,10 +1416,45 @@ void cloth_clothVertexCollisionLaunch(
 		femClothes,
 		clothClothPairs,
 		numClothClothPairs,
-		outPoint,
-		outNormalPen,
-		outBarycentric0,
-		outBarycentric1,
+		outContactInfo,
+		totalContactCount,
+		(femMidphaseScratch*)scratchMem[threadIdx.y]
+		);
+}
+
+extern "C" __global__
+__launch_bounds__(MIDPHASE_WARPS_PER_BLOCK * WARP_SIZE, 16) //At least 16 blocks per multiprocessor helps with performance
+void cloth_differentClothCollisionEELaunch(
+	const PxU32									maxContacts,
+	const PxReal								tolerenceLength,
+	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
+	const PxsCachedTransform* PX_RESTRICT		transformCache,
+	const PxReal* PX_RESTRICT					contactDistance,
+	const PxgShape* PX_RESTRICT					gpuShapes,
+	const PxgFEMCloth* PX_RESTRICT				femClothes,
+	PxgNonRigidFilterPair* clothClothPairs,
+	const PxU32									numClothClothPairs,
+	const PxU8* updateContactPairs,
+	PxgFemFemContactInfo * outContactInfo,		//output
+	PxU32* totalContactCount					//output
+)
+{
+	// Early exit if contact pairs are not updated.
+	if (*updateContactPairs == 0)
+		return;
+
+	__shared__ PxU32 scratchMem[MIDPHASE_WARPS_PER_BLOCK][FEM_MIDPHASE_SCRATCH_SIZE];
+
+	femDifferentClothCollisionCoreEE<MIDPHASE_WARPS_PER_BLOCK>(
+		maxContacts,
+		tolerenceLength,
+		cmInputs,
+		transformCache,
+		contactDistance,
+		gpuShapes,
+		femClothes,
+		clothClothPairs,
+		numClothClothPairs,
 		outContactInfo,
 		totalContactCount,
 		(femMidphaseScratch*)scratchMem[threadIdx.y]

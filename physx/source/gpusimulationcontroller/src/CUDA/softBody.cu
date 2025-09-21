@@ -775,13 +775,12 @@ extern "C" __global__ void sb_rigidContactPrepareLaunch(
 	float4*							contacts_restW,
 	float4*							normalPens,
 	float4*							barycentrics,
-	PxgFemVsRigidContactInfo*		contactInfos,
+	PxgFemOtherContactInfo*			contactInfos,
 	PxU32*							numContacts,
 	PxgFemRigidConstraintBlock*		primitiveConstraints,
 	PxgPrePrepDesc*					preDesc,
 	PxgConstraintPrepareDesc*		prepareDesc,
-	float4*							rigidAppliedForces,
-	float4*							softBodyAppliedForces,
+	PxReal*							rigidAppliedForces,
 	const PxReal					invDt,
 	PxgSolverSharedDescBase*		sharedDesc,
 	const bool						isTGS
@@ -801,10 +800,9 @@ extern "C" __global__ void sb_rigidContactPrepareLaunch(
 		if (workIndex >= tNumContacts)
 			return;
 
-		rigidAppliedForces[workIndex] = make_float4(0.f, 0.f, 0.f, 0.f);
-		softBodyAppliedForces[workIndex] = make_float4(0.f, 0.f, 0.f, 0.f);
+		rigidAppliedForces[workIndex] = 0.0f;
 
-		PxgFemVsRigidContactInfo contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo contactInfo = contactInfos[workIndex];
 		PxgFemRigidConstraintBlock& constraint = primitiveConstraints[workIndex/32];
 
 		// First actor: rigid body
@@ -849,7 +847,7 @@ extern "C" __global__ void sb_particleContactPrepareLaunch(
 	float4*							contacts,
 	float4*							normalPens,
 	float4*							barycentrics,
-	PxgFemContactInfo*				contactInfos,
+	PxgFemOtherContactInfo*			contactInfos,
 	PxU32*							numContacts,
 	PxgFEMParticleConstraintBlock*	spConstraints, //soft body particle constraint
 	float2*							softBodyAppliedForces,
@@ -876,7 +874,7 @@ extern "C" __global__ void sb_particleContactPrepareLaunch(
 		softBodyAppliedForces[workIndex] = make_float2(0.f, 0.f);
 		particleAppliedForces[workIndex] = make_float2(0.f, 0.f);
 
-		PxgFemContactInfo contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo contactInfo = contactInfos[workIndex];
 		PxgFEMParticleConstraintBlock& constraint = spConstraints[workIndex/32];
 
 		PxU64 pairInd0 = contactInfo.pairInd0;
@@ -945,7 +943,7 @@ extern "C" __global__ void sb_softbodyContactPrepareLaunch(
 	float4*								normalPens,
 	float4*								barycentrics0,
 	float4*								barycentrics1,
-	PxgFemContactInfo*					contactInfos,
+	PxgFemFemContactInfo*				contactInfos,
 	PxU32*								numContacts,
 	PxgSoftBodySoftBodyConstraintBlock*	constraints,
 	float2*								softBodyAppliedForces,
@@ -974,7 +972,7 @@ extern "C" __global__ void sb_softbodyContactPrepareLaunch(
 		//initialize appliedForces to be zero
 		softBodyAppliedForces[workIndex] = make_float2(0.f, 0.f);
 
-		PxgFemContactInfo contactInfo = contactInfos[workIndex];
+		PxgFemFemContactInfo contactInfo = contactInfos[workIndex];
 		PxgSoftBodySoftBodyConstraintBlock& constraint = constraints[workIndex/32];
 
 		PxU32 pairInd0 = PxU32(contactInfo.pairInd0);
@@ -1031,7 +1029,7 @@ extern "C" __global__ void sb_clothContactPrepareLaunch(
 	float4*								normalPens,
 	float4*								barycentrics0,
 	float4*								barycentrics1,
-	PxgFemContactInfo*					contactInfos,
+	PxgFemFemContactInfo*				contactInfos,
 	PxU32*								numContacts,
 	PxgSoftBodySoftBodyConstraintBlock*	constraints,
 	float*								lambdaNs,
@@ -1061,7 +1059,7 @@ extern "C" __global__ void sb_clothContactPrepareLaunch(
 		// initialize lambdaN (accumulated delta lambdaN)
 		lambdaNs[workIndex] = 0.f;
 
-		PxgFemContactInfo contactInfo = contactInfos[workIndex];
+		PxgFemFemContactInfo contactInfo = contactInfos[workIndex];
 		PxgSoftBodySoftBodyConstraintBlock& constraint = constraints[workIndex / 32];
 
 		// first actor: cloth vertex or triangle
@@ -1151,7 +1149,7 @@ extern "C" __global__ void sb_clothContactPrepareLaunch(
 extern "C" __global__ void sb_solveOutputSPDeltaVLaunch(
 	PxgSoftBody*								softbodies,
 	PxgParticleSystem*							particlesystems,
-	PxgFemContactInfo*							contactInfos,
+	PxgFemOtherContactInfo*						contactInfos,
 	PxgFEMParticleConstraintBlock*				constraints,
 	PxU32*										numContacts,
 	float2*										appliedForces,				//output
@@ -1182,7 +1180,7 @@ extern "C" __global__ void sb_solveOutputSPDeltaVLaunch(
 		printf("tNumContacts %i\n", tNumContacts);
 		}*/
 
-		PxgFemContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo& contactInfo = contactInfos[workIndex];
 
 		PxgFEMParticleConstraintBlock& constraint = constraints[workIndex/32];
 
@@ -1288,7 +1286,7 @@ extern "C" __global__ void sb_solveOutputSPDeltaVLaunch(
 extern "C" __global__ void sb_solveOutputParticleDeltaVLaunch(
 	PxgSoftBody*								softbodies,
 	PxgParticleSystem*							particlesystems,
-	PxgFemContactInfo*							contactInfos,
+	PxgFemOtherContactInfo*						contactInfos,
 	PxgFEMParticleConstraintBlock*				constraints,
 	PxU32*										numContacts,
 	float4*										deltaP,			//output
@@ -1318,7 +1316,7 @@ extern "C" __global__ void sb_solveOutputParticleDeltaVLaunch(
 		printf("tNumContacts %i\n", tNumContacts);
 		}*/
 
-		PxgFemContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo& contactInfo = contactInfos[workIndex];
 
 		PxgFEMParticleConstraintBlock& constraint = constraints[workIndex/32];
 
@@ -1425,7 +1423,7 @@ extern "C" __global__ void sb_solveOutputParticleDeltaVLaunch(
 //solve soft bodies contacts, store positional change to soft body buffer
 extern "C" __global__ void sb_solveOutputSSDeltaVLaunch(
 	PxgSoftBody*								softbodies,
-	PxgFemContactInfo*							contactInfos,
+	PxgFemFemContactInfo*						contactInfos,
 	PxgSoftBodySoftBodyConstraintBlock*			constraints,
 	PxU32*										numContacts,
 	const PxReal								dt,
@@ -1457,7 +1455,7 @@ extern "C" __global__ void sb_solveOutputSSDeltaVLaunch(
 			printf("tNumContacts %i\n", tNumContacts);
 		}*/
 
-		PxgFemContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemFemContactInfo& contactInfo = contactInfos[workIndex];
 
 		PxgSoftBodySoftBodyConstraintBlock& constraint = constraints[workIndex/32];
 
@@ -1568,7 +1566,7 @@ extern "C" __global__ void sb_solveOutputSSDeltaVLaunch(
 extern "C" __global__ void sb_solveOutputSCDeltaVLaunch(
 	PxgSoftBody*								softbodies,
 	PxgFEMCloth*								clothes,
-	PxgFemContactInfo*							contactInfos,
+	PxgFemFemContactInfo*						contactInfos,
 	PxgSoftBodySoftBodyConstraintBlock*			constraints,
 	PxU32*										numContacts,
 	PxReal*										lambdaNs //output
@@ -1588,7 +1586,7 @@ extern "C" __global__ void sb_solveOutputSCDeltaVLaunch(
 		if (workIndex >= tNumContacts)
 			return;
 
-		PxgFemContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemFemContactInfo& contactInfo = contactInfos[workIndex];
 		PxgSoftBodySoftBodyConstraintBlock& constraint = constraints[workIndex / 32];
 
 		PxReal denomInv = constraint.velMultiplier[threadIndexInWarp]; // maybe we can remove velMultiplier from
@@ -1692,7 +1690,7 @@ extern "C" __global__ void sb_solveOutputSCDeltaVLaunch(
 //solve soft bodies contacts, store positional change to soft body buffer
 extern "C" __global__ void sb_solveOutputSSDeltaVLaunchTGS(
 	PxgSoftBody*								softbodies,
-	PxgFemContactInfo*							contactInfos,
+	PxgFemFemContactInfo*						contactInfos,
 	PxgSoftBodySoftBodyConstraintBlock*			constraints,
 	PxU32*										numContacts,
 	const PxReal								dt,
@@ -1725,7 +1723,7 @@ extern "C" __global__ void sb_solveOutputSSDeltaVLaunchTGS(
 		printf("tNumContacts %i\n", tNumContacts);
 		}*/
 
-		PxgFemContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemFemContactInfo& contactInfo = contactInfos[workIndex];
 
 		PxgSoftBodySoftBodyConstraintBlock& constraint = constraints[workIndex / 32];
 
@@ -1825,7 +1823,7 @@ extern "C" __global__ void sb_solveOutputSSDeltaVLaunchTGS(
 template <typename IterativeData>
 static __device__ void queryRigidSoftBodyContactReferenceCount(
 	PxgSoftBody* softbodies,
-	PxgFemVsRigidContactInfo* contactInfos,
+	PxgFemOtherContactInfo* contactInfos,
 	PxgFemRigidConstraintBlock* constraints,
 	PxU32* numContacts,
 	PxgPrePrepDesc* prePrepDesc,
@@ -1833,7 +1831,7 @@ static __device__ void queryRigidSoftBodyContactReferenceCount(
 	PxgArticulationCoreDesc* artiCoreDesc,
 	PxgSolverSharedDesc<IterativeData>* sharedDesc,
 	const PxReal dt,
-	float4* appliedForces,
+	PxReal* appliedForces,
 	PxU32* rigidBodyReferenceCounts,
 	bool isTGS)
 {
@@ -1855,49 +1853,53 @@ static __device__ void queryRigidSoftBodyContactReferenceCount(
 		if(workIndex >= tNumContacts)
 			return;
 
-		PxgFemVsRigidContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo& contactInfo = contactInfos[workIndex];
+		const bool wasActive = contactInfo.isInCollision();
+		const PxU64 pairInd0 = contactInfo.pairInd0;
+		const PxU32 pairInd1 = contactInfo.pairInd1;
+
 		PxgFemRigidConstraintBlock& constraint = constraints[workIndex / 32];
 		const float4 fricTan0_invMass0 = constraint.fricTan0_invMass0[threadIndexInWarp];
 		const float4 bc = constraint.barycentric[threadIndexInWarp];
 
 		// First actor: rigid body
-		const PxU64 pairInd0 = contactInfo.pairInd0;
 		const PxU64 tRigidId = pairInd0;
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
 
 		// Second actor: soft body
-		const PxU32 pairInd1 = PxU32(contactInfo.pairInd1);
 		const PxU32 softbodyId = PxGetSoftBodyId(pairInd1);
 		const PxU32 tetId = PxGetSoftBodyElementIndex(pairInd1);
 
 		if(tetId < PX_MAX_NB_DEFORMABLE_VOLUME_TET)
 		{
+			const bool checkOnlyActivity = true; // Check only if the constraint is active, without evaluating forces/impulses.
+			bool isActive = false;
+
 			PxgSoftBody& softbody = softbodies[softbodyId];
 
-			const PxVec4 bcVec(bc.x, bc.y, bc.z, bc.w);
-			PxU32 globalRigidBodyId;
-			bool isActive;
-			PxVec4 femInvMass;
+			FEMCollision<PxVec4> femCollision;
+			femCollision.isTGS = isTGS;
 
-			if(isTGS)
+			const int globalRigidBodyId = femCollision.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies);
+
+			const PxVec4 bcVec(bc.x, bc.y, bc.z, bc.w);
+			const PxVec4 deformableInvMasses = femCollision.readSoftBody(softbody, tetId, bc, NULL, checkOnlyActivity);
+
+			if(wasActive)
 			{
-				FEMCollisionTGS<PxVec4> femCollision;
-				femCollision.readRigidBody(prePrepDesc, rigidId, fricTan0_invMass0.w, numSolverBodies, NULL, NULL);
-				femCollision.readSoftBody(softbody, tetId, bc, NULL, true); // Friction info not required when querying reference counts
-				isActive = femCollision.initialize(fricTan0_invMass0, constraint, appliedForces[workIndex], rigidId, velocityReader, dt,
-												   bcVec, true);
-				globalRigidBodyId = femCollision.globalRigidBodyId;
-				femInvMass = femCollision.deformableVertexInvMasses;
+				// Once activated, keep the contact pair active to maintain a conservative reference count.
+				isActive = true;
 			}
 			else
 			{
-				FEMCollisionPGS<PxVec4> femCollision;
-				femCollision.readRigidBody(prePrepDesc, rigidId, fricTan0_invMass0.w, numSolverBodies, NULL, NULL);
-				femCollision.readSoftBody(softbody, tetId, bc, NULL, true); // Friction info not required when querying reference counts
+				femCollision.readRigidBody(rigidId, globalRigidBodyId, fricTan0_invMass0.w, NULL, NULL);
 				isActive = femCollision.initialize(fricTan0_invMass0, constraint, appliedForces[workIndex], rigidId, velocityReader, dt,
-												   bcVec, true);
-				globalRigidBodyId = femCollision.globalRigidBodyId;
-				femInvMass = femCollision.deformableVertexInvMasses;
+												   bcVec, wasActive, checkOnlyActivity);
+
+				if(isActive)
+				{
+					contactInfo.markInCollision(true);
+				}
 			}
 
 			if(isActive)
@@ -1906,21 +1908,29 @@ static __device__ void queryRigidSoftBodyContactReferenceCount(
 				{
 					// Increment the reference count of the four vertices.
 					const uint4 tetrahedronId = softbody.mSimTetIndices[tetId];
-					if(femInvMass.x > 0.0f && PxAbs(bc.x) > 1e-6f)
+					if(bc.x > 1e-3f && deformableInvMasses.x != 0.0f)
+					{
 						atomicAdd(&softbody.mSimDelta[tetrahedronId.x].w, 1.0f);
+					}
 
-					if(femInvMass.y > 0.0f && PxAbs(bc.y) > 1e-6f)
+					if(bc.y > 1e-3f && deformableInvMasses.y != 0.0f)
+					{
 						atomicAdd(&softbody.mSimDelta[tetrahedronId.y].w, 1.0f);
+					}
 
-					if(femInvMass.z > 0.0f && PxAbs(bc.z) > 1e-6f)
+					if(bc.z > 1e-3f && deformableInvMasses.z != 0.0f)
+					{
 						atomicAdd(&softbody.mSimDelta[tetrahedronId.z].w, 1.0f);
+					}
 
-					if(femInvMass.w > 0.0f && PxAbs(bc.w) > 1e-6f)
+					if(bc.w > 1e-3f && deformableInvMasses.w != 0.0f)
+					{
 						atomicAdd(&softbody.mSimDelta[tetrahedronId.w].w, 1.0f);
+					}
 				}
 
 				// Update rigidbody
-				if(!rigidId.isStaticBody() && fricTan0_invMass0.w != 0.0f)
+				if(globalRigidBodyId != -1 && fricTan0_invMass0.w != 0.0f)
 				{
 					// Increment the reference count of the rigid body.
 					atomicAdd(&rigidBodyReferenceCounts[globalRigidBodyId], 1);
@@ -1933,7 +1943,7 @@ static __device__ void queryRigidSoftBodyContactReferenceCount(
 extern "C" __global__
 void sb_queryRigidSoftContactReferenceCountLaunch(
 	PxgSoftBody* softbodies,
-	PxgFemVsRigidContactInfo* contactInfos,
+	PxgFemOtherContactInfo* contactInfos,
 	PxgFemRigidConstraintBlock* constraints,
 	PxU32* numContacts,
 	PxgPrePrepDesc* prePrepDesc,
@@ -1941,7 +1951,7 @@ void sb_queryRigidSoftContactReferenceCountLaunch(
 	PxgArticulationCoreDesc* artiCoreDesc,
 	PxgSolverSharedDesc<IterativeSolveData>* sharedDesc,
 	const PxReal dt,
-	float4* appliedForces,
+	PxReal* appliedForces,
 	PxU32* rigidBodyReferenceCounts)
 {
 	const bool isTGS = false;
@@ -1952,7 +1962,7 @@ void sb_queryRigidSoftContactReferenceCountLaunch(
 template <typename IterativeData>
 static __device__ void solveRigidSoftBodyContact(
 	PxgSoftBody* softbodies,
-	PxgFemVsRigidContactInfo* contactInfos,
+	PxgFemOtherContactInfo* contactInfos,
 	PxgFemRigidConstraintBlock* constraints,
 	PxU32* numContacts,
 	PxgPrePrepDesc* prePrepDesc,
@@ -1960,11 +1970,10 @@ static __device__ void solveRigidSoftBodyContact(
 	PxgArticulationCoreDesc* artiCoreDesc,
 	PxgSolverSharedDesc<IterativeData>* sharedDesc,
 	float4* rigidDeltaVel,
-	float4* appliedForces,
+	PxReal* appliedForces,
 	PxU32* rigidBodyReferenceCounts,
 	const PxReal dt,
 	PxsDeformableVolumeMaterialData* materials,
-	bool updateRigid,
 	const PxsMaterialData* PX_RESTRICT rigidBodyMaterials,
 	bool isTGS)
 {
@@ -1986,105 +1995,73 @@ static __device__ void solveRigidSoftBodyContact(
 		if(workIndex >= tNumContacts)
 			return;
 
-		PxgFemVsRigidContactInfo& contactInfo = contactInfos[workIndex];
+		PxgFemOtherContactInfo& contactInfo = contactInfos[workIndex];
+		const bool isActive = contactInfo.isInCollision();
+		const PxU64 pairInd0 = contactInfo.pairInd0;
+		const PxU32 pairInd1 = contactInfo.pairInd1;
+
 		PxgFemRigidConstraintBlock& constraint = constraints[workIndex / 32];
 		const float4 fricTan0_invMass0 = constraint.fricTan0_invMass0[threadIndexInWarp];
 		const float4 bc = constraint.barycentric[threadIndexInWarp];
 
 		// First actor: rigid body
-		const PxU64 pairInd0 = contactInfo.pairInd0;
 		const PxU64 tRigidId = pairInd0;
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
 
 		// Second actor: soft body
-		const PxU32 pairInd1 = PxU32(contactInfo.pairInd1);
 		const PxU32 softbodyId = PxGetSoftBodyId(pairInd1);
 		const PxU32 tetId = PxGetSoftBodyElementIndex(pairInd1);
 
 		if(tetId < PX_MAX_NB_DEFORMABLE_VOLUME_TET)
 		{
-			PxgSoftBody& softbody = softbodies[softbodyId];
-			const PxVec4 bcVec(bc.x, bc.y, bc.z, bc.w);
+			const bool checkOnlyActivity = false;
 
-			if(isTGS)
+			FEMCollision<PxVec4> femCollision;
+			femCollision.isTGS = isTGS;
+
+			const int globalRigidBodyId = femCollision.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies);
+			PxVec3 deltaLinVel0(0.0f), deltaAngVel0(0.0f);
+			PxReal count = 0.0f;
+
+			if(isActive)
 			{
-				FEMCollisionTGS<PxVec4> femCollision;
-				femCollision.readRigidBody(prePrepDesc, rigidId, fricTan0_invMass0.w, numSolverBodies, rigidBodyReferenceCounts,
-										   &rigidBodyMaterials[contactInfo.rigidMatInd]);
-				femCollision.readSoftBody(softbody, tetId, bc, materials, false);
-				const bool isActive = femCollision.initialize(fricTan0_invMass0, constraint, appliedForces[workIndex], rigidId,
-															  velocityReader, dt, bcVec, false);
+				PxgSoftBody& softbody = softbodies[softbodyId];
 
-				if(updateRigid) // Update rigid body
+				const PxVec4 bcVec(bc.x, bc.y, bc.z, bc.w);
+
+				femCollision.readRigidBody(rigidId, globalRigidBodyId, fricTan0_invMass0.w, rigidBodyReferenceCounts,
+										   &rigidBodyMaterials[contactInfo.getRigidMaterialIndex()]);
+				femCollision.readSoftBody(softbody, tetId, bc, materials, checkOnlyActivity);
+
+				femCollision.initialize(fricTan0_invMass0, constraint, appliedForces[workIndex], rigidId, velocityReader, dt, bcVec,
+										isActive, checkOnlyActivity);
+
+				// Compute soft body delta
+				PxVec3 deltaPos;
+				appliedForces[workIndex] = femCollision.computeFEMChange(deltaPos, dt);
+
+				// Update soft body
+				femCollision.writeSoftBody(softbody, tetId, bc, deltaPos);
+
+				// Compute rigid body delta
+				if(fricTan0_invMass0.w != 0.0f && !rigidId.isStaticBody())
 				{
-					PxVec3 deltaLinVel0, deltaAngVel0;
-					appliedForces[workIndex] = femCollision.computeRigidChange(deltaLinVel0, deltaAngVel0, fricTan0_invMass0.w, rigidId);
-					femCollision.writeRigidBody(rigidDeltaVel, deltaLinVel0, deltaAngVel0, isActive, workIndex, workIndex + tNumContacts);
-				}
-				else if(isActive) // Update soft body
-				{
-					PxVec3 deltaPos;
-					appliedForces[workIndex] = femCollision.computeFEMChange(deltaPos, dt);
-					femCollision.writeSoftBody(softbody, tetId, bc, deltaPos);
+					count = 1.0f;
+					femCollision.computeRigidChange(deltaLinVel0, deltaAngVel0, rigidId, fricTan0_invMass0.w);
 				}
 			}
-			else // PGS
-			{
-				FEMCollisionPGS<PxVec4> femCollision;
-				femCollision.readRigidBody(prePrepDesc, rigidId, fricTan0_invMass0.w, numSolverBodies, rigidBodyReferenceCounts,
-										   &rigidBodyMaterials[contactInfo.rigidMatInd]);
-				femCollision.readSoftBody(softbody, tetId, bc, materials, false);
-				const bool isActive = femCollision.initialize(fricTan0_invMass0, constraint, appliedForces[workIndex], rigidId,
-															  velocityReader, dt, bcVec, false);
 
-				if(updateRigid) // Update rigid body
-				{
-					PxVec3 deltaLinVel0, deltaAngVel0;
-					appliedForces[workIndex] = femCollision.computeRigidChange(deltaLinVel0, deltaAngVel0, fricTan0_invMass0.w, rigidId);
-					femCollision.writeRigidBody(rigidDeltaVel, deltaLinVel0, deltaAngVel0, isActive, workIndex, workIndex + tNumContacts);
-				}
-				else if(isActive) // Update soft body
-				{
-					PxVec3 deltaPos;
-					appliedForces[workIndex] = femCollision.computeFEMChange(deltaPos, dt);
-					femCollision.writeSoftBody(softbody, tetId, bc, deltaPos);
-				}
-			}
+			// Update rigid body
+			femCollision.writeRigidBody(rigidDeltaVel, deltaLinVel0, deltaAngVel0, workIndex, workIndex + tNumContacts, count);
 		}
 	}
 }
 
-
-//solve collision between softbody and primitives
-//store positional change to soft body buffer
-extern "C" __global__ void sb_solveOutputSRDeltaVLaunch(
-	PxgSoftBody*								softbodies,
-	PxgFemVsRigidContactInfo*							contactInfos,
-	PxgFemRigidConstraintBlock*					constraints,
-	PxU32*										numContacts,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgArticulationCoreDesc*					artiCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
-	float4*										rigidDeltaVel,				//output
-	float4*										appliedForces,				//output
-	PxU32*										rigidBodyReferenceCounts,
-	const PxReal								dt,
-	PxsDeformableVolumeMaterialData*			materials,
-	const PxsMaterialData * PX_RESTRICT rigidBodyMaterials)
-{
-	const bool updateRigid = false; // Update soft body
-	const bool isTGS = false;
-
-	solveRigidSoftBodyContact(softbodies, contactInfos, constraints, numContacts, prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc,
-							  rigidDeltaVel, appliedForces, rigidBodyReferenceCounts, dt, materials, updateRigid, rigidBodyMaterials, isTGS);
-}
-
 //solve collision between soft body and primitives based on the sorted contact by rigid id
 //store new velocity to rigid body buffer
-extern "C" __global__ void sb_solveOutputRigidDeltaVLaunch(
+extern "C" __global__ void sb_solveRigidSoftCollisionLaunch(
 	PxgSoftBody*								softbodies,
-	PxgFemVsRigidContactInfo*					contactInfos,
+	PxgFemOtherContactInfo*						contactInfos,
 	PxgFemRigidConstraintBlock*					constraints,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
@@ -2092,17 +2069,15 @@ extern "C" __global__ void sb_solveOutputRigidDeltaVLaunch(
 	PxgArticulationCoreDesc*					artiCoreDesc,
 	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
 	float4*										rigidDeltaVel,				//output
-	float4*										appliedForces,				//output
+	PxReal*										appliedForces,				//output
 	PxU32*										rigidBodyReferenceCounts,
 	const PxReal								dt,
 	PxsDeformableVolumeMaterialData*			materials,
 	const PxsMaterialData * PX_RESTRICT rigidBodyMaterials)
 {
-	const bool updateRigid = true;
 	const bool isTGS = false;
-
 	solveRigidSoftBodyContact(softbodies, contactInfos, constraints, numContacts, prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc,
-		rigidDeltaVel, appliedForces, rigidBodyReferenceCounts, dt, materials, updateRigid, rigidBodyMaterials, isTGS);
+		rigidDeltaVel, appliedForces, rigidBodyReferenceCounts, dt, materials, rigidBodyMaterials, isTGS);
 }
 
 
@@ -2112,7 +2087,7 @@ extern "C" __global__ void sb_solveOutputRigidDeltaVLaunch(
 extern "C" __global__
 void sb_queryRigidSoftContactReferenceCountLaunchTGS(
 	PxgSoftBody* softbodies,
-	PxgFemVsRigidContactInfo* contactInfos,
+	PxgFemOtherContactInfo* contactInfos,
 	PxgFemRigidConstraintBlock* constraints,
 	PxU32* numContacts,
 	PxgPrePrepDesc* prePrepDesc,
@@ -2120,7 +2095,7 @@ void sb_queryRigidSoftContactReferenceCountLaunchTGS(
 	PxgArticulationCoreDesc* artiCoreDesc,
 	PxgSolverSharedDesc<IterativeSolveDataTGS>* sharedDesc,
 	const PxReal dt,
-	float4* appliedForces,
+	PxReal* appliedForces,
 	PxU32* rigidBodyReferenceCounts)
 {
 	const bool isTGS = true;
@@ -2128,37 +2103,11 @@ void sb_queryRigidSoftContactReferenceCountLaunchTGS(
 		sharedDesc, dt, appliedForces, rigidBodyReferenceCounts, isTGS);
 }
 
-
-//solve collision between softbody and primitives
-//store positional change to soft body buffer
-extern "C" __global__ void sb_solveOutputSRDeltaVLaunchTGS(
-	PxgSoftBody*								softbodies,
-	PxgFemVsRigidContactInfo*							contactInfos,
-	PxgFemRigidConstraintBlock*					constraints,
-	PxU32*										numContacts,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgArticulationCoreDesc*					artiCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveDataTGS>*	sharedDesc,
-	float4*										rigidDeltaVel,				//output
-	float4*										appliedForces,				//output
-	PxU32*										rigidBodyReferenceCounts,
-	const PxReal								dt,
-	PxsDeformableVolumeMaterialData*			materials,
-	const PxsMaterialData * PX_RESTRICT			rigidBodyMaterials)
-{
-	const bool updateRigid = false; // Update soft body
-	const bool isTGS = true;
-
-	solveRigidSoftBodyContact(softbodies, contactInfos, constraints, numContacts, prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc,
-		rigidDeltaVel, appliedForces, rigidBodyReferenceCounts, dt, materials, updateRigid, rigidBodyMaterials, isTGS);
-}
-
 //solve collision between soft body and primitives based on the sorted contact by rigid id
 //store new velocity to rigid body buffer
-extern "C" __global__ void sb_solveOutputRigidDeltaVLaunchTGS(
+extern "C" __global__ void sb_solveRigidSoftCollisionLaunchTGS(
 	PxgSoftBody*								softbodies,
-	PxgFemVsRigidContactInfo*							contactInfos,
+	PxgFemOtherContactInfo*						contactInfos,
 	PxgFemRigidConstraintBlock*					constraints,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
@@ -2166,16 +2115,14 @@ extern "C" __global__ void sb_solveOutputRigidDeltaVLaunchTGS(
 	PxgArticulationCoreDesc*					artiCoreDesc,
 	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
 	float4*										rigidDeltaVel,				//output
-	float4*										appliedForces,				//output
+	PxReal*										appliedForces,				//output
 	PxU32*										rigidBodyReferenceCounts,
 	const PxReal								dt,
 	PxsDeformableVolumeMaterialData*			materials,
 	const PxsMaterialData * PX_RESTRICT			rigidBodyMaterials
 )
 {
-	const bool updateRigid = true;
 	const bool isTGS = true;
-
 	solveRigidSoftBodyContact(softbodies, contactInfos, constraints, numContacts, prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc,
-		rigidDeltaVel, appliedForces, rigidBodyReferenceCounts, dt, materials, updateRigid, rigidBodyMaterials, isTGS);
+		rigidDeltaVel, appliedForces, rigidBodyReferenceCounts, dt, materials, rigidBodyMaterials, isTGS);
 }

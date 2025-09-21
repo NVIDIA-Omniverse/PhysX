@@ -284,10 +284,20 @@ template<> struct PxEnumTraits< physx::PxD6Motion::Enum > { PxEnumTraits() : Nam
 		{ "eSWING", static_cast<PxU32>( physx::PxD6Drive::eSWING ) },
 		{ "eTWIST", static_cast<PxU32>( physx::PxD6Drive::eTWIST ) },
 		{ "eSLERP", static_cast<PxU32>( physx::PxD6Drive::eSLERP ) },
+		{ "eSWING1", static_cast<PxU32>( physx::PxD6Drive::eSWING1 ) },
+		{ "eSWING2", static_cast<PxU32>( physx::PxD6Drive::eSWING2 ) },
 		{ NULL, 0 }
 	};
 
 template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : NameConversion( g_physx__PxD6Drive__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
+	static PxU32ToName g_physx__PxD6AngularDriveConfig__EnumConversion[] = {
+		{ "eSWING_TWIST", static_cast<PxU32>( physx::PxD6AngularDriveConfig::eSWING_TWIST ) },
+		{ "eSLERP", static_cast<PxU32>( physx::PxD6AngularDriveConfig::eSLERP ) },
+		{ "eLEGACY", static_cast<PxU32>( physx::PxD6AngularDriveConfig::eLEGACY ) },
+		{ NULL, 0 }
+	};
+
+template<> struct PxEnumTraits< physx::PxD6AngularDriveConfig::Enum > { PxEnumTraits() : NameConversion( g_physx__PxD6AngularDriveConfig__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	class PxD6Joint;
 	struct PxD6JointGeneratedValues
 		: PxJointGeneratedValues	{
@@ -304,6 +314,7 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 		PxD6JointDrive Drive[physx::PxD6Drive::eCOUNT];
 		PxTransform DrivePosition;
 		const char * ConcreteTypeName;
+		PxD6AngularDriveConfig::Enum AngularDriveConfig;
 		  PxD6JointGeneratedValues( const PxD6Joint* inSource );
 	};
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, Motion, PxD6JointGeneratedValues)
@@ -319,6 +330,7 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, Drive, PxD6JointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, DrivePosition, PxD6JointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, ConcreteTypeName, PxD6JointGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, AngularDriveConfig, PxD6JointGeneratedValues)
 	struct PxD6JointGeneratedInfo
 		: PxJointGeneratedInfo
 	{
@@ -336,6 +348,7 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_Drive, PxD6Joint, PxD6Drive::Enum, PxD6JointDrive > Drive;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_DrivePosition, PxD6Joint, const PxTransform &, PxTransform > DrivePosition;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_ConcreteTypeName, PxD6Joint, const char * > ConcreteTypeName;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_AngularDriveConfig, PxD6Joint, PxD6AngularDriveConfig::Enum, PxD6AngularDriveConfig::Enum > AngularDriveConfig;
 
 		 PxD6JointGeneratedInfo();
 		template<typename TReturnType, typename TOperator>
@@ -358,7 +371,7 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 13; }
+		static PxU32 instancePropertyCount() { return 14; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -379,7 +392,8 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 			inOperator( Drive, inStartIndex + 10 );; 
 			inOperator( DrivePosition, inStartIndex + 11 );; 
 			inOperator( ConcreteTypeName, inStartIndex + 12 );; 
-			return 13 + inStartIndex;
+			inOperator( AngularDriveConfig, inStartIndex + 13 );; 
+			return 14 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxD6Joint>

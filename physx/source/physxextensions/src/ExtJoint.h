@@ -715,7 +715,7 @@ namespace Ext
 	};
 
 #if PX_SUPPORT_OMNI_PVD
-	void omniPvdSetBaseJointParams(PxJoint& joint, PxJointConcreteType::Enum cType);
+	void omniPvdSetBaseJointParams(const PxJoint& joint, PxJointConcreteType::Enum cType);
 	template<typename JointType> void omniPvdInitJoint(JointType& joint);
 #endif
 

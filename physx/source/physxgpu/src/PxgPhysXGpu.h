@@ -65,9 +65,10 @@ public:
 
 	virtual PxsKernelWranglerManager*				getGpuKernelWranglerManager(PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
 
-	virtual Bp::BroadPhase*							createGpuBroadPhase(PxsKernelWranglerManager* gpuKernelWrangler,
+	virtual Bp::BroadPhase*							createGpuBroadPhase(const PxGpuBroadPhaseDesc& desc,
+														PxsKernelWranglerManager* gpuKernelWrangler,
 														PxCudaContextManager* cudaContextManager,
-														const PxU32 gpuComputeVersion,
+														PxU32 gpuComputeVersion,
 														const PxGpuDynamicsMemoryConfig& config,
 														PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID)	PX_OVERRIDE;
 

@@ -62,7 +62,7 @@ using namespace physx;
 #define FEMCLOTH_SQRT2		1.4142135623730950488016887242097f
 #define FEMCLOTH_SQRT3		1.7320508075688772935274463415059f
 
-#define FEMCLOTH_THRESHOLD	1.0e-12f // to check if the value is near zero
+#define FEMCLOTH_THRESHOLD	1.0e-14f
 #define FEMCLOTH_PI			3.14159265358979323846f
 #define FEMCLOTH_HALF_PI	1.57079632679489661923f
 #define FEMCLOTH_2PI		6.28318530717958647692f
@@ -587,29 +587,6 @@ static __device__ inline void bendingEnergySolvePerTrianglePair(PxgFEMCloth& shF
 	float dtInv = 1.0f / dt;
 
 	alphaTilde = kInv * dtInv * dtInv;
-
-#if 0 //! incremental angle update
-
-		const PxReal prevBendingAngle = shFEMCloth.mPrevBendingAngles[trianglePairIndex];
-		//const PxReal tentativeAngle = atan2(sinAngle, cosAngle);
-
-		const PxReal dif = angle - prevBendingAngle;
-		const PxReal sign = (dif > 0.f) ? 1.f : -1.f;
-		const PxReal absDif = sign * dif;
-
-		PxReal quotient = floorf(absDif * FEMCLOTH_2PI_INV);
-		PxReal residual = absDif - FEMCLOTH_2PI * quotient;
-
-		if(residual > FEMCLOTH_PI)
-			quotient += 1.f;
-
-		angle -= sign * quotient * FEMCLOTH_2PI;
-		shFEMCloth.mPrevBendingAngles[trianglePairIndex] = angle;
-
-		C = angle - restBendingAngle;
-
-#else //! direct angle update
-
 	C = angle - restBendingAngle;
 
 	if(PxAbs(C + FEMCLOTH_2PI) < PxAbs(C))
@@ -620,8 +597,6 @@ static __device__ inline void bendingEnergySolvePerTrianglePair(PxgFEMCloth& shF
 	{
 		C -= FEMCLOTH_2PI;
 	}
-
-#endif
 
 	// Bending constraint clamped.
 	C = PxClamp(C, -FEMCLOTH_HALF_PI, FEMCLOTH_HALF_PI);

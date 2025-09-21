@@ -3146,6 +3146,17 @@ PxDominanceGroupPair NpScene::getDominanceGroupPair(PxDominanceGroup group1, PxD
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
+void NpScene::updatePhysXIndicator()
+{
+	PxIntBool isGpu = mScene.isUsingGpuDynamicsOrBp();
+
+	mPhysXIndicator.setIsGpu(isGpu != 0);
+}
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+
 void NpScene::setSolverBatchSize(PxU32 solverBatchSize)
 {
 	NP_WRITE_CHECK(this);
