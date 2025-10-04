@@ -262,3 +262,51 @@ stress_processor_using_simd()
 {
     return StressProcessor::usingSIMD() ? 1 : 0;
 }
+
+extern "C" uint32_t
+stress_sizeof_stress_vec3()
+{
+    return static_cast<uint32_t>(sizeof(StressVec3));
+}
+
+extern "C" uint32_t
+stress_sizeof_node_desc()
+{
+    return static_cast<uint32_t>(sizeof(StressNodeDesc));
+}
+
+extern "C" uint32_t
+stress_sizeof_bond_desc()
+{
+    return static_cast<uint32_t>(sizeof(StressBondDesc));
+}
+
+extern "C" uint32_t
+stress_sizeof_velocity()
+{
+    return static_cast<uint32_t>(sizeof(StressVelocity));
+}
+
+extern "C" uint32_t
+stress_sizeof_impulse()
+{
+    return static_cast<uint32_t>(sizeof(StressImpulse));
+}
+
+extern "C" uint32_t
+stress_sizeof_data_params()
+{
+    return static_cast<uint32_t>(sizeof(StressDataParams));
+}
+
+extern "C" uint32_t
+stress_sizeof_solver_params()
+{
+    return static_cast<uint32_t>(sizeof(StressSolverParams));
+}
+
+extern "C" uint32_t
+stress_sizeof_error_sq()
+{
+    return static_cast<uint32_t>(sizeof(StressErrorSq));
+}

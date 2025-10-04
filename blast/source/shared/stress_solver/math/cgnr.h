@@ -29,7 +29,15 @@
 #include <stdint.h>
 #include <cstring>  // for memcpy, memset
 
+#if !defined(STRESS_SOLVER_NO_SIMD)
 #include "simd/simd.h"
+#else
+inline void load_float(float& f, const float* mem) { f = *mem; }
+inline void store_float(float* mem, float value) { *mem = value; }
+inline float mul(float a, float b) { return a * b; }
+inline float div(float a, float b) { return a / b; }
+inline bool le(float a, float b) { return a <= b; }
+#endif
 
 
 template<typename Elem, typename ElemOps, typename Mat, typename MatOps, typename Scalar = float, typename Error = float>

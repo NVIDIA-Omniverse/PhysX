@@ -83,6 +83,15 @@ uint8_t stress_processor_get_bond_desc(const StressProcessorHandle* handle,
 
 uint8_t stress_processor_using_simd();
 
+uint32_t stress_sizeof_stress_vec3();
+uint32_t stress_sizeof_node_desc();
+uint32_t stress_sizeof_bond_desc();
+uint32_t stress_sizeof_velocity();
+uint32_t stress_sizeof_impulse();
+uint32_t stress_sizeof_data_params();
+uint32_t stress_sizeof_solver_params();
+uint32_t stress_sizeof_error_sq();
+
 #ifdef __cplusplus
 }
 #endif

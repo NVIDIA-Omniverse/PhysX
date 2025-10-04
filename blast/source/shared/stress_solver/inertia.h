@@ -81,6 +81,7 @@ struct InertiaMatrixOps
     }
 };
 
+#if !defined(STRESS_SOLVER_NO_SIMD)
 template<>
 struct InertiaMatrixOps<SIMD_Scalar>
 {
@@ -114,3 +115,4 @@ struct InertiaMatrixOps<SIMD_Scalar>
         }
     }
 };
+#endif // !STRESS_SOLVER_NO_SIMD

@@ -28,7 +28,9 @@
 
 #include "NvCTypes.h"
 
+#if !defined(STRESS_SOLVER_NO_SIMD)
 #include "simd/simd.h"
+#endif
 
 
 /**
@@ -36,7 +38,11 @@
  * Currently also used as a template argument to distinguish code paths.  May need a different
  * scheme if two codepaths use the same scalar type.
  */
+#if !defined(STRESS_SOLVER_NO_SIMD)
 typedef __m128  SIMD_Scalar;
+#else
+typedef float   SIMD_Scalar;
+#endif
 typedef float   Float_Scalar;
 
 

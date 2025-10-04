@@ -1,0 +1,10 @@
+{
+  "name": "blast-js-stress-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ./scripts/build.js",
+    "demo": "npm run build --silent && node ./demo.js"
+  }
+}

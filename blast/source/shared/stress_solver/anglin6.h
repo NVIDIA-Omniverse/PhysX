@@ -27,7 +27,17 @@
 #pragma once
 
 #include "NvCMath.h"
+
+#if !defined(STRESS_SOLVER_NO_SIMD)
 #include "simd/simd.h"
+#else
+#ifndef SIMD_ALIGN_16
+#define SIMD_ALIGN_16(code) NV_ALIGN_PREFIX(16) code NV_ALIGN_SUFFIX(16)
+#endif
+#ifndef SIMD_ALIGN_32
+#define SIMD_ALIGN_32(code) NV_ALIGN_PREFIX(32) code NV_ALIGN_SUFFIX(32)
+#endif
+#endif
 
 
 /**
@@ -149,6 +159,7 @@ struct AngLin6Ops
 };
 
 
+#if !defined(STRESS_SOLVER_NO_SIMD)
 /**
  * SIMD AngLin6 operations.
  */
@@ -280,3 +291,4 @@ struct AngLin6Ops<__m128>
         return _mm_add_ps(_ang_sq, _lin_sq);
     }
 };
+#endif // !STRESS_SOLVER_NO_SIMD

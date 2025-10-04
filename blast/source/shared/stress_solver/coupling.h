@@ -116,6 +116,7 @@ struct CouplingMatrixOps
     }
 };
 
+#if !defined(STRESS_SOLVER_NO_SIMD)
 template <typename Elem>
 struct CouplingMatrixOps<Elem, SIMD_Scalar>
 {
@@ -202,3 +203,4 @@ private:
         return _mm256_shuffle_ps(res_shuffled, res_shuffled, 0xc9);
     }
 };
+#endif // !STRESS_SOLVER_NO_SIMD

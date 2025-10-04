@@ -1,0 +1,24 @@
+# Blast Stress Solver JavaScript Demo
+
+This example shows how to compile the Blast stress solver extension to WebAssembly
+with Emscripten and drive it from Node.js. The scenario matches the Rust demo:
+three chunks connected by three bonds, simulated across several frames while we
+monitor the resulting bond stresses and remove overstressed connections.
+
+## Prerequisites
+
+- Emscripten (`emcc`) available on the `PATH`.
+- Node.js 18+ (installed automatically when the Emscripten Debian package is
+  used).
+
+## Build and run
+
+```bash
+cd blast/js_stress_example
+npm run demo
+```
+
+The build step compiles `stress_bridge.cpp` together with the Blast stress solver
+implementation (`stress.cpp`) to `dist/stress_solver.{cjs,wasm}`. The demo script
+then loads the generated module, feeds the same frame inputs as the Rust example,
+computes bond stresses, and logs which bonds fail under the configured limits.
