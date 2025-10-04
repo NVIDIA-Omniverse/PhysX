@@ -42,6 +42,10 @@ typedef CGNR<AngLin6, AngLin6Ops<SIMD_Scalar>, BondMatrixS, BondMatrixOpsS<SIMD_
  * StressProcessor static members
  */
 
+#if defined(STRESS_SOLVER_FORCE_SCALAR)
+const bool
+StressProcessor::s_use_simd = false;
+#else
 // Check for SSE, FMA3, and AVX support
 const bool
 StressProcessor::s_use_simd =
@@ -50,6 +54,7 @@ StressProcessor::s_use_simd =
     device_supports_instruction_set(InstructionSet::OSXSAVE) && // OS uses XSAVE and XRSTORE instructions allowing saving YMM registers on context switch
     device_supports_instruction_set(InstructionSet::AVX) &&     // Advanced Vector Extensions (256 bit operations)
     os_supports_avx_restore();                                  // OS has enabled the required extended state for AVX
+#endif
 
 
 /**

@@ -1,0 +1,13 @@
+[package]
+name = "rust_stress_example"
+version = "0.1.0"
+edition = "2021"
+authors = ["PhysX Stress Solver Example"]
+description = "Minimal example showing how to drive the PhysX Blast StressProcessor from Rust"
+license = "BSD-3-Clause"
+links = "stress_solver_ffi"
+
+[dependencies]
+
+[build-dependencies]
+cc = "1.0"
