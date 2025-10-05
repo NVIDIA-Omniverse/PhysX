@@ -114,17 +114,6 @@ export class StressLimits {
     return this.#shearFatal();
   }
 
-  scaledBy(factor) {
-    return new StressLimits({
-      compressionElasticLimit: this.compressionElasticLimit * factor,
-      compressionFatalLimit: this.compressionFatalLimit * factor,
-      tensionElasticLimit: this.tensionElasticLimit * factor,
-      tensionFatalLimit: this.tensionFatalLimit * factor,
-      shearElasticLimit: this.shearElasticLimit * factor,
-      shearFatalLimit: this.shearFatalLimit * factor
-    });
-  }
-
   #compressionElastic() {
     return resolveLimit(this.compressionElasticLimit, 1.0);
   }
@@ -164,8 +153,6 @@ export async function loadStressSolver({ module: moduleOptions } = {}) {
       return isNode ? fileURLToPathFn(url) : url.href;
     };
   }
-  options.print ??= (...args) => console.log('[blast-wasm]', ...args);
-  options.printErr ??= (...args) => console.error('[blast-wasm]', ...args);
 
   const module = await factory(options);
   return createRuntime(module);
@@ -259,7 +246,6 @@ function createRuntime(module) {
     StressLimits,
     StressFailure,
     computeBondStress,
-    defaultSolverParams: () => ({ maxIterations: 32, tolerance: 1.0e-6, warmStart: false }),
     createProcessor(description) {
       return new StressProcessor(module, memory, sizes, description);
     }
@@ -357,8 +343,6 @@ class StressProcessor {
     this._nodes = this._fetchAllNodes();
     this._bonds = this._fetchAllBonds();
     this._impulses = Array.from({ length: this.bondCount }, () => createImpulse());
-    this._pendingForces = Array.from({ length: this.nodeCount }, () => ({ force: vec3(), torque: vec3() }));
-    this._forceScratchPtr = memory.alloc(sizes.velocity);
     this._solverParams = {
       maxIterations: 32,
       tolerance: 1.0e-6,
@@ -452,23 +436,8 @@ class StressProcessor {
 
     velocities.forEach((velocity, index) => {
       const base = this.velocitiesPtr + index * this.sizes.velocity;
-      const pending = this._pendingForces[index];
-      if (pending && (pending.force.x || pending.force.y || pending.force.z || pending.torque.x || pending.torque.y || pending.torque.z)) {
-        const applied = this._pendingForces[index];
-        const angVec = addVec3(velocity.ang ?? vec3(), applied.torque);
-        const linVec = addVec3(velocity.lin ?? vec3(), applied.force);
-        if (typeof console !== 'undefined' && console.debug) {
-          console.debug('[stress][pendingForce]', { index, applied });
-          console.debug('[stress][velocityWithForce]', { index, angVec, linVec });
-        }
-        writeVec3(view, base, angVec);
-        writeVec3(view, base + this.sizes.vec3, linVec);
-        applied.force = vec3();
-        applied.torque = vec3();
-      } else {
-        writeVec3(view, base, velocity.ang ?? vec3());
-        writeVec3(view, base + this.sizes.vec3, velocity.lin ?? vec3());
-      }
+      writeVec3(view, base, velocity.ang ?? vec3());
+      writeVec3(view, base + this.sizes.vec3, velocity.lin ?? vec3());
     });
 
     this._impulses.forEach((impulse, index) => {
@@ -492,20 +461,7 @@ class StressProcessor {
     );
 
     if (iterations < 0) {
-      const errorView = this.memory.view();
-      const angularErrorSq = errorView.getFloat32(this.errorPtr, true);
-      const linearErrorSq = errorView.getFloat32(this.errorPtr + 4, true);
-      const angularError = Number.isFinite(angularErrorSq) ? Math.sqrt(Math.max(angularErrorSq, 0)) : Number.NaN;
-      const linearError = Number.isFinite(linearErrorSq) ? Math.sqrt(Math.max(linearErrorSq, 0)) : Number.NaN;
-      const message = `Stress solver failed (code ${iterations}) linear=${linearError.toExponential(3)} angular=${angularError.toExponential(3)}`;
-      console.error(message, {
-        iterations,
-        linearError,
-        angularError,
-        solverParams: this._solverParams,
-        velocitySample: velocities.slice(0, 4)
-      });
-      throw new Error(message);
+      throw new Error('Stress solver reported an error');
     }
 
     this._impulses = this._readImpulses();
@@ -601,32 +557,19 @@ class StressProcessor {
     view.setUint8(this.solverParamsPtr + 10, 0);
     view.setUint8(this.solverParamsPtr + 11, 0);
   }
-
-  accumulateForce(nodeIndex, localPos, localForce) {
-    if (nodeIndex < 0 || nodeIndex >= this.nodeCount) {
-      return;
-    }
-    const entry = this._pendingForces[nodeIndex];
-    entry.force.x += localForce.x;
-    entry.force.y += localForce.y;
-    entry.force.z += localForce.z;
-    entry.torque.x += localPos.y * localForce.z - localPos.z * localForce.y;
-    entry.torque.y += localPos.z * localForce.x - localPos.x * localForce.z;
-    entry.torque.z += localPos.x * localForce.y - localPos.y * localForce.x;
-  }
 }
 
 function writeNode(view, base, node) {
   writeVec3(view, base, node.com ?? vec3());
   view.setFloat32(base + 12, node.mass ?? 0.0, true);
-  writeVec3(view, base + 16, node.inertia ?? vec3());
+  view.setFloat32(base + 16, node.inertia ?? 0.0, true);
 }
 
 function readNode(view, base) {
   return {
     com: readVec3(view, base),
     mass: view.getFloat32(base + 12, true),
-    inertia: readVec3(view, base + 16)
+    inertia: view.getFloat32(base + 16, true)
   };
 }
 
@@ -669,7 +612,7 @@ function cloneNode(node) {
   return {
     com: vec3(node.com.x, node.com.y, node.com.z),
     mass: node.mass,
-    inertia: vec3(node.inertia.x, node.inertia.y, node.inertia.z)
+    inertia: node.inertia
   };
 }
 
@@ -708,14 +651,6 @@ function mapStressValue(stress, elastic, fatal) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
-}
-
-function addVec3(a, b) {
-  return vec3(
-    (a?.x ?? 0) + (b?.x ?? 0),
-    (a?.y ?? 0) + (b?.y ?? 0),
-    (a?.z ?? 0) + (b?.z ?? 0)
-  );
 }
 
 

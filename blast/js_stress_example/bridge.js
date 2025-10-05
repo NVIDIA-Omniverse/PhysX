@@ -1,16 +1,11 @@
-function fractureBond(world, bridge, bondIndex, bond, meta, mode) {
-  const chunkA = bridge.chunks[bond.node0];
-  const chunkB = bridge.chunks[bond.node1];
+function fractureBond(world, bridge, bondIndex, bond, mode) {
+  const chunkA = bridge.chunks.find((chunk) => chunk.nodeId === bond.node0);
+  const chunkB = bridge.chunks.find((chunk) => chunk.nodeId === bond.node1);
   if (!chunkA || !chunkB) {
     return;
   }
-  if (meta) {
-    pushEvent(`${meta.name ?? `${bond.node0}→${bond.node1}`} failed due to ${mode}`);
-  }
-  bridge.stressProcessor.removeBond(bondIndex);
-  if (meta) {
-    bridge.bonds.splice(bondIndex, 1);
-  }
+  bond.active = false;
+  pushEvent(`${bond.name} failed due to ${mode}`);
   splitChunk(world, bridge, chunkB);
 }
 
@@ -25,6 +20,7 @@ function splitChunk(world, bridge, chunk) {
     return;
   }
 
+  const colliderShape = collider.shape;
   world.removeCollider(collider, false);
 
   const translation = parentBody.translation();
@@ -35,13 +31,10 @@ function splitChunk(world, bridge, chunk) {
   const newBodyDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(translation.x, translation.y, translation.z)
     .setRotation(rotation)
-    .setCanSleep(false);
+    .setLinearVelocity(velocity)
+    .setAngularVelocity(angularVelocity);
   const newBody = world.createRigidBody(newBodyDesc);
-  newBody.setLinvel({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
-  newBody.setAngvel({ x: angularVelocity.x, y: angularVelocity.y, z: angularVelocity.z }, true);
-
-  const newColliderDesc = createColliderForChunk(chunk, { global: true });
-  const newCollider = world.createCollider(newColliderDesc, newBody);
+  const newCollider = world.createCollider(colliderShape, newBody);
   chunk.bodyHandle = newBody.handle;
   chunk.colliderHandle = newCollider.handle;
   chunk.active = true;
@@ -56,9 +49,7 @@ import {
   vec3,
   computeBondStress,
   StressLimits
-} from './stress.js';
-
-const DEBUG_LOGGING = true;
+} from './stress_old.js';
 
 const GRAVITY_DEFAULT = -9.81;
 const PROJECTILE_SPEED = 35;
@@ -68,7 +59,7 @@ const colorScale = new THREE.Color();
 
 const BRIDGE_DIMENSIONS = {
   deckSegmentLength: 9,
-  deckWidth: 8,
+  deckWidth: 4,
   deckThickness: 0.6,
   deckElevation: 2.2,
   pierWidth: 1.4,
@@ -76,21 +67,12 @@ const BRIDGE_DIMENSIONS = {
   pierHeight: 2.2
 };
 
-const MATERIAL_DENSITIES = {
-  deck: 450, // kg/m^3
-  pier: 600,
-  base: 750
-};
-
-const VEHICLE_CONFIG = {
-  mass: 75000,
-  length: 3.4,
-  width: 1.7,
+const CAR_PROPS = {
+  mass: 2400,
+  length: 3.6,
+  width: 1.8,
   height: 1.2,
-  speed: 2.8,
-  startOffsetX: -0.3,
-  startOffsetZ: 0.6,
-  loopExtentMultiplier: 0.6
+  speed: 4.5
 };
 
 class BridgeChunk {
@@ -100,25 +82,17 @@ class BridgeChunk {
     this.bodyHandle = null;
     this.mesh = null;
     this.active = true;
-    this.severity = createSeverity();
+    this.severity = 0;
     this.pendingForce = { x: 0, y: 0, z: 0 };
-
-    const baseOffset = desc.localPosition
-      ? new THREE.Vector3(desc.localPosition.x, desc.localPosition.y, desc.localPosition.z)
-      : new THREE.Vector3();
-    const baseQuat = desc.localRotation instanceof THREE.Quaternion
+    this.localOffset = new THREE.Vector3(this.localPosition.x, this.localPosition.y, this.localPosition.z);
+    this.localQuat = desc.localRotation instanceof THREE.Quaternion
       ? desc.localRotation.clone()
       : new THREE.Quaternion(
-          desc.localRotation?.x ?? 0,
-          desc.localRotation?.y ?? 0,
-          desc.localRotation?.z ?? 0,
-          desc.localRotation?.w ?? 1
+          this.localRotation.x ?? 0,
+          this.localRotation.y ?? 0,
+          this.localRotation.z ?? 0,
+          this.localRotation.w ?? 1
         );
-
-    this.structureOffset = baseOffset.clone();
-    this.structureQuat = baseQuat.clone();
-    this.localOffset = baseOffset.clone();
-    this.localQuat = baseQuat.clone();
   }
 }
 
@@ -140,53 +114,19 @@ function createSeverity() {
   };
 }
 
-function computeBoxMassAndInertia(hx, hy, hz, density) {
-  const volume = (hx * 2) * (hy * 2) * (hz * 2);
-  const mass = density * volume;
-  const ix = (1.0 / 12.0) * mass * ((hy * 2) ** 2 + (hz * 2) ** 2);
-  const iy = (1.0 / 12.0) * mass * ((hx * 2) ** 2 + (hz * 2) ** 2);
-  const iz = (1.0 / 12.0) * mass * ((hx * 2) ** 2 + (hy * 2) ** 2);
-  return { mass, inertia: { x: ix, y: iy, z: iz } };
-}
-
 const HUD = {
   gravityValue: document.getElementById('gravity-value'),
   bondTable: document.getElementById('bond-table'),
   eventLog: document.getElementById('event-log'),
-  overlay: document.getElementById('overlay'),
-  strengthValue: document.getElementById('strength-value')
+  overlay: document.getElementById('overlay')
 };
 
 const controlsUI = {
   gravitySlider: document.getElementById('gravity-slider'),
   fireButton: document.getElementById('fire-projectile'),
   resetButton: document.getElementById('reset-bridge'),
-  debugToggle: document.getElementById('toggle-debug'),
-  strengthSlider: document.getElementById('strength-slider'),
-  strengthValue: document.getElementById('strength-value')
+  debugToggle: document.getElementById('toggle-debug')
 };
-
-const solverParamsUI = {
-  iterationsSlider: document.getElementById('iter-slider'),
-  toleranceSlider: document.getElementById('tolerance-slider'),
-  iterationsValue: document.getElementById('iter-value'),
-  toleranceValue: document.getElementById('tolerance-value')
-};
-
-const storageKey = (name) => `blast-bridge-${name}`;
-
-function loadSetting(name, fallback) {
-  const raw = localStorage.getItem(storageKey(name));
-  if (raw === null) {
-    return fallback;
-  }
-  const parsed = parseFloat(raw);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function saveSetting(name, value) {
-  localStorage.setItem(storageKey(name), String(value));
-}
 
 async function init() {
   await RAPIER.init();
@@ -195,8 +135,8 @@ async function init() {
   const world = new RAPIER.World(new RAPIER.Vector3(0, GRAVITY_DEFAULT, 0));
   const { scene, renderer, camera, controls } = initThree();
   const bridge = buildBridge(scene, world, stressRuntime);
-  const debugRendererInstance = new RapierDebugRenderer(scene, world, { enabled: loadSetting('debug', 1) === 1 });
-  bridge.debugRenderer = debugRendererInstance;
+  const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: false });
+  bridge.debugRenderer = debugRenderer;
 
   setupControls(world, bridge);
 
@@ -224,8 +164,6 @@ function initThree() {
   const initialWidth = canvas.clientWidth || window.innerWidth;
   const initialHeight = canvas.clientHeight || window.innerHeight;
   renderer.setSize(initialWidth, initialHeight, false);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05070a);
@@ -263,11 +201,10 @@ function buildBridge(scene, world, stressRuntime) {
     nodeIndexById.set(chunk.id, index);
   });
   const bonds = createBridgeBonds(nodeIndexById);
-  const bondMeta = bonds.map((bond) => ({ ...bond }));
 
   const stressProcessor = stressRuntime.createProcessor({
     nodes: chunks.map((chunk) => ({
-      com: chunk.localOffset,
+      com: chunk.localPosition,
       mass: chunk.mass,
       inertia: chunk.inertia
     })),
@@ -279,11 +216,16 @@ function buildBridge(scene, world, stressRuntime) {
     dataParams: { equalizeMasses: 1, centerBonds: 1 }
   });
 
-  const limits = scaledLimits(1.0);
-  const solverParams = loadSolverParams();
-  stressProcessor.setSolverParams(solverParams);
+  const limits = new StressLimits({
+    compressionElasticLimit: 3.5e5,
+    compressionFatalLimit: 6.5e5,
+    tensionElasticLimit: 2.8e5,
+    tensionFatalLimit: 4.5e5,
+    shearElasticLimit: 1.8e5,
+    shearFatalLimit: 3.5e5
+  });
 
-  const bridgeBodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased()
+  const bridgeBodyDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(0, 0, 0)
     .setCanSleep(false)
     .setLinearDamping(0.8)
@@ -295,11 +237,8 @@ function buildBridge(scene, world, stressRuntime) {
   const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x1d2533, roughness: 0.75, metalness: 0.18 });
 
   const chunkMeshes = [];
-  const colliderToChunk = new Map();
   chunks.forEach((chunk) => {
-    const colliderDesc = createColliderForChunk(chunk)
-      .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-      .setContactForceEventThreshold(0);
+    const colliderDesc = createColliderForChunk(chunk);
     const collider = world.createCollider(colliderDesc, bridgeBody);
     chunk.colliderHandle = collider.handle;
     chunk.bodyHandle = bridgeBody.handle;
@@ -313,30 +252,19 @@ function buildBridge(scene, world, stressRuntime) {
     const mesh = createMeshForChunk(chunk, material);
     chunk.mesh = mesh;
     chunkMeshes.push(mesh);
-    mesh.position.copy(chunk.structureOffset);
-    mesh.quaternion.copy(chunk.structureQuat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.position.copy(chunk.localOffset);
+    mesh.quaternion.copy(chunk.localQuat);
     scene.add(mesh);
-    colliderToChunk.set(collider.handle, chunk);
   });
 
-  const groundPosition = new THREE.Vector3(0, -2, 0);
   const groundBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
-  world.createCollider(
-    RAPIER.ColliderDesc.cuboid(20, 0.5, 20)
-      .setTranslation(groundPosition.x, groundPosition.y, groundPosition.z)
-      .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-      .setContactForceEventThreshold(0),
-    groundBody
-  );
+  world.createCollider(RAPIER.ColliderDesc.cuboid(20, 0.5, 20).setTranslation(0, -2, 0), groundBody);
   const ground = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshStandardMaterial({
     color: 0x1a1e2f,
     roughness: 0.8,
     metalness: 0.1
   }));
-  ground.position.set(groundPosition.x, groundPosition.y, groundPosition.z);
-  ground.receiveShadow = true;
+  ground.position.set(0, -2, 0);
   scene.add(ground);
 
   updateBondTable(bonds);
@@ -346,54 +274,32 @@ function buildBridge(scene, world, stressRuntime) {
     scene,
     body: bridgeBody,
     chunks,
-    bonds: bondMeta,
+    bonds,
+    meshes: chunkMeshes,
     stressProcessor,
     limits,
     projectiles: [],
     splitBodies: [],
     activeGravity: GRAVITY_DEFAULT,
-    eventQueue: new RAPIER.EventQueue(true),
-    limitsScale: 1,
-    solverParams
+    debugRenderer: new RapierDebugRenderer(scene, world)
   };
 }
 
 function updateBridge(world, bridge, stressRuntime, delta) {
-  const { stressProcessor, chunks, limits, eventQueue } = bridge;
-
-  chunks.forEach((chunk) => {
-    chunk.severity = createSeverity();
-  });
-
-  drainContactForces(world, bridge);
+  const { stressProcessor, chunks, bonds, limits } = bridge;
 
   const velocities = chunks.map((chunk) => {
     const body = world.getRigidBody(chunk.bodyHandle);
-    if (!body || chunk.isRootChunk) {
-      return { lin: vec3(), ang: vec3() };
-    }
-    if (!chunk.mass || chunk.mass <= 0) {
+    if (!body) {
       return { lin: vec3(), ang: vec3() };
     }
     const linVel = body.linvel();
     const angVel = body.angvel();
-    if (DEBUG_LOGGING && (linVel.x || linVel.y || linVel.z || angVel.x || angVel.y || angVel.z)) {
-      console.log('[bridge][velocity]', {
-        chunkId: chunk.id,
-        nodeId: chunk.nodeId,
-        linVel,
-        angVel
-      });
-    }
     return {
       lin: vec3(linVel.x, linVel.y, linVel.z),
       ang: vec3(angVel.x, angVel.y, angVel.z)
     };
   });
-  // console.log('[bridge][updateBridge]', {
-  //   chunks: chunks.map((chunk) => chunk.id),
-  //   velocities,
-  // });
 
   let solveResult;
   try {
@@ -408,10 +314,8 @@ function updateBridge(world, bridge, stressRuntime, delta) {
     return;
   }
   const solverNodes = stressProcessor.getNodes();
-  const bonds = stressProcessor.getBonds();
 
   bonds.forEach((bond, index) => {
-    const meta = bridge.bonds[index];
     if (!bond.active) {
       return;
     }
@@ -421,89 +325,20 @@ function updateBridge(world, bridge, stressRuntime, delta) {
       solverNodes,
       bond.area
     );
-    if (DEBUG_LOGGING && (stress.compression > 0 || stress.tension > 0 || stress.shear > 0)) {
-      console.log('[bridge][bondStress]', {
-        bond: meta?.id ?? index,
-        stress,
-        impulses: impulses[index]
-      });
-    }
     const severity = limits.severity(stress);
+    bond.severity = severity;
     severity.max = Math.max(severity.compression, severity.tension, severity.shear);
-    if (meta) {
-      meta.severity = severity;
-    }
-    const chunkSeverityA = chunks[bond.node0].severity ?? createSeverity();
-    const chunkSeverityB = chunks[bond.node1].severity ?? createSeverity();
-    chunkSeverityA.max = Math.max(chunkSeverityA.max, severity.max);
-    chunkSeverityA.compression = Math.max(chunkSeverityA.compression ?? 0, severity.compression);
-    chunkSeverityA.tension = Math.max(chunkSeverityA.tension ?? 0, severity.tension);
-    chunkSeverityA.shear = Math.max(chunkSeverityA.shear ?? 0, severity.shear);
-    chunkSeverityB.max = Math.max(chunkSeverityB.max, severity.max);
-    chunkSeverityB.compression = Math.max(chunkSeverityB.compression ?? 0, severity.compression);
-    chunkSeverityB.tension = Math.max(chunkSeverityB.tension ?? 0, severity.tension);
-    chunkSeverityB.shear = Math.max(chunkSeverityB.shear ?? 0, severity.shear);
-    chunks[bond.node0].severity = chunkSeverityA;
-    chunks[bond.node1].severity = chunkSeverityB;
     const mode = limits.failureMode(stress);
     if (mode) {
-      fractureBond(world, bridge, index, bond, meta, mode);
+      fractureBond(world, bridge, index, bond, mode);
     }
   });
 
   syncMeshes(world, bridge);
   updateProjectiles(world, bridge, delta);
   updateLoadVehicle(world, bridge, delta);
-  updateBondTable(bridge.bonds.slice(0, bonds.length));
+  updateBondTable(bonds);
   pushEvent(`Bridge solve: iter ${iterations}, error=(${error.lin.toFixed(3)}, ${error.ang.toFixed(3)})`);
-}
-
-function drainContactForces(world, bridge) {
-  const { eventQueue, stressProcessor, colliderToChunk } = bridge;
-  if (!eventQueue) {
-    return;
-  }
-  const toVec3 = (v) => vec3(v.x ?? 0, v.y ?? 0, v.z ?? 0);
-  eventQueue.drainContactForceEvents((event) => {
-    const collider1 = event.collider1();
-    const collider2 = event.collider2();
-    const chunk = colliderToChunk.get(collider1) || colliderToChunk.get(collider2);
-    if (!chunk || !chunk.active) {
-      if (DEBUG_LOGGING) {
-        console.debug('[bridge][contact][skip]', { collider1, collider2 });
-      }
-      return;
-    }
-    const body = world.getRigidBody(chunk.bodyHandle);
-    if (!body) {
-      return;
-    }
-    const dir = event.maxForceDirection();
-    const magnitude = event.maxForceMagnitude();
-    if (!Number.isFinite(magnitude) || magnitude === 0) {
-      return;
-    }
-    const worldForce = new RAPIER.Vector3(dir.x * magnitude, dir.y * magnitude, dir.z * magnitude);
-    const localForce = toVec3(body.worldVectorToLocal(worldForce));
-    const worldPoint = event.worldContactPoint ? event.worldContactPoint() : body.translation();
-    const localPoint = chunk.isRootChunk && chunk.structureOffset
-      ? chunk.structureOffset
-      : toVec3(body.worldPointToLocal(worldPoint));
-    if (DEBUG_LOGGING) {
-      console.log('[bridge][contact]', {
-        collider1,
-        collider2,
-        chunkId: chunk.id,
-        nodeId: chunk.nodeId,
-        magnitude,
-        direction: dir,
-        localForce,
-        localPoint,
-        root: chunk.isRootChunk
-      });
-    }
-    stressProcessor.accumulateForce(chunk.nodeId, localPoint, localForce);
-  });
 }
 
 function updateLoadVehicle(world, bridge, delta) {
@@ -518,9 +353,8 @@ function updateLoadVehicle(world, bridge, delta) {
     return;
   }
   const translation = body.translation();
-  const loopExtent = BRIDGE_DIMENSIONS.deckSegmentLength * VEHICLE_CONFIG.loopExtentMultiplier;
-  if (translation.x > loopExtent) {
-    body.setTranslation({ x: -loopExtent, y: translation.y, z: translation.z }, true);
+  if (translation.x > BRIDGE_DIMENSIONS.deckSegmentLength * 1.6) {
+    body.setTranslation({ x: -BRIDGE_DIMENSIONS.deckSegmentLength * 1.6, y: translation.y, z: translation.z }, true);
   }
   vehicle.mesh.position.set(translation.x, translation.y, translation.z);
   const rotation = body.rotation();
@@ -541,13 +375,14 @@ function syncMeshes(world, bridge) {
 
     chunk.mesh.position.set(position.x, position.y, position.z);
     chunk.mesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    chunk.mesh.position.add(chunk.localOffset.clone().applyQuaternion(chunk.mesh.quaternion));
 
-    if (chunk.bodyHandle === bridge.body.handle && chunk.structureOffset && typeof chunk.structureOffset.clone === 'function') {
-      const offset = chunk.structureOffset.clone().applyQuaternion(chunk.mesh.quaternion);
-      chunk.mesh.position.add(offset);
-    }
-
-    const severity = chunk.severity?.max ?? 0;
+    const severity = Math.max(
+      chunk.severity?.max ?? 0,
+      ...bridge.bonds
+        .filter((bond) => bond.node0 === chunk.nodeId || bond.node1 === chunk.nodeId)
+        .map((bond) => bond.severity.max)
+    );
     colorScale.setHSL(Math.max(0.05, 0.62 - severity * 0.5), 0.75, 0.55);
     chunk.mesh.material.color.lerp(colorScale, 0.18);
   });
@@ -564,6 +399,10 @@ function createBridgeChunks() {
     pierHeight
   } = BRIDGE_DIMENSIONS;
 
+  const deckMass = 18000;
+  const pierMass = 32000;
+  const pierBaseMass = 15000;
+
   const deckHalfLength = deckSegmentLength * 0.5;
   const pierHalfHeight = pierHeight * 0.5;
   const pierBaseHeight = 0.6;
@@ -577,7 +416,8 @@ function createBridgeChunks() {
         shape: { type: 'box', hx: deckHalfLength, hy: deckThickness * 0.5, hz: deckWidth * 0.5 },
         localPosition: vec3(i * deckSegmentLength, deckElevation, 0),
         localRotation: { x: 0, y: 0, z: 0, w: 1 },
-        density: MATERIAL_DENSITIES.deck
+        mass: deckMass,
+        inertia: deckMass * 0.15
       })
     );
   }
@@ -591,7 +431,8 @@ function createBridgeChunks() {
         shape: { type: 'box', hx: pierWidth * 0.5, hy: pierHeight * 0.5, hz: pierDepth * 0.5 },
         localPosition: vec3(offset, pierHalfHeight, 0),
         localRotation: { x: 0, y: 0, z: 0, w: 1 },
-        density: MATERIAL_DENSITIES.pier
+        mass: pierMass,
+        inertia: pierMass * 0.18
       })
     );
     chunks.push(
@@ -600,17 +441,10 @@ function createBridgeChunks() {
         shape: { type: 'box', hx: pierWidth * 0.8, hy: pierBaseHeight * 0.5, hz: pierDepth * 0.8 },
         localPosition: vec3(offset, pierBaseHeight * 0.5, 0),
         localRotation: { x: 0, y: 0, z: 0, w: 1 },
-        density: MATERIAL_DENSITIES.base
+        mass: pierBaseMass,
+        inertia: pierBaseMass * 0.12
       })
     );
-  });
-
-  chunks.forEach((chunk) => {
-    if (chunk.shape.type === 'box') {
-      const { mass, inertia } = computeBoxMassAndInertia(chunk.shape.hx, chunk.shape.hy, chunk.shape.hz, chunk.density ?? 500);
-      chunk.mass = mass;
-      chunk.inertia = vec3(inertia.x, inertia.y, inertia.z);
-    }
   });
 
   return chunks;
@@ -708,36 +542,19 @@ function getBondCentroid(bond, chunks) {
   );
 }
 
-function createColliderForChunk(chunk, { global = false } = {}) {
-  const rotation = chunk.structureQuat ?? new THREE.Quaternion();
-  const offset = chunk.structureOffset ?? new THREE.Vector3();
-  if (global) {
-    const body = chunk.bodyHandle ? chunk.world.getRigidBody(chunk.bodyHandle) : null;
-    if (body) {
-      const translation = body.translation();
-      const quat = body.rotation();
-      const offsetWorld = offset.clone().applyQuaternion(new THREE.Quaternion(quat.x, quat.y, quat.z, quat.w));
-      chunk.localOffset = new THREE.Vector3(translation.x, translation.y, translation.z).add(offsetWorld);
-      chunk.localQuat = new THREE.Quaternion(quat.x, quat.y, quat.z, quat.w).multiply(rotation);
-    }
-  } else {
-    chunk.localOffset = offset.clone();
-    chunk.localQuat = rotation.clone();
-  }
-
-  const rot = chunk.localQuat;
-  const pos = chunk.localOffset;
+function createColliderForChunk(chunk) {
+  const rotation = chunk.localQuat ?? new THREE.Quaternion();
   switch (chunk.shape.type) {
     case 'box':
       return RAPIER.ColliderDesc.cuboid(chunk.shape.hx, chunk.shape.hy, chunk.shape.hz)
-        .setTranslation(pos.x, pos.y, pos.z)
-        .setRotation(new RAPIER.Quaternion(rot.x, rot.y, rot.z, rot.w));
+        .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
+        .setRotation(new RAPIER.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w));
     case 'capsule':
       return RAPIER.ColliderDesc.capsule(chunk.shape.halfHeight, chunk.shape.radius)
-        .setTranslation(pos.x, pos.y, pos.z)
-        .setRotation(new RAPIER.Quaternion(rot.x, rot.y, rot.z, rot.w));
+        .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
+        .setRotation(new RAPIER.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w));
     default:
-      return RAPIER.ColliderDesc.ball(1).setTranslation(pos.x, pos.y, pos.z);
+      return RAPIER.ColliderDesc.ball(1).setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z);
   }
 }
 
@@ -762,26 +579,25 @@ function updateBondTable(bonds) {
     return;
   }
   HUD.bondTable.innerHTML = '';
-  bonds.forEach((bond) => {
-    if (!bond) {
-      return;
-    }
-    const row = document.createElement('div');
-    row.className = 'bond-row';
-    const title = document.createElement('div');
-    title.textContent = bond.name ?? `${bond.node0} → ${bond.node1}`;
-    row.appendChild(title);
-    const value = document.createElement('div');
-    value.textContent = `${(bond.severity.max * 100).toFixed(0)}%`;
-    row.appendChild(value);
-    const bar = document.createElement('div');
-    bar.className = 'bars';
-    const fill = document.createElement('span');
-    fill.style.width = `${Math.min(1, bond.severity.max) * 100}%`;
-    bar.appendChild(fill);
-    row.appendChild(bar);
-    HUD.bondTable.appendChild(row);
-  });
+  bonds
+    .filter((bond) => bond.active)
+    .forEach((bond) => {
+      const row = document.createElement('div');
+      row.className = 'bond-row';
+      const title = document.createElement('div');
+      title.textContent = bond.name;
+      row.appendChild(title);
+      const value = document.createElement('div');
+      value.textContent = `${(bond.severity.max * 100).toFixed(0)}%`;
+      row.appendChild(value);
+      const bar = document.createElement('div');
+      bar.className = 'bars';
+      const fill = document.createElement('span');
+      fill.style.width = `${Math.min(1, bond.severity.max) * 100}%`;
+      bar.appendChild(fill);
+      row.appendChild(bar);
+      HUD.bondTable.appendChild(row);
+    });
 }
 
 function pushEvent(message) {
@@ -798,18 +614,11 @@ function pushEvent(message) {
 
 function setupControls(world, bridge) {
   if (controlsUI.gravitySlider) {
-    const gravityValue = loadSetting('gravity', GRAVITY_DEFAULT);
-    controlsUI.gravitySlider.value = gravityValue.toString();
-    world.gravity = new RAPIER.Vector3(0, gravityValue, 0);
-    bridge.activeGravity = gravityValue;
-    if (HUD.gravityValue) {
-      HUD.gravityValue.textContent = gravityValue.toFixed(2);
-    }
+    controlsUI.gravitySlider.value = GRAVITY_DEFAULT.toString();
     controlsUI.gravitySlider.addEventListener('input', (event) => {
       const value = parseFloat(event.target.value);
       world.gravity = new RAPIER.Vector3(0, value, 0);
       bridge.activeGravity = value;
-      saveSetting('gravity', value);
       if (HUD.gravityValue) {
         HUD.gravityValue.textContent = value.toFixed(2);
       }
@@ -827,62 +636,12 @@ function setupControls(world, bridge) {
     });
   }
   if (controlsUI.debugToggle && bridge.debugRenderer) {
-    const initial = bridge.debugRenderer.enabled;
-    controlsUI.debugToggle.textContent = initial ? 'Hide Debug' : 'Show Debug';
     controlsUI.debugToggle.addEventListener('click', () => {
       const enabled = bridge.debugRenderer.toggle();
       controlsUI.debugToggle.textContent = enabled ? 'Hide Debug' : 'Show Debug';
-      saveSetting('debug', enabled ? 1 : 0);
     });
   }
-  if (controlsUI.strengthSlider) {
-    const storedStrength = loadSetting('strength', 1);
-    controlsUI.strengthSlider.value = storedStrength.toString();
-    setMaterialStrength(bridge, storedStrength);
-    if (controlsUI.strengthValue) {
-      controlsUI.strengthValue.textContent = `${Math.round(storedStrength * 100)}%`;
-    }
-    controlsUI.strengthSlider.addEventListener('input', (event) => {
-      const value = parseFloat(event.target.value);
-      setMaterialStrength(bridge, value);
-      if (controlsUI.strengthValue) {
-        controlsUI.strengthValue.textContent = `${Math.round(value * 100)}%`;
-      }
-      saveSetting('strength', value);
-      pushEvent(`Material strength set to ${Math.round(value * 100)}%`);
-    });
-  }
-  setupSolverControls(bridge);
   spawnLoadVehicle(world, bridge);
-}
-
-function setupSolverControls(bridge) {
-  const params = bridge.solverParams;
-  if (solverParamsUI.iterationsSlider) {
-    solverParamsUI.iterationsSlider.value = params.maxIterations.toString();
-    solverParamsUI.iterationsValue.textContent = params.maxIterations.toString();
-    solverParamsUI.iterationsSlider.addEventListener('input', (event) => {
-      const value = Math.max(1, Math.round(parseFloat(event.target.value)));
-      solverParamsUI.iterationsValue.textContent = value.toString();
-      bridge.solverParams.maxIterations = value;
-      bridge.stressProcessor.setSolverParams(bridge.solverParams);
-      saveSetting('iterations', value);
-      pushEvent(`Solver iterations set to ${value}`);
-    });
-  }
-  if (solverParamsUI.toleranceSlider) {
-    solverParamsUI.toleranceSlider.value = params.tolerance.toExponential(2);
-    solverParamsUI.toleranceValue.textContent = params.tolerance.toExponential(2);
-    solverParamsUI.toleranceSlider.addEventListener('input', (event) => {
-      const exponent = parseFloat(event.target.value);
-      const tolerance = Math.pow(10, exponent);
-      solverParamsUI.toleranceValue.textContent = tolerance.toExponential(2);
-      bridge.solverParams.tolerance = tolerance;
-      bridge.stressProcessor.setSolverParams(bridge.solverParams);
-      saveSetting('tolerance', tolerance);
-      pushEvent(`Solver tolerance set to ${tolerance.toExponential(2)}`);
-    });
-  }
 }
 
 function spawnProjectile(world, bridge) {
@@ -891,25 +650,8 @@ function spawnProjectile(world, bridge) {
     .setTranslation(origin.x, origin.y, origin.z)
     .setCanSleep(false);
   const projectileBody = world.createRigidBody(bodyDesc);
-  const colliderDesc = RAPIER.ColliderDesc.ball(0.6)
-    .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-    .setContactForceEventThreshold(0);
-  const collider = world.createCollider(colliderDesc, projectileBody);
+  const collider = world.createCollider(RAPIER.ColliderDesc.ball(0.6), projectileBody);
   projectileBody.setLinvel({ x: PROJECTILE_SPEED, y: -1, z: (Math.random() - 0.5) * 5 }, true);
-
-  // Position the projectile above the center of the bridge with a little randomness, but ensure it still hits the bridge
-  const maxOffsetX = BRIDGE_DIMENSIONS.deckSegmentLength * 0.4; // stay well within bridge span
-  const maxOffsetZ = BRIDGE_DIMENSIONS.deckWidth * 0.4;
-  const bridgeMidX = (Math.random() - 0.5) * 2 * maxOffsetX;
-  const bridgeMidZ = (Math.random() - 0.5) * 2 * maxOffsetZ;
-  const bridgeMidY = BRIDGE_DIMENSIONS.deckElevation + 6; // 6 units above deck
-  origin.set(bridgeMidX, bridgeMidY, bridgeMidZ);
-  projectileBody.setTranslation({ x: bridgeMidX, y: bridgeMidY, z: bridgeMidZ }, true);
-  // Add a tiny bit of horizontal velocity so it's not perfectly vertical, but still hits the bridge
-  const xVel = (Math.random() - 0.5) * 2; // up to +/-1 unit/sec
-  const zVel = (Math.random() - 0.5) * 2;
-  projectileBody.setLinvel({ x: xVel, y: -PROJECTILE_SPEED, z: zVel }, true);
-
 
   const projectileMaterial = new THREE.MeshStandardMaterial({ color: 0xff9147, emissive: 0x552211 });
   const projectileMesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 20), projectileMaterial);
@@ -928,18 +670,13 @@ function spawnProjectile(world, bridge) {
 }
 
 function spawnLoadVehicle(world, bridge) {
-  const { length, width, height, mass, speed, startOffsetX, startOffsetZ } = VEHICLE_CONFIG;
-  const startX = BRIDGE_DIMENSIONS.deckSegmentLength * startOffsetX;
+  const { length, width, height, mass, speed } = CAR_PROPS;
   const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
-    .setTranslation(startX, BRIDGE_DIMENSIONS.deckElevation + height * 0.5 + 0.05, startOffsetZ)
-    .setLinearDamping(0.35)
+    .setTranslation(-BRIDGE_DIMENSIONS.deckSegmentLength * 1.5, BRIDGE_DIMENSIONS.deckElevation + height * 0.5 + 0.05, 0)
+    .setLinearDamping(0.4)
     .setAngularDamping(1.0);
   const body = world.createRigidBody(bodyDesc);
-  const colliderDesc = RAPIER.ColliderDesc.cuboid(length * 0.5, height * 0.5, width * 0.5)
-    .setMass(mass)
-    .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-    .setContactForceEventThreshold(0);
-  const collider = world.createCollider(colliderDesc, body);
+  const collider = world.createCollider(RAPIER.ColliderDesc.cuboid(length * 0.5, height * 0.5, width * 0.5).setMass(mass), body);
   const material = new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.4, metalness: 0.6 });
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(length, height, width), material);
   mesh.castShadow = true;
@@ -972,64 +709,6 @@ function updateProjectiles(world, bridge, delta) {
     remaining.push(projectile);
   });
   bridge.projectiles = remaining;
-}
-
-function resetChunkTransform(chunk) {
-  chunk.localOffset.copy(chunk.originalOffset);
-  chunk.localQuat.copy(chunk.originalQuat);
-  if (chunk.mesh) {
-    chunk.mesh.position.copy(chunk.originalOffset);
-    chunk.mesh.quaternion.copy(chunk.originalQuat);
-  }
-}
-
-const DEFAULT_LIMITS = {
-  compressionElasticLimit: 3.5e5,
-  compressionFatalLimit: 6.5e5,
-  tensionElasticLimit: 2.8e5,
-  tensionFatalLimit: 4.5e5,
-  shearElasticLimit: 1.8e5,
-  shearFatalLimit: 3.5e5
-};
-
-const DEFAULT_SOLVER_PARAMS = {
-  maxIterations: 32,
-  tolerance: 1.0e-6,
-  warmStart: false
-};
-
-function scaledLimits(scale) {
-  const s = scale;
-  return new StressLimits(DEFAULT_LIMITS).scaledBy(s);
-}
-
-function setMaterialStrength(bridge, factor) {
-  const clamped = Math.max(0, factor);
-  bridge.limitsScale = factor;
-  bridge.limits = scaledLimits(clamped);
-  pushEvent(`Limits updated: ×${clamped.toFixed(2)}`);
-  updateLegendThresholds(bridge.limits);
-}
-
-function updateLegendThresholds(limits) {
-  const overlay = HUD.overlay;
-  if (!overlay) {
-    return;
-  }
-  const lines = [
-    `Compression fatal: ${(limits.compressionFatalThreshold() / 1e5).toFixed(2)}e5 Pa`,
-    `Tension fatal: ${(limits.tensionFatalThreshold() / 1e5).toFixed(2)}e5 Pa`,
-    `Shear fatal: ${(limits.shearFatalThreshold() / 1e5).toFixed(2)}e5 Pa`
-  ];
-  overlay.innerHTML = lines.map((line) => `<div>${line}</div>`).join('');
-}
-
-function loadSolverParams() {
-  return {
-    maxIterations: loadSetting('iterations', DEFAULT_SOLVER_PARAMS.maxIterations),
-    tolerance: loadSetting('tolerance', DEFAULT_SOLVER_PARAMS.tolerance),
-    warmStart: DEFAULT_SOLVER_PARAMS.warmStart
-  };
 }
 
 init().catch((err) => {
