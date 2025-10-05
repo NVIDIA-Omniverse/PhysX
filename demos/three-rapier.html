@@ -38,6 +38,7 @@
             import Stats from 'three/addons/libs/stats.module.js'
             import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
             import RAPIER from '@dimforge/rapier3d-compat'
+            import RapierDebugRenderer from '../blast/js_stress_example/rapier-debug-renderer.js'
 
             await RAPIER.init() // This line is only needed if using the compat version
             const gravity = new RAPIER.Vector3(0.0, -9.81, 0.0)
@@ -45,6 +46,7 @@
             const dynamicBodies = []
 
             const scene = new THREE.Scene()
+            const rapierDebugRenderer = new RapierDebugRenderer(scene, world)
 
             const light1 = new THREE.SpotLight(undefined, Math.PI * 10)
             light1.position.set(2.5, 5, 5)
@@ -161,6 +163,13 @@
             physicsFolder.add(world.gravity, 'y', -10.0, 10.0, 0.1)
             physicsFolder.add(world.gravity, 'z', -10.0, 10.0, 0.1)
 
+            const debugSettings = { rapierDebug: false }
+            const debugFolder = gui.addFolder('Debug')
+            debugFolder
+                .add(debugSettings, 'rapierDebug')
+                .name('Rapier Debug')
+                .onChange((enabled) => rapierDebugRenderer.setEnabled(enabled))
+
             const clock = new THREE.Clock()
             let delta
 
@@ -176,6 +185,7 @@
                     dynamicBodies[i][0].quaternion.copy(dynamicBodies[i][1].rotation())
                 }
 
+                rapierDebugRenderer.update()
                 controls.update()
 
                 renderer.render(scene, camera)

@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stress Solver Browser Demo</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #111;
+        color: #fafafa;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 1rem 1.5rem;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        z-index: 10;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.2rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      main {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 0;
+        min-height: 0;
+      }
+
+      #viewport {
+        position: relative;
+        min-height: 0;
+      }
+
+      #viewport canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      #panel {
+        background: rgba(0, 0, 0, 0.55);
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.2rem 1.4rem;
+        overflow-y: auto;
+      }
+
+      #panel h2 {
+        font-size: 1rem;
+        margin: 0 0 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgb(126, 190, 255);
+      }
+
+      .status {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .stress-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      .stress-table thead {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      .stress-table th,
+      .stress-table td {
+        padding: 0.35rem 0.25rem;
+        text-align: right;
+      }
+
+      .stress-table td:first-child,
+      .stress-table th:first-child {
+        text-align: left;
+      }
+
+      .stress-table tbody tr:nth-child(every odd) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .stress-bar {
+        display: inline-flex;
+        align-items: center;
+        width: 120px;
+        height: 6px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.1);
+        margin-left: 0.4rem;
+      }
+
+      .stress-bar span {
+        height: 100%;
+        background: linear-gradient(90deg, rgba(98, 218, 255, 0.9), rgba(249, 114, 196, 0.95));
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        padding: 0.6rem 1.2rem;
+        background: linear-gradient(120deg, rgba(65, 157, 255, 0.85), rgba(189, 74, 255, 0.85));
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.75rem;
+        cursor: pointer;
+        margin-bottom: 1.4rem;
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      #toast {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.75rem 1.4rem;
+        border-radius: 999px;
+        background: rgba(20, 20, 20, 0.9);
+        border: 1px solid rgba(126, 190, 255, 0.35);
+        color: rgb(126, 190, 255);
+        font-size: 0.82rem;
+        letter-spacing: 0.05em;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+
+      #toast.show {
+        opacity: 1;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/build/three.module.js",
+          "three/addons/": "/vendor/three/examples/jsm/",
+          "@dimforge/rapier3d-compat": "/vendor/rapier/rapier.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Blast Stress Solver (WASM × Three × Rapier)</h1>
+    </header>
+    <main>
+      <section id="viewport"></section>
+      <aside id="panel">
+        <button id="trigger">Trigger Impact</button>
+        <button id="toggle-debug">Enable Rapier Debug</button>
+        <div class="status">
+          <span>Iterations</span>
+          <span id="iterations">0</span>
+          <span>Angular Error</span>
+          <span id="error-ang">0.00000</span>
+          <span>Linear Error</span>
+          <span id="error-lin">0.00000</span>
+        </div>
+        <h2>Bonds</h2>
+        <table class="stress-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Compression</th>
+              <th>Tension</th>
+              <th>Shear</th>
+            </tr>
+          </thead>
+          <tbody id="bond-rows"></tbody>
+        </table>
+      </aside>
+    </main>
+    <div id="toast"></div>
+
+    <script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+      import RAPIER from '@dimforge/rapier3d-compat';
+
+      import {
+        loadStressSolver,
+        vec3,
+        StressLimits,
+        StressFailure,
+        computeBondStress
+      } from './stress.js';
+      import RapierDebugRenderer from './rapier-debug-renderer.js';
+
+      const GRAVITY = new THREE.Vector3(0, -9.81, 0);
+      let nodeMaterial;
+      let bondMaterial;
+      const nodeMeshes = [];
+      const bondMeshes = [];
+      const fallingPieces = [];
+      const bondGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 20);
+      bondGeometry.translate(0, 0.5, 0);
+      const baseBondColor = new THREE.Color(0x1f8eff);
+      const warningBondColor = new THREE.Color(0xff5f7a);
+      let groundMesh = null;
+
+      const BOND_META = new Map([
+        ['0-2', { name: 'left diagonal', area: 0.6 }],
+        ['2-0', { name: 'left diagonal', area: 0.6 }],
+        ['1-2', { name: 'right diagonal', area: 0.6 }],
+        ['2-1', { name: 'right diagonal', area: 0.6 }],
+        ['0-1', { name: 'base tie', area: 0.9 }],
+        ['1-0', { name: 'base tie', area: 0.9 }]
+      ]);
+
+      const ZERO_STRESS = { compression: 0, tension: 0, shear: 0 };
+
+      const ZERO_SEVERITY = { compression: 0, tension: 0, shear: 0, max: 0 };
+
+      const viewportEl = document.querySelector('#viewport');
+      const bondRowsEl = document.querySelector('#bond-rows');
+      const iterationsEl = document.querySelector('#iterations');
+      const errorAngEl = document.querySelector('#error-ang');
+      const errorLinEl = document.querySelector('#error-lin');
+      const triggerButton = document.querySelector('#trigger');
+      const toggleDebugButton = document.querySelector('#toggle-debug');
+      const toastEl = document.querySelector('#toast');
+
+      const TOP_NODE = 2;
+
+      const IMPACT_FRAMES = [
+        { lin: vec3(0, -24, 0), ang: vec3(0, 0, 3) },
+        { lin: vec3(8, -42, 0), ang: vec3(0, 0, 7) },
+        { lin: vec3(14, -63, 0), ang: vec3(0, 0, 11.5) },
+        { lin: vec3(20, -90, 0), ang: vec3(0, 0, 16) }
+      ];
+
+      const limits = new StressLimits({
+        compressionElasticLimit: 320.0,
+        compressionFatalLimit: 520.0,
+        tensionElasticLimit: 180.0,
+        tensionFatalLimit: 320.0,
+        shearElasticLimit: 140.0,
+        shearFatalLimit: 260.0
+      });
+
+      let stressRuntime;
+      let stressProcessor;
+      let activeBonds = [];
+
+      let rapierWorld;
+      let scene;
+      let renderer;
+      let camera;
+      let controls;
+      let rapierDebugRenderer;
+
+      function resetVisualization() {
+        nodeMeshes.forEach((mesh) => mesh.parent?.remove(mesh));
+        bondMeshes.forEach((mesh) => mesh.parent?.remove(mesh));
+        nodeMeshes.length = 0;
+        bondMeshes.length = 0;
+        fallingPieces.length = 0;
+        if (groundMesh) {
+          groundMesh.parent?.remove(groundMesh);
+          groundMesh = null;
+        }
+      }
+
+
+      let rafHandle = null;
+      let frameIndex = 0;
+      let impactCooldown = false;
+
+      init().catch((err) => {
+        console.error(err);
+        showToast('Failed to start demo, check console');
+      });
+
+      async function init() {
+        await RAPIER.init({});
+        stressRuntime = await loadStressSolver();
+
+        const nodes = [
+          { com: vec3(-1.0, 0.0, 0.0), mass: 25.0, inertia: 2.5 },
+          { com: vec3(1.0, 0.0, 0.0), mass: 25.0, inertia: 2.5 },
+          { com: vec3(0.0, 1.5, 0.0), mass: 15.0, inertia: 1.5 }
+        ];
+
+        const bonds = [
+          { centroid: vec3(-0.5, 0.75, 0.0), node0: 0, node1: 2 },
+          { centroid: vec3(0.5, 0.75, 0.0), node0: 1, node1: 2 },
+          { centroid: vec3(0.0, 0.0, 0.0), node0: 0, node1: 1 }
+        ];
+
+        stressProcessor = stressRuntime.createProcessor({ nodes, bonds });
+        activeBonds = stressProcessor.getBonds().map((bond) => {
+          const key = `${bond.node0}-${bond.node1}`;
+          const meta = BOND_META.get(key) ?? { name: key, area: 0.75 };
+          return {
+            name: meta.name,
+            area: meta.area,
+            desc: bond,
+            stress: ZERO_STRESS,
+            severity: ZERO_SEVERITY
+          };
+        });
+
+        setupThree();
+        setupRapier();
+        setupUI();
+        startLoop();
+      }
+
+      function setupThree() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x05070a);
+
+        const ambient = new THREE.AmbientLight(0x334466, 0.4);
+        scene.add(ambient);
+
+        const directional = new THREE.DirectionalLight(0x77aaff, 1.2);
+        directional.position.set(4, 6, 3);
+        directional.castShadow = true;
+        scene.add(directional);
+
+        camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+        camera.position.set(0, 2.8, 6);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(devicePixelRatio);
+        renderer.setSize(viewportEl.clientWidth, viewportEl.clientHeight, false);
+        viewportEl.appendChild(renderer.domElement);
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.target.set(0, 1.3, 0);
+
+        createInitialScene();
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+      }
+
+      function createInitialScene() {
+        resetVisualization();
+
+        nodeMaterial = new THREE.MeshStandardMaterial({
+          color: 0x1f8eff,
+          emissive: 0x0a1c30,
+          roughness: 0.3,
+          metalness: 0.45
+        });
+
+        bondMaterial = new THREE.MeshStandardMaterial({
+          color: 0x1f8eff,
+          emissive: 0x11233e,
+          roughness: 0.35,
+          metalness: 0.55
+        });
+
+        stressProcessor.getNodes().forEach((node) => {
+          const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 18, 18), nodeMaterial);
+          mesh.position.set(node.com.x, node.com.y, node.com.z);
+          scene.add(mesh);
+          nodeMeshes.push(mesh);
+        });
+
+        activeBonds.forEach((bond, index) => {
+          const mesh = new THREE.Mesh(bondGeometry.clone(), bondMaterial.clone());
+          alignBondMesh(mesh, bond.desc);
+          mesh.userData.index = index;
+          scene.add(mesh);
+          bondMeshes.push(mesh);
+        });
+
+        groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({
+          color: 0x28303b,
+          roughness: 0.65,
+          metalness: 0.2
+        }));
+        groundMesh.rotation.x = -Math.PI / 2;
+        groundMesh.position.y = -0.5;
+        scene.add(groundMesh);
+      }
+
+      function setupRapier() {
+        rapierWorld = new RAPIER.World(new RAPIER.Vector3(0, -9.81, 0));
+
+        const groundBody = rapierWorld.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+        rapierWorld.createCollider(RAPIER.ColliderDesc.cuboid(15, 0.2, 15), groundBody);
+
+        rapierDebugRenderer = new RapierDebugRenderer(scene, rapierWorld);
+      }
+
+      function setupUI() {
+        triggerButton.addEventListener('click', () => {
+          if (impactCooldown) {
+            return;
+          }
+          triggerImpactSequence();
+        });
+
+        renderBondRows();
+
+        toggleDebugButton.addEventListener('click', () => {
+          if (!rapierDebugRenderer) {
+            return;
+          }
+          const enabled = rapierDebugRenderer.toggle();
+          toggleDebugButton.textContent = enabled ? 'Disable Rapier Debug' : 'Enable Rapier Debug';
+        });
+      }
+
+      function startLoop() {
+        const clock = new THREE.Clock();
+
+        function loop() {
+          const delta = clock.getDelta();
+          rapierWorld.timestep = Math.min(delta, 1 / 60);
+          rapierWorld.step();
+          updateFallingPieces(delta);
+          rapierDebugRenderer?.update();
+          controls.update();
+          renderer.render(scene, camera);
+          rafHandle = requestAnimationFrame(loop);
+        }
+
+        rafHandle = requestAnimationFrame(loop);
+      }
+
+      async function triggerImpactSequence() {
+        impactCooldown = true;
+        triggerButton.disabled = true;
+        frameIndex = 0;
+
+        for (const frameInput of IMPACT_FRAMES) {
+          await runFrame(frameInput);
+          await delay(400);
+          if (activeBonds.length === 0) {
+            showToast('All bonds removed. Structure yielded.');
+            break;
+          }
+        }
+
+        triggerButton.disabled = false;
+        impactCooldown = false;
+      }
+
+      async function runFrame(input) {
+        const velocities = stressProcessor.getNodes().map(() => ({ lin: vec3(), ang: vec3() }));
+        velocities[TOP_NODE] = { lin: input.lin, ang: input.ang };
+
+        const { iterations, error } = stressProcessor.solve({ velocities, resume: frameIndex > 0 });
+
+        iterationsEl.textContent = iterations;
+        errorAngEl.textContent = error.ang.toFixed(5);
+        errorLinEl.textContent = error.lin.toFixed(5);
+
+        const updated = [];
+        const removals = [];
+
+        activeBonds.forEach((entry, index) => {
+          const impulse = stressProcessor.getImpulses()[index] ?? { ang: vec3(), lin: vec3() };
+          const stress = computeBondStress(entry.desc, impulse, stressProcessor.getNodes(), entry.area);
+          const severity = limits.severity(stress);
+          severity.max = Math.max(severity.compression, severity.tension, severity.shear);
+          const mode = limits.failureMode(stress);
+
+          updated.push({
+            ...entry,
+            stress,
+            severity,
+            mode
+          });
+
+          if (bondMeshes[index]) {
+            alignBondMesh(bondMeshes[index], entry.desc);
+            const color = bondMeshes[index].material.color;
+            color.copy(baseBondColor).lerp(warningBondColor, severity.max);
+          }
+
+          if (mode) {
+            removals.push({ index, entry, mode });
+          }
+        });
+
+        renderBondRows(updated);
+
+        if (removals.length) {
+          removals.sort((a, b) => a.index - b.index);
+          for (let i = removals.length - 1; i >= 0; --i) {
+            const removal = removals[i];
+            if (stressProcessor.removeBond(removal.index)) {
+              showToast(`Removed bond “${removal.entry.name}” due to ${removal.mode}`);
+              detachBondVisual(removal.index, removal.entry);
+              activeBonds.splice(removal.index, 1);
+            }
+          }
+          activeBonds = stressProcessor.getBonds().map((bond) => {
+            const key = `${bond.node0}-${bond.node1}`;
+            const meta = BOND_META.get(key) ?? { name: key, area: 0.75 };
+            return {
+              name: meta.name,
+              area: meta.area,
+              desc: bond,
+              stress: ZERO_STRESS,
+              severity: ZERO_SEVERITY
+            };
+          });
+          rebuildBondMeshes();
+        }
+
+        frameIndex += 1;
+      }
+
+      function renderBondRows(data = activeBonds) {
+        bondRowsEl.textContent = '';
+        data.forEach((entry) => {
+          const tr = document.createElement('tr');
+
+          const nameTd = document.createElement('td');
+          nameTd.textContent = entry.name;
+          tr.appendChild(nameTd);
+
+          const compressionTd = document.createElement('td');
+          compressionTd.appendChild(
+            createStressCell(entry.stress?.compression ?? 0, entry.severity?.compression ?? 0)
+          );
+          tr.appendChild(compressionTd);
+
+          const tensionTd = document.createElement('td');
+          tensionTd.appendChild(
+            createStressCell(entry.stress?.tension ?? 0, entry.severity?.tension ?? 0)
+          );
+          tr.appendChild(tensionTd);
+
+          const shearTd = document.createElement('td');
+          shearTd.appendChild(
+            createStressCell(entry.stress?.shear ?? 0, entry.severity?.shear ?? 0)
+          );
+          tr.appendChild(shearTd);
+
+          bondRowsEl.appendChild(tr);
+        });
+      }
+
+      function createStressCell(value, severity) {
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'flex-end';
+
+        const label = document.createElement('span');
+        label.textContent = value.toFixed(2);
+        container.appendChild(label);
+
+        const bar = document.createElement('div');
+        bar.className = 'stress-bar';
+        const fill = document.createElement('span');
+        fill.style.width = `${Math.min(severity, 1) * 100}%`;
+        fill.style.background = severity >= 1 ? 'rgba(255, 99, 132, 0.95)' : '';
+        bar.appendChild(fill);
+        container.appendChild(bar);
+
+        return container;
+      }
+
+      function handleResize() {
+        const { clientWidth, clientHeight } = viewportEl;
+        renderer.setSize(clientWidth, clientHeight, false);
+        camera.aspect = clientWidth / clientHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add('show');
+        setTimeout(() => toastEl.classList.remove('show'), 2400);
+      }
+
+      function delay(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function vec3Distance(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dz = a.z - b.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+      }
+
+      function alignBondMesh(mesh, desc) {
+        const node0 = stressProcessor.nodeDesc(desc.node0).com;
+        const node1 = stressProcessor.nodeDesc(desc.node1).com;
+        const target = new THREE.Vector3(node1.x, node1.y, node1.z);
+        const origin = new THREE.Vector3(node0.x, node0.y, node0.z);
+        const centroid = new THREE.Vector3(desc.centroid.x, desc.centroid.y, desc.centroid.z);
+        mesh.position.copy(centroid);
+        const distance = origin.distanceTo(target);
+        mesh.scale.set(1, distance, 1);
+        mesh.lookAt(target);
+      }
+
+      function detachBondVisual(index, entry) {
+        const mesh = bondMeshes[index];
+        if (!mesh) {
+          return;
+        }
+        if (mesh.parent) {
+          mesh.parent.remove(mesh);
+        }
+        bondMeshes.splice(index, 1);
+        const clone = mesh.clone();
+        clone.material = clone.material.clone();
+        const stressMag = entry.stress ? Math.max(entry.stress.compression, entry.stress.tension, entry.stress.shear) : 0;
+        clone.material.color.copy(baseBondColor).lerp(warningBondColor, stressMag > 0 ? Math.min(stressMag / 800, 1) : 0.5);
+        fallingPieces.push({ mesh: clone, velocity: new THREE.Vector3(0, 0, 0) });
+        scene.add(clone);
+      }
+
+      function rebuildBondMeshes() {
+        bondMeshes.forEach((mesh) => mesh.parent?.remove(mesh));
+        bondMeshes.length = 0;
+        activeBonds.forEach((entry, idx) => {
+          const mesh = new THREE.Mesh(bondGeometry.clone(), bondMaterial.clone());
+          alignBondMesh(mesh, entry.desc);
+          mesh.userData.index = idx;
+          scene.add(mesh);
+          bondMeshes.push(mesh);
+        });
+      }
+
+      function updateFallingPieces(dt) {
+        const gravityStep = GRAVITY.clone().multiplyScalar(dt);
+        for (let i = fallingPieces.length - 1; i >= 0; --i) {
+          const piece = fallingPieces[i];
+          piece.velocity.add(gravityStep);
+          piece.mesh.position.addScaledVector(piece.velocity, dt);
+          piece.mesh.rotateX(0.25 * dt);
+          piece.mesh.rotateZ(0.35 * dt);
+          if (piece.mesh.position.y < -2.5) {
+            piece.mesh.parent?.remove(piece.mesh);
+            fallingPieces.splice(i, 1);
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
+

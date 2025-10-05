@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bridge Stress Solver Demo</title>
+    <link rel="stylesheet" href="./styles/bridge-demo.css" />
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "/vendor/three/build/three.module.js",
+            "three/addons/": "/vendor/three/examples/jsm/",
+            "@dimforge/rapier3d-compat": "/vendor/rapier/rapier.mjs"
+          }
+        }
+    </script>  
+    </head>
+  <body>
+    <main class="layout">
+      <section class="viewport">
+        <canvas id="bridge-canvas"></canvas>
+        <div id="overlay" class="overlay"></div>
+      </section>
+      <aside class="sidebar">
+        <header>
+          <h1>Destructible Bridge</h1>
+          <p id="bridge-summary">
+            This demo keeps a Rapier compound rigid body and the Blast stress solver in
+            sync. Adjust gravity or fire projectiles to see the bridge fracture into
+            independent bodies.
+          </p>
+        </header>
+        <div class="controls">
+          <label class="control">
+            <span>Gravity (m/s²)</span>
+            <input type="range" id="gravity-slider" data-setting="gravity" min="-30" max="-1" step="0.5" value="-9.81" />
+            <span id="gravity-value">-9.81</span>
+          </label>
+          <label class="control">
+            <span>Material Strength</span>
+            <input type="range" id="strength-slider" data-setting="strength" min="0" max="1.5" step="0.001" value="1" />
+            <span id="strength-value">100.0%</span>
+          </label>
+          <label class="control">
+            <span>Solver Iterations</span>
+            <input type="range" id="iter-slider" min="4" max="128" step="1" />
+            <span id="iter-value">32</span>
+          </label>
+          <label class="control">
+            <span>Solver Tolerance (10^x)</span>
+            <input type="range" id="tolerance-slider" min="-8" max="-2" step="0.25" />
+            <span id="tolerance-value">1.0e-6</span>
+          </label>
+          <button id="fire-projectile" class="primary">Fire Projectile</button>
+          <button id="reset-bridge" class="secondary">Reset Bridge</button>
+          <button id="toggle-debug" class="secondary">Hide Debug</button>
+        </div>
+        <section class="legend">
+          <h2>Stress Legend</h2>
+          <ul>
+            <li><span class="swatch low"></span>Low stress</li>
+            <li><span class="swatch medium"></span>Warning</li>
+            <li><span class="swatch high"></span>Failure imminent</li>
+          </ul>
+        </section>
+        <section class="bond-stats">
+          <h2>Bond Loads</h2>
+          <div id="bond-table"></div>
+        </section>
+        <section class="events">
+          <h2>Recent Events</h2>
+          <ol id="event-log"></ol>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="./bridge.js"></script>
+  </body>
+</html>
