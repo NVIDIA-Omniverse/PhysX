@@ -32,7 +32,16 @@
 #include "NsBasicTemplates.h"
 #include "NvIntrinsics.h"
 
-#if NV_LINUX || NV_ANDROID || (NV_IOS && !NV_A64) || NV_OSX || NV_PS3 || NV_PSP2 || NV_WIIU
+#if defined(__EMSCRIPTEN__)
+#include <type_traits>
+namespace std
+{
+namespace tr1
+{
+using std::is_pod;
+}
+}
+#elif NV_LINUX || NV_ANDROID || (NV_IOS && !NV_A64) || NV_OSX || NV_PS3 || NV_PSP2 || NV_WIIU
 #include <tr1/type_traits>
 #elif NV_WINRT || NV_XBOXONE || (NV_IOS && NV_A64) || NV_WIN64 || NV_X360 || NV_WIN32 || NV_PS4
 #include <type_traits>
