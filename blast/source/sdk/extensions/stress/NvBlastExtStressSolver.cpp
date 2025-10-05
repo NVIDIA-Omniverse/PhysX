@@ -43,6 +43,7 @@
 #include "simd/simd_device_query.h"
 
 #include <algorithm>
+#include <cmath>
 
 #define USE_SCALAR_IMPL 0
 #define WARM_START 1
@@ -372,7 +373,7 @@ public:
         const float twistContribution = twist * 2.0f / nodeDist;
         stressShear += twistContribution;
         const float bendContribution = bend * 2.0f / nodeDist;
-        stressNormal += copysignf(bendContribution, stressNormal);
+        stressNormal += std::copysign(bendContribution, stressNormal);
     }
 
     float mapStressToRange(float stress, float elasticLimit, float fatalLimit) const
@@ -633,7 +634,7 @@ private:
 
                     // Align normal(s) with node displacement, so that compressive/tensile distinction is correct
                     const nvidia::NvVec3 assetBondNormal(blastBond.normal[0], blastBond.normal[1], blastBond.normal[2]);
-                    const nvidia::NvVec3 blastBondNormal = std::copysignf(1.0f, assetBondNormal.dot(nodeDisp))*assetBondNormal;
+                    const nvidia::NvVec3 blastBondNormal = std::copysign(1.0f, assetBondNormal.dot(nodeDisp))*assetBondNormal;
 
                     const nvidia::NvVec3 blastBondCentroid(blastBond.centroid[0], blastBond.centroid[1], blastBond.centroid[2]);
 
@@ -889,7 +890,7 @@ private:
             bond.centroid = *(NvVec3*)bonds[bond.blastBondIndex].centroid;
 
             // fix normal direction to point from node0 to node1
-            bond.normal *= std::copysignf(1.0f, bond.normal.dot(node1.localPos - node1.localPos));
+            bond.normal *= std::copysign(1.0f, bond.normal.dot(node1.localPos - node1.localPos));
 
             if (node0.solverNode == node1.solverNode)
                 continue; // skip (internal)

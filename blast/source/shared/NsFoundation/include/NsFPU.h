@@ -82,7 +82,11 @@ NV_FORCE_INLINE float NV_FR(const unsigned int x)
 #define NV_FPU_GUARD shdfnd::FPUGuard scopedFpGuard;
 #define NV_SIMD_GUARD shdfnd::SIMDGuard scopedFpGuard;
 
+#if defined(__EMSCRIPTEN__)
+#define NV_SUPPORT_GUARDS 0
+#else
 #define NV_SUPPORT_GUARDS (NV_WINDOWS_FAMILY || NV_XBOXONE || NV_LINUX || NV_PS4 || NV_OSX)
+#endif
 
 namespace nvidia
 {
@@ -125,6 +129,14 @@ NV_FOUNDATION_API void disableFPExceptions();
 
 #if NV_WINDOWS_FAMILY || NV_XBOXONE
 #include "platform/windows/NsWindowsFPU.h"
+#elif defined(__EMSCRIPTEN__)
+NV_INLINE nvidia::shdfnd::SIMDGuard::SIMDGuard()
+{
+}
+
+NV_INLINE nvidia::shdfnd::SIMDGuard::~SIMDGuard()
+{
+}
 #elif NV_LINUX || NV_PS4 || NV_OSX
 #include "platform/unix/NsUnixFPU.h"
 #else

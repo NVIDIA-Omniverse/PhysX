@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node ./scripts/build.js",
-    "demo": "npm run build --silent && node ./demo.js"
+    "demo": "npm run build --silent && node ./demo.js",
+    "demo:ext": "npm run build --silent && node ./ext-demo.js"
   }
 }
