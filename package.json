@@ -1,0 +1,17 @@
+{
+  "name": "physx",
+  "version": "1.0.0",
+  "description": "Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run serve:demos",
+    "serve:demos": "node scripts/serve-demo.mjs"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.1",
+    "lil-gui": "^0.20.0",
+    "three": "^0.180.0"
+  }
+}
