@@ -35,6 +35,25 @@ This script applies gravity and a downward impulse on the top node, steps the
 solver until it converges, and prints debug-render line samples generated via
 `fillDebugRender`.
 
+Additional `ExtStressSolver` demos are available:
+
+```bash
+cd blast/js_stress_example
+npm run demo:ext-cube      # Projectile vs. fractured cube
+npm run demo:ext-bridge    # Heavy vehicles collapsing a bridge deck
+```
+
+- `ext-cube-projectile.js` procedurally fractures a cube into eight pieces,
+  applies gravity plus a high-speed projectile impulse, and reports the bonds
+  predicted to fail along the impacted face. Debug-render lines are sorted by
+  magnitude so that the most stressed bonds are easy to inspect.
+- `ext-bridge-cars.js` builds a beam bridge with layered deck fragments and
+  suspension piers. It sweeps a heavy "car" load across successive deck
+  segments, printing per-span solver errors, overstressed bond counts, and the
+  hottest debug lines. Once the car load creates an overstressed bond the demo
+  flags the deck as failed, mirroring how a game would generate fracture
+  commands from the solver output.
+
 ## ExtStressSolver bindings
 
 The build also bundles the Blast `ExtStressSolver` extension.  You can create and

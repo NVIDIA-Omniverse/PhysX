@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node ./scripts/build.js",
     "demo": "npm run build --silent && node ./demo.js",
-    "demo:ext": "npm run build --silent && node ./ext-demo.js"
+    "demo:ext": "npm run build --silent && node ./ext-demo.js",
+    "demo:ext-cube": "npm run build --silent && node ./ext-cube-projectile.js",
+    "demo:ext-bridge": "npm run build --silent && node ./ext-bridge-cars.js"
   }
 }
