@@ -1,0 +1,519 @@
+---
+alwaysApply: true
+---
+
+Below is a practical, no‑nonsense “zero → 100%” guide to using **NVIDIA Blast** with the **Stress Solver** to make a destructible cube (and then arbitrary meshes). I’ll start with the mental model and terminology, then give you a minimal working pipeline with C++ code you can drop into a blank project, and finally show how to scale to real assets, gravity/impacts, saving/loading, and common gotchas. I’ll point to the relevant Blast docs at each step so you can cross‑check the exact API names and signatures.
+
+---
+
+## 1) What Blast *is* (in one page)
+
+**Core ideas**
+
+* **Asset** – a pre‑fractured object. It contains:
+
+  * **Chunks** (pieces) arranged in a hierarchy (root → leaves).
+  * **Bonds** (interfaces) between support chunks.
+  * **Support graph** – graph of support chunks connected by bonds.
+* **Family** – a runtime instance of an asset (the original actor + any children produced by splits).
+* **Actor** – a *currently intact* subset of the family’s chunks (often the whole thing at the start).
+* **Damage & fracture** – you don’t cut meshes at runtime; you **author** fractures up front, then at runtime you **break bonds** according to damage or stress.
+* **Blast is physics‑agnostic** – it won’t move bodies; you integrate it with a physics engine (e.g., PhysX 5) for motion. The Stress Solver can figure out which **bonds** should break under forces/accelerations; you still use your physics engine to apply forces and simulate motion. ([NVIDIA Omniverse][1])
+
+**Stress Solver in a sentence**
+
+* Create once per **Family**, set masses/volumes of graph nodes, then each frame **apply forces/accelerations**, call `update()`, and if bonds are overstressed, **generate fracture commands** and **apply** them to the family. API overview shows the exact flow and methods. ([NVIDIA Omniverse][2])
+
+---
+
+## 2) The shortest path to a destructible **cube**
+
+We’ll do this end‑to‑end in C++:
+
+1. **Author** a destructible cube at startup (create triangle mesh, fracture it into many cells, compute bonds → build a Blast asset).
+2. **Instance** it (create a TkActor and get its TkFamily).
+3. **Create the Stress Solver** for that family and configure bond limits (elastic/fatal).
+4. **Game loop:** apply forces → `stressSolver.update()` → if overstressed → generate & apply fracture commands → handle spawned child actors.
+
+We’ll lean on the official Blast extensions for:
+
+* **Authoring** tools: `FractureTool`, `BlastBondGenerator`, and helpers to build an `NvBlastAsset` (and optional collision hulls). ([NVIDIA Omniverse][3])
+* **Stress Solver**: `ExtStressSolver` + `ExtStressSolverSettings`. ([NVIDIA Omniverse][2])
+* **Tk High‑Level API** (convenient C++ wrappers): `TkFramework`, `TkAsset`, `TkActor`, `TkFamily`, `TkGroup`. ([NVIDIA Omniverse][1])
+
+### 2.1. Project setup (headers you’ll include)
+
+```cpp
+// Blast core & toolkit
+#include "NvBlastTk.h"
+#include "NvBlastTkFramework.h"
+#include "NvBlastTkAsset.h"
+#include "NvBlastTkActor.h"
+#include "NvBlastTkFamily.h"
+#include "NvBlastTkGroup.h"
+
+// Authoring extension
+#include "NvBlastExtAuthoring.h"                   // factory functions (CreateFractureTool, CreateMesh, …)
+#include "NvBlastExtAuthoringFractureTool.h"       // FractureTool API
+#include "NvBlastExtAuthoringBondGenerator.h"      // BlastBondGenerator
+#include "NvBlastExtAuthoringTypes.h"              // AuthoringResult
+
+// Stress solver extension
+#include "NvBlastExtStressSolver.h"
+
+// Optional damage shaders (radial/sheer etc.) if you want both approaches
+#include "NvBlastExtDamageShaders.h"
+
+// Globals, types & math
+#include "NvBlast.h"
+#include "NvBlastGlobals.h"
+#include "NvCMath.h"
+```
+
+All of the factory functions you’ll call (e.g., `NvBlastExtAuthoringCreateFractureTool`, `NvBlastExtAuthoringCreateMeshOnlyTriangles`, etc.) live in **NvBlastExtAuthoring.h**. ([NVIDIA Omniverse][3])
+
+---
+
+### 2.2. Author a fractured cube in memory
+
+**Step A – Build a triangle mesh for a unit cube**
+
+Use the helper `NvBlastExtAuthoringCreateMeshOnlyTriangles(vertices, vertexCount, indices, indexCount)`. It only needs positions and indexed triangles. (Materials are optional.) ([NVIDIA Omniverse][4])
+
+```cpp
+using namespace Nv::Blast;
+
+// 8 cube vertices at corners of a unit cube centered at origin
+static const float V[] = {
+    -0.5f,-0.5f,-0.5f,   +0.5f,-0.5f,-0.5f,
+    +0.5f,+0.5f,-0.5f,   -0.5f,+0.5f,-0.5f,
+    -0.5f,-0.5f,+0.5f,   +0.5f,-0.5f,+0.5f,
+    +0.5f,+0.5f,+0.5f,   -0.5f,+0.5f,+0.5f
+};
+static const uint32_t I[] = {
+    // 12 triangles (two per face), CCW
+    0,1,2,  0,2,3,   // -Z
+    4,6,5,  4,7,6,   // +Z
+    0,4,5,  0,5,1,   // -Y
+    3,2,6,  3,6,7,   // +Y
+    0,3,7,  0,7,4,   // -X
+    1,5,6,  1,6,2    // +X
+};
+
+Mesh* srcMesh = NvBlastExtAuthoringCreateMeshOnlyTriangles(
+    V, 8, const_cast<uint32_t*>(I), 36 /* 12 tris * 3 */
+);
+```
+
+**Step B – Fracture it with Voronoi**
+
+Create a `FractureTool`, feed it the mesh, generate site points, and call `voronoiFracturing`. Then finalize to bake the internal split geometry. (Note: for the *root* chunk (ID 0) you should *not* use `replaceChunk=true` – the API considers that invalid for the root; generate children at the next depth.) The functions and behavior are in the FractureTool docs. ([NVIDIA Omniverse][5])
+
+```cpp
+FractureTool* ft = NvBlastExtAuthoringCreateFractureTool();
+
+// Give it the source mesh
+Mesh* meshes[] = { srcMesh };
+ft->setSourceMeshes(meshes, 1, nullptr);
+
+// Make N random Voronoi sites inside the unit cube
+std::vector<NvcVec3> sites;
+const uint32_t cellCount = 32;  // tweak for coarser/finer pieces
+sites.reserve(cellCount);
+for (uint32_t i = 0; i < cellCount; ++i) {
+    float x = -0.5f + static_cast<float>(rand())/RAND_MAX;  // [-0.5, 0.5]
+    float y = -0.5f + static_cast<float>(rand())/RAND_MAX;
+    float z = -0.5f + static_cast<float>(rand())/RAND_MAX;
+    sites.push_back({x,y,z});
+}
+
+// Fracture root chunk (id 0); put new chunks at next depth (replaceChunk=false)
+ft->voronoiFracturing(/*chunkId=*/0, cellCount, sites.data(), /*replaceChunk=*/false);
+
+// Bake results into final chunk geometry
+ft->finalizeFracturing();
+```
+
+**Step C – Turn fracture results into a Blast asset (chunks+bonds)**
+
+Run the **BondGenerator** to compute bonds between neighboring support chunks and assemble **chunk/bond descriptors**. You can call the path optimized for `FractureTool` output; or use the higher-level helper `NvBlastExtAuthoringProcessFracture` to build the `AuthoringResult` in one go (includes `NvBlastAsset* asset`, optional render/collision hulls). See the authoring docs for these functions and the `AuthoringResult` fields. ([NVIDIA Omniverse][6])
+
+```cpp
+// (A) “Do‑it‑for‑me” path: one call prepares the asset & geometry
+ConvexDecompositionParams hullParams{};     // defaults are fine to start
+// You need a ConvexMeshBuilder implementation; in most setups it’s created by your
+// integration layer. If you don’t have one yet, you can skip collision building for now
+// and just create the asset (physics can be added later).
+
+BlastBondGenerator* bondGen = NvBlastExtAuthoringCreateBondGenerator(/*ConvexMeshBuilder*/ nullptr);
+
+// Mark all bottom-level generated chunks as “support”.
+// A typical choice: support = depth == maxDepth (leaf chunks).
+std::vector<bool> isSupport;
+isSupport.resize(ft->getChunkCount(), true);  // start simple: all leaves are support
+
+std::vector<NvBlastBondDesc> bonds;
+std::vector<NvBlastChunkDesc> chunks;
+bondGen->buildDescFromInternalFracture(ft, isSupport, bonds, chunks);  // authoring docs show this signature
+
+// Now cook a low-level asset from descriptors.
+NvBlastAssetDesc llDesc{};
+llDesc.chunkCount = static_cast<uint32_t>(chunks.size());
+llDesc.chunkDescs = chunks.data();
+llDesc.bondCount  = static_cast<uint32_t>(bonds.size());
+llDesc.bondDescs  = bonds.data();
+
+void* mem = NVBLAST_ALLOC(NvBlastGetAssetMemorySize(&llDesc));
+NvBlastLog logFn = nullptr;  // or provide a logging callback
+NvBlastAsset* llAsset = NvBlastCreateAsset(mem, &llDesc, logFn);
+```
+
+> Tip: Instead of the manual `buildDescFromInternalFracture` + `NvBlastCreateAsset`, you can use `NvBlastExtAuthoringProcessFracture` to fill an `AuthoringResult` which already contains `asset`, bonds/chunks, render geometry and collision hulls – handy once you want physics shapes. See the function list in **NvBlastExtAuthoring.h** and the `AuthoringResult` struct (contains `NvBlastAsset* asset`, `collisionHull`, `geometry`, offsets, etc.). ([NVIDIA Omniverse][3])
+
+**Step D – Wrap the low‑level asset in the high‑level Tk layer**
+
+The Tk layer makes life easier (family, events, groups). Create a `TkFramework`, then a `TkAsset` from the low‑level asset, and finally a `TkActor` (that automatically creates a `TkFamily`). This flow is shown in the Tk user guide (“Creating a TkAsset” and “Instancing a TkAsset”). ([NVIDIA Omniverse][1])
+
+```cpp
+using namespace Nv::Blast;
+
+TkFramework* framework = NvBlastTkFrameworkCreate();
+
+TkAsset* tkAsset = framework->createAsset(llAsset /*takes ownership?*/, nullptr, 0, true);
+
+TkActorDesc actorDesc{};
+actorDesc.asset = tkAsset;
+TkActor* tkActor = framework->createActor(actorDesc);
+
+// Family holds all current and future child actors
+TkFamily& family = tkActor->getFamily();
+```
+
+---
+
+### 2.3. Create and configure the **Stress Solver** for this family
+
+The Stress Solver operates on the **low‑level family** (`NvBlastFamily`) and the asset’s **support graph**. You create it once, provide node info (mass/volume/position), then on each frame you apply forces/accelerations and call `update()`. If bonds are overstressed, ask it for **fracture commands** and **apply** them to the family. All of this – including method names and sequence – is in the class reference and the extension overview. ([NVIDIA Omniverse][2])
+
+```cpp
+// Access the low-level family (needed by ExtStressSolver::create)
+const NvBlastFamily* llFamily = family.getFamilyLL();  // TkFamily API
+ExtStressSolver* stress = ExtStressSolver::create(*llFamily);
+
+// Fill node info (mass/volume/centroid) from LL asset automatically using a density
+stress->setAllNodesInfoFromLL(/*density=*/1000.0f);  // kg/m^3, e.g. wood-ish density
+// (Doc: uses chunk volumes & centroids; nodes marked ‘external’ are treated as static.) :contentReference[oaicite:12]{index=12}
+
+// Configure bond limits (elastic and fatal thresholds, in Pascals)
+ExtStressSolverSettings s{};
+s.maxSolverIterationsPerFrame = 64;  // upper bound per frame
+s.compressionElasticLimit = 1.0e5f;
+s.compressionFatalLimit   = 5.0e5f;
+s.shearElasticLimit       = -1.0f;   // negative = fall back to compression limits
+s.shearFatalLimit         = -1.0f;
+s.tensionElasticLimit     = -1.0f;
+s.tensionFatalLimit       = -1.0f;
+stress->setSettings(s);  // can be adjusted at runtime :contentReference[oaicite:13]{index=13}
+
+// Register the initial actor with the solver
+stress->notifyActorCreated(*tkActor->getActorLL());   // TkActor exposes getActorLL() :contentReference[oaicite:14]{index=14}
+```
+
+---
+
+### 2.4. Per‑frame loop: apply forces → update solver → fracture if needed
+
+Here is a minimal loop that:
+
+* Applies a force at a point on the actor (e.g., from a “bullet hit”),
+* Updates the solver, and if bonds are overstressed,
+* Generates fracture commands and applies them to the family (which dispatches split events).
+
+The relevant methods are `addForce`, `update`, `getOverstressedBondCount`, `generateFractureCommands`, and `TkFamily::applyFracture`. ([NVIDIA Omniverse][2])
+
+```cpp
+void applyLocalImpact(ExtStressSolver& stress, TkActor& tkActor,
+                      const NvcVec3& localHitPos, const NvcVec3& localForce)
+{
+    // Apply a force/impulse to the nearest graph node of this actor
+    stress.addForce(*tkActor.getActorLL(), localHitPos, localForce /*, ExtForceMode::FORCE*/);
+}
+
+void tickDestruction(ExtStressSolver& stress, TkFamily& family)
+{
+    // 1) Solve bond stresses with all forces applied this frame
+    stress.update();
+
+    // 2) If any bonds are overstressed, generate fracture commands and apply them
+    if (stress.getOverstressedBondCount() > 0) {
+        // For simplicity we’ll process the single actor case:
+        // In general, prefer generateFractureCommandsPerActor.
+        // (We need the low-level actor pointer.)
+        // tkActor reference available? Use family.getActors(...) to iterate.
+
+        // Collect current actors from the family
+        std::vector<TkActor*> actors(family.getActorCount());
+        family.getActors(actors.data(), static_cast<uint32_t>(actors.size()));
+
+        std::vector<NvBlastFractureBuffers> cmds(actors.size());
+        std::vector<const NvBlastActor*> llActors; llActors.reserve(actors.size());
+
+        uint32_t n = 0;
+        for (TkActor* a : actors) {
+            if (!a) continue;
+            llActors.push_back(a->getActorLL());
+            stress.generateFractureCommands(*a->getActorLL(), cmds[n++]);
+        }
+
+        // Apply to the whole family (Blast will split actors and dispatch events)
+        for (uint32_t i = 0; i < n; ++i) {
+            family.applyFracture(&cmds[i]);  // TkFamily::applyFracture
+        }
+    }
+}
+```
+
+> **Important:** When actors split, you must notify the stress solver about the new/destroyed low‑level actors. Call `notifyActorDestroyed` for the old one(s) and `notifyActorCreated` for each child. Typically you do this in your **TkFamily event listener** when you handle split events. The Stress Solver class docs call this out explicitly. ([NVIDIA Omniverse][2])
+
+---
+
+## 3) Making the cube *move* (physics integration)
+
+Blast doesn’t move bodies. To see fragments fly and fall, integrate with a physics engine like **PhysX 5**:
+
+* Create one rigid body for each **visible chunk set** in a `TkActor` (often just one at the start).
+* When a split happens (TkFamily event), **delete** the old rigid body and **spawn** new ones for the child actors, attaching collision shapes made from the child’s collision hulls (convexes).
+* Apply your gameplay impulses both to PhysX (to move) **and** to the stress solver (to compute bond stresses/breakage).
+
+The Tk user guide explains families, groups and events; TkActor exposes helpers like `getVisibleChunkIndices`, and TkFamily provides `addListener` to receive split events. You can also query low‑level pointers via `TkActor::getActorLL()` and the family via `TkActor::getFamily()`. ([NVIDIA Omniverse][1])
+
+> **Collision hulls**: Use the Authoring toolchain to produce per‑chunk convex hulls (via the convex builder and `NvBlastExtAuthoringProcessFracture`). Each child actor’s visible chunks correspond to a set of hulls that you convert to your physics engine’s convex meshes. The extension functions and `AuthoringResult` hold the hulls and offsets. ([NVIDIA Omniverse][3])
+
+---
+
+## 4) Using the Stress Solver effectively
+
+**Minimum recipe per family (from the official usage notes):** Create → set node info (or `setAllNodesInfoFromLL`) → notify initial actors → each frame **apply forces** (and/or accelerations like gravity) → `update()` → if overstressed, **generate** and **apply** fracture commands → after split, **notify** created/destroyed actors. The class page lists every method (including debug helpers). ([NVIDIA Omniverse][2])
+
+**Choosing limits** (units are Pascals):
+
+* `*_ElasticLimit` – below this, bonds don’t take damage.
+* `*_FatalLimit` – above this, a bond is immediately broken.
+  If you set tension/shear limits to a negative value, they fall back to the compression limits, which is handy for first passes. (These fields are in `ExtStressSolverSettings`.) ([NVIDIA Omniverse][7])
+
+**For static structures breaking under weight (optional)**
+
+* If you want the cube “glued” to the world and breaking from gravity (no rigid body motion), add **world bonds** (asset utilities), mark world nodes static, and then call `addGravity(actor, localGravity)` each frame. The solver treats static nodes as anchors and computes internal stresses; when limits are exceeded, bonds break. (The authoring utilities include functions to add bonds to the world; the Stress Solver provides `addGravity` and mentions static nodes through the “external” node concept.) ([NVIDIA Omniverse][8])
+
+---
+
+## 5) Alternative or complementary approach: **Damage Shaders**
+
+Blast ships with ready‑made **damage shaders** (radial, shear, impact spread, segment‑radial, etc.) that generate fracture commands from a single call (bypass the stress calculation). You can use these *alongside* the solver—for example, use shaders for explosions and the solver for progressive structural failure. Example of setting up a shear/radial damage program is shown in the damage‑shaders doc; with Tk you enqueue `tkActor->damage(program, params)`, then process your TkGroup. ([NVIDIA Omniverse][9])
+
+---
+
+## 6) Full minimal example (all steps in one place)
+
+> **Note:** This is deliberately compact to focus on the Blast + Stress Solver flow. It doesn’t include PhysX code—add rigid bodies & shapes for each `TkActor` to see motion.
+
+```cpp
+#include <vector>
+#include <cstdlib>
+#include "NvBlastTk.h"
+#include "NvBlastTkFramework.h"
+#include "NvBlastTkAsset.h"
+#include "NvBlastTkActor.h"
+#include "NvBlastTkFamily.h"
+#include "NvBlastExtAuthoring.h"
+#include "NvBlastExtAuthoringFractureTool.h"
+#include "NvBlastExtAuthoringBondGenerator.h"
+#include "NvBlastExtAuthoringTypes.h"
+#include "NvBlastExtStressSolver.h"
+#include "NvBlastGlobals.h"
+#include "NvCMath.h"
+
+using namespace Nv::Blast;
+
+struct Destructible
+{
+    TkFramework*     framework{};
+    TkAsset*         tkAsset{};
+    TkActor*         tkActor{};
+    ExtStressSolver* stress{};
+};
+
+Destructible makeDestructibleCube()
+{
+    Destructible out{};
+    out.framework = NvBlastTkFrameworkCreate();
+
+    // --- Build unit-cube mesh
+    static const float V[] = {
+        -0.5f,-0.5f,-0.5f,  +0.5f,-0.5f,-0.5f,
+        +0.5f,+0.5f,-0.5f,  -0.5f,+0.5f,-0.5f,
+        -0.5f,-0.5f,+0.5f,  +0.5f,-0.5f,+0.5f,
+        +0.5f,+0.5f,+0.5f,  -0.5f,+0.5f,+0.5f
+    };
+    static const uint32_t I[] = {
+        0,1,2, 0,2,3,  4,6,5, 4,7,6,
+        0,4,5, 0,5,1,  3,2,6, 3,6,7,
+        0,3,7, 0,7,4,  1,5,6, 1,6,2
+    };
+    Mesh* mesh = NvBlastExtAuthoringCreateMeshOnlyTriangles(V, 8, const_cast<uint32_t*>(I), 36);
+
+    // --- Fracture into Voronoi cells
+    FractureTool* ft = NvBlastExtAuthoringCreateFractureTool();
+    Mesh* meshes[] = { mesh };
+    ft->setSourceMeshes(meshes, 1, nullptr);
+
+    const uint32_t cellCount = 32;
+    std::vector<NvcVec3> pts;
+    pts.reserve(cellCount);
+    for (uint32_t i = 0; i < cellCount; ++i) {
+        float x = -0.5f + (float)rand()/RAND_MAX;
+        float y = -0.5f + (float)rand()/RAND_MAX;
+        float z = -0.5f + (float)rand()/RAND_MAX;
+        pts.push_back({x,y,z});
+    }
+    ft->voronoiFracturing(0, cellCount, pts.data(), /*replaceChunk=*/false);
+    ft->finalizeFracturing();
+
+    // --- Bond & chunk descriptors
+    BlastBondGenerator* bondGen = NvBlastExtAuthoringCreateBondGenerator(nullptr);
+    std::vector<bool> isSupport(ft->getChunkCount(), true);
+    std::vector<NvBlastBondDesc> bonds;
+    std::vector<NvBlastChunkDesc> chunks;
+    bondGen->buildDescFromInternalFracture(ft, isSupport, bonds, chunks);
+
+    // --- Cook low-level asset
+    NvBlastAssetDesc llDesc{};
+    llDesc.chunkCount = (uint32_t)chunks.size();
+    llDesc.chunkDescs = chunks.data();
+    llDesc.bondCount  = (uint32_t)bonds.size();
+    llDesc.bondDescs  = bonds.data();
+
+    void* mem = NVBLAST_ALLOC(NvBlastGetAssetMemorySize(&llDesc));
+    NvBlastAsset* llAsset = NvBlastCreateAsset(mem, &llDesc, nullptr);
+
+    // --- TkAsset + Actor + Family
+    out.tkAsset = out.framework->createAsset(llAsset, nullptr, 0, /*own*/ true);
+    TkActorDesc ad{}; ad.asset = out.tkAsset;
+    out.tkActor = out.framework->createActor(ad);
+    TkFamily& family = out.tkActor->getFamily();
+
+    // --- Stress Solver
+    out.stress = ExtStressSolver::create(*family.getFamilyLL());
+    out.stress->setAllNodesInfoFromLL(1000.0f); // density
+    ExtStressSolverSettings s{};
+    s.compressionElasticLimit = 1.0e5f; s.compressionFatalLimit = 5.0e5f;
+    s.shearElasticLimit = s.shearFatalLimit = -1.0f;
+    s.tensionElasticLimit = s.tensionFatalLimit = -1.0f;
+    out.stress->setSettings(s);
+    out.stress->notifyActorCreated(*out.tkActor->getActorLL());
+
+    // Clean up authoring objects (asset is now owned by TkAsset)
+    ft->release(); mesh->release();
+
+    return out;
+}
+
+// Example: hit the cube with a force at a point in the cube’s local space
+void hit(Destructible& d, const NvcVec3& localPos, const NvcVec3& localForce)
+{
+    d.stress->addForce(*d.tkActor->getActorLL(), localPos, localForce);
+}
+
+void step(Destructible& d)
+{
+    d.stress->update();
+
+    if (d.stress->getOverstressedBondCount() > 0)
+    {
+        TkFamily& family = d.tkActor->getFamily();
+
+        std::vector<TkActor*> actors(family.getActorCount());
+        family.getActors(actors.data(), (uint32_t)actors.size());
+
+        for (TkActor* a : actors) if (a) {
+            NvBlastFractureBuffers cmds{};
+            d.stress->generateFractureCommands(*a->getActorLL(), cmds);
+            family.applyFracture(&cmds);
+            // After apply, Blast will dispatch split events to listeners (spawn PhysX actors there)
+        }
+    }
+}
+```
+
+> **Add your physics**: Create a rigid body for `d.tkActor` initially; on split events from `TkFamily` create new bodies for child `TkActor`s and delete the parent body. Apply the same gameplay impulse to PhysX and to `ExtStressSolver::addForce(...)`. TkActor and TkFamily APIs, including `getActorLL()`, `getActors`, and `applyFracture`, are documented in the Toolkit API and class references. ([NVIDIA Omniverse][1])
+
+---
+
+## 7) Feeding real‑world loads into the solver
+
+* **Projectile hits:** when your physics engine reports a contact/impulse on a body corresponding to TkActor A at world point `P` with impulse `J`, transform `P` and `J` to the actor’s **local space**, then call `stress.addForce(A, localP, localJ)`, `update()`, and handle bond breaks.
+* **Gravity on anchored structures:** if the object is “attached to world,” call `addGravity(actor, localGravity)`. Make sure parts that are anchored are marked as **static** (via the external/world node concept). ([NVIDIA Omniverse][2])
+* **Spinning machinery:** the solver has `addCentrifugalAcceleration(actor, localCOM, localAngularVelocity)` to model rotation‑induced loads (see API). ([NVIDIA Omniverse][2])
+
+---
+
+## 8) Arbitrary meshes (beyond a cube)
+
+1. Convert your render mesh (OBJ/FBX/etc.) into a Blast authoring **Mesh**:
+
+   * If you already have triangles: `NvBlastExtAuthoringCreateMeshOnlyTriangles(...)`. ([NVIDIA Omniverse][4])
+   * Or use `NvBlastExtAuthoringCreateMesh(...)` if you have positions+normals+uvs. ([NVIDIA Omniverse][10])
+2. Run **FractureTool** with the pattern(s) you like:
+
+   * `voronoiFracturing`, `slicing` (with optional noise), or cutout fracturing. ([NVIDIA Omniverse][5])
+3. Generate bonds (`BlastBondGenerator`). If you used noisy cuts and the hulls overlap, consider the **Average** bonding mode; otherwise use **Exact** for accurate area/normal/centroid. (Authoring page explains modes.) ([NVIDIA Omniverse][6])
+4. Cook the asset (`NvBlastCreateAsset`) or let `NvBlastExtAuthoringProcessFracture` produce `AuthoringResult` with render & collision hulls. ([NVIDIA Omniverse][3])
+5. Proceed exactly as with the cube: TkAsset → TkActor → Family → Stress Solver.
+
+---
+
+## 9) Saving & loading assets
+
+Use **ExtSerialization** to save/load low‑level and Tk assets (Cap’n Proto binary by default). For Tk assets, load the Tk serializers and then call `serializeIntoBuffer` / `deserializeFromBuffer`. The docs show exact calls and object type IDs (`LlObjectTypeID::Asset`, `TkObjectTypeID::Asset`). ([NVIDIA Omniverse][11])
+
+---
+
+## 10) Debugging & visualization
+
+* **Stress debug lines**: `fillDebugRender(nodes, count, mode)` returns colored line segments visualizing stress percentage (max/compression/tension/shear). Draw them in your engine’s line renderer. ([NVIDIA Omniverse][2])
+* **Groups**: Use `TkGroup` to batch damage/processing across many actors. In shader‑damage workflows you add actors to a group, queue damage, and call `group->process()`. (Snippet in damage‑shader docs shows the pattern.) ([NVIDIA Omniverse][9])
+
+---
+
+## 11) Common pitfalls & best practices
+
+* **You must pre‑fracture.** The Stress Solver can only break **existing bonds**; it does not cut new surfaces at runtime. (That’s why we author with FractureTool.) ([NVIDIA Omniverse][5])
+* **Root replacement rule:** Don’t call `voronoiFracturing(0, ..., replaceChunk=true)` for the root; put children at the next depth (`replaceChunk=false`) then call `finalizeFracturing()`. ([NVIDIA Omniverse][5])
+* **Notify the solver on splits.** After you apply fracture, actors change; call `notifyActorDestroyed/notifyActorCreated` accordingly (usually in your TkFamily split event handler). ([NVIDIA Omniverse][2])
+* **Units matter.** Limits are in **Pascals**. Set a density that makes sense for your material so node masses are realistic, or set masses explicitly via `setNodeInfo`. ([NVIDIA Omniverse][7])
+* **Collision hull trimming.** If you use noisy slicing, hulls may overlap, causing explosive simulations. The authoring tools provide hull trimming to reduce interpenetration; render meshes can still interpenetrate slightly (trade‑off). ([NVIDIA Omniverse][6])
+* **Don’t forget physics.** During debugging you can “fake” motion, but for a real game feel you’ll want PhysX (or equivalent) for rigid bodies and collision.
+
+---
+
+## 12) Where to look in the docs (by task)
+
+* **Tk overview & flow** – framework, assets, actors, families, groups, events, damage: *High‑Level (Toolkit) API user’s guide*. ([NVIDIA Omniverse][1])
+* **Authoring tools** – `FractureTool`, `BlastBondGenerator`, mesh restrictions, hull builder, one‑shot authoring helpers: *Asset Authoring (NvBlastExtAuthoring)* + `AuthoringResult`. ([NVIDIA Omniverse][6])
+* **Stress Solver** – key methods & lifecycle, per‑frame update, settings & limits (Pa), debug rendering: *Stress Solver (NvBlastExtStress)* and `ExtStressSolver`/`ExtStressSolverSettings` class refs. ([NVIDIA Omniverse][8])
+* **Damage shaders** – ready‑to‑use shear/radial/impact programs: *Damage Shaders (NvBlastExtShaders)*. ([NVIDIA Omniverse][9])
+* **Serialization** – saving/loading LL and Tk assets: *ExtSerialization* & *ExtTkSerialization*. ([NVIDIA Omniverse][11])
+
+---
+
+[1]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/api_hl_users_guide.html "High Level (Toolkit) API (NvBlastTk) — blast-sdk 5.0.6 documentation"
+[2]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/class_nv_1_1_blast_1_1_ext_stress_solver.html "Nv::Blast::ExtStressSolver — blast-sdk 5.0.6 documentation"
+[3]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/file_extensions_authoring_NvBlastExtAuthoring.h.html "extensions/authoring/NvBlastExtAuthoring.h — blast-sdk 5.0.6 documentation"
+[4]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/function__nv_blast_ext_authoring_8h_1a182991cd87c0d30176ef387e542b589a.html "NvBlastExtAuthoringCreateMeshOnlyTriangles — blast-sdk 5.0.6 documentation"
+[5]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/class_nv_1_1_blast_1_1_fracture_tool.html "Nv::Blast::FractureTool — blast-sdk 5.0.6 documentation"
+[6]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/extensions/ext_authoring.html "Asset Authoring (NvBlastExtAuthoring) — blast-sdk 5.0.6 documentation"
+[7]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html "Nv::Blast::ExtStressSolverSettings — blast-sdk 5.0.6 documentation"
+[8]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/extensions/ext_stress.html "Stress Solver (NvBlastExtStress) — blast-sdk 5.0.6 documentation"
+[9]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/extensions/ext_shaders.html "Damage Shaders (NvBlastExtShaders) — blast-sdk 5.0.6 documentation"
+[10]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/function__nv_blast_ext_authoring_8h_1a83bd2e459926ad7fa302b2a75ccc7bf9.html "NvBlastExtAuthoringCreateMesh — blast-sdk 5.0.6 documentation"
+[11]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/extensions/ext_serialization.html "Serialization (NvBlastExtSerialization) — blast-sdk 5.0.6 documentation"
