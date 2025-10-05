@@ -26,10 +26,13 @@
 
 #include "stress.h"
 #include "math/cgnr.h"
+#if !defined(STRESS_SOLVER_NO_DEVICE_QUERY)
 #include "simd/simd_device_query.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 #define MASS_AND_LENGTH_SCALING 1
 
@@ -43,6 +46,9 @@ typedef CGNR<AngLin6, AngLin6Ops<SIMD_Scalar>, BondMatrixS, BondMatrixOpsS<SIMD_
  */
 
 #if defined(STRESS_SOLVER_FORCE_SCALAR)
+const bool
+StressProcessor::s_use_simd = false;
+#elif defined(STRESS_SOLVER_NO_DEVICE_QUERY)
 const bool
 StressProcessor::s_use_simd = false;
 #else
@@ -219,6 +225,11 @@ StressProcessor::solve(AngLin6* impulses, const AngLin6* velocities, const Solve
         const InertiaS& I_i = sqrt_I_inv[i];
         const AngLin6& v_i = velocities[i];
         AngLin6& b_i = b[i];
+        if (I_i.I <= 0.0f && (v_i.ang|v_i.ang) > 0.0f)
+        {
+            std::fprintf(stderr, "[Blast][StressSolver] node %u has zero angular inertia but non-zero angular velocity\n", i);
+            return -32;
+        }
         b_i.ang = v_i.ang/(-(I_i.I > 0 ? I_i.I : 1.0f));
         b_i.lin = (-recip_length_scale/(I_i.m > 0 ? I_i.m : 1.0f))*v_i.lin;
     }

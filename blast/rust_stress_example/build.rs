@@ -30,6 +30,8 @@ fn main() {
     build.include(repo_root.join("blast/include/shared/NvFoundation"));
     build.flag_if_supported("-std=c++17");
     build.define("STRESS_SOLVER_FORCE_SCALAR", None);
+    build.define("STRESS_SOLVER_NO_SIMD", None);
+    build.define("STRESS_SOLVER_NO_DEVICE_QUERY", None);
     build.define("NDEBUG", None);
     build.flag_if_supported("-fno-exceptions");
     build.flag_if_supported("-fvisibility=hidden");

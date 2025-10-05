@@ -56,13 +56,10 @@ const exportedRuntimeMethods = [
   'HEAP32',
   'HEAPU32',
   'HEAPF32',
-  'HEAPF64',
-  'stackSave',
-  'stackRestore',
-  'stackAlloc'
+  'HEAPF64'
 ];
 
-const args = [
+const commonArgs = [
   resolve(ffiDir, 'stress_bridge.cpp'),
   resolve(solverDir, 'stress.cpp'),
   '-I' + ffiDir,
@@ -81,22 +78,45 @@ const args = [
   '-O3',
   '-sWASM=1',
   '-sMODULARIZE=1',
-  '-sEXPORT_NAME=createStressModule',
   '-sALLOW_MEMORY_GROWTH=1',
-  '-sENVIRONMENT=node',
   `-sEXPORTED_FUNCTIONS=[${exportedFunctions.map((fn) => `"${fn}"`).join(',')}]`,
-  `-sEXPORTED_RUNTIME_METHODS=[${exportedRuntimeMethods.map((name) => `"${name}"`).join(',')}]`,
-  '-o',
-  resolve(distDir, 'stress_solver.cjs')
+  `-sEXPORTED_RUNTIME_METHODS=[${exportedRuntimeMethods.map((name) => `"${name}"`).join(',')}]`
 ];
 
-const result = spawnSync('emcc', args, { stdio: 'inherit' });
+const builds = [
+  {
+    name: 'node-cjs',
+    args: [
+      ...commonArgs,
+      '-sEXPORT_NAME=createStressModule',
+      '-sENVIRONMENT=node',
+      '-o',
+      resolve(distDir, 'stress_solver.cjs')
+    ]
+  },
+  {
+    name: 'browser-esm',
+    args: [
+      ...commonArgs,
+      '-sEXPORT_ES6=1',
+      '-sENVIRONMENT=web,worker,node',
+      '-sEXPORT_NAME=createStressModule',
+      '-o',
+      resolve(distDir, 'stress_solver.mjs')
+    ]
+  }
+];
 
-if (result.error) {
-  console.error(result.error);
-  process.exit(1);
-}
+for (const build of builds) {
+  const result = spawnSync('emcc', build.args, { stdio: 'inherit' });
 
-if (result.status !== 0) {
-  process.exit(result.status ?? 1);
+  if (result.error) {
+    console.error(`Failed ${build.name} build:`, result.error);
+    process.exit(1);
+  }
+
+  if (result.status !== 0) {
+    console.error(`Emscripten exited with code ${result.status} for ${build.name}`);
+    process.exit(result.status ?? 1);
+  }
 }
