@@ -19,6 +19,18 @@ export const StressFailure = Object.freeze({
   Shear: 'shear'
 });
 
+export const ExtForceMode = Object.freeze({
+  Force: 0,
+  Acceleration: 1
+});
+
+export const ExtDebugMode = Object.freeze({
+  Max: 0,
+  Compression: 1,
+  Tension: 2,
+  Shear: 3
+});
+
 export function vec3(x = 0.0, y = 0.0, z = 0.0) {
   return { x, y, z };
 }
@@ -153,6 +165,13 @@ export async function loadStressSolver({ module: moduleOptions } = {}) {
       return isNode ? fileURLToPathFn(url) : url.href;
     };
   }
+  if (isNode && !options.wasmBinary) {
+    const fs = await import('node:fs/promises');
+    const wasmUrl = new URL('stress_solver.wasm', distDirUrl);
+    options.wasmBinary = await fs.readFile(fileURLToPathFn(wasmUrl));
+  }
+  options.print ??= (...args) => console.log('[blast-wasm]', ...args);
+  options.printErr ??= (...args) => console.error('[blast-wasm]', ...args);
 
   const module = await factory(options);
   return createRuntime(module);
@@ -234,7 +253,11 @@ function createRuntime(module) {
     impulse: module.ccall('stress_sizeof_impulse', 'number', [], []),
     dataParams: module.ccall('stress_sizeof_data_params', 'number', [], []),
     solverParams: module.ccall('stress_sizeof_solver_params', 'number', [], []),
-    errorSq: module.ccall('stress_sizeof_error_sq', 'number', [], [])
+    errorSq: module.ccall('stress_sizeof_error_sq', 'number', [], []),
+    extNode: module.ccall('ext_stress_sizeof_ext_node_desc', 'number', [], []),
+    extBond: module.ccall('ext_stress_sizeof_ext_bond_desc', 'number', [], []),
+    extSettings: module.ccall('ext_stress_sizeof_ext_settings', 'number', [], []),
+    extDebugLine: module.ccall('ext_stress_sizeof_ext_debug_line', 'number', [], [])
   };
 
   const memory = new ModuleMemory(module);
@@ -245,9 +268,25 @@ function createRuntime(module) {
     vec3,
     StressLimits,
     StressFailure,
+    ExtForceMode,
+    ExtDebugMode,
     computeBondStress,
+    defaultSolverParams: () => ({ maxIterations: 32, tolerance: 1.0e-6, warmStart: false }),
+    defaultExtSettings: () => ({
+      maxSolverIterationsPerFrame: 25,
+      graphReductionLevel: 0,
+      compressionElasticLimit: 1.0,
+      compressionFatalLimit: 2.0,
+      tensionElasticLimit: -1.0,
+      tensionFatalLimit: -1.0,
+      shearElasticLimit: -1.0,
+      shearFatalLimit: -1.0
+    }),
     createProcessor(description) {
       return new StressProcessor(module, memory, sizes, description);
+    },
+    createExtSolver(description) {
+      return new ExtStressSolver(module, memory, sizes, description);
     }
   };
 }
@@ -559,6 +598,193 @@ class StressProcessor {
   }
 }
 
+class ExtStressSolver {
+  constructor(module, memory, sizes, description) {
+    if (!description) {
+      throw new Error('ExtStressSolver description is required');
+    }
+
+    const nodes = description.nodes ?? [];
+    const bonds = description.bonds ?? [];
+    if (nodes.length === 0 || bonds.length === 0) {
+      throw new Error('ExtStressSolver requires at least one node and one bond');
+    }
+
+    this.module = module;
+    this.memory = memory;
+    this.sizes = sizes;
+
+    this.nodeCount = nodes.length;
+    this.bondCount = bonds.length;
+
+    const nodesPtr = memory.alloc(sizes.extNode * this.nodeCount);
+    const bondsPtr = memory.alloc(sizes.extBond * this.bondCount);
+    const settingsPtr = description.settings ? memory.alloc(sizes.extSettings) : 0;
+
+    try {
+      const view = memory.view();
+      nodes.forEach((node, index) => writeExtNode(view, nodesPtr + index * sizes.extNode, node));
+      bonds.forEach((bond, index) => writeExtBond(view, bondsPtr + index * sizes.extBond, bond));
+
+      if (settingsPtr) {
+        writeExtSettings(view, settingsPtr, description.settings);
+      }
+
+      const handle = module.ccall(
+        'ext_stress_solver_create',
+        'number',
+        ['number', 'number', 'number', 'number', 'number'],
+        [nodesPtr, this.nodeCount, bondsPtr, this.bondCount, settingsPtr]
+      );
+
+      if (!handle) {
+        throw new Error('Failed to create ExtStressSolver');
+      }
+
+      this.handle = handle >>> 0;
+      this._debugCapacity = Math.max(this.bondCount, 1);
+      this._debugPtr = memory.alloc(this._debugCapacity * sizes.extDebugLine);
+    } finally {
+      memory.free(nodesPtr);
+      memory.free(bondsPtr);
+      if (settingsPtr) {
+        memory.free(settingsPtr);
+      }
+    }
+  }
+
+  destroy() {
+    if (!this.handle) {
+      return;
+    }
+    this.module.ccall('ext_stress_solver_destroy', null, ['number'], [this.handle]);
+    this.handle = 0;
+    if (this._debugPtr) {
+      this.memory.free(this._debugPtr);
+      this._debugPtr = 0;
+    }
+  }
+
+  setSettings(settings) {
+    if (!settings || !this.handle) {
+      return;
+    }
+    const ptr = this.memory.alloc(this.sizes.extSettings);
+    try {
+      writeExtSettings(this.memory.view(), ptr, settings);
+      this.module.ccall('ext_stress_solver_set_settings', null, ['number', 'number'], [this.handle, ptr]);
+    } finally {
+      this.memory.free(ptr);
+    }
+  }
+
+  graphNodeCount() {
+    if (!this.handle) {
+      return 0;
+    }
+    return this.module.ccall('ext_stress_solver_graph_node_count', 'number', ['number'], [this.handle]) >>> 0;
+  }
+
+  bondCapacity() {
+    return this.bondCount;
+  }
+
+  reset() {
+    if (!this.handle) {
+      return;
+    }
+    this.module.ccall('ext_stress_solver_reset', null, ['number'], [this.handle]);
+  }
+
+  addForce(nodeIndex, localPosition, localForce, mode = ExtForceMode.Force) {
+    if (!this.handle) {
+      return;
+    }
+    const positionPtr = this.memory.alloc(this.sizes.vec3);
+    const forcePtr = this.memory.alloc(this.sizes.vec3);
+    try {
+      const view = this.memory.view();
+      writeVec3(view, positionPtr, localPosition ?? vec3());
+      writeVec3(view, forcePtr, localForce ?? vec3());
+      this.module.ccall(
+        'ext_stress_solver_add_force',
+        null,
+        ['number', 'number', 'number', 'number', 'number'],
+        [this.handle, nodeIndex >>> 0, positionPtr, forcePtr, mode >>> 0]
+      );
+    } finally {
+      this.memory.free(positionPtr);
+      this.memory.free(forcePtr);
+    }
+  }
+
+  addGravity(localGravity) {
+    if (!this.handle) {
+      return;
+    }
+    const gravityPtr = this.memory.alloc(this.sizes.vec3);
+    try {
+      writeVec3(this.memory.view(), gravityPtr, localGravity ?? vec3());
+      this.module.ccall('ext_stress_solver_add_gravity', null, ['number', 'number'], [this.handle, gravityPtr]);
+    } finally {
+      this.memory.free(gravityPtr);
+    }
+  }
+
+  update() {
+    if (!this.handle) {
+      return;
+    }
+    this.module.ccall('ext_stress_solver_update', null, ['number'], [this.handle]);
+  }
+
+  overstressedBondCount() {
+    if (!this.handle) {
+      return 0;
+    }
+    return this.module.ccall('ext_stress_solver_overstressed_bond_count', 'number', ['number'], [this.handle]) >>> 0;
+  }
+
+  fillDebugRender({ mode = ExtDebugMode.Max, scale = 1.0 } = {}) {
+    if (!this.handle || !this._debugPtr) {
+      return [];
+    }
+    const capacity = this._debugCapacity;
+    const count = this.module.ccall(
+      'ext_stress_solver_fill_debug_render',
+      'number',
+      ['number', 'number', 'number', 'number', 'number'],
+      [this.handle, mode >>> 0, scale, this._debugPtr, capacity]
+    );
+    const result = [];
+    if (count <= 0) {
+      return result;
+    }
+    const view = this.memory.view();
+    for (let i = 0; i < count; ++i) {
+      const base = this._debugPtr + i * this.sizes.extDebugLine;
+      result.push(readExtDebugLine(view, base));
+    }
+    return result;
+  }
+
+  stressError() {
+    if (!this.handle) {
+      return { lin: 0.0, ang: 0.0 };
+    }
+    const lin = this.module.ccall('ext_stress_solver_get_linear_error', 'number', ['number'], [this.handle]);
+    const ang = this.module.ccall('ext_stress_solver_get_angular_error', 'number', ['number'], [this.handle]);
+    return { lin, ang };
+  }
+
+  converged() {
+    if (!this.handle) {
+      return false;
+    }
+    return this.module.ccall('ext_stress_solver_converged', 'number', ['number'], [this.handle]) !== 0;
+  }
+}
+
 function writeNode(view, base, node) {
   writeVec3(view, base, node.com ?? vec3());
   view.setFloat32(base + 12, node.mass ?? 0.0, true);
@@ -595,6 +821,40 @@ function writeVec3(view, base, value) {
 
 function readVec3(view, base) {
   return vec3(view.getFloat32(base, true), view.getFloat32(base + 4, true), view.getFloat32(base + 8, true));
+}
+
+function writeExtNode(view, base, node) {
+  writeVec3(view, base, node.centroid ?? vec3());
+  view.setFloat32(base + 12, node.mass ?? 0.0, true);
+  view.setFloat32(base + 16, node.volume ?? Math.max(node.mass ?? 0.0, 1.0), true);
+}
+
+function writeExtBond(view, base, bond) {
+  writeVec3(view, base, bond.centroid ?? vec3());
+  writeVec3(view, base + 12, bond.normal ?? vec3(0.0, 1.0, 0.0));
+  view.setFloat32(base + 24, bond.area ?? 1.0, true);
+  view.setUint32(base + 28, bond.node0 >>> 0, true);
+  view.setUint32(base + 32, bond.node1 >>> 0, true);
+}
+
+function writeExtSettings(view, base, settings) {
+  view.setUint32(base, settings.maxSolverIterationsPerFrame >>> 0, true);
+  view.setUint32(base + 4, settings.graphReductionLevel >>> 0, true);
+  view.setFloat32(base + 8, settings.compressionElasticLimit ?? 1.0, true);
+  view.setFloat32(base + 12, settings.compressionFatalLimit ?? 2.0, true);
+  view.setFloat32(base + 16, settings.tensionElasticLimit ?? -1.0, true);
+  view.setFloat32(base + 20, settings.tensionFatalLimit ?? -1.0, true);
+  view.setFloat32(base + 24, settings.shearElasticLimit ?? -1.0, true);
+  view.setFloat32(base + 28, settings.shearFatalLimit ?? -1.0, true);
+}
+
+function readExtDebugLine(view, base) {
+  return {
+    p0: readVec3(view, base),
+    p1: readVec3(view, base + 12),
+    color0: view.getUint32(base + 24, true),
+    color1: view.getUint32(base + 28, true)
+  };
 }
 
 function createImpulse() {

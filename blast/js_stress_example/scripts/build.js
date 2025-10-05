@@ -14,10 +14,18 @@ mkdirSync(distDir, { recursive: true });
 const ffiDir = resolve(blastRoot, 'rust_stress_example/ffi');
 const solverDir = resolve(blastRoot, 'source/shared/stress_solver');
 const sharedDir = resolve(blastRoot, 'source/shared');
+const sharedNsFoundationIncludeDir = resolve(sharedDir, 'NsFoundation', 'include');
 const includeDir = resolve(blastRoot, 'include');
 const includeGlobalsDir = resolve(includeDir, 'globals');
 const includeSharedDir = resolve(includeDir, 'shared');
+const includeLowLevelDir = resolve(includeDir, 'lowlevel');
+const includeExtensionsDir = resolve(includeDir, 'extensions');
+const includeStressExtDir = resolve(includeExtensionsDir, 'stress');
 const foundationDir = resolve(includeSharedDir, 'NvFoundation');
+const sdkCommonDir = resolve(blastRoot, 'source/sdk/common');
+const sdkGlobalsDir = resolve(blastRoot, 'source/sdk/globals');
+const sdkLowLevelDir = resolve(blastRoot, 'source/sdk/lowlevel');
+const sdkStressDir = resolve(blastRoot, 'source/sdk/extensions/stress');
 
 const exportedFunctions = [
   '_stress_processor_create',
@@ -37,6 +45,24 @@ const exportedFunctions = [
   '_stress_sizeof_data_params',
   '_stress_sizeof_solver_params',
   '_stress_sizeof_error_sq',
+  '_ext_stress_solver_create',
+  '_ext_stress_solver_destroy',
+  '_ext_stress_solver_set_settings',
+  '_ext_stress_solver_graph_node_count',
+  '_ext_stress_solver_bond_count',
+  '_ext_stress_solver_reset',
+  '_ext_stress_solver_add_force',
+  '_ext_stress_solver_add_gravity',
+  '_ext_stress_solver_update',
+  '_ext_stress_solver_overstressed_bond_count',
+  '_ext_stress_solver_fill_debug_render',
+  '_ext_stress_solver_get_linear_error',
+  '_ext_stress_solver_get_angular_error',
+  '_ext_stress_solver_converged',
+  '_ext_stress_sizeof_ext_node_desc',
+  '_ext_stress_sizeof_ext_bond_desc',
+  '_ext_stress_sizeof_ext_settings',
+  '_ext_stress_sizeof_ext_debug_line',
   '_malloc',
   '_free'
 ];
@@ -61,14 +87,36 @@ const exportedRuntimeMethods = [
 
 const commonArgs = [
   resolve(ffiDir, 'stress_bridge.cpp'),
+  resolve(ffiDir, 'ext_stress_bridge.cpp'),
   resolve(solverDir, 'stress.cpp'),
+  resolve(sdkStressDir, 'NvBlastExtStressSolver.cpp'),
+  resolve(sdkCommonDir, 'NvBlastAssert.cpp'),
+  resolve(sdkCommonDir, 'NvBlastAtomic.cpp'),
+  resolve(sdkCommonDir, 'NvBlastTime.cpp'),
+  resolve(sdkCommonDir, 'NvBlastTimers.cpp'),
+  resolve(sdkGlobalsDir, 'NvBlastGlobals.cpp'),
+  resolve(sdkGlobalsDir, 'NvBlastInternalProfiler.cpp'),
+  resolve(sdkLowLevelDir, 'NvBlastActor.cpp'),
+  resolve(sdkLowLevelDir, 'NvBlastActorSerializationBlock.cpp'),
+  resolve(sdkLowLevelDir, 'NvBlastAsset.cpp'),
+  resolve(sdkLowLevelDir, 'NvBlastAssetHelper.cpp'),
+  resolve(sdkLowLevelDir, 'NvBlastFamily.cpp'),
+  resolve(sdkLowLevelDir, 'NvBlastFamilyGraph.cpp'),
   '-I' + ffiDir,
   '-I' + solverDir,
   '-I' + sharedDir,
+  '-I' + sharedNsFoundationIncludeDir,
   '-I' + includeDir,
   '-I' + includeGlobalsDir,
   '-I' + includeSharedDir,
+  '-I' + includeLowLevelDir,
+  '-I' + includeExtensionsDir,
+  '-I' + includeStressExtDir,
   '-I' + foundationDir,
+  '-I' + sdkCommonDir,
+  '-I' + sdkGlobalsDir,
+  '-I' + sdkLowLevelDir,
+  '-I' + sdkStressDir,
   '-DSTRESS_SOLVER_FORCE_SCALAR=1',
   '-DSTRESS_SOLVER_NO_SIMD=1',
   '-D__linux__=1',
