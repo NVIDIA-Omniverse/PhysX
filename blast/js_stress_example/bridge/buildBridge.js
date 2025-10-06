@@ -49,6 +49,9 @@ export function buildBridge(scene, world, stressRuntime) {
     const collider = world.createCollider(colliderDesc, bridgeBody);
     chunk.colliderHandle = collider.handle;
     chunk.bodyHandle = bridgeBody.handle;
+    chunk.parentBodyHandle = bridgeBody.handle;
+    chunk.localOffset.copy(chunk.restOffset);
+    chunk.localQuat.copy(chunk.restQuat);
 
     let material = deckMaterial;
     if (chunk.id.startsWith('pier-base')) {
@@ -100,7 +103,7 @@ export function buildBridge(scene, world, stressRuntime) {
     projectiles: [],
     splitBodies: [],
     activeGravity: GRAVITY_DEFAULT,
-    debugRenderer: new RapierDebugRenderer(scene, world)
+    debugRenderer: new RapierDebugRenderer(scene, world, { enabled: true })
   };
 }
 

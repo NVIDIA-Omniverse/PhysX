@@ -5,8 +5,9 @@ import { updateProjectiles } from './spawning.js';
 import { updateBondTable, pushEvent } from './ui.js';
 import { BRIDGE_DIMENSIONS } from './constants.js';
 import { createColliderForChunk } from './factory.js';
+import { resolveParentBody, computeWorldPose, computeLinearVelocityAtPoint, identityQuaternion } from './transformUtils.js';
 
-const stressColors = {
+export const stressColors = {
   low: new THREE.Color('#3fb3ff'),
   medium: new THREE.Color('#ff9f43'),
   high: new THREE.Color('#ff4f67')
@@ -77,42 +78,84 @@ export function fractureBond(world, bridge, bondIndex, bond, mode) {
   }
   bond.active = false;
   pushEvent(`${bond.name} failed due to ${mode}`);
-  splitChunk(world, bridge, chunkB);
+
+  const targetChunk = chunkB.active ? chunkB : chunkA;
+  if (!targetChunk || !targetChunk.active) {
+    return;
+  }
+  splitChunk(world, bridge, targetChunk);
 }
 
 export function splitChunk(world, bridge, chunk) {
   if (!chunk.active) {
     return;
   }
-  chunk.active = false;
-  const parentBody = world.getRigidBody(chunk.bodyHandle);
+  const parentBody = resolveParentBody(world, chunk);
+  if (!parentBody) {
+    return;
+  }
   const collider = world.getCollider(chunk.colliderHandle);
-  if (!parentBody || !collider) {
+  if (!collider) {
     return;
   }
 
-  return; // TODO: fix unreachable error
+  const pose = computeWorldPose(parentBody, chunk);
+  if (!pose) {
+    return;
+  }
 
-  const colliderShape = collider.shape;
+  const parentTranslation = parentBody.translation();
+  const offsetWorld = pose.position.clone().sub(new THREE.Vector3(parentTranslation.x, parentTranslation.y, parentTranslation.z));
+  const worldLinVel = computeLinearVelocityAtPoint(parentBody, {
+    x: offsetWorld.x,
+    y: offsetWorld.y,
+    z: offsetWorld.z
+  });
+  const parentAngVel = parentBody.angvel();
+
+  // FIXME: After this errors with "Uncaught RuntimeError: unreachable""
+  return;
+
+  chunk.active = false;
   world.removeCollider(collider, false);
 
-  const translation = parentBody.translation();
-  const rotation = parentBody.rotation();
-  const velocity = parentBody.linvel();
-  const angularVelocity = parentBody.angvel();
+  const newBodyDesc = RAPIER.RigidBodyDesc.dynamic()
+    .setTranslation(pose.position.x, pose.position.y, pose.position.z)
+    .setRotation(pose.rotation.x, pose.rotation.y, pose.rotation.z, pose.rotation.w)
+    .setLinearDamping(parentBody.linearDamping())
+    .setAngularDamping(parentBody.angularDamping());
 
-  const newBodyDesc = RAPIER.RigidBodyDesc.dynamic();
-  newBodyDesc.setTranslation(translation.x, translation.y, translation.z);
-  newBodyDesc.setRotation(rotation.x, rotation.y, rotation.z, rotation.w);
+  if (Number.isFinite(worldLinVel.x) && Number.isFinite(worldLinVel.y) && Number.isFinite(worldLinVel.z)) {
+    newBodyDesc.setLinvel(worldLinVel.x, worldLinVel.y, worldLinVel.z);
+  }
+  if (
+    Number.isFinite(parentAngVel.x) &&
+    Number.isFinite(parentAngVel.y) &&
+    Number.isFinite(parentAngVel.z)
+  ) {
+    newBodyDesc.setAngvel(parentAngVel.x, parentAngVel.y, parentAngVel.z);
+  }
+
   const newBody = world.createRigidBody(newBodyDesc);
-  newBody.setLinvel({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
-  newBody.setAngvel({ x: angularVelocity.x, y: angularVelocity.y, z: angularVelocity.z }, true);
+
+  chunk.localOffset.set(0, 0, 0);
+  chunk.localQuat.copy(identityQuaternion());
 
   const newColliderDesc = createColliderForChunk(chunk);
   const newCollider = world.createCollider(newColliderDesc, newBody);
+
   chunk.bodyHandle = newBody.handle;
+  chunk.parentBodyHandle = newBody.handle;
   chunk.colliderHandle = newCollider.handle;
   chunk.active = true;
+  if (chunk.mesh) {
+    chunk.mesh.position.set(pose.position.x, pose.position.y, pose.position.z);
+    chunk.mesh.quaternion.copy(pose.rotation);
+  }
+
+  if (Array.isArray(bridge.splitBodies)) {
+    bridge.splitBodies.push(newBody.handle);
+  }
 }
 
 function syncMeshes(world, bridge) {

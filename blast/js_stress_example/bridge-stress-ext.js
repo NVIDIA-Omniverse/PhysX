@@ -10,6 +10,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import RapierDebugRenderer from './rapier-debug-renderer.js';
 
@@ -20,6 +21,7 @@ import {
   ExtDebugMode
 } from './stress.js';
 import { buildBridgeScenario } from './extBridgeScenario.js';
+import { updateBondTable } from './bridge/ui.js';
 
 // --------------------------- Constants & UI ---------------------------
 
@@ -66,6 +68,21 @@ const controlsUI = {
   toleranceSlider: document.getElementById('tolerance-slider')
 };
 
+const STRESS_COLOR_LOW = new THREE.Color('#3fb3ff');
+const STRESS_COLOR_MEDIUM = new THREE.Color('#ff9f43');
+const STRESS_COLOR_HIGH = new THREE.Color('#ff4f67');
+const DETACHED_COLOR = new THREE.Color('#ffd166');
+
+const stressColorScratch = new THREE.Color();
+
+const SEVERITY_EPSILON = 1.0e-6;
+const COLOR_LOW_R = STRESS_COLOR_LOW.r;
+const COLOR_HIGH_R = STRESS_COLOR_HIGH.r;
+const COLOR_LOW_G = STRESS_COLOR_LOW.g;
+const COLOR_HIGH_G = STRESS_COLOR_HIGH.g;
+const COLOR_RANGE_R = Math.max(COLOR_HIGH_R - COLOR_LOW_R, 1.0e-6);
+const COLOR_RANGE_G = Math.max(COLOR_LOW_G - COLOR_HIGH_G, 1.0e-6);
+
 // --------------------------- Helpers / Types ---------------------------
 
 class BridgeChunk {
@@ -78,6 +95,9 @@ class BridgeChunk {
     this.colliderHandle = null;
     this.bodyHandle = null;
     this.active = true;
+    this.baseColor = this.mesh.material.color.clone();
+    this.stressSeverity = 0;
+    this.detached = false;
   }
 }
 
@@ -89,6 +109,7 @@ class BridgeBond {
     this.centroid = centroid; // local (bridge frame)
     this.active = true;
     this.key = `${node0}-${node1}`;
+    this.severity = 0;
   }
 }
 
@@ -119,6 +140,8 @@ async function init() {
   const runtime = await loadStressSolver();
 
   const { scene, renderer, camera, controls } = initThree();
+  const stats = new Stats();
+  document.body.appendChild(stats.dom);
   const world = new RAPIER.World(new RAPIER.Vector3(0, GRAVITY_DEFAULT, 0));
 
   const bridge = buildBridge(scene, world, runtime);
@@ -144,6 +167,8 @@ async function init() {
 
     controls.update();
     renderer.render(scene, camera);
+    stats.update();
+
     requestAnimationFrame(loop);
   }
   loop();
@@ -210,7 +235,9 @@ function buildBridge(scene, world, runtime) {
   // a bit more iterations by default
   settings.maxSolverIterationsPerFrame = 32;
   settings.graphReductionLevel = 0;
-  applyStrengthScale(settings, BASE_LIMITS, 1.0);
+//   const strengthScale = 10000000.0; // Strong
+  const strengthScale = 0.5;
+  applyStrengthScale(settings, BASE_LIMITS, strengthScale);
 
   // Ext solver instance
   let solver = runtime.createExtSolver({
@@ -320,7 +347,7 @@ function buildBridge(scene, world, runtime) {
 
   // Overlays
   pushEvent(`Bridge scenario loaded with ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`);
-  updateBondTable([]); // start empty
+  updateBondTable(bonds);
 
   // Core bridge state
   return {
@@ -337,7 +364,7 @@ function buildBridge(scene, world, runtime) {
     car,
     projectiles,
     gravity: GRAVITY_DEFAULT,
-    strengthScale: 1.0,
+    strengthScale,
     targetError: 1.0e-6,
     iterationCount: 0,
     lastError: { lin: 0, ang: 0 },
@@ -378,6 +405,8 @@ function updateBridgeLogical(bridge, delta) {
 }
 
 function advanceCarLogic(bridge, delta) {
+  return;
+
   const car = bridge.car;
   if (!car.active) return;
   if (bridge.failureDetected) return;
@@ -439,14 +468,17 @@ function applyForcesAndSolve(bridge, contact) {
   bridge.iterationCount = iterations + 1;
   bridge.lastError = error;
   bridge.overstressed = solver.overstressedBondCount();
+
+  updateBondStressFromSolver(bridge);
 }
 
 function attemptFractureFromDebug(bridge) {
   // Pull Blast debug lines in bridge-local frame
-  const linesMax = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Max, scale: 1.0 });
-  const linesComp = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Compression, scale: 1.0 });
-  const linesTen = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Tension, scale: 1.0 });
-  const linesShear = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Shear, scale: 1.0 });
+  const scale = solverSeverityScale(bridge);
+  const linesMax = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Max, scale });
+  const linesComp = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Compression, scale });
+  const linesTen = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Tension, scale });
+  const linesShear = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Shear, scale });
 
   // Build candidate map: bondIndex -> {score, mode}
   const candidateByBond = new Map();
@@ -528,10 +560,17 @@ function fractureBond(bridge, bondIndex, mode = 'overstress') {
   if (!chunkA || !chunkB) return;
 
   bond.active = false;
+  bond.severity = 0;
   pushEvent(`Bond ${bond.node0}-${bond.node1} failed due to ${mode}`);
 
   // Split node1 voxel into its own rigid body
   splitChunk(world, chunkB);
+
+  if (chunkB) {
+    chunkB.detached = true;
+  }
+
+  updateBondTable(bridge.bonds);
 
   // Rebuild Blast solver with bond removed
   const remainingBonds = [];
@@ -556,6 +595,8 @@ function splitChunk(world, chunk) {
   const parent = world.getRigidBody(chunk.bodyHandle);
   const oldCollider = world.getCollider(chunk.colliderHandle);
   if (!parent || !oldCollider) return;
+
+  chunk.stressSeverity = 0;
 
   // Remove old collider from parent
   world.removeCollider(oldCollider, /* wakeUpBodies: */ false);
@@ -591,6 +632,7 @@ function splitChunk(world, chunk) {
   chunk.bodyHandle = newBody.handle;
   chunk.colliderHandle = newCollider.handle;
   chunk.active = true;
+  chunk.detached = true;
 }
 
 // --------------------------- Rendering / Sync ---------------------------
@@ -614,6 +656,12 @@ function syncMeshes(world, bridge) {
     // apply local offset (bridge-local -> world)
     tmp.copy(chunk.localOffset).applyQuaternion(chunk.mesh.quaternion);
     chunk.mesh.position.add(tmp);
+
+    const stressValue = bridge.chunkStress?.get(chunk.nodeIndex) ?? 0;
+    const color = chunk.detached ? DETACHED_COLOR : chunkColorForSeverity(chunk, stressValue);
+    if (chunk.mesh.material.color.r !== color.r || chunk.mesh.material.color.g !== color.g || chunk.mesh.material.color.b !== color.b) {
+      chunk.mesh.material.color.copy(color);
+    }
   });
 
   // Sync car mesh to its body
@@ -630,13 +678,15 @@ function syncMeshes(world, bridge) {
 }
 
 function renderDebugLines(bridge) {
+  const scale = solverSeverityScale(bridge);
+  const debugLines = bridge.solver?.fillDebugRender({ mode: ExtDebugMode.Max, scale }) ?? [];
+  bridge.debugHelper.currentLines = debugLines;
+  processDebugLinesForSeverity(bridge, debugLines);
+
   if (!bridge.debugEnabled) {
     updateDebugLineObject(bridge.debugHelper, [], false);
     return;
   }
-  // Fetch fresh lines from solver (bridge-local frame)
-  const debugLines = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Max, scale: 1.0 });
-  bridge.debugHelper.currentLines = debugLines;
 
   // Transform to world using the "root" bridge body transform
   const body = bridge.world.getRigidBody(bridge.body.handle);
@@ -656,10 +706,6 @@ function renderDebugLines(bridge) {
   });
 
   updateDebugLineObject(bridge.debugHelper, worldLines, true);
-
-  // Update right panel summary with top lines (world lengths shown)
-  const summary = summarizeLines(worldLines, 6);
-  updateBondTable(summary);
 }
 
 // Debug helper (line object)
@@ -711,20 +757,6 @@ function updateDebugLineObject(debugHelper, debugLines, enabled) {
   debugHelper.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   debugHelper.geometry.computeBoundingSphere();
   debugHelper.object.visible = true;
-}
-
-function summarizeLines(lines, limit = 6) {
-  const sorted = [...lines].sort((a, b) => lineMagnitude(b) - lineMagnitude(a));
-  return sorted.slice(0, limit).map((line) => {
-    const length = lineMagnitude(line);
-    return {
-      length,
-      centerX: (line.p0.x + line.p1.x) * 0.5,
-      centerY: (line.p0.y + line.p1.y) * 0.5,
-      centerZ: (line.p0.z + line.p1.z) * 0.5,
-      color: `#${(line.color0 & 0xffffff).toString(16).padStart(6, '0')}`
-    };
-  });
 }
 
 function lineMagnitude(line) {
@@ -821,6 +853,8 @@ function spawnLoadVehicle(world, scene) {
 }
 
 function updateLoadVehicle(world, bridge, delta) {
+  return;
+
   const car = bridge.car;
   if (!car) return;
   const body = world.getRigidBody(car.bodyHandle);
@@ -1019,7 +1053,7 @@ function resetBridge(world, bridge) {
   bridge.debugHelper.currentLines = [];
   updateDebugLineObject(bridge.debugHelper, [], bridge.debugEnabled);
 
-  updateBondTable([]);
+  updateBondTable(bridge.bonds);
   updateOverlay(bridge, { column: -1, nodes: [] });
   if (HUD.eventLog) HUD.eventLog.innerHTML = '';
   pushEvent('Bridge reset to initial state');
@@ -1044,44 +1078,6 @@ function applyStrengthScale(settings, baseLimits, scale) {
   settings.shearFatalLimit = baseLimits.shearFatalLimit * scale;
 }
 
-function updateBondTable(highlights) {
-  if (!HUD.bondTable) return;
-  HUD.bondTable.innerHTML = '';
-
-  if (!highlights || highlights.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'bond-row';
-    empty.textContent = 'No stressed bonds reported';
-    HUD.bondTable.appendChild(empty);
-    return;
-  }
-
-  highlights.forEach((item, idx) => {
-    const row = document.createElement('div');
-    row.className = 'bond-row';
-
-    const title = document.createElement('div');
-    title.textContent = `Line ${idx + 1}`;
-    row.appendChild(title);
-
-    const value = document.createElement('div');
-    value.textContent = `${formatNumber(item.length, 6, 3)} m`;
-    row.appendChild(value);
-
-    const info = document.createElement('div');
-    info.className = 'bond-info';
-    info.textContent = `center (${formatNumber(item.centerX, 6, 2)}, ${formatNumber(item.centerY, 6, 2)}, ${formatNumber(item.centerZ, 6, 2)})`;
-    row.appendChild(info);
-
-    const colorLabel = document.createElement('div');
-    colorLabel.className = 'bond-color';
-    colorLabel.style.backgroundColor = item.color;
-    row.appendChild(colorLabel);
-
-    HUD.bondTable.appendChild(row);
-  });
-}
-
 function updateOverlay(bridge, contact) {
   if (!HUD.overlay) return;
   const contactLabel = contact.column >= 0 ? `${contact.column} – ${contact.column + 1}` : 'off-deck';
@@ -1089,7 +1085,7 @@ function updateOverlay(bridge, contact) {
     <div>Car span: ${contactLabel}</div>
     <div>Iterations: ${bridge.iterationCount}/${bridge.settings.maxSolverIterationsPerFrame}</div>
     <div>Error lin ${formatNumber(bridge.lastError.lin, 7, 4)} | ang ${formatNumber(bridge.lastError.ang, 7, 4)}</div>
-    <div>Overstressed bonds: ${bridge.overstressed}</div>
+    <div>Active bonds: ${bridge.bonds.filter((b) => b.active).length}/${bridge.bonds.length}</div>
     <div>Force multiplier: ${bridge.forceBoost.toFixed(2)}x</div>
     <div>Status: ${bridge.failureDetected ? 'FAILED' : 'Active'}</div>
   `;
@@ -1121,4 +1117,143 @@ function pushEvent(message) {
   while (HUD.eventLog.children.length > MAX_EVENTS) {
     HUD.eventLog.removeChild(HUD.eventLog.lastChild);
   }
+}
+
+function chunkColorForSeverity(chunk, severity) {
+  if (severity <= 0) {
+    return chunk.baseColor;
+  }
+  const lerpMedium = Math.min(severity, 1);
+  stressColorScratch.copy(chunk.baseColor).lerp(STRESS_COLOR_MEDIUM, lerpMedium);
+  if (severity >= 1) {
+    stressColorScratch.lerp(STRESS_COLOR_HIGH, Math.min(severity - 1, 1));
+  }
+  return stressColorScratch;
+}
+
+function processDebugLinesForSeverity(bridge, debugLines) {
+  if (!debugLines || debugLines.length === 0) {
+    resetChunkColors(bridge);
+    return;
+  }
+  applyDebugStressToChunks(bridge, debugLines);
+}
+
+function applyDebugStressToChunks(bridge, debugLines) {
+  const chunkStress = bridge.chunkStress ?? new Map();
+  chunkStress.clear();
+
+  const { bonds, bondCentroids } = bridge;
+  debugLines.forEach((line) => {
+    const bondIndex = nearestBondIndexFast(bondCentroids, line);
+    if (bondIndex < 0) {
+      return;
+    }
+    const bond = bonds[bondIndex];
+    if (!bond || !bond.active) {
+      return;
+    }
+
+    const color = line.color0 & 0xffffff;
+    const r = ((color >> 16) & 0xff) / 255;
+    const severity = Math.max(0, Math.min(1, (r - COLOR_LOW_R) / COLOR_RANGE_R));
+    if (severity <= SEVERITY_EPSILON) {
+      return;
+    }
+
+    chunkStress.set(bond.node0, Math.max(chunkStress.get(bond.node0) ?? 0, severity));
+    chunkStress.set(bond.node1, Math.max(chunkStress.get(bond.node1) ?? 0, severity));
+    bond.severity = severity;
+  });
+
+  bridge.chunkStress = chunkStress;
+
+  bridge.chunks.forEach((chunk) => {
+    if (!chunk.mesh) {
+      return;
+    }
+    const severity = chunkStress.get(chunk.nodeIndex) ?? 0;
+    chunk.stressSeverity = severity;
+  });
+}
+
+function resetChunkColors(bridge) {
+  if (bridge.chunkStress) {
+    bridge.chunkStress.clear();
+  }
+  bridge.chunks.forEach((chunk) => {
+    if (!chunk.mesh) {
+      return;
+    }
+    chunk.mesh.material.color.copy(chunk.baseColor);
+    chunk.detached = false;
+    chunk.stressSeverity = 0;
+  });
+  bridge.bonds.forEach((bond) => {
+    if (bond) {
+      bond.severity = 0;
+    }
+  });
+}
+
+function nearestBondIndexFast(centroids, line) {
+  let best = -1;
+  let bestDistSq = Infinity;
+  const cx = (line.p0.x + line.p1.x) * 0.5;
+  const cy = (line.p0.y + line.p1.y) * 0.5;
+  const cz = (line.p0.z + line.p1.z) * 0.5;
+
+  for (let i = 0; i < centroids.length; ++i) {
+    const centroid = centroids[i];
+    if (!centroid) {
+      continue;
+    }
+    const dx = centroid.x - cx;
+    const dy = centroid.y - cy;
+    const dz = centroid.z - cz;
+    const distSq = dx * dx + dy * dy + dz * dz;
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      best = i;
+    }
+  }
+
+  return best;
+}
+
+function colorIntensity(rgb) {
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const max = Math.max(r, g, b);
+  return max / 255;
+}
+
+function colorForSeverity(baseColor, severity) {
+  if (severity <= 0) {
+    return baseColor.clone();
+  }
+  const color = baseColor.clone();
+  const mediumBlend = Math.min(severity, 1);
+  color.lerp(STRESS_COLOR_MEDIUM, mediumBlend);
+  if (severity >= 0.65) {
+    const highBlend = Math.min((severity - 0.65) / 0.35, 1);
+    color.lerp(STRESS_COLOR_HIGH, highBlend);
+  }
+  return color;
+}
+
+function updateBondStressFromSolver(bridge) {
+  if (!bridge?.solver || !bridge?.bonds) {
+    return;
+  }
+  updateBondTable(bridge.bonds);
+}
+
+function solverSeverityScale(bridge) {
+  const scale = bridge?.strengthScale;
+  if (!scale || !Number.isFinite(scale) || scale <= 0) {
+    return 1.0;
+  }
+  return 1.0 / scale;
 }

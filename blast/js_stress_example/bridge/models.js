@@ -5,12 +5,13 @@ export class BridgeChunk {
     Object.assign(this, desc);
     this.colliderHandle = null;
     this.bodyHandle = null;
+    this.parentBodyHandle = null;
     this.mesh = null;
     this.active = true;
     this.severity = 0;
     this.pendingForce = { x: 0, y: 0, z: 0 };
-    this.localOffset = new THREE.Vector3(this.localPosition.x, this.localPosition.y, this.localPosition.z);
-    this.localQuat = desc.localRotation instanceof THREE.Quaternion
+    this.restOffset = new THREE.Vector3(this.localPosition.x, this.localPosition.y, this.localPosition.z);
+    this.restQuat = desc.localRotation instanceof THREE.Quaternion
       ? desc.localRotation.clone()
       : new THREE.Quaternion(
           this.localRotation.x ?? 0,
@@ -18,6 +19,8 @@ export class BridgeChunk {
           this.localRotation.z ?? 0,
           this.localRotation.w ?? 1
         );
+    this.localOffset = this.restOffset.clone();
+    this.localQuat = this.restQuat.clone();
   }
 }
 

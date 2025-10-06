@@ -1,4 +1,5 @@
 import { MAX_EVENTS } from './constants.js';
+import { stressColors } from './simulation.js';
 
 export const HUD = {
   gravityValue: document.getElementById('gravity-value'),
@@ -25,25 +26,58 @@ export function updateBondTable(bonds) {
     return;
   }
   HUD.bondTable.innerHTML = '';
-  bonds
-    .filter((bond) => bond.active)
-    .forEach((bond) => {
-      const row = document.createElement('div');
-      row.className = 'bond-row';
-      const title = document.createElement('div');
-      title.textContent = bond.name;
-      row.appendChild(title);
-      const value = document.createElement('div');
-      value.textContent = `${(bond.severity.max * 100).toFixed(0)}%`;
-      row.appendChild(value);
-      const bar = document.createElement('div');
-      bar.className = 'bars';
-      const fill = document.createElement('span');
-      fill.style.width = `${Math.min(1, bond.severity.max) * 100}%`;
-      bar.appendChild(fill);
-      row.appendChild(bar);
-      HUD.bondTable.appendChild(row);
-    });
+  const sorted = [...bonds].sort((a, b) => {
+    if (a.active === b.active) {
+      return b.severity - a.severity;
+    }
+    return a.active ? -1 : 1;
+  });
+
+  sorted.forEach((bond) => {
+    const row = document.createElement('div');
+    row.className = `bond-row${bond.active ? '' : ' bond-row--inactive'}`;
+
+    const name = document.createElement('div');
+    name.className = 'bond-name';
+    name.textContent = bond.name ?? bond.key ?? `Bond ${bond.index}`;
+    row.appendChild(name);
+
+    const status = document.createElement('div');
+    status.className = 'bond-status';
+    status.textContent = bond.active ? `${formatPercent(bond.severity)} stress` : 'broken';
+    row.appendChild(status);
+
+    const meter = document.createElement('div');
+    meter.className = 'bond-meter';
+
+    const fill = document.createElement('span');
+    const fillValue = Math.min(1, Math.max(0, bond.severity ?? 0));
+    fill.style.setProperty('--fill', `${fillValue}`);
+    fill.style.width = `${fillValue * 100}%`;
+    meter.appendChild(fill);
+
+    const badge = document.createElement('i');
+    badge.className = 'bond-badge';
+    badge.style.backgroundColor = bondColorForSeverity(bond);
+
+    meter.appendChild(badge);
+    row.appendChild(meter);
+
+    HUD.bondTable.appendChild(row);
+  });
+}
+
+function formatPercent(value = 0) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function bondColorForSeverity(bond) {
+  if (!bond.active) {
+    return 'rgba(255, 94, 105, 0.8)';
+  }
+  const v = Math.min(1, Math.max(0, bond.severity ?? 0));
+  const base = stressColors.low.clone().lerp(stressColors.high, v);
+  return `rgb(${Math.round(base.r * 255)}, ${Math.round(base.g * 255)}, ${Math.round(base.b * 255)})`;
 }
 
 export function pushEvent(message) {
@@ -64,6 +98,12 @@ export function updateStrengthUI(strengthScale) {
     controlsUI.strengthValue.textContent = value;
   }
   return value;
+}
+
+export function setDebugToggleLabel(enabled) {
+  if (controlsUI.debugToggle) {
+    controlsUI.debugToggle.textContent = enabled ? 'Hide Debug' : 'Show Debug';
+  }
 }
 
 export function updateIterationsUI(iterations) {

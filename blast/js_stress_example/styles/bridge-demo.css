@@ -132,33 +132,70 @@ button.secondary {
   background: #ff4f67;
 }
 
+.legend .swatch.detached {
+  background: #ffd166;
+}
+
 #bond-table {
   display: grid;
-  gap: 0.5rem;
-  font-size: 0.82rem;
+  gap: 0.45rem;
+  font-size: 0.8rem;
 }
 
 .bond-row {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 0.35rem;
-  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 8px;
+  background: rgba(12, 18, 34, 0.45);
+  border: 1px solid rgba(126, 193, 255, 0.08);
 }
 
-.bond-row .bars {
+.bond-row--inactive {
+  opacity: 0.6;
+  background: rgba(38, 16, 24, 0.4);
+  border-color: rgba(255, 79, 103, 0.35);
+}
+
+.bond-name {
+  font-weight: 500;
+}
+
+.bond-status {
+  justify-self: end;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bond-meter {
   grid-column: 1 / -1;
-  height: 8px;
+  position: relative;
+  height: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
+  margin-top: 0.25rem;
 }
 
-.bond-row .bars span {
-  display: block;
-  height: 100%;
+.bond-meter span {
+  position: absolute;
+  inset: 0;
   background: linear-gradient(90deg, #3fb3ff, #ff4f67);
-  width: 0%;
-  transition: width 140ms ease-out;
+  width: calc(var(--fill, 0) * 100%);
+  transition: width 160ms ease-out;
+}
+
+.bond-badge {
+  position: absolute;
+  right: 0.25rem;
+  top: -0.35rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 .events ol {

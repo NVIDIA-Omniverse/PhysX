@@ -1,7 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 
 import { GRAVITY_DEFAULT, STRENGTH_DEFAULT, SOLVER_DEFAULTS } from './constants.js';
-import { HUD, pushEvent, controlsUI, updateStrengthUI, updateIterationsUI, updateToleranceUI } from './ui.js';
+import { HUD, pushEvent, controlsUI, updateStrengthUI, updateIterationsUI, updateToleranceUI, setDebugToggleLabel } from './ui.js';
 import { spawnProjectile } from './spawning.js';
 import { scaleStressLimits, clamp, toleranceFromExponent } from './utils.js';
 
@@ -75,9 +75,10 @@ export function setupControls(world, bridge) {
     });
   }
   if (controlsUI.debugToggle && bridge.debugRenderer) {
+    setDebugToggleLabel(bridge.debugRenderer.enabled);
     controlsUI.debugToggle.addEventListener('click', () => {
       const enabled = bridge.debugRenderer.toggle();
-      controlsUI.debugToggle.textContent = enabled ? 'Hide Debug' : 'Show Debug';
+      setDebugToggleLabel(enabled);
     });
   }
 }
