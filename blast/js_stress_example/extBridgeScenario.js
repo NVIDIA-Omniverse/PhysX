@@ -1,13 +1,15 @@
 import { vec3 } from './stress.js';
 
 export function buildBridgeScenario({
-  span = 12.0,
-  deckWidth = 4.0,
+  span = 20.0,
+  deckWidth = 8.0,
   deckThickness = 0.6,
-  spanSegments = 6,
-  widthSegments = 2,
+  spanSegments = 12,
+  widthSegments = 4,
+  // spanSegments = 2,
+  // widthSegments = 2,
   thicknessLayers = 2,
-  deckMass = 6000.0,
+  deckMass = 60000.0,
   pierHeight = 3.0,
   areaScale = 0.05
 } = {}) {
@@ -101,9 +103,10 @@ export function buildBridgeScenario({
     for (let iz = 0; iz < widthSegments; ++iz) {
       const baseIndex = indexAt(ix, 0, iz);
       const baseNode = nodes[baseIndex];
+      const deckBottomY = baseNode.centroid.y - spacingY * 0.5;
       const supportCentroid = vec3(
         baseNode.centroid.x,
-        baseNode.centroid.y - pierHeight,
+        deckBottomY - pierHeight * 0.5,
         baseNode.centroid.z
       );
       const supportIndex = nodes.length;

@@ -26,7 +26,7 @@ import { updateBondTable } from './bridge/ui.js';
 // --------------------------- Constants & UI ---------------------------
 
 const GRAVITY_DEFAULT = -9.81;
-const PROJECTILE_SPEED = 35;
+const PROJECTILE_SPEED = 5; //35;
 const MAX_EVENTS = 8;
 const IMPACT_MULTIPLIER = 3.5;
 
@@ -127,6 +127,30 @@ function colorFromUint24(u24) {
   const g = ((u24 >> 8) & 0xff) / 255;
   const b = (u24 & 0xff) / 255;
   return { r, g, b };
+}
+
+function clamp01(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.min(Math.max(value, 0), 1);
+}
+
+function stressSeverityFromLine(line) {
+  if (!line) {
+    return 0;
+  }
+
+  const c0 = colorFromUint24(line.color0 ?? 0);
+  const c1 = colorFromUint24(line.color1 ?? line.color0 ?? 0);
+  const red = Math.max(c0.r, c1.r);
+  const green = Math.min(c0.g, c1.g);
+
+  const redSeverity = COLOR_RANGE_R > 0 ? (red - COLOR_LOW_R) / COLOR_RANGE_R : 0;
+  const greenSeverity = COLOR_RANGE_G > 0 ? (COLOR_LOW_G - green) / COLOR_RANGE_G : 0;
+
+  const severity = Math.max(redSeverity, greenSeverity, 0);
+  return clamp01(severity);
 }
 
 function formatTolerance(value) {
@@ -235,8 +259,10 @@ function buildBridge(scene, world, runtime) {
   // a bit more iterations by default
   settings.maxSolverIterationsPerFrame = 32;
   settings.graphReductionLevel = 0;
-//   const strengthScale = 10000000.0; // Strong
-  const strengthScale = 0.5;
+  // const strengthScale = 10000000.0; // Strong
+  // const strengthScale = 1.0; // Strong
+  const strengthScale = 0.6;
+  // const strengthScale = 0.5;
   applyStrengthScale(settings, BASE_LIMITS, strengthScale);
 
   // Ext solver instance
@@ -260,11 +286,18 @@ function buildBridge(scene, world, runtime) {
   const topMaterial = new THREE.MeshStandardMaterial({
     color: 0x5b86ff, roughness: 0.28, metalness: 0.55
   });
+  const supportMaterial = new THREE.MeshStandardMaterial({
+    color: 0x2f3e56, roughness: 0.6, metalness: 0.25
+  });
 
   // Use scenario spacing to size voxels similar to your ext visualization
   const spacing = scenario.spacing;
   const chunks = [];
   const meshByNode = new Map();
+  const supportChunks = [];
+
+  // const nodeSizeScale = 0.9;
+  const nodeSizeScale = 1.0;
 
   // Create colliders/meshes for deck nodes (iy >= 0). Supports get visual columns only.
   scenario.nodes.forEach((node, nodeIndex) => {
@@ -272,11 +305,11 @@ function buildBridge(scene, world, runtime) {
     if (!coord) return;
 
     if (coord.iy >= 0) {
-      const sizeX = Math.max(spacing.x * 0.9, 0.25);
-      const sizeY = Math.max(spacing.y * 0.9, 0.2);
+      const sizeX = Math.max(spacing.x * nodeSizeScale, 0.25);
+      const sizeY = Math.max(spacing.y * nodeSizeScale, 0.2);
       const sizeZ = scenario.widthSegments > 1
-        ? Math.max(spacing.z * 0.9, 0.25)
-        : Math.max(scenario.parameters.deckWidth * 0.9, 0.8);
+        ? Math.max(spacing.z * nodeSizeScale, 0.25)
+        : Math.max(scenario.parameters.deckWidth * nodeSizeScale, 0.8);
       const size = { x: sizeX, y: sizeY, z: sizeZ };
 
       const mat = (coord.iy === scenario.thicknessLayers - 1) ? topMaterial : deckMaterial;
@@ -288,36 +321,40 @@ function buildBridge(scene, world, runtime) {
       // Rapier collider on the single parent body (offset to node centroid)
       const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
+        // .setMass(10000.0)
+        .setMass(node.mass ?? 1.0)
         .setFriction(1.0)
-        .setRestitution(0.05);
+        .setRestitution(0.0);
       const collider = world.createCollider(colliderDesc, bridgeBody);
       // Optional: give mass to voxels based on scenario.mass (Rapier sums densities)
       // collider.setMass(node.mass ?? 1.0); // uncomment if you want heavier deck
 
       chunk.colliderHandle = collider.handle;
       chunk.bodyHandle = bridgeBody.handle;
-    }
-  });
+    } else if (coord.iy === -1) {
+      const sizeX = Math.max(spacing.x * 0.6, 0.4);
+      const sizeZ = scenario.widthSegments > 1
+        ? Math.max(spacing.z * 0.6, 0.4)
+        : Math.max(scenario.parameters.deckWidth * 0.4, 0.4);
+      const sizeY = scenario.parameters.pierHeight;
+      const size = { x: sizeX, y: sizeY, z: sizeZ };
 
-  // Visual supports (no Rapier colliders; the bridge is free-floating like your original demo)
-  const supportMaterial = new THREE.MeshStandardMaterial({
-    color: 0x2f3e56, roughness: 0.6, metalness: 0.25
-  });
-  scenario.supportLinks.forEach((link) => {
-    const deckNode = scenario.nodes[link.deckIndex];
-    if (!deckNode) return;
-    const columnHeight = scenario.parameters.pierHeight;
-    const columnWidth = Math.max(spacing.x * 0.6, 0.4);
-    const columnDepth = scenario.widthSegments > 1
-      ? Math.max(spacing.z * 0.6, 0.4)
-      : Math.max(scenario.parameters.deckWidth * 0.4, 0.4);
-    const geo = new THREE.BoxGeometry(columnWidth, columnHeight, columnDepth);
-    const mesh = new THREE.Mesh(geo, supportMaterial.clone());
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    const topY = deckNode.centroid.y - spacing.y * 0.5;
-    mesh.position.set(deckNode.centroid.x, topY - columnHeight * 0.5, deckNode.centroid.z);
-    scene.add(mesh);
+      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: supportMaterial.clone() });
+      chunks.push(chunk);
+      meshByNode.set(nodeIndex, chunk.mesh);
+      scene.add(chunk.mesh);
+      supportChunks.push(chunk);
+
+      const parent = bridgeBody;
+      chunk.bodyHandle = parent.handle;
+      const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
+        .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
+        .setMass(10000.0)
+        .setFriction(1.0)
+        .setRestitution(0.0);
+      const collider = world.createCollider(colliderDesc, parent);
+      chunk.colliderHandle = collider.handle;
+    }
   });
 
   // Bonds (we mirror scenario.bonds with active flags)
@@ -330,7 +367,11 @@ function buildBridge(scene, world, runtime) {
 
   // Rapier ground
   const groundBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
-  world.createCollider(RAPIER.ColliderDesc.cuboid(20, 0.5, 20).setTranslation(0, -4, 0), groundBody);
+  world.createCollider(RAPIER.ColliderDesc.cuboid(20, 0.5, 20)
+    .setTranslation(0, -4, 0)
+    .setFriction(1.0)
+    .setRestitution(0.0)
+  , groundBody);
 
   // Rapier debug overlay
   const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: false });
@@ -363,6 +404,7 @@ function buildBridge(scene, world, runtime) {
     body: bridgeBody,
     car,
     projectiles,
+    supports: supportChunks,
     gravity: GRAVITY_DEFAULT,
     strengthScale,
     targetError: 1.0e-6,
@@ -371,7 +413,7 @@ function buildBridge(scene, world, runtime) {
     overstressed: 0,
     failureDetected: false,
     forceBoost: 1.0,
-    debugEnabled: true,
+    debugEnabled: false,
     debugHelper,
     debugRenderer,
     // caches for mapping lines -> bonds quickly
@@ -397,11 +439,12 @@ function updateBridgeLogical(bridge, delta) {
     bridge.forceBoost = THREE.MathUtils.lerp(bridge.forceBoost, 1.0, Math.min(delta * 0.75, 1.0));
   }
 
+  // FIXME: re-enable after performance fixed
   // UI updates
-  updateOverlay(bridge, contact);
-  updateIterationDisplay(bridge);
-  updateToleranceDisplay(bridge);
-  updateStrengthDisplay(bridge);
+  // updateOverlay(bridge, contact);
+  // updateIterationDisplay(bridge);
+  // updateToleranceDisplay(bridge);
+  // updateStrengthDisplay(bridge);
 }
 
 function advanceCarLogic(bridge, delta) {
@@ -438,13 +481,15 @@ function applyForcesAndSolve(bridge, contact) {
   const { solver } = bridge;
   solver.reset();
 
+  const gravity = bridge.gravity * 1;
+
   // Gravity (solver-local frame)
-  solver.addGravity(vec3(0.0, bridge.gravity, 0.0));
+  solver.addGravity(vec3(0.0, gravity, 0.0));
 
   // Car load distributed to contact nodes (solver-local)
   const contactNodes = contact.nodes ?? [];
   if (contactNodes.length > 0 && bridge.car.active) {
-    const baseForcePerNode = (CAR_PROPS.mass * 9.81) / contactNodes.length;
+    const baseForcePerNode = (CAR_PROPS.mass * gravity) / contactNodes.length;
     const severity = contact.column >= 0 ? 1.0 + contact.column * 1.4 : 1.0;
     const half = Math.floor(contactNodes.length / 2);
     contactNodes.forEach((nodeIndex, idx) => {
@@ -625,7 +670,7 @@ function splitChunk(world, chunk) {
   const colliderDesc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
     .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
     .setFriction(1.0)
-    .setRestitution(0.05);
+    .setRestitution(0.0);
 
   const newCollider = world.createCollider(colliderDesc, newBody);
 
@@ -663,6 +708,7 @@ function syncMeshes(world, bridge) {
       chunk.mesh.material.color.copy(color);
     }
   });
+  // console.log('bridge.chunks', bridge.chunks, bridge);
 
   // Sync car mesh to its body
   const car = bridge.car;
@@ -819,7 +865,7 @@ function spawnLoadVehicle(world, scene) {
   // Place car at the left off-deck position in world (we'll move it)
   const minX = -6.0; // will be normalized against bridge-local in computeContactNodes
   const maxX = +6.0;
-  const margin = CAR_PROPS.length * 0.5;
+  const margin = CAR_PROPS.length * 0.2;
 
   const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(minX - margin, 2.0 + CAR_PROPS.height * 0.5 + 0.1, 0)
@@ -829,6 +875,7 @@ function spawnLoadVehicle(world, scene) {
   const collider = world.createCollider(
     RAPIER.ColliderDesc.cuboid(CAR_PROPS.length * 0.5, CAR_PROPS.height * 0.5, CAR_PROPS.width * 0.5)
       .setFriction(1.0)
+      .setRestitution(0.0)
       .setMass(CAR_PROPS.mass),
     body
   );
@@ -865,14 +912,15 @@ function updateLoadVehicle(world, bridge, delta) {
   body.setLinvel({ x: car.speed * car.direction, y: v.y, z: v.z }, true);
 }
 
-function spawnProjectile(world, bridge) {
-  const origin = new THREE.Vector3(-20, 4, 0);
+function spawnBallProjectile(world, bridge) {
+  // Fire from above the bridge, aiming downward
+  const origin = new THREE.Vector3(0, 20, 0); // x=0 (center), y=20 (above), z=0
   const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(origin.x, origin.y, origin.z)
     .setCanSleep(false);
   const body = world.createRigidBody(bodyDesc);
   const collider = world.createCollider(RAPIER.ColliderDesc.ball(0.6), body);
-  body.setLinvel({ x: PROJECTILE_SPEED, y: -1, z: (Math.random() - 0.5) * 5 }, true);
+  body.setLinvel({ x: (Math.random() - 0.5) * 5, y: -PROJECTILE_SPEED, z: (Math.random() - 0.5) * 5 }, true);
 
   const material = new THREE.MeshStandardMaterial({ color: 0xff9147, emissive: 0x552211 });
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 20), material);
@@ -891,6 +939,43 @@ function spawnProjectile(world, bridge) {
   bridge.forceBoost = Math.min(bridge.forceBoost + 0.75, 6.0);
   pushEvent('Projectile fired at bridge (force amplified)');
 }
+
+function spawnCuboidProjectile(world, bridge) {
+  // Fire from above the bridge, aiming downward
+  const origin = new THREE.Vector3(0, 5, 0); // x=0 (center), y=20 (above), z=0
+  const size = { x: 1.2, y: 1.2, z: 1.2 };
+  const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
+    .setTranslation(origin.x, origin.y, origin.z)
+    .setCanSleep(false);
+  const body = world.createRigidBody(bodyDesc);
+  const collider = world.createCollider(
+    RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
+      .setMass(1000000.0)
+      .setFriction(0.0)
+      .setRestitution(0.0)
+  , body);
+  body.setLinvel({ x: (Math.random() - 0.5) * 5, y: 0 * -PROJECTILE_SPEED, z: (Math.random() - 0.5) * 5 }, true);
+
+  const material = new THREE.MeshStandardMaterial({ color: 0xff9147, emissive: 0x552211 });
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), material);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  mesh.position.copy(origin);
+  bridge.scene.add(mesh);
+
+  bridge.projectiles.push({
+    bodyHandle: body.handle,
+    colliderHandle: collider.handle,
+    mesh,
+    ttl: 12
+  });
+
+  // Also apply a transient shock in the solver side
+  // bridge.forceBoost = Math.min(bridge.forceBoost + 0.75, 6.0);
+  pushEvent('Projectile fired at bridge (force amplified)');
+}
+
+// For now, spawnProjectile is an alias for spawnCuboidProjectile
+const spawnProjectile = spawnCuboidProjectile;
 
 function updateProjectiles(world, bridge, delta) {
   const remaining = [];
@@ -968,6 +1053,8 @@ function setupControls(world, bridge) {
     updateToleranceDisplay(bridge);
   }
 
+  // console.log('bridge.settings', bridge.settings);
+
   // Fire projectile
   if (controlsUI.fireButton) {
     controlsUI.fireButton.addEventListener('click', () => spawnProjectile(world, bridge));
@@ -1027,7 +1114,7 @@ function resetBridge(world, bridge) {
       const desc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
         .setFriction(1.0)
-        .setRestitution(0.05);
+        .setRestitution(0.0);
       const newCollider = world.createCollider(desc, root);
       chunk.bodyHandle = root.handle;
       chunk.colliderHandle = newCollider.handle;
@@ -1143,38 +1230,72 @@ function applyDebugStressToChunks(bridge, debugLines) {
   const chunkStress = bridge.chunkStress ?? new Map();
   chunkStress.clear();
 
-  const { bonds, bondCentroids } = bridge;
+  const { bonds, bondCentroids, chunks } = bridge;
+
+  // Reset existing severities before we accumulate fresh values
+  bonds.forEach((bond) => {
+    if (bond) {
+      bond.severity = 0;
+    }
+  });
+
+  if (!Array.isArray(debugLines) || debugLines.length === 0) {
+    bridge.chunkStress = chunkStress;
+    chunks.forEach((chunk) => {
+      chunk.stressSeverity = 0;
+    });
+    return;
+  }
+
   debugLines.forEach((line) => {
     const bondIndex = nearestBondIndexFast(bondCentroids, line);
     if (bondIndex < 0) {
       return;
     }
+
     const bond = bonds[bondIndex];
     if (!bond || !bond.active) {
       return;
     }
 
-    const color = line.color0 & 0xffffff;
-    const r = ((color >> 16) & 0xff) / 255;
-    const severity = Math.max(0, Math.min(1, (r - COLOR_LOW_R) / COLOR_RANGE_R));
-    if (severity <= SEVERITY_EPSILON) {
+    const severity = stressSeverityFromLine(line);
+    if (!(severity > 0)) {
       return;
     }
 
-    chunkStress.set(bond.node0, Math.max(chunkStress.get(bond.node0) ?? 0, severity));
-    chunkStress.set(bond.node1, Math.max(chunkStress.get(bond.node1) ?? 0, severity));
-    bond.severity = severity;
+    bond.severity = Math.max(bond.severity ?? 0, severity);
+  });
+
+  const severitySumByNode = new Map();
+  const severityCountByNode = new Map();
+
+  bonds.forEach((bond) => {
+    if (!bond || !bond.active) {
+      return;
+    }
+    const severity = bond.severity ?? 0;
+    const node0Sum = severitySumByNode.get(bond.node0) ?? 0;
+    const node1Sum = severitySumByNode.get(bond.node1) ?? 0;
+    severitySumByNode.set(bond.node0, node0Sum + severity);
+    severitySumByNode.set(bond.node1, node1Sum + severity);
+
+    const node0Count = severityCountByNode.get(bond.node0) ?? 0;
+    const node1Count = severityCountByNode.get(bond.node1) ?? 0;
+    severityCountByNode.set(bond.node0, node0Count + 1);
+    severityCountByNode.set(bond.node1, node1Count + 1);
+  });
+
+  chunks.forEach((chunk) => {
+    const sum = severitySumByNode.get(chunk.nodeIndex) ?? 0;
+    const count = severityCountByNode.get(chunk.nodeIndex) ?? 0;
+    const avgSeverity = count > 0 ? sum / Math.max(count, 1) : 0;
+    chunk.stressSeverity = avgSeverity;
+    // chunk.stressSeverity = sum;
+    chunkStress.set(chunk.nodeIndex, chunk.stressSeverity);
   });
 
   bridge.chunkStress = chunkStress;
-
-  bridge.chunks.forEach((chunk) => {
-    if (!chunk.mesh) {
-      return;
-    }
-    const severity = chunkStress.get(chunk.nodeIndex) ?? 0;
-    chunk.stressSeverity = severity;
-  });
+  // console.log('bridge.chunkStress', bridge.chunkStress);
 }
 
 function resetChunkColors(bridge) {

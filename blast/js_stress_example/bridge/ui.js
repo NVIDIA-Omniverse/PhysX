@@ -22,6 +22,8 @@ export const controlsUI = {
 };
 
 export function updateBondTable(bonds) {
+  return;
+
   if (!HUD.bondTable) {
     return;
   }
