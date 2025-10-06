@@ -18,7 +18,8 @@ import {
   loadStressSolver,
   vec3,
   formatNumber,
-  ExtDebugMode
+  ExtDebugMode,
+  ExtForceMode
 } from './stress.js';
 import { buildBridgeScenario } from './extBridgeScenario.js';
 import { updateBondTable } from './bridge/ui.js';
@@ -26,12 +27,11 @@ import { updateBondTable } from './bridge/ui.js';
 // --------------------------- Constants & UI ---------------------------
 
 const GRAVITY_DEFAULT = -9.81;
-const PROJECTILE_SPEED = 5; //35;
-const MAX_EVENTS = 8;
-const IMPACT_MULTIPLIER = 3.5;
+const PROJECTILE_SPEED = 5;
+const CONTACT_FORCE_THRESHOLD = 0.0;
 
 const CAR_PROPS = {
-  mass: 5200,
+  mass: 0.01,//5200,
   length: 3.6,
   width: 1.8,
   height: 1.2,
@@ -180,7 +180,8 @@ async function init() {
     updateBridgeLogical(bridge, delta);
 
     // 2) Step Rapier world & sync visuals
-    world.step();
+    world.step(bridge.eventQueue);
+    drainContactForces(bridge);
     if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
 
     syncMeshes(world, bridge);
@@ -295,6 +296,9 @@ function buildBridge(scene, world, runtime) {
   const chunks = [];
   const meshByNode = new Map();
   const supportChunks = [];
+  const colliderToNode = new Map();
+  const activeContactColliders = new Set();
+  const pendingContactForces = new Map();
 
   // const nodeSizeScale = 0.9;
   const nodeSizeScale = 1.0;
@@ -324,13 +328,19 @@ function buildBridge(scene, world, runtime) {
         // .setMass(10000.0)
         .setMass(node.mass ?? 1.0)
         .setFriction(1.0)
-        .setRestitution(0.0);
+        .setRestitution(0.0)
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
       const collider = world.createCollider(colliderDesc, bridgeBody);
+      collider.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS);
+      collider.setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
       // Optional: give mass to voxels based on scenario.mass (Rapier sums densities)
       // collider.setMass(node.mass ?? 1.0); // uncomment if you want heavier deck
 
       chunk.colliderHandle = collider.handle;
       chunk.bodyHandle = bridgeBody.handle;
+      colliderToNode.set(collider.handle, nodeIndex);
+      activeContactColliders.add(collider.handle);
     } else if (coord.iy === -1) {
       const sizeX = Math.max(spacing.x * 0.6, 0.4);
       const sizeZ = scenario.widthSegments > 1
@@ -351,9 +361,15 @@ function buildBridge(scene, world, runtime) {
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
         .setMass(10000.0)
         .setFriction(1.0)
-        .setRestitution(0.0);
+        .setRestitution(0.0)
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
       const collider = world.createCollider(colliderDesc, parent);
+      collider.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS);
+      collider.setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
       chunk.colliderHandle = collider.handle;
+      colliderToNode.set(collider.handle, nodeIndex);
+      activeContactColliders.add(collider.handle);
     }
   });
 
@@ -390,6 +406,26 @@ function buildBridge(scene, world, runtime) {
   pushEvent(`Bridge scenario loaded with ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`);
   updateBondTable(bonds);
 
+  // Rapier event queue for contact forces
+  const eventQueue = new RAPIER.EventQueue(true);
+
+  const topLayerNodeIndices = scenario.topColumnNodes.reduce((acc, column) => {
+    if (!Array.isArray(column)) return acc;
+    column.forEach((nodeIndex) => {
+      if (Number.isInteger(nodeIndex)) {
+        acc.push(nodeIndex);
+      }
+    });
+    return acc;
+  }, []);
+  const topLayerNodePositions = topLayerNodeIndices.map((nodeIndex) => {
+    const node = scenario.nodes[nodeIndex];
+    if (!node?.centroid) {
+      return null;
+    }
+    return new THREE.Vector3(node.centroid.x, node.centroid.y, node.centroid.z);
+  });
+
   // Core bridge state
   return {
     runtime,
@@ -404,6 +440,7 @@ function buildBridge(scene, world, runtime) {
     body: bridgeBody,
     car,
     projectiles,
+    eventQueue,
     supports: supportChunks,
     gravity: GRAVITY_DEFAULT,
     strengthScale,
@@ -417,17 +454,23 @@ function buildBridge(scene, world, runtime) {
     debugHelper,
     debugRenderer,
     // caches for mapping lines -> bonds quickly
-    bondCentroids: scenario.bonds.map((b) => new THREE.Vector3(b.centroid.x, b.centroid.y, b.centroid.z))
+    bondCentroids: scenario.bonds.map((b) => new THREE.Vector3(b.centroid.x, b.centroid.y, b.centroid.z)),
+    topLayerNodeIndices,
+    topLayerNodePositions,
+    colliderToNode,
+    projectileColliderHandles: new Set(),
+    activeContactColliders,
+    pendingContactForces,
+    contactForceScratch: []
   };
 }
 
 // --------------------------- Solver Update / Destruction ---------------------------
 
 function updateBridgeLogical(bridge, delta) {
-  advanceCarLogic(bridge, delta);
-
-  const contact = computeContactNodesBridgeLocal(bridge);
-  applyForcesAndSolve(bridge, contact);
+  (void delta);
+  const contactForces = gatherSolverForcesFromRapier(bridge);
+  applyForcesAndSolve(bridge, contactForces);
 
   // Choose/perform fractures if solver reports overstress
   if (bridge.overstressed > 0) {
@@ -477,7 +520,7 @@ function advanceCarLogic(bridge, delta) {
   }
 }
 
-function applyForcesAndSolve(bridge, contact) {
+function applyForcesAndSolve(bridge, solverForces) {
   const { solver } = bridge;
   solver.reset();
 
@@ -486,18 +529,12 @@ function applyForcesAndSolve(bridge, contact) {
   // Gravity (solver-local frame)
   solver.addGravity(vec3(0.0, gravity, 0.0));
 
-  // Car load distributed to contact nodes (solver-local)
-  const contactNodes = contact.nodes ?? [];
-  if (contactNodes.length > 0 && bridge.car.active) {
-    const baseForcePerNode = (CAR_PROPS.mass * gravity) / contactNodes.length;
-    const severity = contact.column >= 0 ? 1.0 + contact.column * 1.4 : 1.0;
-    const half = Math.floor(contactNodes.length / 2);
-    contactNodes.forEach((nodeIndex, idx) => {
-      const dynamicBoost = idx < half ? 1.0 : IMPACT_MULTIPLIER;
-      const downwardForce = baseForcePerNode * severity * dynamicBoost * bridge.forceBoost;
-      solver.addForce(nodeIndex, vec3(), vec3(0.0, -downwardForce, 0.0));
-    });
-  }
+  (solverForces ?? []).forEach((force) => {
+    solver.addForce(force.nodeIndex, force.localPoint, force.localForce, force.mode ?? ExtForceMode.Force);
+    if (force.impulse) {
+      solver.addForce(force.nodeIndex, force.localPoint, force.impulse, ExtForceMode.Impulse);
+    }
+  });
 
   // Iterate solver
   let iterations = 0;
@@ -814,41 +851,101 @@ function lineMagnitude(line) {
 
 // --------------------------- Contact Mapping (Bridge-local) ---------------------------
 
-function computeContactNodesBridgeLocal(bridge) {
-  const { car, scenario } = bridge;
 
-  // Car body world -> bridge-local (relative to current root body transform)
-  const body = bridge.world.getRigidBody(bridge.body.handle);
-  if (!body) return { column: -1, nodes: [] };
+function drainContactForces(bridge) {
+  const { eventQueue, colliderToNode, activeContactColliders, pendingContactForces, world } = bridge;
+  if (!eventQueue || typeof eventQueue.drainContactForceEvents !== 'function' || !world) {
+    return;
+  }
 
-  const brPos = body.translation();
-  const brRot = body.rotation();
-  const qInv = new THREE.Quaternion(brRot.x, brRot.y, brRot.z, brRot.w).invert();
+  eventQueue.drainContactForceEvents((event) => {
+    if (!event) {
+      return;
+    }
 
-  const carBody = bridge.world.getRigidBody(car.bodyHandle);
-  if (!carBody) return { column: -1, nodes: [] };
-  const ct = carBody.translation();
-  const carWorld = new THREE.Vector3(ct.x, ct.y, ct.z);
+    const totalForce = event.totalForce?.();
+    const magnitude = event.totalForceMagnitude?.();
+    if (!totalForce || !(magnitude > 0)) {
+      return;
+    }
 
-  const local = carWorld.sub(new THREE.Vector3(brPos.x, brPos.y, brPos.z)).applyQuaternion(qInv);
+    const collider1 = event.collider1?.();
+    const collider2 = event.collider2?.();
+    const worldPoint = event.worldContactPoint ? event.worldContactPoint() : undefined;
+    const worldPoint2 = event.worldContactPoint2 ? event.worldContactPoint2() : undefined;
+    const totalImpulse = event.totalImpulse ? event.totalImpulse() : undefined;
 
-  const deckLength = scenario.origins.x + scenario.spacing.x * (scenario.spanSegments - 1) - scenario.origins.x;
-  const minX = scenario.origins.x;
-  const maxX = scenario.origins.x + scenario.spacing.x * (scenario.spanSegments - 1);
+    const register = (handle, direction) => {
+      if (handle == null || !activeContactColliders.has(handle)) {
+        return;
+      }
 
-  if (deckLength <= 0) return { column: -1, nodes: [] };
+      const collider = world.getCollider(handle);
+      const bodyHandle = collider?.parent()?.handle;
+      const body = bodyHandle != null ? world.getRigidBody(bodyHandle) : undefined;
+      const bodyTranslation = body?.translation?.();
 
-  const progress = (local.x - minX) / (maxX - minX);
-  if (progress <= 0 || progress >= 1) return { column: -1, nodes: [] };
+      const forceVec = {
+        x: (totalForce.x ?? 0) * direction,
+        y: (totalForce.y ?? 0) * direction,
+        z: (totalForce.z ?? 0) * direction
+      };
+      const point = worldPoint
+        ? { x: worldPoint.x ?? 0, y: worldPoint.y ?? 0, z: worldPoint.z ?? 0 }
+        : (worldPoint2
+            ? { x: worldPoint2.x ?? 0, y: worldPoint2.y ?? 0, z: worldPoint2.z ?? 0 }
+            : (bodyTranslation
+                ? { x: bodyTranslation.x ?? 0, y: bodyTranslation.y ?? 0, z: bodyTranslation.z ?? 0 }
+                : { x: 0, y: 0, z: 0 }));
+      const impulse = totalImpulse
+        ? {
+            x: (totalImpulse.x ?? 0) * direction,
+            y: (totalImpulse.y ?? 0) * direction,
+            z: (totalImpulse.z ?? 0) * direction
+          }
+        : undefined;
 
-  const segments = scenario.spanSegments;
-  const clamped = THREE.MathUtils.clamp(progress, 0, 0.999);
-  const column = Math.min(Math.floor(clamped * (segments - 1)), segments - 2);
-  const nodes = [
-    ...scenario.topColumnNodes[column],
-    ...scenario.topColumnNodes[column + 1]
-  ];
-  return { column, nodes };
+      const existing = pendingContactForces.get(handle);
+      if (existing) {
+        existing.force.x += forceVec.x;
+        existing.force.y += forceVec.y;
+        existing.force.z += forceVec.z;
+        existing.point = point;
+        if (impulse) {
+          if (existing.impulse) {
+            existing.impulse.x += impulse.x;
+            existing.impulse.y += impulse.y;
+            existing.impulse.z += impulse.z;
+          } else {
+            existing.impulse = { ...impulse };
+          }
+        }
+      } else {
+        pendingContactForces.set(handle, {
+          force: forceVec,
+          point,
+          impulse: impulse || { x: 0, y: 0, z: 0 }
+        });
+      }
+    };
+
+    register(collider1, 1);
+    register(collider2, -1);
+  });
+}
+
+function accumulateContactForce(map, handle, force) {
+  if (!map || handle == null || !force) {
+    return;
+  }
+  const prev = map.get(handle);
+  if (!prev) {
+    map.set(handle, { x: force.x ?? 0, y: force.y ?? 0, z: force.z ?? 0 });
+    return;
+  }
+  prev.x += force.x ?? 0;
+  prev.y += force.y ?? 0;
+  prev.z += force.z ?? 0;
 }
 
 // --------------------------- Car / Projectiles ---------------------------
@@ -934,6 +1031,7 @@ function spawnBallProjectile(world, bridge) {
     mesh,
     ttl: 12
   });
+  bridge.projectileColliderHandles.add(collider.handle);
 
   // Also apply a transient shock in the solver side
   bridge.forceBoost = Math.min(bridge.forceBoost + 0.75, 6.0);
@@ -968,6 +1066,7 @@ function spawnCuboidProjectile(world, bridge) {
     mesh,
     ttl: 12
   });
+  bridge.projectileColliderHandles.add(collider.handle);
 
   // Also apply a transient shock in the solver side
   // bridge.forceBoost = Math.min(bridge.forceBoost + 0.75, 6.0);
@@ -983,6 +1082,7 @@ function updateProjectiles(world, bridge, delta) {
     const body = world.getRigidBody(proj.bodyHandle);
     if (!body) {
       proj.mesh?.removeFromParent();
+      bridge.projectileColliderHandles.delete(proj.colliderHandle);
       return;
     }
     proj.ttl -= delta;
@@ -990,6 +1090,7 @@ function updateProjectiles(world, bridge, delta) {
     if (proj.ttl <= 0 || t.y < -20) {
       world.removeRigidBody(body);
       proj.mesh?.removeFromParent();
+      bridge.projectileColliderHandles.delete(proj.colliderHandle);
       return;
     }
     proj.mesh.position.set(t.x, t.y, t.z);
@@ -1197,6 +1298,9 @@ function updateToleranceDisplay(bridge) {
 }
 
 function pushEvent(message) {
+  return; // Disabled
+
+  console.log('pushEvent', message);
   if (!HUD.eventLog) return;
   const li = document.createElement('li');
   li.textContent = message;
@@ -1377,4 +1481,59 @@ function solverSeverityScale(bridge) {
     return 1.0;
   }
   return 1.0 / scale;
+}
+
+function gatherSolverForcesFromRapier(bridge) {
+  const {
+    world,
+    body,
+    colliderToNode,
+    activeContactColliders,
+    pendingContactForces,
+    contactForceScratch
+  } = bridge;
+
+  if (!world || !body || activeContactColliders.size === 0) {
+    return [];
+  }
+
+  const rootBody = world.getRigidBody(body.handle);
+  if (!rootBody) {
+    return [];
+  }
+
+  const qInv = new THREE.Quaternion(
+    rootBody.rotation().x,
+    rootBody.rotation().y,
+    rootBody.rotation().z,
+    rootBody.rotation().w
+  ).invert();
+
+  const results = contactForceScratch ?? [];
+  results.length = 0;
+
+  activeContactColliders.forEach((handle) => {
+    const contact = pendingContactForces.get(handle);
+    const nodeIndex = colliderToNode.get(handle);
+    if (!contact || !Number.isInteger(nodeIndex) || nodeIndex < 0) {
+      return;
+    }
+
+    const localForce = new THREE.Vector3(contact.force.x, contact.force.y, contact.force.z).applyQuaternion(qInv);
+    const localPoint = new THREE.Vector3(contact.point.x, contact.point.y, contact.point.z).applyQuaternion(qInv);
+    const impulseVec = contact.impulse
+      ? new THREE.Vector3(contact.impulse.x, contact.impulse.y, contact.impulse.z).applyQuaternion(qInv)
+      : undefined;
+
+    results.push({
+      nodeIndex,
+      localForce: vec3(localForce.x, localForce.y, localForce.z),
+      localPoint: vec3(localPoint.x, localPoint.y, localPoint.z),
+      impulse: impulseVec ? vec3(impulseVec.x, impulseVec.y, impulseVec.z) : undefined,
+      mode: ExtForceMode.Force
+    });
+  });
+
+  pendingContactForces.clear();
+  return results;
 }
