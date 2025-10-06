@@ -31,7 +31,7 @@ const PROJECTILE_SPEED = 5;
 const CONTACT_FORCE_THRESHOLD = 0.0;
 
 const CAR_PROPS = {
-  mass: 0.01,//5200,
+  mass: 0.01, //5200,
   length: 3.6,
   width: 1.8,
   height: 1.2,
@@ -70,8 +70,9 @@ const controlsUI = {
 
 const STRESS_COLOR_LOW = new THREE.Color('#3fb3ff');
 const STRESS_COLOR_MEDIUM = new THREE.Color('#ff9f43');
-const STRESS_COLOR_HIGH = new THREE.Color('#ff4f67');
-const DETACHED_COLOR = new THREE.Color('#ffd166');
+const STRESS_COLOR_HIGH = new THREE.Color('#DC143C');
+// const DETACHED_COLOR = new THREE.Color('#ffd166');
+const DETACHED_COLOR = new THREE.Color('#3f3f3f');
 
 const stressColorScratch = new THREE.Color();
 
@@ -86,9 +87,11 @@ const COLOR_RANGE_G = Math.max(COLOR_LOW_G - COLOR_HIGH_G, 1.0e-6);
 // --------------------------- Helpers / Types ---------------------------
 
 class BridgeChunk {
-  constructor({ nodeIndex, centroid, size, material }) {
+  constructor({ nodeIndex, centroid, size, material, isSupport = false }) {
     this.nodeIndex = nodeIndex;
-    this.localOffset = new THREE.Vector3(centroid.x, centroid.y, centroid.z);
+    this.baseWorldPosition = new THREE.Vector3(centroid.x, centroid.y, centroid.z);
+    this.baseLocalOffset = new THREE.Vector3(centroid.x, centroid.y, centroid.z);
+    this.localOffset = this.baseLocalOffset.clone();
     this.localQuat = new THREE.Quaternion(0, 0, 0, 1);
     this.size = size; // { x, y, z } (box)
     this.mesh = createVoxelMesh(size, material);
@@ -98,6 +101,7 @@ class BridgeChunk {
     this.baseColor = this.mesh.material.color.clone();
     this.stressSeverity = 0;
     this.detached = false;
+    this.isSupport = isSupport;
   }
 }
 
@@ -120,6 +124,22 @@ function createVoxelMesh(size, material) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
+}
+
+function buildSolverNodesFromScenario(scenario) {
+  if (!scenario?.nodes) {
+    return [];
+  }
+
+  return scenario.nodes.map((node, nodeIndex) => {
+    const coord = scenario.gridCoordinates?.[nodeIndex];
+    const isSupport = coord?.iy === -1;
+    return {
+      centroid: node.centroid,
+      mass: isSupport ? 0 : node.mass ?? 0,
+      volume: isSupport ? 0 : node.volume ?? 0
+    };
+  });
 }
 
 function colorFromUint24(u24) {
@@ -256,6 +276,7 @@ function initThree() {
 function buildBridge(scene, world, runtime) {
   // --- Build the new scenario (grid deck + supports) ---
   const scenario = buildBridgeScenario(); // defaults are fine; tune as needed
+  const solverNodes = buildSolverNodesFromScenario(scenario);
   const settings = runtime.defaultExtSettings();
   // a bit more iterations by default
   settings.maxSolverIterationsPerFrame = 32;
@@ -268,17 +289,15 @@ function buildBridge(scene, world, runtime) {
 
   // Ext solver instance
   let solver = runtime.createExtSolver({
-    nodes: scenario.nodes,
+    nodes: solverNodes,
     bonds: scenario.bonds,
     settings
   });
 
-  // --- Rapier: one dynamic parent body that holds all deck voxels initially ---
-  const bridgeBodyDesc = RAPIER.RigidBodyDesc.dynamic()
+  // --- Rapier: one static parent body that holds all deck voxels until fracture ---
+  const bridgeBodyDesc = RAPIER.RigidBodyDesc.fixed()
     .setTranslation(0, 0, 0)
-    .setCanSleep(false)
-    .setLinearDamping(0.8)
-    .setAngularDamping(1.2);
+    .setCanSleep(false);
   const bridgeBody = world.createRigidBody(bridgeBodyDesc);
 
   const deckMaterial = new THREE.MeshStandardMaterial({
@@ -317,7 +336,7 @@ function buildBridge(scene, world, runtime) {
       const size = { x: sizeX, y: sizeY, z: sizeZ };
 
       const mat = (coord.iy === scenario.thicknessLayers - 1) ? topMaterial : deckMaterial;
-      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: mat });
+      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: mat, isSupport: false });
       chunks.push(chunk);
       meshByNode.set(nodeIndex, chunk.mesh);
       scene.add(chunk.mesh);
@@ -326,7 +345,7 @@ function buildBridge(scene, world, runtime) {
       const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
         // .setMass(10000.0)
-        .setMass(node.mass ?? 1.0)
+        // .setMass(node.mass ?? 1.0)
         .setFriction(1.0)
         .setRestitution(0.0)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -349,24 +368,30 @@ function buildBridge(scene, world, runtime) {
       const sizeY = scenario.parameters.pierHeight;
       const size = { x: sizeX, y: sizeY, z: sizeZ };
 
-      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: supportMaterial.clone() });
+      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: supportMaterial.clone(), isSupport: true });
+      chunk.baseLocalOffset.set(0, 0, 0);
+      chunk.localOffset.set(0, 0, 0);
       chunks.push(chunk);
       meshByNode.set(nodeIndex, chunk.mesh);
       scene.add(chunk.mesh);
       supportChunks.push(chunk);
 
-      const parent = bridgeBody;
-      chunk.bodyHandle = parent.handle;
+      const supportBodyDesc = RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(node.centroid.x, node.centroid.y, node.centroid.z)
+        .setCanSleep(false);
+      const supportBody = world.createRigidBody(supportBodyDesc);
+
       const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
-        .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
-        .setMass(10000.0)
+        .setTranslation(0, 0, 0)
         .setFriction(1.0)
         .setRestitution(0.0)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
         .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
-      const collider = world.createCollider(colliderDesc, parent);
+      const collider = world.createCollider(colliderDesc, supportBody);
       collider.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS);
       collider.setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
+
+      chunk.bodyHandle = supportBody.handle;
       chunk.colliderHandle = collider.handle;
       colliderToNode.set(collider.handle, nodeIndex);
       activeContactColliders.add(collider.handle);
@@ -431,6 +456,7 @@ function buildBridge(scene, world, runtime) {
     runtime,
     world,
     scene,
+    solverNodes,
     settings,
     solver,
     scenario,
@@ -469,6 +495,9 @@ function buildBridge(scene, world, runtime) {
 
 function updateBridgeLogical(bridge, delta) {
   (void delta);
+
+  maybeRebuildSolver(bridge);
+
   const contactForces = gatherSolverForcesFromRapier(bridge);
   applyForcesAndSolve(bridge, contactForces);
 
@@ -488,6 +517,31 @@ function updateBridgeLogical(bridge, delta) {
   // updateIterationDisplay(bridge);
   // updateToleranceDisplay(bridge);
   // updateStrengthDisplay(bridge);
+}
+
+function maybeRebuildSolver(bridge) {  
+  // Rebuild Blast solver with bond removed
+  // TODO: Rewrite this using 'generateFractureCommands' then apply the command
+  // which will splits the bond between chunks in the same solver
+  const remainingBonds = [];
+  for (let i = 0; i < bridge.scenario.bonds.length; ++i) {
+    if (bridge.bonds[i].active) remainingBonds.push(bridge.scenario.bonds[i]);
+  }
+
+  // Check if the number of bonds is different in solver from the remaining bonds
+  if (bridge.solver.bondCount === remainingBonds.length) return;
+
+  console.log('maybeRebuildSolver', bridge.solver.bondCount, remainingBonds.length);
+  bridge.solver.destroy();
+  bridge.solver = bridge.runtime.createExtSolver({
+    nodes: bridge.solverNodes,
+    bonds: remainingBonds,
+    settings: bridge.settings
+  });
+
+  // Clear lines immediately
+  // bridge.debugHelper.currentLines = [];
+  // updateDebugLineObject(bridge.debugHelper, [], false);
 }
 
 function advanceCarLogic(bridge, delta) {
@@ -524,7 +578,7 @@ function applyForcesAndSolve(bridge, solverForces) {
   const { solver } = bridge;
   solver.reset();
 
-  const gravity = bridge.gravity * 1;
+  const gravity = bridge.gravity * 0.1;
 
   // Gravity (solver-local frame)
   solver.addGravity(vec3(0.0, gravity, 0.0));
@@ -532,7 +586,7 @@ function applyForcesAndSolve(bridge, solverForces) {
   (solverForces ?? []).forEach((force) => {
     solver.addForce(force.nodeIndex, force.localPoint, force.localForce, force.mode ?? ExtForceMode.Force);
     if (force.impulse) {
-      solver.addForce(force.nodeIndex, force.localPoint, force.impulse, ExtForceMode.Impulse);
+      // solver.addForce(force.nodeIndex, force.localPoint, force.impulse, ExtForceMode.Impulse);
     }
   });
 
@@ -554,7 +608,12 @@ function applyForcesAndSolve(bridge, solverForces) {
   updateBondStressFromSolver(bridge);
 }
 
+/**
+ * TODO: Rewrite this using 'generateFractureCommands'
+ */
 function attemptFractureFromDebug(bridge) {
+  // console.log('attemptFractureFromDebug', bridge);
+
   // Pull Blast debug lines in bridge-local frame
   const scale = solverSeverityScale(bridge);
   const linesMax = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Max, scale });
@@ -597,7 +656,11 @@ function attemptFractureFromDebug(bridge) {
 
   // Pick best not-yet-broken bond that has both chunks existing
   const sorted = [...candidateByBond.entries()].sort((a, b) => b[1].score - a[1].score);
+  const maxFracture = 1
+  let fractured = 0;
   for (const [bondIndex, info] of sorted) {
+    if (fractured >= maxFracture) break;
+
     const bond = bridge.bonds[bondIndex];
     if (!bond || !bond.active) continue;
 
@@ -606,6 +669,7 @@ function attemptFractureFromDebug(bridge) {
     if (!chunkA || !chunkB) continue; // skip support-only bonds
 
     fractureBond(bridge, bondIndex, info.mode);
+    fractured++;
     break;
   }
 }
@@ -641,27 +705,34 @@ function fractureBond(bridge, bondIndex, mode = 'overstress') {
   const chunkB = findChunkForNode(bridge, bond.node1);
   if (!chunkA || !chunkB) return;
 
+  // Only split chunkB if all bonds associated with chunkB are broken/deactivated
+  const bondsForChunkB = bridge.bonds.filter(b => b.node0 === chunkB.node || b.node1 === chunkB.node);
+  const allBondsInactive = bondsForChunkB.every(b => !b.active);
+
+  // const allBondsInactive = true;
+  if (!allBondsInactive) {
+    return;
+  }
+
   bond.active = false;
   bond.severity = 0;
   pushEvent(`Bond ${bond.node0}-${bond.node1} failed due to ${mode}`);
 
-  // Split node1 voxel into its own rigid body
   splitChunk(world, chunkB);
 
-  if (chunkB) {
-    chunkB.detached = true;
-  }
-
+  /*
   updateBondTable(bridge.bonds);
 
   // Rebuild Blast solver with bond removed
+  // TODO: Rewrite this using 'generateFractureCommands' then apply the command
+  // which will splits the bond between chunks in the same solver
   const remainingBonds = [];
   for (let i = 0; i < bridge.scenario.bonds.length; ++i) {
     if (bridge.bonds[i].active) remainingBonds.push(bridge.scenario.bonds[i]);
   }
   bridge.solver.destroy();
   bridge.solver = bridge.runtime.createExtSolver({
-    nodes: bridge.scenario.nodes,
+    nodes: bridge.solverNodes,
     bonds: remainingBonds,
     settings: bridge.settings
   });
@@ -669,10 +740,11 @@ function fractureBond(bridge, bondIndex, mode = 'overstress') {
   // Clear lines immediately
   bridge.debugHelper.currentLines = [];
   updateDebugLineObject(bridge.debugHelper, [], false);
+  */
 }
 
 function splitChunk(world, chunk) {
-  if (!chunk.active) return;
+  if (!chunk.active || chunk.isSupport) return;
 
   const parent = world.getRigidBody(chunk.bodyHandle);
   const oldCollider = world.getCollider(chunk.colliderHandle);
@@ -682,6 +754,9 @@ function splitChunk(world, chunk) {
 
   // Remove old collider from parent
   world.removeCollider(oldCollider, /* wakeUpBodies: */ false);
+
+  // Reset local offset so the new rigid body keeps the chunk mesh at its centroid
+  chunk.localOffset.copy(chunk.baseLocalOffset);
 
   // Create new rigid body at parent's current pose/vel
   const translation = parent.translation();
@@ -724,9 +799,16 @@ function syncMeshes(world, bridge) {
   const quat = new THREE.Quaternion();
 
   bridge.chunks.forEach((chunk) => {
-    if (!chunk.mesh) return;
+    if (!chunk.mesh) {
+      console.log('no mesh', chunk.nodeIndex, chunk.bodyHandle);
+      return;
+    }
+
     const body = world.getRigidBody(chunk.bodyHandle);
-    if (!body) return;
+    if (!body) {
+      console.log('no body', chunk.nodeIndex, chunk.bodyHandle);
+      return;
+    }
 
     const p = body.translation();
     const r = body.rotation();
@@ -744,6 +826,9 @@ function syncMeshes(world, bridge) {
     if (chunk.mesh.material.color.r !== color.r || chunk.mesh.material.color.g !== color.g || chunk.mesh.material.color.b !== color.b) {
       chunk.mesh.material.color.copy(color);
     }
+    // if (chunk.detached) {
+    //   console.log('chunk.mesh.material.color', chunk.nodeIndex, chunk.detached, chunk.mesh.material.color);
+    // }
   });
   // console.log('bridge.chunks', bridge.chunks, bridge);
 
@@ -1040,15 +1125,24 @@ function spawnBallProjectile(world, bridge) {
 
 function spawnCuboidProjectile(world, bridge) {
   // Fire from above the bridge, aiming downward
-  const origin = new THREE.Vector3(0, 5, 0); // x=0 (center), y=20 (above), z=0
-  const size = { x: 1.2, y: 1.2, z: 1.2 };
+  const scale = 1.0;
+
+  // Add some x,z randomization to the spawn position
+  const origin = new THREE.Vector3(
+    (Math.random() - 0.5) * 6, // random x in [-3, 3]
+    5,
+    (Math.random() - 0.5) * 6  // random z in [-3, 3]
+  );
+
+  const size = { x: 1.2 * scale, y: 1.2 * scale, z: 1.2 * scale };
   const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(origin.x, origin.y, origin.z)
     .setCanSleep(false);
   const body = world.createRigidBody(bodyDesc);
   const collider = world.createCollider(
     RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
-      .setMass(1000000.0)
+      // .setMass(100000000.0 * scale * scale)
+      .setMass(1000.0 * scale * scale)
       .setFriction(0.0)
       .setRestitution(0.0)
   , body);
@@ -1201,32 +1295,74 @@ function resetBridge(world, bridge) {
   bridge.car.speed = bridge.car.baseSpeed;
   bridge.car.active = true;
 
-  // Re-attach all voxels to the single body (remove split bodies)
+  // Rebuild colliders/bodies so supports return to their original locations
   const root = world.getRigidBody(bridge.body.handle);
-  const rootPos = root.translation();
-  const rootRot = root.rotation();
+  bridge.colliderToNode.clear();
+  bridge.activeContactColliders.clear();
+  bridge.pendingContactForces.clear();
 
   bridge.chunks.forEach((chunk) => {
-    if (!chunk.active) return;
-    const body = world.getRigidBody(chunk.bodyHandle);
-    const collider = world.getCollider(chunk.colliderHandle);
-    if (body && body.handle !== root.handle && collider) {
-      world.removeCollider(collider, false);
-      const desc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
+    // Clean up existing collider/body state
+    const oldCollider = world.getCollider(chunk.colliderHandle);
+    if (oldCollider) {
+      world.removeCollider(oldCollider, false);
+    }
+
+    if (chunk.isSupport) {
+      const oldBody = world.getRigidBody(chunk.bodyHandle);
+      if (oldBody) {
+        world.removeRigidBody(oldBody);
+      }
+
+      const supportBodyDesc = RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(chunk.baseWorldPosition.x, chunk.baseWorldPosition.y, chunk.baseWorldPosition.z)
+        .setCanSleep(false);
+      const supportBody = world.createRigidBody(supportBodyDesc);
+
+      const supportColliderDesc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
+        .setTranslation(0, 0, 0)
+        .setFriction(1.0)
+        .setRestitution(0.0)
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
+      const supportCollider = world.createCollider(supportColliderDesc, supportBody);
+
+      chunk.bodyHandle = supportBody.handle;
+      chunk.colliderHandle = supportCollider.handle;
+      chunk.localOffset.set(0, 0, 0);
+    } else {
+      const oldBody = world.getRigidBody(chunk.bodyHandle);
+      if (oldBody && oldBody.handle !== root.handle) {
+        world.removeRigidBody(oldBody);
+      }
+
+      chunk.localOffset.copy(chunk.baseLocalOffset);
+
+      const deckColliderDesc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
         .setFriction(1.0)
-        .setRestitution(0.0);
-      const newCollider = world.createCollider(desc, root);
+        .setRestitution(0.0)
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
+      const deckCollider = world.createCollider(deckColliderDesc, root);
+
       chunk.bodyHandle = root.handle;
-      chunk.colliderHandle = newCollider.handle;
+      chunk.colliderHandle = deckCollider.handle;
     }
+
+    chunk.active = true;
+    chunk.detached = false;
+    chunk.stressSeverity = 0;
+
+    bridge.colliderToNode.set(chunk.colliderHandle, chunk.nodeIndex);
+    bridge.activeContactColliders.add(chunk.colliderHandle);
   });
 
   // Restore solver with all bonds
   bridge.bonds.forEach((b) => (b.active = true));
   bridge.solver.destroy();
   bridge.solver = bridge.runtime.createExtSolver({
-    nodes: bridge.scenario.nodes,
+    nodes: bridge.solverNodes,
     bonds: bridge.scenario.bonds,
     settings: bridge.settings
   });
@@ -1241,6 +1377,7 @@ function resetBridge(world, bridge) {
   bridge.debugHelper.currentLines = [];
   updateDebugLineObject(bridge.debugHelper, [], bridge.debugEnabled);
 
+  resetChunkColors(bridge);
   updateBondTable(bridge.bonds);
   updateOverlay(bridge, { column: -1, nodes: [] });
   if (HUD.eventLog) HUD.eventLog.innerHTML = '';
@@ -1310,23 +1447,36 @@ function pushEvent(message) {
   }
 }
 
+// Configurable threshold value for stress severity coloring.
+// "Medium" is the severity at which the color is fully blended to STRESS_COLOR_MEDIUM.
+// "High" is the severity at which the color starts blending toward STRESS_COLOR_HIGH.
+// In this model, both thresholds are the same, as the transition to "high" begins where "medium" ends.
+const STRESS_SEVERITY_MEDIUM_THRESHOLD = 0.5;
+const STRESS_SEVERITY_HIGH_THRESHOLD = STRESS_SEVERITY_MEDIUM_THRESHOLD;
+
 function chunkColorForSeverity(chunk, severity) {
   if (severity <= 0) {
     return chunk.baseColor;
   }
-  const lerpMedium = Math.min(severity, 1);
+  // Blend from baseColor to STRESS_COLOR_MEDIUM as severity goes from 0 to MEDIUM_THRESHOLD
+  const lerpMedium = Math.min(severity, STRESS_SEVERITY_MEDIUM_THRESHOLD) / STRESS_SEVERITY_MEDIUM_THRESHOLD;
   stressColorScratch.copy(chunk.baseColor).lerp(STRESS_COLOR_MEDIUM, lerpMedium);
-  if (severity >= 1) {
-    stressColorScratch.lerp(STRESS_COLOR_HIGH, Math.min(severity - 1, 1));
+
+  // If severity exceeds HIGH_THRESHOLD, blend further toward STRESS_COLOR_HIGH
+  if (severity >= STRESS_SEVERITY_HIGH_THRESHOLD) {
+    const lerpHigh = Math.min(severity - STRESS_SEVERITY_HIGH_THRESHOLD, 1.0);
+    stressColorScratch.lerp(STRESS_COLOR_HIGH, lerpHigh);
   }
   return stressColorScratch;
 }
 
 function processDebugLinesForSeverity(bridge, debugLines) {
+  /*
   if (!debugLines || debugLines.length === 0) {
     resetChunkColors(bridge);
     return;
   }
+  */
   applyDebugStressToChunks(bridge, debugLines);
 }
 
