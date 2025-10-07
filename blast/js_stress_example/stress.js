@@ -13,6 +13,12 @@ const distDirUrl = new URL('./dist/', import.meta.url);
 
 let fileURLToPathFn;
 
+export const FractureResult = Object.freeze({
+  None: 0,
+  Success: 1,
+  Truncated: 2
+});
+
 export const StressFailure = Object.freeze({
   Compression: 'compression',
   Tension: 'tension',
@@ -257,7 +263,9 @@ function createRuntime(module) {
     extNode: module.ccall('ext_stress_sizeof_ext_node_desc', 'number', [], []),
     extBond: module.ccall('ext_stress_sizeof_ext_bond_desc', 'number', [], []),
     extSettings: module.ccall('ext_stress_sizeof_ext_settings', 'number', [], []),
-    extDebugLine: module.ccall('ext_stress_sizeof_ext_debug_line', 'number', [], [])
+    extDebugLine: module.ccall('ext_stress_sizeof_ext_debug_line', 'number', [], []),
+    extBondFracture: module.ccall('ext_stress_sizeof_ext_bond_fracture', 'number', [], []),
+    extFractureCommands: module.ccall('ext_stress_sizeof_ext_fracture_commands', 'number', [], [])
   };
 
   const memory = new ModuleMemory(module);
@@ -265,6 +273,7 @@ function createRuntime(module) {
   return {
     module,
     sizes,
+    FractureResult,
     vec3,
     StressLimits,
     StressFailure,
@@ -644,6 +653,11 @@ class ExtStressSolver {
       this.handle = handle >>> 0;
       this._debugCapacity = Math.max(this.bondCount, 1);
       this._debugPtr = memory.alloc(this._debugCapacity * sizes.extDebugLine);
+      this._fractureCapacity = Math.max(this.bondCount, 1);
+      this._fracturePtr = memory.alloc(this._fractureCapacity * sizes.extBondFracture);
+      this._fractureCommandsPtr = memory.alloc(sizes.extFractureCommands);
+      this._forcePtr = memory.alloc(sizes.vec3);
+      this._torquePtr = memory.alloc(sizes.vec3);
     } finally {
       memory.free(nodesPtr);
       memory.free(bondsPtr);
@@ -662,6 +676,22 @@ class ExtStressSolver {
     if (this._debugPtr) {
       this.memory.free(this._debugPtr);
       this._debugPtr = 0;
+    }
+    if (this._fracturePtr) {
+      this.memory.free(this._fracturePtr);
+      this._fracturePtr = 0;
+    }
+    if (this._fractureCommandsPtr) {
+      this.memory.free(this._fractureCommandsPtr);
+      this._fractureCommandsPtr = 0;
+    }
+    if (this._forcePtr) {
+      this.memory.free(this._forcePtr);
+      this._forcePtr = 0;
+    }
+    if (this._torquePtr) {
+      this.memory.free(this._torquePtr);
+      this._torquePtr = 0;
     }
   }
 
@@ -743,6 +773,63 @@ class ExtStressSolver {
       return 0;
     }
     return this.module.ccall('ext_stress_solver_overstressed_bond_count', 'number', ['number'], [this.handle]) >>> 0;
+  }
+
+  generateFractureCommands({ maxBonds = this._fractureCapacity } = {}) {
+    if (!this.handle || !this._fracturePtr || !this._fractureCommandsPtr || maxBonds === 0) {
+      return { fractures: [], truncated: false, result: FractureResult.None };
+    }
+
+    const limit = Math.min(maxBonds, this._fractureCapacity);
+    this.memory.zero(this._fractureCommandsPtr, this.sizes.extFractureCommands);
+    const result = this.module.ccall(
+      'ext_stress_solver_generate_fracture_commands',
+      'number',
+      ['number', 'number', 'number', 'number'],
+      [this.handle, this._fractureCommandsPtr, this._fracturePtr, limit]
+    );
+
+    const view = this.memory.view();
+    const count = view.getUint32(this._fractureCommandsPtr + 4, true);
+    const fractures = [];
+    for (let i = 0; i < count; ++i) {
+      const base = this._fracturePtr + i * this.sizes.extBondFracture;
+      fractures.push(readExtBondFracture(view, base));
+    }
+
+    return {
+      fractures,
+      truncated: result === FractureResult.Truncated,
+      result
+    };
+  }
+
+  getExcessForces(actorIndex, centerOfMass = vec3()) {
+    if (!this.handle || !this._forcePtr || !this._torquePtr) {
+      return null;
+    }
+
+    const comPtr = this.memory.alloc(this.sizes.vec3);
+    try {
+      writeVec3(this.memory.view(), comPtr, centerOfMass ?? vec3());
+      const ok = this.module.ccall(
+        'ext_stress_solver_get_excess_forces',
+        'number',
+        ['number', 'number', 'number', 'number', 'number'],
+        [this.handle, actorIndex >>> 0, comPtr, this._forcePtr, this._torquePtr]
+      );
+
+      if (!ok) {
+        return null;
+      }
+
+      const view = this.memory.view();
+      const force = readVec3(view, this._forcePtr);
+      const torque = readVec3(view, this._torquePtr);
+      return { force, torque };
+    } finally {
+      this.memory.free(comPtr);
+    }
   }
 
   fillDebugRender({ mode = ExtDebugMode.Max, scale = 1.0 } = {}) {
@@ -854,6 +941,15 @@ function readExtDebugLine(view, base) {
     p1: readVec3(view, base + 12),
     color0: view.getUint32(base + 24, true),
     color1: view.getUint32(base + 28, true)
+  };
+}
+
+function readExtBondFracture(view, base) {
+  return {
+    userdata: view.getUint32(base, true),
+    nodeIndex0: view.getUint32(base + 4, true),
+    nodeIndex1: view.getUint32(base + 8, true),
+    health: view.getFloat32(base + 12, true)
   };
 }
 

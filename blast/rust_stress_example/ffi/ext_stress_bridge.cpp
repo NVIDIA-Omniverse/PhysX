@@ -29,6 +29,7 @@ struct ExtStressSolverHandleImpl
 
     std::vector<uint32_t> inputToGraph;
     std::vector<uint32_t> graphNodeIndices;
+    std::vector<uint32_t> graphToInput;
 };
 
 inline StressVec3 toStressVec3(const NvcVec3& value)
@@ -273,6 +274,7 @@ ext_stress_solver_create(const ExtStressNodeDesc* nodes,
     const NvBlastSupportGraph supportGraph = NvBlastAssetGetSupportGraph(handle->asset, kLogFn);
     handle->inputToGraph.assign(node_count, UINT32_MAX);
     handle->graphNodeIndices.resize(supportGraph.nodeCount);
+    handle->graphToInput.assign(supportGraph.nodeCount, UINT32_MAX);
     for (uint32_t graphIndex = 0; graphIndex < supportGraph.nodeCount; ++graphIndex)
     {
         handle->graphNodeIndices[graphIndex] = graphIndex;
@@ -281,6 +283,7 @@ ext_stress_solver_create(const ExtStressNodeDesc* nodes,
         {
             const uint32_t inputIndex = chunkIndex - 1U;
             handle->inputToGraph[inputIndex] = graphIndex;
+            handle->graphToInput[graphIndex] = inputIndex;
             const ExtStressNodeDesc& nodeDesc = nodes[inputIndex];
             handle->solver->setNodeInfo(graphIndex,
                                         nodeDesc.mass,
@@ -427,6 +430,99 @@ ext_stress_solver_fill_debug_render(const ExtStressSolverHandle* handlePtr,
     return count;
 }
 
+namespace
+{
+
+uint32_t mapGraphNodeToInput(const ExtStressSolverHandleImpl& handle, uint32_t graphIndex)
+{
+    if (graphIndex < handle.graphToInput.size())
+    {
+        return handle.graphToInput[graphIndex];
+    }
+    return UINT32_MAX;
+}
+
+} // namespace
+
+extern "C" uint8_t
+ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handlePtr,
+                                             ExtStressFractureCommands* out_commands,
+                                             ExtStressBondFracture* bond_buffer,
+                                             uint32_t max_bonds)
+{
+    const auto* handle = reinterpret_cast<const ExtStressSolverHandleImpl*>(handlePtr);
+    if (!handle || !handle->solver || !handle->actor || !out_commands || !bond_buffer || max_bonds == 0U)
+    {
+        if (out_commands)
+        {
+            out_commands->bondFractures = nullptr;
+            out_commands->bondFractureCount = 0U;
+        }
+        return 0U;
+    }
+
+    NvBlastFractureBuffers commands{};
+    handle->solver->generateFractureCommands(*handle->actor, commands);
+
+    const uint32_t available = commands.bondFractureCount;
+    const uint32_t toCopy = std::min(available, max_bonds);
+    if (toCopy == 0U)
+    {
+        out_commands->bondFractures = nullptr;
+        out_commands->bondFractureCount = 0U;
+        return 1U;
+    }
+
+    const NvBlastBondFractureData* src = commands.bondFractures;
+    if (!src)
+    {
+        out_commands->bondFractures = nullptr;
+        out_commands->bondFractureCount = 0U;
+        return 1U;
+    }
+
+    for (uint32_t i = 0; i < toCopy; ++i)
+    {
+        const NvBlastBondFractureData& fracture = src[i];
+        ExtStressBondFracture converted{};
+        converted.userdata = fracture.userdata;
+        converted.nodeIndex0 = mapGraphNodeToInput(*handle, fracture.nodeIndex0);
+        converted.nodeIndex1 = mapGraphNodeToInput(*handle, fracture.nodeIndex1);
+        converted.health = fracture.health;
+        bond_buffer[i] = converted;
+    }
+
+    out_commands->bondFractures = bond_buffer;
+    out_commands->bondFractureCount = toCopy;
+    return available <= max_bonds ? 1U : 2U; // 2 indicates truncation
+}
+
+extern "C" uint8_t
+ext_stress_solver_get_excess_forces(const ExtStressSolverHandle* handlePtr,
+                                    uint32_t actor_index,
+                                    const StressVec3* center_of_mass,
+                                    StressVec3* out_force,
+                                    StressVec3* out_torque)
+{
+    const auto* handle = reinterpret_cast<const ExtStressSolverHandleImpl*>(handlePtr);
+    if (!handle || !handle->solver || !out_force || !out_torque)
+    {
+        return 0U;
+    }
+
+    const NvcVec3 com = center_of_mass ? toNvcVec3(*center_of_mass) : NvcVec3{0.0f, 0.0f, 0.0f};
+    NvcVec3 force{};
+    NvcVec3 torque{};
+    if (handle->solver->getExcessForces(actor_index, com, force, torque))
+    {
+        *out_force = toStressVec3(force);
+        *out_torque = toStressVec3(torque);
+        return 1U;
+    }
+
+    return 0U;
+}
+
 extern "C" float
 ext_stress_solver_get_linear_error(const ExtStressSolverHandle* handlePtr)
 {
@@ -470,5 +566,17 @@ extern "C" uint32_t
 ext_stress_sizeof_ext_debug_line()
 {
     return static_cast<uint32_t>(sizeof(ExtStressDebugLine));
+}
+
+extern "C" uint32_t
+ext_stress_sizeof_ext_bond_fracture()
+{
+    return static_cast<uint32_t>(sizeof(ExtStressBondFracture));
+}
+
+extern "C" uint32_t
+ext_stress_sizeof_ext_fracture_commands()
+{
+    return static_cast<uint32_t>(sizeof(ExtStressFractureCommands));
 }
 

@@ -42,6 +42,18 @@ typedef struct ExtStressDebugLine {
     uint32_t color1;
 } ExtStressDebugLine;
 
+typedef struct ExtStressBondFracture {
+    uint32_t userdata;
+    uint32_t nodeIndex0;
+    uint32_t nodeIndex1;
+    float health;
+} ExtStressBondFracture;
+
+typedef struct ExtStressFractureCommands {
+    ExtStressBondFracture* bondFractures;
+    uint32_t bondFractureCount;
+} ExtStressFractureCommands;
+
 ExtStressSolverHandle* ext_stress_solver_create(const ExtStressNodeDesc* nodes,
                                                 uint32_t node_count,
                                                 const ExtStressBondDesc* bonds,
@@ -78,6 +90,17 @@ uint32_t ext_stress_solver_fill_debug_render(const ExtStressSolverHandle* handle
                                              ExtStressDebugLine* out_lines,
                                              uint32_t max_lines);
 
+uint8_t ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handle,
+                                                     ExtStressFractureCommands* out_commands,
+                                                     ExtStressBondFracture* bond_buffer,
+                                                     uint32_t max_bonds);
+
+uint8_t ext_stress_solver_get_excess_forces(const ExtStressSolverHandle* handle,
+                                            uint32_t actor_index,
+                                            const StressVec3* center_of_mass,
+                                            StressVec3* out_force,
+                                            StressVec3* out_torque);
+
 float ext_stress_solver_get_linear_error(const ExtStressSolverHandle* handle);
 
 float ext_stress_solver_get_angular_error(const ExtStressSolverHandle* handle);
@@ -88,6 +111,8 @@ uint32_t ext_stress_sizeof_ext_node_desc();
 uint32_t ext_stress_sizeof_ext_bond_desc();
 uint32_t ext_stress_sizeof_ext_settings();
 uint32_t ext_stress_sizeof_ext_debug_line();
+uint32_t ext_stress_sizeof_ext_bond_fracture();
+uint32_t ext_stress_sizeof_ext_fracture_commands();
 
 #ifdef __cplusplus
 }
