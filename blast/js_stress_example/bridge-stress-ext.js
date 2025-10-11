@@ -1,3 +1,9 @@
+// Ensure a global harness object exists as early as possible
+const __existingHarness = (typeof globalThis !== 'undefined') ? (globalThis.__bridgeExt ?? (globalThis.__bridgeExt = {})) : {};
+if (__existingHarness) {
+  __existingHarness.scriptLoaded = true;
+}
+
 /**
  * Rapier + Three.js + Blast Ext Stress Solver (destructible bridge)
  * -----------------------------------------------------------------
@@ -12,7 +18,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import RAPIER from '@dimforge/rapier3d-compat';
+// import RAPIER from '@dimforge/rapier3d-debug';
 import RapierDebugRenderer from './rapier-debug-renderer.js';
+import { handleSplitEvents as handleSplitEventsCore } from './bridge/handleSplitEvents.js';
 
 import {
   loadStressSolver,
@@ -31,7 +39,7 @@ const PROJECTILE_SPEED = 5;
 const CONTACT_FORCE_THRESHOLD = 0.0;
 
 const CAR_PROPS = {
-  mass: 0.01, //5200,
+  mass: 5200,
   length: 3.6,
   width: 1.8,
   height: 1.2,
@@ -40,12 +48,20 @@ const CAR_PROPS = {
 };
 
 const BASE_LIMITS = {
+  /*
   compressionElasticLimit: 0.05,
   compressionFatalLimit: 0.1,
   tensionElasticLimit: 0.05,
   tensionFatalLimit: 0.1,
   shearElasticLimit: 0.05,
   shearFatalLimit: 0.1
+  */
+  compressionElasticLimit: 0.001,
+  compressionFatalLimit: 0.002,
+  tensionElasticLimit: 0.001,
+  tensionFatalLimit: 0.002,
+  shearElasticLimit: 0.001,
+  shearFatalLimit: 0.002
 };
 
 const HUD = {
@@ -112,9 +128,15 @@ class BridgeBond {
     this.node1 = node1;
     this.centroid = centroid; // local (bridge frame)
     this.active = true;
-    this.key = `${node0}-${node1}`;
+    this.key = bondKey(node0, node1);
     this.severity = 0;
   }
+}
+
+function bondKey(a, b) {
+  const n0 = Math.min(a, b);
+  const n1 = Math.max(a, b);
+  return `${n0}-${n1}`;
 }
 
 function createVoxelMesh(size, material) {
@@ -180,12 +202,35 @@ function formatTolerance(value) {
 // --------------------------- Main Entry ---------------------------
 
 async function init() {
+  const harness = globalThis.__bridgeExt ?? (globalThis.__bridgeExt = {});
+  harness.tickCount = 0;
+  harness.lastError = null;
+  harness.ready = false;
+  harness.url = globalThis.location?.href ?? harness.url ?? '';
+  harness.console = [];
+
+  const logHook = (level, ...args) => {
+    try {
+      harness.console.push({ level, message: args.map((a) => String(a ?? '')).join(' '), time: Date.now() });
+      if (harness.console.length > 200) {
+        harness.console.splice(0, harness.console.length - 200);
+      }
+    } catch (err) {
+      // ignore logging errors
+    }
+  };
+  console.log = ((orig) => (...args) => { logHook('log', ...args); orig(...args); })(console.log.bind(console));
+  console.warn = ((orig) => (...args) => { logHook('warn', ...args); orig(...args); })(console.warn.bind(console));
+  console.error = ((orig) => (...args) => { logHook('error', ...args); orig(...args); })(console.error.bind(console));
+
   await RAPIER.init();
   const runtime = await loadStressSolver();
 
   const { scene, renderer, camera, controls } = initThree();
   const stats = new Stats();
+  try {
   document.body.appendChild(stats.dom);
+  } catch (_) {}
   const world = new RAPIER.World(new RAPIER.Vector3(0, GRAVITY_DEFAULT, 0));
 
   const bridge = buildBridge(scene, world, runtime);
@@ -195,6 +240,13 @@ async function init() {
   const clock = new THREE.Clock();
   function loop() {
     const delta = clock.getDelta();
+
+    const loopHarness = globalThis.__bridgeExt;
+    if (loopHarness) {
+      loopHarness.tickCount = (loopHarness.tickCount ?? 0) + 1;
+    loopHarness.overstressed = bridge.overstressed ?? 0;
+    loopHarness.actorCount = bridge.solver?.actorCount?.() ?? bridge.solver?.actors?.()?.length ?? null;
+    }
 
     // 1) Run Blast Ext solver and fracture if needed (bridge-local frame)
     updateBridgeLogical(bridge, delta);
@@ -216,21 +268,38 @@ async function init() {
 
     requestAnimationFrame(loop);
   }
+  harness.ready = true;
   loop();
 }
 
 init().catch((err) => {
   console.error('Failed to initialize bridge demo', err);
   pushEvent(`Initialization failed: ${err?.message ?? err}`);
+  const harness = globalThis.__bridgeExt ?? (globalThis.__bridgeExt = {});
+  harness.lastError = err?.stack ?? err?.message ?? String(err ?? 'Unknown error');
 });
 
 // --------------------------- Scene / Build ---------------------------
 
 function initThree() {
   const canvas = document.getElementById('bridge-canvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  let renderer = null;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.shadowMap.enabled = true;
+  } catch (err) {
+    const h = globalThis.__bridgeExt ?? (globalThis.__bridgeExt = {});
+    h.lastError = h.lastError ?? `Renderer init failed: ${err?.message ?? err}`;
+    // Fallback no-op renderer to keep logic running in headless CI
+    renderer = {
+      setPixelRatio: () => {},
+      setSize: () => {},
+      shadowMap: { enabled: false },
+      render: () => {},
+      domElement: canvas
+    };
+  }
 
   const initialWidth = canvas.clientWidth || window.innerWidth;
   const initialHeight = canvas.clientHeight || window.innerHeight;
@@ -262,6 +331,7 @@ function initThree() {
   ground.receiveShadow = true;
   scene.add(ground);
 
+  try {
   window.addEventListener('resize', () => {
     const width = canvas.clientWidth || window.innerWidth;
     const height = window.innerHeight - 1;
@@ -269,6 +339,7 @@ function initThree() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   });
+  } catch (_) {}
 
   return { scene, renderer, camera, controls };
 }
@@ -283,8 +354,10 @@ function buildBridge(scene, world, runtime) {
   settings.graphReductionLevel = 0;
   // const strengthScale = 10000000.0; // Strong
   // const strengthScale = 1.0; // Strong
-  const strengthScale = 0.6;
+  // const strengthScale = 0.6;
   // const strengthScale = 0.5;
+  const strengthScale = 0.05;
+
   applyStrengthScale(settings, BASE_LIMITS, strengthScale);
 
   // Ext solver instance
@@ -451,6 +524,11 @@ function buildBridge(scene, world, runtime) {
     return new THREE.Vector3(node.centroid.x, node.centroid.y, node.centroid.z);
   });
 
+  const actorMap = new Map();
+  solver.actors().forEach((actor) => {
+    actorMap.set(actor.actorIndex, { bodyHandle: bridgeBody.handle });
+  });
+
   // Core bridge state
   return {
     runtime,
@@ -487,7 +565,8 @@ function buildBridge(scene, world, runtime) {
     projectileColliderHandles: new Set(),
     activeContactColliders,
     pendingContactForces,
-    contactForceScratch: []
+    contactForceScratch: [],
+    actorMap
   };
 }
 
@@ -496,17 +575,14 @@ function buildBridge(scene, world, runtime) {
 function updateBridgeLogical(bridge, delta) {
   (void delta);
 
-  maybeRebuildSolver(bridge);
-
   const contactForces = gatherSolverForcesFromRapier(bridge);
   applyForcesAndSolve(bridge, contactForces);
 
-  // Choose/perform fractures if solver reports overstress
   if (bridge.overstressed > 0) {
-    attemptFractureFromDebug(bridge);
+    // console.log('    overstressed > 0', bridge.overstressed);
+    processSolverFractures(bridge);
   }
 
-  // Decay transient shock
   if (bridge.forceBoost > 1.0) {
     bridge.forceBoost = THREE.MathUtils.lerp(bridge.forceBoost, 1.0, Math.min(delta * 0.75, 1.0));
   }
@@ -519,29 +595,307 @@ function updateBridgeLogical(bridge, delta) {
   // updateStrengthDisplay(bridge);
 }
 
-function maybeRebuildSolver(bridge) {  
-  // Rebuild Blast solver with bond removed
-  // TODO: Rewrite this using 'generateFractureCommands' then apply the command
-  // which will splits the bond between chunks in the same solver
-  const remainingBonds = [];
-  for (let i = 0; i < bridge.scenario.bonds.length; ++i) {
-    if (bridge.bonds[i].active) remainingBonds.push(bridge.scenario.bonds[i]);
+function processSolverFractures(bridge) {
+  const { solver } = bridge;
+  if (!solver) {
+    return;
   }
 
-  // Check if the number of bonds is different in solver from the remaining bonds
-  if (bridge.solver.bondCount === remainingBonds.length) return;
+  const fractureSets = solver.generateFractureCommandsPerActor();
+  // console.log(`    fracture sets generated: ${fractureSets.length}`);
+  if (!Array.isArray(fractureSets) || fractureSets.length === 0) {
+    return;
+  }
 
-  console.log('maybeRebuildSolver', bridge.solver.bondCount, remainingBonds.length);
-  bridge.solver.destroy();
-  bridge.solver = bridge.runtime.createExtSolver({
-    nodes: bridge.solverNodes,
-    bonds: remainingBonds,
-    settings: bridge.settings
+  const splitResults = solver.applyFractureCommands(fractureSets);
+  // console.log(`    split results returned: ${splitResults.length}`);
+  // console.log(
+  //   `processSolverFractures: overstressed=${bridge.overstressed}, fractureSets.length=${Array.isArray(fractureSets) ? fractureSets.length : 0}, splitResults.length=${Array.isArray(splitResults) ? splitResults.length : 0}`,
+  //   {
+  //     fractureSets,
+  //     splitResults,
+  //     bridge
+  //   }
+  // );
+  if (!Array.isArray(splitResults) || splitResults.length === 0) {
+    return;
+  }
+
+  console.log(
+    `processSolverFractures: overstressed=${bridge.overstressed}, fractureSets.length=${Array.isArray(fractureSets) ? fractureSets.length : 0}, splitResults.length=${Array.isArray(splitResults) ? splitResults.length : 0}`,
+    {
+      fractureSets,
+      splitResults,
+      bridge
+    }
+  );
+
+  handleSplitEventsCore(bridge, splitResults, RAPIER, CONTACT_FORCE_THRESHOLD);
+  rebuildActorsFromSolver(bridge);
+  bridge.bonds.forEach((bond) => {
+    if (bond) {
+      bond.active = true;
+      bond.severity = 0;
+    }
+  });
+}
+
+function handleSplitEvents(bridge, splitResults) {
+  if (!Array.isArray(splitResults) || splitResults.length === 0) {
+    return;
+  }
+
+  const { solver } = bridge;
+  const chunkByNode = new Map();
+  bridge.chunks.forEach((chunk) => {
+    chunkByNode.set(chunk.nodeIndex, chunk);
   });
 
-  // Clear lines immediately
-  // bridge.debugHelper.currentLines = [];
-  // updateDebugLineObject(bridge.debugHelper, [], false);
+  // Snapshot current actor→body mapping for context
+  const actorMapSnapshot = [];
+  if (bridge.actorMap) {
+    for (const [actorIndex, entry] of bridge.actorMap.entries()) {
+      actorMapSnapshot.push({ actorIndex, bodyHandle: entry?.bodyHandle });
+    }
+  }
+  console.log(`    handleSplitEvents: split results length: ${splitResults.length}`, {
+    splitResults,
+    actorMap: actorMapSnapshot
+  });
+
+  splitResults.forEach((evt) => {
+    const parentActorIndex = evt?.parentActorIndex;
+    if (!Number.isInteger(parentActorIndex)) {
+      console.error('    handleSplitEvents: parent actor index not found', evt);
+      return;
+    }
+
+    const parentEntry = bridge.actorMap?.get(parentActorIndex);
+    if (!parentEntry) {
+      console.error('    handleSplitEvents: parent entry not found', parentActorIndex);
+      return;
+    }
+
+    const { bodyHandle: parentBodyHandle } = parentEntry;
+    const parentBody = parentBodyHandle != null ? bridge.world.getRigidBody(parentBodyHandle) : null;
+
+    // Gather chunks currently attached to the parent body (pre-move), to verify coverage
+    const prevChunksOnParent = [];
+    bridge.chunks.forEach((c) => {
+      if (c && c.bodyHandle === parentBodyHandle) prevChunksOnParent.push(c.nodeIndex);
+    });
+
+    const unionChildNodes = new Set();
+    const assignedNodes = new Set();
+    const missingChunkNodes = [];
+    const duplicateNodes = [];
+    const createdBodies = [];
+    const supportNodesSkipped = [];
+
+    // Detect if one of the children reuses the parent actor index; if so, we will keep the parent body
+    const parentChild = (evt.children ?? []).find((c) => c && c.actorIndex === parentActorIndex);
+
+    evt.children?.forEach((child) => {
+      if (!child || !Array.isArray(child.nodes) || child.nodes.length === 0) {
+        return;
+      }
+
+      let bodyHandle = null;
+      let body = null;
+
+      // Note: mapping might not exist for a newly-created child. If this child is the parent actor, reuse the parent body.
+      if (parentChild && child.actorIndex === parentActorIndex) {
+        body = parentBody;
+        bodyHandle = parentBodyHandle;
+      } else {
+        bodyHandle = bridge.actorMap?.get(child.actorIndex)?.bodyHandle;
+      }
+
+      if (bodyHandle != null) {
+        body = bridge.world.getRigidBody(bodyHandle);
+      }
+
+      if (!body) {
+        console.log('    handleSplitEvents: creating rigid body for child', {
+          childActorIndex: child.actorIndex,
+          nodeCount: child.nodes.length,
+          inferredBodyHandle: bodyHandle,
+          parentBodyHandle
+        });
+        // Spawn a new dynamic body at the parent's pose (if available) otherwise at chunk locale.
+        const spawnDesc = RAPIER.RigidBodyDesc.dynamic();
+        if (parentBody) {
+          const pt = parentBody.translation();
+          const pq = parentBody.rotation();
+          spawnDesc
+            .setTranslation(pt.x, pt.y, pt.z)
+            .setRotation(pq)
+            .setLinvel(parentBody.linvel().x, parentBody.linvel().y, parentBody.linvel().z)
+            .setAngvel(parentBody.angvel().x, parentBody.angvel().y, parentBody.angvel().z);
+        }
+
+        body = bridge.world.createRigidBody(spawnDesc);
+        bodyHandle = body.handle;
+
+        if (bridge.actorMap) {
+          bridge.actorMap.set(child.actorIndex, { bodyHandle });
+        }
+        createdBodies.push({ actorIndex: child.actorIndex, bodyHandle });
+        console.log('    handleSplitEvents: created rigid body', { actorIndex: child.actorIndex, bodyHandle });
+      }
+
+      // Sanity log for body handle type/shape
+      try {
+        const rawHandle = body && body.handle;
+        console.log('    handleSplitEvents: body handle sanity', {
+          actorIndex: child.actorIndex,
+          raw: rawHandle,
+          type: typeof rawHandle,
+          intCoerce: (typeof rawHandle === 'number') ? (rawHandle >>> 0) : null
+        });
+      } catch (e) {
+        console.warn('    handleSplitEvents: body handle sanity failed', e);
+      }
+
+      // Attach colliders for every visible chunk belonging to this child.
+      child.nodes.forEach((nodeIndex) => {
+        unionChildNodes.add(nodeIndex);
+        if (assignedNodes.has(nodeIndex)) {
+          duplicateNodes.push(nodeIndex);
+        }
+        assignedNodes.add(nodeIndex);
+        const chunk = chunkByNode.get(nodeIndex);
+        if (!chunk) {
+          missingChunkNodes.push(nodeIndex);
+          return;
+        }
+
+        // Skip supports: keep them on their own fixed bodies
+        if (chunk.isSupport) {
+          supportNodesSkipped.push(nodeIndex);
+          return;
+        }
+
+        if (chunk.colliderHandle != null) {
+          const oldHandle = chunk.colliderHandle;
+          const collider = bridge.world.getCollider(oldHandle);
+          if (collider) {
+            bridge.world.removeCollider(collider, false);
+          }
+          bridge.activeContactColliders.delete(oldHandle);
+          bridge.colliderToNode.delete(oldHandle);
+          chunk.colliderHandle = null;
+        }
+
+        // Ensure offsets are consistent on new body
+        if (chunk.localOffset && chunk.baseLocalOffset) {
+          chunk.localOffset.copy(chunk.baseLocalOffset);
+        }
+
+        const colliderDesc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
+          .setTranslation(chunk.baseLocalOffset.x, chunk.baseLocalOffset.y, chunk.baseLocalOffset.z)
+          .setFriction(1.0)
+          .setRestitution(0.0)
+          .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+          .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
+
+        const collider = bridge.world.createCollider(colliderDesc, body);
+        chunk.bodyHandle = bodyHandle;
+        chunk.colliderHandle = collider.handle;
+        chunk.detached = true;
+        chunk.active = true;
+        bridge.colliderToNode.set(collider.handle, chunk.nodeIndex);
+        bridge.activeContactColliders.add(collider.handle);
+
+        console.log('    handleSplitEvents: created collider for chunk', {
+          nodeIndex: chunk.nodeIndex,
+          actorIndex: child.actorIndex,
+          bodyHandle: chunk.bodyHandle,
+          colliderHandle: chunk.colliderHandle
+        });
+      });
+
+      if (bridge.actorMap) {
+        bridge.actorMap.set(child.actorIndex, { bodyHandle });
+      }
+    });
+
+    // Summary for this parent split
+    const notCovered = prevChunksOnParent.filter((n) => !assignedNodes.has(n));
+    console.log('    handleSplitEvents: split summary', {
+      parentActorIndex,
+      parentBodyHandle,
+      prevChunkCount: prevChunksOnParent.length,
+      childrenCount: evt.children?.length ?? 0,
+      unionChildNodes: unionChildNodes.size,
+      assignedNodes: assignedNodes.size,
+      missingChunkNodesCount: missingChunkNodes.length,
+      missingChunkNodes: missingChunkNodes.slice(0, 32),
+      duplicateNodesCount: duplicateNodes.length,
+      duplicateNodes: duplicateNodes.slice(0, 32),
+      supportNodesSkippedCount: supportNodesSkipped.length,
+      supportNodesSkipped: supportNodesSkipped.slice(0, 32),
+      notCoveredCount: notCovered.length,
+      notCovered: notCovered.slice(0, 32),
+      createdBodies
+    });
+
+    /*
+    // If the parent child exists, we keep the parent body and mapping. Otherwise, remove mapping/body.
+    if (!parentChild) {
+      if (bridge.actorMap) {
+        bridge.actorMap.delete(parentActorIndex);
+      }
+      // Safety: remove only if no chunk still references the parent body
+      const stillHasChunks = bridge.chunks.some((c) => c && c.bodyHandle === parentBodyHandle);
+      if (parentBody && !stillHasChunks) {
+        bridge.world.removeRigidBody(parentBody);
+      }
+    }
+    */
+  });
+
+  // Refresh solver actor table after the split to keep JS view in sync.
+  const actorsAfter = solver.actors();
+  const actorMapAfter = [];
+  if (bridge.actorMap) {
+    for (const [actorIndex, entry] of bridge.actorMap.entries()) {
+      actorMapAfter.push({ actorIndex, bodyHandle: entry?.bodyHandle });
+    }
+  }
+  console.log('    handleSplitEvents: solver actors after split', { actorsAfter, actorMapAfter });
+}
+
+function rebuildActorsFromSolver(bridge) {
+  const solverActors = bridge.solver.actors();
+  bridge.actorMap = bridge.actorMap ?? new Map();
+
+  const knownActorIndices = new Set();
+  solverActors.forEach((actor) => {
+    knownActorIndices.add(actor.actorIndex);
+  });
+
+  // Clean up stale entries in the actor map.
+  [...bridge.actorMap.keys()].forEach((key) => {
+    if (!knownActorIndices.has(key)) {
+      bridge.actorMap.delete(key);
+    }
+  });
+}
+
+function findBodyForNodes(bridge, nodes) {
+  const nodeSet = new Set(nodes);
+  const chunks = bridge.chunks.filter((chunk) => nodeSet.has(chunk.nodeIndex));
+  if (chunks.length === 0) {
+    return null;
+  }
+
+  const bodyHandle = chunks[0].bodyHandle;
+  if (!chunks.every((chunk) => chunk.bodyHandle === bodyHandle)) {
+    return null;
+  }
+
+  return bridge.world.getRigidBody(bodyHandle);
 }
 
 function advanceCarLogic(bridge, delta) {
@@ -576,8 +930,6 @@ function advanceCarLogic(bridge, delta) {
 
 function applyForcesAndSolve(bridge, solverForces) {
   const { solver } = bridge;
-  solver.reset();
-
   const gravity = bridge.gravity * 0.1;
 
   // Gravity (solver-local frame)
@@ -606,141 +958,6 @@ function applyForcesAndSolve(bridge, solverForces) {
   bridge.overstressed = solver.overstressedBondCount();
 
   updateBondStressFromSolver(bridge);
-}
-
-/**
- * TODO: Rewrite this using 'generateFractureCommands'
- */
-function attemptFractureFromDebug(bridge) {
-  // console.log('attemptFractureFromDebug', bridge);
-
-  // Pull Blast debug lines in bridge-local frame
-  const scale = solverSeverityScale(bridge);
-  const linesMax = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Max, scale });
-  const linesComp = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Compression, scale });
-  const linesTen = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Tension, scale });
-  const linesShear = bridge.solver.fillDebugRender({ mode: ExtDebugMode.Shear, scale });
-
-  // Build candidate map: bondIndex -> {score, mode}
-  const candidateByBond = new Map();
-
-  const consider = (line, mode) => {
-    const center = {
-      x: 0.5 * (line.p0.x + line.p1.x),
-      y: 0.5 * (line.p0.y + line.p1.y),
-      z: 0.5 * (line.p0.z + line.p1.z)
-    };
-    const bondIndex = nearestBondIndex(bridge, center);
-    if (bondIndex < 0) return;
-
-    const length = lineMagnitude(line);
-    const color = colorFromUint24(line.color0);
-    const redNorm = color.r / Math.max(color.r + color.g + color.b, 1e-6); // favor "hot" lines
-    const spacingX = Math.max(bridge.scenario.spacing.x, 1e-3);
-    const lenNorm = THREE.MathUtils.clamp(length / (spacingX * 1.25), 0, 2);
-
-    const score = 0.5 * lenNorm + 0.5 * redNorm;
-
-    const curr = candidateByBond.get(bondIndex);
-    if (!curr || score > curr.score) {
-      candidateByBond.set(bondIndex, { score, mode });
-    }
-  };
-
-  linesMax.forEach((l) => consider(l, 'max'));
-  linesComp.forEach((l) => consider(l, 'compression'));
-  linesTen.forEach((l) => consider(l, 'tension'));
-  linesShear.forEach((l) => consider(l, 'shear'));
-
-  if (candidateByBond.size === 0) return;
-
-  // Pick best not-yet-broken bond that has both chunks existing
-  const sorted = [...candidateByBond.entries()].sort((a, b) => b[1].score - a[1].score);
-  const maxFracture = 1
-  let fractured = 0;
-  for (const [bondIndex, info] of sorted) {
-    if (fractured >= maxFracture) break;
-
-    const bond = bridge.bonds[bondIndex];
-    if (!bond || !bond.active) continue;
-
-    const chunkA = findChunkForNode(bridge, bond.node0);
-    const chunkB = findChunkForNode(bridge, bond.node1);
-    if (!chunkA || !chunkB) continue; // skip support-only bonds
-
-    fractureBond(bridge, bondIndex, info.mode);
-    fractured++;
-    break;
-  }
-}
-
-function nearestBondIndex(bridge, center) {
-  // naive nearest lookup (bonds count is modest in typical scenarios)
-  let best = -1;
-  let bestDistSq = Infinity;
-  for (let i = 0; i < bridge.bonds.length; ++i) {
-    const b = bridge.bonds[i];
-    if (!b.active) continue;
-    const c = bridge.bondCentroids[i];
-    const dx = c.x - center.x;
-    const dy = c.y - center.y;
-    const dz = c.z - center.z;
-    const d2 = dx * dx + dy * dy + dz * dz;
-    if (d2 < bestDistSq) {
-      bestDistSq = d2;
-      best = i;
-    }
-  }
-  // small tolerance to avoid accidental mapping across the bridge
-  const tol = Math.pow(Math.max(bridge.scenario.spacing.x, 0.5) * 0.75, 2);
-  return bestDistSq <= tol ? best : -1;
-}
-
-function fractureBond(bridge, bondIndex, mode = 'overstress') {
-  const { world } = bridge;
-  const bond = bridge.bonds[bondIndex];
-  if (!bond || !bond.active) return;
-
-  const chunkA = findChunkForNode(bridge, bond.node0);
-  const chunkB = findChunkForNode(bridge, bond.node1);
-  if (!chunkA || !chunkB) return;
-
-  // Only split chunkB if all bonds associated with chunkB are broken/deactivated
-  const bondsForChunkB = bridge.bonds.filter(b => b.node0 === chunkB.node || b.node1 === chunkB.node);
-  const allBondsInactive = bondsForChunkB.every(b => !b.active);
-
-  // const allBondsInactive = true;
-  if (!allBondsInactive) {
-    return;
-  }
-
-  bond.active = false;
-  bond.severity = 0;
-  pushEvent(`Bond ${bond.node0}-${bond.node1} failed due to ${mode}`);
-
-  splitChunk(world, chunkB);
-
-  /*
-  updateBondTable(bridge.bonds);
-
-  // Rebuild Blast solver with bond removed
-  // TODO: Rewrite this using 'generateFractureCommands' then apply the command
-  // which will splits the bond between chunks in the same solver
-  const remainingBonds = [];
-  for (let i = 0; i < bridge.scenario.bonds.length; ++i) {
-    if (bridge.bonds[i].active) remainingBonds.push(bridge.scenario.bonds[i]);
-  }
-  bridge.solver.destroy();
-  bridge.solver = bridge.runtime.createExtSolver({
-    nodes: bridge.solverNodes,
-    bonds: remainingBonds,
-    settings: bridge.settings
-  });
-
-  // Clear lines immediately
-  bridge.debugHelper.currentLines = [];
-  updateDebugLineObject(bridge.debugHelper, [], false);
-  */
 }
 
 function splitChunk(world, chunk) {
@@ -800,13 +1017,14 @@ function syncMeshes(world, bridge) {
 
   bridge.chunks.forEach((chunk) => {
     if (!chunk.mesh) {
-      console.log('no mesh', chunk.nodeIndex, chunk.bodyHandle);
+      console.log(`No mesh found for chunk. nodeIndex: ${chunk.nodeIndex}, bodyHandle: ${chunk.bodyHandle}`);
       return;
     }
 
     const body = world.getRigidBody(chunk.bodyHandle);
     if (!body) {
-      console.log('no body', chunk.nodeIndex, chunk.bodyHandle);
+      // console.log(`No body found for chunk. nodeIndex: ${chunk.nodeIndex}, bodyHandle: ${chunk.bodyHandle}`, world.bodies.getAll());
+      console.log(`No body found for chunk.`);
       return;
     }
 
@@ -822,7 +1040,8 @@ function syncMeshes(world, bridge) {
     chunk.mesh.position.add(tmp);
 
     const stressValue = bridge.chunkStress?.get(chunk.nodeIndex) ?? 0;
-    const color = chunk.detached ? DETACHED_COLOR : chunkColorForSeverity(chunk, stressValue);
+    // const color = chunk.detached ? DETACHED_COLOR : chunkColorForSeverity(chunk, stressValue);
+    const color = chunkColorForSeverity(chunk, stressValue);
     if (chunk.mesh.material.color.r !== color.r || chunk.mesh.material.color.g !== color.g || chunk.mesh.material.color.b !== color.b) {
       chunk.mesh.material.color.copy(color);
     }
@@ -1141,8 +1360,8 @@ function spawnCuboidProjectile(world, bridge) {
   const body = world.createRigidBody(bodyDesc);
   const collider = world.createCollider(
     RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
-      // .setMass(100000000.0 * scale * scale)
-      .setMass(1000.0 * scale * scale)
+      .setMass(100000000.0 * scale * scale)
+      // .setMass(1000.0 * scale * scale)
       .setFriction(0.0)
       .setRestitution(0.0)
   , body);
@@ -1367,6 +1586,11 @@ function resetBridge(world, bridge) {
     settings: bridge.settings
   });
 
+  bridge.actorMap = new Map();
+  bridge.solver.actors().forEach((actor) => {
+    bridge.actorMap.set(actor.actorIndex, { bodyHandle: bridge.body.handle });
+  });
+
   // Clear debug/overlay
   bridge.iterationCount = 0;
   bridge.lastError = { lin: 0, ang: 0 };
@@ -1471,16 +1695,6 @@ function chunkColorForSeverity(chunk, severity) {
 }
 
 function processDebugLinesForSeverity(bridge, debugLines) {
-  /*
-  if (!debugLines || debugLines.length === 0) {
-    resetChunkColors(bridge);
-    return;
-  }
-  */
-  applyDebugStressToChunks(bridge, debugLines);
-}
-
-function applyDebugStressToChunks(bridge, debugLines) {
   const chunkStress = bridge.chunkStress ?? new Map();
   chunkStress.clear();
 
@@ -1544,12 +1758,10 @@ function applyDebugStressToChunks(bridge, debugLines) {
     const count = severityCountByNode.get(chunk.nodeIndex) ?? 0;
     const avgSeverity = count > 0 ? sum / Math.max(count, 1) : 0;
     chunk.stressSeverity = avgSeverity;
-    // chunk.stressSeverity = sum;
     chunkStress.set(chunk.nodeIndex, chunk.stressSeverity);
   });
 
   bridge.chunkStress = chunkStress;
-  // console.log('bridge.chunkStress', bridge.chunkStress);
 }
 
 function resetChunkColors(bridge) {
