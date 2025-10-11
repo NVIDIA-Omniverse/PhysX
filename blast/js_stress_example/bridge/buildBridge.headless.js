@@ -2,11 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { loadStressSolver } from '../stress.js';
 import { buildBridgeScenario } from '../extBridgeScenario.js';
 
-export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.05 } = {}) {
-  await RAPIER.init();
-  const runtime = await loadStressSolver();
-  const scenario = buildBridgeScenario();
-
+export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.05 }) {
   const settings = runtime.defaultExtSettings();
   settings.maxSolverIterationsPerFrame = 32;
   settings.graphReductionLevel = 0;
@@ -27,8 +23,6 @@ export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.05 
   settings.shearFatalLimit = BASE_LIMITS.shearFatalLimit * strengthScale;
 
   const solver = runtime.createExtSolver({ nodes: scenario.nodes, bonds: scenario.bonds, settings });
-  const world = new RAPIER.World({ x: 0, y: gravity, z: 0 });
-  world.RAPIER = RAPIER;
 
   const bridgeBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, 0, 0));
 
@@ -131,6 +125,15 @@ export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.05 
     overstressed: 0,
     topLayerNodeIndices
   };
+}
+
+export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.05 } = {}) {
+  await RAPIER.init();
+  const runtime = await loadStressSolver();
+  const scenario = buildBridgeScenario();
+  const world = new RAPIER.World({ x: 0, y: gravity, z: 0 });
+  world.RAPIER = RAPIER;
+  return createBridgeCore({ runtime, world, scenario, gravity, strengthScale });
 }
 
 

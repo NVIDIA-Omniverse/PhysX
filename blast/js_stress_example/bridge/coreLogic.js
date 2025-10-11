@@ -49,12 +49,33 @@ export function processSolverFractures(bridge, RAPIER, contactForceThreshold = 0
   }
 
   bridge._handleSplitEventsCount = (bridge._handleSplitEventsCount ?? 0) + 1;
-
-  // console.log('    processSolverFractures: splitResults', splitResults.length, splitResults);
+  // Normalize and record the split results for determinism/assertions in tests
+  try {
+    console.log('    processSolverFractures: splitResults', splitResults.length, splitResults);
+    console.log('    splitResults (json):', JSON.stringify(splitResults));
+    console.log('    fractureSets (json):', JSON.stringify(fractureSets));
+  
+    const normalized = normalizeSplitResults(splitResults);
+    if (!bridge._splitLog) bridge._splitLog = [];
+    bridge._splitLog.push(normalized);
+  } catch (_) {}
 
   handleSplitEvents(bridge, splitResults, RAPIER, contactForceThreshold);
   rebuildActorsFromSolver(bridge);
   return true;
+}
+
+export function normalizeSplitResults(splitResults) {
+  if (!Array.isArray(splitResults)) return [];
+  return splitResults.map((evt) => ({
+    parentActorIndex: evt?.parentActorIndex ?? -1,
+    children: (evt?.children ?? [])
+      .map((c) => ({
+        actorIndex: c?.actorIndex ?? -1,
+        nodes: Array.isArray(c?.nodes) ? [...c.nodes].sort((a, b) => a - b) : []
+      }))
+      .sort((a, b) => a.actorIndex - b.actorIndex)
+  }));
 }
 
 export function rebuildActorsFromSolver(bridge) {

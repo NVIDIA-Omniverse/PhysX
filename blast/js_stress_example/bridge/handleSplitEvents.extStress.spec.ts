@@ -33,14 +33,16 @@ describe('handleSplitEvents with ExtStressSolver-generated splits', () => {
     let broke = false;
     let handleCount = 0;
     for (let i = 0; i < 240; i++) {
-      updateLoadVehicle(bridge.world, bridge.car, 1/60);
+      // Match browser loop ordering: update dynamics → step world → drain → apply forces → process
       if (Math.random() < 0.02) bridge.projectiles.push(spawnProjectile(bridge.world, { kind: 'box' }));
       bridge.projectiles = updateProjectiles(bridge.world, bridge.projectiles, 1/60);
+      updateLoadVehicle(bridge.world, bridge.car, 1/60);
+
+      bridge.world.step(bridge.eventQueue);
+      drainContactForces(bridge);
 
       applyForcesAndSolve(bridge);
       if (bridge.overstressed > 0) processSolverFractures(bridge, bridge.world.RAPIER, 0.0);
-      bridge.world.step(bridge.eventQueue);
-      drainContactForces(bridge);
 
       handleCount = bridge._handleSplitEventsCount ?? 0;
       if (handleCount > 0) { broke = true; break; }

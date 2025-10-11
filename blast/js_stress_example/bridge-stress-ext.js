@@ -42,6 +42,7 @@ import {
 } from './bridge/dynamics.js';
 import { buildBridgeScenario } from './extBridgeScenario.js';
 import { updateBondTable } from './bridge/ui.js';
+import { createBridgeCore } from './bridge/buildBridge.headless.js';
 
 // --------------------------- Constants & UI ---------------------------
 
@@ -358,208 +359,94 @@ function initThree() {
 }
 
 function buildBridge(scene, world, runtime) {
-  // --- Build the new scenario (grid deck + supports) ---
-  const scenario = buildBridgeScenario(); // defaults are fine; tune as needed
-  const solverNodes = buildSolverNodesFromScenario(scenario);
-  const settings = runtime.defaultExtSettings();
-  // a bit more iterations by default
-  settings.maxSolverIterationsPerFrame = 32;
-  settings.graphReductionLevel = 0;
-  // const strengthScale = 10000000.0; // Strong
-  // const strengthScale = 1.0; // Strong
-  // const strengthScale = 0.6;
-  // const strengthScale = 0.5;
+  // Shared scenario and strength scale (must match headless)
+  const scenario = buildBridgeScenario();
   const strengthScale = 0.05;
 
-  applyStrengthScale(settings, BASE_LIMITS, strengthScale);
+  // Ensure world exposes Rapier for shared dynamics
+  world.RAPIER = RAPIER;
 
-  // Ext solver instance
-  let solver = runtime.createExtSolver({
-    nodes: solverNodes,
-    bonds: scenario.bonds,
-    settings
-  });
+  // Build core physics/solver identically to headless path
+  const core = createBridgeCore({ runtime, world, scenario, gravity: GRAVITY_DEFAULT, strengthScale });
 
-  // --- Rapier: one static parent body that holds all deck voxels until fracture ---
-  const bridgeBodyDesc = RAPIER.RigidBodyDesc.fixed()
-    .setTranslation(0, 0, 0)
-    .setCanSleep(false);
-  const bridgeBody = world.createRigidBody(bridgeBodyDesc);
+  // Materials for visuals
+  const deckMaterial = new THREE.MeshStandardMaterial({ color: 0x486fe3, roughness: 0.35, metalness: 0.45 });
+  const topMaterial = new THREE.MeshStandardMaterial({ color: 0x5b86ff, roughness: 0.28, metalness: 0.55 });
+  const supportMaterial = new THREE.MeshStandardMaterial({ color: 0x2f3e56, roughness: 0.6, metalness: 0.25 });
 
-  const deckMaterial = new THREE.MeshStandardMaterial({
-    color: 0x486fe3, roughness: 0.35, metalness: 0.45
-  });
-  const topMaterial = new THREE.MeshStandardMaterial({
-    color: 0x5b86ff, roughness: 0.28, metalness: 0.55
-  });
-  const supportMaterial = new THREE.MeshStandardMaterial({
-    color: 0x2f3e56, roughness: 0.6, metalness: 0.25
-  });
-
-  // Use scenario spacing to size voxels similar to your ext visualization
-  const spacing = scenario.spacing;
-  const chunks = [];
-  const meshByNode = new Map();
-  const supportChunks = [];
-  const colliderToNode = new Map();
-  const activeContactColliders = new Set();
-  const pendingContactForces = new Map();
-
-  // const nodeSizeScale = 0.9;
-  const nodeSizeScale = 1.0;
-
-  // Create colliders/meshes for deck nodes (iy >= 0). Supports get visual columns only.
-  scenario.nodes.forEach((node, nodeIndex) => {
-    const coord = scenario.gridCoordinates[nodeIndex];
-    if (!coord) return;
-
-    if (coord.iy >= 0) {
-      const sizeX = Math.max(spacing.x * nodeSizeScale, 0.25);
-      const sizeY = Math.max(spacing.y * nodeSizeScale, 0.2);
-      const sizeZ = scenario.widthSegments > 1
-        ? Math.max(spacing.z * nodeSizeScale, 0.25)
-        : Math.max(scenario.parameters.deckWidth * nodeSizeScale, 0.8);
-      const size = { x: sizeX, y: sizeY, z: sizeZ };
-
-      const mat = (coord.iy === scenario.thicknessLayers - 1) ? topMaterial : deckMaterial;
-      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: mat, isSupport: false });
-      chunks.push(chunk);
-      meshByNode.set(nodeIndex, chunk.mesh);
-      scene.add(chunk.mesh);
-
-      // Rapier collider on the single parent body (offset to node centroid)
-      const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
-        .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
-        // .setMass(10000.0)
-        // .setMass(node.mass ?? 1.0)
-        .setFriction(1.0)
-        .setRestitution(0.0)
-        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-        .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
-      const collider = world.createCollider(colliderDesc, bridgeBody);
-      collider.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS);
-      collider.setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
-      // Optional: give mass to voxels based on scenario.mass (Rapier sums densities)
-      // collider.setMass(node.mass ?? 1.0); // uncomment if you want heavier deck
-
-      chunk.colliderHandle = collider.handle;
-      chunk.bodyHandle = bridgeBody.handle;
-      colliderToNode.set(collider.handle, nodeIndex);
-      activeContactColliders.add(collider.handle);
-    } else if (coord.iy === -1) {
-      const sizeX = Math.max(spacing.x * 0.6, 0.4);
-      const sizeZ = scenario.widthSegments > 1
-        ? Math.max(spacing.z * 0.6, 0.4)
-        : Math.max(scenario.parameters.deckWidth * 0.4, 0.4);
-      const sizeY = scenario.parameters.pierHeight;
-      const size = { x: sizeX, y: sizeY, z: sizeZ };
-
-      const chunk = new BridgeChunk({ nodeIndex, centroid: node.centroid, size, material: supportMaterial.clone(), isSupport: true });
-      chunk.baseLocalOffset.set(0, 0, 0);
-      chunk.localOffset.set(0, 0, 0);
-      chunks.push(chunk);
-      meshByNode.set(nodeIndex, chunk.mesh);
-      scene.add(chunk.mesh);
-      supportChunks.push(chunk);
-
-      const supportBodyDesc = RAPIER.RigidBodyDesc.fixed()
-        .setTranslation(node.centroid.x, node.centroid.y, node.centroid.z)
-        .setCanSleep(false);
-      const supportBody = world.createRigidBody(supportBodyDesc);
-
-      const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
-        .setTranslation(0, 0, 0)
-        .setFriction(1.0)
-        .setRestitution(0.0)
-        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-        .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
-      const collider = world.createCollider(colliderDesc, supportBody);
-      collider.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS);
-      collider.setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
-
-      chunk.bodyHandle = supportBody.handle;
-      chunk.colliderHandle = collider.handle;
-      colliderToNode.set(collider.handle, nodeIndex);
-      activeContactColliders.add(collider.handle);
-    }
-  });
-
-  // Bonds (we mirror scenario.bonds with active flags)
-  const bonds = scenario.bonds.map((b, i) => new BridgeBond({
-    index: i,
-    node0: b.node0,
-    node1: b.node1,
-    centroid: b.centroid
-  }));
-
-  // Rapier ground
-  const groundBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
-  world.createCollider(RAPIER.ColliderDesc.cuboid(20, 0.5, 20)
-    .setTranslation(0, -4, 0)
-    .setFriction(1.0)
-    .setRestitution(0.0)
-  , groundBody);
-
-  // Rapier debug overlay
+  // Rapier debug overlay and Blast debug helper
   const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: false });
-
-  // Blast debug helper (line segments)
   const debugHelper = createDebugLineHelper();
   scene.add(debugHelper.object);
 
-  // Load vehicle (Rapier)
-  // Ensure world exposes Rapier for shared dynamics
-  world.RAPIER = RAPIER;
-  const car = spawnCar(world, { bodyDescFactory: () => RAPIER.RigidBodyDesc.dynamic(), scene, THREE });
+  // Attach meshes to core chunks (no new colliders/bodies created here!)
+  const meshByNode = new Map();
+  const supportChunks = [];
+  core.chunks.forEach((chunk) => {
+    const coord = scenario.gridCoordinates[chunk.nodeIndex];
+    const mat = chunk.isSupport
+      ? supportMaterial.clone()
+      : ((coord && coord.iy === scenario.thicknessLayers - 1) ? topMaterial : deckMaterial);
+    const mesh = createVoxelMesh(chunk.size, mat);
+    chunk.mesh = mesh;
+    chunk.baseWorldPosition = new THREE.Vector3(
+      chunk.baseLocalOffset.x, chunk.baseLocalOffset.y, chunk.baseLocalOffset.z
+    );
+    chunk.baseLocalOffset = new THREE.Vector3(
+      chunk.baseLocalOffset.x, chunk.baseLocalOffset.y, chunk.baseLocalOffset.z
+    );
+    chunk.localOffset = chunk.baseLocalOffset.clone();
+    chunk.baseColor = mesh.material.color.clone();
+    scene.add(mesh);
+    meshByNode.set(chunk.nodeIndex, mesh);
+    if (chunk.isSupport) supportChunks.push(chunk);
+  });
 
-  // Projectile list
+  // Bonds (mirror scenario for UI)
+  const bonds = scenario.bonds.map((b, i) => new BridgeBond({ index: i, node0: b.node0, node1: b.node1, centroid: b.centroid }));
+
+  // Rapier ground
+  const groundBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(20, 0.5, 20).setTranslation(0, -4, 0).setFriction(1.0).setRestitution(0.0),
+    groundBody
+  );
+
+  // Load vehicle (Rapier) and projectiles list
+  const car = spawnCar(world, { bodyDescFactory: () => RAPIER.RigidBodyDesc.dynamic(), scene, THREE });
   const projectiles = [];
 
   // Overlays
   pushEvent(`Bridge scenario loaded with ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`);
   updateBondTable(bonds);
 
-  // Rapier event queue for contact forces
-  const eventQueue = new RAPIER.EventQueue(true);
-
   const topLayerNodeIndices = scenario.topColumnNodes.reduce((acc, column) => {
     if (!Array.isArray(column)) return acc;
-    column.forEach((nodeIndex) => {
-      if (Number.isInteger(nodeIndex)) {
-        acc.push(nodeIndex);
-      }
-    });
+    column.forEach((nodeIndex) => { if (Number.isInteger(nodeIndex)) acc.push(nodeIndex); });
     return acc;
   }, []);
   const topLayerNodePositions = topLayerNodeIndices.map((nodeIndex) => {
     const node = scenario.nodes[nodeIndex];
-    if (!node?.centroid) {
-      return null;
-    }
+    if (!node?.centroid) return null;
     return new THREE.Vector3(node.centroid.x, node.centroid.y, node.centroid.z);
   });
 
-  const actorMap = new Map();
-  solver.actors().forEach((actor) => {
-    actorMap.set(actor.actorIndex, { bodyHandle: bridgeBody.handle });
-  });
-
-  // Core bridge state
+  // Compose bridge state (physics from core + browser visuals)
   return {
     runtime,
     world,
     scene,
-    solverNodes,
-    settings,
-    solver,
+    solverNodes: buildSolverNodesFromScenario(scenario),
+    settings: core.settings,
+    solver: core.solver,
     scenario,
-    chunks,
+    chunks: core.chunks,
     bonds,
     meshByNode,
-    body: bridgeBody,
+    body: core.body,
     car,
     projectiles,
-    eventQueue,
+    eventQueue: core.eventQueue,
     supports: supportChunks,
     gravity: GRAVITY_DEFAULT,
     strengthScale,
@@ -572,16 +459,15 @@ function buildBridge(scene, world, runtime) {
     debugEnabled: false,
     debugHelper,
     debugRenderer,
-    // caches for mapping lines -> bonds quickly
     bondCentroids: scenario.bonds.map((b) => new THREE.Vector3(b.centroid.x, b.centroid.y, b.centroid.z)),
     topLayerNodeIndices,
     topLayerNodePositions,
-    colliderToNode,
+    colliderToNode: core.colliderToNode,
     projectileColliderHandles: new Set(),
-    activeContactColliders,
-    pendingContactForces,
+    activeContactColliders: core.activeContactColliders,
+    pendingContactForces: core.pendingContactForces,
     contactForceScratch: [],
-    actorMap
+    actorMap: core.actorMap
   };
 }
 
@@ -1897,6 +1783,26 @@ function updateProjectiles(world, bridge, delta) {
     proj.mesh.position.set(t.x, t.y, t.z);
     proj.mesh.quaternion.set(q.x, q.y, q.z, q.w);
   });
+
+  // Prune stale projectile collider handles from contact tracking to avoid Rapier errors
+  if (bridge.projectileColliderHandles && bridge.activeContactColliders) {
+    const stillAlive = new Set();
+    bridge.projectiles.forEach((p) => {
+      if (p?.colliderHandle != null) stillAlive.add(p.colliderHandle);
+    });
+    const toDelete = [];
+    bridge.projectileColliderHandles.forEach((h) => {
+      const exists = world.getCollider(h) != null;
+      if (!exists || !stillAlive.has(h)) {
+        toDelete.push(h);
+      }
+    });
+    toDelete.forEach((h) => {
+      bridge.projectileColliderHandles.delete(h);
+      bridge.activeContactColliders.delete(h);
+      if (bridge.colliderToNode) bridge.colliderToNode.delete(h);
+    });
+  }
 }
 
 function fireProjectile(world, bridge) {
