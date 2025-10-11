@@ -29,6 +29,17 @@ import {
   ExtDebugMode,
   ExtForceMode
 } from './stress.js';
+import {
+  applyForcesAndSolve as coreApplyForcesAndSolve,
+  processSolverFractures as coreProcessSolverFractures,
+  drainContactForces as coreDrainContactForces
+} from './bridge/coreLogic.js';
+import {
+  spawnLoadVehicle as spawnCar,
+  updateLoadVehicle as updateCar,
+  spawnProjectile as spawnProj,
+  updateProjectiles as updateProjList
+} from './bridge/dynamics.js';
 import { buildBridgeScenario } from './extBridgeScenario.js';
 import { updateBondTable } from './bridge/ui.js';
 
@@ -244,23 +255,25 @@ async function init() {
     const loopHarness = globalThis.__bridgeExt;
     if (loopHarness) {
       loopHarness.tickCount = (loopHarness.tickCount ?? 0) + 1;
-    loopHarness.overstressed = bridge.overstressed ?? 0;
-    loopHarness.actorCount = bridge.solver?.actorCount?.() ?? bridge.solver?.actors?.()?.length ?? null;
+      loopHarness.overstressed = bridge.overstressed ?? 0;
+      loopHarness.actorCount = bridge.solver?.actorCount?.() ?? bridge.solver?.actors?.()?.length ?? null;
     }
 
-    // 1) Run Blast Ext solver and fracture if needed (bridge-local frame)
-    updateBridgeLogical(bridge, delta);
+    // 1) Update dynamics to produce contacts
+    updateProjectiles(world, bridge, delta);
+    // updateCar(world, bridge.car, delta);
 
-    // 2) Step Rapier world & sync visuals
+    // 2) Step Rapier and drain contact forces into solver-space
     world.step(bridge.eventQueue);
-    drainContactForces(bridge);
+    coreDrainContactForces(bridge);
     if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
 
-    syncMeshes(world, bridge);
-    updateProjectiles(world, bridge, delta);
-    updateLoadVehicle(world, bridge, delta);
+    // 3) Solve stresses and handle splits using shared logic
+    updateBridgeLogical(bridge, delta);
 
-    renderDebugLines(bridge); // show Blast lines in world space
+    // 4) Visuals
+    renderDebugLines(bridge);
+    syncMeshes(world, bridge);
 
     controls.update();
     renderer.render(scene, camera);
@@ -495,7 +508,9 @@ function buildBridge(scene, world, runtime) {
   scene.add(debugHelper.object);
 
   // Load vehicle (Rapier)
-  const car = spawnLoadVehicle(world, scene);
+  // Ensure world exposes Rapier for shared dynamics
+  world.RAPIER = RAPIER;
+  const car = spawnCar(world, { bodyDescFactory: () => RAPIER.RigidBodyDesc.dynamic(), scene, THREE });
 
   // Projectile list
   const projectiles = [];
@@ -575,12 +590,12 @@ function buildBridge(scene, world, runtime) {
 function updateBridgeLogical(bridge, delta) {
   (void delta);
 
-  const contactForces = gatherSolverForcesFromRapier(bridge);
-  applyForcesAndSolve(bridge, contactForces);
+  // const contactForces = gatherSolverForcesFromRapier(bridge);
+  // console.log('    updateBridgeLogical: contactForces', contactForces.length, contactForces);
+  coreApplyForcesAndSolve(bridge);
 
   if (bridge.overstressed > 0) {
-    // console.log('    overstressed > 0', bridge.overstressed);
-    processSolverFractures(bridge);
+    coreProcessSolverFractures(bridge, RAPIER, CONTACT_FORCE_THRESHOLD);
   }
 
   if (bridge.forceBoost > 1.0) {
@@ -1053,7 +1068,7 @@ function syncMeshes(world, bridge) {
 
   // Sync car mesh to its body
   const car = bridge.car;
-  if (car) {
+  if (car && car.mesh) {
     const b = world.getRigidBody(car.bodyHandle);
     if (b) {
       const t = b.translation();
@@ -1300,18 +1315,7 @@ function spawnLoadVehicle(world, scene) {
   };
 }
 
-function updateLoadVehicle(world, bridge, delta) {
-  return;
-
-  const car = bridge.car;
-  if (!car) return;
-  const body = world.getRigidBody(car.bodyHandle);
-  if (!body) return;
-
-  // keep some forward velocity (world), let physics handle contacts
-  const v = body.linvel();
-  body.setLinvel({ x: car.speed * car.direction, y: v.y, z: v.z }, true);
-}
+// use shared dynamics update (no-op here as we move car in tests via shared code)
 
 function spawnBallProjectile(world, bridge) {
   // Fire from above the bridge, aiming downward
@@ -1361,10 +1365,12 @@ function spawnCuboidProjectile(world, bridge) {
   const collider = world.createCollider(
     RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
       .setMass(100000000.0 * scale * scale)
-      // .setMass(1000.0 * scale * scale)
       .setFriction(0.0)
       .setRestitution(0.0)
-  , body);
+      .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+      .setContactForceEventThreshold(0.0),
+    body
+  );
   body.setLinvel({ x: (Math.random() - 0.5) * 5, y: 0 * -PROJECTILE_SPEED, z: (Math.random() - 0.5) * 5 }, true);
 
   const material = new THREE.MeshStandardMaterial({ color: 0xff9147, emissive: 0x552211 });
@@ -1380,6 +1386,7 @@ function spawnCuboidProjectile(world, bridge) {
     ttl: 12
   });
   bridge.projectileColliderHandles.add(collider.handle);
+  if (bridge.activeContactColliders) bridge.activeContactColliders.add(collider.handle);
 
   // Also apply a transient shock in the solver side
   // bridge.forceBoost = Math.min(bridge.forceBoost + 0.75, 6.0);
@@ -1389,30 +1396,7 @@ function spawnCuboidProjectile(world, bridge) {
 // For now, spawnProjectile is an alias for spawnCuboidProjectile
 const spawnProjectile = spawnCuboidProjectile;
 
-function updateProjectiles(world, bridge, delta) {
-  const remaining = [];
-  bridge.projectiles.forEach((proj) => {
-    const body = world.getRigidBody(proj.bodyHandle);
-    if (!body) {
-      proj.mesh?.removeFromParent();
-      bridge.projectileColliderHandles.delete(proj.colliderHandle);
-      return;
-    }
-    proj.ttl -= delta;
-    const t = body.translation();
-    if (proj.ttl <= 0 || t.y < -20) {
-      world.removeRigidBody(body);
-      proj.mesh?.removeFromParent();
-      bridge.projectileColliderHandles.delete(proj.colliderHandle);
-      return;
-    }
-    proj.mesh.position.set(t.x, t.y, t.z);
-    const q = body.rotation();
-    proj.mesh.quaternion.set(q.x, q.y, q.z, q.w);
-    remaining.push(proj);
-  });
-  bridge.projectiles = remaining;
-}
+// visual updates kept, physics list maintenance via shared updateProjList
 
 // --------------------------- UI / HUD ---------------------------
 
@@ -1471,7 +1455,7 @@ function setupControls(world, bridge) {
 
   // Fire projectile
   if (controlsUI.fireButton) {
-    controlsUI.fireButton.addEventListener('click', () => spawnProjectile(world, bridge));
+    controlsUI.fireButton.addEventListener('click', () => fireProjectile(world, bridge));
   }
 
   // Reset
@@ -1898,4 +1882,37 @@ function gatherSolverForcesFromRapier(bridge) {
 
   pendingContactForces.clear();
   return results;
+}
+
+// visual updates kept, physics list maintenance via shared updateProjList
+function updateProjectiles(world, bridge, delta) {
+  // physics list maintenance
+  bridge.projectiles = updateProjList(world, bridge.projectiles, delta);
+  // visuals
+  bridge.projectiles.forEach((proj) => {
+    const body = world.getRigidBody(proj.bodyHandle);
+    if (!body || !proj.mesh) return;
+    const t = body.translation();
+    const q = body.rotation();
+    proj.mesh.position.set(t.x, t.y, t.z);
+    proj.mesh.quaternion.set(q.x, q.y, q.z, q.w);
+  });
+}
+
+function fireProjectile(world, bridge) {
+  const p = spawnProj(world, { kind: 'box' });
+  // create matching mesh
+  const size = { x: 1.2, y: 1.2, z: 1.2 };
+  const material = new THREE.MeshStandardMaterial({ color: 0xff9147, emissive: 0x552211 });
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), material);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  const body = world.getRigidBody(p.bodyHandle);
+  if (body) {
+    const t = body.translation();
+    mesh.position.set(t.x, t.y, t.z);
+  }
+  bridge.scene.add(mesh);
+  bridge.projectiles.push({ ...p, mesh });
+  bridge.projectileColliderHandles.add(p.colliderHandle);
+  if (bridge.activeContactColliders) bridge.activeContactColliders.add(p.colliderHandle);
 }

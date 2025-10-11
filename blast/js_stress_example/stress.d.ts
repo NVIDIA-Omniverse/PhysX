@@ -374,6 +374,12 @@ export class ExtStressSolver {
    * Query fracture commands produced by the last update. Optionally limit copies.
    */
   generateFractureCommands(options?: { maxBonds?: number }): ExtStressFractureResult;
+  /** Snapshot the current actor table (actor index + owned nodes). */
+  actors(): Array<{ actorIndex: number; nodes: number[] }>;
+  /** Generate fracture commands for each actor individually. */
+  generateFractureCommandsPerActor(): Array<{ actorIndex: number; fractures: ExtStressBondFracture[] }>;
+  /** Apply per-actor fracture commands and return split information. */
+  applyFractureCommands(fractureSets: Array<{ actorIndex: number; fractures: ExtStressBondFracture[] }>): SplitEvent[];
   /**
    * Return the force/torque that should be applied to an actor after bond failure.
    *
@@ -490,4 +496,9 @@ export interface Vec3 {
   x: number;
   y: number;
   z: number;
+}
+
+export interface SplitEvent {
+  parentActorIndex: number;
+  children: Array<{ actorIndex: number; nodes: number[] }>;
 }

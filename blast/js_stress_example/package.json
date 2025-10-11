@@ -4,10 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "npm run build && npm run demo && npm run demo:ext && npm run demo:ext-cube && npm run demo:ext-bridge",
     "build": "node ./scripts/build.js",
+    "build:debug": "EMCC_PROFILING=1 EMCC_ASSERTIONS=1 node ./scripts/build.js",
     "demo": "npm run build --silent && node ./demo.js",
     "demo:ext": "npm run build --silent && node ./ext-demo.js",
     "demo:ext-cube": "npm run build --silent && node ./ext-cube-projectile.js",
-    "demo:ext-bridge": "npm run build --silent && node ./ext-bridge-cars.js"
+    "demo:ext-bridge": "npm run build --silent && node ./ext-bridge-cars.js",
+    "test:bridge-ui": "npx playwright test tests/stress.spec.js",
+    "test:bridge-ui:headed": "npx playwright test tests/stress.spec.js --headed --project=chromium",
+    "test:bridge-ui:ui": "npx playwright test tests/stress.spec.js --ui",
+    "test:split": "vitest run bridge/handleSplitEvents.spec.ts bridge/handleSplitEvents.multiple.spec.ts bridge/handleSplitEvents.bridgeScenario.spec.ts bridge/handleSplitEvents.extStress.spec.ts bridge/organicSplit.spec.ts",
+    "test:split:watch": "vitest"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "vitest": "^3.2.4"
   }
 }

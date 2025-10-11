@@ -57,6 +57,10 @@ const exportedFunctions = [
   '_ext_stress_solver_overstressed_bond_count',
   '_ext_stress_solver_fill_debug_render',
   '_ext_stress_solver_generate_fracture_commands',
+  '_ext_stress_solver_actor_count',
+  '_ext_stress_solver_collect_actors',
+  '_ext_stress_solver_generate_fracture_commands_per_actor',
+  '_ext_stress_solver_apply_fracture_commands',
   '_ext_stress_solver_get_excess_forces',
   '_ext_stress_solver_get_linear_error',
   '_ext_stress_solver_get_angular_error',
@@ -67,9 +71,15 @@ const exportedFunctions = [
   '_ext_stress_sizeof_ext_debug_line',
   '_ext_stress_sizeof_ext_bond_fracture',
   '_ext_stress_sizeof_ext_fracture_commands',
+  '_ext_stress_sizeof_actor',
+  '_ext_stress_sizeof_actor_buffer',
+  '_ext_stress_sizeof_ext_split_event',
   '_malloc',
   '_free'
 ];
+
+const enableAssertions = process.env.EMCC_ASSERTIONS !== '0';
+const enableProfiling = process.env.EMCC_PROFILING === '1';
 
 const exportedRuntimeMethods = [
   'cwrap',
@@ -134,6 +144,16 @@ const commonArgs = [
   `-sEXPORTED_FUNCTIONS=[${exportedFunctions.map((fn) => `"${fn}"`).join(',')}]`,
   `-sEXPORTED_RUNTIME_METHODS=[${exportedRuntimeMethods.map((name) => `"${name}"`).join(',')}]`
 ];
+
+if (enableAssertions) {
+  console.log('Building with assertions');
+  commonArgs.push('-sASSERTIONS=1');
+}
+
+if (enableProfiling) {
+  console.log('Building with profiling symbols');
+  commonArgs.push('--profiling');
+}
 
 const builds = [
   {

@@ -265,7 +265,9 @@ function createRuntime(module) {
     extSettings: module.ccall('ext_stress_sizeof_ext_settings', 'number', [], []),
     extDebugLine: module.ccall('ext_stress_sizeof_ext_debug_line', 'number', [], []),
     extBondFracture: module.ccall('ext_stress_sizeof_ext_bond_fracture', 'number', [], []),
-    extFractureCommands: module.ccall('ext_stress_sizeof_ext_fracture_commands', 'number', [], [])
+    extFractureCommands: module.ccall('ext_stress_sizeof_ext_fracture_commands', 'number', [], []),
+    extActor: module.ccall('ext_stress_sizeof_actor_buffer', 'number', [], []),
+    extSplitEvent: module.ccall('ext_stress_sizeof_ext_split_event', 'number', [], [])
   };
 
   const memory = new ModuleMemory(module);
@@ -775,6 +777,77 @@ class ExtStressSolver {
     return this.module.ccall('ext_stress_solver_overstressed_bond_count', 'number', ['number'], [this.handle]) >>> 0;
   }
 
+  actorCount() {
+    if (!this.handle) {
+      return 0;
+    }
+    return this.module.ccall('ext_stress_solver_actor_count', 'number', ['number'], [this.handle]) >>> 0;
+  }
+
+
+  actors() {
+    if (!this.handle) {
+      return [];
+    }
+
+    const actorCount = this.actorCount();
+    if (actorCount === 0) {
+      return [];
+    }
+
+    const actorStructSize = this.sizes.extActor;
+    const actorPtr = this.memory.alloc(actorStructSize * actorCount);
+    const nodesPtr = this.memory.alloc(this.nodeCount * 4);
+    const actorCountPtr = this.memory.alloc(4);
+    const nodeCountPtr = this.memory.alloc(4);
+
+    try {
+      this.module.ccall(
+        'ext_stress_solver_collect_actors',
+        'number',
+        ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+        [
+          this.handle,
+          actorPtr,
+          actorCount,
+          nodesPtr,
+          this.nodeCount,
+          actorCountPtr,
+          nodeCountPtr
+        ]
+      );
+
+      const actualActorCount = this.memory.view().getUint32(actorCountPtr, true);
+      const view = this.memory.view();
+      const heapU32 = this.module.HEAPU32;
+      const actors = [];
+
+      for (let i = 0; i < actualActorCount; ++i) {
+        const base = actorPtr + i * actorStructSize;
+        const actorIndex = view.getUint32(base, true);
+        const nodesAddress = view.getUint32(base + 4, true);
+        const nodeCount = view.getUint32(base + 8, true);
+
+        const nodes = [];
+        if (nodesAddress) {
+          const offset = nodesAddress >>> 2;
+          for (let n = 0; n < nodeCount; ++n) {
+            nodes.push(heapU32[offset + n]);
+          }
+        }
+
+        actors.push({ actorIndex, nodes });
+      }
+
+      return actors;
+    } finally {
+      this.memory.free(actorPtr);
+      this.memory.free(nodesPtr);
+      this.memory.free(actorCountPtr);
+      this.memory.free(nodeCountPtr);
+    }
+  }
+
   generateFractureCommands({ maxBonds = this._fractureCapacity } = {}) {
     if (!this.handle || !this._fracturePtr || !this._fractureCommandsPtr || maxBonds === 0) {
       return { fractures: [], truncated: false, result: FractureResult.None };
@@ -802,6 +875,210 @@ class ExtStressSolver {
       truncated: result === FractureResult.Truncated,
       result
     };
+  }
+
+  generateFractureCommandsPerActor() {
+    if (!this.handle) {
+      return [];
+    }
+
+    const actorCount = Math.max(1, this.actorCount());
+    const commandPtr = this.memory.alloc(this.sizes.extFractureCommands * actorCount);
+    const bondPtr = this.memory.alloc(this.sizes.extBondFracture * this.bondCount);
+    const commandCountPtr = this.memory.alloc(4);
+    const bondCountPtr = this.memory.alloc(4);
+
+    try {
+      this.module.ccall(
+        'ext_stress_solver_generate_fracture_commands_per_actor',
+        'number',
+        ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+        [
+          this.handle,
+          commandPtr,
+          actorCount,
+          bondPtr,
+          this.bondCount,
+          commandCountPtr,
+          bondCountPtr
+        ]
+      );
+
+      const commandCount = this.memory.view().getUint32(commandCountPtr, true);
+      const commands = [];
+      const view = this.memory.view();
+
+      for (let i = 0; i < commandCount; ++i) {
+        const base = commandPtr + i * this.sizes.extFractureCommands;
+        const actorIndex = view.getUint32(base, true);
+        const fracturesPtr = view.getUint32(base + 4, true);
+        const fractureCount = view.getUint32(base + 8, true);
+
+        const fractures = [];
+        for (let f = 0; f < fractureCount; ++f) {
+          const structBase = fracturesPtr + f * this.sizes.extBondFracture;
+          fractures.push({
+            userdata: view.getUint32(structBase, true),
+            nodeIndex0: view.getUint32(structBase + 4, true),
+            nodeIndex1: view.getUint32(structBase + 8, true),
+            health: view.getFloat32(structBase + 12, true)
+          });
+        }
+
+        commands.push({ actorIndex, fractures });
+      }
+
+      return commands;
+    } finally {
+      this.memory.free(commandPtr);
+      this.memory.free(bondPtr);
+      this.memory.free(commandCountPtr);
+      this.memory.free(bondCountPtr);
+    }
+  }
+
+  applyFractureCommands(fractureSets) {
+    if (!this.handle || !Array.isArray(fractureSets) || fractureSets.length === 0) {
+      return [];
+    }
+
+    const commandStructSize = this.sizes.extFractureCommands;
+    const bondStructSize = this.sizes.extBondFracture;
+    const splitEventSize = this.sizes.extSplitEvent;
+    const actorStructSize = this.sizes.extActor;
+
+    // Estimate total bonds to size the buffer. Fall back to bondCapacity if unknown.
+    let totalBonds = 0;
+    fractureSets.forEach((set) => {
+      totalBonds += set?.fractures?.length ?? 0;
+    });
+    totalBonds = Math.max(totalBonds, 1);
+    const baseCapacity = Math.max(this.nodeCount, 1);
+    let childCapacity = Math.max(baseCapacity, fractureSets.length + 1);
+    let nodeCapacity = baseCapacity;
+    let splitEvents = [];
+    let status = 0;
+    let attempts = 0;
+    const maxAttempts = 4;
+
+    do {
+      const commandPtr = this.memory.alloc(commandStructSize * fractureSets.length);
+      const bondPtr = this.memory.alloc(bondStructSize * totalBonds);
+      const splitPtr = this.memory.alloc(splitEventSize * fractureSets.length);
+      const childPtr = this.memory.alloc(actorStructSize * childCapacity);
+      const nodesPtr = this.memory.alloc(nodeCapacity * 4);
+      const eventCountPtr = this.memory.alloc(4);
+      const childCountPtr = this.memory.alloc(4);
+      const nodeCountPtr = this.memory.alloc(4);
+
+      try {
+        const commandView = this.memory.view();
+        let bondOffset = 0;
+
+        fractureSets.forEach((set, idx) => {
+          const fractures = set?.fractures ?? [];
+          const cmdBase = commandPtr + idx * commandStructSize;
+          commandView.setUint32(cmdBase, set?.actorIndex >>> 0, true);
+          commandView.setUint32(cmdBase + 8, fractures.length >>> 0, true);
+          const fractureBase = bondPtr + bondOffset * bondStructSize;
+          commandView.setUint32(cmdBase + 4, fractureBase >>> 0, true);
+
+          fractures.forEach((fracture, fIdx) => {
+            const base = fractureBase + fIdx * bondStructSize;
+            commandView.setUint32(base, fracture.userdata >>> 0, true);
+            commandView.setUint32(base + 4, fracture.nodeIndex0 >>> 0, true);
+            commandView.setUint32(base + 8, fracture.nodeIndex1 >>> 0, true);
+            commandView.setFloat32(base + 12, fracture.health ?? 0, true);
+          });
+
+          bondOffset += fractures.length;
+        });
+
+        commandView.setUint32(eventCountPtr, 0, true);
+        commandView.setUint32(childCountPtr, 0, true);
+        commandView.setUint32(nodeCountPtr, 0, true);
+
+        status = this.module.ccall(
+          'ext_stress_solver_apply_fracture_commands',
+          'number',
+          ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+          [
+            this.handle,
+            commandPtr,
+            fractureSets.length >>> 0,
+            splitPtr,
+            fractureSets.length >>> 0,
+            childPtr,
+            childCapacity >>> 0,
+            eventCountPtr,
+            childCountPtr,
+            nodesPtr,
+            nodeCapacity >>> 0,
+            nodeCountPtr
+          ]
+        );
+
+        const eventCount = commandView.getUint32(eventCountPtr, true);
+        const childCount = commandView.getUint32(childCountPtr, true);
+
+        const heapU32 = this.module.HEAPU32;
+        const parsedEvents = [];
+        for (let i = 0; i < eventCount; ++i) {
+          const base = splitPtr + i * splitEventSize;
+          const parentActorIndex = commandView.getUint32(base, true);
+          const childCountForEvent = commandView.getUint32(base + 8, true);
+          const childAddress = commandView.getUint32(base + 4, true);
+
+          const children = [];
+          if (childAddress) {
+            const childIndex = childAddress >>> 2;
+            for (let c = 0; c < childCountForEvent; ++c) {
+              const actorBase = childPtr + (childIndex - (childPtr >>> 2) + c) * actorStructSize;
+              const actorIndex = commandView.getUint32(actorBase, true);
+              const nodesAddress = commandView.getUint32(actorBase + 4, true);
+              const nodeCount = commandView.getUint32(actorBase + 8, true);
+              const nodes = [];
+              if (nodesAddress) {
+                const nodeOffset = nodesAddress >>> 2;
+                for (let n = 0; n < nodeCount; ++n) {
+                  nodes.push(heapU32[nodeOffset + n]);
+                }
+              }
+              children.push({ actorIndex, nodes });
+            }
+          }
+
+          parsedEvents.push({ parentActorIndex, children });
+        }
+
+        if (status !== 2) {
+          splitEvents = parsedEvents;
+        }
+      } finally {
+        this.memory.free(commandPtr);
+        this.memory.free(bondPtr);
+        this.memory.free(splitPtr);
+        this.memory.free(childPtr);
+        this.memory.free(nodesPtr);
+        this.memory.free(eventCountPtr);
+        this.memory.free(childCountPtr);
+        this.memory.free(nodeCountPtr);
+      }
+
+      if (status === 2) {
+        attempts += 1;
+        childCapacity = Math.min(baseCapacity * 4, childCapacity * 2);
+        nodeCapacity = Math.min(baseCapacity * 4, nodeCapacity * 2);
+      } else {
+        break;
+      }
+    } while (attempts < maxAttempts);
+
+    if (status === 2) {
+      console.warn('[ExtStressSolver] applyFractureCommands: output truncated; consider enlarging buffers.');
+    }
+
+    return splitEvents;
   }
 
   getExcessForces(actorIndex, centerOfMass = vec3()) {

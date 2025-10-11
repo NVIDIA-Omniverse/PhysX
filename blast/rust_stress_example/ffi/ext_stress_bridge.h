@@ -50,9 +50,22 @@ typedef struct ExtStressBondFracture {
 } ExtStressBondFracture;
 
 typedef struct ExtStressFractureCommands {
+    uint32_t actorIndex;
     ExtStressBondFracture* bondFractures;
     uint32_t bondFractureCount;
 } ExtStressFractureCommands;
+
+typedef struct ExtStressActor {
+    uint32_t actorIndex;
+    const uint32_t* nodes;
+    uint32_t nodeCount;
+} ExtStressActor;
+
+typedef struct ExtStressSplitEvent {
+    uint32_t parentActorIndex;
+    ExtStressActor* children;
+    uint32_t childCount;
+} ExtStressSplitEvent;
 
 ExtStressSolverHandle* ext_stress_solver_create(const ExtStressNodeDesc* nodes,
                                                 uint32_t node_count,
@@ -95,6 +108,37 @@ uint8_t ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle
                                                      ExtStressBondFracture* bond_buffer,
                                                      uint32_t max_bonds);
 
+uint32_t ext_stress_solver_actor_count(const ExtStressSolverHandle* handle);
+
+uint8_t ext_stress_solver_collect_actors(const ExtStressSolverHandle* handle,
+                                         ExtStressActor* actor_buffer,
+                                         uint32_t actor_capacity,
+                                         uint32_t* nodes_buffer,
+                                         uint32_t nodes_capacity,
+                                         uint32_t* out_actor_count,
+                                         uint32_t* out_node_count);
+
+uint8_t ext_stress_solver_generate_fracture_commands_per_actor(const ExtStressSolverHandle* handle,
+                                                               ExtStressFractureCommands* command_buffer,
+                                                               uint32_t command_capacity,
+                                                               ExtStressBondFracture* bond_buffer,
+                                                               uint32_t bond_capacity,
+                                                               uint32_t* out_command_count,
+                                                               uint32_t* out_bond_count);
+
+uint8_t ext_stress_solver_apply_fracture_commands(ExtStressSolverHandle* handle,
+                                                  const ExtStressFractureCommands* command_buffer,
+                                                  uint32_t command_count,
+                                                  ExtStressSplitEvent* events_buffer,
+                                                  uint32_t event_capacity,
+                                                  ExtStressActor* child_buffer,
+                                                  uint32_t child_capacity,
+                                                  uint32_t* out_event_count,
+                                                  uint32_t* out_child_count,
+                                                  uint32_t* nodes_buffer,
+                                                  uint32_t nodes_capacity,
+                                                  uint32_t* out_node_count);
+
 uint8_t ext_stress_solver_get_excess_forces(const ExtStressSolverHandle* handle,
                                             uint32_t actor_index,
                                             const StressVec3* center_of_mass,
@@ -113,6 +157,9 @@ uint32_t ext_stress_sizeof_ext_settings();
 uint32_t ext_stress_sizeof_ext_debug_line();
 uint32_t ext_stress_sizeof_ext_bond_fracture();
 uint32_t ext_stress_sizeof_ext_fracture_commands();
+uint32_t ext_stress_sizeof_actor();
+uint32_t ext_stress_sizeof_actor_buffer();
+uint32_t ext_stress_sizeof_ext_split_event();
 
 #ifdef __cplusplus
 }
