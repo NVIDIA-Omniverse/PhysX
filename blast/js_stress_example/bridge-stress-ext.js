@@ -265,7 +265,23 @@ async function init() {
     // updateCar(world, bridge.car, delta);
 
     // 2) Step Rapier and drain contact forces into solver-space
-    world.step(bridge.eventQueue);
+    // If we just handled splits, do one safe step without events to let BVH settle
+    if (bridge._justSplitFrames && bridge._justSplitFrames > 0) {
+      world.step();
+      bridge._justSplitFrames -= 1;
+      // After a safe step, remove any colliders we only disabled to avoid BVH panics
+      if (bridge.disabledCollidersToRemove && bridge.disabledCollidersToRemove.size > 0) {
+        for (const h of Array.from(bridge.disabledCollidersToRemove)) {
+          const c = world.getCollider(h);
+          if (c) world.removeCollider(c, false);
+          bridge.disabledCollidersToRemove.delete(h);
+        }
+      }
+    } else {
+      // Sweep tracking collections so the eventful step cannot see stale handles
+      try { const { sweepBeforeEventfulStep } = await import('./bridge/coreLogic.js'); sweepBeforeEventfulStep(bridge); } catch (_) {}
+      world.step(bridge.eventQueue);
+    }
     coreDrainContactForces(bridge);
     if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
 

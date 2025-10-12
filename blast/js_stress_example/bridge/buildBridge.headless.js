@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { loadStressSolver } from '../stress.js';
 import { buildBridgeScenario } from '../extBridgeScenario.js';
 
-export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.05 }) {
+export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.03 }) {
   const settings = runtime.defaultExtSettings();
   settings.maxSolverIterationsPerFrame = 32;
   settings.graphReductionLevel = 0;
@@ -127,7 +127,7 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
   };
 }
 
-export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.05 } = {}) {
+export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.03 } = {}) {
   await RAPIER.init();
   const runtime = await loadStressSolver();
   const scenario = buildBridgeScenario();

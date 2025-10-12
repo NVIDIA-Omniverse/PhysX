@@ -61,8 +61,151 @@ export function processSolverFractures(bridge, RAPIER, contactForceThreshold = 0
   } catch (_) {}
 
   handleSplitEvents(bridge, splitResults, RAPIER, contactForceThreshold);
+  // After splits, sweep and disable any colliders that lost a parent/body (parry BVH safety)
+  try {
+    if (bridge.activeContactColliders && bridge.colliderToNode) {
+      const toDisable = [];
+      bridge.activeContactColliders.forEach((h) => {
+        const col = bridge.world.getCollider(h);
+        if (!col || !col.parent()) toDisable.push(h);
+      });
+      toDisable.forEach((h) => {
+        const col = bridge.world.getCollider(h);
+        if (col) col.setEnabled(false);
+        bridge.activeContactColliders.delete(h);
+        bridge.colliderToNode.delete(h);
+      });
+    }
+  } catch (_) {}
+
+  // Optional: full Rapier rebuild after split to avoid BVH edge cases
+  if (bridge._rebuildOnSplit) {
+    try { rebuildRapierAfterSplit(bridge); } catch (e) { console.warn('rebuildRapierAfterSplit failed', e); }
+  }
+  // After any split, run one safe physics step without events to let BVH settle
+  bridge._justSplitFrames = Math.max(bridge._justSplitFrames ?? 0, 1);
+  // Reset EventQueue to drop stale events referencing old handles
+  try {
+    const R = bridge.world?.RAPIER;
+    if (R) bridge.eventQueue = new R.EventQueue(true);
+  } catch (_) {}
+  // Stricter invariant sweep for colliders/actorMap
+  try {
+    const world = bridge.world;
+    if (Array.isArray(bridge.chunks)) {
+      for (const chunk of bridge.chunks) {
+        const h = chunk?.colliderHandle;
+        if (h == null) continue;
+        const c = world.getCollider(h);
+        const parent = c ? c.parent() : undefined;
+        const body = parent != null ? world.getRigidBody(parent) : undefined;
+        if (!c || (c.isEnabled && !c.isEnabled()) || !body) {
+          chunk.colliderHandle = undefined;
+          if (chunk.active !== undefined) chunk.active = false;
+        }
+      }
+    }
+    if (bridge.actorMap && typeof bridge.actorMap.forEach === 'function') {
+      for (const [actorIndex, entry] of Array.from(bridge.actorMap.entries())) {
+        const body = world.getRigidBody(entry?.bodyHandle);
+        if (!body) bridge.actorMap.delete(actorIndex);
+      }
+    }
+  } catch (_) {}
   rebuildActorsFromSolver(bridge);
   return true;
+}
+
+export function rebuildRapierAfterSplit(bridge) {
+  const R = bridge.world.RAPIER;
+  const oldWorld = bridge.world;
+  const gravity = oldWorld.gravity ?? { x: 0, y: -9.81, z: 0 };
+  const newWorld = new R.World(gravity);
+  newWorld.RAPIER = R;
+  const newEventQueue = new R.EventQueue(true);
+
+  const colliderToNode = new Map();
+  const activeContactColliders = new Set();
+
+  // Root fixed body for any non-detached deck chunks
+  const rootBody = newWorld.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, 0, 0).setCanSleep(false));
+
+  // Helper to create collider on body
+  const createChunkCollider = (chunk, body) => {
+    const halfX = (chunk.size?.x ?? 1) * 0.5;
+    const halfY = (chunk.size?.y ?? 1) * 0.5;
+    const halfZ = (chunk.size?.z ?? 1) * 0.5;
+    const tx = chunk.baseLocalOffset?.x ?? 0;
+    const ty = chunk.baseLocalOffset?.y ?? 0;
+    const tz = chunk.baseLocalOffset?.z ?? 0;
+    const col = newWorld.createCollider(
+      R.ColliderDesc.cuboid(halfX, halfY, halfZ)
+        .setTranslation(tx, ty, tz)
+        .setFriction(1.0)
+        .setRestitution(0.0)
+        .setActiveEvents(R.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(0.0),
+      body
+    );
+    chunk.bodyHandle = body.handle;
+    chunk.colliderHandle = col.handle;
+    colliderToNode.set(col.handle, chunk.nodeIndex);
+    activeContactColliders.add(col.handle);
+  };
+
+  // Create supports first (fixed at their world position)
+  (bridge.chunks ?? []).forEach((chunk) => {
+    if (!chunk || !chunk.isSupport) return;
+    const pos = chunk.baseWorldPosition ?? { x: 0, y: 0, z: 0 };
+    const body = newWorld.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(pos.x, pos.y, pos.z).setCanSleep(false));
+    // supports have local offset at 0,0,0
+    const save = chunk.baseLocalOffset; chunk.baseLocalOffset = { x: 0, y: 0, z: 0 };
+    createChunkCollider(chunk, body);
+    // restore
+    chunk.baseLocalOffset = save;
+  });
+
+  // Create deck chunks: detached → dynamic body at old body's pose; else attach to root
+  (bridge.chunks ?? []).forEach((chunk) => {
+    if (!chunk || chunk.isSupport) return;
+    if (chunk.detached) {
+      const oldBody = oldWorld.getRigidBody(chunk.bodyHandle);
+      const t = oldBody?.translation?.();
+      const r = oldBody?.rotation?.();
+      const bodyDesc = R.RigidBodyDesc.dynamic()
+        .setTranslation(t?.x ?? 0, t?.y ?? 0, t?.z ?? 0)
+        .setRotation(r ?? { x: 0, y: 0, z: 0, w: 1 })
+        .setLinearDamping(oldBody?.linearDamping?.() ?? 0.4)
+        .setAngularDamping(oldBody?.angularDamping?.() ?? 1.0);
+      const body = newWorld.createRigidBody(bodyDesc);
+      if (oldBody) {
+        const lv = oldBody.linvel?.(); const av = oldBody.angvel?.();
+        if (lv) body.setLinvel({ x: lv.x, y: lv.y, z: lv.z }, true);
+        if (av) body.setAngvel({ x: av.x, y: av.y, z: av.z }, true);
+      }
+      createChunkCollider(chunk, body);
+    } else {
+      createChunkCollider(chunk, rootBody);
+    }
+  });
+
+  // Swap in new world and event queue
+  bridge.world = newWorld;
+  bridge.eventQueue = newEventQueue;
+  bridge.activeContactColliders = activeContactColliders;
+  bridge.colliderToNode = colliderToNode;
+  // Update root body reference used by other systems
+  bridge.body = rootBody;
+  // Reset pending contact forces (handles from old world are invalid)
+  bridge.pendingContactForces = new Map();
+  // Reset actorMap body handles to safe root (will be refined by future splits)
+  if (bridge.actorMap) {
+    const remap = new Map();
+    bridge.actorMap.forEach((entry, key) => {
+      remap.set(key, { bodyHandle: rootBody.handle });
+    });
+    bridge.actorMap = remap;
+  }
 }
 
 export function normalizeSplitResults(splitResults) {
@@ -116,6 +259,12 @@ export function drainContactForces(bridge) {
       if (handle == null || !activeContactColliders.has(handle)) return;
 
       const collider = world.getCollider(handle);
+      if (!collider) {
+        // Prune stale handle
+        activeContactColliders.delete(handle);
+        colliderToNode.delete(handle);
+        return;
+      }
       const bodyHandle = collider?.parent()?.handle;
       const body = bodyHandle != null ? world.getRigidBody(bodyHandle) : undefined;
       const bodyTranslation = body?.translation?.();
@@ -217,4 +366,38 @@ export function gatherSolverForcesFromRapier(bridge) {
   return results;
 }
 
+
+// Drop invalid collider handles from tracking collections before an eventful step
+export function sweepBeforeEventfulStep(bridge) {
+  try {
+    const world = bridge.world;
+    if (!world) return;
+
+    if (bridge.activeContactColliders && typeof bridge.activeContactColliders.forEach === 'function') {
+      for (const h of Array.from(bridge.activeContactColliders)) {
+        const c = world.getCollider(h);
+        const parent = c ? c.parent() : undefined;
+        const body = parent != null ? world.getRigidBody(parent) : undefined;
+        if (!c || (c.isEnabled && !c.isEnabled()) || !body) {
+          bridge.activeContactColliders.delete(h);
+          bridge.colliderToNode?.delete?.(h);
+          bridge.pendingContactForces?.delete?.(h);
+        }
+      }
+    }
+
+    if (bridge.colliderToNode && typeof bridge.colliderToNode.forEach === 'function') {
+      for (const [h] of Array.from(bridge.colliderToNode.entries())) {
+        const c = world.getCollider(h);
+        const parent = c ? c.parent() : undefined;
+        const body = parent != null ? world.getRigidBody(parent) : undefined;
+        if (!c || (c.isEnabled && !c.isEnabled()) || !body) {
+          bridge.colliderToNode.delete(h);
+          bridge.activeContactColliders?.delete?.(h);
+          bridge.pendingContactForces?.delete?.(h);
+        }
+      }
+    }
+  } catch (_) {}
+}
 
