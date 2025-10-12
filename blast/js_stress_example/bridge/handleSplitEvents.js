@@ -12,6 +12,9 @@ export function handleSplitEvents(bridge, splitResults, RAPIER, contactForceThre
   });
 
   const rebuildMode = !!bridge._rebuildOnSplit;
+  // Initialize deferred queues when not rebuilding
+  if (!rebuildMode && !Array.isArray(bridge.pendingBodiesToCreate)) bridge.pendingBodiesToCreate = [];
+  if (!rebuildMode && !Array.isArray(bridge.pendingColliderMigrations)) bridge.pendingColliderMigrations = [];
 
   splitResults.forEach((evt) => {
     const parentActorIndex = evt?.parentActorIndex;
@@ -57,24 +60,14 @@ export function handleSplitEvents(bridge, splitResults, RAPIER, contactForceThre
       }
 
       if (!rebuildMode) {
-        if (!body) {
-          const rapier = bridge.world?.RAPIER ?? RAPIER;
-          const spawnDesc = rapier.RigidBodyDesc.dynamic();
-          if (parentBody) {
-            const pt = parentBody.translation();
-            const pq = parentBody.rotation();
-            spawnDesc
-              .setTranslation(pt.x, pt.y, pt.z)
-              .setRotation(pq)
-              .setLinvel(parentBody.linvel().x, parentBody.linvel().y, parentBody.linvel().z)
-              .setAngvel(parentBody.angvel().x, parentBody.angvel().y, parentBody.angvel().z);
-          }
-
-          body = bridge.world.createRigidBody(spawnDesc);
-          bodyHandle = body.handle;
-          if (bridge.actorMap) {
-            bridge.actorMap.set(child.actorIndex, { bodyHandle });
-          }
+        // Phase 1 (split frame, no RB creation/removal): queue body creation; keep mapping to parent
+        bridge.pendingBodiesToCreate.push({
+          actorIndex: child.actorIndex,
+          inheritFromBodyHandle: parentBodyHandle,
+          nodes: Array.isArray(child.nodes) ? child.nodes.slice() : []
+        });
+        if (bridge.actorMap) {
+          bridge.actorMap.set(child.actorIndex, { bodyHandle: parentBodyHandle });
         }
       } else {
         // In rebuild mode, we only update the logical mapping; colliders/bodies will be recreated in the new world
@@ -103,44 +96,13 @@ export function handleSplitEvents(bridge, splitResults, RAPIER, contactForceThre
           // Clear old handle to avoid accidental reuse
           chunk.colliderHandle = null;
         } else {
-          if (chunk.colliderHandle != null) {
-            const oldHandle = chunk.colliderHandle;
-            const collider = bridge.world.getCollider(oldHandle);
-            if (collider) {
-              collider.setEnabled(false);
-            }
-            bridge.activeContactColliders?.delete?.(oldHandle);
-            bridge.colliderToNode?.delete?.(oldHandle);
-            if (!bridge.disabledCollidersToRemove) bridge.disabledCollidersToRemove = new Set();
-            bridge.disabledCollidersToRemove.add(oldHandle);
-            chunk.colliderHandle = null;
-          }
-
+          // Phase 1: don’t migrate colliders yet; keep them on the parent, but mark chunk as detached
           if (chunk.localOffset && chunk.baseLocalOffset) {
             chunk.localOffset.copy?.(chunk.baseLocalOffset);
           }
-
-          const halfX = (chunk.size?.x ?? 1) * 0.5;
-          const halfY = (chunk.size?.y ?? 1) * 0.5;
-          const halfZ = (chunk.size?.z ?? 1) * 0.5;
-          const tx = chunk.baseLocalOffset?.x ?? 0;
-          const ty = chunk.baseLocalOffset?.y ?? 0;
-          const tz = chunk.baseLocalOffset?.z ?? 0;
-
-          const colliderDesc = RAPIER.ColliderDesc.cuboid(halfX, halfY, halfZ)
-            .setTranslation(tx, ty, tz)
-            .setFriction(1.0)
-            .setRestitution(0.0)
-            .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-            .setContactForceEventThreshold(contactForceThreshold);
-
-          const collider = bridge.world.createCollider(colliderDesc, body);
-          chunk.bodyHandle = bodyHandle;
-          chunk.colliderHandle = collider.handle;
           chunk.detached = true;
           chunk.active = true;
-          bridge.colliderToNode?.set?.(collider.handle, chunk.nodeIndex);
-          bridge.activeContactColliders?.add?.(collider.handle);
+          // Keep chunk.bodyHandle as-is until Phase 2 when the new body exists
         }
       });
     });

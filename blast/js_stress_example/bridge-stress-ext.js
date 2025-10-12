@@ -32,7 +32,8 @@ import {
 import {
   applyForcesAndSolve as coreApplyForcesAndSolve,
   processSolverFractures as coreProcessSolverFractures,
-  drainContactForces as coreDrainContactForces
+  drainContactForces as coreDrainContactForces,
+  sweepBeforeEventfulStep
 } from './bridge/coreLogic.js';
 import {
   spawnLoadVehicle as spawnCar,
@@ -253,6 +254,9 @@ async function init() {
   function loop() {
     const delta = clock.getDelta();
 
+    // Always use the current world reference (may change after rebuilds)
+    const worldNow = bridge.world;
+
     const loopHarness = globalThis.__bridgeExt;
     if (loopHarness) {
       loopHarness.tickCount = (loopHarness.tickCount ?? 0) + 1;
@@ -261,36 +265,102 @@ async function init() {
     }
 
     // 1) Update dynamics to produce contacts
-    updateProjectiles(world, bridge, delta);
+    updateProjectiles(worldNow, bridge, delta);
     // updateCar(world, bridge.car, delta);
 
-    // 2) Step Rapier and drain contact forces into solver-space
-    // If we just handled splits, do one safe step without events to let BVH settle
+    // 2) Solve stresses and handle splits first so the next physics step can be safe if needed
+    updateBridgeLogical(bridge, delta);
+
+    // 3) Step Rapier and then drain contact forces into solver-space
     if (bridge._justSplitFrames && bridge._justSplitFrames > 0) {
-      world.step();
+      // Safe step without events right after splits
+      worldNow.step();
       bridge._justSplitFrames -= 1;
-      // After a safe step, remove any colliders we only disabled to avoid BVH panics
+      // Complete any deferred collider migrations after the safe step
+      // Phase 2a: create deferred rigid bodies for children
+      if (Array.isArray(bridge.pendingBodiesToCreate) && bridge.pendingBodiesToCreate.length > 0) {
+        const pendingBodies = bridge.pendingBodiesToCreate;
+        bridge.pendingBodiesToCreate = [];
+        const R = worldNow.RAPIER;
+        for (const pb of pendingBodies) {
+          const inherit = worldNow.getRigidBody(pb.inheritFromBodyHandle);
+          const spawnDesc = R.RigidBodyDesc.dynamic();
+          if (inherit) {
+            const pt = inherit.translation(); const pq = inherit.rotation();
+            spawnDesc
+              .setTranslation(pt.x, pt.y, pt.z)
+              .setRotation(pq)
+              .setLinvel(inherit.linvel().x, inherit.linvel().y, inherit.linvel().z)
+              .setAngvel(inherit.angvel().x, inherit.angvel().y, inherit.angvel().z);
+          }
+          const body = worldNow.createRigidBody(spawnDesc);
+          if (bridge.actorMap) bridge.actorMap.set(pb.actorIndex, { bodyHandle: body.handle });
+          // Queue collider migrations for all nodes of this actor
+          if (!Array.isArray(bridge.pendingColliderMigrations)) bridge.pendingColliderMigrations = [];
+          for (const nodeIndex of (pb.nodes || [])) {
+            bridge.pendingColliderMigrations.push({ nodeIndex, targetBodyHandle: body.handle });
+          }
+        }
+      }
+      // Phase 2b: migrate colliders
+      if (Array.isArray(bridge.pendingColliderMigrations) && bridge.pendingColliderMigrations.length > 0) {
+        const pending = bridge.pendingColliderMigrations;
+        bridge.pendingColliderMigrations = [];
+        const R = worldNow.RAPIER;
+        const byNode = new Map();
+        (bridge.chunks ?? []).forEach((ch) => { if (ch) byNode.set(ch.nodeIndex, ch); });
+        for (const mig of pending) {
+          const chunk = byNode.get(mig.nodeIndex);
+          if (!chunk) continue;
+          if (chunk.colliderHandle != null) {
+            const oldC = worldNow.getCollider(chunk.colliderHandle);
+            if (oldC) oldC.setEnabled(false);
+            bridge.activeContactColliders?.delete?.(chunk.colliderHandle);
+            bridge.colliderToNode?.delete?.(chunk.colliderHandle);
+            if (!bridge.disabledCollidersToRemove) bridge.disabledCollidersToRemove = new Set();
+            bridge.disabledCollidersToRemove.add(chunk.colliderHandle);
+            chunk.colliderHandle = null;
+          }
+          const halfX = (chunk.size?.x ?? 1) * 0.5;
+          const halfY = (chunk.size?.y ?? 1) * 0.5;
+          const halfZ = (chunk.size?.z ?? 1) * 0.5;
+          const tx = chunk.baseLocalOffset?.x ?? 0;
+          const ty = chunk.baseLocalOffset?.y ?? 0;
+          const tz = chunk.baseLocalOffset?.z ?? 0;
+          const body = worldNow.getRigidBody(mig.targetBodyHandle);
+          if (!body) continue;
+          const desc = R.ColliderDesc.cuboid(halfX, halfY, halfZ)
+            .setTranslation(tx, ty, tz)
+            .setFriction(1.0)
+            .setRestitution(0.0)
+            .setActiveEvents(R.ActiveEvents.CONTACT_FORCE_EVENTS)
+            .setContactForceEventThreshold(0.0);
+          const col = worldNow.createCollider(desc, body);
+          chunk.bodyHandle = mig.targetBodyHandle;
+          chunk.colliderHandle = col.handle;
+          bridge.colliderToNode?.set?.(col.handle, chunk.nodeIndex);
+          bridge.activeContactColliders?.add?.(col.handle);
+        }
+      }
+      // Remove any disabled colliders after completing migrations
       if (bridge.disabledCollidersToRemove && bridge.disabledCollidersToRemove.size > 0) {
         for (const h of Array.from(bridge.disabledCollidersToRemove)) {
-          const c = world.getCollider(h);
-          if (c) world.removeCollider(c, false);
+          const c = worldNow.getCollider(h);
+          if (c) worldNow.removeCollider(c, false);
           bridge.disabledCollidersToRemove.delete(h);
         }
       }
     } else {
-      // Sweep tracking collections so the eventful step cannot see stale handles
-      try { const { sweepBeforeEventfulStep } = await import('./bridge/coreLogic.js'); sweepBeforeEventfulStep(bridge); } catch (_) {}
-      world.step(bridge.eventQueue);
+      // Eventful step with a pre-sweep for stale handles
+      sweepBeforeEventfulStep(bridge);
+      worldNow.step(bridge.eventQueue);
     }
     coreDrainContactForces(bridge);
     if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
 
-    // 3) Solve stresses and handle splits using shared logic
-    updateBridgeLogical(bridge, delta);
-
     // 4) Visuals
     renderDebugLines(bridge);
-    syncMeshes(world, bridge);
+    syncMeshes(worldNow, bridge);
 
     controls.update();
     renderer.render(scene, camera);
@@ -938,11 +1008,16 @@ function syncMeshes(world, bridge) {
       return;
     }
 
-    const body = world.getRigidBody(chunk.bodyHandle);
+    let body = world.getRigidBody(chunk.bodyHandle);
     if (!body) {
-      // console.log(`No body found for chunk. nodeIndex: ${chunk.nodeIndex}, bodyHandle: ${chunk.bodyHandle}`, world.bodies.getAll());
-      console.log(`No body found for chunk.`);
+      // Fallback to root body after rebuilds or during transient frames
+      const root = bridge.body ? world.getRigidBody(bridge.body.handle) : null;
+      if (root) {
+        chunk.bodyHandle = bridge.body.handle;
+        body = root;
+      } else {
       return;
+      }
     }
 
     const p = body.translation();

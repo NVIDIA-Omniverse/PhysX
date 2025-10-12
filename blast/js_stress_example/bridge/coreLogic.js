@@ -82,13 +82,15 @@ export function processSolverFractures(bridge, RAPIER, contactForceThreshold = 0
   if (bridge._rebuildOnSplit) {
     try { rebuildRapierAfterSplit(bridge); } catch (e) { console.warn('rebuildRapierAfterSplit failed', e); }
   }
-  // After any split, run one safe physics step without events to let BVH settle
-  bridge._justSplitFrames = Math.max(bridge._justSplitFrames ?? 0, 1);
+  // After any split, run two safe physics steps without events to let BVH settle fully
+  bridge._justSplitFrames = Math.max(bridge._justSplitFrames ?? 0, 2);
   // Reset EventQueue to drop stale events referencing old handles
   try {
     const R = bridge.world?.RAPIER;
     if (R) bridge.eventQueue = new R.EventQueue(true);
   } catch (_) {}
+  // Clear any pending contact forces accumulated with stale handles
+  try { bridge.pendingContactForces?.clear?.(); } catch (_) {}
   // Stricter invariant sweep for colliders/actorMap
   try {
     const world = bridge.world;
