@@ -56,7 +56,8 @@ export class RapierDebugRenderer {
       return;
     }
 
-    const buffers = this.world.debugRender();
+    // Pass 0 as filterFlags to avoid WASM error with undefined
+    const buffers = this.world.debugRender(0);
     if (!buffers) {
       return;
     }

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bridge Stress Solver Demo</title>
+    <link rel="stylesheet" href="./styles/bridge-demo.css" />
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "/vendor/three/build/three.module.js",
+            "three/addons/": "/vendor/three/examples/jsm/",
+            "@dimforge/rapier3d-compat": "/vendor/rapier/rapier.mjs",
+            "@dimforge/rapier3d-debug": "/vendor/rapier-debug/rapier.mjs"
+          }
+        }
+    </script>  
+    </head>
+  <body>
+    <main class="layout">
+      <section class="viewport">
+        <canvas id="bridge-canvas"></canvas>
+        <div id="overlay" class="overlay"></div>
+      </section>
+      <aside class="sidebar">
+        <header>
+          <h1>Split-on-Contact Demo</h1>
+          <p id="bridge-summary">
+            Click anywhere to drop balls onto the bridge. When a ball hits a bridge segment,
+            that segment detaches and becomes an independent dynamic body. This demonstrates
+            safe collider migration from a compound fixed body to individual dynamic bodies.
+          </p>
+        </header>
+        <details class="controls-collapsible" open>
+          <summary>Controls</summary>
+          <div class="controls">
+            <label class="control">
+              <span>Gravity (m/s²)</span>
+              <input type="range" id="gravity-slider" min="-30" max="-1" step="0.5" value="-9.81" />
+              <span id="gravity-value">-9.81</span>
+            </label>
+            <button id="reset-bridge" class="secondary">Reset Bridge</button>
+            <button id="toggle-debug" class="secondary">Show Debug Wireframe</button>
+          </div>
+        </details>
+        <section class="events">
+          <h2>Bridge Status</h2>
+          <div id="status-info">
+            <p><strong>Segments:</strong> <span id="segment-count">0</span> attached, <span id="detached-count">0</span> detached</p>
+            <p><strong>Balls:</strong> <span id="ball-count">0</span></p>
+          </div>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="./split-bridge-demo.js"></script>
+  </body>
+</html>
