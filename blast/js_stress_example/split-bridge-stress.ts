@@ -1,6 +1,9 @@
+// Testing
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import RAPIER from '@dimforge/rapier3d-compat';
+import { RapierDebugRenderer } from './rapier-debug-renderer.js';
 import {
   loadStressSolver,
   ExtForceMode,
@@ -8,11 +11,19 @@ import {
 } from './stress.js';
 
 /**
- * Minimal stress-driven bridge fracture demo.
+ * Minimal stress-driven bridge fracture demo with stable identity tracking.
+ * 
  * Key invariants:
  *  - NO Rapier world mutation outside the frame loop.
  *  - Mutations happen ONLY on SAFE frames (no event queue bound).
  *  - If a solver split child uses the parent actorIndex, REUSE the parent body (no new body).
+ * 
+ * Stable Identity System:
+ *  - Each rigid body and collider gets human-readable metadata (name, type, etc.)
+ *  - Segment colliders maintain stable names across handle changes (e.g., "Segment-5")
+ *  - Snapshots capture world state before migrations to compute deltas
+ *  - Delta tracking shows: NEW bodies/colliders, MOVED colliders, handle changes (recreated)
+ *  - After migrations, printWorldHierarchy() logs complete state with deltas
  */
 
 // ---------- Tunables ----------
@@ -43,6 +54,8 @@ const state = {
   renderer: null,
   controls: null,
   clock: null,
+  debugRenderer: null,
+  stats: null,
 
   // Bridge
   rootBodyHandle: null,
@@ -64,6 +77,17 @@ const state = {
   activeContactColliders: /** @type {Set<number>} */ (new Set()),
   disabledCollidersToRemove: /** @type {Set<number>} */ (new Set()),
   bodiesToRemove: /** @type {Set<number>} */ (new Set()),
+
+  // Stable identity tracking
+  bodyMetadata: /** @type {Map<number, {type:string, name:string, actorIndex?:number, createdAt:number}>} */ (new Map()),
+  colliderMetadata: /** @type {Map<number, {type:string, name:string, segmentIndex?:number, nodeIndex?:number, createdAt:number}>} */ (new Map()),
+  
+  // Previous state snapshot for delta tracking
+  previousWorldState: /** @type {{bodies:Map<number,any>, colliders:Map<number,any>}} */ ({ bodies: new Map(), colliders: new Map() }),
+  
+  // Counters for unique naming
+  bodyIdCounter: 0,
+  ballIdCounter: 0,
 
   // Queues (mutations applied in SAFE frames only)
   pendingBodiesToCreate: /** @type {Array<{ actorIndex:number, inheritFromBodyHandle:number, nodes:number[] }>} */ ([]),
@@ -94,7 +118,9 @@ async function init() {
   // Three
   const canvas = ensureCanvas();
   const { scene, camera, renderer, controls } = initThree(canvas);
-  Object.assign(state, { scene, camera, renderer, controls, clock: new THREE.Clock() });
+  const stats = new Stats();
+  try { document.body.appendChild(stats.dom); } catch {}
+  Object.assign(state, { scene, camera, renderer, controls, stats, clock: new THREE.Clock() });
 
   // Rapier
   const world = new RAPIER.World({ x: 0, y: GRAVITY, z: 0 });
@@ -105,7 +131,28 @@ async function init() {
   buildGround(scene, world);
   buildBridge(scene, world);
 
+  // Debug renderer (enabled by default)
+  const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: true });
+  state.debugRenderer = debugRenderer;
+
   await buildStressModel();
+  
+  // Capture initial state as baseline
+  captureWorldSnapshot();
+  
+  // Expose debug helpers globally
+  window.debugBridge = {
+    printHierarchy: () => printWorldHierarchy(),
+    captureSnapshot: () => captureWorldSnapshot(),
+    state
+  };
+  
+  console.log('%c🌉 Bridge Stress Demo Ready!', 'font-size: 16px; font-weight: bold; color: #4b6fe8');
+  console.log('%cDebug Tools Available:', 'font-weight: bold');
+  console.log('  • window.debugBridge.printHierarchy() - Print current world hierarchy');
+  console.log('  • window.debugBridge.captureSnapshot() - Capture current state as baseline');
+  console.log('  • window.debugBridge.state - Access demo state');
+  console.log('\n💡 Click anywhere to drop a heavy ball and watch the bridge fracture!');
 
   // IMPORTANT: no direct world mutation in handlers; just queue the spawn
   canvas.addEventListener('pointerdown', (ev) => {
@@ -121,7 +168,45 @@ async function init() {
     }
   });
 
+  setupControls();
   loop();
+}
+
+// ---------- UI Controls ----------
+function setupControls() {
+  // Gravity slider
+  const gravitySlider = document.getElementById('gravity-slider');
+  const gravityValue = document.getElementById('gravity-value');
+  if (gravitySlider && gravityValue) {
+    gravitySlider.addEventListener('input', (e) => {
+      const newGravity = parseFloat(e.target.value);
+      gravityValue.textContent = newGravity.toFixed(2);
+      if (state.world) {
+        state.world.gravity = { x: 0, y: newGravity, z: 0 };
+      }
+    });
+  }
+
+  // Reset button
+  const resetButton = document.getElementById('reset-bridge');
+  if (resetButton) {
+    resetButton.addEventListener('click', () => {
+      location.reload();
+    });
+  }
+
+  // Debug toggle
+  const debugToggle = document.getElementById('toggle-debug');
+  if (debugToggle) {
+    // Set initial text based on enabled state
+    debugToggle.textContent = 'Hide Debug Wireframe';
+    debugToggle.addEventListener('click', () => {
+      if (state.debugRenderer) {
+        const enabled = state.debugRenderer.toggle();
+        debugToggle.textContent = enabled ? 'Hide Debug Wireframe' : 'Show Debug Wireframe';
+      }
+    });
+  }
 }
 
 // ---------- Scene builders ----------
@@ -195,6 +280,14 @@ function buildGround(scene, world) {
 function buildBridge(scene, world) {
   const root = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, BRIDGE_Y, 0));
   state.rootBodyHandle = root.handle;
+  
+  // Register root body metadata
+  state.bodyMetadata.set(root.handle, {
+    type: 'bridge-root',
+    name: 'Bridge-Root-Fixed',
+    actorIndex: 0,
+    createdAt: Date.now()
+  });
 
   const mat = new THREE.MeshStandardMaterial({ color: 0x4b6fe8, roughness: 0.4, metalness: 0.45 });
 
@@ -238,6 +331,15 @@ function buildBridge(scene, world) {
     console.info('Setting collider to segment:', collider.handle, i);
     state.colliderToSegment.set(collider.handle, i);
     state.activeContactColliders.add(collider.handle);
+    
+    // Register collider metadata
+    state.colliderMetadata.set(collider.handle, {
+      type: 'bridge-segment',
+      name: `Segment-${i}`,
+      segmentIndex: i,
+      nodeIndex: i,
+      createdAt: Date.now()
+    });
   }
 
   syncSegmentsMeshes();
@@ -297,8 +399,11 @@ function loop() {
     removeDisabledHandles();    // prune disabled colliders/bodies
 
     updateMeshes();
+    updateStatus();
+    if (state.debugRenderer) state.debugRenderer.update();
     controls.update();
     renderer.render(scene, camera);
+    if (state.stats) state.stats.update();
     requestAnimationFrame(loop);
     return;
   }
@@ -318,8 +423,11 @@ function loop() {
 
   if (!stepped) {
     updateMeshes();
+    updateStatus();
+    if (state.debugRenderer) state.debugRenderer.update();
     controls.update();
     renderer.render(scene, camera);
+    if (state.stats) state.stats.update();
     requestAnimationFrame(loop);
     return;
   }
@@ -348,8 +456,11 @@ function loop() {
   }
 
   updateMeshes();
+  updateStatus();
+  if (state.debugRenderer) state.debugRenderer.update();
   controls.update();
   renderer.render(scene, camera);
+  if (state.stats) state.stats.update();
   requestAnimationFrame(loop);
 }
 
@@ -513,8 +624,9 @@ function applyPendingSpawns() {
   for (const s of batch) spawnBallNow(s.x, s.z);
 }
 
-function spawnBallNow(x, z) {
+function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
   const { world, scene } = state;
+  const ballId = ++state.ballIdCounter;
 
   const body = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
@@ -523,20 +635,53 @@ function spawnBallNow(x, z) {
       .setLinearDamping(0.01)
       .setAngularDamping(0.01)
   );
-  world.createCollider(
-    RAPIER.ColliderDesc.ball(BALL_RADIUS)
-      .setMass(100_000_000.0)
-      .setFriction(0.6)
-      .setRestitution(0.2)
-      .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-      .setContactForceEventThreshold(0.0),
-    body
-  );
+
+  // Pick collider desc line based on type, then chain common settings
+  let colliderDesc = type === 'ball'
+    ? RAPIER.ColliderDesc.ball(BALL_RADIUS)
+    : RAPIER.ColliderDesc.cuboid(BALL_RADIUS, BALL_RADIUS, BALL_RADIUS);
+
+  colliderDesc = colliderDesc
+    .setMass(10.0)
+    .setFriction(0.6)
+    .setRestitution(0.2)
+    .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+    .setContactForceEventThreshold(0.0);
+
+  const collider = world.createCollider(colliderDesc, body);
+
+  // Choose geometry (BoxGeometry takes size, not radius)
+  const geometry = type === 'ball'
+    ? new THREE.SphereGeometry(BALL_RADIUS, 20, 20)
+    : new THREE.BoxGeometry(BALL_RADIUS * 2, BALL_RADIUS * 2, BALL_RADIUS * 2);
 
   const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(BALL_RADIUS, 20, 20),
+    geometry,
     new THREE.MeshStandardMaterial({ color: 0xff9147, emissive: 0x331100 })
   );
+
+  // Register metadata, track type
+  state.bodyMetadata.set(body.handle, {
+    type: 'projectile',
+    projectileType: type,
+    name: `Ball-${ballId}`,
+    createdAt: Date.now()
+  });
+
+  state.colliderMetadata.set(collider.handle, {
+    type: 'projectile',
+    projectileType: type,
+    name: `Ball-${ballId}-Collider`,
+    createdAt: Date.now()
+  });
+
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.position.set(x, BALL_DROP_Y, z);
+  scene.add(mesh);
+
+  state.balls.push({ bodyHandle: body.handle, mesh, type });
+
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.position.set(x, BALL_DROP_Y, z);
@@ -547,13 +692,14 @@ function spawnBallNow(x, z) {
 
 function applyPendingMigrations() {
   const { world, pendingBodiesToCreate, pendingColliderMigrations } = state;
-  // const R = world?.RAPIER;
   const R = RAPIER;
   if (!world) {
     console.warn('World is not initialized');
     return;
   }
-  // if (!world || !R) return;
+
+  // Capture state BEFORE any mutations for delta tracking
+  captureWorldSnapshot();
 
   // Create child bodies & schedule collider migrations
   if (pendingBodiesToCreate.length > 0) {
@@ -564,12 +710,24 @@ function applyPendingMigrations() {
       if (inherit) {
         const pt = inherit.translation(); const pq = inherit.rotation();
         const lv = inherit.linvel?.();   const av = inherit.angvel?.();
-        desc.setTranslation(pt.x, pt.y, pt.z).setRotation(pq)
+        desc.setTranslation(pt.x, pt.y, pt.z)
+            .setRotation(pq)
             .setLinvel(lv?.x ?? 0, lv?.y ?? 0, lv?.z ?? 0)
-            .setAngvel(av?.x ?? 0, av?.y ?? 0, av?.z ?? 0);
+            // .setAngvel(av?.x ?? 0, av?.y ?? 0, av?.z ?? 0)
+            ;
       }
       const body = world.createRigidBody(desc);
       state.actorMap.set(pb.actorIndex, { bodyHandle: body.handle });
+      
+      // Register new body metadata
+      const bodyId = ++state.bodyIdCounter;
+      const nodeNames = pb.nodes.map(n => `Seg${n}`).join(',');
+      state.bodyMetadata.set(body.handle, {
+        type: 'bridge-fragment',
+        name: `Bridge-Actor${pb.actorIndex}-Body${bodyId} [${nodeNames}]`,
+        actorIndex: pb.actorIndex,
+        createdAt: Date.now()
+      });
 
       for (const nodeIndex of pb.nodes) {
         pendingColliderMigrations.push({ nodeIndex, targetBodyHandle: body.handle });
@@ -584,6 +742,9 @@ function applyPendingMigrations() {
       const seg = state.segments[mig.nodeIndex];
       if (!seg) continue;
 
+      // Preserve old collider metadata before removal
+      const oldMetadata = seg.colliderHandle != null ? state.colliderMetadata.get(seg.colliderHandle) : null;
+
       // Disable old collider and queue removal
       if (seg.colliderHandle != null) {
         console.warn('Disabling old collider:', seg.colliderHandle);
@@ -592,6 +753,8 @@ function applyPendingMigrations() {
         state.activeContactColliders.delete(seg.colliderHandle);
         state.colliderToSegment.delete(seg.colliderHandle);
         state.disabledCollidersToRemove.add(seg.colliderHandle);
+        // Metadata will be removed in cleanup
+        state.colliderMetadata.delete(seg.colliderHandle);
         seg.colliderHandle = null;
       }
 
@@ -619,22 +782,320 @@ function applyPendingMigrations() {
       console.info('Setting collider to segment:', col.handle, seg.index);
       state.colliderToSegment.set(col.handle, seg.index);
       state.activeContactColliders.add(col.handle);
+      
+      // Restore/create metadata with stable name (preserve the segment identity)
+      state.colliderMetadata.set(col.handle, {
+        type: 'bridge-segment',
+        name: oldMetadata?.name ?? `Segment-${seg.index}`,
+        segmentIndex: seg.index,
+        nodeIndex: seg.index,
+        createdAt: oldMetadata?.createdAt ?? Date.now()
+      });
     }
   }
+
+  // Print final state after migrations
+  printWorldHierarchy();
+}
+
+/**
+ * Captures current world state for delta tracking.
+ * Called before any migrations to establish a baseline for comparison.
+ */
+function captureWorldSnapshot() {
+  const { world, bodyMetadata, colliderMetadata } = state;
+  
+  const bodies = new Map();
+  const colliders = new Map();
+  const collidersByStableId = new Map(); // Track by segment index for stable identity
+  
+  // Capture current state of all bodies
+  world.forEachRigidBody((body) => {
+    const handle = body.handle;
+    const meta = bodyMetadata.get(handle);
+    const bodyColliders = [];
+    
+    // Find all colliders attached to this body
+    for (let i = 0; i < body.numColliders(); i++) {
+      const cHandle = body.collider(i)?.handle;
+      if (cHandle != null) bodyColliders.push(cHandle);
+    }
+    
+    bodies.set(handle, {
+      handle,
+      name: meta?.name,
+      actorIndex: meta?.actorIndex,
+      colliders: bodyColliders
+    });
+  });
+  
+  // Capture current state of all colliders
+  world.forEachCollider((col) => {
+    const handle = col.handle;
+    const meta = colliderMetadata.get(handle);
+    const parentHandle = col.parent();
+    
+    const info = {
+      handle,
+      name: meta?.name,
+      parentBodyHandle: parentHandle,
+      segmentIndex: meta?.segmentIndex,
+      nodeIndex: meta?.nodeIndex
+    };
+    
+    colliders.set(handle, info);
+    
+    // Also index by stable ID (segment index) for tracking across handle changes
+    if (meta?.segmentIndex != null) {
+      collidersByStableId.set(`segment-${meta.segmentIndex}`, info);
+    }
+  });
+  
+  state.previousWorldState = { bodies, colliders, collidersByStableId };
+}
+
+/**
+ * Prints complete world hierarchy with delta tracking.
+ * 
+ * Shows:
+ * - All rigid bodies with their metadata (name, type, actor index, position, velocity)
+ * - All colliders attached to each body with stable names
+ * - Delta indicators: NEW (just created), MOVED (changed parent), recreated (new handle)
+ * - Summary statistics
+ * 
+ * Example output after a bridge split:
+ * 
+ * 🌍 WORLD HIERARCHY AFTER MIGRATIONS
+ * 
+ * 📖 LEGEND:
+ *   Bodies:    🏛️ = Root (fixed)  |  📦 = Dynamic  |  🔒 = Fixed
+ *   Status:    ✨ NEW = Just created  |  ✅ = Existed before  |  🔄 MOVED = Changed parent
+ *   Handles:   "(recreated, old handle: N)" = Collider was destroyed and recreated
+ * 
+ * 📦 RIGID BODIES:
+ * 
+ *   🏛️ ✅ Bridge-Root-Fixed (Handle: 0)
+ *   ├─ Type: Fixed
+ *   ├─ Actor Index: 0
+ *   ├─ Translation: (0.00, 0.50, 0.00)
+ *   └─ Colliders: 20 total (0 added, 20 retained)
+ *      ├─ ✅ Segment-0 (Handle: 1)
+ *      │  ├─ Segment Index: 0
+ *      │  ├─ Node Index: 0
+ *      │  └─ Parent Body: Bridge-Root-Fixed
+ *      ...
+ * 
+ *   📦 ✨ NEW Bridge-Actor1-Body1 [Seg25,Seg26,...,Seg31] (Handle: 5)
+ *   ├─ Type: Dynamic
+ *   ├─ Actor Index: 1
+ *   ├─ Translation: (8.53, 0.48, 0.00)
+ *   ├─ Linear Velocity: (0.12, -0.03, 0.00)
+ *   ├─ Angular Velocity: (0.00, 0.00, 0.01)
+ *   └─ Colliders: 7 total (7 added, 0 retained)
+ *      ├─ 🔄 MOVED from Bridge-Root-Fixed Segment-25 (Handle: 39, recreated, old handle: 26)
+ *      │  ├─ Segment Index: 25
+ *      │  ├─ Node Index: 25
+ *      │  └─ Parent Body: Bridge-Actor1-Body1 [Seg25,Seg26,...,Seg31]
+ *      ...
+ * 
+ * 📊 SUMMARY:
+ * ├─ Total Actors: 2
+ * ├─ Rigid Bodies: 2 (1 new)
+ * ├─ Colliders: 32
+ * ├─   New Colliders: 0
+ * ├─   Moved Colliders: 7
+ * └─ Removed Bodies: 0
+ */
+function printWorldHierarchy() {
+  const { world, actorMap, bodyMetadata, colliderMetadata, previousWorldState } = state;
+  
+  console.group('🌍 WORLD HIERARCHY AFTER MIGRATIONS');
+  
+  // Print legend
+  console.log('\n📖 LEGEND:');
+  console.log('  Bodies:    🏛️ = Root (fixed)  |  📦 = Dynamic  |  🔒 = Fixed');
+  console.log('  Status:    ✨ NEW = Just created  |  ✅ = Existed before  |  🔄 MOVED = Changed parent');
+  console.log('  Handles:   "(recreated, old handle: N)" = Collider was destroyed and recreated');
+  console.log('');
+  
+  // Build current state maps
+  const currentBodies = new Map();
+  const currentColliders = new Map();
+  const bodyToColliders = new Map();
+  
+  // Scan current world state
+  world.forEachRigidBody((body) => {
+    const handle = body.handle;
+    const meta = bodyMetadata.get(handle);
+    const wasPresent = previousWorldState.bodies.has(handle);
+    
+    currentBodies.set(handle, {
+      handle,
+      name: meta?.name ?? `Body-${handle}`,
+      actorIndex: meta?.actorIndex,
+      isNew: !wasPresent,
+      body
+    });
+    
+    bodyToColliders.set(handle, []);
+  });
+  
+  world.forEachCollider((col) => {
+    const handle = col.handle;
+    const meta = colliderMetadata.get(handle);
+    const parentHandle = col.parent();
+    
+    // Check by handle first (for balls and other non-segment colliders)
+    let prevState = previousWorldState.colliders.get(handle);
+    
+    // For segment colliders, also check by stable ID to track across handle changes
+    if (!prevState && meta?.segmentIndex != null) {
+      prevState = previousWorldState.collidersByStableId?.get(`segment-${meta.segmentIndex}`);
+    }
+    
+    const wasPresent = prevState != null;
+    const wasMoved = wasPresent && prevState.parentBodyHandle !== parentHandle;
+    const isNew = !wasPresent;
+    
+    const colliderInfo = {
+      handle,
+      name: meta?.name ?? `Collider-${handle}`,
+      parentBodyHandle: parentHandle,
+      segmentIndex: meta?.segmentIndex,
+      nodeIndex: meta?.nodeIndex,
+      isNew,
+      wasMoved,
+      prevParentHandle: wasMoved ? prevState.parentBodyHandle : null,
+      prevParentName: null, // will fill below
+      oldHandle: prevState?.handle !== handle ? prevState?.handle : null
+    };
+    
+    currentColliders.set(handle, colliderInfo);
+    
+    if (parentHandle != null) {
+      if (!bodyToColliders.has(parentHandle)) {
+        bodyToColliders.set(parentHandle, []);
+      }
+      bodyToColliders.get(parentHandle).push(colliderInfo);
+    }
+  });
+  
+  // Fill in previous parent names for moved colliders
+  currentColliders.forEach((cInfo) => {
+    if (cInfo.wasMoved && cInfo.prevParentHandle != null) {
+      const prevBody = previousWorldState.bodies.get(cInfo.prevParentHandle);
+      cInfo.prevParentName = prevBody?.name ?? `Body-${cInfo.prevParentHandle}`;
+    }
+  });
+  
+  // Print each body with delta indicators
+  console.log('\n📦 RIGID BODIES:\n');
+  
+  currentBodies.forEach((bInfo) => {
+    const { handle, name, actorIndex, isNew, body } = bInfo;
+    const isRoot = handle === state.rootBodyHandle;
+    const isDynamic = body.isDynamic();
+    const isFixed = body.isFixed();
+    const t = body.translation();
+    
+    const statusIcon = isNew ? '✨ NEW' : '✅';
+    const bodyIcon = isRoot ? '🏛️' : (isDynamic ? '📦' : '🔒');
+    
+    console.group(`${bodyIcon} ${statusIcon} ${name} (Handle: ${handle})`);
+    console.log('├─ Type:', isDynamic ? 'Dynamic' : (isFixed ? 'Fixed' : 'Other'));
+    console.log('├─ Actor Index:', actorIndex ?? 'N/A');
+    console.log('├─ Translation:', `(${t.x.toFixed(2)}, ${t.y.toFixed(2)}, ${t.z.toFixed(2)})`);
+    
+    if (isDynamic) {
+      const lv = body.linvel();
+      const av = body.angvel();
+      console.log('├─ Linear Velocity:', `(${lv.x.toFixed(2)}, ${lv.y.toFixed(2)}, ${lv.z.toFixed(2)})`);
+      console.log('├─ Angular Velocity:', `(${av.x.toFixed(2)}, ${av.y.toFixed(2)}, ${av.z.toFixed(2)})`);
+    }
+    
+    // Show colliders attached to this body
+    const colliders = bodyToColliders.get(handle) || [];
+    
+    // Determine what changed with colliders
+    const prevBodyState = previousWorldState.bodies.get(handle);
+    const prevColliders = new Set(prevBodyState?.colliders ?? []);
+    const currColliders = new Set(colliders.map(c => c.handle));
+    
+    const addedColliders = colliders.filter(c => c.isNew || c.wasMoved);
+    const retainedColliders = colliders.filter(c => !c.isNew && !c.wasMoved);
+    const removedCount = prevBodyState ? prevColliders.size - retainedColliders.length : 0;
+    
+    console.log(`└─ Colliders: ${colliders.length} total (${addedColliders.length} added, ${retainedColliders.length} retained${removedCount > 0 ? `, ${removedCount} removed` : ''})`);
+    
+    if (colliders.length > 0) {
+      colliders.forEach((cInfo, idx) => {
+        const isLast = idx === colliders.length - 1;
+        const prefix = isLast ? '   └─' : '   ├─';
+        
+        let status = '';
+        if (cInfo.isNew) status = '✨ NEW';
+        else if (cInfo.wasMoved) status = `🔄 MOVED from ${cInfo.prevParentName}`;
+        else status = '✅';
+        
+        const handleInfo = cInfo.oldHandle ? ` (recreated, old handle: ${cInfo.oldHandle})` : '';
+        
+        console.group(`${prefix} ${status} ${cInfo.name} (Handle: ${cInfo.handle}${handleInfo})`);
+        if (cInfo.segmentIndex != null) console.log('├─ Segment Index:', cInfo.segmentIndex);
+        if (cInfo.nodeIndex != null) console.log('├─ Node Index:', cInfo.nodeIndex);
+        console.log('└─ Parent Body:', name);
+        console.groupEnd();
+      });
+    }
+    
+    console.groupEnd();
+  });
+  
+  // Show removed bodies
+  const removedBodies = [];
+  previousWorldState.bodies.forEach((prevBody, handle) => {
+    if (!currentBodies.has(handle)) {
+      removedBodies.push(prevBody);
+    }
+  });
+  
+  if (removedBodies.length > 0) {
+    console.log('\n🗑️  REMOVED BODIES:\n');
+    removedBodies.forEach((bInfo) => {
+      console.log(`   ❌ ${bInfo.name} (Handle: ${bInfo.handle}) with ${bInfo.colliders.length} colliders`);
+    });
+  }
+  
+  // Summary
+  console.log('\n📊 SUMMARY:');
+  console.log('├─ Total Actors:', actorMap.size);
+  console.log('├─ Rigid Bodies:', currentBodies.size, `(${Array.from(currentBodies.values()).filter(b => b.isNew).length} new)`);
+  console.log('├─ Colliders:', currentColliders.size);
+  
+  const newColliders = Array.from(currentColliders.values()).filter(c => c.isNew).length;
+  const movedColliders = Array.from(currentColliders.values()).filter(c => c.wasMoved).length;
+  console.log('├─   New Colliders:', newColliders);
+  console.log('├─   Moved Colliders:', movedColliders);
+  console.log('└─ Removed Bodies:', removedBodies.length);
+  
+  console.groupEnd();
 }
 
 function removeDisabledHandles() {
-  const { world, disabledCollidersToRemove, bodiesToRemove } = state;
+  const { world, disabledCollidersToRemove, bodiesToRemove, colliderMetadata, bodyMetadata } = state;
+  console.log('Removing disabled handles', { disabledCollidersToRemove, bodiesToRemove });
+  return
 
   for (const h of Array.from(disabledCollidersToRemove)) {
     const c = world.getCollider(h);
     if (c) world.removeCollider(c, false);
+    colliderMetadata.delete(h); // Clean up metadata
     disabledCollidersToRemove.delete(h);
   }
 
   for (const bh of Array.from(bodiesToRemove)) {
     const b = world.getRigidBody(bh);
     if (b) world.removeRigidBody(b);
+    bodyMetadata.delete(bh); // Clean up metadata
     bodiesToRemove.delete(bh);
   }
 }
@@ -683,6 +1144,23 @@ function updateMeshes() {
   syncBallMeshes();
 }
 
+function updateStatus() {
+  const attachedCount = state.segments.filter(s => !s.detached).length;
+  const detachedCount = state.segments.filter(s => s.detached).length;
+  const ballCount = state.balls.length;
+  const rigidbodyCount = state.world.bodies.len();
+
+  const segmentCountEl = document.getElementById('segment-count');
+  const detachedCountEl = document.getElementById('detached-count');
+  const ballCountEl = document.getElementById('ball-count');
+  const rigidbodyCountEl = document.getElementById('rigidbody-count');
+
+  if (segmentCountEl) segmentCountEl.textContent = attachedCount;
+  if (detachedCountEl) detachedCountEl.textContent = detachedCount;
+  if (ballCountEl) ballCountEl.textContent = ballCount;
+  if (rigidbodyCountEl) rigidbodyCountEl.textContent = rigidbodyCount;
+}
+
 function syncSegmentsMeshes() {
   const { world, segments, rootBodyHandle } = state;
 
@@ -717,7 +1195,7 @@ function syncSegmentsMeshes() {
 }
 
 function syncBallMeshes() {
-  const { world, balls, scene } = state;
+  const { world, balls, scene, bodyMetadata, colliderMetadata } = state;
   const keep = [];
 
   for (const b of balls) {
@@ -732,6 +1210,13 @@ function syncBallMeshes() {
     if (t.y < -50) {
       scene.remove(b.mesh);
       state.bodiesToRemove.add(b.bodyHandle);
+      
+      // Clean up metadata for the ball body and its colliders
+      bodyMetadata.delete(b.bodyHandle);
+      for (let i = 0; i < body.numColliders(); i++) {
+        const cHandle = body.collider(i)?.handle;
+        if (cHandle != null) colliderMetadata.delete(cHandle);
+      }
     } else {
       keep.push(b);
     }
