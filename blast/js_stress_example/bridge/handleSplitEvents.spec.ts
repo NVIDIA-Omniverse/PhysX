@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { handleSplitEvents } from './handleSplitEvents.js';
+import { applyPendingMigrations, pruneStaleHandles } from './rapierHierarchyApplier.js';
 
 function makeChunk(nodeIndex: number, size = { x: 1, y: 1, z: 1 }, isSupport = false) {
   return {
@@ -24,6 +25,7 @@ describe('handleSplitEvents (Rapier integration)', () => {
 
   it('migrates colliders from parent body to new child bodies and updates actorMap', () => {
     const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    (world as any).RAPIER = RAPIER;
 
     // Create parent body with 4 chunk colliders
     const parentBody = world.createRigidBody(
@@ -59,6 +61,10 @@ describe('handleSplitEvents (Rapier integration)', () => {
     ];
 
     handleSplitEvents(bridge as any, splitResults as any, RAPIER, 0.0);
+    // Phase 2: safe step + apply migrations before assertions
+    world.step();
+    applyPendingMigrations(bridge as any);
+    pruneStaleHandles(bridge as any);
 
     // Assert: two new bodies exist and chunks moved
     const child1BodyHandle = bridge.actorMap.get(1)!.bodyHandle;
@@ -67,16 +73,12 @@ describe('handleSplitEvents (Rapier integration)', () => {
     expect(child2BodyHandle).toBeTypeOf('number');
     expect(child1BodyHandle).not.toEqual(child2BodyHandle);
 
-    // Chunks [0,1] should now be on child1, [2,3] on child2, with new colliders
+    // After migrations, bodies must differ and colliders must be recreated on children
     expect(bridge.chunks[0].bodyHandle).toEqual(child1BodyHandle);
     expect(bridge.chunks[1].bodyHandle).toEqual(child1BodyHandle);
     expect(bridge.chunks[2].bodyHandle).toEqual(child2BodyHandle);
     expect(bridge.chunks[3].bodyHandle).toEqual(child2BodyHandle);
-
-    expect(bridge.chunks[0].colliderHandle).not.toBeNull();
-    expect(bridge.chunks[1].colliderHandle).not.toBeNull();
-    expect(bridge.chunks[2].colliderHandle).not.toBeNull();
-    expect(bridge.chunks[3].colliderHandle).not.toBeNull();
+    expect(bridge.chunks.every((c) => c.colliderHandle != null)).toBe(true);
 
     // Parent body remains only if parent appears as child; here it does not, so parent may be removed
     const maybeParent = world.getRigidBody(parentBody.handle);

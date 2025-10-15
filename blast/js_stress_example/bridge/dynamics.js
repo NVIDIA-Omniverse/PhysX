@@ -122,7 +122,7 @@ export function spawnProjectile(world, options = {}) {
   };
 }
 
-export function updateProjectiles(world, projectiles, delta) {
+export function updateProjectiles(world, projectiles, delta, bridge) {
   const remaining = [];
   projectiles.forEach((proj) => {
     const body = world.getRigidBody(proj.bodyHandle);
@@ -130,7 +130,13 @@ export function updateProjectiles(world, projectiles, delta) {
     proj.ttl -= delta;
     const t = body.translation();
     if (proj.ttl <= 0 || t.y < -20) {
-      world.removeRigidBody(body);
+      // Defer removal to safe-step if bridge provided; else remove immediately
+      if (bridge) {
+        if (!bridge.bodiesToRemove) bridge.bodiesToRemove = new Set();
+        bridge.bodiesToRemove.add(proj.bodyHandle);
+      } else {
+        world.removeRigidBody(body);
+      }
       return;
     }
     remaining.push(proj);

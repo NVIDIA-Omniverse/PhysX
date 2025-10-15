@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { handleSplitEvents } from './handleSplitEvents.js';
+import { applyPendingMigrations, pruneStaleHandles } from './rapierHierarchyApplier.js';
 
 function makeChunk(nodeIndex: number, size = { x: 1, y: 1, z: 1 }) {
   return {
@@ -25,6 +26,7 @@ describe('handleSplitEvents large bridge scenario', () => {
 
   it('applies many child splits and survives world.step without panic', () => {
     const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    (world as any).RAPIER = RAPIER;
     const parent = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0));
 
     // Create 104 chunks total; attach first 96 to parent to reflect prevChunksOnParent: 96
@@ -61,11 +63,14 @@ describe('handleSplitEvents large bridge scenario', () => {
 
     const splitResults = [{ parentActorIndex: 0, children: groups }];
 
-    // Apply splits and step the world a few frames to trigger BVH rebuilds
+    // Apply splits and run safe step + migrations before eventful stepping
     handleSplitEvents(bridge as any, splitResults as any, RAPIER, 0.0);
-    for (let i = 0; i < 3; i++) {
-      world.step();
-    }
+    world.step();
+    applyPendingMigrations(bridge as any);
+    pruneStaleHandles(bridge as any);
+    // Then a couple eventful steps should be safe
+    world.step();
+    world.step();
 
     // Basic assertions: many child actors are present and chunks re-mapped
     const childActorIndices = Array.from(bridge.actorMap.keys()).filter((k) => k !== 0);

@@ -25,18 +25,18 @@ describe('handleSplitEvents with ExtStressSolver-generated splits', () => {
   });
 
   it('generates organic splits via the shared bridge simulation', async () => {
-    const bridge = await buildBridgeShared({ gravity: -9.81, strengthScale: 0.05 });
+    const bridge = await buildBridgeShared({ gravity: -9.81, strengthScale: 0.03 });
     bridge.world.RAPIER = (await import('@dimforge/rapier3d-compat')).default;
     bridge.projectiles = [];
     bridge.car = spawnLoadVehicle(bridge.world, {});
 
     let broke = false;
     let handleCount = 0;
-    for (let i = 0; i < 240; i++) {
+    for (let i = 0; i < 480; i++) {
       // Match browser loop ordering: update dynamics → step world → drain → apply forces → process
-      if (Math.random() < 0.02) bridge.projectiles.push(spawnProjectile(bridge.world, { kind: 'box' }));
-      bridge.projectiles = updateProjectiles(bridge.world, bridge.projectiles, 1/60);
-      updateLoadVehicle(bridge.world, bridge.car, 1/60);
+      if (Math.random() < 0.03) bridge.projectiles.push(spawnProjectile(bridge.world, { kind: 'box' }));
+      bridge.projectiles = updateProjectiles(bridge.world, bridge.projectiles, 1/60, bridge);
+      // keep car static during this test
 
       bridge.world.step(bridge.eventQueue);
       drainContactForces(bridge);

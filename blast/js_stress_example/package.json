@@ -14,7 +14,7 @@
     "test:bridge-ui": "npx playwright test tests/stress.spec.js",
     "test:bridge-ui:headed": "npx playwright test tests/stress.spec.js --headed --project=chromium",
     "test:bridge-ui:ui": "npx playwright test tests/stress.spec.js --ui",
-    "test:split": "vitest run bridge/handleSplitEvents.spec.ts bridge/handleSplitEvents.multiple.spec.ts bridge/handleSplitEvents.bridgeScenario.spec.ts bridge/handleSplitEvents.extStress.spec.ts bridge/organicSplit.spec.ts",
+    "test:split": "vitest run bridge/manualSplit.spec.ts bridge/eventfulReplay.spec.ts bridge/handleSplitEvents.spec.ts bridge/handleSplitEvents.multiple.spec.ts bridge/handleSplitEvents.bridgeScenario.spec.ts bridge/handleSplitEvents.extStress.spec.ts bridge/organicSplit.spec.ts",
     "test:split:watch": "vitest"
   },
   "devDependencies": {

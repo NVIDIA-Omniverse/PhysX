@@ -1,0 +1,22 @@
+{
+  "initial": {
+    "nodeCount": 4,
+    "grid": [
+      { "x": -0.55, "y": -0.55, "z": 0 },
+      { "x":  0.55, "y": -0.55, "z": 0 },
+      { "x": -0.55, "y":  0.55, "z": 0 },
+      { "x":  0.55, "y":  0.55, "z": 0 }
+    ]
+  },
+  "splits": [
+    {
+      "parentActorIndex": 0,
+      "children": [
+        { "actorIndex": 1, "nodes": [0, 1] },
+        { "actorIndex": 2, "nodes": [2, 3] }
+      ]
+    }
+  ]
+}
+
+

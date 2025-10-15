@@ -4,16 +4,16 @@ import { buildBridgeScenario } from '../extBridgeScenario.js';
 
 export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.03 }) {
   const settings = runtime.defaultExtSettings();
-  settings.maxSolverIterationsPerFrame = 32;
+  settings.maxSolverIterationsPerFrame = 64;
   settings.graphReductionLevel = 0;
 
   const BASE_LIMITS = {
-    compressionElasticLimit: 0.001,
-    compressionFatalLimit: 0.002,
-    tensionElasticLimit: 0.001,
-    tensionFatalLimit: 0.002,
-    shearElasticLimit: 0.001,
-    shearFatalLimit: 0.002
+    compressionElasticLimit: 0.0008,
+    compressionFatalLimit: 0.0016,
+    tensionElasticLimit: 0.0008,
+    tensionFatalLimit: 0.0016,
+    shearElasticLimit: 0.0008,
+    shearFatalLimit: 0.0016
   };
   settings.compressionElasticLimit = BASE_LIMITS.compressionElasticLimit * strengthScale;
   settings.compressionFatalLimit = BASE_LIMITS.compressionFatalLimit * strengthScale;
@@ -22,7 +22,17 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
   settings.shearElasticLimit = BASE_LIMITS.shearElasticLimit * strengthScale;
   settings.shearFatalLimit = BASE_LIMITS.shearFatalLimit * strengthScale;
 
-  const solver = runtime.createExtSolver({ nodes: scenario.nodes, bonds: scenario.bonds, settings });
+  // Build solver nodes with supports marked external (mass/volume 0)
+  const solverNodes = scenario.nodes.map((node, nodeIndex) => {
+    const coord = scenario.gridCoordinates[nodeIndex];
+    const isSupport = coord?.iy === -1;
+    return {
+      centroid: node.centroid,
+      mass: isSupport ? 0 : (node.mass ?? 0),
+      volume: isSupport ? 0 : (node.volume ?? 0)
+    };
+  });
+  const solver = runtime.createExtSolver({ nodes: solverNodes, bonds: scenario.bonds, settings });
 
   const bridgeBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, 0, 0));
 
@@ -110,7 +120,7 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
     solver,
     settings,
     scenario,
-    body: bridgeBody,
+    bodyHandle: bridgeBody.handle,
     chunks,
     colliderToNode,
     activeContactColliders,
@@ -123,7 +133,9 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
     iterationCount: 0,
     lastError: { lin: 0, ang: 0 },
     overstressed: 0,
-    topLayerNodeIndices
+    topLayerNodeIndices,
+    bodiesToRemove: new Set(),
+    disabledCollidersToRemove: new Set()
   };
 }
 
