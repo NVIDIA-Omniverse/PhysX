@@ -33,7 +33,7 @@ const GRAVITY = -9.81;
 const SAFE_FRAMES_AFTER_SPLIT = 2;
 
 // Stress model (keep limits modest so impacts can cause fractures)
-const NODE_MASS_KG = 10;
+const NODE_MASS_KG = 100;
 const NODE_VOLUME_M3 = SEGMENT_SIZE.x * SEGMENT_SIZE.y * SEGMENT_SIZE.z;
 const BOND_AREA_M2 = SEGMENT_SIZE.y * SEGMENT_SIZE.z; // contact face area between segments
 
@@ -309,6 +309,7 @@ function onPointerDown(ev) {
 
 function spawnBall(x, z) {
   const { world, scene } = state;
+  const BALL_MASS = 100_000_000.0; // kg
 
   const body = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
@@ -319,6 +320,7 @@ function spawnBall(x, z) {
   );
   const collider = world.createCollider(
     RAPIER.ColliderDesc.ball(BALL_RADIUS)
+      .setMass(BALL_MASS)
       .setFriction(0.6)
       .setRestitution(0.2)
       .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -501,6 +503,8 @@ function fallbackPoint(world, handle) {
 
 // ---------- Split queueing & migrations ----------
 function queueSplitResults(splitEvents) {
+  console.log('Queueing split results:', splitEvents);
+
   // Translate solver split events into body creations + collider migrations
   for (const evt of splitEvents) {
     const parentActor = evt?.parentActorIndex;
@@ -525,8 +529,13 @@ function queueSplitResults(splitEvents) {
 
 function applyPendingMigrations() {
   const { world, pendingBodiesToCreate, pendingColliderMigrations } = state;
-  const R = world?.RAPIER;
-  if (!world || !R) return;
+  // const R = world?.RAPIER;
+  // if (!world || !R) return;
+  const R = RAPIER;
+  if (!world) {
+    console.warn('World is not initialized');
+    return;
+  }
 
   // Create child bodies; queue node→collider migrations
   if (pendingBodiesToCreate.length > 0) {
