@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { RapierDebugRenderer } from './rapier-debug-renderer.js';
 
@@ -83,7 +84,9 @@ async function init() {
   // Three.js
   const canvas = ensureCanvas();
   const { scene, camera, renderer, controls } = initThree(canvas);
-  Object.assign(state, { scene, camera, renderer, controls, clock: new THREE.Clock() });
+  const stats = new Stats();
+  try { document.body.appendChild(stats.dom); } catch {}
+  Object.assign(state, { scene, camera, renderer, controls, stats, clock: new THREE.Clock() });
 
   // Rapier world
   const world = new RAPIER.World({ x: 0, y: GRAVITY, z: 0 });
@@ -323,7 +326,10 @@ function loop() {
 
   if (state.safeFrames > 0) {
     // SAFE STEP: no event queue, then apply migrations & removals
-    try { world.step(); } catch (err) { /* eslint-disable no-console */ console.warn('Safe step failed', err); }
+    try { world.step(); } catch (err) {
+        /* eslint-disable no-console */
+        console.warn('Safe step failed', err);
+    }
     state.safeFrames -= 1;
 
     applyPendingDetaches();
@@ -334,6 +340,7 @@ function loop() {
     if (state.debugRenderer) state.debugRenderer.update();
     controls.update();
     renderer.render(scene, camera);
+    state.stats.update();
     requestAnimationFrame(loop);
     return;
   }
@@ -358,6 +365,7 @@ function loop() {
     if (state.debugRenderer) state.debugRenderer.update();
     controls.update();
     renderer.render(scene, camera);
+    state.stats.update();
     requestAnimationFrame(loop);
     return;
   }
@@ -381,6 +389,7 @@ function loop() {
   if (state.debugRenderer) state.debugRenderer.update();
   controls.update();
   renderer.render(scene, camera);
+  state.stats.update();
 
   requestAnimationFrame(loop);
 }
@@ -515,14 +524,17 @@ function updateStatus() {
   const attachedCount = state.segments.filter(s => !s.detached).length;
   const detachedCount = state.segments.filter(s => s.detached).length;
   const ballCount = state.balls.length;
+  const rigidbodyCount = state.world.bodies.len();
 
   const segmentCountEl = document.getElementById('segment-count');
   const detachedCountEl = document.getElementById('detached-count');
   const ballCountEl = document.getElementById('ball-count');
+  const rigidbodyCountEl = document.getElementById('rigidbody-count');
 
   if (segmentCountEl) segmentCountEl.textContent = attachedCount;
   if (detachedCountEl) detachedCountEl.textContent = detachedCount;
   if (ballCountEl) ballCountEl.textContent = ballCount;
+  if (rigidbodyCountEl) rigidbodyCountEl.textContent = rigidbodyCount;
 }
 
 function syncSegmentsMeshes() {
