@@ -286,6 +286,12 @@ function buildGround(scene, world) {
     ),
     body
   );
+
+  state.colliderMetadata.set(body.handle, {
+    type: 'ground',
+    name: 'Ground',
+    createdAt: Date.now()
+  });
 }
 
 function buildBridge(scene, world) {
@@ -300,9 +306,9 @@ function buildBridge(scene, world) {
     gravity: GRAVITY,
     // strengthScale: 0.03
     // strengthScale: 5_0_000_000.0
-    // strengthScale: 10_000_000.0
-    // strengthScale: 100_000.0
-    strengthScale: 30_000_000.0
+    strengthScale: 10_000_000.0
+    // strengthScale: 1_000.0
+    // strengthScale: 30_000_000.0
   });
   
   // Materials
@@ -454,6 +460,25 @@ function loop() {
 
   // Solve
   state.solver.update();
+  // console.log('converged?', state.solver.converged());
+  // state.solver.update();
+  // state.solver.update();
+
+  /*
+  // Iterate solver to convergence
+  let iterations = 0;
+  const maxIterations = state.solverSettings?.maxSolverIterationsPerFrame ?? 5;
+  let error = { lin: 0, ang: 0 };
+  
+  for (; iterations < maxIterations; ++iterations) {
+    state.solver.update();
+    error = state.solver.stressError();
+    if (state.solver.converged()) break;
+    if (error.lin <= state.solverSettings?.targetError && error.ang <= state.solverSettings?.targetError) break;
+  }
+  state.solver.iterationCount = iterations + 1;
+  state.solver.lastError = error;
+  */
 
   // Optional: quick debug log if errors spike
   // const err = state.solver.stressError();
@@ -505,8 +530,15 @@ function drainContactsAndApplyForces() {
   const add = (handle, direction, totalForce, worldPoint) => {
     // console.log('Adding force to collider:', handle, direction, totalForce, worldPoint);
     if (handle == null) return;
+    
+    const colliderMetadata = state.colliderMetadata.get(handle);
+    if (!['bridge-segment', 'bridge-support'].includes(colliderMetadata.type)) {
+      // console.warn('Skipping bridge collider:', handle, colliderMetadata.type, colliderMetadata);
+      return;
+    }
+    // Is Bridge collider
     if (!state.colliderToNode.has(handle)) {
-      // console.error('No collider to node found:', handle, state.colliderToNode);
+      console.error('No collider to node found:', handle, state.colliderToNode);
       return;
     }
 
@@ -653,7 +685,7 @@ function applyPendingSpawns() {
   for (const s of batch) spawnBallNow(s.x, s.z);
 }
 
-function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'ball') {
+function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
   const { world, scene } = state;
   const ballId = ++state.ballIdCounter;
 
@@ -672,8 +704,8 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'ball') {
     : RAPIER.ColliderDesc.cuboid(BALL_RADIUS, BALL_RADIUS, BALL_RADIUS);
 
   colliderDesc = colliderDesc
-    // .setMass(150_000.0)
-    .setMass(120_000.0)
+    .setMass(15_000.0)
+    // .setMass(1200_000.0)
     // .setMass(120_000_000.0)
     .setFriction(0.6)
     .setRestitution(0.2)

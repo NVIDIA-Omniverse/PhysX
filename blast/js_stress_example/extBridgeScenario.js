@@ -26,28 +26,41 @@ export function buildBridgeScenario({
   deckThickness = 0.6,
   // spanSegments = 40,
   // widthSegments = 10,
-  spanSegments = 20,
-  widthSegments = 6,
-  // spanSegments = 15,
-  // widthSegments = 5,
+  // spanSegments = 20,
+  // widthSegments = 6,
+  spanSegments = 15,
+  widthSegments = 5,
   // spanSegments = 15,
   // widthSegments = 5,
   // spanSegments = 12,
   // widthSegments = 4,
   // spanSegments = 4,
   // widthSegments = 4,
-  thicknessLayers = 3,
-  // thicknessLayers = 2,
+  // thicknessLayers = 3,
+  thicknessLayers = 2,
   // thicknessLayers = 1,
-  // deckMass = 60_000.0,
+  deckMass = 60_000.0,
   // deckMass = 1_000.0,
-  deckMass = 80_000.0,
+  // deckMass = 80_000.0,
   pierHeight = 3.0,
-  // areaScale = 0.05
-  areaScale = 0.10
+  areaScale = 0.05
+  // areaScale = 0.10
+  // areaScale = 1.00
 } = {}) {
   const nodes = [];
   const bonds = [];
+
+  // Debug/verification controls for bond correctness
+  const DEBUG_VERIFY_BONDS = true;
+  const seenBondPairs = new Set();
+  let __DEBUG_SUPPORT_AREA = null; // set after support area is computed
+
+  // Stable, order-independent key for a bond between node indices a and b
+  const bondPairKey = (a, b) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+
+  // Floating point comparison with tolerance
+  const approximatelyEqual = (a, b, eps = 1e-6) =>
+    Math.abs(a - b) <= eps * Math.max(1, Math.max(Math.abs(a), Math.abs(b)));
 
   // Grid spacing between nodes along each principal axis. With a single segment/layer we fall
   // back to the overall span/width/thickness so that the geometry remains centred.
@@ -105,9 +118,10 @@ export function buildBridgeScenario({
     }
   }
 
-  const deckBondAreaX = spacingY * spacingZ * areaScale;
-  const deckBondAreaY = spacingX * spacingZ * areaScale;
-  const deckBondAreaZ = spacingX * spacingY * areaScale;
+  // Cross-sectional areas used for bonds along principal axes
+  const deckBondAreaX = spacingY * spacingZ * areaScale; // faces perpendicular to X
+  const deckBondAreaY = spacingX * spacingZ * areaScale; // faces perpendicular to Y
+  const deckBondAreaZ = spacingX * spacingY * areaScale; // faces perpendicular to Z
 
   const addBond = (a, b, area) => {
     const na = nodes[a];
@@ -118,9 +132,58 @@ export function buildBridgeScenario({
       (na.centroid.z + nb.centroid.z) * 0.5
     );
     const normal = normalize(subtract(nb.centroid, na.centroid));
+    if (DEBUG_VERIFY_BONDS) {
+      // 1) Ensure we don't add duplicate bonds regardless of order
+      const key = bondPairKey(a, b);
+      if (seenBondPairs.has(key)) {
+        console.warn('Duplicate bond detected between nodes', { a, b });
+      } else {
+        seenBondPairs.add(key);
+      }
+
+      // 2) Verify adjacency in grid space: deck neighbors differ by exactly 1 in a single axis
+      const ga = gridCoordinates[a];
+      const gb = gridCoordinates[b];
+      if (ga && gb) {
+        // Support bonds: one endpoint is a support (iy === -1) directly beneath a bottom deck node (iy === 0)
+        const isSupportPair =
+          ((ga.iy === -1 && gb.iy === 0) || (ga.iy === 0 && gb.iy === -1)) &&
+          ga.ix === gb.ix &&
+          ga.iz === gb.iz;
+
+        if (!isSupportPair) {
+          const dx = Math.abs(ga.ix - gb.ix);
+          const dy = Math.abs(ga.iy - gb.iy);
+          const dz = Math.abs(ga.iz - gb.iz);
+          const manhattan = dx + dy + dz;
+          if (manhattan !== 1) {
+            console.warn('Non-adjacent nodes bonded (expected immediate neighbors)', { a, b, ga, gb });
+          } else {
+            // 3) Check area matches the axis of adjacency for deck bonds
+            if (dx === 1 && !(approximatelyEqual(area, deckBondAreaX))) {
+              console.warn('Bond area mismatch for X-adjacent nodes', { a, b, area, expected: deckBondAreaX });
+            }
+            if (dy === 1 && !(approximatelyEqual(area, deckBondAreaY))) {
+              console.warn('Bond area mismatch for Y-adjacent nodes', { a, b, area, expected: deckBondAreaY });
+            }
+            if (dz === 1 && !(approximatelyEqual(area, deckBondAreaZ))) {
+              console.warn('Bond area mismatch for Z-adjacent nodes', { a, b, area, expected: deckBondAreaZ });
+            }
+          }
+        } else {
+          // For support bonds, validate against support area if available
+          if (__DEBUG_SUPPORT_AREA != null && !(approximatelyEqual(area, __DEBUG_SUPPORT_AREA))) {
+            console.warn('Support bond area mismatch', { a, b, area, expected: __DEBUG_SUPPORT_AREA });
+          }
+        }
+      }
+    }
+
     bonds.push({ centroid, normal, area, node0: a, node1: b });
   };
 
+  // Establish bonds only to immediate neighbors in +X, +Y, +Z to avoid duplicates.
+  // This creates a 6-connected grid (face neighbors) across the deck volume.
   for (let ix = 0; ix < spanSegments; ++ix) {
     for (let iy = 0; iy < thicknessLayers; ++iy) {
       for (let iz = 0; iz < widthSegments; ++iz) {
@@ -143,6 +206,7 @@ export function buildBridgeScenario({
   const supportIndices = [];
   const supportLinks = [];
   const supportArea = spacingX * spacingZ * areaScale;
+  __DEBUG_SUPPORT_AREA = supportArea; // expose for debug verification in addBond
   const supportMass = massPerDeckNode * 6.0;
   const supportVolume = spacingX * spacingZ * pierHeight;
 
@@ -161,11 +225,13 @@ export function buildBridgeScenario({
       supportIndices.push(supportIndex);
       supportLinks.push({ supportIndex, deckIndex: baseIndex });
       gridCoordinates[supportIndex] = { ix, iy: -1, iz };
+      // Bond each support directly to the deck node directly above it
       addBond(baseIndex, supportIndex, supportArea);
     }
   }
 
   console.log('nodes:', nodes.length, nodes);
+  console.log('bonds:', bonds.length);
   console.log('supportIndices:', supportIndices);
 
   return {
