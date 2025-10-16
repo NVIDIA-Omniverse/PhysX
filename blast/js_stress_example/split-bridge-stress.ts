@@ -47,6 +47,7 @@ const state = {
   controls: null,
   clock: null,
   debugRenderer: null,
+  debugHelper: null,
   stats: null,
 
   // Bridge
@@ -134,6 +135,10 @@ async function init() {
   // Debug renderer (enabled by default)
   const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: true });
   state.debugRenderer = debugRenderer;
+  // Stress solver debug line helper (rendered when physics debugger is enabled)
+  const debugHelper = createDebugLineHelper();
+  try { scene.add(debugHelper.object); } catch {}
+  state.debugHelper = debugHelper;
   
   // Capture initial state as baseline
   captureWorldSnapshot();
@@ -203,6 +208,17 @@ function setupControls() {
       if (state.debugRenderer) {
         const enabled = state.debugRenderer.toggle();
         debugToggle.textContent = enabled ? 'Hide Debug Wireframe' : 'Show Debug Wireframe';
+        // Keep stress solver line overlay in sync with physics debugger
+        try {
+          if (state.debugHelper) {
+            if (!enabled) {
+              updateDebugLineObject(state.debugHelper, [], false);
+            } else {
+              // Will be updated during the next frame; ensure visibility reflects state
+              state.debugHelper.object.visible = !!(state.debugHelper.currentLines && state.debugHelper.currentLines.length > 0);
+            }
+          }
+        } catch {}
       }
     });
   }
@@ -419,6 +435,7 @@ function loop() {
     updateMeshes();
     updateStatus();
     if (state.debugRenderer) state.debugRenderer.update();
+    try { if (state.debugRenderer?.enabled) renderDebugLines(); else if (state.debugHelper) updateDebugLineObject(state.debugHelper, [], false); } catch {}
     controls.update();
     renderer.render(scene, camera);
     if (state.stats) state.stats.update();
@@ -445,6 +462,7 @@ function loop() {
     updateMeshes();
     updateStatus();
     if (state.debugRenderer) state.debugRenderer.update();
+    try { if (state.debugRenderer?.enabled) renderDebugLines(); else if (state.debugHelper) updateDebugLineObject(state.debugHelper, [], false); } catch {}
     controls.update();
     renderer.render(scene, camera);
     if (state.stats) state.stats.update();
@@ -501,6 +519,7 @@ function loop() {
   updateMeshes();
   updateStatus();
   if (state.debugRenderer) state.debugRenderer.update();
+  try { if (state.debugRenderer?.enabled) renderDebugLines(); else if (state.debugHelper) updateDebugLineObject(state.debugHelper, [], false); } catch {}
   controls.update();
   renderer.render(scene, camera);
   if (state.stats) state.stats.update();
@@ -1320,7 +1339,7 @@ function debugPrintSolver() {
   const err = s.stressError();
   const converged = s.converged();
   const settings = state.solverSettings;
-  const debugLines = s.fillDebugRender();
+  const debugLines = s.fillDebugRender({ mode: ExtDebugMode.Max, scale: 1.0 });
 
   console.group('🧮 ExtStressSolver Snapshot');
   console.log('Actors:', actors.length);
@@ -1331,5 +1350,201 @@ function debugPrintSolver() {
   console.log('Stress Error:', `lin=${err.lin.toFixed(6)} ang=${err.ang.toFixed(6)}`, converged ? '(converged)' : '');
   if (settings) console.log('Settings:', settings);
   console.log('Debug Lines (for overlay):', debugLines?.length ?? 0);
+
+  // Planned fractures (without applying) — per-actor preview
+  try {
+    const planned = s.generateFractureCommandsPerActor();
+    if (planned && planned.length) {
+      console.log('Planned fractures (by actor):');
+      planned.forEach((p) => {
+        const total = p.fractures?.length ?? 0;
+        const sample = (p.fractures || []).slice(0, 5).map((f) => ({ n0: f.nodeIndex0, n1: f.nodeIndex1, health: f.health?.toFixed?.(4) ?? f.health }));
+        console.log(`  • Actor ${p.actorIndex}: ${total} bond(s)`, sample.length ? { sample } : '');
+      });
+    }
+  } catch {}
+
+  // Top stressed bonds (derived from debug colors)
+  try {
+    const top = computeTopStressedBonds(10);
+    if (top.length) {
+      console.log('Top stressed bonds (percent of limits):');
+      console.log('  idx |   max%    C%     T%     S%   | C=Compression  T=Tension  S=Shear');
+      const fmt = (p:number) => (p*100).toFixed(1).padStart(6);
+      top.forEach((t, i) => {
+        const idx = String(i + 1).padStart(2, '0');
+        console.log(`  ${idx}  | ${fmt(t.maxPct)}  ${fmt(t.cPct)}  ${fmt(t.tPct)}  ${fmt(t.sPct)}  |`);
+      });
+    }
+  } catch {}
   console.groupEnd();
 }
+
+// ---------- Stress Debug Line Rendering ----------
+function createDebugLineHelper() {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(0), 3));
+
+  const material = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.95,
+    depthTest: false
+  });
+
+  const object = new THREE.LineSegments(geometry, material);
+  object.visible = false;
+
+  return { object, geometry, material, currentLines: [] };
+}
+
+function updateDebugLineObject(debugHelper, debugLines, enabled) {
+  if (!enabled || !debugLines || debugLines.length === 0) {
+    debugHelper.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
+    debugHelper.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(0), 3));
+    debugHelper.object.visible = false;
+    return;
+  }
+
+  const positions = new Float32Array(debugLines.length * 2 * 3);
+  const colors = new Float32Array(debugLines.length * 2 * 3);
+
+  const colorFromUint24 = (u24) => ({
+    r: ((u24 >> 16) & 0xff) / 255,
+    g: ((u24 >> 8) & 0xff) / 255,
+    b: (u24 & 0xff) / 255
+  });
+
+  debugLines.forEach((line, index) => {
+    const base = index * 6;
+    positions[base] = line.p0.x;
+    positions[base + 1] = line.p0.y;
+    positions[base + 2] = line.p0.z;
+    positions[base + 3] = line.p1.x;
+    positions[base + 4] = line.p1.y;
+    positions[base + 5] = line.p1.z;
+
+    const c0 = colorFromUint24(line.color0);
+    const c1 = colorFromUint24(line.color1 ?? line.color0);
+    colors[base] = c0.r; colors[base + 1] = c0.g; colors[base + 2] = c0.b;
+    colors[base + 3] = c1.r; colors[base + 4] = c1.g; colors[base + 5] = c1.b;
+  });
+
+  debugHelper.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  debugHelper.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  debugHelper.geometry.computeBoundingSphere();
+  debugHelper.object.visible = true;
+}
+
+function renderDebugLines() {
+  const solver = state.solver;
+  const world = state.world;
+  const bodyHandle = state.rootBodyHandle;
+  const helper = state.debugHelper;
+  if (!solver || !world || !helper) return;
+
+  // Lines are in bridge-local space; fetch them
+  const debugLines = solver.fillDebugRender({ mode: ExtDebugMode.Max, scale: 1.0 }) || [];
+  helper.currentLines = debugLines;
+
+  if (!state.debugRenderer?.enabled) {
+    updateDebugLineObject(helper, [], false);
+    return;
+  }
+
+  const body = world.getRigidBody(bodyHandle);
+  if (!body) {
+    updateDebugLineObject(helper, [], false);
+    return;
+  }
+
+  const tr = body.translation();
+  const rot = body.rotation();
+  const q = new THREE.Quaternion(rot.x, rot.y, rot.z, rot.w);
+  const t = new THREE.Vector3(tr.x, tr.y, tr.z);
+
+  // Transform to world-space for rendering
+  const worldLines = debugLines.map((line) => {
+    const p0 = new THREE.Vector3(line.p0.x, line.p0.y, line.p0.z).applyQuaternion(q).add(t);
+    const p1 = new THREE.Vector3(line.p1.x, line.p1.y, line.p1.z).applyQuaternion(q).add(t);
+    return { p0: { x: p0.x, y: p0.y, z: p0.z }, p1: { x: p1.x, y: p1.y, z: p1.z }, color0: line.color0, color1: line.color1 };
+  });
+
+  updateDebugLineObject(helper, worldLines, true);
+}
+
+// Compute stress percentages for compression/tension/shear by decoding debug colors.
+// Note: This mirrors the C++ hue mapping used in NvBlastExtStressSolver (bondHealthColor).
+function computeTopStressedBonds(limit = 10) {
+  const s = state.solver;
+  if (!s) return [];
+
+  // Per-mode debug lines; arrays are expected to align by solver bond order
+  const linesMax = s.fillDebugRender({ mode: ExtDebugMode.Max, scale: 1.0 }) || [];
+  const linesC = s.fillDebugRender({ mode: ExtDebugMode.Compression, scale: 1.0 }) || [];
+  const linesT = s.fillDebugRender({ mode: ExtDebugMode.Tension, scale: 1.0 }) || [];
+  const linesS = s.fillDebugRender({ mode: ExtDebugMode.Shear, scale: 1.0 }) || [];
+
+  const N = Math.min(linesMax.length, linesC.length, linesT.length, linesS.length);
+  const entries = [];
+  for (let i = 0; i < N; i++) {
+    const cPct = stressPctFromColor(linesC[i].color0);
+    const tPct = stressPctFromColor(linesT[i].color0);
+    const sPct = stressPctFromColor(linesS[i].color0);
+    const mPct = Math.max(cPct, tPct, sPct);
+    if (mPct >= 0) {
+      entries.push({ idx: i, maxPct: mPct, cPct, tPct, sPct });
+    }
+  }
+
+  entries.sort((a, b) => b.maxPct - a.maxPct);
+  return entries.slice(0, limit);
+}
+
+function stressPctFromColor(color: number): number {
+  // Detect unbreakable color (approx 0xFF00AEFF) — treat as 0
+  if ((color & 0x00FFFFFF) === 0x00AEFF) return 0.0;
+
+  const r = (color >> 16) & 0xFF;
+  const g = (color >> 8) & 0xFF;
+  const b = color & 0xFF;
+  const { h, s, v } = rgbToHsv(r / 255, g / 255, b / 255);
+  if (s < 0.5 || v < 0.5) return -1; // unexpected
+
+  const GREEN = 1.0 / 3.0;
+  const RED = 0.0;
+  const BLUE = 2.0 / 3.0;
+  const MAGENTA = 5.0 / 6.0;
+
+  // Map hue back to stressPct per solver mapping
+  // 0..0.5: GREEN -> RED, 0.5..1.0: BLUE -> MAGENTA
+  if (h <= GREEN + 1e-3 && h >= RED - 1e-3) {
+    const t = (GREEN - h) / (GREEN - RED);
+    return 0.5 * clamp01(t);
+  }
+  if (h >= BLUE - 1e-3 && h <= MAGENTA + 1e-3) {
+    const t = (h - BLUE) / (MAGENTA - BLUE);
+    return 0.5 + 0.5 * clamp01(t);
+  }
+  return -1;
+}
+
+function rgbToHsv(r: number, g: number, b: number) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+      case g: h = ((b - r) / d + 2); break;
+      case b: h = ((r - g) / d + 4); break;
+    }
+    h /= 6;
+  }
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+  return { h, s, v };
+}
+
+function clamp01(x: number) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
