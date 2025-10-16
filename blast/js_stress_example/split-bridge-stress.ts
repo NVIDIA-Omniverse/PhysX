@@ -142,6 +142,7 @@ async function init() {
   window.debugBridge = {
     printHierarchy: () => printWorldHierarchy(),
     captureSnapshot: () => captureWorldSnapshot(),
+    printSolver: () => debugPrintSolver(),
     state
   };
   
@@ -454,6 +455,10 @@ function loop() {
   // Solve
   state.solver.update();
 
+  // Optional: quick debug log if errors spike
+  // const err = state.solver.stressError();
+  // if (err.lin > 1e-3 || err.ang > 1e-3) console.debug('Stress error', err);
+
   // Stress-based fracture & split
   if (state.solver.overstressedBondCount() > 0) {
     // console.log('Overstressed bond count:', state.solver.overstressedBondCount());
@@ -482,7 +487,10 @@ function drainContactsAndApplyForces() {
   const { world, eventQueue, rootBodyHandle } = state;
 
   const rootBody = world.getRigidBody(rootBodyHandle);
-  if (!rootBody) return;
+  if (!rootBody) {
+    console.error('No root body found:', rootBodyHandle);
+    return;
+  }
 
   const rq = new THREE.Quaternion(
     rootBody.rotation().x,
@@ -666,6 +674,7 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'ball') {
   colliderDesc = colliderDesc
     // .setMass(150_000.0)
     .setMass(120_000.0)
+    // .setMass(120_000_000.0)
     .setFriction(0.6)
     .setRestitution(0.2)
     .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -723,7 +732,7 @@ function applyPendingMigrations() {
     for (const pb of list) {
       const inherit = world.getRigidBody(pb.inheritFromBodyHandle);
       const desc = pb.isSupport ? R.RigidBodyDesc.fixed() : R.RigidBodyDesc.dynamic();
-      console.log('applyPendingMigrations pb', pb, inherit);
+      // console.log('applyPendingMigrations pb', pb, inherit);
       if (inherit) {
         const pt = inherit.translation();
         const pq = inherit.rotation();
@@ -734,7 +743,7 @@ function applyPendingMigrations() {
             .setLinvel(lv?.x ?? 0, lv?.y ?? 0, lv?.z ?? 0)
             // .setAngvel(av?.x ?? 0, av?.y ?? 0, av?.z ?? 0)
             ;
-        console.log('applyPendingMigrations translation', desc);
+        // console.log('applyPendingMigrations translation', desc);
       }
       const body = world.createRigidBody(desc);
       state.actorMap.set(pb.actorIndex, { bodyHandle: body.handle });
@@ -767,7 +776,7 @@ function applyPendingMigrations() {
 
       // Disable old collider and queue removal
       if (seg.colliderHandle != null) {
-        console.warn('Disabling old collider:', seg.colliderHandle);
+        // console.warn('Disabling old collider:', seg.colliderHandle);
         const oldC = world.getCollider(seg.colliderHandle);
         if (oldC) oldC.setEnabled(false);
         state.activeContactColliders.delete(seg.colliderHandle);
@@ -789,7 +798,7 @@ function applyPendingMigrations() {
         ? seg.baseWorldPosition
         : seg.baseLocalOffset;
 
-      console.log('applyPendingMigrations collider seg', seg.isSupport, seg);
+      // console.log('applyPendingMigrations collider seg', seg.isSupport, seg);
       const col = world.createCollider(
         R.ColliderDesc.cuboid(halfX, halfY, halfZ)
           // .setTranslation(seg.localOffset.x, seg.localOffset.y, seg.localOffset.z)
@@ -806,7 +815,7 @@ function applyPendingMigrations() {
       seg.colliderHandle = col.handle;
       seg.detached = true;
 
-      console.info('Setting collider to node:', col.handle, seg.nodeIndex);
+      // console.info('Setting collider to node:', col.handle, seg.nodeIndex);
       state.colliderToNode.set(col.handle, seg.nodeIndex);
       state.activeContactColliders.add(col.handle);
       
@@ -1176,16 +1185,35 @@ function updateStatus() {
   const detachedCount = state.chunks.filter(c => c.detached).length;
   const ballCount = state.balls.length;
   const rigidbodyCount = state.world.bodies.len();
+  const solverActorCount = state.solver ? state.solver.actorCount() : 0;
+  const solverNodeCount = state.solver ? state.solver.graphNodeCount() : 0;
+  const overstressed = state.solver ? state.solver.overstressedBondCount() : 0;
+  const stressErr = state.solver ? state.solver.stressError() : { lin: 0, ang: 0 };
+  const converged = state.solver ? state.solver.converged() : false;
 
   const segmentCountEl = document.getElementById('segment-count');
   const detachedCountEl = document.getElementById('detached-count');
   const ballCountEl = document.getElementById('ball-count');
   const rigidbodyCountEl = document.getElementById('rigidbody-count');
+  const solverActorsEl = document.getElementById('solver-actors');
+  const solverNodesEl = document.getElementById('solver-nodes');
+  const solverOverstressedEl = document.getElementById('solver-overstressed');
+  const solverBondsEl = document.getElementById('solver-bonds');
+  const solverErrLinEl = document.getElementById('solver-error-lin');
+  const solverErrAngEl = document.getElementById('solver-error-ang');
+  const solverConvergedEl = document.getElementById('solver-converged');
 
   if (segmentCountEl) segmentCountEl.textContent = String(attachedCount);
   if (detachedCountEl) detachedCountEl.textContent = String(detachedCount);
   if (ballCountEl) ballCountEl.textContent = String(ballCount);
   if (rigidbodyCountEl) rigidbodyCountEl.textContent = String(rigidbodyCount);
+  if (solverActorsEl) solverActorsEl.textContent = String(solverActorCount);
+  if (solverNodesEl) solverNodesEl.textContent = String(solverNodeCount);
+  if (solverOverstressedEl) solverOverstressedEl.textContent = String(overstressed);
+  if (solverBondsEl) solverBondsEl.textContent = String(state.solver ? state.solver.bondCapacity() : 0);
+  if (solverErrLinEl) solverErrLinEl.textContent = stressErr.lin.toFixed(5);
+  if (solverErrAngEl) solverErrAngEl.textContent = stressErr.ang.toFixed(5);
+  if (solverConvergedEl) solverConvergedEl.textContent = converged ? '(converged)' : '';
 }
 
 function syncChunkMeshes() {
@@ -1243,4 +1271,33 @@ function syncBallMeshes() {
     }
   }
   state.balls = keep;
+}
+
+// ---------- Solver Debug Helpers ----------
+function debugPrintSolver() {
+  const s = state.solver;
+  if (!s) {
+    console.log('Solver not ready');
+    return;
+  }
+
+  const actors = s.actors();
+  const nodes = s.graphNodeCount();
+  const bonds = s.bondCapacity();
+  const overstressed = s.overstressedBondCount();
+  const err = s.stressError();
+  const converged = s.converged();
+  const settings = state.solverSettings;
+  const debugLines = s.fillDebugRender();
+
+  console.group('🧮 ExtStressSolver Snapshot');
+  console.log('Actors:', actors.length);
+  actors.forEach((a) => console.log(`  - Actor ${a.actorIndex}: nodes [${(a.nodes || []).join(', ')}]`));
+  console.log('Graph Nodes:', nodes);
+  console.log('Bond Capacity:', bonds);
+  console.log('Overstressed Bonds:', overstressed);
+  console.log('Stress Error:', `lin=${err.lin.toFixed(6)} ang=${err.ang.toFixed(6)}`, converged ? '(converged)' : '');
+  if (settings) console.log('Settings:', settings);
+  console.log('Debug Lines (for overlay):', debugLines?.length ?? 0);
+  console.groupEnd();
 }
