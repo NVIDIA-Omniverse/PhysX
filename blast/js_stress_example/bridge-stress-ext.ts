@@ -967,7 +967,8 @@ function resetBridge(world, bridge) {
 
       const supportColliderDesc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
         .setTranslation(0, 0, 0)
-        .setFriction(1.0)
+        // .setFriction(1.0)
+        .setFriction(0.25)
         .setRestitution(0.0)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
         .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);
@@ -984,7 +985,8 @@ function resetBridge(world, bridge) {
 
       const deckColliderDesc = RAPIER.ColliderDesc.cuboid(chunk.size.x * 0.5, chunk.size.y * 0.5, chunk.size.z * 0.5)
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
-        .setFriction(1.0)
+        // .setFriction(1.0)
+        .setFriction(0.25)
         .setRestitution(0.0)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
         .setContactForceEventThreshold(CONTACT_FORCE_THRESHOLD);

@@ -28,6 +28,7 @@ export interface BridgeConfig {
 
 export interface SolverConfig {
   maxSolverIterationsPerFrame: number;
+  strengthScale: number;
   compressionElasticLimit: number;
   compressionFatalLimit: number;
   tensionElasticLimit: number;
@@ -68,16 +69,18 @@ export const DEFAULT_CONFIG: DemoConfig = {
     thicknessLayers: 2,
     deckMass: 60_000.0,
     pierHeight: 3.0,
-    areaScale: 0.05
+    areaScale: 0.05  // 0.01–0.03 is a nice interactive range
   },
   solver: {
-    maxSolverIterationsPerFrame: 64,
-    compressionElasticLimit: 3_000_000.0,
-    compressionFatalLimit: 10_000_000.0,
-    tensionElasticLimit: 300_000.0,
-    tensionFatalLimit: 1_000_000.0,
-    shearElasticLimit: 400_000.0,
-    shearFatalLimit: 1_300_000.0,
+    maxSolverIterationsPerFrame: 25, //64,
+    strengthScale: 1_000.0,
+    // These are *unitless* solver-scale thresholds (roughly material "strength")
+    compressionElasticLimit: 0.009,   // was 3_000_000
+    compressionFatalLimit:  0.030,    // was 10_000_000
+    tensionElasticLimit:    0.0009,   // was 300_000
+    tensionFatalLimit:      0.0030,   // was 1_000_000
+    shearElasticLimit:      0.0012,   // was 400_000
+    shearFatalLimit:        0.0039,   // was 1_300_000
     graphReductionLevel: 0
   },
   environment: {
@@ -225,57 +228,65 @@ export const CONFIG_DESCRIPTORS: Record<string, Record<string, any>> = {
       unit: '',
       immediate: false
     },
+    strengthScale: {
+      label: 'Strength Scale',
+      min: 0.1,
+      max: 1_000_000.0,
+      step: 0.1,
+      unit: '',
+      immediate: false
+    },
     compressionElasticLimit: {
       label: 'Compression Elastic Limit',
-      min: 100_000,
-      max: 10_000_000,
-      step: 100_000,
-      unit: 'Pa',
+      min: 0.001,
+      max: 0.1,
+      step: 0.001,
+      unit: '',
       immediate: false,
-      exponent: 1 // non-linear scale
+      exponent: 1
     },
     compressionFatalLimit: {
       label: 'Compression Fatal Limit',
-      min: 500_000,
-      max: 50_000_000,
-      step: 500_000,
-      unit: 'Pa',
+      min: 0.005,
+      max: 0.5,
+      step: 0.005,
+      unit: '',
       immediate: false,
       exponent: 1
     },
     tensionElasticLimit: {
       label: 'Tension Elastic Limit',
-      min: 10_000,
-      max: 1_000_000,
-      step: 10_000,
-      unit: 'Pa',
+      min: 0.0001,
+      max: 0.01,
+      step: 0.0001,
+      unit: '',
       immediate: false,
       exponent: 1
     },
     tensionFatalLimit: {
       label: 'Tension Fatal Limit',
-      min: 100_000,
-      max: 5_000_000,
-      step: 100_000,
-      unit: 'Pa',
+      min: 0.0005,
+      max: 0.05,
+      step: 0.0005,
+      unit: '',
       immediate: false,
       exponent: 1
     },
     shearElasticLimit: {
       label: 'Shear Elastic Limit',
-      min: 10_000,
-      max: 1_000_000,
-      step: 10_000,
-      unit: 'Pa',
+      min: 0.0001,
+      max: 0.01,
+      step: 0.0001,
+      unit: '',
       immediate: false,
       exponent: 1
     },
     shearFatalLimit: {
       label: 'Shear Fatal Limit',
-      min: 100_000,
-      max: 5_000_000,
-      step: 100_000,
-      unit: 'Pa',
+      min: 0.0005,
+      max: 0.05,
+      step: 0.0005,
+      unit: '',
       immediate: false,
       exponent: 1
     },

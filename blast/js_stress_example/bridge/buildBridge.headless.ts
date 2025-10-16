@@ -12,21 +12,36 @@ interface CreateBridgeCoreOptions {
   solverSettings?: any;
 }
 
-export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.03, solverSettings }: CreateBridgeCoreOptions): BridgeCore {
+export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 1.0, solverSettings }: CreateBridgeCoreOptions): BridgeCore {
   const settings = runtime.defaultExtSettings();
+  
+  // Base limits (normalized values)
+  const BASE_LIMITS = {
+    compressionElasticLimit: 0.30,
+    compressionFatalLimit: 1.00,
+    tensionElasticLimit: 0.03,
+    tensionFatalLimit: 0.10,
+    shearElasticLimit: 0.04,
+    shearFatalLimit: 0.13
+  };
   
   // Apply solver settings from config if provided
   if (solverSettings) {
-    settings.maxSolverIterationsPerFrame = solverSettings.maxSolverIterationsPerFrame ?? 64;
+    settings.maxSolverIterationsPerFrame = solverSettings.maxSolverIterationsPerFrame ?? 25; //64;
     settings.graphReductionLevel = solverSettings.graphReductionLevel ?? 0;
-    settings.compressionElasticLimit = solverSettings.compressionElasticLimit ?? 0.30;
-    settings.compressionFatalLimit = solverSettings.compressionFatalLimit ?? 1.00;
-    settings.tensionElasticLimit = solverSettings.tensionElasticLimit ?? 0.03;
-    settings.tensionFatalLimit = solverSettings.tensionFatalLimit ?? 0.10;
-    settings.shearElasticLimit = solverSettings.shearElasticLimit ?? 0.04;
-    settings.shearFatalLimit = solverSettings.shearFatalLimit ?? 0.13;
+    
+    // Get strength scale from settings, default to 1.0 (no scaling)
+    const configStrengthScale = solverSettings.strengthScale ?? 1.0;
+    
+    // Apply strength scale multiplier to all limits
+    settings.compressionElasticLimit = (solverSettings.compressionElasticLimit ?? BASE_LIMITS.compressionElasticLimit) * configStrengthScale;
+    settings.compressionFatalLimit = (solverSettings.compressionFatalLimit ?? BASE_LIMITS.compressionFatalLimit) * configStrengthScale;
+    settings.tensionElasticLimit = (solverSettings.tensionElasticLimit ?? BASE_LIMITS.tensionElasticLimit) * configStrengthScale;
+    settings.tensionFatalLimit = (solverSettings.tensionFatalLimit ?? BASE_LIMITS.tensionFatalLimit) * configStrengthScale;
+    settings.shearElasticLimit = (solverSettings.shearElasticLimit ?? BASE_LIMITS.shearElasticLimit) * configStrengthScale;
+    settings.shearFatalLimit = (solverSettings.shearFatalLimit ?? BASE_LIMITS.shearFatalLimit) * configStrengthScale;
   } else {
-    settings.maxSolverIterationsPerFrame = 64;
+    settings.maxSolverIterationsPerFrame = 25; //64;
     settings.graphReductionLevel = 0;
 
     /*
@@ -39,14 +54,6 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
       shearFatalLimit: 0.0016
     };
     */
-    const BASE_LIMITS = {
-      compressionElasticLimit: 0.30,
-      compressionFatalLimit: 1.00,
-      tensionElasticLimit: 0.03,
-      tensionFatalLimit: 0.10,
-      shearElasticLimit: 0.04,
-      shearFatalLimit: 0.13
-    };
     settings.compressionElasticLimit = BASE_LIMITS.compressionElasticLimit * strengthScale;
     settings.compressionFatalLimit = BASE_LIMITS.compressionFatalLimit * strengthScale;
     settings.tensionElasticLimit = BASE_LIMITS.tensionElasticLimit * strengthScale;
@@ -54,6 +61,8 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
     settings.shearElasticLimit = BASE_LIMITS.shearElasticLimit * strengthScale;
     settings.shearFatalLimit = BASE_LIMITS.shearFatalLimit * strengthScale;
   }
+
+  console.log('Final settings', settings);
 
   // Build solver nodes with supports marked external (mass/volume 0)
   const solverNodes: SolverNode[] = scenario.nodes.map((node: any, nodeIndex: number) => {
@@ -101,7 +110,8 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
       chunks.push(chunk);
       const colliderDesc = RAPIER.ColliderDesc.cuboid(sizeX*0.5, sizeY*0.5, sizeZ*0.5)
         .setTranslation(chunk.localOffset.x, chunk.localOffset.y, chunk.localOffset.z)
-        .setFriction(1.0)
+        // .setFriction(1.0)
+        .setFriction(0.25)
         .setRestitution(0.0)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
         .setContactForceEventThreshold(0.0);

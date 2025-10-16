@@ -24,41 +24,312 @@
       </section>
       <aside class="sidebar">
         <header>
-          <h1>Split-on-Contact Demo</h1>
-          <p id="bridge-summary">
-            Click anywhere to drop balls onto the bridge. When a ball hits a bridge segment,
-            that segment detaches and becomes an independent dynamic body. This demonstrates
-            safe collider migration from a compound fixed body to individual dynamic bodies.
-          </p>
+          <h1>🌉 Bridge Stress Tester</h1>
+          <p>Adjust parameters in real-time. Change bridge → click Reset.</p>
         </header>
-        <details class="controls-collapsible" open>
-          <summary>Controls</summary>
-          <div class="controls">
-            <label class="control">
-              <span>Gravity (m/s²)</span>
-              <input type="range" id="gravity-slider" min="-30" max="-1" step="0.5" value="-9.81" />
-              <span id="gravity-value">-9.81</span>
-            </label>
-            <button id="reset-bridge" class="secondary">Reset Bridge</button>
-            <button id="toggle-debug" class="secondary">Show Debug Wireframe</button>
+
+        <!-- Environment Controls -->
+        <section class="config-section">
+          <h2 class="section-title">⚙️ Environment</h2>
+          <div class="config-grid">
+            <div class="config-row">
+              <label for="config-gravity" class="config-label">Gravity</label>
+              <div class="config-input-group">
+                <input type="range" id="config-gravity" class="config-slider" min="-30" max="0" step="0.5" value="-9.81" />
+                <span class="config-value"><span id="config-gravity-value">-9.81</span> m/s²</span>
+                <button class="config-toggle" data-target="config-gravity" title="Toggle input mode">≡</button>
+              </div>
+            </div>
           </div>
-        </details>
-        <section class="events">
-          <h2>Bridge Status</h2>
-          <div id="status-info">
-            <p><strong>Segments:</strong> <span id="segment-count">0</span> attached, <span id="detached-count">0</span> detached</p>
-            <p><strong>Balls:</strong> <span id="ball-count">0</span></p>
-            <p><strong>Rigidbodies:</strong> <span id="rigidbody-count">0</span></p>
-            <p><strong>Solver Actors:</strong> <span id="solver-actors">0</span></p>
-            <p><strong>Solver Nodes:</strong> <span id="solver-nodes">0</span></p>
-            <p><strong>Overstressed Bonds:</strong> <span id="solver-overstressed">0</span></p>
-            <p><strong>Total Bonds:</strong> <span id="solver-bonds">0</span></p>
-            <p><strong>Stress Error:</strong> lin=<span id="solver-error-lin">0</span> ang=<span id="solver-error-ang">0</span> <span id="solver-converged"></span></p>
+        </section>
+
+        <!-- Projectile Controls (Immediate) -->
+        <section class="config-section">
+          <h2 class="section-title">🎱 Projectile (Immediate)</h2>
+          <div class="config-grid">
+            <div class="config-row config-row-select">
+              <label for="config-projectile-type" class="config-label">Type</label>
+              <select id="config-projectile-type" class="config-select">
+                <option value="ball" selected>Ball</option>
+                <option value="box">Box</option>
+              </select>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-projectile-radius" class="config-label">Radius</label>
+              <div class="config-input-group">
+                <input type="range" id="config-projectile-radius" class="config-slider" min="0.1" max="1" step="0.05" value="0.35" />
+                <span class="config-value"><span id="config-projectile-radius-value">0.35</span> m</span>
+                <button class="config-toggle" data-target="config-projectile-radius" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-projectile-mass" class="config-label">Mass</label>
+              <div class="config-input-group">
+                <input type="range" id="config-projectile-mass" class="config-slider" min="1000" max="50000" step="1000" value="15000" />
+                <span class="config-value"><span id="config-projectile-mass-value">15,000</span> kg</span>
+                <button class="config-toggle" data-target="config-projectile-mass" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-projectile-dropY" class="config-label">Drop Height</label>
+              <div class="config-input-group">
+                <input type="range" id="config-projectile-dropY" class="config-slider" min="2" max="15" step="0.5" value="8" />
+                <span class="config-value"><span id="config-projectile-dropY-value">8.00</span> m</span>
+                <button class="config-toggle" data-target="config-projectile-dropY" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-projectile-linvelY" class="config-label">Velocity</label>
+              <div class="config-input-group">
+                <input type="range" id="config-projectile-linvelY" class="config-slider" min="-30" max="-1" step="1" value="-10" />
+                <span class="config-value"><span id="config-projectile-linvelY-value">-10.00</span> m/s</span>
+                <button class="config-toggle" data-target="config-projectile-linvelY" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-projectile-friction" class="config-label">Friction</label>
+              <div class="config-input-group">
+                <input type="range" id="config-projectile-friction" class="config-slider" min="0" max="1" step="0.1" value="0.6" />
+                <span class="config-value"><span id="config-projectile-friction-value">0.60</span></span>
+                <button class="config-toggle" data-target="config-projectile-friction" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-projectile-restitution" class="config-label">Restitution</label>
+              <div class="config-input-group">
+                <input type="range" id="config-projectile-restitution" class="config-slider" min="0" max="1" step="0.05" value="0.2" />
+                <span class="config-value"><span id="config-projectile-restitution-value">0.20</span></span>
+                <button class="config-toggle" data-target="config-projectile-restitution" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bridge Configuration (Deferred) -->
+        <section class="config-section">
+          <h2 class="section-title">🌉 Bridge (Requires Reset)</h2>
+          <div class="config-grid">
+            <div class="config-row">
+              <label for="config-bridge-span" class="config-label">Span</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-span" class="config-slider" min="10" max="40" step="2" value="20" />
+                <span class="config-value"><span id="config-bridge-span-value">20.00</span> m</span>
+                <button class="config-toggle" data-target="config-bridge-span" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-deckWidth" class="config-label">Width</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-deckWidth" class="config-slider" min="4" max="16" step="0.5" value="8" />
+                <span class="config-value"><span id="config-bridge-deckWidth-value">8.00</span> m</span>
+                <button class="config-toggle" data-target="config-bridge-deckWidth" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-deckThickness" class="config-label">Thickness</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-deckThickness" class="config-slider" min="0.2" max="2" step="0.1" value="0.6" />
+                <span class="config-value"><span id="config-bridge-deckThickness-value">0.60</span> m</span>
+                <button class="config-toggle" data-target="config-bridge-deckThickness" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-spanSegments" class="config-label">Span Segs</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-spanSegments" class="config-slider" min="5" max="30" step="1" value="15" />
+                <span class="config-value"><span id="config-bridge-spanSegments-value">15</span></span>
+                <button class="config-toggle" data-target="config-bridge-spanSegments" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-widthSegments" class="config-label">Width Segs</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-widthSegments" class="config-slider" min="2" max="10" step="1" value="5" />
+                <span class="config-value"><span id="config-bridge-widthSegments-value">5</span></span>
+                <button class="config-toggle" data-target="config-bridge-widthSegments" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-thicknessLayers" class="config-label">Thickness Layers</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-thicknessLayers" class="config-slider" min="1" max="5" step="1" value="2" />
+                <span class="config-value"><span id="config-bridge-thicknessLayers-value">2</span></span>
+                <button class="config-toggle" data-target="config-bridge-thicknessLayers" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-deckMass" class="config-label">Deck Mass</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-deckMass" class="config-slider" min="10000" max="200000" step="5000" value="60000" />
+                <span class="config-value"><span id="config-bridge-deckMass-value">60,000</span> kg</span>
+                <button class="config-toggle" data-target="config-bridge-deckMass" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-pierHeight" class="config-label">Pier Height</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-pierHeight" class="config-slider" min="1" max="8" step="0.5" value="3" />
+                <span class="config-value"><span id="config-bridge-pierHeight-value">3.00</span> m</span>
+                <button class="config-toggle" data-target="config-bridge-pierHeight" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-bridge-areaScale" class="config-label">Bond Area</label>
+              <div class="config-input-group">
+                <input type="range" id="config-bridge-areaScale" class="config-slider" min="0.01" max="0.5" step="0.01" value="0.02" />
+                <span class="config-value"><span id="config-bridge-areaScale-value">0.02</span></span>
+                <button class="config-toggle" data-target="config-bridge-areaScale" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Solver Configuration (Deferred) -->
+        <section class="config-section">
+          <h2 class="section-title">🧮 Solver (Requires Reset)</h2>
+          <div class="config-grid">
+            <div class="config-row">
+              <label for="config-solver-maxSolverIterationsPerFrame" class="config-label">Max Iterations</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-maxSolverIterationsPerFrame" class="config-slider" min="1" max="256" step="1" value="64" />
+                <span class="config-value"><span id="config-solver-maxSolverIterationsPerFrame-value">64</span></span>
+                <button class="config-toggle" data-target="config-solver-maxSolverIterationsPerFrame" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-strengthScale" class="config-label">Strength Scale</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-strengthScale" class="config-slider" min="0.1" max="1000000" step="1" value="1.0" />
+                <span class="config-value"><span id="config-solver-strengthScale-value">1.00</span>×</span>
+                <button class="config-toggle" data-target="config-solver-strengthScale" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-compressionElasticLimit" class="config-label">Comp. Elastic</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-compressionElasticLimit" class="config-slider" min="0.001" max="0.1" step="0.001" value="0.009" />
+                <span class="config-value"><span id="config-solver-compressionElasticLimit-value">0.009</span></span>
+                <button class="config-toggle" data-target="config-solver-compressionElasticLimit" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-compressionFatalLimit" class="config-label">Comp. Fatal</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-compressionFatalLimit" class="config-slider" min="0.005" max="0.5" step="0.005" value="0.030" />
+                <span class="config-value"><span id="config-solver-compressionFatalLimit-value">0.030</span></span>
+                <button class="config-toggle" data-target="config-solver-compressionFatalLimit" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-tensionElasticLimit" class="config-label">Tens. Elastic</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-tensionElasticLimit" class="config-slider" min="0.0001" max="0.01" step="0.0001" value="0.0009" />
+                <span class="config-value"><span id="config-solver-tensionElasticLimit-value">0.0009</span></span>
+                <button class="config-toggle" data-target="config-solver-tensionElasticLimit" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-tensionFatalLimit" class="config-label">Tens. Fatal</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-tensionFatalLimit" class="config-slider" min="0.0005" max="0.05" step="0.0005" value="0.0030" />
+                <span class="config-value"><span id="config-solver-tensionFatalLimit-value">0.0030</span></span>
+                <button class="config-toggle" data-target="config-solver-tensionFatalLimit" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-shearElasticLimit" class="config-label">Shear Elastic</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-shearElasticLimit" class="config-slider" min="0.0001" max="0.01" step="0.0001" value="0.0012" />
+                <span class="config-value"><span id="config-solver-shearElasticLimit-value">0.0012</span></span>
+                <button class="config-toggle" data-target="config-solver-shearElasticLimit" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+            
+            <div class="config-row">
+              <label for="config-solver-shearFatalLimit" class="config-label">Shear Fatal</label>
+              <div class="config-input-group">
+                <input type="range" id="config-solver-shearFatalLimit" class="config-slider" min="0.0005" max="0.05" step="0.0005" value="0.0039" />
+                <span class="config-value"><span id="config-solver-shearFatalLimit-value">0.0039</span></span>
+                <button class="config-toggle" data-target="config-solver-shearFatalLimit" title="Toggle input mode">≡</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reset & Actions -->
+        <div class="control-actions">
+          <button id="reset-bridge" class="button button-primary">↻ Reset Bridge</button>
+          <button id="toggle-debug" class="button button-secondary">◊ Debug Wireframe</button>
+          <button id="reset-defaults" class="button button-secondary">⟲ Reset to Defaults</button>
+          <div id="pending-changes-indicator" class="pending-indicator hidden">
+            ⚠️ Changes pending reset
+          </div>
+        </div>
+
+        <!-- Status Panel -->
+        <section class="status-panel">
+          <h2>📊 Status</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Segments</span>
+              <span class="status-value"><span id="segment-count">0</span>/<span id="detached-count">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Balls</span>
+              <span class="status-value"><span id="ball-count">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Bodies</span>
+              <span class="status-value"><span id="rigidbody-count">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Actors</span>
+              <span class="status-value"><span id="solver-actors">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Nodes</span>
+              <span class="status-value"><span id="solver-nodes">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Overstressed</span>
+              <span class="status-value"><span id="solver-overstressed">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Bonds</span>
+              <span class="status-value"><span id="solver-bonds">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Error L</span>
+              <span class="status-value"><span id="solver-error-lin">0</span></span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Error A</span>
+              <span class="status-value"><span id="solver-error-ang">0</span></span>
+            </div>
           </div>
         </section>
       </aside>
     </main>
-    <!-- <script type="module" src="./split-bridge-demo.js"></script> -->
     <script type="module" src="./dist/split-bridge-stress.js"></script>
   </body>
 </html>

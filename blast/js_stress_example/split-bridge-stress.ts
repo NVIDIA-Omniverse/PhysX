@@ -254,6 +254,17 @@ function setupControls() {
     });
   }
 
+  // Reset to defaults button
+  const resetDefaultsButton = document.getElementById('reset-defaults');
+  if (resetDefaultsButton) {
+    resetDefaultsButton.addEventListener('click', () => {
+      // Clear localStorage to restore defaults
+      clearConfigFromStorage();
+      // Reload page - will initialize with default configuration
+      location.reload();
+    });
+  }
+
   // Setup comprehensive configuration UI
   setupConfigurationUI();
 }
@@ -351,6 +362,9 @@ function setupConfigurationUI() {
               const key = matches[2];
               state.configManager!.set(category, key, value);
               updatePendingIndicator();
+              // Auto-save to localStorage
+              const currentConfig = state.configManager!.getConfig();
+              saveConfigToStorage(currentConfig);
             }
           }
         });
@@ -491,6 +505,10 @@ function setupConfigurationUI() {
 
       // Update pending indicator if bridge/solver changed
       updatePendingIndicator();
+      
+      // Auto-save to localStorage whenever a value changes
+      const currentConfig = state.configManager!.getConfig();
+      saveConfigToStorage(currentConfig);
     };
   };
 
@@ -508,9 +526,20 @@ function setupConfigurationUI() {
       // Attach event listener (use 'change' for select, 'input' for others)
       const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
       input.addEventListener(eventType, createInputHandler(category as keyof DemoConfig, key, displayId, isImmediate));
-      
-      // Initialize current value
-      const currentConfig = state.configManager.getConfig();
+    }
+  }
+
+  // SEPARATE PASS: Initialize all UI values from the saved config
+  // This ensures values are loaded correctly on page load
+  const currentConfig = state.configManager.getConfig();
+  for (const [category, keys] of Object.entries(CONFIG_DESCRIPTORS)) {
+    for (const [key] of Object.entries(keys as any)) {
+      const inputId = `config-${category}-${key}`;
+      const displayId = `config-${category}-${key}-value`;
+      const input = document.getElementById(inputId) as HTMLInputElement | HTMLSelectElement;
+
+      if (!input) continue;
+
       const currentValue = (currentConfig[category as keyof DemoConfig] as any)[key];
       
       // For select elements, set the selected value; for others, update display
@@ -659,7 +688,7 @@ function buildBridge(scene, world) {
     world: world,
     scenario,
     gravity: currentConfig?.environment?.gravity ?? DEFAULT_CONFIG.environment.gravity,
-    strengthScale: 10_000_000.0,
+    strengthScale: 10_000_000.0, // Old
     solverSettings: solverConfig
   });
   
@@ -814,6 +843,10 @@ function loop() {
 
   // Solve
   state.solver.update();
+  if (!state.solver.converged()) {
+    // console.log('solver not converged');
+    state.solver.update();
+  }
   // console.log('converged?', state.solver.converged());
   // state.solver.update();
   // state.solver.update();
@@ -1203,7 +1236,8 @@ function applyPendingMigrations() {
           .setTranslation(tx, ty, tz)
           .setActiveEvents(R.ActiveEvents.CONTACT_FORCE_EVENTS)
           .setContactForceEventThreshold(0.0)
-          .setFriction(0.9)
+          // .setFriction(0.9)
+          .setFriction(0.25)
           .setRestitution(0.0),
         body
       );
