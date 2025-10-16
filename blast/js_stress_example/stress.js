@@ -2,14 +2,14 @@ const isNode = typeof process !== 'undefined' && process.release?.name === 'node
 
 const moduleFactoryPromise = (async () => {
   if (isNode) {
-    const factoryModule = await import('./dist/stress_solver.cjs');
+    const factoryModule = await import('./stress_solver.cjs');
     return factoryModule.default ?? factoryModule;
   }
-  const factoryModule = await import('./dist/stress_solver.mjs');
+  const factoryModule = await import('./stress_solver.mjs');
   return factoryModule.default ?? factoryModule;
 })();
 
-const distDirUrl = new URL('./dist/', import.meta.url);
+const distDirUrl = new URL('./', import.meta.url);
 
 let fileURLToPathFn;
 
@@ -832,7 +832,21 @@ class ExtStressSolver {
         if (nodesAddress) {
           const offset = nodesAddress >>> 2;
           for (let n = 0; n < nodeCount; ++n) {
-            nodes.push(heapU32[offset + n]);
+            try {
+              nodes.push(heapU32[offset + n]);
+            } catch (e) {
+              console.error(
+                `Failed to access nodes for actor at index ${i} (actorIndex: ${actorIndex}):`,
+                {
+                  offset,
+                  n,
+                  nodeCount,
+                  heapU32Length: heapU32.length,
+                  nodesAddress,
+                }
+              );
+              throw e;
+            }
           }
         }
 
@@ -1041,7 +1055,21 @@ class ExtStressSolver {
               if (nodesAddress) {
                 const nodeOffset = nodesAddress >>> 2;
                 for (let n = 0; n < nodeCount; ++n) {
-                  nodes.push(heapU32[nodeOffset + n]);
+                  try {
+                    nodes.push(heapU32[nodeOffset + n]);
+                  } catch (e) {
+                    console.error(
+                      `Failed to access nodes for actor at index ${i} (actorIndex: ${actorIndex}):`,
+                      {
+                        nodeOffset,
+                        n,
+                        nodeCount,
+                        heapU32Length: heapU32.length,
+                        nodesAddress,
+                      }
+                    );
+                    throw e;
+                  }
                 }
               }
               children.push({ actorIndex, nodes });
