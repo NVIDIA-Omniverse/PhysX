@@ -1045,9 +1045,8 @@ class ExtStressSolver {
 
           const children = [];
           if (childAddress) {
-            const childIndex = childAddress >>> 2;
             for (let c = 0; c < childCountForEvent; ++c) {
-              const actorBase = childPtr + (childIndex - (childPtr >>> 2) + c) * actorStructSize;
+              const actorBase = childAddress + c * actorStructSize;
               const actorIndex = commandView.getUint32(actorBase, true);
               const nodesAddress = commandView.getUint32(actorBase + 4, true);
               const nodeCount = commandView.getUint32(actorBase + 8, true);

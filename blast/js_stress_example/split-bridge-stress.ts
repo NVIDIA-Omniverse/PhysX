@@ -9,6 +9,8 @@ import {
   ExtForceMode,
   ExtDebugMode // (unused here, handy if you want to add a stress overlay)
 } from './stress.js';
+import { createBridgeCore } from './bridge/buildBridge.headless.js';
+import { buildBridgeScenario } from './extBridgeScenario.js';
 
 /**
  * Minimal stress-driven bridge fracture demo with stable identity tracking.
@@ -27,22 +29,12 @@ import {
  */
 
 // ---------- Tunables ----------
-const BRIDGE_SEGMENTS = 32;
-const SEGMENT_SIZE = { x: 0.6, y: 0.2, z: 2.0 };
-const SEGMENT_SPACING = 0.62;
-const BRIDGE_Y = 0.5;
-
 const BALL_RADIUS = 0.35;
 const BALL_DROP_Y = 8;
 
 const GRAVITY = -9.81;
 const SAFE_FRAMES_AFTER_SPLIT = 2;  // give BVH time to settle after migrations
 const SAFE_FRAMES_AFTER_SPAWN = 1;  // spawn-only cycles
-
-// Stress parameters
-const NODE_MASS_KG = 10;
-const NODE_VOLUME_M3 = SEGMENT_SIZE.x * SEGMENT_SIZE.y * SEGMENT_SIZE.z;
-const BOND_AREA_M2 = SEGMENT_SIZE.y * SEGMENT_SIZE.z;
 
 // ---------- Demo state ----------
 const state = {
@@ -59,21 +51,22 @@ const state = {
 
   // Bridge
   rootBodyHandle: null,
-  segments: /** @type {Array<{
-    index:number,
+  chunks: /** @type {Array<{
+    nodeIndex:number,
     localOffset: THREE.Vector3,
     size: {x:number,y:number,z:number},
     mesh: THREE.Mesh,
     colliderHandle: number,
     bodyHandle: number,
-    detached: boolean
+    detached: boolean,
+    isSupport: boolean
   }>} */ ([]),
 
   // Balls
   balls: /** @type {Array<{ bodyHandle:number, mesh:THREE.Mesh }>} */ ([]),
 
   // Handle maps
-  colliderToSegment: /** @type {Map<number, number>} */ (new Map()),
+  colliderToNode: /** @type {Map<number, number>} */ (new Map()),
   activeContactColliders: /** @type {Set<number>} */ (new Set()),
   disabledCollidersToRemove: /** @type {Set<number>} */ (new Set()),
   bodiesToRemove: /** @type {Set<number>} */ (new Set()),
@@ -83,14 +76,14 @@ const state = {
   colliderMetadata: /** @type {Map<number, {type:string, name:string, segmentIndex?:number, nodeIndex?:number, createdAt:number}>} */ (new Map()),
   
   // Previous state snapshot for delta tracking
-  previousWorldState: /** @type {{bodies:Map<number,any>, colliders:Map<number,any>}} */ ({ bodies: new Map(), colliders: new Map() }),
+  previousWorldState: /** @type {{bodies:Map<number,any>, colliders:Map<number,any>, collidersByStableId?:Map<string,any>}} */ ({ bodies: new Map(), colliders: new Map(), collidersByStableId: new Map() }),
   
   // Counters for unique naming
   bodyIdCounter: 0,
   ballIdCounter: 0,
 
   // Queues (mutations applied in SAFE frames only)
-  pendingBodiesToCreate: /** @type {Array<{ actorIndex:number, inheritFromBodyHandle:number, nodes:number[] }>} */ ([]),
+  pendingBodiesToCreate: /** @type {Array<{ actorIndex:number, inheritFromBodyHandle:number, nodes:number[], isSupport:boolean }>} */ ([]),
   pendingColliderMigrations: /** @type {Array<{ nodeIndex:number, targetBodyHandle:number }>} */ ([]),
   pendingBallSpawns: /** @type {Array<{ x:number, z:number }>} */ ([]),
 
@@ -108,12 +101,19 @@ const state = {
   solverSettings: null,
   // actorIndex -> { bodyHandle }
   actorMap: /** @type {Map<number, { bodyHandle:number }>} */ (new Map()),
+  
+  // Additional bridge state
+  scenario: null,
+  pendingContactForces: /** @type {Map<number, {force:any, point:any, impulse:any}>} */ (new Map()),
 };
 
 init().catch((e) => console.error('Demo init failed:', e));
 
 async function init() {
   await RAPIER.init();
+  
+  // Load stress solver runtime FIRST
+  state.runtime = await loadStressSolver();
 
   // Three
   const canvas = ensureCanvas();
@@ -134,8 +134,6 @@ async function init() {
   // Debug renderer (enabled by default)
   const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: true });
   state.debugRenderer = debugRenderer;
-
-  await buildStressModel();
   
   // Capture initial state as baseline
   captureWorldSnapshot();
@@ -241,7 +239,7 @@ function initThree(canvas) {
   camera.position.set(0, 8, 18);
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, BRIDGE_Y, 0);
+  controls.target.set(0, 0, 0);
   controls.enableDamping = true;
 
   window.addEventListener('resize', () => {
@@ -265,133 +263,146 @@ function buildLights(scene) {
 }
 
 function buildGround(scene, world) {
+  // Define geometry and position options once
+  const groundGeometry = new THREE.BoxGeometry(60, 1, 60);
+  const groundMaterialOptions = { color: 0x1a1e2f, roughness: 0.85, metalness: 0.1 };
+  const groundPosition = { x: 0, y: -5, z: 0 };
+
+  // Create mesh with reusable options
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(60, 1, 60),
-    new THREE.MeshStandardMaterial({ color: 0x1a1e2f, roughness: 0.85, metalness: 0.1 })
+    groundGeometry,
+    new THREE.MeshStandardMaterial(groundMaterialOptions)
   );
-  mesh.position.set(0, -2.5, 0);
+  mesh.position.set(groundPosition.x, groundPosition.y, groundPosition.z);
   mesh.receiveShadow = true;
   scene.add(mesh);
 
+  // Create collider using reusable position
   const body = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
-  world.createCollider(RAPIER.ColliderDesc.cuboid(30, 0.5, 30).setTranslation(0, -2.5, 0), body);
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(30, 0.5, 30).setTranslation(
+      groundPosition.x, groundPosition.y, groundPosition.z
+    ),
+    body
+  );
 }
 
 function buildBridge(scene, world) {
-  const root = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, BRIDGE_Y, 0));
-  state.rootBodyHandle = root.handle;
+  const scenario = buildBridgeScenario(); // Use defaults for complex bridge
+  state.scenario = scenario;
   
-  // Register root body metadata
-  state.bodyMetadata.set(root.handle, {
-    type: 'bridge-root',
-    name: 'Bridge-Root-Fixed',
-    actorIndex: 0,
-    createdAt: Date.now()
+  // Create physics/solver core using proven buildBridge.headless approach
+  const core = createBridgeCore({ 
+    runtime: state.runtime,
+    world: world,
+    scenario,
+    gravity: GRAVITY,
+    // strengthScale: 0.03
+    // strengthScale: 5_0_000_000.0
+    // strengthScale: 10_000_000.0
+    // strengthScale: 100_000.0
+    strengthScale: 30_000_000.0
   });
-
-  const mat = new THREE.MeshStandardMaterial({ color: 0x4b6fe8, roughness: 0.4, metalness: 0.45 });
-
-  const halfCount = (BRIDGE_SEGMENTS - 1) * 0.5;
-  for (let i = 0; i < BRIDGE_SEGMENTS; i++) {
-    const x = (i - halfCount) * SEGMENT_SPACING;
-    const localOffset = new THREE.Vector3(x, 0, 0);
-
-    const halfX = SEGMENT_SIZE.x * 0.5;
-    const halfY = SEGMENT_SIZE.y * 0.5;
-    const halfZ = SEGMENT_SIZE.z * 0.5;
-
-    const collider = world.createCollider(
-      RAPIER.ColliderDesc.cuboid(halfX, halfY, halfZ)
-        .setTranslation(localOffset.x, localOffset.y, localOffset.z)
-        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
-        .setContactForceEventThreshold(0.0)
-        .setFriction(0.9)
-        .setRestitution(0.0),
-      root
-    );
-
+  
+  // Materials
+  const deckMat = new THREE.MeshStandardMaterial({ color: 0x4b6fe8, roughness: 0.4, metalness: 0.45 });
+  const supportMat = new THREE.MeshStandardMaterial({ color: 0x2f3e56, roughness: 0.6, metalness: 0.25 });
+  
+  // Create Three.js meshes for each chunk
+  console.log('buildBridge chunks', core.chunks);
+  core.chunks.forEach((chunk) => {
+    const mat = chunk.isSupport ? supportMat.clone() : deckMat.clone();
     const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(SEGMENT_SIZE.x, SEGMENT_SIZE.y, SEGMENT_SIZE.z),
-      mat.clone()
+      new THREE.BoxGeometry(chunk.size.x, chunk.size.y, chunk.size.z),
+      mat
     );
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    chunk.mesh = mesh;
+    chunk.baseColor = mat.color.clone();
+    
+    // Store baseLocalOffset as THREE.Vector3 for existing mesh sync logic
+    chunk.baseLocalOffset = new THREE.Vector3(
+      chunk.baseLocalOffset.x,
+      chunk.baseLocalOffset.y,
+      chunk.baseLocalOffset.z
+    );
+    chunk.localOffset = new THREE.Vector3(
+      chunk.localOffset.x,
+      chunk.localOffset.y,
+      chunk.localOffset.z
+    );
+    
+    // For support piers, also convert baseWorldPosition to THREE.Vector3
+    if (chunk.isSupport && chunk.baseWorldPosition) {
+      chunk.baseWorldPosition = new THREE.Vector3(
+        chunk.baseWorldPosition.x,
+        chunk.baseWorldPosition.y,
+        chunk.baseWorldPosition.z
+      );
+    }
+    
     scene.add(mesh);
-
-    state.segments.push({
-      index: i,
-      localOffset,
-      size: { ...SEGMENT_SIZE },
-      mesh,
-      colliderHandle: collider.handle,
-      bodyHandle: root.handle,
-      detached: false
-    });
-
-    console.info('Setting collider to segment:', collider.handle, i);
-    state.colliderToSegment.set(collider.handle, i);
-    state.activeContactColliders.add(collider.handle);
+  });
+  
+  // Register body metadata (preserve existing metadata tracking)
+  state.bodyMetadata.set(core.bodyHandle, {
+    type: 'bridge-root',
+    name: 'Bridge-Deck-Fixed',
+    actorIndex: 0,
+    createdAt: Date.now()
+  });
+  
+  core.chunks.forEach((chunk) => {
+    // Support piers have separate fixed bodies
+    if (chunk.isSupport && chunk.bodyHandle !== core.bodyHandle) {
+      state.bodyMetadata.set(chunk.bodyHandle, {
+        type: 'bridge-support',
+        name: `Support-Pier-${chunk.nodeIndex}`,
+        createdAt: Date.now()
+      });
+    }
     
     // Register collider metadata
-    state.colliderMetadata.set(collider.handle, {
-      type: 'bridge-segment',
-      name: `Segment-${i}`,
-      segmentIndex: i,
-      nodeIndex: i,
-      createdAt: Date.now()
-    });
-  }
-
-  syncSegmentsMeshes();
-}
-
-// ---------- Stress model ----------
-async function buildStressModel() {
-  state.runtime = await loadStressSolver();
-
-  const nodes = state.segments.map((seg) => ({
-    centroid: { x: seg.localOffset.x, y: seg.localOffset.y, z: seg.localOffset.z },
-    mass: NODE_MASS_KG,
-    volume: NODE_VOLUME_M3
-  }));
-
-  const bonds = [];
-  for (let i = 0; i < BRIDGE_SEGMENTS - 1; i++) {
-    const a = state.segments[i].localOffset;
-    const b = state.segments[i + 1].localOffset;
-    bonds.push({
-      centroid: { x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5, z: (a.z + b.z) * 0.5 },
-      normal:   { x: 1, y: 0, z: 0 },
-      area: BOND_AREA_M2,
-      node0: i,
-      node1: i + 1
-    });
-  }
-
-  const settings = state.runtime.defaultExtSettings();
-  settings.maxSolverIterationsPerFrame = 32;
-  settings.compressionElasticLimit = 1.0e4;
-  settings.compressionFatalLimit   = 2.0e4;
-  settings.tensionElasticLimit     = 1.0e4;
-  settings.tensionFatalLimit       = 2.0e4;
-  settings.shearElasticLimit       = 8.0e3;
-  settings.shearFatalLimit         = 1.6e4;
-
-  state.solverSettings = settings;
-  state.solver = state.runtime.createExtSolver({ nodes, bonds, settings });
-
-  state.actorMap.clear();
-  state.actorMap.set(0, { bodyHandle: state.rootBodyHandle });
+    if (chunk.colliderHandle !== null) {
+      state.colliderMetadata.set(chunk.colliderHandle, {
+        type: chunk.isSupport ? 'bridge-support' : 'bridge-segment',
+        name: chunk.isSupport ? `Support-${chunk.nodeIndex}` : `Segment-${chunk.nodeIndex}`,
+        segmentIndex: chunk.nodeIndex,
+        nodeIndex: chunk.nodeIndex,
+        createdAt: Date.now()
+      });
+    }
+  });
+  
+  // Copy core state to global state
+  state.chunks = core.chunks;
+  state.colliderToNode = core.colliderToNode;
+  state.activeContactColliders = core.activeContactColliders;
+  state.pendingContactForces = core.pendingContactForces;
+  state.actorMap = core.actorMap;
+  state.solver = core.solver;
+  state.solverSettings = core.settings;
+  state.rootBodyHandle = core.bodyHandle;
+  
+  syncChunkMeshes();
 }
 
 // ---------- Loop ----------
+const physicsEnabled = true;
 function loop() {
   const { world, eventQueue, renderer, scene, camera, controls, clock } = state;
   const delta = clock.getDelta();
 
   // SAFE FRAMES: step without events then do all queued world mutations
   if (state.safeFrames > 0) {
-    try { world.step(); } catch (err) { console.warn('Safe step failed', err); }
+    try {
+      if (physicsEnabled) {
+        world.step();
+      }
+    } catch (err) {
+      console.warn('Safe step failed', err);
+    }
     state.safeFrames -= 1;
 
     applyPendingSpawns();       // create balls
@@ -413,7 +424,9 @@ function loop() {
 
   let stepped = false;
   try {
-    world.step(eventQueue);
+    if (physicsEnabled) {
+      world.step(eventQueue);
+    }
     stepped = true;
   } catch (err) {
     console.warn('Eventful step failed, switching to safe frame', err);
@@ -443,7 +456,7 @@ function loop() {
 
   // Stress-based fracture & split
   if (state.solver.overstressedBondCount() > 0) {
-    console.log('Overstressed bond count:', state.solver.overstressedBondCount());
+    // console.log('Overstressed bond count:', state.solver.overstressedBondCount());
 
     const perActor = state.solver.generateFractureCommandsPerActor();
     if (Array.isArray(perActor) && perActor.length > 0) {
@@ -482,14 +495,14 @@ function drainContactsAndApplyForces() {
   // Accumulate forces per collider handle without calling world.* inside the drain
   const acc = new Map(); // handle -> { force:THREE.Vector3, point:THREE.Vector3 }
   const add = (handle, direction, totalForce, worldPoint) => {
-    console.log('Adding force to collider:', handle, direction, totalForce, worldPoint);
+    // console.log('Adding force to collider:', handle, direction, totalForce, worldPoint);
     if (handle == null) return;
-    if (!state.colliderToSegment.has(handle)) {
-      console.error('No collider to segment found:', handle, state.colliderToSegment);
+    if (!state.colliderToNode.has(handle)) {
+      // console.error('No collider to node found:', handle, state.colliderToNode);
       return;
     }
 
-    console.log('Adding force to collider:', handle, direction, totalForce, worldPoint);
+    // console.log('Adding force to collider:', handle, direction, totalForce, worldPoint);
 
     const f = new THREE.Vector3(
       (totalForce.x ?? 0) * direction,
@@ -537,7 +550,7 @@ function drainContactsAndApplyForces() {
         console.error('No collider found:', h1, h2);
         return;
       }
-      console.log('Adding force to collider:', tf, mag, p1, p2);
+      // console.log('Adding force to collider:', tf, mag, p1, p2);
 
       // if (h1 != null)
       add(h1, +1, tf, p1 ?? p2);
@@ -549,11 +562,11 @@ function drainContactsAndApplyForces() {
   });
 
   // Apply to solver (root-local)
-  if (acc.size > 0) {
-    console.log('Applying forces to solver:', acc);
-  }
+  // if (acc.size > 0) {
+  //   console.log('Applying forces to solver:', acc);
+  // }
   acc.forEach((val, handle) => {
-    const nodeIndex = state.colliderToSegment.get(handle);
+    const nodeIndex = state.colliderToNode.get(handle);
     if (nodeIndex == null) return;
 
     const localForce = val.force.clone().applyQuaternion(qInv);
@@ -581,7 +594,7 @@ function fallbackPoint(world, handle) {
 
 // ---------- Split queueing & migrations ----------
 function queueSplitResults(splitEvents) {
-  console.log('Queueing split results:', splitEvents);
+  console.log('Queueing split results:', splitEvents, state);
 
   for (const evt of splitEvents) {
     const parentActorIndex = evt?.parentActorIndex;
@@ -603,9 +616,17 @@ function queueSplitResults(splitEvents) {
         continue;
       }
 
+      const isActorSupport = child.nodes.some(
+        nodeIndex => {
+          const chunk = state.chunks[nodeIndex];
+          return chunk?.isSupport === true;
+        }
+      );
+
       // Schedule child body creation (inherits parent pose/vel), and migrate its nodes later.
       state.pendingBodiesToCreate.push({
         actorIndex: child.actorIndex,
+        isSupport: isActorSupport,
         inheritFromBodyHandle: parentBodyHandle,
         nodes: child.nodes.slice()
       });
@@ -624,7 +645,7 @@ function applyPendingSpawns() {
   for (const s of batch) spawnBallNow(s.x, s.z);
 }
 
-function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
+function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'ball') {
   const { world, scene } = state;
   const ballId = ++state.ballIdCounter;
 
@@ -634,6 +655,7 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
       .setCanSleep(false)
       .setLinearDamping(0.01)
       .setAngularDamping(0.01)
+      .setLinvel(0, -10, 0)
   );
 
   // Pick collider desc line based on type, then chain common settings
@@ -642,7 +664,8 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
     : RAPIER.ColliderDesc.cuboid(BALL_RADIUS, BALL_RADIUS, BALL_RADIUS);
 
   colliderDesc = colliderDesc
-    .setMass(10.0)
+    // .setMass(150_000.0)
+    .setMass(120_000.0)
     .setFriction(0.6)
     .setRestitution(0.2)
     .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -680,13 +703,6 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
   mesh.position.set(x, BALL_DROP_Y, z);
   scene.add(mesh);
 
-  state.balls.push({ bodyHandle: body.handle, mesh, type });
-
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.position.set(x, BALL_DROP_Y, z);
-  scene.add(mesh);
-
   state.balls.push({ bodyHandle: body.handle, mesh });
 }
 
@@ -706,15 +722,19 @@ function applyPendingMigrations() {
     const list = pendingBodiesToCreate.splice(0, pendingBodiesToCreate.length);
     for (const pb of list) {
       const inherit = world.getRigidBody(pb.inheritFromBodyHandle);
-      const desc = R.RigidBodyDesc.dynamic();
+      const desc = pb.isSupport ? R.RigidBodyDesc.fixed() : R.RigidBodyDesc.dynamic();
+      console.log('applyPendingMigrations pb', pb, inherit);
       if (inherit) {
-        const pt = inherit.translation(); const pq = inherit.rotation();
-        const lv = inherit.linvel?.();   const av = inherit.angvel?.();
+        const pt = inherit.translation();
+        const pq = inherit.rotation();
+        const lv = inherit.linvel?.();
+        const av = inherit.angvel?.();
         desc.setTranslation(pt.x, pt.y, pt.z)
             .setRotation(pq)
             .setLinvel(lv?.x ?? 0, lv?.y ?? 0, lv?.z ?? 0)
             // .setAngvel(av?.x ?? 0, av?.y ?? 0, av?.z ?? 0)
             ;
+        console.log('applyPendingMigrations translation', desc);
       }
       const body = world.createRigidBody(desc);
       state.actorMap.set(pb.actorIndex, { bodyHandle: body.handle });
@@ -739,7 +759,7 @@ function applyPendingMigrations() {
   if (pendingColliderMigrations.length > 0) {
     const jobs = pendingColliderMigrations.splice(0, pendingColliderMigrations.length);
     for (const mig of jobs) {
-      const seg = state.segments[mig.nodeIndex];
+      const seg = state.chunks.find(c => c.nodeIndex === mig.nodeIndex);
       if (!seg) continue;
 
       // Preserve old collider metadata before removal
@@ -751,7 +771,7 @@ function applyPendingMigrations() {
         const oldC = world.getCollider(seg.colliderHandle);
         if (oldC) oldC.setEnabled(false);
         state.activeContactColliders.delete(seg.colliderHandle);
-        state.colliderToSegment.delete(seg.colliderHandle);
+        state.colliderToNode.delete(seg.colliderHandle);
         state.disabledCollidersToRemove.add(seg.colliderHandle);
         // Metadata will be removed in cleanup
         state.colliderMetadata.delete(seg.colliderHandle);
@@ -765,9 +785,16 @@ function applyPendingMigrations() {
       const body = world.getRigidBody(mig.targetBodyHandle);
       if (!body) continue;
 
+      const { x: tx, y: ty, z: tz } = seg.isSupport
+        ? seg.baseWorldPosition
+        : seg.baseLocalOffset;
+
+      console.log('applyPendingMigrations collider seg', seg.isSupport, seg);
       const col = world.createCollider(
         R.ColliderDesc.cuboid(halfX, halfY, halfZ)
-          .setTranslation(seg.localOffset.x, seg.localOffset.y, seg.localOffset.z)
+          // .setTranslation(seg.localOffset.x, seg.localOffset.y, seg.localOffset.z)
+          // .setTranslation(seg.baseLocalOffset.x, seg.baseLocalOffset.y, seg.baseLocalOffset.z)
+          .setTranslation(tx, ty, tz)
           .setActiveEvents(R.ActiveEvents.CONTACT_FORCE_EVENTS)
           .setContactForceEventThreshold(0.0)
           .setFriction(0.9)
@@ -779,23 +806,23 @@ function applyPendingMigrations() {
       seg.colliderHandle = col.handle;
       seg.detached = true;
 
-      console.info('Setting collider to segment:', col.handle, seg.index);
-      state.colliderToSegment.set(col.handle, seg.index);
+      console.info('Setting collider to node:', col.handle, seg.nodeIndex);
+      state.colliderToNode.set(col.handle, seg.nodeIndex);
       state.activeContactColliders.add(col.handle);
       
       // Restore/create metadata with stable name (preserve the segment identity)
       state.colliderMetadata.set(col.handle, {
         type: 'bridge-segment',
-        name: oldMetadata?.name ?? `Segment-${seg.index}`,
-        segmentIndex: seg.index,
-        nodeIndex: seg.index,
+        name: oldMetadata?.name ?? `Segment-${seg.nodeIndex}`,
+        segmentIndex: seg.nodeIndex,
+        nodeIndex: seg.nodeIndex,
         createdAt: oldMetadata?.createdAt ?? Date.now()
       });
     }
   }
 
   // Print final state after migrations
-  printWorldHierarchy();
+  // printWorldHierarchy();
 }
 
 /**
@@ -1082,8 +1109,8 @@ function printWorldHierarchy() {
 
 function removeDisabledHandles() {
   const { world, disabledCollidersToRemove, bodiesToRemove, colliderMetadata, bodyMetadata } = state;
-  console.log('Removing disabled handles', { disabledCollidersToRemove, bodiesToRemove });
-  return
+  // console.log('Removing disabled handles', { disabledCollidersToRemove, bodiesToRemove });
+  // return
 
   for (const h of Array.from(disabledCollidersToRemove)) {
     const c = world.getCollider(h);
@@ -1102,7 +1129,7 @@ function removeDisabledHandles() {
 
 // ---------- Safety sweeps ----------
 function preStepSweep() {
-  const { world, activeContactColliders, colliderToSegment, disabledCollidersToRemove } = state;
+  const { world, activeContactColliders, colliderToNode, disabledCollidersToRemove } = state;
 
   // Drop any colliders that no longer exist, are disabled, or lost their parent.
   for (const h of Array.from(activeContactColliders)) {
@@ -1113,19 +1140,19 @@ function preStepSweep() {
     if (!c || !enabled || !b) {
       console.warn('Deleting active contact collider:', h);
       activeContactColliders.delete(h);
-      colliderToSegment.delete(h);
+      colliderToNode.delete(h);
     }
   }
 
   // Mirror sweep on the map (paranoid redundancy)
-  for (const [h] of Array.from(colliderToSegment.entries())) {
+  for (const [h] of Array.from(colliderToNode.entries())) {
     const c = world.getCollider(h);
     const p = c ? c.parent() : undefined;
     const b = p != null ? world.getRigidBody(p) : undefined;
     const enabled = c?.isEnabled ? c.isEnabled() : true;
     if (!c || !enabled || !b) {
-      console.warn('Deleting collider to segment:', h);
-      colliderToSegment.delete(h);
+      console.warn('Deleting collider to node:', h);
+      colliderToNode.delete(h);
       activeContactColliders.delete(h);
     }
   }
@@ -1140,13 +1167,13 @@ function preStepSweep() {
 
 // ---------- Rendering ----------
 function updateMeshes() {
-  syncSegmentsMeshes();
+  syncChunkMeshes();
   syncBallMeshes();
 }
 
 function updateStatus() {
-  const attachedCount = state.segments.filter(s => !s.detached).length;
-  const detachedCount = state.segments.filter(s => s.detached).length;
+  const attachedCount = state.chunks.filter(c => !c.detached).length;
+  const detachedCount = state.chunks.filter(c => c.detached).length;
   const ballCount = state.balls.length;
   const rigidbodyCount = state.world.bodies.len();
 
@@ -1155,42 +1182,36 @@ function updateStatus() {
   const ballCountEl = document.getElementById('ball-count');
   const rigidbodyCountEl = document.getElementById('rigidbody-count');
 
-  if (segmentCountEl) segmentCountEl.textContent = attachedCount;
-  if (detachedCountEl) detachedCountEl.textContent = detachedCount;
-  if (ballCountEl) ballCountEl.textContent = ballCount;
-  if (rigidbodyCountEl) rigidbodyCountEl.textContent = rigidbodyCount;
+  if (segmentCountEl) segmentCountEl.textContent = String(attachedCount);
+  if (detachedCountEl) detachedCountEl.textContent = String(detachedCount);
+  if (ballCountEl) ballCountEl.textContent = String(ballCount);
+  if (rigidbodyCountEl) rigidbodyCountEl.textContent = String(rigidbodyCount);
 }
 
-function syncSegmentsMeshes() {
-  const { world, segments, rootBodyHandle } = state;
-
-  const root = world.getRigidBody(rootBodyHandle);
-  if (!root) return;
-
-  const rt = root.translation();
-  const rr = root.rotation();
-  const rootPos = new THREE.Vector3(rt.x, rt.y, rt.z);
-  const rootQuat = new THREE.Quaternion(rr.x, rr.y, rr.z, rr.w);
-
+function syncChunkMeshes() {
+  const { world, chunks } = state;
   const tmp = new THREE.Vector3();
   const quat = new THREE.Quaternion();
 
-  for (const seg of segments) {
-    const body = world.getRigidBody(seg.bodyHandle);
+  for (const chunk of chunks) {
+    if (!chunk.mesh) continue;
+    
+    const body = world.getRigidBody(chunk.bodyHandle);
     if (!body) continue;
 
     const t = body.translation();
     const r = body.rotation();
 
-    const basePos = (seg.detached ? new THREE.Vector3(t.x, t.y, t.z) : rootPos);
-    const baseQuat = (seg.detached ? new THREE.Quaternion(r.x, r.y, r.z, r.w) : rootQuat);
+    // Set mesh to body position
+    chunk.mesh.position.set(t.x, t.y, t.z);
+    quat.set(r.x, r.y, r.z, r.w);
+    chunk.mesh.quaternion.copy(quat);
 
-    seg.mesh.position.copy(basePos);
-    quat.copy(baseQuat);
-    seg.mesh.quaternion.copy(quat);
-
-    tmp.copy(seg.localOffset).applyQuaternion(seg.mesh.quaternion);
-    seg.mesh.position.add(tmp);
+    // Apply local offset (bridge-local -> world)
+    // For supports, localOffset is (0,0,0) so this has no effect
+    // For deck chunks, localOffset positions them relative to root body
+    tmp.copy(chunk.localOffset).applyQuaternion(chunk.mesh.quaternion);
+    chunk.mesh.position.add(tmp);
   }
 }
 

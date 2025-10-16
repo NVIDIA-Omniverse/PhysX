@@ -24,16 +24,27 @@ export function buildBridgeScenario({
   span = 20.0,
   deckWidth = 8.0,
   deckThickness = 0.6,
+  // spanSegments = 40,
+  // widthSegments = 10,
+  spanSegments = 20,
+  widthSegments = 6,
   // spanSegments = 15,
   // widthSegments = 5,
-  spanSegments = 12,
-  widthSegments = 4,
+  // spanSegments = 15,
+  // widthSegments = 5,
+  // spanSegments = 12,
+  // widthSegments = 4,
   // spanSegments = 4,
   // widthSegments = 4,
-  thicknessLayers = 2,
-  deckMass = 60000.0,
+  thicknessLayers = 3,
+  // thicknessLayers = 2,
+  // thicknessLayers = 1,
+  // deckMass = 60_000.0,
+  // deckMass = 1_000.0,
+  deckMass = 80_000.0,
   pierHeight = 3.0,
-  areaScale = 0.05
+  // areaScale = 0.05
+  areaScale = 0.10
 } = {}) {
   const nodes = [];
   const bonds = [];
@@ -153,6 +164,9 @@ export function buildBridgeScenario({
       addBond(baseIndex, supportIndex, supportArea);
     }
   }
+
+  console.log('nodes:', nodes.length, nodes);
+  console.log('supportIndices:', supportIndices);
 
   return {
     nodes,
