@@ -9,37 +9,51 @@ interface CreateBridgeCoreOptions {
   scenario: any;
   gravity?: number;
   strengthScale?: number;
+  solverSettings?: any;
 }
 
-export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.03 }: CreateBridgeCoreOptions): BridgeCore {
+export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, strengthScale = 0.03, solverSettings }: CreateBridgeCoreOptions): BridgeCore {
   const settings = runtime.defaultExtSettings();
-  settings.maxSolverIterationsPerFrame = 64;
-  settings.graphReductionLevel = 0;
+  
+  // Apply solver settings from config if provided
+  if (solverSettings) {
+    settings.maxSolverIterationsPerFrame = solverSettings.maxSolverIterationsPerFrame ?? 64;
+    settings.graphReductionLevel = solverSettings.graphReductionLevel ?? 0;
+    settings.compressionElasticLimit = solverSettings.compressionElasticLimit ?? 0.30;
+    settings.compressionFatalLimit = solverSettings.compressionFatalLimit ?? 1.00;
+    settings.tensionElasticLimit = solverSettings.tensionElasticLimit ?? 0.03;
+    settings.tensionFatalLimit = solverSettings.tensionFatalLimit ?? 0.10;
+    settings.shearElasticLimit = solverSettings.shearElasticLimit ?? 0.04;
+    settings.shearFatalLimit = solverSettings.shearFatalLimit ?? 0.13;
+  } else {
+    settings.maxSolverIterationsPerFrame = 64;
+    settings.graphReductionLevel = 0;
 
-  /*
-  const BASE_LIMITS = {
-    compressionElasticLimit: 0.0008,
-    compressionFatalLimit: 0.0016,
-    tensionElasticLimit: 0.0008,
-    tensionFatalLimit: 0.0016,
-    shearElasticLimit: 0.0008,
-    shearFatalLimit: 0.0016
-  };
-  */
-  const BASE_LIMITS = {
-    compressionElasticLimit: 0.30,
-    compressionFatalLimit: 1.00,
-    tensionElasticLimit: 0.03,
-    tensionFatalLimit: 0.10,
-    shearElasticLimit: 0.04,
-    shearFatalLimit: 0.13
-  };
-  settings.compressionElasticLimit = BASE_LIMITS.compressionElasticLimit * strengthScale;
-  settings.compressionFatalLimit = BASE_LIMITS.compressionFatalLimit * strengthScale;
-  settings.tensionElasticLimit = BASE_LIMITS.tensionElasticLimit * strengthScale;
-  settings.tensionFatalLimit = BASE_LIMITS.tensionFatalLimit * strengthScale;
-  settings.shearElasticLimit = BASE_LIMITS.shearElasticLimit * strengthScale;
-  settings.shearFatalLimit = BASE_LIMITS.shearFatalLimit * strengthScale;
+    /*
+    const BASE_LIMITS = {
+      compressionElasticLimit: 0.0008,
+      compressionFatalLimit: 0.0016,
+      tensionElasticLimit: 0.0008,
+      tensionFatalLimit: 0.0016,
+      shearElasticLimit: 0.0008,
+      shearFatalLimit: 0.0016
+    };
+    */
+    const BASE_LIMITS = {
+      compressionElasticLimit: 0.30,
+      compressionFatalLimit: 1.00,
+      tensionElasticLimit: 0.03,
+      tensionFatalLimit: 0.10,
+      shearElasticLimit: 0.04,
+      shearFatalLimit: 0.13
+    };
+    settings.compressionElasticLimit = BASE_LIMITS.compressionElasticLimit * strengthScale;
+    settings.compressionFatalLimit = BASE_LIMITS.compressionFatalLimit * strengthScale;
+    settings.tensionElasticLimit = BASE_LIMITS.tensionElasticLimit * strengthScale;
+    settings.tensionFatalLimit = BASE_LIMITS.tensionFatalLimit * strengthScale;
+    settings.shearElasticLimit = BASE_LIMITS.shearElasticLimit * strengthScale;
+    settings.shearFatalLimit = BASE_LIMITS.shearFatalLimit * strengthScale;
+  }
 
   // Build solver nodes with supports marked external (mass/volume 0)
   const solverNodes: SolverNode[] = scenario.nodes.map((node: any, nodeIndex: number) => {

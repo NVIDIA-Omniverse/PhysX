@@ -11,6 +11,15 @@ import {
 } from './stress.js';
 import { createBridgeCore } from './bridge/buildBridge.headless.js';
 import { buildBridgeScenario } from './extBridgeScenario.js';
+import { 
+  ConfigManager, 
+  DEFAULT_CONFIG, 
+  CONFIG_DESCRIPTORS, 
+  type DemoConfig,
+  saveConfigToStorage,
+  loadConfigFromStorage,
+  clearConfigFromStorage
+} from './config.js';
 
 /**
  * Minimal stress-driven bridge fracture demo with stable identity tracking.
@@ -106,12 +115,25 @@ const state = {
   // Additional bridge state
   scenario: null,
   pendingContactForces: /** @type {Map<number, {force:any, point:any, impulse:any}>} */ (new Map()),
+
+  // ------------ Configuration Manager (NEW) ------------
+  configManager: null as ConfigManager | null,
 };
 
 init().catch((e) => console.error('Demo init failed:', e));
 
 async function init() {
   await RAPIER.init();
+  
+  // Initialize configuration manager with saved config or defaults
+  const savedConfig = loadConfigFromStorage();
+  if (savedConfig) {
+    console.log('🔄 Restoring configuration from previous reset...');
+    state.configManager = new ConfigManager(savedConfig);
+  } else {
+    console.log('🆕 Initializing with default configuration');
+    state.configManager = new ConfigManager(DEFAULT_CONFIG);
+  }
   
   // Load stress solver runtime FIRST
   state.runtime = await loadStressSolver();
@@ -123,8 +145,9 @@ async function init() {
   try { document.body.appendChild(stats.dom); } catch {}
   Object.assign(state, { scene, camera, renderer, controls, stats, clock: new THREE.Clock() });
 
-  // Rapier
-  const world = new RAPIER.World({ x: 0, y: GRAVITY, z: 0 });
+  // Rapier - use current config for gravity
+  const currentConfig = state.configManager.getConfig();
+  const world = new RAPIER.World({ x: 0, y: currentConfig.environment.gravity, z: 0 });
   state.world = world;
   state.eventQueue = new RAPIER.EventQueue(true);
 
@@ -178,15 +201,18 @@ async function init() {
 
 // ---------- UI Controls ----------
 function setupControls() {
-  // Gravity slider
-  const gravitySlider = document.getElementById('gravity-slider');
-  const gravityValue = document.getElementById('gravity-value');
+  // Legacy gravity slider - now handled through config system
+  const gravitySlider = document.getElementById('config-gravity');
+  const gravityValue = document.getElementById('config-gravity-value');
   if (gravitySlider && gravityValue) {
     gravitySlider.addEventListener('input', (e) => {
-      const newGravity = parseFloat(e.target.value);
+      const newGravity = parseFloat((e.target as HTMLInputElement).value);
       gravityValue.textContent = newGravity.toFixed(2);
       if (state.world) {
         state.world.gravity = { x: 0, y: newGravity, z: 0 };
+      }
+      if (state.configManager) {
+        state.configManager.set('environment', 'gravity', newGravity);
       }
     });
   }
@@ -195,6 +221,14 @@ function setupControls() {
   const resetButton = document.getElementById('reset-bridge');
   if (resetButton) {
     resetButton.addEventListener('click', () => {
+      // Save current configuration before reset
+      if (state.configManager) {
+        const currentConfig = state.configManager.getConfig();
+        saveConfigToStorage(currentConfig);
+        // Mark that config has been persisted for this reset
+        state.configManager.confirmBridgeReset();
+      }
+      // Reload page - will restore config from localStorage on init
       location.reload();
     });
   }
@@ -202,25 +236,325 @@ function setupControls() {
   // Debug toggle
   const debugToggle = document.getElementById('toggle-debug');
   if (debugToggle) {
-    // Set initial text based on enabled state
     debugToggle.textContent = 'Hide Debug Wireframe';
     debugToggle.addEventListener('click', () => {
       if (state.debugRenderer) {
         const enabled = state.debugRenderer.toggle();
         debugToggle.textContent = enabled ? 'Hide Debug Wireframe' : 'Show Debug Wireframe';
-        // Keep stress solver line overlay in sync with physics debugger
         try {
           if (state.debugHelper) {
             if (!enabled) {
               updateDebugLineObject(state.debugHelper, [], false);
             } else {
-              // Will be updated during the next frame; ensure visibility reflects state
               state.debugHelper.object.visible = !!(state.debugHelper.currentLines && state.debugHelper.currentLines.length > 0);
             }
           }
         } catch {}
       }
     });
+  }
+
+  // Setup comprehensive configuration UI
+  setupConfigurationUI();
+}
+
+/**
+ * Setup all configuration UI controls with immediate and deferred updates
+ */
+function setupConfigurationUI() {
+  if (!state.configManager) return;
+
+  // Helper to update UI display value
+  const updateDisplayValue = (elementId: string, value: any) => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.textContent = typeof value === 'number' 
+        ? (value > 1000 ? value.toLocaleString() : value.toFixed(2))
+        : String(value);
+    }
+  };
+
+  // Helper to toggle between slider and number input
+  const toggleInputMode = (sliderId: string) => {
+    try {
+      // Try to find the slider element (might not exist if we're in input mode)
+      let slider = document.getElementById(sliderId) as HTMLInputElement | null;
+      let inputGroup: HTMLElement | null = null;
+      
+      if (slider) {
+        // Normal case: slider exists, get its parent
+        inputGroup = slider.parentElement;
+        if (!inputGroup) {
+          console.warn('Slider exists but has no parent element');
+          return;
+        }
+      } else {
+        // Input mode case: slider was replaced, find the input group via toggle button
+        const toggleBtn = document.querySelector(`[data-target="${sliderId}"]`);
+        if (toggleBtn && toggleBtn.parentElement) {
+          inputGroup = toggleBtn.parentElement as HTMLElement;
+        } else {
+          console.warn('Could not find toggle button or its parent for:', sliderId);
+          return;
+        }
+      }
+      
+      const valueSpan = inputGroup.querySelector('.config-value') as HTMLElement | null;
+      const toggleBtn = inputGroup.querySelector('.config-toggle') as HTMLButtonElement | null;
+      
+      if (!toggleBtn) {
+        console.warn('Could not find toggle button in input group');
+        return;
+      }
+      
+      const isCurrentlySlider = slider && slider.type === 'range';
+      
+      if (isCurrentlySlider && slider) {
+        // Switch to number input mode
+        const currentValue = parseFloat(slider.value);
+        
+        // Create number input
+        const numberInput = document.createElement('input');
+        numberInput.type = 'number';
+        numberInput.className = 'config-number-input';
+        numberInput.value = String(currentValue);
+        numberInput.step = '0.01';
+        
+        // Store slider attributes for restoration - distinguish between original and current
+        numberInput.setAttribute('data-original-min', slider.min);
+        numberInput.setAttribute('data-original-max', slider.max);
+        numberInput.setAttribute('data-min', slider.min);
+        numberInput.setAttribute('data-max', slider.max);
+        numberInput.setAttribute('data-step', slider.step);
+        
+        // Replace slider with number input (keep same position in DOM)
+        slider.replaceWith(numberInput);
+        
+        // Hide value display
+        if (valueSpan) valueSpan.style.display = 'none';
+        
+        // Mark button as active
+        toggleBtn.classList.add('active');
+        
+        // Focus the input
+        numberInput.focus();
+        numberInput.select();
+        
+        // Handle input changes
+        numberInput.addEventListener('input', (e) => {
+          const value = parseFloat((e.target as HTMLInputElement).value);
+          if (!isNaN(value)) {
+            // Find the config category and key from the slider ID
+            const matches = sliderId.match(/config-(\w+)-(\w+)/);
+            if (matches) {
+              const category = matches[1] as keyof DemoConfig;
+              const key = matches[2];
+              state.configManager!.set(category, key, value);
+              updatePendingIndicator();
+            }
+          }
+        });
+        
+        // Handle blur to save and switch back
+        numberInput.addEventListener('blur', () => {
+          setTimeout(() => toggleInputMode(sliderId), 100);
+        });
+        
+        // Handle Enter key to confirm and switch back
+        numberInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            // Just save the value, don't toggle mode
+            const finalValue = parseFloat(numberInput.value);
+            if (!isNaN(finalValue)) {
+              const matches = sliderId.match(/config-(\w+)-(\w+)/);
+              if (matches) {
+                const category = matches[1] as keyof DemoConfig;
+                const key = matches[2];
+                // Force save to config
+                state.configManager!.set(category, key, finalValue);
+                updatePendingIndicator();
+              }
+            }
+            // Blur to lose focus and trigger any validation
+            numberInput.blur();
+          }
+        });
+      } else {
+        // Switch back to slider mode
+        const numberInput = inputGroup.querySelector('input[type="number"]') as HTMLInputElement | null;
+        if (!numberInput) {
+          console.warn('Could not find number input to switch back');
+          return;
+        }
+        
+        // Get the value that was entered
+        const enteredValue = parseFloat(numberInput.value);
+        if (isNaN(enteredValue)) {
+          console.warn('Invalid number in input:', numberInput.value);
+          return;
+        }
+        
+        // Get the ORIGINAL default min/max from data attributes (these never change)
+        const originalMin = parseFloat(numberInput.getAttribute('data-original-min') || '0');
+        const originalMax = parseFloat(numberInput.getAttribute('data-original-max') || '100');
+        const step = numberInput.getAttribute('data-step') || '1';
+        
+        // Start with the original defaults
+        let min = originalMin;
+        let max = originalMax;
+        
+        // Only expand the range if the entered value is outside the original bounds
+        if (enteredValue < min) {
+          min = enteredValue;
+        }
+        if (enteredValue > max) {
+          max = enteredValue;
+        }
+        
+        // Add some padding to the expanded range for usability
+        const range = max - min;
+        if (range > 0) {
+          const lowerPadding = min - range * 0.1;
+          const upperPadding = max + range * 0.1;
+          // Only apply padding if it doesn't shrink below the original defaults
+          min = Math.max(lowerPadding, originalMin);
+          max = Math.max(upperPadding, originalMax); // max can only increase
+        }
+        
+        // Create slider
+        const newSlider = document.createElement('input');
+        newSlider.type = 'range';
+        newSlider.id = sliderId;
+        newSlider.className = 'config-slider';
+        
+        // Set slider properties BEFORE setting the value
+        newSlider.min = String(min);
+        newSlider.max = String(max);
+        newSlider.step = step;
+        newSlider.value = String(enteredValue); // Now set the actual value
+        
+        // Replace number input with slider
+        numberInput.replaceWith(newSlider);
+        
+        // Show value display
+        if (valueSpan) valueSpan.style.display = 'inline';
+        
+        // Mark button as inactive
+        toggleBtn.classList.remove('active');
+        
+        // Update display immediately
+        const displayId = sliderId + '-value';
+        updateDisplayValue(displayId, enteredValue);
+        
+        // Re-attach slider event listener
+        newSlider.addEventListener('input', (e) => {
+          const value = parseFloat((e.target as HTMLInputElement).value);
+          
+          // Find the config category and key
+          const matches = sliderId.match(/config-(\w+)-(\w+)/);
+          if (matches) {
+            const category = matches[1] as keyof DemoConfig;
+            const key = matches[2];
+            state.configManager!.set(category, key, value);
+            updateDisplayValue(displayId, value);
+            updatePendingIndicator();
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error in toggleInputMode:', error, 'sliderId:', sliderId);
+    }
+  };
+
+  // Create input handler
+  const createInputHandler = (category: keyof DemoConfig, key: string, displayId: string, isImmediate: boolean) => {
+    return (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      let value: any = input.value;
+      
+      // Parse numeric values
+      if (input.type === 'range') {
+        value = parseFloat(value);
+      }
+
+      // Update config
+      state.configManager!.set(category, key, value);
+      updateDisplayValue(displayId, value);
+
+      // Apply immediate changes
+      if (isImmediate) {
+        if (category === 'environment' && key === 'gravity' && state.world) {
+          state.world.gravity = { x: 0, y: value, z: 0 };
+        }
+      }
+
+      // Update pending indicator if bridge/solver changed
+      updatePendingIndicator();
+    };
+  };
+
+  // Scan all config elements and attach listeners
+  for (const [category, keys] of Object.entries(CONFIG_DESCRIPTORS)) {
+    for (const [key, descriptor] of Object.entries(keys as any)) {
+      const inputId = `config-${category}-${key}`;
+      const displayId = `config-${category}-${key}-value`;
+      const input = document.getElementById(inputId) as HTMLInputElement | HTMLSelectElement;
+
+      if (!input) continue;
+
+      const isImmediate = (descriptor as any).immediate ?? false;
+      
+      // Attach event listener (use 'change' for select, 'input' for others)
+      const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
+      input.addEventListener(eventType, createInputHandler(category as keyof DemoConfig, key, displayId, isImmediate));
+      
+      // Initialize current value
+      const currentConfig = state.configManager.getConfig();
+      const currentValue = (currentConfig[category as keyof DemoConfig] as any)[key];
+      
+      // For select elements, set the selected value; for others, update display
+      if (input.tagName === 'SELECT') {
+        (input as HTMLSelectElement).value = String(currentValue);
+      } else {
+        // Set input value too (important for sliders)
+        (input as HTMLInputElement).value = String(currentValue);
+        updateDisplayValue(displayId, currentValue);
+        
+        // Store min/max/step on the input for later restoration
+        if (input.type === 'range') {
+          input.setAttribute('data-min', input.min);
+          input.setAttribute('data-max', input.max);
+          input.setAttribute('data-step', input.step);
+        }
+      }
+    }
+  }
+  
+  // Setup toggle button listeners
+  document.querySelectorAll('.config-toggle').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = (btn as HTMLElement).getAttribute('data-target');
+      if (target) {
+        toggleInputMode(target);
+      }
+    });
+  });
+}
+
+/**
+ * Update pending changes indicator
+ */
+function updatePendingIndicator() {
+  const indicator = document.getElementById('pending-changes-indicator');
+  if (!indicator || !state.configManager) return;
+
+  const hasPending = state.configManager.hasPendingBridgeChanges();
+  if (hasPending) {
+    indicator.classList.remove('hidden');
+  } else {
+    indicator.classList.add('hidden');
   }
 }
 
@@ -311,20 +645,22 @@ function buildGround(scene, world) {
 }
 
 function buildBridge(scene, world) {
-  const scenario = buildBridgeScenario(); // Use defaults for complex bridge
+  // Build bridge with current configuration
+  const currentConfig = state.configManager?.getConfig();
+  const bridgeConfig = currentConfig?.bridge || DEFAULT_CONFIG.bridge;
+  
+  const scenario = buildBridgeScenario(bridgeConfig);
   state.scenario = scenario;
   
   // Create physics/solver core using proven buildBridge.headless approach
+  const solverConfig = currentConfig?.solver || DEFAULT_CONFIG.solver;
   const core = createBridgeCore({ 
     runtime: state.runtime,
     world: world,
     scenario,
-    gravity: GRAVITY,
-    // strengthScale: 0.03
-    // strengthScale: 5_0_000_000.0
-    strengthScale: 10_000_000.0
-    // strengthScale: 1_000.0
-    // strengthScale: 30_000_000.0
+    gravity: currentConfig?.environment?.gravity ?? DEFAULT_CONFIG.environment.gravity,
+    strengthScale: 10_000_000.0,
+    solverSettings: solverConfig
   });
   
   // Materials
@@ -595,7 +931,7 @@ function drainContactsAndApplyForces() {
       // const p2 = ev.worldContactPoint2?.();
       // if (!p1 && !p2) return;
 
-      // Prefer explicit contact points; fall back to collider’s parent body position if absent
+      // Prefer explicit contact points; fall back to collider's parent body position if absent
       const wp = ev.worldContactPoint ? ev.worldContactPoint() : undefined;
       const wp2 = ev.worldContactPoint2 ? ev.worldContactPoint2() : undefined;
       
@@ -708,35 +1044,45 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
   const { world, scene } = state;
   const ballId = ++state.ballIdCounter;
 
+  // Get current projectile configuration
+  const config = state.configManager?.getConfig();
+  const projConfig = config?.projectile || DEFAULT_CONFIG.projectile;
+  
+  const radius = projConfig.radius;
+  const mass = projConfig.mass;
+  const dropY = projConfig.dropY;
+  const linvelY = projConfig.linvelY;
+  const friction = projConfig.friction;
+  const restitution = projConfig.restitution;
+  const projType = projConfig.type;
+
   const body = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(x, BALL_DROP_Y, z)
+      .setTranslation(x, dropY, z)
       .setCanSleep(false)
       .setLinearDamping(0.01)
       .setAngularDamping(0.01)
-      .setLinvel(0, -10, 0)
+      .setLinvel(0, linvelY, 0)
   );
 
-  // Pick collider desc line based on type, then chain common settings
-  let colliderDesc = type === 'ball'
-    ? RAPIER.ColliderDesc.ball(BALL_RADIUS)
-    : RAPIER.ColliderDesc.cuboid(BALL_RADIUS, BALL_RADIUS, BALL_RADIUS);
+  // Pick collider desc based on config type, then chain common settings
+  let colliderDesc = projType === 'ball'
+    ? RAPIER.ColliderDesc.ball(radius)
+    : RAPIER.ColliderDesc.cuboid(radius, radius, radius);
 
   colliderDesc = colliderDesc
-    .setMass(15_000.0)
-    // .setMass(1200_000.0)
-    // .setMass(120_000_000.0)
-    .setFriction(0.6)
-    .setRestitution(0.2)
+    .setMass(mass)
+    .setFriction(friction)
+    .setRestitution(restitution)
     .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
     .setContactForceEventThreshold(0.0);
 
   const collider = world.createCollider(colliderDesc, body);
 
-  // Choose geometry (BoxGeometry takes size, not radius)
-  const geometry = type === 'ball'
-    ? new THREE.SphereGeometry(BALL_RADIUS, 20, 20)
-    : new THREE.BoxGeometry(BALL_RADIUS * 2, BALL_RADIUS * 2, BALL_RADIUS * 2);
+  // Choose geometry based on config type
+  const geometry = projType === 'ball'
+    ? new THREE.SphereGeometry(radius, 20, 20)
+    : new THREE.BoxGeometry(radius * 2, radius * 2, radius * 2);
 
   const mesh = new THREE.Mesh(
     geometry,
@@ -746,21 +1092,21 @@ function spawnBallNow(x: number, z: number, type: 'box' | 'ball' = 'box') {
   // Register metadata, track type
   state.bodyMetadata.set(body.handle, {
     type: 'projectile',
-    projectileType: type,
+    projectileType: projType,
     name: `Ball-${ballId}`,
     createdAt: Date.now()
   });
 
   state.colliderMetadata.set(collider.handle, {
     type: 'projectile',
-    projectileType: type,
+    projectileType: projType,
     name: `Ball-${ballId}-Collider`,
     createdAt: Date.now()
   });
 
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-  mesh.position.set(x, BALL_DROP_Y, z);
+  mesh.position.set(x, dropY, z);
   scene.add(mesh);
 
   state.balls.push({ bodyHandle: body.handle, mesh });
@@ -1289,7 +1635,8 @@ function syncChunkMeshes() {
     // Apply local offset (bridge-local -> world)
     // For supports, localOffset is (0,0,0) so this has no effect
     // For deck chunks, localOffset positions them relative to root body
-    tmp.copy(chunk.localOffset).applyQuaternion(chunk.mesh.quaternion);
+    // tmp.copy(chunk.localOffset).applyQuaternion(chunk.mesh.quaternion);
+    tmp.copy(chunk.baseLocalOffset).applyQuaternion(chunk.mesh.quaternion);
     chunk.mesh.position.add(tmp);
   }
 }
