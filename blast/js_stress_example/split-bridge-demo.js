@@ -464,7 +464,7 @@ function applyPendingDetaches() {
     colliderToSegment.delete(segment.colliderHandle);
 
     // Create a new dynamic body at the root's pose (inherits pose; velocities can be zeroed or inherited)
-    const dyn = world.createRigidBody(
+    const newRigidBody = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(rootTr.x, rootTr.y, rootTr.z)
         .setRotation(rootRot)
@@ -476,29 +476,30 @@ function applyPendingDetaches() {
     const halfX = segment.size.x * 0.5;
     const halfY = segment.size.y * 0.5;
     const halfZ = segment.size.z * 0.5;
-    const newCol = world.createCollider(
+    const newCollider = world.createCollider(
       RAPIER.ColliderDesc.cuboid(halfX, halfY, halfZ)
         .setTranslation(segment.localOffset.x, segment.localOffset.y, segment.localOffset.z)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
         .setContactForceEventThreshold(0.0)
         .setFriction(0.9)
         .setRestitution(0.0),
-      dyn
+      newRigidBody
     );
 
     // Update bookkeeping
-    segment.bodyHandle = dyn.handle;
-    segment.colliderHandle = newCol.handle;
+    segment.bodyHandle = newRigidBody.handle;
+    segment.colliderHandle = newCollider.handle;
     segment.detached = true;
 
-    colliderToSegment.set(newCol.handle, segIdx);
-    activeContactColliders.add(newCol.handle);
+    colliderToSegment.set(newCollider.handle, segIdx);
+    activeContactColliders.add(newCollider.handle);
   }
 
   // We remove disabled colliders at the end of this safe frame (or next pre-sweep)
 }
 
 function removeDisabledHandles() {
+  return;
   const { world, disabledCollidersToRemove, bodiesToRemove } = state;
 
   for (const h of Array.from(disabledCollidersToRemove)) {

@@ -29,11 +29,12 @@ import {
 import {
   applyForcesAndSolve as coreApplyForcesAndSolve,
   processSolverFractures as coreProcessSolverFractures,
-  drainContactForces as coreDrainContactForces,
+  collectContactForceEvents,
+  accumulateContactForcesFromEvents,
   sweepBeforeEventfulStep
 } from './bridge/coreLogic.js';
 
-import { applyPendingMigrations, pruneStaleHandles } from './bridge/rapierHierarchyApplier.js';
+import { applyPendingMigrations, pruneStaleHandles, enqueueSplitResults } from './bridge/rapierHierarchyApplier.js';
 
 import {
   spawnLoadVehicle as spawnCar,
@@ -187,34 +188,32 @@ async function init() {
       loopHarness.actorCount = bridge.solver?.actorCount?.() ?? bridge.solver?.actors?.()?.length ?? null;
     }
 
-    const isSafeFrame = !!(bridge._justSplitFrames && bridge._justSplitFrames > 0);
+    const isSafeFrame = !!(bridge.safeFrames && bridge.safeFrames > 0);
 
     if (isSafeFrame) {
       // -------- SAFE STEP (no events): migration/removal only, no drains --------
       try {
-        worldNow.step(); // no queue → non-eventful
+        worldNow.step();
       } catch (err) {
-        // If even a safe step fails, mark another safe frame and surface the error
-        bridge._justSplitFrames = Math.max(bridge._justSplitFrames ?? 0, 1);
         try { const h = globalThis.__bridgeExt ?? (globalThis.__bridgeExt = {}); h.lastError = h.lastError ?? (err?.stack ?? String(err)); } catch {}
       }
 
-      bridge._justSplitFrames -= 1;
+      bridge.safeFrames = Math.max((bridge.safeFrames ?? 1) - 1, 0);
 
-      // Phase 2 of split handling: create bodies, migrate colliders, prune/cleanup.
-      try { applyPendingMigrations(bridge); } catch {}
-      try {
-        // Remove deferred rigid bodies on safe frames
-        if (bridge.bodiesToRemove && bridge.bodiesToRemove.size > 0) {
-          for (const bh of Array.from(bridge.bodiesToRemove)) {
-            const b = worldNow.getRigidBody(bh);
-            if (b) worldNow.removeRigidBody(b);
-            bridge.bodiesToRemove.delete(bh);
-          }
-        }
-      } catch {}
+      // Process pending splits from stress solver → migrations only in safe frames
+      if (bridge.pendingSplitResults?.length > 0) {
+        const splits = bridge.pendingSplitResults;
+        bridge.pendingSplitResults = [];
+        try { enqueueSplitResults(bridge, splits); } catch {}
+      }
 
-      // Render and continue (skip drains/solver on safe frames)
+      // try { applyPendingMigrations(bridge); } catch {}
+      try { removeDisabledHandles(bridge); } catch {}
+
+      // For safety with Rapier aliasing, skip mesh sync in safe frames
+      // Meshes will be synced on the next eventful frame
+      if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
+
       controls.update();
       renderer.render(scene, camera);
       stats.update();
@@ -229,17 +228,18 @@ async function init() {
     // 1) Eventful step with our queue
     let stepped = false;
     try {
-      // Use (and keep) the existing queue; do not recreate per-frame.
       if (!bridge.eventQueue) bridge.eventQueue = new RAPIER.EventQueue(true);
       worldNow.step(bridge.eventQueue);
       stepped = true;
     } catch (err) {
-      // If eventful step fails, reset queue and schedule a safe frame to settle the BVH.
+      // Reset queue and schedule a safe frame
       try { bridge.eventQueue = new RAPIER.EventQueue(true); } catch {}
-      bridge._justSplitFrames = Math.max(bridge._justSplitFrames ?? 0, 1);
+      bridge.safeFrames = Math.max(bridge.safeFrames ?? 0, 1);
       try { const h = globalThis.__bridgeExt ?? (globalThis.__bridgeExt = {}); h.lastError = h.lastError ?? (err?.stack ?? String(err)); } catch {}
     }
     if (!stepped) {
+      // Skip mesh sync during safe frames to avoid aliasing
+      if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
       controls.update();
       renderer.render(scene, camera);
       stats.update();
@@ -247,21 +247,25 @@ async function init() {
       return;
     }
 
-    // 2) Post-step hygiene + drains
+    // 2) Post-step drains (two-phase) + sync
     pruneStaleHandles(bridge);
-    coreDrainContactForces(bridge); // drains the very queue we passed to step()
+    const collected = collectContactForceEvents(bridge.eventQueue);
+    accumulateContactForcesFromEvents(bridge, collected);
 
-    if (bridge.debugRenderer?.enabled) bridge.debugRenderer.update();
+    try {
+      syncMeshes(worldNow, bridge);
+    } catch (e) {
+      try { bridge.safeFrames = Math.max(bridge.safeFrames ?? 0, 1); } catch {}
+    }
+    if (bridge.debugRenderer?.enabled) {
+      try { bridge.debugRenderer.update(); } catch {}
+    }
 
-    // 3) Visual debug lines (from solver) then logic updates
-    renderDebugLines(bridge);
-
-    // Post-step dynamics and solver (reads body transforms)
-    updateProjectiles(worldNow, bridge, delta);
-    // updateCar(worldNow, bridge.car, delta); // kept disabled for perf
-
-    updateBridgeLogical(bridge, delta); // apply forces, update solver, process fractures if needed
-    syncMeshes(worldNow, bridge);
+    // 3) Solver pass
+    updateBridgeLogical(bridge, delta);
+    if (bridge.pendingSplitResults && bridge.pendingSplitResults.length > 0) {
+      bridge.safeFrames = Math.max(bridge.safeFrames ?? 0, 2);
+    }
 
     controls.update();
     renderer.render(scene, camera);
@@ -362,7 +366,7 @@ function buildBridge(scene, world, runtime) {
   const topMaterial = new THREE.MeshStandardMaterial({ color: 0x5b86ff, roughness: 0.28, metalness: 0.55 });
   const supportMaterial = new THREE.MeshStandardMaterial({ color: 0x2f3e56, roughness: 0.6, metalness: 0.25 });
 
-  const debugRenderer = { enabled: false, update: () => {}, toggle: function() { this.enabled = !this.enabled; } };
+  const debugRenderer = new RapierDebugRenderer(scene, world, { enabled: true });
   const debugHelper = createDebugLineHelper();
   scene.add(debugHelper.object);
 
@@ -470,7 +474,15 @@ function buildBridge(scene, world, runtime) {
     pendingContactForces: core.pendingContactForces,
     contactForceScratch: [],
     actorMap: core.actorMap,
-    _justSplitFrames: 10 // let BVH settle at startup
+    safeFrames: 10, // let BVH settle at startup
+    // Two-phase migration state
+    pendingSplitResults: [],
+    pendingBodiesToCreate: [],
+    pendingColliderMigrations: [],
+    disabledCollidersToRemove: new Set<number>(),
+    bodiesToRemove: new Set(),
+    _handleSplitEventsCount: 0,
+    _splitLog: []
   };
 }
 
@@ -481,11 +493,35 @@ function updateBridgeLogical(bridge, delta) {
   coreApplyForcesAndSolve(bridge);
 
   if (bridge.overstressed > 0) {
-    coreProcessSolverFractures(bridge, RAPIER, CONTACT_FORCE_THRESHOLD);
+    const result = coreProcessSolverFractures(bridge, RAPIER, CONTACT_FORCE_THRESHOLD);
+    if (result?.splitResults) {
+      bridge.pendingSplitResults.push(...result.splitResults);
+      bridge._justSplitFrames = Math.max(bridge._justSplitFrames ?? 0, 3);
+    }
   }
 
   if (bridge.forceBoost > 1.0) {
     bridge.forceBoost = THREE.MathUtils.lerp(bridge.forceBoost, 1.0, Math.min(delta * 0.75, 1.0));
+  }
+}
+
+function removeDisabledHandles(bridge) {
+  const { world, disabledCollidersToRemove, bodiesToRemove } = bridge;
+  
+  if (disabledCollidersToRemove?.size > 0) {
+    for (const h of Array.from(disabledCollidersToRemove)) {
+      const c = world.getCollider(h);
+      if (c) world.removeCollider(c, false);
+      disabledCollidersToRemove.delete(h);
+    }
+  }
+  
+  if (bodiesToRemove?.size > 0) {
+    for (const bh of Array.from(bodiesToRemove)) {
+      const b = world.getRigidBody(bh);
+      if (b) world.removeRigidBody(b);
+      bodiesToRemove.delete(bh);
+    }
   }
 }
 
@@ -777,9 +813,9 @@ function fireProjectile(world, bridge) {
 function setupControls(world, bridge) {
   // Gravity
   if (controlsUI.gravitySlider) {
-    controlsUI.gravitySlider.value = GRAVITY_DEFAULT.toString();
+    (controlsUI.gravitySlider as HTMLInputElement).value = GRAVITY_DEFAULT.toString();
     controlsUI.gravitySlider.addEventListener('input', (e) => {
-      const value = parseFloat(e.target.value);
+      const value = parseFloat((e.target as HTMLInputElement).value);
       world.gravity = new RAPIER.Vector3(0, value, 0);
       bridge.gravity = value;
       if (HUD.gravityValue) HUD.gravityValue.textContent = value.toFixed(2);
@@ -790,9 +826,9 @@ function setupControls(world, bridge) {
 
   // Strength scale
   if (controlsUI.strengthSlider) {
-    controlsUI.strengthSlider.value = bridge.strengthScale.toString();
+    (controlsUI.strengthSlider as HTMLInputElement).value = bridge.strengthScale.toString();
     controlsUI.strengthSlider.addEventListener('input', (e) => {
-      const value = parseFloat(e.target.value);
+      const value = parseFloat((e.target as HTMLInputElement).value);
       bridge.strengthScale = Number.isFinite(value) ? value : 1.0;
       applyStrengthScale(bridge.settings, BASE_LIMITS, bridge.strengthScale);
       bridge.solver.setSettings(bridge.settings);
@@ -803,9 +839,9 @@ function setupControls(world, bridge) {
 
   // Max iterations
   if (controlsUI.iterSlider) {
-    controlsUI.iterSlider.value = bridge.settings.maxSolverIterationsPerFrame.toString();
+    (controlsUI.iterSlider as HTMLInputElement).value = bridge.settings.maxSolverIterationsPerFrame.toString();
     controlsUI.iterSlider.addEventListener('input', (e) => {
-      const value = parseInt(e.target.value, 10);
+      const value = parseInt((e.target as HTMLInputElement).value, 10);
       bridge.settings.maxSolverIterationsPerFrame = Number.isFinite(value) ? value : 32;
       bridge.solver.setSettings(bridge.settings);
       updateIterationDisplay(bridge);
@@ -816,9 +852,9 @@ function setupControls(world, bridge) {
   // Solver tolerance (10^x)
   if (controlsUI.toleranceSlider) {
     const initial = Math.log10(bridge.targetError);
-    controlsUI.toleranceSlider.value = initial.toString();
+    (controlsUI.toleranceSlider as HTMLInputElement).value = initial.toString();
     controlsUI.toleranceSlider.addEventListener('input', (e) => {
-      const exponent = parseFloat(e.target.value);
+      const exponent = parseFloat((e.target as HTMLInputElement).value);
       bridge.targetError = Math.pow(10, exponent);
       updateToleranceDisplay(bridge);
     });
@@ -838,15 +874,25 @@ function setupControls(world, bridge) {
   // Toggle debug (Blast lines + Rapier overlay)
   if (controlsUI.debugToggle) {
     controlsUI.debugToggle.addEventListener('click', () => {
-      bridge.debugEnabled = !bridge.debugEnabled;
-      const enabled = bridge.debugEnabled;
+      if (!bridge.debugRenderer) {
+        return;
+      }
+
+      // bridge.debugEnabled = !bridge.debugEnabled;
+      // const enabled = bridge.debugEnabled;
+      const enabled = bridge.debugRenderer.toggle();
+      bridge.debugEnabled = enabled;
+
       controlsUI.debugToggle.textContent = enabled ? 'Hide Debug' : 'Show Debug';
       bridge.debugHelper.object.visible = enabled && bridge.debugHelper.currentLines.length > 0;
-      const was = bridge.debugRenderer.enabled;
-      const now = enabled ? true : false;
-      if (was !== now) bridge.debugRenderer.toggle();
+      // const was = bridge.debugRenderer.enabled;
+      // const now = enabled ? true : false;
+      // if (was !== now) {
+      // bridge.debugRenderer.toggle();
+      console.log('Debug renderer toggled:', bridge.debugRenderer.enabled);
+      // }
     });
-    controlsUI.debugToggle.textContent = 'Hide Debug';
+    controlsUI.debugToggle.textContent = bridge.debugEnabled ? 'Hide Debug' : 'Show Debug';
   }
 }
 
@@ -986,5 +1032,11 @@ function resetBridge(world, bridge) {
   resetChunkColors(bridge);
   updateBondTable(bridge.bonds);
   if (HUD.eventLog) HUD.eventLog.innerHTML = '';
+  
+  // Reset two-phase migration state
+  bridge.pendingSplitResults = [];
+  bridge.pendingBodiesToCreate = [];
+  bridge.pendingColliderMigrations = [];
+  
   pushEvent('Bridge reset to initial state');
 }

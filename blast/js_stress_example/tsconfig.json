@@ -40,18 +40,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/*.spec.ts",
-    "**/*.spec.js",
-    "**/*.test.js",
-    "demo.js",
-    "ext-*.js",
-    "bridge-sim.js",
-    "bridge.js",
-    "bridge_*.js",
-    "stress_*.js",
-    "tests/**",
-    "scripts/**",
-    "vendor/**"
+    "dist"
   ]
 }

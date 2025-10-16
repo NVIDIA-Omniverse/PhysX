@@ -1,11 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { buildBridgeShared } from '../bridge/buildBridge.headless.js';
-import { applyForcesAndSolve, processSolverFractures, drainContactForces, normalizeSplitResults, sweepBeforeEventfulStep } from '../bridge/coreLogic.js';
-import { applyPendingMigrations, pruneStaleHandles } from './rapierHierarchyApplier.js';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-import { spawnLoadVehicle, updateLoadVehicle, spawnProjectile, updateProjectiles } from '../bridge/dynamics.js';
+import { applyForcesAndSolve, processSolverFractures, drainContactForces, sweepBeforeEventfulStep } from '../bridge/coreLogic.js';
+import { applyPendingMigrations, pruneStaleHandles, enqueueSplitResults } from './rapierHierarchyApplier.js';
+import { spawnLoadVehicle, spawnProjectile, updateProjectiles } from '../bridge/dynamics.js';
+import type { BridgeCore } from './types.js';
 
 describe('Organic split flow (no manual handleSplitEvents)', () => {
   beforeAll(async () => {
@@ -13,12 +11,9 @@ describe('Organic split flow (no manual handleSplitEvents)', () => {
   });
 
   it('produces deterministic split events that match expected patterns', async () => {
-    const bridge = await buildBridgeShared({ gravity: -9.81, strengthScale: 0.02 });
-    bridge.world.RAPIER = (await import('@dimforge/rapier3d-compat')).default;
-    bridge.projectiles = [];
-    bridge.car = spawnLoadVehicle(bridge.world, {});
-    // Enable full Rapier rebuild after split to avoid BVH edge cases
-    (bridge as any)._rebuildOnSplit = false;
+    const bridge: BridgeCore = await buildBridgeShared({ gravity: -9.81, strengthScale: 0.02 });
+    const projectiles: any[] = [];
+    const car = spawnLoadVehicle(bridge.world, {});
 
     // Fixed timestep and seeded randomness for determinism
     const dt = 1/60;
@@ -28,157 +23,132 @@ describe('Organic split flow (no manual handleSplitEvents)', () => {
 
     let handleCount = 0;
     for (let i = 0; i < 1800; i++) {
-      // Decide spawns; perform after step to avoid aliasing
-      const shouldSpawn = ((bridge._handleSplitEventsCount ?? 0) >= 1 && (i % 30 === 0));
-      // Defer projectile/world reads that call body.translation() until after stepping
-      // updateLoadVehicle is also deferred to post-step
+      const shouldSpawn = (bridge._handleSplitEventsCount >= 1 && i % 30 === 0);
 
-      // Safety sweep before stepping (skip during safe-step frames to avoid aliasing)
-      if (!((bridge as any)._justSplitFrames && (bridge as any)._justSplitFrames > 0)) {
-        if (bridge.activeContactColliders && bridge.colliderToNode) {
-          const stale = [] as number[];
-          bridge.activeContactColliders.forEach((h: number) => {
-            const col = bridge.world.getCollider(h);
-            if (!col || !col.parent()) stale.push(h);
-          });
-          stale.forEach((h: number) => {
-            const col = bridge.world.getCollider(h);
-            if (col) col.setEnabled(false);
-            bridge.activeContactColliders.delete(h);
-            bridge.colliderToNode.delete(h);
-          });
-        }
-
-        // Extra safety: ensure all colliders referenced by activeContactColliders exist and have parents
-        if (bridge.activeContactColliders && bridge.colliderToNode) {
-          const stale = [] as number[];
-          bridge.activeContactColliders.forEach((h: number) => {
-            const col = bridge.world.getCollider(h);
-            if (!col || !col.parent()) stale.push(h);
-          });
-          stale.forEach((h: number) => { bridge.activeContactColliders.delete(h); bridge.colliderToNode.delete(h); });
-        }
-      }
-
-      // Use the potentially swapped world after rebuild
-      // Match browser safe-step semantics: if just split, safe step once; else step with events
-      if ((bridge as any)._justSplitFrames && (bridge as any)._justSplitFrames > 0) {
-        // Safe-step without events to avoid any iterator/borrow aliasing
+      // Safe frame: no events, apply migrations
+      if (bridge._justSplitFrames > 0) {
         try {
-          (bridge.world as any).step();
+          bridge.world.step();
         } catch (error) {
-          console.error('error 1:', error);
-          // If even a safe-step panics, skip this frame and try again
-          (bridge as any)._justSplitFrames = Math.max((bridge as any)._justSplitFrames ?? 0, 1);
+          console.error('Safe step error:', error);
+          bridge._justSplitFrames = Math.max(bridge._justSplitFrames, 1);
           continue;
         }
-        (bridge as any)._justSplitFrames -= 1;
-        applyPendingMigrations(bridge as any);
-        // Remove deferred bodies/colliders in safe frames
-        try {
-          if ((bridge as any).disabledCollidersToRemove && (bridge as any).disabledCollidersToRemove.size > 0) {
-            for (const h of Array.from((bridge as any).disabledCollidersToRemove)) {
-              const c = (bridge.world as any).getCollider(h);
-              if (c) (bridge.world as any).removeCollider(c, false);
-              (bridge as any).disabledCollidersToRemove.delete(h);
-            }
-          }
-          if ((bridge as any).bodiesToRemove && (bridge as any).bodiesToRemove.size > 0) {
-            for (const bh of Array.from((bridge as any).bodiesToRemove)) {
-              const b = (bridge.world as any).getRigidBody(bh);
-              if (b) (bridge.world as any).removeRigidBody(b);
-              (bridge as any).bodiesToRemove.delete(bh);
-            }
-          }
-        } catch (error) {
-          console.error('error 2:', error);
+
+        bridge._justSplitFrames -= 1;
+
+        // Process pending splits
+        if (bridge.pendingSplitResults.length > 0) {
+          const splits = bridge.pendingSplitResults;
+          bridge.pendingSplitResults = [];
+          enqueueSplitResults(bridge, splits);
         }
-        // Early continue: no drains, no projectiles/car updates in safe frames
+
+        applyPendingMigrations(bridge);
+
+        // Remove disabled handles
+        if (bridge.disabledCollidersToRemove.size > 0) {
+          for (const h of Array.from(bridge.disabledCollidersToRemove)) {
+            const c = bridge.world.getCollider(h);
+            if (c) bridge.world.removeCollider(c, false);
+            bridge.disabledCollidersToRemove.delete(h);
+          }
+        }
+        if (bridge.bodiesToRemove.size > 0) {
+          for (const bh of Array.from(bridge.bodiesToRemove)) {
+            const b = bridge.world.getRigidBody(bh);
+            if (b) bridge.world.removeRigidBody(b);
+            bridge.bodiesToRemove.delete(bh);
+          }
+        }
+
+        // Rebuild contact tracking
+        bridge.activeContactColliders.clear();
+        bridge.colliderToNode.clear();
+        for (const chunk of bridge.chunks) {
+          const h = chunk.colliderHandle;
+          if (h !== null) {
+            const c = bridge.world.getCollider(h);
+            const p = c?.parent();
+            const b = p !== undefined ? bridge.world.getRigidBody(p) : undefined;
+            const enabled = c?.isEnabled ? c.isEnabled() : true;
+            if (c && enabled && b) {
+              bridge.activeContactColliders.add(h);
+              bridge.colliderToNode.set(h, chunk.nodeIndex);
+            }
+          }
+        }
+
         continue;
-      } else {
-        // Eventful step with strict pre-sweep and diagnostic skip if it fails
-        sweepBeforeEventfulStep(bridge as any);
-        let stepped = false;
-        try {
-          (bridge.world as any).step(bridge.eventQueue);
-          stepped = true;
-        } catch (err) {
-          console.error('error 3:', err);
-          // If eventful step panics, reset queue and schedule a safe-step next frame
-          try { const R = (bridge.world as any).RAPIER; if (R) bridge.eventQueue = new R.EventQueue(true); } catch {}
-          (bridge as any)._justSplitFrames = Math.max((bridge as any)._justSplitFrames ?? 0, 1);
-        }
-        if (!stepped) {
-          continue;
-        }
       }
-      pruneStaleHandles(bridge as any);
-      // Drain only on eventful frames
+
+      // Eventful frame: step with events
+      sweepBeforeEventfulStep(bridge);
+
+      let stepped = false;
+      try {
+        bridge.world.step(bridge.eventQueue);
+        stepped = true;
+      } catch (err) {
+        console.error('Eventful step error:', err);
+        bridge.eventQueue = new bridge.world.RAPIER.EventQueue(true);
+        bridge._justSplitFrames = Math.max(bridge._justSplitFrames, 1);
+      }
+
+      if (!stepped) continue;
+
+      pruneStaleHandles(bridge);
       drainContactForces(bridge);
 
-      // Post-step: now safe to update projectiles and car (reads body.translation())
+      // Spawn projectiles
       if (shouldSpawn) {
-        bridge.projectiles.push(spawnProjectile(bridge.world, { kind: 'box', origin: { x: 0, y: 6, z: 0 }, scale: 1.0 }));
+        projectiles.push(spawnProjectile(bridge.world, { kind: 'box', origin: { x: 0, y: 6, z: 0 }, scale: 1.0 }));
       }
-      bridge.projectiles = updateProjectiles(bridge.world, bridge.projectiles, dt, bridge);
-      // Keep car stationary during deterministic test to focus forces on gravity + projectiles
-      // updateLoadVehicle(bridge.world, bridge.car, dt);
+      const updatedProjectiles = updateProjectiles(bridge.world, projectiles, dt, bridge);
+      projectiles.length = 0;
+      projectiles.push(...updatedProjectiles);
 
       applyForcesAndSolve(bridge);
+
       if (bridge.overstressed > 0) {
-        processSolverFractures(bridge, bridge.world.RAPIER, 0.0);
-        // rebuild activeContactColliders/colliderToNode from current colliders after splits
-        try {
-          bridge.activeContactColliders?.clear?.();
-          bridge.colliderToNode?.clear?.();
-          const world: any = bridge.world;
-          for (const chunk of bridge.chunks) {
-            const h = chunk?.colliderHandle;
-            if (typeof h === 'number') {
-              const c = world.getCollider(h);
-              const p = c ? c.parent() : undefined;
-              const b = p != null ? world.getRigidBody(p) : undefined;
-              if (c && (c.isEnabled ? c.isEnabled() : true) && b) {
-                bridge.activeContactColliders?.add?.(h);
-                bridge.colliderToNode?.set?.(h, chunk.nodeIndex);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('error 4:', error);
+        const result = processSolverFractures(bridge, bridge.world.RAPIER, 0.0);
+        if (result?.splitResults) {
+          bridge.pendingSplitResults.push(...result.splitResults);
+          bridge._justSplitFrames = Math.max(bridge._justSplitFrames, 3);
         }
       }
 
-      handleCount = bridge._handleSplitEventsCount ?? 0;
-      if (handleCount >= 2) { break; }
+      handleCount = bridge._handleSplitEventsCount;
+      if (handleCount >= 2) break;
     }
 
     expect(handleCount).toBeGreaterThanOrEqual(1);
 
     // Assert normalized split log against a stable expectation schema (shape-only)
     expect(Array.isArray(bridge._splitLog)).toBe(true);
-    const flat = (bridge._splitLog ?? []).flat();
+    const flat = bridge._splitLog.flat();
     expect(flat.length).toBeGreaterThan(0);
-    flat.forEach((evt: any) => {
+    
+    // Validate structure
+    for (const evt of flat) {
       expect(typeof evt.parentActorIndex).toBe('number');
       expect(Array.isArray(evt.children)).toBe(true);
-      evt.children.forEach((c: any) => {
+      for (const c of evt.children) {
         expect(typeof c.actorIndex).toBe('number');
         expect(Array.isArray(c.nodes)).toBe(true);
         // nodes are sorted
         for (let k = 1; k < c.nodes.length; k++) {
           expect(c.nodes[k]).toBeGreaterThanOrEqual(c.nodes[k-1]);
         }
-      });
-    });
+      }
+    }
 
     // Optional: compare to a predefined snapshot shape by counts
-    const summary = flat.map((evt: any) => ({ parent: evt.parentActorIndex, childCount: evt.children.length }));
+    const summary = flat.map((evt) => ({ parent: evt.parentActorIndex, childCount: evt.children.length }));
     expect(summary.length).toBeGreaterThan(0);
 
     // Shape-specific assertion for first split: [0..3] then quads of 4 until 95, then 8 singletons [96..103]
-    const actualFirst = (bridge._splitLog ?? [])[0];
-    const evt0 = actualFirst?.[0];
+    const evt0 = bridge._splitLog[0]?.[0];
     expect(evt0?.parentActorIndex).toBe(0);
     const kids = evt0?.children ?? [];
     // total children = 1 (parent group) + 23 quad groups + 8 singletons = 32

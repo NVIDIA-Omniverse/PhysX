@@ -6,6 +6,7 @@
   "scripts": {
     "test": "npm run build && npm run demo && npm run demo:ext && npm run demo:ext-cube && npm run demo:ext-bridge",
     "build": "node ./scripts/build.js",
+    "build:ts": "npx -y tsc",
     "build:debug": "EMCC_PROFILING=1 EMCC_ASSERTIONS=1 node ./scripts/build.js",
     "demo": "npm run build --silent && node ./demo.js",
     "demo:ext": "npm run build --silent && node ./ext-demo.js",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
 }
