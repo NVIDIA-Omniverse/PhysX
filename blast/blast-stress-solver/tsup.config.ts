@@ -6,9 +6,10 @@ export default defineConfig({
   dts: true,
   splitting: false,
   sourcemap: true,
+  minify: true,
   clean: true,
   target: 'es2020',
-  external: ['./stress_solver.cjs', './stress_solver.mjs']
+  external: ['./stress_solver.cjs', './stress_solver.mjs', './stress_solver.browser.mjs']
 });
 
 

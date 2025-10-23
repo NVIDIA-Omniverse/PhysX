@@ -49,27 +49,40 @@ const moduleFactoryPromise: Promise<any> = (async () => {
     const factoryModule: any = await import('./stress_solver.cjs');
     return (factoryModule as any).default ?? factoryModule;
   }
-  const factoryModule: any = await import('./stress_solver.mjs');
+  // Use a browser-safe variant that avoids importing Node's 'module'
+  const factoryModule: any = await import('./stress_solver.browser.mjs');
   return (factoryModule as any).default ?? factoryModule;
 })();
 
-// Compute directory URL for resolving colocated WASM/artifacts across ESM/CJS
-// - In CJS builds, __dirname exists; in ESM/browser, use import.meta.url
+// Resolve colocated artifacts statically per environment to aid bundlers
+// Node/CJS path uses __dirname; browser/ESM uses import.meta.url
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const hasDirname: boolean = typeof __dirname !== 'undefined';
-/**
- * Base URL used to resolve colocated artifacts (`stress_solver.wasm`).
- * Uses `__dirname` when available (CJS) else falls back to `import.meta.url`.
- */
-const distDirUrl = (isNode && hasDirname)
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  ? new URL('./', 'file://' + __dirname + '/')
-  : new URL('./', import.meta.url);
+// const NODE_DIST_DIR_URL = typeof __dirname !== 'undefined' ? new URL('./', 'file://' + __dirname + '/') : undefined as any;
+// const BROWSER_DIST_DIR_URL = new URL('./', import.meta.url);
 
 /** Node-only: dynamic reference to `fileURLToPath` for URL → path conversion. */
 let fileURLToPathFn: ((url: URL) => string) | undefined;
+
+/** Safely compute a browser base href for URL resolution under bundlers. */
+/*
+function browserBaseHref(): string | null {
+  try {
+    // Prefer import.meta.url if it is an http(s) URL (some bundlers rewrite it)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const meta = typeof import.meta !== 'undefined' ? (import.meta as any) : undefined;
+    if (meta && typeof meta.url === 'string') {
+      const u = new URL(meta.url);
+      if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+    }
+  } catch {}
+  if (typeof window !== 'undefined' && (window as any).location?.href) {
+    return (window as any).location.href as string;
+  }
+  return null;
+}
+  */
 
 /** Result codes used by fracture command generation helpers. */
 export const FractureResult = Object.freeze({
@@ -200,14 +213,22 @@ export async function loadStressSolver({ module: moduleOptions }: LoadStressSolv
   const factory = await moduleFactoryPromise;
   const options: Record<string, any> = { ...(moduleOptions ?? {}) };
   if (!options.locateFile) {
-    options.locateFile = (path: string) => {
-      const url = new URL(path, distDirUrl);
-      return isNode && fileURLToPathFn ? fileURLToPathFn(url) : url.href;
+    options.locateFile = (p: string) => {
+      // Node: resolve statically from __dirname
+      // if (isNode && fileURLToPathFn) {
+      //   try { return fileURLToPathFn(new URL('./' + p, new URL('file://' + __dirname + '/'))); } catch {}
+      // }
+      // Browser: allow bundlers to statically see the asset
+      if (p.endsWith('.wasm')) {
+        return new URL('./stress_solver.wasm', import.meta.url).href;
+      }
+      return p;
     };
   }
   if (isNode && !options.wasmBinary) {
     const fs = await import('node:fs/promises');
-    const wasmUrl = new URL('stress_solver.wasm', distDirUrl);
+    // const wasmUrl = new URL('stress_solver.wasm', NODE_DIST_DIR_URL);
+    const wasmUrl = new URL('stress_solver.wasm', import.meta.url);
     options.wasmBinary = await (fs as any).readFile(fileURLToPathFn!(wasmUrl));
   }
   options.print ??= (...args: any[]) => console.log('[blast-wasm]', ...args);

@@ -1,6 +1,6 @@
 {
   "name": "blast-stress-solver",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -10,10 +10,16 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "browser": "./dist/index.js",
+      "node": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
-    "./stress_solver.wasm": "./dist/stress_solver.wasm"
+    "./stress_solver.wasm": "./dist/stress_solver.wasm",
+    "./stress_solver.mjs": {
+      "browser": "./dist/stress_solver.mjs",
+      "node": "./dist/stress_solver.cjs",
+      "default": "./dist/stress_solver.mjs"
+    }
   },
   "files": [
     "dist/**",
