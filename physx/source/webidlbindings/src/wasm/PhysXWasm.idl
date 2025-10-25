@@ -1870,6 +1870,7 @@ interface PxOverlapResult {
     [Const, Ref] PxOverlapHit getAnyHit(unsigned long index);
     unsigned long getNbTouches();
     [Const, Ref] PxOverlapHit getTouch(unsigned long index);
+    void clear();
     [Value] attribute PxOverlapHit block;
     attribute boolean hasBlock;
 };
@@ -2086,6 +2087,7 @@ interface PxRaycastResult {
     [Const, Ref] PxRaycastHit getAnyHit(unsigned long index);
     unsigned long getNbTouches();
     [Const, Ref] PxRaycastHit getTouch(unsigned long index);
+    void clear();
     [Value] attribute PxRaycastHit block;
     attribute boolean hasBlock;
 };
@@ -2664,6 +2666,7 @@ interface PxSweepResult {
     [Const, Ref] PxSweepHit getAnyHit(unsigned long index);
     unsigned long getNbTouches();
     [Const, Ref] PxSweepHit getTouch(unsigned long index);
+    void clear();
     [Value] attribute PxSweepHit block;
     attribute boolean hasBlock;
 };

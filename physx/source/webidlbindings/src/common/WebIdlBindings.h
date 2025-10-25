@@ -223,6 +223,10 @@ class PxHitResult : public physx::PxHitCallback<HitType> {
             return hits[index];
         }
 
+        PX_INLINE void clear() {
+            hits.clear();
+        }
+
     protected:
         virtual physx::PxAgain processTouches(const HitType* buffer, physx::PxU32 nbHits) {
             if (isFinalized) {
