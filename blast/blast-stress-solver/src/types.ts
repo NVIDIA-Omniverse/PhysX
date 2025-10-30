@@ -55,17 +55,56 @@ export interface StressLimitsConfig {
   shearFatalLimit?: number;
 }
 
-/** Result code values returned by fracture generation helpers. */
-export type FractureResultValue = 0 | 1 | 2;
+/**
+ * Result code values returned by fracture generation helpers.
+ *
+ * - None (0): No commands were produced (e.g., no overstressed bonds or capacity was zero).
+ * - Success (1): Commands successfully generated and fully written to the provided buffers.
+ * - Truncated (2): Output was truncated due to insufficient buffer capacity; increase buffer sizes and retry.
+ */
+export enum FractureResultValue {
+  /** No commands were produced. */
+  None = 0,
+  /** Commands generated successfully without truncation. */
+  Success = 1,
+  /** Output was truncated by buffer limits. */
+  Truncated = 2
+}
 
 /** Failure mode keys returned by the solver when limits are exceeded. */
 export type StressFailureValue = 'compression' | 'tension' | 'shear';
 
-/** Force mode used by ExtStressSolver.addForce. */
-export type ExtForceModeValue = 0 | 1;
+/**
+ * Force mode used by ExtStressSolver.addForce.
+ *
+ * - Force (0): The vector is interpreted as a force in Newtons (mass-dependent effect).
+ * - Acceleration (1): The vector is interpreted as an acceleration in m/s² (mass-independent effect).
+ */
+export enum ExtForceModeValue {
+  /** Apply a force in Newtons (N). */
+  Force = 0,
+  /** Apply an acceleration in meters per second squared (m/s²). */
+  Acceleration = 1
+}
 
-/** Debug render channels available from the solver. */
-export type ExtDebugModeValue = 0 | 1 | 2 | 3;
+/**
+ * Debug render channels available from the solver.
+ *
+ * - Max (0): Maximum of compression, tension, and shear stress percentages.
+ * - Compression (1): Compression stress percentage only.
+ * - Tension (2): Tension stress percentage only.
+ * - Shear (3): Shear stress percentage only.
+ */
+export enum ExtDebugModeValue {
+  /** Maximum of compression, tension, and shear stress percentages. */
+  Max = 0,
+  /** Compression stress percentage only. */
+  Compression = 1,
+  /** Tension stress percentage only. */
+  Tension = 2,
+  /** Shear stress percentage only. */
+  Shear = 3
+}
 
 /**
  * Solver node descriptor consumed by the low-level stress processor.
@@ -269,6 +308,12 @@ export interface ExtStressFractureResult {
   result: FractureResultValue;
 }
 
+/** Result returned by ExtStressSolver.generateFractureCommands (single-actor). */
+export interface ExtStressFractureSingleResult extends ExtStressFractureResult {
+  /** Family index of the actor these fractures belong to. */
+  actorIndex: number;
+}
+
 /**
  * Split event reported by the WASM bridge after applying fracture commands.
  * Contains the parent actor and the set of child actors created, including
@@ -304,7 +349,7 @@ export interface ExtStressSolver {
   /** Snapshot the current actor table (actor index + owned nodes). */
   actors(): Array<{ actorIndex: number; nodes: number[] }>;
   /** Generate fracture commands for the last update. */
-  generateFractureCommands(options?: { maxBonds?: number }): ExtStressFractureResult;
+  generateFractureCommands(options?: { maxBonds?: number }): ExtStressFractureSingleResult;
   /** Generate fracture commands for each actor individually. */
   generateFractureCommandsPerActor(): Array<{ actorIndex: number; fractures: ExtStressBondFracture[] }>;
   /** Apply per-actor fracture commands and return split information. */

@@ -15,7 +15,7 @@ import type {
   ExtStressBondDesc,
   ExtStressBondFracture,
   ExtStressDebugLine,
-  ExtStressFractureResult,
+  ExtStressFractureSingleResult,
   ExtStressNodeDesc,
   ExtStressSolver as ExtStressSolverType,
   ExtStressSolverDescription,
@@ -785,22 +785,23 @@ class ExtStressSolver implements ExtStressSolverType {
     }
   }
 
-  generateFractureCommands({ maxBonds = this._fractureCapacity } = {}): ExtStressFractureResult {
+  generateFractureCommands({ maxBonds = this._fractureCapacity } = {}): ExtStressFractureSingleResult {
     if (!this.handle || !this._fracturePtr || !this._fractureCommandsPtr || maxBonds === 0) {
-      return { fractures: [], truncated: false, result: FractureResult.None };
+      return { actorIndex: 0, fractures: [], truncated: false, result: FractureResult.None };
     }
     const limit = Math.min(maxBonds, this._fractureCapacity);
     this.memory.zero(this._fractureCommandsPtr, this.sizes.extFractureCommands);
     const result = this.module.ccall('ext_stress_solver_generate_fracture_commands', 'number', ['number', 'number', 'number', 'number'], [this.handle, this._fractureCommandsPtr, this._fracturePtr, limit]);
 
     const view = this.memory.view();
+    const actorIndex = view.getUint32(this._fractureCommandsPtr + 0, true);
     const count = view.getUint32(this._fractureCommandsPtr + 4, true);
     const fractures: ExtStressBondFracture[] = [];
     for (let i = 0; i < count; ++i) {
       const base = this._fracturePtr + i * this.sizes.extBondFracture;
       fractures.push(readExtBondFracture(view, base));
     }
-    return { fractures, truncated: result === FractureResult.Truncated, result } as ExtStressFractureResult;
+    return { actorIndex, fractures, truncated: result === FractureResult.Truncated, result };
   }
 
   generateFractureCommandsPerActor(): Array<{ actorIndex: number; fractures: ExtStressBondFracture[] }> {
