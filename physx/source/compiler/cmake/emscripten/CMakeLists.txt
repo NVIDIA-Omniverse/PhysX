@@ -90,6 +90,9 @@ SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Wstrict-aliasing=2 -W
     -Wno-inconsistent-missing-destructor-override \
     -Wno-unused-function \
     -Wno-inconsistent-missing-override \
+    -Wno-missing-include-dirs \
+    -Wno-nrvo \
+    -Wno-format-signedness \
 ")
 
 # Set to true to enable multi-threading - works but is difficult to use
@@ -97,7 +100,7 @@ SET(PHYSX_WASM_MULTI_THREADING false)
 IF(PHYSX_WASM_MULTI_THREADING)
 	SET(PHYSX_WASM_PTHREAD_PX_FLAGS "-pthread -DWASMPTHREAD")
 	SET(PHYSX_WASM_PTHREAD "-pthread")
-	SET(PHYSX_WASM_THREAD_POOL_SZ "-s PTHREAD_POOL_SIZE=8")
+	SET(PHYSX_WASM_THREAD_POOL_SZ "-sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency")
 ELSE()
 SET(PHYSX_WASM_PTHREAD_PX_FLAGS "")
 	SET(PHYSX_WASM_PTHREAD "")
@@ -106,29 +109,11 @@ ENDIF()
 
 SET(WASM_EXPORTED_FUNCTIONS "-sEXPORTED_FUNCTIONS=_malloc")
 
-
-SET(GCC_WARNINGS "-Wall -Werror\
-    -Wno-array-bounds\
-    -Wno-class-memaccess\
-    -Wno-invalid-offsetof\
-    -Wno-mismatched-new-delete\
-    -Wno-nonnull-compare\
-    -Wno-pragmas\
-    -Wno-uninitialized\
-    -Wno-unused-function\
-    -Wno-stringop-overflow\
-")
-SET(AARCH64_FLAGS "")
-
-IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-	# using Clang
-	IF ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "10.0.0")
-		SET(PHYSX_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -fstrict-aliasing -fvisibility=hidden ${AARCH64_FLAGS} ${CLANG_WARNINGS}" CACHE INTERNAL "PhysX CXX")
-	ELSE()
-		SET(PHYSX_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -fstrict-aliasing -fvisibility=hidden -ffp-exception-behavior=maytrap ${AARCH64_FLAGS} ${CLANG_WARNINGS}" CACHE INTERNAL "PhysX CXX")
-	ENDIF()
-ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	SET(PHYSX_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -fno-strict-aliasing -fvisibility=hidden ${AARCH64_FLAGS} ${GCC_WARNINGS}" CACHE INTERNAL "PhysX CXX")
+# using Clang
+IF ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "10.0.0")
+    SET(PHYSX_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -fstrict-aliasing -fvisibility=hidden ${AARCH64_FLAGS} ${CLANG_WARNINGS}" CACHE INTERNAL "PhysX CXX")
+ELSE()
+    SET(PHYSX_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -fstrict-aliasing -fvisibility=hidden -ffp-exception-behavior=maytrap ${AARCH64_FLAGS} ${CLANG_WARNINGS}" CACHE INTERNAL "PhysX CXX")
 ENDIF()
 
 # Build debug info for all configurations
@@ -163,28 +148,6 @@ SET(PHYSX_LINUX_DEBUG_COMPILE_DEFS   "PX_DEBUG=1;PX_CHECKED=1;${NVTX_FLAG};PX_SU
 SET(PHYSX_LINUX_CHECKED_COMPILE_DEFS "NDEBUG;PX_CHECKED=1;${NVTX_FLAG};PX_SUPPORT_PVD=1;${PX_SUPPORT_OMNI_PVD_FLAG}" CACHE INTERNAL "Checked PhysX preprocessor definitions")
 SET(PHYSX_LINUX_PROFILE_COMPILE_DEFS "NDEBUG;PX_PROFILE=1;${NVTX_FLAG};PX_SUPPORT_PVD=1;${PX_SUPPORT_OMNI_PVD_FLAG}"  CACHE INTERNAL "Profile PhysX preprocessor definitions")
 SET(PHYSX_LINUX_RELEASE_COMPILE_DEFS "NDEBUG;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0" CACHE INTERNAL "Release PhysX preprocessor definitions")
-
-#IF(PUBLIC_RELEASE)
-#	IF(NOT PHYSX_PHYSXGPU_PATH)
-#		SET(PHYSX_PHYSXGPU_PATH "$ENV{PM_PhysXGpu_PATH}/bin" CACHE INTERNAL "PhysXGpu copy path")
-#	ENDIF()
-#	IF(NOT GPU_LIB_COPIED)
-#		IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-#				SET(GPU_LIB_COPIED 1 CACHE INTERNAL "PhysX GPU so files copied")
-#					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
-#					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
-#					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/profile/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
-#					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/release/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
-#		ENDIF()
-#		IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-#			SET(GPU_LIB_COPIED 1 CACHE INTERNAL "PhysX GPU so files copied")
-#				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
-#				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
-#				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/profile/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
-#				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/release/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
-#		ENDIF()
-#	ENDIF()
-#ENDIF()
 
 # Include all of the projects
 IF(PX_GENERATE_GPU_PROJECTS_ONLY)

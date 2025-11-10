@@ -17,13 +17,16 @@ SET(PHYSXWASM_IDL_FILE ${PHYSX_WASM_SOURCE_DIR}/wasm/PhysXWasm.idl)
 SET(EMCC_WASM_ARGS
 		--post-js glue.js
 		--post-js ${PHYSX_WASM_SOURCE_DIR}/wasm/onload.js
-		-s MODULARIZE=1
-		-s EXPORT_NAME=PhysX
-		-s ENVIRONMENT=web,worker
-		-s NO_FILESYSTEM=1
-		-s ALLOW_TABLE_GROWTH=1
-		-s ALLOW_MEMORY_GROWTH=1
-		-s TOTAL_MEMORY=268435456
+		-sMODULARIZE=1
+		-sEXPORT_ES6=1
+		-sEXPORT_NAME=PhysX
+		-sENVIRONMENT=web,worker
+		-sNO_FILESYSTEM=1
+		-sALLOW_TABLE_GROWTH=1
+		-sALLOW_MEMORY_GROWTH=1
+		-sTOTAL_MEMORY=268435456
+		-fno-rtti
+		-fno-exceptions
 		${WASM_EXPORTED_FUNCTIONS}
 		${PHYSX_WASM_PTHREAD}
 		${PHYSX_WASM_THREAD_POOL_SZ}
@@ -32,6 +35,8 @@ SET(EMCC_WASM_ARGS
 SET(EMCC_GLUE_ARGS
 		-c
 		-DNDEBUG
+		-O3
+		-msimd128
 		${PHYSX_WASM_PTHREAD}
 		-I${PHYSXWASM_INCLUDE_DIR}
 		# todo: maybe find a more elegant way to include generated glue.cpp
@@ -49,7 +54,7 @@ ADD_CUSTOM_COMMAND(
 
 ADD_CUSTOM_COMMAND(
 		OUTPUT glue.o
-		COMMAND emcc ${PHYSXWASM_GLUE_WRAPPER} ${EMCC_GLUE_ARGS} -o glue.o
+		COMMAND em++ ${PHYSXWASM_GLUE_WRAPPER} ${EMCC_GLUE_ARGS} -o glue.o
 		DEPENDS glue.cpp
 		COMMENT "Building physx-js-webidl bindings"
 		VERBATIM
@@ -62,10 +67,10 @@ FOREACH(_TARGET ${PHYSX_TARGETS})
 ENDFOREACH()
 
 ADD_CUSTOM_COMMAND(
-		OUTPUT physx-js-webidl.js physx-js-webidl.wasm
-		COMMAND emcc glue.o ${PHYSX_LIBS} ${EMCC_WASM_ARGS} -o physx-js-webidl.js
+		OUTPUT physx-js-webidl.mjs physx-js-webidl.wasm
+		COMMAND em++ glue.o ${PHYSX_LIBS} ${EMCC_WASM_ARGS} -o physx-js-webidl.mjs
 		DEPENDS physx-js-bindings ${PHYSX_TARGETS}
 		COMMENT "Building physx-js-webidl webassembly"
 		VERBATIM
 )
-ADD_CUSTOM_TARGET(PhysXWasmBindings ALL DEPENDS physx-js-webidl.js physx-js-webidl.wasm)
+ADD_CUSTOM_TARGET(PhysXWasmBindings ALL DEPENDS physx-js-webidl.mjs physx-js-webidl.wasm)
