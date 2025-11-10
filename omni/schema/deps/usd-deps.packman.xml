@@ -1,0 +1,9 @@
+<project toolsVersion="5.6">
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="python" />
+    <filter include="usd-${config}" />
+    <filter include="premake" linkPath="../_build/host-deps/premake" />	
+  </import>
+  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}" />
+</project>

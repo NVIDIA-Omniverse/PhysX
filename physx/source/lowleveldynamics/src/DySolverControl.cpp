@@ -113,7 +113,54 @@ SolveBlockMethod gVTableSolveConcludeBlock[] PX_UNUSED_ATTRIBUTE =
 	solve1D4Block_Conclude,					// DY_SC_TYPE_BLOCK_1D,
 };
 
-void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
+struct SolverDt
+{
+	PxReal simDt;
+	PxReal stepDt;
+	PxReal invStepDt; 
+};
+
+constexpr bool tWriteBackInternalConstraints = true;
+constexpr bool tResetPosIters =  true;
+constexpr bool tResetVelIters = true;
+
+template<bool writeBackInternalConstraints, bool resetPosIter, bool resetVelIter>
+void solveArticulations
+(ArticulationSolverDesc* articulationListStart, const PxU32 articulationListSize,
+ const SolverDt& solverDt,
+ const bool isVelocityIteration, const bool isTGS,
+ const ArticulationConstraintProcessingConfigCPU& articulationConstraintProcessingConfig,
+ const PxReal biasCoefficient,
+ const bool residualReportingActive)
+{
+	for (PxU32 i = 0; i < articulationListSize; ++i)
+	{
+		if(resetPosIter)
+		{
+			articulationListStart[i].articulation->mInternalErrorAccumulatorPosIter.reset();
+			articulationListStart[i].articulation->mContactErrorAccumulatorPosIter.reset();
+		}
+		if(resetVelIter)
+		{
+			articulationListStart[i].articulation->mInternalErrorAccumulatorVelIter.reset();
+			articulationListStart[i].articulation->mContactErrorAccumulatorVelIter.reset();
+		}
+		articulationListStart[i].articulation->solveInternalConstraints(
+			solverDt.simDt, solverDt.stepDt, solverDt.invStepDt, 
+			isVelocityIteration, isTGS, 
+			articulationConstraintProcessingConfig,
+			0.f, 
+			biasCoefficient, 
+			residualReportingActive);
+
+		if(writeBackInternalConstraints)
+		{
+			articulationListStart[i].articulation->writebackInternalConstraints(false);
+		}
+	}
+}
+
+void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration, bool solveArticulationContactLast)
 {
 	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
 	const bool isTGS = false;
@@ -151,13 +198,19 @@ void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
 	{
 		solveNoContactsCase(bodyListSize, bodyListStart, motionVelocityArray,
 							articulationListSize, articulationListStart, cache.deltaV,
-							positionIterations, velocityIterations, params.dt, params.invDt, residualReportingActive);
+							positionIterations, velocityIterations, params.dt, params.invDt, residualReportingActive, solveArticulationContactLast);
 		return;
 	}
 
 	BatchIterator contactIterator(params.constraintBatchHeaders, params.numConstraintHeaders);
 
 	const PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
+
+	const SolverDt solverDt = {params.dt, params.dt, params.invDt};
+
+	const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
+	const ArticulationConstraintProcessingConfigCPU firstPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getFirstPassConfig();
+	const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
 
 	//0-(n-1) iterations
 	PxI32 normalIter = 0;
@@ -171,11 +224,49 @@ void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
 
 		cache.doFriction = solveFrictionEveryIteration ? true : iteration <= 3;
 
-		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
-			cache, contactIterator, iteration == 1 ? gVTableSolveConcludeBlock : gVTableSolveBlock, normalIter);
+		if(solveArticulationContactLast)
+		{
+			//writeBackInternalConstraints is false (we do this only on the last vel iter)
+			//retPosIters is true (but only really need this on the last pos iter)
+			//resetVelIters is false (we do the vel iters later on)
+			solveArticulations<!tWriteBackInternalConstraints, tResetPosIters, !tResetVelIters>(
+					articulationListStart, articulationListSize, 
+					solverDt,
+					false, isTGS, 
+					firstPassArticulationConstraintProcessingConfig,
+					biasCoefficient, 
+					residualReportingActive);
 
-		for (PxU32 i = 0; i < articulationListSize; ++i)
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.dt, params.invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
+			SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
+				cache, contactIterator, iteration == 1 ? gVTableSolveConcludeBlock : gVTableSolveBlock, normalIter);
+
+			//writeBackInternalConstraints is false (we do this only on the last vel iter)
+			//retPosIters is false (we already reset it above)
+			//resetVelIters is false (we do the vel iters later on)
+			 solveArticulations<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(
+					articulationListStart, articulationListSize, 
+					solverDt,
+					false, isTGS, 
+					secondPassArticulationConstraintProcessingConfig,
+					biasCoefficient, 
+					residualReportingActive);
+		}
+		else
+		{
+			SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
+				cache, contactIterator, iteration == 1 ? gVTableSolveConcludeBlock : gVTableSolveBlock, normalIter);
+
+			//writeBackInternalConstraints is false (we do this only on the last vel iter)
+			//retPosIters is true (but we only really need this on the last pos iter)
+			//resetVelIters is false (we do the vel iters later on)
+			solveArticulations<!tWriteBackInternalConstraints, tResetPosIters, !tResetVelIters>(
+					articulationListStart, articulationListSize, 
+					solverDt,
+					false, isTGS, 
+					singlePassArticulationConstraintProcessingConfig,
+					biasCoefficient, 
+					residualReportingActive);
+		}
 
 		++normalIter;
 	}
@@ -194,11 +285,50 @@ void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
 		if (cache.contactErrorAccumulator)
 			cache.contactErrorAccumulator->reset();
 
-		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
-			cache, contactIterator, gVTableSolveBlock, normalIter);
+		if(solveArticulationContactLast)
+		{
+			//writeBackInternalConstraints is false (we do this only on the last vel iter)
+			//retPosIters is false (we are on the vel iters now)
+			//resetVelIters is false (only really need this on the last vel iter, which we do later)
+			solveArticulations<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(
+				articulationListStart, articulationListSize, 
+				solverDt,
+				true, isTGS, 
+				firstPassArticulationConstraintProcessingConfig,
+				biasCoefficient, 
+				residualReportingActive);
 
-		for (PxU32 i = 0; i < articulationListSize; ++i)
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
+			SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
+				cache, contactIterator, gVTableSolveBlock, normalIter);
+
+			//writeBackInternalConstraints is false (we do this only on the last vel iter)
+			//retPosIters is false (we are on the vel iters now)
+			//resetVelIters is false (only really need this on the last vel iter, which we do later)
+			solveArticulations<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(
+				articulationListStart, articulationListSize, 
+				solverDt,
+				true, isTGS, 
+				secondPassArticulationConstraintProcessingConfig,
+				biasCoefficient, 
+				residualReportingActive);
+		}
+		else
+		{
+			SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
+				cache, contactIterator, gVTableSolveBlock, normalIter);
+
+			//writeBackInternalConstraints is false (we do this only on the last vel iter)
+			//retPosIters is false (we are on the vel iters now)
+			//resetVelIters is false (only really need this on the last vel iter, which we do later)
+			solveArticulations<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(
+				articulationListStart, articulationListSize, 
+				solverDt,
+				true, isTGS, 
+				singlePassArticulationConstraintProcessingConfig,
+				biasCoefficient, 
+				residualReportingActive);
+		}
+
 		++normalIter;
 	}
 
@@ -215,15 +345,51 @@ void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
 		if (cache.contactErrorAccumulator)
 			cache.contactErrorAccumulator->reset();
 
-		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
-			cache, contactIterator, gVTableSolveWriteBackBlock, normalIter);
-
-		for (PxU32 i = 0; i < articulationListSize; ++i)
+		if(solveArticulationContactLast)
 		{
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
-			articulationListStart[i].articulation->writebackInternalConstraints(false);
-		}
+			//writeBackInternalConstraints is false (we do this at the very end of the last vel iter)
+			//retPosIters is false (we are on the vel iters now)
+			//resetVelIters is true (only really need this on the last vel iter, which is now)
+			solveArticulations<!tWriteBackInternalConstraints, !tResetPosIters, tResetVelIters>(
+				articulationListStart, articulationListSize, 
+				solverDt,
+				true, isTGS, 
+				firstPassArticulationConstraintProcessingConfig,
+				biasCoefficient,
+				residualReportingActive);
 
+			SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
+				cache, contactIterator, gVTableSolveWriteBackBlock, normalIter);
+
+			//writeBackInternalConstraints is true (we do this at the very end of the last vel iter, which is now)
+			//retPosIters is false (we are on the vel iters now)
+			//resetVelIters is false (already reset them above)
+			solveArticulations<tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(
+				articulationListStart, articulationListSize, 
+				solverDt,
+				true, isTGS, 
+				secondPassArticulationConstraintProcessingConfig,
+				biasCoefficient,
+				residualReportingActive);
+
+		}
+		else
+		{
+			SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
+				cache, contactIterator, gVTableSolveWriteBackBlock, normalIter);
+
+			//writeBackInternalConstraints is true (we do this on the last vel iter, which is now)
+			//retPosIters is false (we are on the vel iters now)
+			//resetVelIters is true (only really need this on the last vel iter, which is now)
+			solveArticulations<tWriteBackInternalConstraints, !tResetPosIters, tResetVelIters>(
+				articulationListStart, articulationListSize, 
+				solverDt,
+				true, isTGS, 
+				singlePassArticulationConstraintProcessingConfig,
+				biasCoefficient,
+				residualReportingActive);
+		}
+			
 		++normalIter;
 	}
 
@@ -240,172 +406,145 @@ void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration)
 	}
 }
 
-void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator,
-	bool solveFrictionEveryIteration)
+static void solveVBlockParallelPartition
+( const PxU32 headersInPartition,
+ const PxI32 normalIteration, const PxI32 unrollCount, const  PxI32 batchCount, 
+ const PxSolverConstraintDesc* PX_RESTRICT constraintList, 
+ SolverContext& cache, BatchIterator& contactIter,
+ SolveBlockMethod* solveTable,
+ PxI32& maxNormalIndex, PxI32& index, PxI32& endIndexCount, PxI32& targetConstraintIndex,
+ PxI32* constraintIndex, PxI32* constraintIndexCompleted)
 {
-#if PX_PROFILE_SOLVE_STALLS
-	PxU64 startTime = readTimer();
-
-	PxU64 stallCount = 0;
-#endif
-	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
-	const bool isTGS = false;
-	const bool residualReportingActive = errorAccumulator != NULL;
-
-	SolverContext cache;
-	cache.solverBodyArray = params.bodyDataList;
-	const PxU32 batchSize = params.batchSize;
-
-	const PxI32 UnrollCount = PxI32(batchSize);
-	const PxI32 ArticCount = 2;
-	const PxI32 SaveUnrollCount = 32;
-
-	const PxI32 TempThresholdStreamSize = 32;
-	ThresholdStreamElement tempThresholdStream[TempThresholdStreamSize];
-
-	const PxI32 bodyListSize = PxI32(params.bodyListSize);
-	const PxI32 articulationListSize = PxI32(params.articulationListSize);
-
-	const PxI32 batchCount = PxI32(params.numConstraintHeaders);
-	cache.mThresholdStream = tempThresholdStream;
-	cache.mThresholdStreamLength = TempThresholdStreamSize;
-	cache.mThresholdStreamIndex = 0;
-	cache.writeBackIteration = false;
-	cache.deltaV = deltaV;
-
-	const PxReal dt = params.dt;
-	const PxReal invDt = params.invDt;
-
-	const PxI32 positionIterations = PxI32(params.positionIterations);
-
-	PxI32* constraintIndex = &params.constraintIndex; // counter for distributing constraints to tasks, incremented before they're solved
-	PxI32* constraintIndexCompleted = &params.constraintIndexCompleted; // counter for completed constraints, incremented after they're solved
-
-	PxI32* articIndex = &params.articSolveIndex;
-	PxI32* articIndexCompleted = &params.articSolveIndexCompleted;
-
-	const PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
-
-	const ArticulationSolverDesc* PX_RESTRICT articulationListStart = params.articulationListStart;
-
-	const PxU32 nbPartitions = params.nbPartitions;	
-
-	const PxU32* headersPerPartition = params.headersPerPartition;
-
-	PX_ASSERT(positionIterations >= 1);
-
-	PxI32 endIndexCount = UnrollCount;
-	PxI32 index = PxAtomicAdd(constraintIndex, UnrollCount) - UnrollCount;
-
-	PxI32 articSolveStart = 0;
-	PxI32 articSolveEnd = 0;
-	PxI32 maxArticIndex = 0;
-	PxI32 articIndexCounter = 0;
-	
-	BatchIterator contactIter(params.constraintBatchHeaders, params.numConstraintHeaders);
-
-	PxI32 maxNormalIndex = 0;
-	PxI32 normalIteration = 0;
-	PxU32 a = 0;
-	PxI32 targetConstraintIndex = 0;
-	PxI32 targetArticIndex = 0;
-	
-	cache.contactErrorAccumulator = residualReportingActive ? &errorAccumulator->mPositionIterationErrorAccumulator : NULL;
-	cache.isPositionIteration = true;
-	for(PxU32 i = 0; i < 2; ++i)
-	{
-		SolveBlockMethod* solveTable = i == 0 ? gVTableSolveBlock : gVTableSolveConcludeBlock;
-		for(; a < positionIterations - 1 + i; ++a)
-		{
-			WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti solve of previous iteration
-
-			if (i == 0 && cache.contactErrorAccumulator)
-				cache.contactErrorAccumulator->reset();
-
-			cache.doFriction = solveFrictionEveryIteration ? true : (positionIterations - a) <= 3;
-			for(PxU32 b = 0; b < nbPartitions; ++b)
-			{
-				WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid solve of previous partition
-
-				maxNormalIndex += headersPerPartition[b];
+	maxNormalIndex += headersInPartition;
 				
-				PxI32 nbSolved = 0;
-				while(index < maxNormalIndex)
-				{
-					const PxI32 remainder = PxMin(maxNormalIndex - index, endIndexCount);
-					SolveBlockParallel(constraintList, remainder, index, batchCount, cache, contactIter, solveTable, 
-						normalIteration);
-					index += remainder;
-					endIndexCount -= remainder;
-					nbSolved += remainder;
-					if(endIndexCount == 0)
-					{
-						endIndexCount = UnrollCount;
-						index = PxAtomicAdd(constraintIndex, UnrollCount) - UnrollCount;
-					}
-				}
-				if(nbSolved)
-				{
-					PxMemoryBarrier();
-					PxAtomicAdd(constraintIndexCompleted, nbSolved);
-				}
-				targetConstraintIndex += headersPerPartition[b]; //Increment target constraint index by batch count
-			}
+	PxI32 nbSolved = 0;
+	while(index < maxNormalIndex)
+	{
+		const PxI32 remainder = PxMin(maxNormalIndex - index, endIndexCount);
+		SolveBlockParallel(constraintList, remainder, index, batchCount, cache, contactIter, solveTable, 
+			normalIteration);
+		index += remainder;
+		endIndexCount -= remainder;
+		nbSolved += remainder;
+		if(endIndexCount == 0)
+		{
+			endIndexCount = unrollCount;
+			index = PxAtomicAdd(constraintIndex, unrollCount) - unrollCount;
+		}
+	}
+	if(nbSolved)
+	{
+		PxMemoryBarrier();
+		PxAtomicAdd(constraintIndexCompleted, nbSolved);
+	}
+	targetConstraintIndex += headersInPartition; //Increment target constraint index by batch count
+}
 
-			WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for all rigid partitions to be done
+static void solveVBlockParallelPartitionsAndWaitOnCompletion
+(const PxU32 nbPartitions, const PxU32* headersPerPartition,
+ const PxI32 normalIteration, const PxI32 unrollCount, const  PxI32 batchCount, 
+ const PxSolverConstraintDesc* PX_RESTRICT constraintList, 
+ SolverContext& cache, BatchIterator& contactIter,
+ SolveBlockMethod* solveTable,
+ PxI32& maxNormalIndex, PxI32& index, PxI32& endIndexCount,  PxI32& targetConstraintIndex,
+ PxI32* constraintIndex, PxI32* constraintIndexCompleted)
+{
+	for(PxU32 b = 0; b < nbPartitions; ++b)
+	{
+		solveVBlockParallelPartition(
+				headersPerPartition[b],
+				normalIteration, unrollCount, batchCount, 
+				constraintList, 
+				cache, contactIter,
+				solveTable,
+				maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+				constraintIndex, constraintIndexCompleted);
+		WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for this rigid partition to be done
+	}
+}
 
-			maxArticIndex += articulationListSize;
-			targetArticIndex += articulationListSize;
+template<bool writeBackInternalConstraints, bool resetPosError, bool resetVelError>
+void solveInternalConstraintsAndWaitForCompletion
+(const PxI32 articulationListSize, const PxI32 ArticCount,
+ const ArticulationSolverDesc* PX_RESTRICT articulationListStart,
+ const SolverDt& solverDt, 
+ const bool isVelIter, const bool isTGS, 
+ const ArticulationConstraintProcessingConfigCPU& articulationConstraintProcessingConfig, 
+ const PxReal elapsedTime, 
+ const PxReal biasCoefficient, 
+ const bool residualReportingActive, 
+ PxI32& maxArticIndex, PxI32& targetArticIndex, PxI32& articSolveStart, PxI32& articIndexCounter, PxI32& articSolveEnd,
+ PxI32* articIndexCompleted, PxI32* articIndex)
+{
+	maxArticIndex += articulationListSize;
+	targetArticIndex += articulationListSize;
 
-			while (articSolveStart < maxArticIndex)
+	while (articSolveStart < maxArticIndex)
+	{
+		const PxI32 endIdx = PxMin(articSolveEnd, maxArticIndex);
+
+		PxI32 nbSolved = 0;
+		while (articSolveStart < endIdx)
+		{
+			if(resetPosError)
 			{
-				const PxI32 endIdx = PxMin(articSolveEnd, maxArticIndex);
-
-				PxI32 nbSolved = 0;
-				while (articSolveStart < endIdx)
-				{
-					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
-					articSolveStart++;
-					nbSolved++;
-				}
-
-				if (nbSolved)
-				{
-					PxMemoryBarrier();
-					PxAtomicAdd(articIndexCompleted, nbSolved);
-				}
-
-				const PxI32 remaining = articSolveEnd - articSolveStart;
-
-				if (remaining == 0)
-				{
-					articSolveStart = PxAtomicAdd(articIndex, ArticCount) - ArticCount;
-					articSolveEnd = articSolveStart + ArticCount;
-				}
+				articulationListStart[articSolveStart - articIndexCounter].articulation->mInternalErrorAccumulatorPosIter.reset();
+				articulationListStart[articSolveStart - articIndexCounter].articulation->mContactErrorAccumulatorPosIter.reset();
 			}
+			if(resetVelError)
+			{
+				articulationListStart[articSolveStart - articIndexCounter].articulation->mInternalErrorAccumulatorVelIter.reset();
+				articulationListStart[articSolveStart - articIndexCounter].articulation->mContactErrorAccumulatorVelIter.reset();
+			}
+			articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(
+				solverDt.simDt, solverDt.stepDt, solverDt.invStepDt, 
+				isVelIter, isTGS, 
+				articulationConstraintProcessingConfig,
+				elapsedTime, 
+				biasCoefficient, 
+				residualReportingActive);
+			if(writeBackInternalConstraints)
+			{
+				articulationListStart[articSolveStart - articIndexCounter].articulation->writebackInternalConstraints(false);
+			}
+			articSolveStart++;
+			nbSolved++;
+		}
 
-			articIndexCounter += articulationListSize;
+		if (nbSolved)
+		{
+			PxMemoryBarrier();
+			PxAtomicAdd(articIndexCompleted, nbSolved);
+		}
 
-			++normalIteration;
+		const PxI32 remaining = articSolveEnd - articSolveStart;
+
+		if (remaining == 0)
+		{
+			articSolveStart = PxAtomicAdd(articIndex, ArticCount) - ArticCount;
+			articSolveEnd = articSolveStart + ArticCount;
 		}
 	}
 
-	PxI32* bodyListIndex = &params.bodyListIndex;
-	PxI32* bodyListIndexCompleted = &params.bodyListIndexCompleted;
+	articIndexCounter += articulationListSize;
 
-	const PxSolverBody* PX_RESTRICT bodyListStart = params.bodyListStart;
-	Cm::SpatialVector* PX_RESTRICT motionVelocityArray = params.motionVelocityArray;
+	WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); 
+}
 
-	//Save velocity - articulated
-	PxI32 endIndexCount2 = SaveUnrollCount;
-	PxI32 index2 = PxAtomicAdd(bodyListIndex, SaveUnrollCount) - SaveUnrollCount;
+void saveVelocitiesAndWaitForCompletion
+(const PxI32 articulationListSize, const PxI32 saveUnrollCount, const PxI32 bodyListSize, 
+ const PxSolverBody* PX_RESTRICT bodyListStart, const ArticulationSolverDesc* PX_RESTRICT articulationListStart, 
+ Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
+ SolverContext& cache, 
+ PxI32* bodyListIndex, PxI32* bodyListIndexCompleted)
+{
+	PxI32 endIndexCount2 = saveUnrollCount;
+	PxI32 index2 = PxAtomicAdd(bodyListIndex, saveUnrollCount) - saveUnrollCount;
 	{
-		WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for all articulation solves before saving velocity
-		WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for all rigid partition solves before saving velocity
 		PxI32 nbConcluded = 0;
 		while(index2 < articulationListSize)
 		{
-			const PxI32 remainder = PxMin(SaveUnrollCount, (articulationListSize - index2));
+			const PxI32 remainder = PxMin(saveUnrollCount, (articulationListSize - index2));
 			endIndexCount2 -= remainder;
 			for(PxI32 b = 0; b < remainder; ++b, ++index2)
 			{
@@ -413,8 +552,8 @@ void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* 
 			}
 			if(endIndexCount2 == 0)
 			{
-				index2 = PxAtomicAdd(bodyListIndex, SaveUnrollCount) - SaveUnrollCount;
-				endIndexCount2 = SaveUnrollCount;
+				index2 = PxAtomicAdd(bodyListIndex, saveUnrollCount) - saveUnrollCount;
+				endIndexCount2 = saveUnrollCount;
 			}
 			nbConcluded += remainder;
 		}
@@ -436,8 +575,8 @@ void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* 
 			//Branch not required because this is the last time we use this atomic variable
 			//if(index2 < articulationListSizePlusbodyListSize)
 			{
-				index2 = PxAtomicAdd(bodyListIndex, SaveUnrollCount) - SaveUnrollCount - articulationListSize;
-				endIndexCount2 = SaveUnrollCount;
+				index2 = PxAtomicAdd(bodyListIndex, saveUnrollCount) - saveUnrollCount - articulationListSize;
+				endIndexCount2 = saveUnrollCount;
 			}
 		}
 
@@ -449,80 +588,268 @@ void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* 
 	}
 
 	WAIT_FOR_PROGRESS(bodyListIndexCompleted, (bodyListSize + articulationListSize)); // wait for all velocity saves to be done
+}
+
+void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator,
+	bool solveFrictionEveryIteration, bool solveArticulationContactLast)
+{
+#if PX_PROFILE_SOLVE_STALLS
+	PxU64 startTime = readTimer();
+
+	PxU64 stallCount = 0;
+#endif
+	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
+	const bool isTGS = false;
+	const bool residualReportingActive = errorAccumulator != NULL;
+
+	SolverContext cache;
+	cache.solverBodyArray = params.bodyDataList;
+	const PxU32 batchSize = params.batchSize;
+
+	const PxI32 unrollCount = PxI32(batchSize);
+	const PxI32 articCount = 2;
+	const PxI32 saveUnrollCount = 32;
+
+	const PxI32 tempThresholdStreamSize = 32;
+	ThresholdStreamElement tempThresholdStream[tempThresholdStreamSize];
+
+	const PxI32 bodyListSize = PxI32(params.bodyListSize);
+	const PxI32 articulationListSize = PxI32(params.articulationListSize);
+
+	const PxI32 batchCount = PxI32(params.numConstraintHeaders);
+	cache.mThresholdStream = tempThresholdStream;
+	cache.mThresholdStreamLength = tempThresholdStreamSize;
+	cache.mThresholdStreamIndex = 0;
+	cache.writeBackIteration = false;
+	cache.deltaV = deltaV;
+
+	const PxI32 positionIterations = PxI32(params.positionIterations);
+
+	PxI32* constraintIndex = &params.constraintIndex; // counter for distributing constraints to tasks, incremented before they're solved
+	PxI32* constraintIndexCompleted = &params.constraintIndexCompleted; // counter for completed constraints, incremented after they're solved
+
+	PxI32* articIndex = &params.articSolveIndex;
+	PxI32* articIndexCompleted = &params.articSolveIndexCompleted;
+
+	const PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
+
+	const ArticulationSolverDesc* PX_RESTRICT articulationListStart = params.articulationListStart;
+
+	const PxU32 nbPartitions = params.nbPartitions;	
+
+	const PxU32* headersPerPartition = params.headersPerPartition;
+
+	PX_ASSERT(positionIterations >= 1);
+
+	PxI32 endIndexCount = unrollCount;
+	PxI32 index = PxAtomicAdd(constraintIndex, unrollCount) - unrollCount;
+
+	PxI32 articSolveStart = 0;
+	PxI32 articSolveEnd = 0;
+	PxI32 maxArticIndex = 0;
+	PxI32 articIndexCounter = 0;
+	
+	BatchIterator contactIter(params.constraintBatchHeaders, params.numConstraintHeaders);
+
+	PxI32 maxNormalIndex = 0;
+	PxI32 normalIteration = 0;
+	PxU32 a = 0;
+	PxI32 targetConstraintIndex = 0;
+	PxI32 targetArticIndex = 0;
+
+	const SolverDt solverDt = {params.dt, params.dt, params.invDt};	
+
+	const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
+	const ArticulationConstraintProcessingConfigCPU firstPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getFirstPassConfig();
+	const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
+
+	//Run all position iterations with:
+	//gVTableSolveConcludeBlock on the last position iteration
+	//gVTableSolveBlock on all prior iterations.
+	cache.contactErrorAccumulator = residualReportingActive ? &errorAccumulator->mPositionIterationErrorAccumulator : NULL;
+	cache.isPositionIteration = true;
+	for(PxU32 i = 0; i < 2; ++i)
+	{
+		SolveBlockMethod* solveTable = i == 0 ? gVTableSolveBlock : gVTableSolveConcludeBlock;
+		for(; a < positionIterations - 1 + i; ++a)
+		{
+			if (i == 0 && cache.contactErrorAccumulator)
+				cache.contactErrorAccumulator->reset();
+
+			cache.doFriction = solveFrictionEveryIteration ? true : (positionIterations - a) <= 3;
+
+			if(solveArticulationContactLast)
+			{
+				//Solve articulation internal constraints and wait on completion.
+				//writeBackInternalConstraint is false (only true on last velIter)
+				//restPosError is true (we only really need this on the last pos iter)
+				//resetVelError is false (we only need the values on the last vel iter, which comes later).
+				solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, tResetPosIters, !tResetVelIters>(	 
+					articulationListSize, articCount,
+					 articulationListStart,
+					 solverDt,
+					 false, isTGS,			//isVelIter = false
+					 firstPassArticulationConstraintProcessingConfig,
+					 0.0f, 
+					 biasCoefficient, 
+					 residualReportingActive, 
+					 maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+					 articIndexCompleted, articIndex);
+
+				//Solve each partition and wait for the last partiton to complete.
+				solveVBlockParallelPartitionsAndWaitOnCompletion(
+					nbPartitions, headersPerPartition,
+					normalIteration, unrollCount, batchCount, 
+					constraintList, 
+					cache, contactIter,
+					solveTable,
+					maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+					constraintIndex, constraintIndexCompleted);
+
+
+				//Solve articulation internal constraints and wait on completion.
+				//writeBackInternalConstraint is false (only true on last velIter)
+				//restPosError is false (we only really need this on the last pos iter but we already did it above)
+				//resetVelError is false (we only need the values on the last vel iter, which comes later).
+				solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(	 
+					articulationListSize, articCount,
+					 articulationListStart,
+					 solverDt,
+					 false, isTGS,			//isVelIter = false
+					 secondPassArticulationConstraintProcessingConfig,
+					 0.0f, 
+					 biasCoefficient, 
+					 residualReportingActive, 
+					 maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+					 articIndexCompleted, articIndex);
+			}
+			else
+			{
+				//Solve each partition and wait for the last partiton to complete.
+				solveVBlockParallelPartitionsAndWaitOnCompletion(
+					nbPartitions, headersPerPartition,
+					normalIteration, unrollCount, batchCount, 
+					constraintList, 
+					cache, contactIter,
+					solveTable,
+					maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+					constraintIndex, constraintIndexCompleted);
+
+				//Solve articulation internal constraints and wait on completion.
+				//writeBackInternalConstraint is false (only true on last velIter)
+				//restPosError is true (we only really need this on the last pos iter)
+				//resetVelError is false (we only need the values on the last vel iter, which comes later).
+				solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, tResetPosIters, !tResetVelIters>(	 
+					articulationListSize, articCount,
+					 articulationListStart,
+					 solverDt,
+					 false, isTGS,			//isVelIter = false
+					 singlePassArticulationConstraintProcessingConfig,
+					 0.0f, 
+					 biasCoefficient, 
+					 residualReportingActive, 
+					 maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+					 articIndexCompleted, articIndex);
+			}
+
+			++normalIteration;
+		}
+	}
+
+	//Save articulation velocities.
+	saveVelocitiesAndWaitForCompletion
+		(articulationListSize, saveUnrollCount, bodyListSize, params.bodyListStart,
+		 articulationListStart, params.motionVelocityArray,
+		 cache, 
+		 &params.bodyListIndex, &params.bodyListIndexCompleted);
+
 	
 	cache.contactErrorAccumulator = residualReportingActive ? &errorAccumulator->mVelocityIterationErrorAccumulator : NULL;
 	cache.isPositionIteration = false;
 
+	//Perform (nbVelIters -1) velocity iterations.
+	//We'll run a final velocity iteration later to make sure that we always run at least 1.
 	a = 1;
 	for(; a < params.velocityIterations; ++a)
 	{
-		WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti solve of previous iteration
-		
 		if (residualReportingActive)
 			cache.contactErrorAccumulator->reset();
-		
-		for(PxU32 b = 0; b < nbPartitions; ++b)
-		{
-			WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid solve of previous partition
 
-			maxNormalIndex += headersPerPartition[b];
-			
-			PxI32 nbSolved = 0;
-			while(index < maxNormalIndex)
-			{
-				const PxI32 remainder = PxMin(maxNormalIndex - index, endIndexCount);
-				SolveBlockParallel(constraintList, remainder, index, batchCount, cache, contactIter, gVTableSolveBlock, 
-					normalIteration);
-				index += remainder;
-				endIndexCount -= remainder;
-				nbSolved += remainder;
-				if(endIndexCount == 0)
-				{
-					endIndexCount = UnrollCount;
-					index = PxAtomicAdd(constraintIndex, UnrollCount) - UnrollCount;
-				}
-			}
-			if(nbSolved)
-			{
-				PxMemoryBarrier();
-				PxAtomicAdd(constraintIndexCompleted, nbSolved);
-			}
-			targetConstraintIndex += headersPerPartition[b]; //Increment target constraint index by batch count
+		if(solveArticulationContactLast)
+		{
+			//Solve articulation internal constraints and wait on completion.
+			//writeBackInternalConstraint is false (only true on last velIter)
+			//restPosError is false (we're on the vel iters now)
+			//resetVelError is false (do do this on the last vel iter, which comes later).
+			solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(	 
+				articulationListSize, articCount,
+				articulationListStart,
+				solverDt,
+				true, isTGS,			//isVelIter = true 
+				firstPassArticulationConstraintProcessingConfig,
+				0.0f, 
+				biasCoefficient, 
+				residualReportingActive, 
+				maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+				articIndexCompleted, articIndex);
+
+			//Solve each partition and wait for the last partiton to complete.
+			solveVBlockParallelPartitionsAndWaitOnCompletion
+				(nbPartitions, headersPerPartition,
+				 normalIteration, unrollCount, batchCount, 
+				 constraintList, 
+				 cache, contactIter,
+				 gVTableSolveBlock,
+				 maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+				constraintIndex, constraintIndexCompleted);
+
+			//Solve articulation internal constraints and wait on completion.
+			//writeBackInternalConstraint is false (only true on last velIter)
+			//restPosError is true (we only really need this on the last pos iter)
+			//resetVelError is false (we only need the values on the last vel iter, which comes later).
+			solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(	 
+				articulationListSize, articCount,
+				articulationListStart,
+				solverDt,
+				true, isTGS,			//isVelIter = true 
+				secondPassArticulationConstraintProcessingConfig,
+				0.0f, 
+				biasCoefficient, 
+				residualReportingActive, 
+				maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+				articIndexCompleted, articIndex);
+
+		}
+		else
+		{		
+			//Solve each partition and wait for the last partiton to complete.
+			solveVBlockParallelPartitionsAndWaitOnCompletion
+				(nbPartitions, headersPerPartition,
+				 normalIteration, unrollCount, batchCount, 
+				 constraintList, 
+				 cache, contactIter,
+				 gVTableSolveBlock,
+				 maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+				constraintIndex, constraintIndexCompleted);
+
+			//Solve articulation internal constraints and wait on completion.
+			//writeBackInternalConstraint is false (only true on last velIter)
+			//restPosError is false (we are doing vel iters now so we won't accumulate posError from now on)
+			//resetVelError is false (we only need the values on the last vel iter, which comes later).
+			solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(	 
+				articulationListSize, articCount,
+				articulationListStart,
+				solverDt,
+				true, isTGS,			//isVelIter = true 
+				singlePassArticulationConstraintProcessingConfig,
+				0.0f, 
+				biasCoefficient, 
+				residualReportingActive, 
+				maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+				articIndexCompleted, articIndex);
 		}
 
-		WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for all rigid partitions to be done
-
-		maxArticIndex += articulationListSize;
-		targetArticIndex += articulationListSize;
-
-		while (articSolveStart < maxArticIndex)
-		{
-			const PxI32 endIdx = PxMin(articSolveEnd, maxArticIndex);
-
-			PxI32 nbSolved = 0;
-			while (articSolveStart < endIdx)
-			{
-				articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, dt, invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
-				articSolveStart++;
-				nbSolved++;
-			}
-
-			if (nbSolved)
-			{
-				PxMemoryBarrier();
-				PxAtomicAdd(articIndexCompleted, nbSolved);
-			}
-
-			const PxI32 remaining = articSolveEnd - articSolveStart;
-
-			if (remaining == 0)
-			{
-				articSolveStart = PxAtomicAdd(articIndex, ArticCount) - ArticCount;
-				articSolveEnd = articSolveStart + ArticCount;
-			}
-		}
 		++normalIteration;
-		articIndexCounter += articulationListSize;
 	}
 
 	ThresholdStreamElement* PX_RESTRICT thresholdStream = params.thresholdStream;
@@ -533,80 +860,85 @@ void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* 
 	cache.mSharedThresholdStream = thresholdStream;
 	cache.mSharedThresholdStreamLength = thresholdStreamLength;
 
+	//Perform a single velocity iteration to make sure that we always run at least 1.
 	//Last iteration - do writeback as well!
 	cache.writeBackIteration = true;
-	{
-		WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti velocity iterations to be done
-		
+	{		
 		if (residualReportingActive)
 			cache.contactErrorAccumulator->reset();
-		
-		for(PxU32 b = 0; b < nbPartitions; ++b)
+
+		if(solveArticulationContactLast)
 		{
-			WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid partition velocity iterations to be done resp. previous partition writeback iteration
+			//Solve articulation internal constraints and wait on completion.
+			//writeBackInternalConstraint is true (only true on last velIter but we'll do this on the 2nd pass below)
+			//restPosError is false (we are doing vel iters now so we won't accumulate posError from now on)
+			//resetVelError is true (we only need the values on the last vel iter, which is right now).
+			solveInternalConstraintsAndWaitForCompletion<!tWriteBackInternalConstraints, !tResetPosIters, tResetVelIters>(	 
+				articulationListSize, articCount,
+				articulationListStart,
+				solverDt,
+				true, isTGS,				
+				firstPassArticulationConstraintProcessingConfig,
+				0.0f,						
+				biasCoefficient,
+				residualReportingActive, 		
+				maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+				articIndexCompleted, articIndex);
 
-			maxNormalIndex += headersPerPartition[b];
-			
-			PxI32 nbSolved = 0;
-			while(index < maxNormalIndex)
-			{
-				const PxI32 remainder = PxMin(maxNormalIndex - index, endIndexCount);
+			//Solve each partition and wait for the last partiton to complete.
+			solveVBlockParallelPartitionsAndWaitOnCompletion
+				(nbPartitions, headersPerPartition,
+				 normalIteration, unrollCount, batchCount, 
+				 constraintList, 
+				 cache, contactIter,
+				 gVTableSolveWriteBackBlock,
+				 maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+				 constraintIndex, constraintIndexCompleted);
 
-				SolveBlockParallel(constraintList, remainder, index, batchCount, cache, contactIter, gVTableSolveWriteBackBlock, 
-					normalIteration);
+			//Solve articulation internal constraints and wait on completion.
+			//writeBackInternalConstraint is true (only true on last velIter)
+			//restPosError is false (we are doing vel iters now so we won't accumulate posError from now on)
+			//resetVelError is true (we only need the values on the last vel iter but we did this already above).
+			solveInternalConstraintsAndWaitForCompletion<tWriteBackInternalConstraints, !tResetPosIters, !tResetVelIters>(	 
+				articulationListSize, articCount,
+				articulationListStart,
+				solverDt,
+				true, isTGS,		
+				secondPassArticulationConstraintProcessingConfig,
+				0.0f,						
+				biasCoefficient,
+				residualReportingActive, 		
+				maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+				articIndexCompleted, articIndex);
 
-				index += remainder;
-				endIndexCount -= remainder;
-				nbSolved += remainder;
-				if(endIndexCount == 0)
-				{
-					endIndexCount = UnrollCount;
-					index = PxAtomicAdd(constraintIndex, UnrollCount) - UnrollCount;
-				}
-			}
-			if(nbSolved)
-			{
-				PxMemoryBarrier();
-				PxAtomicAdd(constraintIndexCompleted, nbSolved);
-			}
-			targetConstraintIndex += headersPerPartition[b]; //Increment target constraint index by batch count
 		}
+		else
 		{
-			WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid partitions writeback iterations to be done
+			//Solve each partition and wait for the last partiton to complete.
+			solveVBlockParallelPartitionsAndWaitOnCompletion
+				(nbPartitions, headersPerPartition,
+				 normalIteration, unrollCount, batchCount, 
+				 constraintList, 
+				 cache, contactIter,
+				 gVTableSolveWriteBackBlock,
+				 maxNormalIndex, index, endIndexCount, targetConstraintIndex,
+				 constraintIndex, constraintIndexCompleted);
 
-			maxArticIndex += articulationListSize;
-			targetArticIndex += articulationListSize;
-
-			while (articSolveStart < maxArticIndex)
-			{
-				const PxI32 endIdx = PxMin(articSolveEnd, maxArticIndex);
-
-				PxI32 nbSolved = 0;
-				while (articSolveStart < endIdx)
-				{
-					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
-					articulationListStart[articSolveStart - articIndexCounter].articulation->writebackInternalConstraints(false);
-					articSolveStart++;
-					nbSolved++;
-				}
-
-				if (nbSolved)
-				{
-					PxMemoryBarrier();
-					PxAtomicAdd(articIndexCompleted, nbSolved);
-				}
-
-				PxI32 remaining = articSolveEnd - articSolveStart;
-
-				if (remaining == 0)
-				{
-					articSolveStart = PxAtomicAdd(articIndex, ArticCount) - ArticCount;
-					articSolveEnd = articSolveStart + ArticCount;
-				}
-			}
-
-			articIndexCounter += articulationListSize; // not strictly necessary but better safe than sorry
-			WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti solve+writeback to be done
+			//Solve articulation internal constraints and wait on completion.
+			//writeBackInternalConstraint is true (only true on last velIter)
+			//restPosError is false (we are doing vel iters now so we won't accumulate posError from now on)
+			//resetVelError is true (we only need the values on the last vel iter, which is right now).
+			solveInternalConstraintsAndWaitForCompletion<tWriteBackInternalConstraints, !tResetPosIters, tResetVelIters>(	 
+				articulationListSize, articCount,
+				articulationListStart,
+				solverDt,
+				false, isTGS,				//isVelIter should be true here(NVBug 5385832)
+				singlePassArticulationConstraintProcessingConfig,
+				0.0f,						
+				biasCoefficient,
+				residualReportingActive, 		
+				maxArticIndex, targetArticIndex, articSolveStart, articIndexCounter, articSolveEnd, 
+				articIndexCompleted, articIndex);
 		}
 
 		// At this point we've awaited the completion all rigid partitions and all articulations
@@ -641,6 +973,6 @@ void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* 
 #endif
 }
 
-}
-}
+} //namespace Dy
+} //namespace physx
 

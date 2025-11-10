@@ -45,9 +45,10 @@ DynamicsContextBase::DynamicsContextBase(
 	PxReal lengthScale,
 	bool enableStabilization,
 	bool useEnhancedDeterminism,
+	bool solveArticulationContactLast,
 	bool isResidualReportingEnabled
 	) :
-	Dy::Context			(islandManager, allocatorCallback, simStats, enableStabilization, useEnhancedDeterminism, maxBiasCoefficient, lengthScale, contextID, isResidualReportingEnabled),
+	Dy::Context			(islandManager, allocatorCallback, simStats, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, lengthScale, contextID, isResidualReportingEnabled),
 	mThreadContextPool	(memBlockPool),
 	mMaterialManager	(materialManager),
 	mTaskPool			(taskPool),

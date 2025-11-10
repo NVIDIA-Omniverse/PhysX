@@ -81,9 +81,9 @@ public:
 		FeatherstoneArticulation::computeUnconstrainedVelocitiesTGS(desc, dt, gravity, invLengthScale, externalForcesEveryTgsIterationEnabled);
 	}
 
-	static void	updateDeltaMotion(const ArticulationSolverDesc& desc, const PxReal dt, Cm::SpatialVectorF* DeltaV, const PxReal totalInvDt)
+	static void	updateDeltaMotion(const ArticulationSolverDesc& desc, const PxReal dt, Cm::SpatialVectorF* DeltaV)
 	{
-		FeatherstoneArticulation::recordDeltaMotion(desc, dt, DeltaV, totalInvDt);
+		FeatherstoneArticulation::recordDeltaMotion(desc, dt, DeltaV);
 	}
 
 	static void	deltaMotionToMotionVel(const ArticulationSolverDesc& desc, const PxReal invDt)

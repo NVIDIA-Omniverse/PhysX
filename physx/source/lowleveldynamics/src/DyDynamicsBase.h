@@ -67,6 +67,7 @@ public:
 								PxReal lengthScale,
 								bool enableStabilization,
 								bool useEnhancedDeterminism,
+								bool solveArticulationContactLast,
 								bool isResidualReportingEnabled
 								);
 

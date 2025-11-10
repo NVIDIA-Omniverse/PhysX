@@ -109,7 +109,7 @@ public:
     // resource-related
 					void						setScratchBlock(void* addr, PxU32 size);
 
-	PX_FORCE_INLINE	void						setContactDistance(const PxFloatArrayPinned* contactDistances)	{ mContactDistances = contactDistances;	}
+	PX_FORCE_INLINE	void						setContactDistance(const PxFloatArrayPinnedSafe* contactDistances)	{ mContactDistances = contactDistances;	}
 
 	// Task-related
 					void						updateContactManager(PxReal dt, bool hasContactDistanceChanged, PxBaseTask* continuation, 
@@ -241,15 +241,13 @@ private:
 	PxPool<Gu::LargePersistentContactManifold>	mManifoldPool;
 	PxPool<Gu::SpherePersistentContactManifold>	mSphereManifoldPool;
 	
-//	PxBitMap				mActiveContactManager;
-	PxBitMap				mActiveContactManagersWithCCD; //KS - adding to filter any pairs that had a touch
-	PxBitMap				mContactManagersWithCCDTouch; //KS - adding to filter any pairs that had a touch
-	PxBitMap				mContactManagerTouchEvent;
-	//Cm::BitMap				mContactManagerPatchChangeEvent;
+	PxBitMap									mActiveContactManagersWithCCD; //KS - adding to filter any pairs that had a touch
+	PxBitMap									mContactManagersWithCCDTouch; //KS - adding to filter any pairs that had a touch
+	PxBitMap									mContactManagerTouchEvent;
 
-	PxU32					mCMTouchEventCount[PXS_TOUCH_EVENT_COUNT];
+	PxU32										mCMTouchEventCount[PXS_TOUCH_EVENT_COUNT];
 
-	PxMutex									mLock;
+	PxMutex										mLock;
 
 	PxContactModifyCallback*					mContactModifyCallback;
 
@@ -267,9 +265,6 @@ private:
 
 					PxCudaContextManager*		mCudaContextManager;
 
-					//	PxU32					mTouchesLost;
-					//	PxU32					mTouchesFound;
-
 						// PX_ENABLE_SIM_STATS
 					PxvSimStats					mSimStats;
 					bool						mPCM;
@@ -277,10 +272,8 @@ private:
 					bool						mCreateAveragePoint;
 
 					PxsTransformCache*			mTransformCache;
-					const PxFloatArrayPinned*	mContactDistances;
-
+					const PxFloatArrayPinnedSafe*	mContactDistances;
 					PxU32						mMaxPatches;
-
 					const PxU64					mContextID;
 
 					friend class PxsCCDContext;

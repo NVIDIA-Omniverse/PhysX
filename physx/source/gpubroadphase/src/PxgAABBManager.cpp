@@ -86,7 +86,7 @@ static PX_FORCE_INLINE PxgCudaBroadPhaseSap& getGPUBroadPhase(BroadPhase& bp)
 	return static_cast<PxgCudaBroadPhaseSap&>(bp);
 }
 
-static void initEnvEntry(PxInt32ArrayPinned& envIDs, BoundsIndex index, PxU32 envID, PxU32 boundsSize)
+static void initEnvEntry(PxInt32ArrayPinnedSafe& envIDs, BoundsIndex index, PxU32 envID, PxU32 boundsSize)
 {
 	// PT: we avoid allocating anything when the feature is not used, and allocate everything lazily
 	// as soon as a non-default environment ID is needed. We need 'boundsSize' to make sure we allocate
@@ -122,7 +122,7 @@ PxgAABBManager::PxgAABBManager(PxgCudaKernelWranglerManager* gpuKernelWrangler,
 	PxCudaContextManager* cudaContextManager,
 	PxgHeapMemoryAllocatorManager* heapMemoryManager,
 	const PxGpuDynamicsMemoryConfig& config,
-	BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinned& contactDistance,
+	BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
 	PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
 	PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode) :
 	AABBManagerBase				(bp, boundsArray, contactDistance, maxNbAggregates, maxNbShapes, allocator, contextID, kineKineFilteringMode, staticKineFilteringMode),
@@ -131,16 +131,16 @@ PxgAABBManager::PxgAABBManager(PxgCudaKernelWranglerManager* gpuKernelWrangler,
 	mCudaContextManager			(cudaContextManager),
 	mCudaContext				(cudaContextManager->getCudaContext()),
 	mHeapMemoryManager			(heapMemoryManager),
-	mAggregatePairs				(allocator),
-	mDirtyAggregateIndices		(allocator),
-	mDirtyAggregates			(allocator),
+	mAggregatePairs				(allocator.getCallback()),
+	mDirtyAggregateIndices		(allocator.getCallback()),
+	mDirtyAggregates			(allocator.getCallback()),
 	mFoundPairs					(allocator),
 	mLostPairs					(allocator),
-	mDirtyBoundIndices			(allocator),
-	mDirtyBoundStartIndices		(allocator),
-	mRemovedAggregatedBounds	(allocator),
-	mAddedAggregatedBounds		(allocator),
-	mAggregatedBoundMap			(allocator),
+	mDirtyBoundIndices			(allocator.getCallback()),
+	mDirtyBoundStartIndices		(allocator.getCallback()),
+	mRemovedAggregatedBounds	(allocator.getCallback()),
+	mAddedAggregatedBounds		(allocator.getCallback()),
+	mAggregatedBoundMap			(allocator.getCallback()),
 	mAggregateBuf				(heapMemoryManager, PxsHeapStats::eBROADPHASE),
 	mAggregatePairsBuf			(heapMemoryManager, PxsHeapStats::eBROADPHASE),
 	mDirtyAggregateIndiceBuf	(heapMemoryManager, PxsHeapStats::eBROADPHASE),

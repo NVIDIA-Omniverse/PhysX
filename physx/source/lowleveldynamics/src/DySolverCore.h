@@ -190,7 +190,7 @@ struct SolverIslandParams
 
 void solveNoContactsCase(	PxU32 bodyListSize, const PxSolverBody* PX_RESTRICT bodyListStart, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
 							PxU32 articulationListSize, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
-							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, bool residualReportingActive);
+							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, bool residualReportingActive, bool solveArticulationContactLast);
 
 void saveMotionVelocities(PxU32 nbBodies, const PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray);
 

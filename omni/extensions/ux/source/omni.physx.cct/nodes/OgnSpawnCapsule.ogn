@@ -1,0 +1,47 @@
+{
+    "OgnSpawnCapsule": {
+        "version": 1,
+        "description": "Spawn a Capsule prim with stage-defined up axis to be used with a Character Controller",
+        "language": "Python",
+        "uiName": "Spawn Capsule",
+        "categoryDefinitions": "categories.json",
+        "categories": "Physx Character Controller",
+        "scheduling": "global-write,usd",
+        "inputs": {
+            "spawn": {
+                "type": "execution",
+                "description": "Spawn"
+            },
+            "capsulePos": {
+                "type": "float[3]",
+                "description": "Capsule Position",
+                "default": [0, 0, 0],
+                "uiName": "Position"
+            },
+            "capsuleHeight": {
+                "type": "float",
+                "description": "Capsule Height",
+                "default": 100,
+                "uiName": "Height"
+            },
+            "capsuleRadius": {
+                "type": "float",
+                "description": "Capsule Radius",
+                "default": 50,
+                "uiName": "Radius"
+            }
+        },
+        "outputs": {
+            "done": {
+                "type": "execution",
+                "description": "Activated after the capsule is spawned",
+                "uiName": "Done"
+            },
+            "path": {
+                "type": "path",
+                "description": "Path",
+                "uiName": "Path"
+            }
+        }
+    }
+}

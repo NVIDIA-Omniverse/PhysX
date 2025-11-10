@@ -1,0 +1,32 @@
+[package]
+category = "simulation"
+authors = ["PhysX"]
+title = "PhysX Commands"
+description="Physics commands"
+repository=""
+keywords = ["physics", "physx", "commands"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.commands" = {}
+"omni.kit.usd_undo" = {}
+"omni.usd" = {}
+
+[[python.module]]
+name = "omni.physxcommands"
+
+[[test]]
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions."

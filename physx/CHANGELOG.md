@@ -22,6 +22,7 @@
 * A new motor model for clamping total joint effort (force or torque). The total joint effort is comprised of drive effort and joint effort applied through articulation cache by the user. Please see PxPerformanceEnvelope for clamping details.
 * New direct GPU API getters for PxArticulationGPUAPIReadType::eFIXED_TENDON, PxArticulationGPUAPIReadType::eFIXED_TENDON_JOINT, PxArticulationGPUAPIReadType::eSPATIAL_TENDON, and PxArticulationGPUAPIReadType::eSPATIAL_TENDON_ATTACHMENT.
 * PxArticulationFixedTendon, PxArticulationTendonJoint, PxArticulationSpatialTendon, and PxArticulationAttachment's parameter getters now report errors if called when PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled.
+* A new flag PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST has been added. Raising the flag reorders the solver so that articulation contact is processed after articulation joint drive but before articulation joint max velocity. Raising the flag can help with contact instabilities in gripping scenarios.
 
 ### Fixed
 
@@ -66,6 +67,13 @@
 ### Added
 
 * `PxConvexCoreGeometry` is now supported as the query geometry in `sweep()` and `overlap()` scene queries.
+
+## Pvd
+
+### Changed
+
+* Fixed a bug related to serialization of articulations and mimic joints into the OVD stream.
+
 
 # v5.6.0-107.0
 

@@ -1,0 +1,83 @@
+{
+    "omni.physx.graph.PropertyQueryRigidBody": {
+        "version": 1,
+        "description": "Returns the physics-related properties of an input rigid body.",
+        "language": "Python",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Property Queries",
+        "uiName": "Get Rigid Body Properties",
+        "tags": ["physics", "physx", "simulation", "rigid body" ],
+        "scheduling": "global-write,usd",
+        "inputs": {
+            "prim": {
+                "type": "target",
+                "description": "Prim to query the properties of. This must be a rigid body.",
+                "uiName": "Prim"
+            },
+            "timeout": {
+                "type": "int",
+                "description": "Query timeout in milliseconds.",
+                "uiName": "Timeout",
+                "default": 10000,
+                "metadata": {
+                    "literalOnly": "1"
+                }
+            },
+            "use_local_frame": {
+                "type": "bool",
+                "description": "If set to true, output coordinates are provided in the rigid body's local frame of reference.",
+                "uiName": "Output in local frame",
+                "default": false,
+                "metadata": {
+                    "literalOnly": "1"
+                }
+            }            
+        },
+        "outputs": {
+            "centerOfMass": {
+                "uiName": "Center of mass",
+                "description": [
+                    "The center of mass of the input rigid body"
+                ],
+                "type": "float[3]"
+            },
+            "mass": {
+                "uiName": "Mass",
+                "description": [
+                    "The total mass of the input rigid body."
+                ],
+                "type": "float"
+            },
+            "diagonalInertia": {
+                "uiName": "Diagonal inertia",
+                "description": [
+                    "The diagonal inertia of the input rigid body (note: the return value is the inertia tensor relative to the principal axes.)"
+                ],
+                "type": "float[3]"
+            },
+            "principalAxes": {
+                "uiName": "Principal axes",
+                "description": [
+                    "The principal axes for the inertia tensor of the input rigid body (note: the return value is always in the rigid body's local frame.)"
+                ],
+                "type": "float[4]"
+            },
+            "AABBMin": {
+                "uiName": "Bounds min",
+                "description": [
+                    "A list of lower bounds coordinates of the colliders of the input rigid body."
+                ],
+                "type": "float[3]"
+            },
+            "AABBMax": {
+                "uiName": "Bounds max",
+                "description": [
+                    "A list of upper bounds coordinates of the colliders of the input rigid body."
+                ],
+                "type": "float[3]"
+            }
+        },
+        "tokens": {
+        }
+    }
+}

@@ -1,0 +1,58 @@
+{
+    "omni.physx.graph.ImmediateComputeGeometryOverlaps": {
+        "version": 1,
+        "description": "Compute overlaps between geometries (currently supports meshes prims)",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Compute Geometry Overlaps",
+        "tags": ["physics", "physx", "simulation", "collision", "broadphase", "bounding", "immediate" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nOverlap check is always executed with trianagle mesh approximation for both items of a pair unless\nthe (optional) 'physics:approximation' is set to different type (can be 'convex mesh' for example).\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+            },
+            "overlapsPair0": {
+                "description": [ "Path of the first geometry from the Prims Bundle to check for overlap with corresponding item at same index in overlapsPair1 input attribute." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            },
+            "overlapsPair1": {
+                "description": [ "Path of the second geometry from the Prims Bundle to check for overlap with corresponding item at same index in overlapsPair0 input attribute." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            }
+       },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlaps": {
+                "description": [ "Array of booleans where 'True' value signals that a corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index do actually overlap." ],
+                "memoryType": "cpu",
+                "type": "bool[]"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "normalf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "pointf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "float[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "double[3]": ["physx::PxVec3d", ["PxPhysicsAPI.h"]],
+                "float[4]": ["physx::PxVec4", ["PxPhysicsAPI.h"]],
+                "double[4]": ["physx::PxVec4d", ["PxPhysicsAPI.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

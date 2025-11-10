@@ -1,0 +1,62 @@
+{
+    "omni.physx.graph.SceneQueryOverlapBoxAny": {
+        "version": 1,
+        "description": "Checks whether any colliders overlap the query input box.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Overlap, Box, Any",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "position": {
+                "type": ["pointf[3]", "pointd[3]"],
+                "description": "Box center position.",
+                "uiName": "Position",
+                "unvalidated": true
+            },
+            "dimensions": {
+                "type": ["float[3]", "double[3]"],
+                "description": "Box dimensions",
+                "uiName": "Dimensions",
+                "unvalidated": true
+            },
+            "rotation": {
+                "type": [ "float[3]", "double[3]" ],
+                "description": "Box rotation in XYZ order Euler angles",
+                "uiName": "Rotation",
+                "unvalidated": true
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlap": {
+                "description": [
+                    "Returns true if any colliders overlap with the input box."
+                ],
+                "type": "bool"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

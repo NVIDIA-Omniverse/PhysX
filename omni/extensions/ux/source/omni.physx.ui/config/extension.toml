@@ -1,0 +1,68 @@
+[package]
+title = "PhysX UI"
+description="Adds GUI elements for physics authoring."
+repository = ""
+keywords = ["physics", "physx", "ui"]
+category = "simulation"
+authors = ["PhysX"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.ui" = {}
+"omni.kit.renderer.imgui" = {}
+"omni.usdphysics.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.timeline" = {}
+"omni.debugdraw" = {}
+"omni.kit.window.property" = {}
+"omni.kit.viewport.utility" = {}
+"omni.kit.window.preferences" = {}
+"omni.kit.context_menu" = {}
+"omni.kit.widget.settings" = {}
+"omni.kit.window.popup_dialog" = {}
+"omni.kit.property.usd" = {}
+"omni.usd" = {}
+"omni.kit.commands" = {}
+"omni.physx.commands" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.notification_manager" = {}
+"omni.client" = {}
+"omni.ui.scene" = {}
+"omni.kit.actions.core" = {}
+"omni.kit.manipulator.tool.snap" = {}
+"omni.kit.manipulator.transform" = {}
+"usdrt.scenegraph" = {}
+"omni.kit.hotkeys.core" = { optional = true }
+"omni.kit.viewport.window" = {}
+"omni.kit.menu.utils" = {}
+
+[[python.module]]
+name = "omni.physxui"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[[test]]
+dependencies = [
+    "omni.kit.stage_templates",
+    "omni.kit.ui_test",
+    "omni.physx.tests",    
+]
+
+args = [
+    "--/physics/developmentMode=true",
+    "--/app/file/ignoreUnsavedOnExit=true",
+    "--no-window"
+]
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions."

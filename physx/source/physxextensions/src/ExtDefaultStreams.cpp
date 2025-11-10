@@ -56,10 +56,18 @@ PxDefaultMemoryOutputStream::~PxDefaultMemoryOutputStream()
 
 PxU32 PxDefaultMemoryOutputStream::write(const void* src, PxU32 size)
 {
-	PxU32 expectedSize = mSize + size;
+	PxU64 expectedSize = PxU64(mSize) + PxU64(size);
+
+	// if expectedSize is bigger than 32 bits (overflow), return 0
+	if (expectedSize > PX_MAX_U32)
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Unable to write to stream because max capacity is PX_MAX_U32\n");
+		return 0;
+	}
+
 	if(expectedSize > mCapacity)
 	{
-		mCapacity = PxMax(PxNextPowerOfTwo(expectedSize), 4096u);
+		mCapacity = PxMax(PxNextPowerOfTwo((PxU32)expectedSize), 4096u);
 
 		PxU8* newData = reinterpret_cast<PxU8*>(mAllocator.allocate(mCapacity,"PxDefaultMemoryOutputStream",__FILE__,__LINE__));
 		PX_ASSERT(newData!=NULL);

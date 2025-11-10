@@ -2488,6 +2488,7 @@ template<> struct PxEnumTraits< physx::PxPruningStructureType::Enum > { PxEnumTr
 		{ "eENABLE_DIRECT_GPU_API", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_DIRECT_GPU_API ) },
 		{ "eENABLE_BODY_ACCELERATIONS", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_BODY_ACCELERATIONS ) },
 		{ "eENABLE_SOLVER_RESIDUAL_REPORTING", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING ) },
+		{ "eSOLVE_ARTICULATION_CONTACT_LAST", static_cast<PxU32>( physx::PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST ) },
 		{ "eMUTABLE_FLAGS", static_cast<PxU32>( physx::PxSceneFlag::eMUTABLE_FLAGS ) },
 		{ NULL, 0 }
 	};

@@ -1,0 +1,4 @@
+[repo_version_reset]
+command = "version_reset"
+entry_point = "${config_root}/tools/repoman/version_reset.py:setup_repo_tool"
+enabled = true

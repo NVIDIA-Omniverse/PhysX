@@ -35,12 +35,12 @@ namespace physx
 {
 	PxgTGSDynamicsContext::PxgTGSDynamicsContext(Cm::FlushPool& flushPool, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
 		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism,
+		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 		PxReal maxBiasCoefficient,
 		PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager,
 		bool externalForcesEveryTgsIterationEnabled, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled)
 		:
-		PxgGpuContext(flushPool, islandManager, maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism,
+		PxgGpuContext(flushPool, islandManager, maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast,
 			maxBiasCoefficient, simStats, heapMemoryManager, lengthScale, enableDirectGPUAPI, contextID, isResidualReportingEnabled, true)
 	{
 		mWorldSolverBody.linearVelocity = PxVec3(0);

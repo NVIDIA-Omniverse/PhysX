@@ -1,0 +1,55 @@
+[package]
+title = "Physics UI"
+description="Adds GUI elements for physics authoring."
+repository = ""
+keywords = ["physics", "ui"]
+category = "simulation"
+authors = ["PhysX"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usdphysics" = { version = "107.3.0-oss.0", exact = true }
+"omni.debugdraw" = {}
+"omni.ui" = {}
+"omni.kit.renderer.imgui" = {}
+"usdrt.scenegraph" = {}
+"omni.ui.scene" = {}
+"omni.kit.viewport.registry" = {}
+"omni.kit.viewport.utility" = { }
+"omni.kit.commands" = {}
+"omni.kit.viewport.menubar.display" = { optional = true } # VP2 only, do not make it required or Kit L1 tests will fail
+"omni.kit.widget.stage" = {} 
+"omni.kit.widget.layers" = {}
+"omni.kit.widget.settings" = {}
+"omni.kit.property.usd" = {}
+"omni.kit.notification_manager" = {}
+"omni.kit.manipulator.prim" = {}
+"omni.kit.manipulator.selector" = {}
+"omni.kit.manipulator.selection" = {}
+
+[[python.module]]
+path = "."
+
+[[python.module]]
+name = "omni.usdphysicsui"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[[test]]
+dependencies = [
+]
+waiver = "Physics tests are running in a separate CI pipeline. Tests are in separate extensions."

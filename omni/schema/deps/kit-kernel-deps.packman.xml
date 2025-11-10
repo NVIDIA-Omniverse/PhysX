@@ -1,0 +1,7 @@
+<project toolsVersion="5.0">
+  <!-- import kit-kernel from the omni project -->
+  <import path="../../deps/kit-sdk-target-deps.packman.xml">
+    <filter include="kit_${config}" />
+  </import>
+  <dependency name="kit_${config}" linkPath="../_build/target-deps/kit_sdk_${config}" />
+</project>

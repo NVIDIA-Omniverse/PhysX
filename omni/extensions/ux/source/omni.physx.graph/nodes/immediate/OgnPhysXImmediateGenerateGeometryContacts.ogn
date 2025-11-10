@@ -1,0 +1,79 @@
+{
+    "omni.physx.graph.ImmediateGenerateGeometryContacts": {
+        "version": 1,
+        "description": "Returns a list of contact points.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Generate Geometry Contacts",
+        "tags": ["physics", "physx", "simulation", "collision", "contacts" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+            },
+            "overlapsPair0": {
+                "description": [ "Path of the first geometry from the Prims Bundle to check for contactwith corresponding item at same index in overlapsPair1 input attribute." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            },
+            "overlapsPair1": {
+                "description": [ "Path of the second geometry from the Prims Bundle to check for contactwith corresponding item at same index in overlapsPair0 input attribute" ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            },
+            "contactDistance": {
+                "type": "float",
+                "description": "Contact Distance.",
+                "memoryType": "cpu",
+                "uiName": "Contact Distance",
+                "default": 0.01
+            },
+            "meshContactMargin": {
+                "type": "float",
+                "description": "Mesh Contact Margin.",
+                "memoryType": "cpu",
+                "uiName": "Mesh Contact Margin",
+                "default": 0.01
+            },
+            "toleranceLength": {
+                "type": "float",
+                "description": "Tolerance Length.",
+                "memoryType": "cpu",
+                "uiName": "Tolerance Length",
+                "default": 0.1
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "contacts": {
+                "description": [ "Bundle of Child bundles containg contacts for each pair. Child Bundles are named prim0...primN that can be extracted with 'Extract Prim'. Each child bundle has 'points', 'normals' and 'depths' attributes. " ],
+                "memoryType": "cpu",
+                "type": "bundle"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

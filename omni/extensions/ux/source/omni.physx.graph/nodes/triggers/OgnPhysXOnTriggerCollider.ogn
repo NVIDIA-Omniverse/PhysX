@@ -1,0 +1,101 @@
+{
+    "omni.physx.graph.OnTriggerCollider": {
+        "version": 1,
+        "description": "Emits an event when a collider enters or leaves the volume of a Trigger.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Triggers",
+        "uiName": "On Trigger",
+        "scheduling" : "compute-on-request",
+        "tags": ["physics", "physx", "simulation", "collision", "trigger"],
+        "inputs": {
+            "triggersRelationships": {
+                "type": "target",
+                "uiName": "Triggers Relationships",
+                "optional": true,
+                "description": [
+                    "Specify one or more Prims with an applied TriggerAPI to monitor their trigger events"
+                ],
+                "metadata": {
+                    "literalOnly": "1",
+                    "allowMultiInputs": "1"
+                }
+            },
+            "triggersPaths": {
+                "type": "token[]",
+                "uiName": "Triggers Paths",
+                "optional": true,
+                "description": [
+                    "Specify one or more paths to Prims with applied TriggerAPI to monitor their trigger events"
+                ],
+                "metadata": {
+                    "literalOnly": "1"
+                }
+            },
+            "listenToAllTriggers" : {
+                "type": "bool",
+                "uiName": "Listen To All Triggers",
+                "optional": true,
+                "description": [
+                    "If True the node will trigger whenever a trigger events happens, ignoring the list of provided paths in \"Triggers Relationships\" and \"Triggers Paths\""
+                ],
+                "metadata": {
+                    "literalOnly": "1"
+                }
+            }
+        },
+        "outputs": {
+            "enterExecOut": {
+                "type": "execution",
+                "description": "Output execution when enter event is emitted"
+            },
+            "leaveExecOut": {
+                "type": "execution",
+                "description": "Output execution when leave event is emitted"
+            },
+            "triggerCollider": {
+                "uiName": "Trigger Collider",
+                "description": [
+                    "Path of Collider Prim containing the TriggerAPI that has emitted the trigger event. It will not be updated if none of the two execution pins are wired."
+                ],
+                "type": "token"
+            },
+            "otherCollider": {
+                "uiName": "Other Collider",
+                "description": [
+                    "Path of the Collider Prim that has entered the volume of the Collider Prim marked as trigger. It will not be updated if none of the two execution pins are wired."
+                ],
+                "type": "token"
+            },
+            "triggerBody": {
+                "uiName": "Trigger Body",
+                "description": [
+                    "Path of Body containing Collider Prim that has emitted the trigger event. It will not be updated if none of the two execution pins are wired."
+                ],
+                "type": "token"
+            },
+            "otherBody": {
+                "uiName": "Other Body",
+                "description": [
+                    "Path of Body containing the Collider Prim that has entered the volume of the Collider Prim marked as trigger. It will not be updated if none of the two execution pins are wired."
+                ],
+                "type": "token"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

@@ -1,0 +1,48 @@
+[package]
+title = "Omniverse PhysX PVD plugin"
+description="Omniverse PhysX PVD plugin."
+repository = ""
+keywords = ["physics", "physx", "pvd", "omnipvd", "ovd"]
+category = "Simulation"
+authors = ["PhysX"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[[python.module]]
+name = "omni.physxpvd"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[dependencies]
+"omni.ui" = {}
+"omni.timeline" = {}
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.debugdraw" = {}
+"omni.kit.menu.utils" = {}
+"omni.kit.window.toolbar" = {}
+"omni.kit.widget.stage" = {}
+"omni.kit.widget.settings" = {}
+"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.window.property" = {}
+"omni.kit.tool.asset_importer" = {}
+"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true, optional=true }
+
+[[test]]
+dependencies = [
+   "omni.physx.tests",
+]
+"filter:platform"."linux-aarch64".enabled = false
+timeout = 20000

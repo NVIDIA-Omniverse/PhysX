@@ -127,6 +127,7 @@ public:
 														PxU64 contextID,
 														bool enableStabilization,
 														bool useEnhancedDeterminism,
+														bool solveArticulationContactLast,
 														PxReal maxBiasCoefficient,
 														bool frictionEveryIteration,
 														PxReal lengthScale,
@@ -138,7 +139,8 @@ public:
 	// Context
 	virtual	void						destroy()	PX_OVERRIDE;
 	virtual void						update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* lostTouchTask,
-												PxvNphaseImplementationContext* nPhase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
+												PxvNphaseImplementationContext* nPhase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks,
+												PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
 	virtual void						mergeResults()	PX_OVERRIDE;
 	virtual void						setSimulationController(PxsSimulationController* simulationController )	PX_OVERRIDE	{ mSimulationController = simulationController; }
 	virtual PxSolverType::Enum			getSolverType()	const	PX_OVERRIDE	{ return PxSolverType::ePGS;	}

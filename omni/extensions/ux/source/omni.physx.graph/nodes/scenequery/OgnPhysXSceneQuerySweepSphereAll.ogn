@@ -1,0 +1,144 @@
+{
+    "omni.physx.graph.SceneQuerySweepSphereAll": {
+        "version": 2,
+        "description": "Outputs the rigid bodies and colliders that are hit by the input sweep.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Sweep, Sphere, All",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "origin": {
+                "type": ["pointf[3]", "pointd[3]"],
+                "description": "Ray origin",
+                "uiName": "Origin",
+                "unvalidated": true
+            },
+            "direction": {
+                "type": ["vectorf[3]", "vectord[3]"],
+                "description": "Ray direction vector",
+                "uiName": "Direction",
+                "unvalidated": true
+            },
+            "radius": {
+                "type": ["float", "double"],
+                "description": "Sphere radius",
+                "uiName": "Radius",
+                "unvalidated": true
+            },            
+            "sweepRange": {
+                "type": ["float", "double"],
+                "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+                "uiName": "Distance",
+                "unvalidated": true
+            },
+            "bothSides": {
+                "type": "bool",
+                "description": "Sets whether backfaces of colliders should be included in checks.",
+                "uiName": "Both Sides",
+                "default": false
+            },
+            "sortByDistance": {
+                "type": "bool",
+                "description": "Enable to sort outputs by distance.",
+                "uiName": "Sort By Distance",
+                "default": false
+            }            
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "colliderPrimPaths": {
+                "uiName": "Collider Prim Paths (deprecated)",
+                "description": [
+                    "A list of paths of the collider prims that are hit by the sweep. Deprecated, please use the Collider Prims output instead."
+                ],
+                "type": "token[]",
+                "deprecated": "Use the Collider Prims output instead"
+            },
+            "colliderPrims": {
+                "uiName": "Collider Prims",
+                "description": [
+                    "A list of collider prims that are hit by the sweep."
+                ],
+                "type": "target"
+            },
+            "bodyPrimPaths": {
+                "uiName": "Body Prim Paths (deprecated)",
+                "description": [
+                    "A list of paths of the associated body prims for the collider prims that are hit by the sweep. Deprecated, please use the Body Prims output instead."
+                ],
+                "type": "token[]",
+                "deprecated": "Use the Body Prims output instead"
+            },
+            "bodyPrims": {
+                "uiName": "Body Prims",
+                "description": [
+                    "A list of the associated body prims for the collider prims that are hit by the sweep."
+                ],
+                "type": "target"
+            },            
+            "positions": {
+                "description": [
+                    "A list of positions of the points hit."
+                ],
+                "type": "pointf[3][]"
+            },
+            "normals": {
+                "description": [
+                    "A list of surface normals of the points hit."
+                ],
+                "type": "normalf[3][]"
+            },       
+            "distances": {
+                "description": [
+                    "A list of distances from the origin to the points hit."
+                ],
+                "uiName": "Hit Distances",
+                "type": "float[]"
+            },
+            "faceIndexes": {
+                "description": [
+                    "A list of the face indexes of the points hit."
+                ],
+                "type": "int[]"
+            },
+            "materialPaths": {
+                "uiName": "Material Paths (deprecated)",
+                "description": [
+                    "A list of paths of the physics materials at the points hit. Deprecated, please use the Material Prims output instead."
+                ],
+                "type": "token[]",
+                "deprecated": "Use the Material Prims output instead"
+            },
+            "materialPrims": {
+                "uiName": "Material Prims",
+                "description": [
+                    "A list of physics material Prims at the points hit."
+                ],
+                "type": "target"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

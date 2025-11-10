@@ -1,0 +1,56 @@
+{
+    "omni.physx.graph.SceneQueryOverlapSphereAny": {
+        "version": 1,
+        "description": "Checks whether any colliders overlap the query input sphere.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Overlap, Sphere, Any",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "position": {
+                "type": ["pointf[3]", "pointd[3]"],
+                "description": "Sphere center position.",
+                "uiName": "Position",
+                "unvalidated": true
+            },
+            "radius": {
+                "type": ["float", "double"],
+                "description": "Sphere radius",
+                "uiName": "Radius",
+                "unvalidated": true
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlap": {
+                "description": [
+                    "Returns true if any colliders overlap with the input sphere."
+                ],
+                "type": "bool"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

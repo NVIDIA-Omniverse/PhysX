@@ -337,10 +337,10 @@ namespace physx
 	}
 
 	PxgGpuContext::PxgGpuContext(Cm::FlushPool& flushPool, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism,
+		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 		PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled, bool isTGS) :
 		Dy::Context(islandManager, heapMemoryManager->mMappedMemoryAllocators, simStats, enableStabilization,
-			useEnhancedDeterminism, maxBiasCoefficient, lengthScale, contextID, isResidualReportingEnabled),
+			useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, lengthScale, contextID, isResidualReportingEnabled),
 		mTotalEdges(0), mTotalPreviousEdges(0),
 		mFlushPool(flushPool), 
 		mSolvedThisFrame(false),
@@ -585,7 +585,7 @@ namespace physx
 		mConstraintPositionIterResidualPoolGpu.resize(mConstraintWriteBackPool.size());
 
 		mGpuSolverCore->solveContactMultiBlockParallel(mIslandContextPool, mNumIslandContextPool,
-			mIncrementalPartition.getCombinedSlabMaxNbPartitions(), mConstraintsPerPartition, mArtiConstraintsPerPartition, mGravity, 
+			mIncrementalPartition.getCombinedSlabMaxNbPartitions(), mConstraintsPerPartition, mArtiConstraintsPerPartition, mGravity, mSolveArticulationContactLast,
 			mConstraintPositionIterResidualPoolGpu.begin(), mConstraintPositionIterResidualPoolGpu.size(), &mTotalContactError.mPositionIterationErrorAccumulator,
 			mArticulationContactErrorPosIter, mInternalResidualPerArticulationPosIter);
 		mContactErrorPosIter = &mTotalContactError.mPositionIterationErrorAccumulator;

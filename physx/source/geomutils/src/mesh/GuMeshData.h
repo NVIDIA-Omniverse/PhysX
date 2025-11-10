@@ -307,16 +307,6 @@ enum InternalMeshSerialFlag
 			mAABB(PxBounds3::empty())
 		{}
 
-		TetrahedronMeshData(PxVec3* vertices, PxU32 nbVertices, void* tetrahedrons, PxU32 nbTetrahedrons, PxU8 flags, PxReal geomEpsilon, PxBounds3 aabb) :
-			mNbVertices(nbVertices),
-			mVertices(vertices),
-			mNbTetrahedrons(nbTetrahedrons),
-			mTetrahedrons(tetrahedrons),
-			mFlags(flags),
-			mGeomEpsilon(geomEpsilon),
-			mAABB(aabb)
-		{}
-
 		void allocateTetrahedrons(const PxU32 nbGridTetrahedrons, const PxU32 allocateGPUData = 0)
 		{
 			if (allocateGPUData)
@@ -351,6 +341,34 @@ enum InternalMeshSerialFlag
 		PX_FORCE_INLINE	bool	has16BitIndices()	const
 		{
 			return (mFlags & PxTriangleMeshFlag::e16_BIT_INDICES) ? true : false;
+		}
+
+		bool checkTetrahedronIndices() const
+		{			
+			if (!mTetrahedrons) 
+				return false;
+
+			const PxU32 count = mNbTetrahedrons * 4;
+			if (has16BitIndices())
+			{
+				const PxU16* indices = reinterpret_cast<const PxU16*>(mTetrahedrons);
+				for (PxU32 i = 0; i < count; ++i)
+				{
+					if (indices[i] >= mNbVertices)
+						return false;
+				}
+			}
+			else
+			{
+				const PxU32* indices = reinterpret_cast<const PxU32*>(mTetrahedrons);
+				for (PxU32 i = 0; i < count; ++i)
+				{
+					if (indices[i] >= mNbVertices)
+						return false;
+				}
+			}
+
+			return true;
 		}
 
 		~TetrahedronMeshData()

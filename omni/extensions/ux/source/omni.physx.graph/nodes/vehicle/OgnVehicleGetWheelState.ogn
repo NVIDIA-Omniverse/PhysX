@@ -1,0 +1,108 @@
+{
+    "VehicleGetWheelState": {
+        "version": 1,
+        "description": [
+            "Retrieving wheel related simulation state of an omni.physx vehicle"
+        ],
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Vehicles",
+        "tags": [ "physics" ],
+        "uiName": "Get Wheel State",
+        "inputs": {
+            "vehicleWheelAttachmentPaths": {
+                "type": "token[]",
+                "description": "The USD path of the vehicle prims to get the wheel state for",
+                "uiName": "Wheel Attachment USD Paths"
+            }
+        },
+        "outputs": {
+            "wheelRotationSpeeds": {
+                "type": "float[]",
+                "description": "The wheel rotation speeds in radians per second",
+                "uiName": "Wheel Rotation Speeds"
+            },
+            "wheelRotationAngles": {
+                "type": "float[]",
+                "description": "The wheel rotation angles in radians",
+                "uiName": "Wheel Rotation Angles"
+            },
+            "wheelSteerAngles": {
+                "type": "float[]",
+                "description": "The wheel steer angles in radians",
+                "uiName": "Wheel Steer Angles"
+            },
+            "groundPlanes": {
+                "type": "float[4][]",
+                "description": "The ground planes under the wheels stored in [nx,ny,nz,d] format ",
+                "uiName": "Wheel Ground Planes"
+            },
+            "groundHitPositions": {
+                "type": "float[3][]",
+                "description": "The ground hit positions under the wheels stored in (x,y,z) format ",
+                "uiName": "Ground Hit Positions"
+            },
+            "groundPhysXActors": {
+                "type": "token[]",
+                "description": "The physx actors under the wheels",
+                "uiName": "Ground Hit PhysX Actors"
+            },
+            "groundPhysXShapes": {
+                "type": "token[]",
+                "description": "The physx shapes under the wheels",
+                "uiName": "Ground Hit PhysX Shapes"
+            },
+            "groundPhysXMaterials": {
+                "type": "token[]",
+                "description": "The physx materials under the wheels",
+                "uiName": "Ground Hit PhysX Materials"
+            },
+            "groundContactStates": {
+                "type": "bool[]",
+                "description": "True if the wheel touches the ground, false if not",
+                "uiName": "Ground Contact State"
+            },
+            "suspensionJounces": {
+                "type": "float[]",
+                "description": "The jounce of the suspensions with zero meaning fully elongated",
+                "uiName": "Suspension Jounces"
+            },
+            "suspensionForces": {
+                "type": "float[3][]",
+                "description": "The force developing on the suspensions",
+                "uiName": "Suspension Forces"
+            },
+            "tireFrictions": {
+                "type": "float[]",
+                "description": "The friction values applied to the tires",
+                "uiName": "Tire Friction Values"
+            },
+            "tireLongitudinalSlips": {
+                "type": "float[]",
+                "description": "The tire longitudinal slips",
+                "uiName": "Tire Longitudinal Slips"
+            },
+            "tireLateralSlips": {
+                "type": "float[]",
+                "description": "The tire lateral slips",
+                "uiName": "Tire Lateral Slips"
+            },
+            "tireLongitudinalDirections": {
+                "type": "float[3][]",
+                "description": "The longitudinal directions of the tires",
+                "uiName": "Tire Longitudinal Directions"
+            },
+            "tireLateralDirections": {
+                "type": "float[3][]",
+                "description": "The lateral directions of the tires",
+                "uiName": "Tire Lateral Directions"
+            },
+            "tireForces": {
+                "type": "float[3][]",
+                "description": "The forces developing on the tires",
+                "uiName": "Tire Forces"
+            }
+        },
+        "exclude": [ "tests", "usd" ]
+    }
+}
+

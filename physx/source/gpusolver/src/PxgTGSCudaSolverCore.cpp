@@ -1244,7 +1244,7 @@ void PxgTGSCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxI
 }
 
 void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 /*maxPartitions*/,
-	PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, 
+	PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
 	PxReal* posIterResidualSharedMem, PxU32 posIterResidualSharedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
 	PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError)
 {
@@ -1324,6 +1324,10 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 		mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 
+		const Dy::ArticulationConstraintProcessingConfigGPU singlePassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSinglePassConfig();
+		const Dy::ArticulationConstraintProcessingConfigGPU firstPassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getFirstPassConfig();
+		const Dy::ArticulationConstraintProcessingConfigGPU secondPassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSecondPassConfig();
+
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
 			PX_PROFILE_ZONE("GpuDynamics.Solve.PosIteration", 0);
@@ -1364,19 +1368,47 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// Apply substep gravity to articulations
 				mGpuContext->getArticulationCore()->applyTgsSubstepForces(stepDt, mStream);
 			}
-			
-			solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, externalForcesEveryTgsIterationEnabled, isVelocityIteration);
 
-			// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
-			// articulation root via "averageLinkImpulsesAndPropagate"
-			// This ensures that future impulse propagations do not originate from rigid body or articulation impulses,
-			// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
-			// solvePartitions).
-			mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-			    stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient,
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-			    doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+			if(solveArticulationContactLast)
+			{
+				//tendons + mimic joints + friction + drive + pos limit
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, firstPassArticulationConstraintProcessConfig, 
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+
+				//dynamic contact
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, externalForcesEveryTgsIterationEnabled, isVelocityIteration);
+
+				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
+				// articulation root via "averageLinkImpulsesAndPropagate"
+				// This ensures that future impulse propagations do not originate from rigid body or articulation impulses,
+				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
+				// solvePartitions).
+				//arti dynamic contact + arti 1d dynamic constraint  + arti static contact + arti static 1d constraint + arti vel limit
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, secondPassArticulationConstraintProcessConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+			}
+			else
+			{
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, externalForcesEveryTgsIterationEnabled, isVelocityIteration);
+
+				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
+				// articulation root via "averageLinkImpulsesAndPropagate"
+				// This ensures that future impulse propagations do not originate from rigid body or articulation impulses,
+				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
+				// solvePartitions).
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient,
+					singlePassArticulationConstraintProcessConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+			}
 
 			if (softbodyCore || numParticleCores > 0 || femClothCore)
 			{
@@ -1598,19 +1630,43 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 				mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 			}
-			
-			solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, anyArticulationConstraints, isVelocityIteration);
 
-			// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
-			// articulation root via "averageLinkImpulsesAndPropagate"
-			// This ensures that future impulse propagations do not originate from rigid body or articulation impulses,
-			// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
-			// solvePartitions).
-			mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-			    stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient,
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-			    doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+			if(solveArticulationContactLast)
+			{
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, firstPassArticulationConstraintProcessConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, anyArticulationConstraints, isVelocityIteration);
+
+				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
+				// articulation root via "averageLinkImpulsesAndPropagate"
+				// This ensures that future impulse propagations do not originate from rigid body or articulation impulses,
+				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
+				// solvePartitions).
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, secondPassArticulationConstraintProcessConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+			}
+			else
+			{		
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, anyArticulationConstraints, isVelocityIteration);
+
+				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
+				// articulation root via "averageLinkImpulsesAndPropagate"
+				// This ensures that future impulse propagations do not originate from rigid body or articulation impulses,
+				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
+				// solvePartitions).
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, singlePassArticulationConstraintProcessConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+			}
 
 			if (softbodyCore || numParticleCores > 0 || femClothCore)
 			{

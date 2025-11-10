@@ -155,7 +155,7 @@ public:
 		PxsHeapMemoryAllocatorManager* heapMemoryManager,
 		Bp::BroadPhase& bp, 
 		Bp::BoundsArray& boundsArray, 
-		PxFloatArrayPinned& contactDistance,
+		PxFloatArrayPinnedSafe& contactDistance,
 		PxU32 maxNbAggregates, PxU32 maxNbShapes,
 		PxVirtualAllocator& allocator, 
 		PxU64 contextID,
@@ -193,7 +193,7 @@ public:
 	virtual Dy::Context* createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
 		PxCudaContextManager* cudaContextManager, 
 		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism, PxReal maxBiasCoefficient,
+		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal maxBiasCoefficient,
 		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
 		bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
 		PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled) = 0;

@@ -1,0 +1,53 @@
+{
+    "omni.physx.graph.ImmediateComputeBoundsOverlaps": {
+        "version": 1,
+        "description": "Computes overlaps between pairs of axis aligned bounding boxes (broadphase)",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Compute Bounds Overlaps",
+        "tags": ["physics", "physx", "simulation", "collision", "broadphase", "bounding", "aabb", "extents", "bounds" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The prims of interest.\nIt must be a bundle with one or more prim children.\nConnect with 'Compute Bounding Boxes' or with\n'Read Prims' checking 'Compute bounding box'.\nFor each child prim reads the:\n - 'sourcePrimPath'\n - 'bboxMinCorner'\n - 'bboxMaxCorner'\n(and optionally 'bboxTransform' and 'worldMatrix') attributes."
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlapsPair0": {
+                "description": [ "Array of tokens where the one at a given index is the first body in an identified overlap pair (the second is at corresponding index in 'overlapsPair1' output)." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            },
+            "overlapsPair1": {
+                "description": [ "Array of tokens where the one at a given index is the second body in an identified overlap pair (the first is at corresponding index in 'overlapsPair0' output)." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "normalf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "pointf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "float[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "double[3]": ["physx::PxVec3d", ["PxPhysicsAPI.h"]],
+                "float[4]": ["physx::PxVec4", ["PxPhysicsAPI.h"]],
+                "double[4]": ["physx::PxVec4d", ["PxPhysicsAPI.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

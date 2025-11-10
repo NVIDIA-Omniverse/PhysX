@@ -1696,26 +1696,6 @@ extern "C" __global__ void computeUnconstrainedSpatialInertiaLaunch1T(
 	}
 }
 
-static __device__ Cm::UnAlignedSpatialVector propagateImpulseW_2(const Cm::UnAlignedSpatialVector* isInvD, const PxVec3& childToParent,
-	const Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector& Z, const PxU32 dofCount, PxReal* qstZ)
-{
-	Cm::UnAlignedSpatialVector temp = Z;
-
-#pragma unroll (3)
-	for (PxU32 ind = 0; ind < 3; ++ind)
-	{
-		if (ind < dofCount)
-		{
-			const PxReal stZ = -motionMatrix[ind].innerProduct(Z);
-			qstZ[ind] += stZ;
-			temp += isInvD[ind] * stZ;
-		}
-	}
-
-	//parent space's spatial zero acceleration impulse
-	return FeatherstoneArticulation::translateSpatialVector(childToParent, temp);
-}
-
 static __device__ PX_FORCE_INLINE void writeMatrix(const PxSpatialMatrix& matrix, PxSpatialMatrix* dstMatrix, 
 	const PxU32 mask, const PxU32 threadIndexInWarp, bool isActive)
 {
@@ -1924,11 +1904,11 @@ extern "C" __global__ void computeMassMatrix1T(const PxgArticulationCoreDesc* co
 
 					PxReal qstZ[3] = { 0.f, 0.f, 0.f };
 					//(1) Propagate impulse to parent
-					const Cm::UnAlignedSpatialVector Zp = propagateImpulseW_2(isInvD, rw, motionV, vec, dof, qstZ);
+					const Cm::UnAlignedSpatialVector Zp = propagateImpulseW_everythingPreLoaded(isInvD, rw, motionV, vec, dof, qstZ);
 
 					//(2) Get deltaV response for parent
 					const Cm::UnAlignedSpatialVector Zr = -(parentResponse * Zp);
-					const Cm::UnAlignedSpatialVector deltaV = propagateAccelerationW(rw, invStIsT, motionV, Zr, dof, isW, qstZ);
+					const Cm::UnAlignedSpatialVector deltaV = propagateAccelerationW_everythingPreLoaded(rw, invStIsT, motionV, Zr, dof, isW, qstZ);
 
 					response.column[i][0] = deltaV.top.x; response.column[i][1] = deltaV.top.y; response.column[i][2] = deltaV.top.z;
 					response.column[i][3] = deltaV.bottom.x; response.column[i][4] = deltaV.bottom.y; response.column[i][5] = deltaV.bottom.z;
@@ -3550,7 +3530,7 @@ extern "C" __global__ void artiApplyTgsSubstepForces(PxgArticulationCoreDesc* sc
 			    isolatedYW * stepDt + loadSpatialVector(linkData.mScratchImpulse, threadIndexInWarp);
 
 			Cm::UnAlignedSpatialVector propagatedYWParent =
-			    propagateImpulseW_0(PxVec3(rwx, rwy, rwz), dofData, articulatedYW, dofCount, threadIndexInWarp, jointForce, stepDt);
+			    propagateImpulseW<WriteToDeferredQstZ>(PxVec3(rwx, rwy, rwz), dofData, articulatedYW, dofCount, threadIndexInWarp, jointForce, stepDt);
 
 			if(parent > 0 || !isFixedBase)
 				addSpatialVector(artiLinks[parent].mScratchImpulse, propagatedYWParent, threadIndexInWarp);
@@ -4068,7 +4048,7 @@ static void __device__ PxcFsFlushVelocity(PxgArticulationBlockData& articulation
 			if (parent != (i - 1))
 				deltaV = loadSpatialVector(artiLinks[parent].mScratchDeltaV, threadIndexInWarp);
 
-			deltaV = propagateAccelerationW(tLink, dofs, nbDofs, deltaV, threadIndexInWarp);
+			deltaV = propagateAccelerationW_nothingpreloaded_updateJointDofVels(tLink, dofs, nbDofs, deltaV, threadIndexInWarp);
 
 			//zeroing mDeferredQstZ
 			for (PxU32 ind = 0; ind < nbDofs; ++ind)
@@ -4201,7 +4181,7 @@ extern "C" __global__ void artiPushImpulse(
 
 				const Cm::UnAlignedSpatialVector Z = loadSpatialVector(linkData.mScratchImpulse, threadIndexInWarp);
 
-				Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW_0(PxVec3(rwx, rwy, rwz),
+				Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(rwx, rwy, rwz),
 					dofData, Z,
 					dofCount, threadIndexInWarp);
 

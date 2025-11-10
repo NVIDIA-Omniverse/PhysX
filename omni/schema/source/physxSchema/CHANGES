@@ -1,0 +1,27 @@
+PhysX schema update 19/04/2024:
+  * PhysxSceneAPI physxScene:bounceThreshold default value changed to 0.0
+PhysX schema update 10/07/2022:
+  * moved CharacterController into PhysxCharacterController
+PhysX schema update 05/03/2022:
+  * added physxScene:updateType
+PhysX schema update 07/09/2021:
+  * removed convex decomposition mesh simplification option
+  * removed min/max triangle count from mesh simplification parameters
+PhysX schema update 10/7/2020:
+  * Rigid body parts do have apiName definition stripping down PhysxRigidBody, PhysxScene etc prefixes
+  * Gear joint and rackAndPinion joint now have a physics prefix for their attributes
+PhysX schema update 9/8/2020:
+  * Plane moved into physxSchema from physicsSchema
+  * characterControllerAPI moved into physxSchema from physicsSchema
+  * physxGearPhysicsJoint renamed to physxPhysicsGearJoint
+  * physxPhysicsRackAndPinionJoint renamed to physxRackAndPinionPhysicsJoint
+  * physxRigidBody:wakeOnStart removed and replaced by PhysicsSchema:PhysicsBodyAPI:phy:startsAsleep
+  * removed physxMeshCollisionAPI:approximation replaced by PhysicsSchema:PhysicsMeshCollisionAPI
+  * added physxDistancePhysicsJointAPI
+  * added physxArticulation:enabledSelfCollisions
+
+PhysX schema update 4/23/2020:
+ * All PhysX schemaAPI's will have a prefix now
+   example: PhysxRigidBodyAPI linearDamping attribute is now physxRigidBody:linearDamping
+            PhysxTriggerAPI onEnterScript attribute is now physxTrigger:onEnterScript
+ * added some doc

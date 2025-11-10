@@ -1,0 +1,41 @@
+[package]
+category = "Internal"
+title = "Physics Tensors Tests"
+description="Physics tensors tests."
+repository=""
+support_level = "Internal"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.tensors" = { version = "107.3.0-oss.0", exact = true }
+"omni.warp" = {}
+# Note: fabric will be enabled on demand
+#"omni.physx.fabric" = {}
+
+[[python.module]]
+name = "omni.physicstensorstests"
+
+[[test]]
+timeout = 1200
+dependencies = [
+   "omni.hydra.rtx",
+]
+args = [
+   "--no-window",
+   "--/app/asyncRendering=false", 
+   "--/app/file/ignoreUnsavedOnExit=true" , 
+   "--/renderer/multiGpu/autoEnable=false",
+   "--/app/profilerBackend=\"\"",
+   "--/rtx/materialDb/syncLoads=true",
+   "--/omni.kit.plugin/syncUsdLoads=true",
+   "--/rtx/hydra/materialSyncLoads=true",
+   "--/app/renderer/resolution/width=64",
+   "--/app/renderer/resolution/height=64",
+   "--/rtx/rendermode=\"rtx\"",
+   "--/physics/cudaDevice=0"
+]

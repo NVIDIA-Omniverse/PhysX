@@ -1,0 +1,80 @@
+[package]
+title = "Extension Test Run Environment"
+version = "107.3.24"
+keywords = ["app"]
+
+[dependencies]
+"omni.kit.test" = {}
+
+# Uncomment to enable python debugger
+# "omni.kit.debug.python" = {}
+
+[settings.exts."omni.physx.tests"]
+localMode = true
+# Uncomment to filter subtests, combine with -f param to filter tests
+# subTestsFilter = "*filter*"
+
+# physics custom settings
+[settings]
+app.fastShutdown = true
+app.menu.legacy_mode = false
+crashreporter.enabled=false
+crashreporter.skipOldDumpUpload=true
+exts."omni.kit.test".stdoutFailPatterns.exclude=[
+    "*Leaking graphics objects*",  # Exclude grahics leaks until fixed
+	"*leaking memory. Missing call to destroyResourceBindingSignature*",
+    "*extension object is still alive, something holds a reference on it.*",
+    "*Client omni.ui Failed to acquire interface [omni::kit::renderer::IGpuFoundation v0.2] while unloading all plugins*", # Shutdown order issue
+    "*audio device is misconfigured or broken*", # Audio device issue
+    "*createDLSSContext error: unable to initialize context. Optional DLSS feature is disabled.*", # DLSS errors on linux
+	"*omni.kit.rpc* -> <class 'omni.kit.rpc.server.RPC_API'>*",  # This extension leaks, can't fully shutdown itself, because of FastAPI
+	"*syncing index failed. Result: Result.ERROR_CONNECTION*",  # On TC when extensions window enabled it tries to sync and might fail if nucleus server is not reachable
+	"*[[]Plugin: carb.sdiio.plugin.dll[]] Could not load the dynamic library from*",  # Random dll load failure?
+	"*Client omni.ui Failed to acquire interface [[]omni::kit::renderer::IGpuFoundation v0.2[]] while unloading all plugins*", # Shutdown order issue
+    "*[rtx.optixdenoising.plugin] [Optix] [DiskCacheDatabase] Failed to prepare statement: file is not a database*", # OM-50198
+    "*[rtx.optixdenoising.plugin] [Optix] [WARNING] Error when configuring the database.*", # OM-50198
+    "*rtx driver verification failed*",
+    "*The currently installed NVIDIA graphics driver is unsupported or has known issues*",
+    "*failed to load native plugin*usdrt.hydra.scene_delegate.plugin.dll*",
+    "packman(WARNING): Remote * defined but not listed in 'remotes' attribute on 'config' element (W001)", # packman:gitlab-repo missing in kit config issue, remove when gone
+    "*OvTextureFile: Obsolete version 510; current version 10",
+]
+
+# Sync with repo.toml repo_test.generate_report_cmd and repo_test.suites.coverage.generate_report_cmd
+exts."omni.kit.test".testExtOutputPath="${kit}/../_testoutput"
+
+# Disable code change analyzer so that all tests run
+exts."omni.kit.test".testExtCodeChangeAnalyzerEnabled=false
+
+# Show ignored error messages so we are aware locally
+exts."omni.kit.test".stdoutFailPatterns.trimExcludedMessages = false
+
+# Hang fix for startup tests with a telemetry dep
+exts."omni.kit.telemetry".skipDeferredStartup=true
+
+[settings.exts."omni.kit.debug.python"]
+# Host and port for listen to debugger for
+# host = "127.0.0.1"
+# port = 3000
+
+# Block until client (debugger) connected
+# waitForClient = true
+
+# break immediately (also waits for client)
+# break = true
+
+# Extensions
+###############################
+[settings.app.exts]
+folders = [
+    "${kit}/apps",
+    "${kit}/exts",
+    "${kit}/exts2",
+    "${kit}/extscore",
+    "${kit}/../../../_exts",
+    "${app_documents}/exts",
+    "${shared_documents}/exts",
+    "${kit}/experiences/kit",
+    "${app}/../exts",
+    "${app}/../extsPhysics",
+]

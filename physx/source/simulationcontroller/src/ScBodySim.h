@@ -31,6 +31,8 @@
 
 #include "foundation/PxUtilities.h"
 #include "foundation/PxIntrinsics.h"
+#include "foundation/PxPinnedArray.h"
+#include "foundation/PxPinnedBitMap.h"
 #include "ScRigidSim.h"
 #include "PxvDynamics.h"
 #include "ScBodyCore.h"
@@ -40,6 +42,7 @@
 
 namespace physx
 {
+
 namespace Bp
 {
 	class BoundsArray;

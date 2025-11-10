@@ -1,0 +1,51 @@
+[package]
+title = "PhysX Fabric"
+description="Omni PhysX Fabric output"
+repository = ""
+keywords = ["physics", "physx", "fabric"]
+category = "Simulation"
+
+version = "107.3.0-oss.0"
+authors = ["PhysX"]
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+
+[dependencies]
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"usdrt.scenegraph" = {}
+"omni.graph.core" = {optional=true}
+"omni.ui" = {optional=true}
+"omni.kit.window.preferences" = {optional=true}
+"omni.kit.widget.settings" = {optional=true}
+
+
+[[python.module]]
+name = "omni.physxfabric"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[[test]]
+dependencies = [
+   "omni.physics.stageupdate",
+   "omni.physics.physx",
+   "omni.hydra.usdrt_delegate"
+]
+args = [
+   "--/app/useFabricSceneDelegate=true"
+]
+stdoutFailPatterns.exclude = [
+    "*Failed to create Cuda Context Manager*",
+    "*Unable to create PxCudaContextManager*",
+]
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions."

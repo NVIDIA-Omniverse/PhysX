@@ -36,6 +36,8 @@
 #include "DyConstraintWriteBack.h"
 #include "foundation/PxAllocator.h"
 #include "foundation/PxUserAllocated.h"
+#include "foundation/PxPinnedArray.h"
+#include "foundation/PxPinnedBitMap.h"
 #include "PxsRigidBody.h"
 #include "DyResidualAccumulator.h"
 
@@ -58,7 +60,6 @@ struct PxvSimStats;
 class PxTaskManager;
 class PxsContactManager;
 struct PxsContactManagerOutputCounts;
-
 class PxvNphaseImplementationContext;
 
 namespace Dy
@@ -156,9 +157,11 @@ public:
 	Island solving is asynchronous. Once all islands have been solved, the continuation task will be called.
 	*/
 	virtual void						update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* processLostTouchTask,
-												PxvNphaseImplementationContext* nPhaseContext, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap) = 0;
+												PxvNphaseImplementationContext* nPhaseContext, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks,
+												PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap) = 0;
 	virtual void						updatePostPartitioning(PxBaseTask* /*processLostTouchTask*/,
-												PxvNphaseImplementationContext* /*nPhaseContext*/, PxU32 /*maxPatchesPerCM*/, PxU32 /*maxArticulationLinks*/, PxReal /*dt*/, const PxVec3& /*gravity*/, PxBitMapPinned& /*changedHandleMap*/)	{}
+												PxvNphaseImplementationContext* /*nPhaseContext*/, PxU32 /*maxPatchesPerCM*/, PxU32 /*maxArticulationLinks*/,
+												PxReal /*dt*/, const PxVec3& /*gravity*/, PxBitMapPinned& /*changedHandleMap*/)	{}
 
 	virtual void						processPatches(	Cm::FlushPool& /*flushPool*/, PxBaseTask* /*continuation*/,
 														PxsContactManager** /*lostFoundPatchManagers*/, PxU32 /*nbLostFoundPatchManagers*/, PxsContactManagerOutputCounts* /*outCounts*/)	{}
@@ -188,7 +191,7 @@ public:
 protected:
 
 	Context(IG::SimpleIslandManager& islandManager, PxVirtualAllocatorCallback* allocatorCallback,
-			PxvSimStats& simStats, bool enableStabilization, bool useEnhancedDeterminism,
+			PxvSimStats& simStats, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 			PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID, bool isResidualReportingEnabled) :
 		mThresholdStream			(NULL),
 		mForceChangedThresholdStream(NULL),		
@@ -198,6 +201,7 @@ protected:
 		mMaxBiasCoefficient			(maxBiasCoefficient),
 		mEnableStabilization		(enableStabilization),
 		mUseEnhancedDeterminism		(useEnhancedDeterminism),
+		mSolveArticulationContactLast(solveArticulationContactLast),	 
 		mBounceThreshold			(-2.0f),
 		mLengthScale				(lengthScale),
 		mSolverBatchSize			(32),
@@ -241,6 +245,8 @@ protected:
 	const bool					mEnableStabilization;
 
 	const bool					mUseEnhancedDeterminism;
+
+	const bool					mSolveArticulationContactLast;
 
 	PxVec3						mGravity;
 	/**
@@ -352,12 +358,12 @@ protected:
 
 Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
 								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-								IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism,
+								IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled);
 
 Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
 									PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-									IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, PxReal lengthScale, 
+									IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal lengthScale, 
 									bool externalForcesEveryTgsIterationEnabled, bool isResidualReportingEnabled);
 }
 

@@ -1,0 +1,5 @@
+<project toolsVersion="5.6">
+  <dependency name="usd_ext_physics_${config}" linkPath="../_build/target-deps/usd_ext_physics/${config}">
+    <package name="usd_ext_physics" version="24.05+release.40469.09c54277.gl.${platform}.${config}" platforms="windows-x86_64 linux-x86_64 linux-aarch64 manylinux_2_35_x86_64 manylinux_2_35_aarch64"/>
+  </dependency>
+</project>

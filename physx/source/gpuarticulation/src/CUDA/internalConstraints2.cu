@@ -87,7 +87,7 @@ static __device__ void getImpulseSelfResponseDofAligned(
 
 	const Cm::UnAlignedSpatialVector deltaV0W = (parentSpatialResponse * impulseDifW);
 
-	deltaV1 = propagateAccelerationW(childToParent, dofData, deltaV0W, dofCount, threadIndexInWarp, qstZ);
+	deltaV1 = propagateAccelerationW_child2ParentPreLoaded<ReadFromProvidedQstZ>(childToParent, dofData, deltaV0W, dofCount, threadIndexInWarp, qstZ, NULL);
 
 	deltaV0 = deltaV0W;
 }
@@ -107,13 +107,14 @@ static __device__ void getImpulseSelfResponse(
 	Cm::UnAlignedSpatialVector Z1W(-impulse1.top, -impulse1.bottom);
 
 	PxReal qstZ[3] = { 0.f, 0.f, 0.f };
-	Cm::UnAlignedSpatialVector Z0W = propagateImpulseW_1(childToParent, dofData, Z1W, NULL, dofCount, threadIndexInWarp, qstZ);
+
+	Cm::UnAlignedSpatialVector Z0W = propagateImpulseW<WriteToProvidedQstZ>(childToParent, const_cast<PxgArticulationBlockDofData*>(dofData), Z1W, dofCount, threadIndexInWarp, NULL, 0.0f, qstZ);
 
 	const Cm::UnAlignedSpatialVector impulseDifW = impulse0 - Z0W;
 
 	const Cm::UnAlignedSpatialVector deltaV0W = (parentSpatialResponse * impulseDifW);
 
-	deltaV1 = propagateAccelerationW(childToParent, dofData, deltaV0W, dofCount, threadIndexInWarp, qstZ);
+	deltaV1 = propagateAccelerationW_child2ParentPreLoaded<ReadFromProvidedQstZ>(childToParent, dofData, deltaV0W, dofCount, threadIndexInWarp, qstZ, NULL);
 
 	deltaV0 = deltaV0W;
 }
@@ -713,7 +714,7 @@ static __device__ void getImpulseSelfResponseSlow(
 
 		const PxVec3 childToParent(rwx, rwy, rwz);
 	
-		Z0 = propagateImpulseWTemp(childToParent, dofData + jointOffset, Z0, dofCount, threadIndexInWarp);
+		Z0 = propagateImpulseW<WriteToTempQstZ>(childToParent, dofData + jointOffset, Z0, dofCount, threadIndexInWarp);
 
 		stack[i0++] = linkID0;
 	}
@@ -729,7 +730,7 @@ static __device__ void getImpulseSelfResponseSlow(
 
 		const PxVec3 childToParent(rwx, rwy, rwz);
 
-		Z1 = propagateImpulseWTemp(childToParent, dofData + jointOffset, Z1, dofCount, threadIndexInWarp);
+		Z1 = propagateImpulseW<WriteToTempQstZ>(childToParent, dofData + jointOffset, Z1, dofCount, threadIndexInWarp);
 		
 		stack[i1++] = linkID1;
 	}
@@ -756,7 +757,7 @@ static __device__ void getImpulseSelfResponseSlow(
 
 		const PxVec3 childToParent(rwx, rwy, rwz);
 
-		dv1 = propagateAccelerationWTemp(childToParent, dofData + jointOffset, dv1, dofCount, threadIndexInWarp);
+		dv1 = propagateAccelerationW_child2ParentPreLoaded<ReadFromTempQstZ>(childToParent, dofData + jointOffset, dv1, dofCount, threadIndexInWarp, NULL, NULL);
 	}
 
 	Cm::UnAlignedSpatialVector dv0 = v;
@@ -772,7 +773,7 @@ static __device__ void getImpulseSelfResponseSlow(
 
 		const PxVec3 childToParent(rwx, rwy, rwz);
 
-		dv0 = propagateAccelerationWTemp(childToParent, dofData + jointOffset, dv0, dofCount, threadIndexInWarp);
+		dv0 = propagateAccelerationW_child2ParentPreLoaded<ReadFromTempQstZ>(childToParent, dofData + jointOffset, dv0, dofCount, threadIndexInWarp, NULL, NULL);
 	}
 
 	deltaV0.bottom = dv0.bottom;
@@ -1550,13 +1551,38 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 	}
 }
 
+void __device__ accumulateLinkImpulsesAndLinkVelocities
+(const PxReal deltaF,
+ const Cm::UnAlignedSpatialVector& deltaVA, const Cm::UnAlignedSpatialVector& deltaVB,
+ const Cm::UnAlignedSpatialVector& row0, const Cm::UnAlignedSpatialVector& row1,
+ Cm::UnAlignedSpatialVector& parentDeltaV, Cm::UnAlignedSpatialVector& deltaV,
+ Cm::UnAlignedSpatialVector& parentV, Cm::UnAlignedSpatialVector& childV,
+ Cm::UnAlignedSpatialVector& parentImp, Cm::UnAlignedSpatialVector& impulse)
+{
+	// the signs look suspicious here
+	const Cm::UnAlignedSpatialVector pDelta = deltaVA * -deltaF;
+	const Cm::UnAlignedSpatialVector cDelta = deltaVB * -deltaF;
+
+	parentDeltaV += pDelta;
+	deltaV += cDelta;
+
+	parentV += pDelta;
+	childV += cDelta;
+
+	//KS - TODO - remove msImpulses and msDeltaV from here!
+	parentImp += row0 * deltaF;
+	impulse -= row1 * deltaF;
+}
+
+
 template <typename IterativeData, const bool isTGS, const bool residualReportingEnabled>
 static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal dt,
 	const PxReal invDt, const PxReal elapsedTime, const bool isVelIter, const PxU32* const PX_RESTRICT staticContactUniqueIds,
 	const PxU32* const PX_RESTRICT staticJointUniqueIds,
 	const PxgSolverSharedDesc<IterativeData>* const PX_RESTRICT sharedDesc,
 	const PxReal erp,
-	bool doFriction, bool isExternalForceEveryStep )
+	bool doFriction, bool isExternalForceEveryStep,
+	const bool doFrictionDrivePosLimit, const Dy::ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, const bool doStaticContactsAnd1dConstraints)
 {
 	const PxU32 nbSlabs = scDesc->nbSlabs; // # articulation slabs
 	const PxU32 nbArticulations = scDesc->nbArticulations;
@@ -1614,7 +1640,7 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 		Cm::UnAlignedSpatialVector parentImp(PxVec3(0.f), PxVec3(0.f));
 		
 
-		if (!fixBase)
+		if (!fixBase && doStaticContactsAnd1dConstraints)
 		{
 			const PxU32 constraintCounts0 = data[0].mNbStaticJoints[threadIdx.x];
 
@@ -1691,7 +1717,7 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 				//We're finished with this link so we can move to the next one.
 				linkID = stackCount > 0 ? stack[stackCount - 1].indices[threadIdx.x] : 0xffffffff;
 
-				const Cm::UnAlignedSpatialVector propagateImp = propagateImpulseW_0(PxVec3(c2px, c2py, c2pz), dofData + jointOffset, impulse, dofCount, threadIdx.x);
+				const Cm::UnAlignedSpatialVector propagateImp = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(c2px, c2py, c2pz), dofData + jointOffset, impulse, dofCount, threadIdx.x);
 
 				parentImp += propagateImp;
 
@@ -1709,8 +1735,8 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 				const Cm::UnAlignedSpatialVector parentDelta = loadSpatialVector(data[parent].mDeltaMotion, threadIdx.x);
 				
 
-				Cm::UnAlignedSpatialVector deltaV = propagateAccelerationW(PxVec3(c2px, c2py, c2pz), dofData + jointOffset,
-					parentDeltaV, dofCount, NULL, threadIdx.x);
+				Cm::UnAlignedSpatialVector deltaV = propagateAccelerationW_child2ParentPreLoaded<ReadFromDeferredQstZ>(PxVec3(c2px, c2py, c2pz), dofData + jointOffset,
+					parentDeltaV, dofCount, threadIdx.x, NULL, NULL);
 
 				Cm::UnAlignedSpatialVector childV = deltaV + loadSpatialVector(linkData.mMotionVelocity, threadIdx.x);
 
@@ -1757,87 +1783,89 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 						const PxReal jointDeltaP = row1.innerProduct(childDelta) - row0.innerProduct(parentDelta);
 
 						PxReal frictionDeltaF = 0.0f;
-						bool newFrictionModel = staticFrictionImpulse != 0.0f || viscousFrictionCoefficient !=  0.0f;
-
-						// deprecated friction model
-						if (!newFrictionModel)	
-						{
-							// Friction force is accumulated through all position iterations only for PGS
-							const PxReal appliedFriction = isTGS ? 0.0f : thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x];
-
-							const PxReal frictionForce = PxClamp(-jointV * recipResponse + appliedFriction,
-																-maxFrictionForce, maxFrictionForce);
-							thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x] = frictionForce; // This is not used for TGS
-
-							frictionDeltaF = frictionForce - appliedFriction;
-
-							jointV += frictionDeltaF * response;
-						}
-
 						PxReal driveDeltaF = 0.0f;
-
-						if (maxImpulse > 0.0f)
-						{
-							appliedDriveImpulse = perSubset ? 0.0f: appliedDriveImpulse;
-
-							const PxReal unclampedImpulse = (isTGS && isVelIter)
-								? appliedDriveImpulse
-								: computeDriveImpulse(appliedDriveImpulse, jointV, jointDeltaP, elapsedTime, implicitDriveDesc);
-							
-							const PxReal clampedImpulse = clampDriveImpulse(
-								jointV,
-								appliedDriveImpulse + externalJointImpulse,
-								unclampedImpulse + externalJointImpulse,
-								response,
-								maxActuatorVelocity,
-								maxImpulse,
-								speedImpulseGradient,
-								velocityDependentResistance
-							) - externalJointImpulse;
-
-							driveDeltaF = clampedImpulse - appliedDriveImpulse; // to keep track of accumulated impulse for velIter in TGS with isExternalForceEveryStep
-							thisDof.mConstraintData.mDriveImpulse[threadIdx.x] += driveDeltaF;
-						}
-
-						else
-						{
-							const PxReal unclampedForce = (isTGS && isVelIter) ? appliedDriveImpulse :
-									computeDriveImpulse(appliedDriveImpulse, jointV, jointDeltaP, elapsedTime,
-										implicitDriveDesc);
-
-							const PxReal clampedForce = PxClamp(unclampedForce, -maxDriveForce, maxDriveForce);
-									driveDeltaF = (clampedForce - appliedDriveImpulse);
-
-							thisDof.mConstraintData.mDriveImpulse[threadIdx.x] = clampedForce;
-						}
-						jointV += driveDeltaF * response;
-
-						if (newFrictionModel)
-						{
-							const PxReal appliedFriction = isTGS && isExternalForceEveryStep && !isVelIter ? 0.0f : thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x];
-							PxReal totalImpulse = appliedFriction - jointV * recipResponse;
-							totalImpulse = computeFrictionImpulse(totalImpulse, staticFrictionImpulse, dynamicFrictionImpulse, viscousFrictionCoefficient, jointV);
-							frictionDeltaF = totalImpulse - appliedFriction;
-							thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x] += frictionDeltaF; // to keep track of accumulated impulse for velIter in TGS with isExternalForceEveryStep
-							jointV += frictionDeltaF * response;
-						}
-
 						PxReal posLimitDeltaF = 0.0f;
-						if (motion == PxArticulationMotion::eLIMITED)
-						{
-							const PxReal errorLow = thisDof.mConstraintData.mLimitError_LowX_highY[threadIdx.x].x;
-							const PxReal errorHigh = thisDof.mConstraintData.mLimitError_LowX_highY[threadIdx.x].y;
-							PxReal& lowImp = thisDof.mConstraintData.mLowImpulse[threadIdx.x];
-							PxReal& highImp = thisDof.mConstraintData.mHighImpulse[threadIdx.x];
-							posLimitDeltaF = computeLimitImpulse(
-								dt, invDt, isVelIter,
-								response, recipResponse, erp,
-								errorLow, errorHigh, jointDeltaP,
-								lowImp, highImp, jointV);
-						}
+						if(doFrictionDrivePosLimit)
+						{	
+							bool newFrictionModel = staticFrictionImpulse != 0.0f || viscousFrictionCoefficient !=  0.0f;
+
+							// deprecated friction model
+							if (!newFrictionModel)	
+							{
+								// Friction force is accumulated through all position iterations only for PGS
+								const PxReal appliedFriction = isTGS ? 0.0f : thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x];
+
+								const PxReal frictionForce = PxClamp(-jointV * recipResponse + appliedFriction,
+																	-maxFrictionForce, maxFrictionForce);
+								thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x] = frictionForce; // This is not used for TGS
+
+								frictionDeltaF = frictionForce - appliedFriction;
+
+								jointV += frictionDeltaF * response;
+							}
+
+							if (maxImpulse > 0.0f)
+							{
+								appliedDriveImpulse = perSubset ? 0.0f: appliedDriveImpulse;
+
+								const PxReal unclampedImpulse = (isTGS && isVelIter)
+									? appliedDriveImpulse
+									: computeDriveImpulse(appliedDriveImpulse, jointV, jointDeltaP, elapsedTime, implicitDriveDesc);
+							
+								const PxReal clampedImpulse = clampDriveImpulse(
+									jointV,
+									appliedDriveImpulse + externalJointImpulse,
+									unclampedImpulse + externalJointImpulse,
+									response,
+									maxActuatorVelocity,
+									maxImpulse,
+									speedImpulseGradient,
+									velocityDependentResistance
+								) - externalJointImpulse;
+
+								driveDeltaF = clampedImpulse - appliedDriveImpulse; // to keep track of accumulated impulse for velIter in TGS with isExternalForceEveryStep
+								thisDof.mConstraintData.mDriveImpulse[threadIdx.x] += driveDeltaF;
+							}
+
+							else
+							{
+								const PxReal unclampedForce = (isTGS && isVelIter) ? appliedDriveImpulse :
+										computeDriveImpulse(appliedDriveImpulse, jointV, jointDeltaP, elapsedTime,
+											implicitDriveDesc);
+
+								const PxReal clampedForce = PxClamp(unclampedForce, -maxDriveForce, maxDriveForce);
+										driveDeltaF = (clampedForce - appliedDriveImpulse);
+
+								thisDof.mConstraintData.mDriveImpulse[threadIdx.x] = clampedForce;
+							}
+							jointV += driveDeltaF * response;
+
+							if (newFrictionModel)
+							{
+								const PxReal appliedFriction = isTGS && isExternalForceEveryStep && !isVelIter ? 0.0f : thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x];
+								PxReal totalImpulse = appliedFriction - jointV * recipResponse;
+								totalImpulse = computeFrictionImpulse(totalImpulse, staticFrictionImpulse, dynamicFrictionImpulse, viscousFrictionCoefficient, jointV);
+								frictionDeltaF = totalImpulse - appliedFriction;
+								thisDof.mConstraintData.mAccumulatedFrictionImpulse[threadIdx.x] += frictionDeltaF; // to keep track of accumulated impulse for velIter in TGS with isExternalForceEveryStep
+								jointV += frictionDeltaF * response;
+							}
+
+							if (motion == PxArticulationMotion::eLIMITED)
+							{
+								const PxReal errorLow = thisDof.mConstraintData.mLimitError_LowX_highY[threadIdx.x].x;
+								const PxReal errorHigh = thisDof.mConstraintData.mLimitError_LowX_highY[threadIdx.x].y;
+								PxReal& lowImp = thisDof.mConstraintData.mLowImpulse[threadIdx.x];
+								PxReal& highImp = thisDof.mConstraintData.mHighImpulse[threadIdx.x];
+								posLimitDeltaF = computeLimitImpulse(
+									dt, invDt, isVelIter,
+									response, recipResponse, erp,
+									errorLow, errorHigh, jointDeltaP,
+									lowImp, highImp, jointV);
+							}
+						}//doFrictionDrivePosLimit
 
 						PxReal velLimitDeltaF = 0.0f;
-						if (PxAbs(jointV) > maxJointVel)
+						if ((Dy::ArticulationConstraintProcessingConfig::VelLimit::eBEFORE_STATIC_CONSTRAINTS == doVelLimit) && (PxAbs(jointV) > maxJointVel))
 						{
 							const PxReal newJointV = PxClamp(jointV, -maxJointVel, maxJointVel);
 							velLimitDeltaF = (newJointV - jointV) * recipResponse;
@@ -1851,33 +1879,102 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 							error.accumulateErrorLocal(deltaF, recipResponse);
 
 						//if (deltaF != 0.f)
-						{
-							// the signs look suspicious here
-							const Cm::UnAlignedSpatialVector pDelta = deltaVA * -deltaF;
-							const Cm::UnAlignedSpatialVector cDelta = deltaVB * -deltaF;
-
-							parentDeltaV += pDelta;
-							deltaV += cDelta;
-
-							parentV += pDelta;
-							childV += cDelta;
-
-							//KS - TODO - remove msImpulses and msDeltaV from here!
-							parentImp += row0 * deltaF;
-							impulse -= row1 * deltaF;
-						}
-					}
-				}
+						accumulateLinkImpulsesAndLinkVelocities
+							(deltaF,
+							 deltaVA, deltaVB,
+							 row0, row1,
+							 parentDeltaV, deltaV,
+							 parentV, childV,
+							 parentImp, impulse);
+					}//motion != PxArticulationMotion::eLOCKED
+				}//dof
 
 				const PxU32 constraintCounts = linkData.mNbStaticJoints[threadIdx.x];
 
 				numChildren = linkData.mNumChildren[threadIdx.x];	// PT: preload to avoid stall
 
-				//Store the internal constraint impulse applied to this link on this solver iteration.
-				storeSpatialVector(linkData.mSolverSpatialInternalConstraintImpulse, impulse, threadIdx.x);
+				//Cache the internal impulse applied to the child.
+				Cm::UnAlignedSpatialVector childImpulseInternal = impulse;
 
-				solveStaticConstraints(scDesc, linkData, sharedDesc, childV, impulse, deltaV, threadIdx.x,
-					doFriction, minPen, elapsedTime, linkID, constraintCounts, residualReportingEnabled ? &contactError : NULL);
+				//Solve static constraints and track the impulse applied to the child link by the static constraints.
+				Cm::UnAlignedSpatialVector childImpulseFromStaticContactAnd1dConstraints(PxVec3(0.0f, 0.0f, 0.0f), PxVec3(0.0f, 0.0f, 0.0f));
+				if(doStaticContactsAnd1dConstraints)
+				{
+					const Cm::UnAlignedSpatialVector childImpulseBeforeStaticContactAnd1dConstraints = impulse;
+					solveStaticConstraints(scDesc, linkData, sharedDesc, childV, impulse, deltaV, threadIdx.x,
+						doFriction, minPen, elapsedTime, linkID, constraintCounts, residualReportingEnabled ? &contactError : NULL);
+					childImpulseFromStaticContactAnd1dConstraints = impulse - childImpulseBeforeStaticContactAnd1dConstraints;
+				}
+
+				if((Dy::ArticulationConstraintProcessingConfig::VelLimit::eAFTER_STATIC_CONSTRAINTS == doVelLimit))
+				{
+					//We still need to account for the vel limit impulse contribution to childImpulseInternal.
+					//Cache the impulse before applying the vel limit.
+					//We will continue to accumulate impulse (the total impulse applied to the child link) so 
+					//we can easily compute the impulse arising from vel limit.
+					const Cm::UnAlignedSpatialVector i1BeforeVelLimit = impulse;
+
+					//We know the impulse applied by static contact/constraint to the child link.
+					//We also know the current velocity of the child link after static contact/constraint.
+					//jointV is no longer up to date because we have not accounted for static contact/constraint impulses
+					//by propagating them to the parent link.
+					//We need to know the velocity of the parent link so that we may recompute the dof speeds and apply 
+					//the dof speed limits.
+					//To compute the parent link velocity we need to propagate the static contact/constraint impulse applied to the 
+					//child inwards to the parent and then compute the deltaVel arising at the parent. We can add that deltaV to the 
+					//last known parent link velocity computed immediately before static contact/constraint.
+					const PxVec3 r(c2px, c2py, c2pz);
+					const Cm::UnAlignedSpatialVector propagatedImpulseAtParentW = propagateImpulseW<WriteToProvidedQstZ>(
+						r, dofData, childImpulseFromStaticContactAnd1dConstraints, dofCount, threadIdx.x, NULL, 0.0f, NULL);
+					PxSpatialMatrix mat;
+					loadSpatialMatrix(data[parent].mSpatialResponseMatrix, threadIdx.x, mat);
+					const Cm::UnAlignedSpatialVector deltaVParent = mat * (-propagatedImpulseAtParentW);
+										
+					//Apply the vel limit to each dof with jointV accounting for deltaVParent.
+					for (PxU32 dof = 0; dof < dofCount; ++dof)
+					{
+						PxgArticulationBlockDofData& PX_RESTRICT thisDof = dofData[jointOffset + dof];
+						const PxU32 motion = thisDof.mMotion[threadIdx.x];
+						if (motion != PxArticulationMotion::eLOCKED)
+						{
+							const PxReal maxJointVel = thisDof.mConstraintData.mMaxJointVelocity[threadIdx.x];
+							// PT: preload as much data as we can
+							const Cm::UnAlignedSpatialVector row0 = loadSpatialVector(thisDof.mConstraintData.mRow0, threadIdx.x);
+							const Cm::UnAlignedSpatialVector row1 = loadSpatialVector(thisDof.mConstraintData.mRow1, threadIdx.x);
+							const PxReal recipResponse = thisDof.mConstraintData.mRecipResponse[threadIdx.x];
+							const Cm::UnAlignedSpatialVector deltaVA = loadSpatialVector(thisDof.mConstraintData.mDeltaVA, threadIdx.x);
+							const Cm::UnAlignedSpatialVector deltaVB = loadSpatialVector(thisDof.mConstraintData.mDeltaVB, threadIdx.x);
+							PxReal jointV = row1.innerProduct(childV) - row0.innerProduct(parentV + deltaVParent);
+
+							PxReal velLimitDeltaF = 0.0f;
+							if (PxAbs(jointV) > maxJointVel)
+							{
+								const PxReal newJointV = PxClamp(jointV, -maxJointVel, maxJointVel);
+								velLimitDeltaF = (newJointV - jointV) * recipResponse;
+								jointV = newJointV;
+							}
+
+							//Accumulate error even if it is zero because the increment of the counter affects the RMS value
+							if (residualReportingEnabled)
+								error.accumulateErrorLocal(velLimitDeltaF, recipResponse);
+
+							accumulateLinkImpulsesAndLinkVelocities
+								(velLimitDeltaF,
+								 deltaVA, deltaVB,
+								 row0, row1,
+								 parentDeltaV, deltaV,
+								 parentV, childV,
+								 parentImp, impulse);
+						}//motion != PxArticulationMotion::eLOCKED
+					}//dof
+				
+					//Account for the impulse applied by the velocity limit.
+					childImpulseInternal += (impulse - i1BeforeVelLimit);
+
+				}//Dy::ArticulationConstraintProcessingConfig::VelLimit::eAFTER_STATIC_CONSTRAINTS == doVelLimit
+	
+				//Store the internal constraint impulse applied to this link on this solver iteration.
+				storeSpatialVector(linkData.mSolverSpatialInternalConstraintImpulse, childImpulseInternal, threadIdx.x);
 
 				storeSpatialVector(stack[parent].impulseStack, parentImp, threadIdx.x);
 				storeSpatialVector(stack[linkID].impulseStack, impulse, threadIdx.x);
@@ -2066,7 +2163,7 @@ static __device__ Cm::UnAlignedSpatialVector pxcFsGetVelocity(
 				//Compute the deltaqDot on the inbound joint of linkID.
 				PxReal* optionalDeltaJointSpeeds = ((linkID == index) && jointDofSpeeds) ? deltaJointDofSpeeds : NULL;
 
-				deltaV = propagateAccelerationW(childToParent, dofData + jointOffset, deltaV, dofCount, optionalDeltaJointSpeeds, threadIndexInWarp);
+				deltaV = propagateAccelerationW_child2ParentPreLoaded<ReadFromDeferredQstZ>(childToParent, dofData + jointOffset, deltaV, dofCount, threadIndexInWarp, NULL, optionalDeltaJointSpeeds);
 			}
 
 			//clear the lowest bit
@@ -2138,7 +2235,7 @@ static __device__ void pxcFsApplyImpulses(PxgArticulationBlockData& blockData,
 
 		addSpatialVector(linkData[i].mSolverSpatialImpulse, Z1, threadIndexInWarp);
 
-		Z1 = propagateImpulseW_0(child2Parent, dofData + jointOffset, Z1, dofCount, threadIndexInWarp, jointImpulseToApply, 1.0f);
+		Z1 = propagateImpulseW<WriteToDeferredQstZ>(child2Parent, dofData + jointOffset, Z1, dofCount, threadIndexInWarp, jointImpulseToApply, 1.0f);
 	}
 
 	for (PxU32 i = linkID0; i != commonLink; i = linkData[i].mParents[threadIndexInWarp])
@@ -2161,7 +2258,7 @@ static __device__ void pxcFsApplyImpulses(PxgArticulationBlockData& blockData,
 
 		addSpatialVector(linkData[i].mSolverSpatialImpulse, Z0, threadIndexInWarp);
 
-		Z0 = propagateImpulseW_0(child2Parent, dofData + jointOffset, Z0, dofCount, threadIndexInWarp, jointImpulseToApply, 1.0f);
+		Z0 = propagateImpulseW<WriteToDeferredQstZ>(child2Parent, dofData + jointOffset, Z0, dofCount, threadIndexInWarp, jointImpulseToApply, 1.0f);
 	}
 
 	Cm::UnAlignedSpatialVector ZCommon = Z0 + Z1;
@@ -2210,7 +2307,7 @@ static __device__ void pxcFsApplyImpulses(PxgArticulationBlockData& blockData,
 
 		addSpatialVector(linkData[i].mSolverSpatialImpulse, ZCommon, threadIndexInWarp);
 
-		ZCommon = propagateImpulseW_0(child2Parent, dofData + jointOffset, ZCommon, dofCount, threadIndexInWarp, jointImpulseToApply, 1.0f);
+		ZCommon = propagateImpulseW<WriteToDeferredQstZ>(child2Parent, dofData + jointOffset, ZCommon, dofCount, threadIndexInWarp, jointImpulseToApply, 1.0f);
 	}
 
 	addSpatialVector(blockData.mRootDeferredZ, ZCommon, threadIndexInWarp);
@@ -2438,7 +2535,7 @@ static __device__ void solveInternalFixedConstraints(
 			Cm::UnAlignedSpatialVector parentDeltaV = loadSpatialVector(pLink.mScratchDeltaV, threadIndexInWarp);
 			Cm::UnAlignedSpatialVector parentV = loadSpatialVector(pLink.mMotionVelocity, threadIndexInWarp) + parentDeltaV;
 
-			Cm::UnAlignedSpatialVector cDeltaV = propagateAccelerationW(c2p, artiDofs + jointOffset, parentDeltaV, dofCount, NULL, threadIndexInWarp);
+			Cm::UnAlignedSpatialVector cDeltaV = propagateAccelerationW_child2ParentPreLoaded<ReadFromDeferredQstZ>(c2p, artiDofs + jointOffset, parentDeltaV, dofCount, threadIndexInWarp, NULL, NULL);
 
 			storeSpatialVector(cLink.mScratchDeltaV, cDeltaV, threadIndexInWarp);
 
@@ -2549,7 +2646,7 @@ static __device__ void solveInternalFixedConstraints(
 			//so (impulse - YInt) = cImpulse.			
 			addSpatialVector(cLink.mSolverSpatialImpulse, cImpulse, threadIndexInWarp);
 
-			Cm::UnAlignedSpatialVector propagatedImpulse = propagateImpulseW_0(c2p, artiDofs + jointOffset, impulse, dofCount, threadIndexInWarp);
+			Cm::UnAlignedSpatialVector propagatedImpulse = propagateImpulseW<WriteToDeferredQstZ>(c2p, artiDofs + jointOffset, impulse, dofCount, threadIndexInWarp);
 
 			addSpatialVector(pLink.mScratchImpulse, propagatedImpulse, threadIndexInWarp);
 
@@ -2577,7 +2674,7 @@ static __device__ void solveInternalFixedConstraints(
 
 			const PxVec3 c2p(rwx, rwy, rwz);
 
-			Z = propagateImpulseW_0(c2p, artiDofs + jointOffset, Z, dofCount, threadIndexInWarp);
+			Z = propagateImpulseW<WriteToDeferredQstZ>(c2p, artiDofs + jointOffset, Z, dofCount, threadIndexInWarp);
 		}
 
 		addSpatialVector(blockData.mRootDeferredZ, Z, threadIndexInWarp);
@@ -2727,15 +2824,18 @@ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc,
 	const PxgSolverSharedDesc<IterativeSolveData>* const PX_RESTRICT sharedDesc,
 	bool doFriction,
 	bool residualReportingEnabled,
-	bool isExternalForcesEveryTgsIterationEnabled)
+	bool isExternalForcesEveryTgsIterationEnabled,
+    const bool doFrictionDrivePosLimit, const Dy::ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, const bool doStaticContactsAnd1dConstraints)
 {
 	// This kernel also resets articulation reference counts to zero after all usage.
 	if(residualReportingEnabled)
 		artiSolveInternalConstraints1T<IterativeSolveData, false, true>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
-			sharedDesc, biasCoefficient, doFriction, isExternalForcesEveryTgsIterationEnabled);
+			sharedDesc, biasCoefficient, doFriction, isExternalForcesEveryTgsIterationEnabled,
+			doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 	else
 		artiSolveInternalConstraints1T<IterativeSolveData, false, false>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
-			sharedDesc, biasCoefficient, doFriction, isExternalForcesEveryTgsIterationEnabled);
+			sharedDesc, biasCoefficient, doFriction, isExternalForcesEveryTgsIterationEnabled,
+			doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 }
 
 extern "C" __global__
@@ -2745,16 +2845,17 @@ void artiSolveInternalConstraintsTGS1T(PxgArticulationCoreDesc* PX_RESTRICT scDe
 	const PxU32* const PX_RESTRICT staticJointUniqueIds,
 	const PxgSolverSharedDesc<IterativeSolveDataTGS>* const PX_RESTRICT sharedDesc,
 	bool doFriction, bool residualReportingEnabled,
-	bool isExternalForceEveryStep)
+	bool isExternalForceEveryStep,
+	const bool doFrictionDrivePosLimit, const Dy::ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, const bool doStaticContactsAnd1dConstraints)
 {
 	// This kernel also resets articulation reference counts to zero after all usage.
 	const PxReal erp = PxMin(0.7f, biasCoefficient);
 	if(residualReportingEnabled)
 		artiSolveInternalConstraints1T<IterativeSolveDataTGS, true, true>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
-			sharedDesc, erp, doFriction, isExternalForceEveryStep);
+			sharedDesc, erp, doFriction, isExternalForceEveryStep, doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 	else
 		artiSolveInternalConstraints1T<IterativeSolveDataTGS, true, false>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
-			sharedDesc, erp, doFriction, isExternalForceEveryStep);
+			sharedDesc, erp, doFriction, isExternalForceEveryStep, doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 }
 
 
@@ -3921,7 +4022,7 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 
 							const PxU32 dofCount = link.mDofs[threadIdx.x];
 							
-							impulse1 = propagateImpulseW_0(PxVec3(child2Parent_x, child2Parent_y, child2Parent_z),
+							impulse1 = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(child2Parent_x, child2Parent_y, child2Parent_z),
 								dofData, impulse1, dofCount, threadIdx.x);
 						}
 					}
@@ -3947,7 +4048,7 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 
 							const PxU32 dofCount = link.mDofs[threadIdx.x];
 
-							impulse0 = propagateImpulseW_0(PxVec3(rwx, rwy, rwz),
+							impulse0 = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(rwx, rwy, rwz),
 								dofData, impulse0, dofCount, threadIdx.x);
 						}
 					}
@@ -3979,7 +4080,7 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 							const float rwz = link.mRw_z[threadIdx.x];
 							const PxU32 dofCount = link.mDofs[threadIdx.x];
 
-							impulse0 = propagateImpulseW_0(PxVec3(rwx, rwy, rwz),
+							impulse0 = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(rwx, rwy, rwz),
 								dofData, impulse0, dofCount, threadIdx.x);
 						}
 					}

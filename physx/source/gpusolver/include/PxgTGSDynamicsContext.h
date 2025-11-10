@@ -51,7 +51,7 @@ namespace physx
 
 	public:
 		PxgTGSDynamicsContext(Cm::FlushPool& flushPool, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, 
-			const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, bool useEnhancedDeterminism,
+			const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 			PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager, bool externalForcesEveryTgsIterationEnabled, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID,
 			bool isResidualReportingEnabled);
 

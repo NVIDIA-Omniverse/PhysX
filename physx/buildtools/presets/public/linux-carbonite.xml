@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preset name="linux-carbonite" comment="Linux clang PhysX SDK general settings for Carbonite">
+  <platform targetPlatform="linux" compiler="clang" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_BUILDUNITTESTS" value="False" comment="Generate the unit tests" />
+    <cmakeSwitch name="PX_BUILDBENCHMARKS" value="False" comment="Generate the Benchmark projects" />
+    <cmakeSwitch name="PX_BUILDVISUALTESTS" value="False" comment="Generate the visual test projects" />
+    <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="True" comment="Generate the OmniPVD project" />
+    <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
+    <cmakeSwitch name="PX_BUILDVHACD" value="True" comment="Generate the vhacd project" />
+    <cmakeSwitch name="PX_CMAKE_SUPPRESS_REGENERATION" value="False" comment="Disable zero_check projects" />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
+    <cmakeSwitch name="PX_SCALAR_MATH" value="False" comment="Disable SIMD math" />
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libraries" />
+    <cmakeSwitch name="PX_EXPORT_LOWLEVEL_PDB" value="False" comment="Export low level pdb's" />
+    <cmakeSwitch name="NV_APPEND_CONFIG_NAME" value="False" comment="Append config " />
+    <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="True" comment="Use the statically linked windows CRT" />
+    <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="Use the debug version of the CRT" />
+    <cmakeSwitch name="NV_FORCE_64BIT_SUFFIX" value="False" comment="Force a 64 bit suffix for platforms that don't register properly." />
+    <cmakeSwitch name="NV_FORCE_32BIT_SUFFIX" value="False" comment="Force a 32 bit suffix for platforms that don't register properly." />
+    <cmakeSwitch name="PX_GENERATE_GPU_STATIC_LIBRARIES" value="False" comment="Generate PhysXGPU static libraries" />
+    <cmakeSwitch name="PX_GENERATE_GPU_REDUCED_ARCHITECTURES" value="False" comment="Generate only a reduced number of GPU architectures for faster compilation" />
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-carbonite/PhysX" comment="Install path relative to PhysX SDK root" />
+  </CMakeParams>
+</preset>

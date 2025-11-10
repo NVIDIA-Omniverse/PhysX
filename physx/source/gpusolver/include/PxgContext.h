@@ -324,7 +324,7 @@ namespace physx
 	public:
 
 		PxgGpuContext(Cm::FlushPool& flushPool, IG::SimpleIslandManager& islandManager, 
-			PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, bool useEnhancedDeterminism, 
+			PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 			PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager,
 			PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled, bool isTGS);
 

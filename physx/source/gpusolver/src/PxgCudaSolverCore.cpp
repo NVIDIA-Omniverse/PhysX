@@ -1238,7 +1238,7 @@ void PxgCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxInt3
 
 //#pragma optimize("", off)
 void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 /*maxPartitions*/,
-	PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity,
+	PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
 	PxReal* posIterResidualPinnedMem, PxU32 posIterResidualPinnedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
 	PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError)
 {
@@ -1279,6 +1279,10 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 	mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 	mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 
+	const Dy::ArticulationConstraintProcessingConfigGPU singlePassArticulationConstraintProcessingConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSinglePassConfig();
+	const Dy::ArticulationConstraintProcessingConfigGPU firstPassArticulationConstraintProcessingConfig = Dy::ArticulationConstraintProcessingConfigGPU::getFirstPassConfig();
+	const Dy::ArticulationConstraintProcessingConfigGPU secondPassArticulationConstraintProcessingConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSecondPassConfig();
+
 	PxCudaKernelParam defaultKernelParams[] =
 	{
 		PX_CUDA_KERNEL_PARAM(mSolverCoreDescd),
@@ -1303,16 +1307,36 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			}
 
 			bool doFriction = mFrictionEveryIteration ? true : (context.mNumPositionIterations - b) <= 3;
-
-			solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
-			                anyArticulationConstraints);
-
 			const PxReal biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
-			mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-			    dt, invDt, false, 0.f, biasCoefficient,
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-			    doFriction, isTgs, residualReportingEnabled);
+
+			if(solveArticulationContactLast)
+			{
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					dt, invDt, false, 0.f, biasCoefficient, firstPassArticulationConstraintProcessingConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTgs, residualReportingEnabled);
+
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
+								anyArticulationConstraints);
+
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					dt, invDt, false, 0.f, biasCoefficient, secondPassArticulationConstraintProcessingConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTgs, residualReportingEnabled);
+			}
+			else
+			{
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
+								anyArticulationConstraints);
+
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					dt, invDt, false, 0.f, biasCoefficient, singlePassArticulationConstraintProcessingConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTgs, residualReportingEnabled);
+			}
 
 			if (softbodyCore || numParticleSystemCores > 0 || femClothCore)
 			{
@@ -1510,15 +1534,36 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 				mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
 			}
 
-			solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
-			                anyArticulationConstraints);
-
 			const PxReal biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
-			mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-			    dt, invDt, true, 0.f, biasCoefficient,
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
-			    reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-			    doFriction, isTgs, residualReportingEnabled);
+
+			if(solveArticulationContactLast)
+			{
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					dt, invDt, true, 0.f, biasCoefficient, firstPassArticulationConstraintProcessingConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTgs, residualReportingEnabled);
+
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
+								anyArticulationConstraints);
+
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					dt, invDt, true, 0.f, biasCoefficient, secondPassArticulationConstraintProcessingConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTgs, residualReportingEnabled);
+			}
+			else
+			{
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
+								anyArticulationConstraints);
+
+				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
+					dt, invDt, true, 0.f, biasCoefficient, singlePassArticulationConstraintProcessingConfig,
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
+					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
+					doFriction, isTgs, residualReportingEnabled);
+			}
 
 			if (softbodyCore || numParticleSystemCores > 0 || femClothCore)
 			{

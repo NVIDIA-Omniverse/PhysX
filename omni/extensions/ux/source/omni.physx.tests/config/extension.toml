@@ -1,0 +1,161 @@
+[package]
+category = "Internal"
+authors = ["PhysX"]
+title = "PhysX Tests"
+description="PhysX tests"
+repository=""
+keywords = ["physx", "tests"]
+
+version = "107.3.0-oss.0"
+
+icon = "icons/icon.png"
+preview_image = "icons/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.foundation" = { version = "107.3.0-oss.1", exact = true }
+"omni.physx.stageupdate" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.commands" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.test" = {}
+"omni.ui" = {}
+"omni.ui.scene" = {}
+"omni.kit.stage_templates" = {}
+"omni.kit.window.toolbar" = {}
+"omni.usd" = {}
+"usdrt.scenegraph" = {}
+"omni.kit.ui_test" = {}
+
+[[python.module]]
+name = "omni.physxtests"
+
+[settings]
+exts."omni.physx.tests".subTestsFilter = ""
+
+# set to true to run all tests, false by default to reduce the chance of timeouts on ETM for some extensions
+exts."omni.physx.tests".localMode = false
+
+# physics tests asset path setting: if not overriden from command line or kit file it will get set when test ext is started 
+# up to either nucleus or S3 path (based on the setting below) and a current kitsdk version is appended
+physics.testsAssetsPath = ""
+
+[[test]]
+name = "base"
+dependencies = [
+    "omni.hydra.rtx",
+]
+args = [
+    "--/UJITSO/datastore/allowHubDataStore=false",
+    "--/app/asyncRendering=false", 
+    "--/app/file/ignoreUnsavedOnExit=true" ,     
+    "--/renderer/multiGpu/autoEnable=false",
+    "--/app/profilerBackend=\"\"",
+    "--/rtx/materialDb/syncLoads=true",
+    "--/omni.kit.plugin/syncUsdLoads=true",
+    "--/rtx/hydra/materialSyncLoads=true",
+    "--/app/renderer/resolution/width=64",
+    "--/app/renderer/resolution/height=64",
+    "--no-window",
+]
+pythonTests.exclude = [
+    # slow1
+    "omni.physxtests.tests.PhysxAutoDeformableAttachmentAPI.*",
+    "omni.physxtests.tests.PhysicsFilteredPairsAPI.*",
+    # slow2
+    "omni.physxtests.tests.PhysxParticleClothAPIDeprecated.*",
+    "omni.physxtests.tests.PhysxDeformableBodyAPIDeprecated.*",
+    # slow 3
+    "omni.physxtests.tests.PhysicsJoint.*",
+    "omni.physxtests.tests.ParticleVisualization.*",
+    "omni.physxtests.tests.PhysicsDriveAPI.*",
+    # slow 4
+    "omni.physxtests.tests.PhysxTriangleMeshCollisionAPI.*",
+    "omni.physxtests.tests.PhysicsCollisionGroup.*",
+]
+timeout = 900
+pyCoverageThreshold = 0
+
+[[test]]
+name = "slow1"
+dependencies = [
+    "omni.hydra.rtx",
+]
+args = [
+    "--/UJITSO/datastore/allowHubDataStore=false",
+    "--/app/asyncRendering=false", 
+    "--/app/file/ignoreUnsavedOnExit=true" ,     
+    "--/renderer/multiGpu/autoEnable=false",
+    "--/app/profilerBackend=\"\"",
+    "--/rtx/materialDb/syncLoads=true",
+    "--/omni.kit.plugin/syncUsdLoads=true",
+    "--/rtx/hydra/materialSyncLoads=true",
+    "--/app/renderer/resolution/width=64",
+    "--/app/renderer/resolution/height=64",
+    "--no-window",
+]
+pythonTests.include = [
+    "omni.physxtests.tests.PhysxAutoDeformableAttachmentAPI.*",
+    "omni.physxtests.tests.PhysicsFilteredPairsAPI.*",
+]
+timeout = 900
+pyCoverageThreshold = 0
+
+[[test]]
+name = "slow3"
+dependencies = [
+    "omni.hydra.rtx",
+]
+args = [
+    "--/UJITSO/datastore/allowHubDataStore=false",
+    "--/app/asyncRendering=false", 
+    "--/app/file/ignoreUnsavedOnExit=true" ,     
+    "--/renderer/multiGpu/autoEnable=false",
+    "--/app/profilerBackend=\"\"",
+    "--/rtx/materialDb/syncLoads=true",
+    "--/omni.kit.plugin/syncUsdLoads=true",
+    "--/rtx/hydra/materialSyncLoads=true",
+    "--/app/renderer/resolution/width=64",
+    "--/app/renderer/resolution/height=64",
+    "--no-window",
+]
+pythonTests.include = [
+    "omni.physxtests.tests.PhysicsJoint.*",
+    "omni.physxtests.tests.ParticleVisualization.*",
+    "omni.physxtests.tests.PhysicsDriveAPI.*",
+]
+timeout = 900
+pyCoverageThreshold = 0
+
+[[test]]
+name = "slow4"
+dependencies = [
+    "omni.hydra.rtx",
+]
+args = [
+    "--/UJITSO/datastore/allowHubDataStore=false",
+    "--/app/asyncRendering=false", 
+    "--/app/file/ignoreUnsavedOnExit=true" ,     
+    "--/renderer/multiGpu/autoEnable=false",
+    "--/app/profilerBackend=\"\"",
+    "--/rtx/materialDb/syncLoads=true",
+    "--/omni.kit.plugin/syncUsdLoads=true",
+    "--/rtx/hydra/materialSyncLoads=true",
+    "--/app/renderer/resolution/width=64",
+    "--/app/renderer/resolution/height=64",
+    "--no-window",
+]
+pythonTests.include = [
+    "omni.physxtests.tests.PhysxTriangleMeshCollisionAPI.*",
+    "omni.physxtests.tests.PhysicsCollisionGroup.*",
+]
+timeout = 900
+pyCoverageThreshold = 0

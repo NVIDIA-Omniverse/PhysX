@@ -1,0 +1,86 @@
+{
+    "omni.physx.graph.SceneQueryOverlapBoxAll": {
+        "version": 1,
+        "description": "Outputs the rigid bodies and colliders that overlap the input box.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Overlap, Box, All",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "position": {
+                "type": ["pointf[3]", "pointd[3]"],
+                "description": "Box center position.",
+                "uiName": "Position",
+                "unvalidated": true
+            },
+            "dimensions": {
+                "type": ["float[3]", "double[3]"],
+                "description": "Box dimensions",
+                "uiName": "Dimensions",
+                "unvalidated": true
+            },
+            "rotation": {
+                "type": [ "float[3]", "double[3]" ],
+                "description": "Box rotation in XYZ order Euler angles.",
+                "uiName": "Rotation",
+                "unvalidated": true
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "colliderPrimPaths": {
+                "uiName": "Collider Prim Paths (deprecated)",
+                "description": [
+                    "A list of paths of the collider prims that overlap the input box. Deprecated, please use the Collider Prims output instead."
+                ],
+                "type": "token[]",
+                "deprecated": "Use the Collider Prims output instead"
+            },
+            "colliderPrims": {
+                "uiName": "Collider Prims",
+                "description": [
+                    "A list of collider prims that overlap the input box."
+                ],
+                "type": "target"
+            },
+            "bodyPrimPaths": {
+                "uiName": "Body Prim Paths (deprecated)",
+                "description": [
+                    "A list of paths of the associated body prims for the collider prims that overlap the input box. Deprecated, please use the Body Prims output instead."
+                ],
+                "type": "token[]",
+                "deprecated": "Use the Body Prims output instead"
+            },
+            "bodyPrims": {
+                "uiName": "Body Prims",
+                "description": [
+                    "A list of the associated body prims for the collider prims that overlap the input box."
+                ],
+                "type": "target"
+            }            
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

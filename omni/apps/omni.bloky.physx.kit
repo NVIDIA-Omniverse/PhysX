@@ -1,0 +1,32 @@
+[package]
+title = "Bloky PhysX"
+description = "Physics focused application. A base set of dependencies for PhysX."
+version = "107.3.0-oss.0"
+
+[dependencies]
+"omni.app.dev" = {}
+
+"omni.physx.bundle" = { version = "107.3.0-oss.0", exact = true }
+
+"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.tests.visual" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.vehicle.tests" = {}
+
+[settings.app.window]
+title = "Bloky PhysX"
+
+# physics custom settings
+[settings]
+physics.developmentMode = true
+app.fastShutdown = true
+
+# Extensions
+###############################
+[settings.app.exts]
+folders = [
+    "${app}/../extsPhysics",
+    "${kit}/apps",
+    "${kit}/exts",
+    "${kit}/extscore",
+    "${kit}/../../../_exts",
+]

@@ -37,6 +37,8 @@
 #include "PxgAggregateDesc.h"
 #include "CmTask.h"
 #include "foundation/PxPinnedArray.h"
+#include "foundation/PxBitMap.h"
+#include "foundation/PxPinnedBitMap.h"
 
 namespace physx
 {
@@ -85,7 +87,7 @@ namespace physx
 												PxCudaContextManager* cudaContextManager,
 												PxgHeapMemoryAllocatorManager* heapMemoryManager,
 												const PxGpuDynamicsMemoryConfig& config,
-												Bp::BroadPhase& bp, Bp::BoundsArray& boundsArray, PxFloatArrayPinned& contactDistance,
+												Bp::BroadPhase& bp, Bp::BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
 												PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
 												PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode);
 
@@ -114,7 +116,6 @@ namespace physx
 						void				processFoundPairs();
 						void				processLostPairs();
 
-//		PX_FORCE_INLINE	PxBitMapPinned&		getAggregatedBoundMap()				{ return mAggregatedBoundMap; }
 		PX_FORCE_INLINE	CUdeviceptr			getAggregatedBounds()				{ return mAggregatedBoundsBuf.getDevicePtr(); }
 		PX_FORCE_INLINE	CUdeviceptr			getAddedHandles()					{ return mAddedHandleBuf.getDevicePtr(); }
 		PX_FORCE_INLINE	CUdeviceptr			getRemovedHandles()					{ return mRemovedHandleBuf.getDevicePtr(); }
@@ -136,23 +137,23 @@ namespace physx
 
 		PxArray<PxgAggregate>				mAggregates;				//cpu mirror
 
-		PxPinnedArray<PxgAggregatePair>		mAggregatePairs;
-		PxPinnedArray<Bp::AggregateHandle>	mDirtyAggregateIndices;
-		PxPinnedArray<PxgAggregate>			mDirtyAggregates;
+		PxPinnedArraySafe<PxgAggregatePair>	mAggregatePairs;
+		PxPinnedArraySafe<Bp::AggregateHandle>	mDirtyAggregateIndices;
+		PxPinnedArraySafe<PxgAggregate>		mDirtyAggregates;
 
 		//found and lost pairs for agg vs agg and agg vs actor
 		PxPinnedArray<PxgBroadPhasePair>	mFoundPairs;
 		PxPinnedArray<PxgBroadPhasePair>	mLostPairs;
 
-						PxInt32ArrayPinned	mDirtyBoundIndices;
-						PxInt32ArrayPinned	mDirtyBoundStartIndices; //start index of each aggregate in the dirty bound indices list
+		PxInt32ArrayPinnedSafe				mDirtyBoundIndices;
+		PxInt32ArrayPinnedSafe				mDirtyBoundStartIndices; //start index of each aggregate in the dirty bound indices list
 
-						PxInt32ArrayPinned  mRemovedAggregatedBounds;
-						PxInt32ArrayPinned	mAddedAggregatedBounds;
+		PxInt32ArrayPinnedSafe				mRemovedAggregatedBounds;
+		PxInt32ArrayPinnedSafe				mAddedAggregatedBounds;
 
-						Cm::DeferredIDPool	mAggregatesIdPool; //generate the remap id between pxgbodysim and pxgaggregate
-						PxBitMap			mDirtyAggregateBitMap;
-						PxBitMapPinned		mAggregatedBoundMap;
+		Cm::DeferredIDPool					mAggregatesIdPool; //generate the remap id between pxgbodysim and pxgaggregate
+		PxBitMap							mDirtyAggregateBitMap;
+		PxBitMapPinned						mAggregatedBoundMap;
 
 		PxArray<PxgAggregateBuffer*>		mAggregateBufferArray;
 

@@ -1,0 +1,64 @@
+{
+    "omni.physx.graph.ImmediateComputeMeshIntersectingFaces": {
+        "version": 1,
+        "description": "Computes indices of intersecting faces between pairs of Meshes.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Compute Mesh Intersecting Faces",
+        "tags": ["physics", "physx", "simulation", "collision", "faces", "intersection", "immediate" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourcePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+            },
+            "overlapsPair0": {
+                "description": [ "Path of the first geometry from the Prims Bundle to check for intesection with corresponding item at same index in overlapsPair1 input attribute." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            },
+            "overlapsPair1": {
+                "description": [ "Path of the second geometry from the Prims Bundle to check for intesection with corresponding item at same index in overlapsPair0 input attribute" ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            }
+       },       
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlaps": {
+                "description": [ "Array of booleans where 'True' value signals that a corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index do actually overlap." ],
+                "memoryType": "cpu",
+                "type": "bool[]"
+            },
+            "faceIndices":
+            {
+                "description": ["Bundle of child prims with faces0 / faces1 attributes containing indices of faces in source meshes that intersect each other"],
+                "memoryType": "cpu",
+                "type": "bundle"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "normalf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "pointf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "float[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "double[3]": ["physx::PxVec3d", ["PxPhysicsAPI.h"]],
+                "float[4]": ["physx::PxVec4", ["PxPhysicsAPI.h"]],
+                "double[4]": ["physx::PxVec4d", ["PxPhysicsAPI.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

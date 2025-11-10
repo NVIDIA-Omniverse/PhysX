@@ -82,7 +82,7 @@ namespace physx
 		void syncUnconstrainedVelocities();
 
 		void propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime,
-			const PxReal biasCoefficient, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
+			const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
 			CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled = false);
 
 		//These two methods are for articulation vs soft body interaction

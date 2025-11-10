@@ -1,0 +1,55 @@
+{
+    "omni.physx.graph.SceneQueryOverlapPrimAny": {
+        "version": 1,
+        "description": "Checks whether any colliders overlap the query input Prim.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Overlap, Prim, Any",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primPath": {
+                "type": "token",
+                "description": "Prim path to check against. This must be a geometric type (UsdGeom). Deprecated, please use the Prim input instead.",
+                "uiName": "Prim Path (deprecated)",
+                "deprecated": "Use the Prim input instead."
+            },
+            "prim": {
+                "type": "target",
+                "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+                "uiName": "Prim"
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlap": {
+                "description": [
+                    "Returns true if any colliders overlap with the input Prim."
+                ],
+                "type": "bool"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

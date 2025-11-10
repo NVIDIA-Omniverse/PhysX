@@ -1729,8 +1729,7 @@ void OmniPvdPxSampler::onObjectAdd(const physx::PxBase& object)
 		}
 		case physx::PxConcreteType::eARTICULATION_MIMIC_JOINT:
 		{
-			const PxArticulationMimicJoint& artMimicJoint = static_cast<const PxArticulationMimicJoint&>(object);
-			streamArticulationMimicJoint(artMimicJoint);
+			// this is added in NpScene::addArticulationMimicJointInternal		
 			break;
 		}
 
@@ -2013,6 +2012,16 @@ OmniPvdPxSampler* OmniPvdPxSampler::getInstance()
 {
 	PX_ASSERT(&physx::NpPhysics::getInstance() != NULL);
 	return &physx::NpPhysics::getInstance() ? physx::NpPhysics::getInstance().mOmniPvdSampler : NULL;
+}
+
+OmniPvdPxSampler* OmniPvdPxSampler::getSamplingInstance()
+{
+	OmniPvdPxSampler* sampler = getInstance();
+	if (sampler)
+	{
+		return sampler->isSampling() ? sampler : NULL;
+	}
+	return NULL;
 }
 
 

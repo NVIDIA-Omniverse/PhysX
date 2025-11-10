@@ -569,6 +569,15 @@ static TetrahedronMeshData* loadTetrahedronMeshData(PxInputStream& stream)
 	const PxU32 nbTetIndices = 4 * data->mNbTetrahedrons;
 	readIndices(serialFlags, tets, nbTetIndices, data->has16BitIndices(), mismatch, stream);
 		
+#if PX_CHECKED
+	if (!data->checkTetrahedronIndices())
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Invalid tetrahedron indices.");
+		PX_DELETE(data);
+		return NULL;
+	}		
+#endif
+
 	// Import local bounds
 	data->mGeomEpsilon = readFloat(mismatch, stream);
 	readFloatBuffer(&data->mAABB.minimum.x, 6, mismatch, stream);
@@ -623,6 +632,14 @@ static bool loadDeformableVolumeMeshData(PxInputStream& stream, DeformableVolume
 	const PxU32 nbTetIndices = 4 * nbTetrahedrons;
 	readIndices(serialFlags, tets, nbTetIndices, data.mCollisionMesh.has16BitIndices(), mismatch, stream);
 	
+#if PX_CHECKED
+	if (!data.mCollisionMesh.checkTetrahedronIndices())
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Invalid tetrahedron indices.");
+		return false;
+	}	
+#endif
+
 	//const PxU32 nbSurfaceTriangleIndices = 3 * nbSurfaceTriangles;
 	//readIndices(serialFlags, surfaceTriangles, nbSurfaceTriangleIndices, data.mCollisionMesh.has16BitIndices(), mismatch, stream);
 
@@ -755,6 +772,14 @@ static bool loadDeformableVolumeMeshData(PxInputStream& stream, DeformableVolume
 
 		const PxU32 nbGridModelIndices = 4 * nbGridModelTetrahedrons;
 		readIndices(serialFlags, data.mSimulationMesh.mTetrahedrons, nbGridModelIndices, data.mSimulationMesh.has16BitIndices(), mismatch, stream);
+
+#if PX_CHECKED
+		if (!data.mSimulationMesh.checkTetrahedronIndices())
+		{
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Invalid tetrahedron indices.");
+			return false;
+		}		
+#endif
 
 		//stream.read(data.mGridModelVerticesInvMass, sizeof(PxVec4) * nbGridModelVertices);
 		stream.read(data.mSimulationMesh.mVertices, sizeof(PxVec3) * nbGridModelVertices);

@@ -1,0 +1,102 @@
+[repo]
+logging = "warn"
+extra_tool_paths = [ "${root}/_build/target-deps/kit_sdk_release/dev", "${root}/_build/target-deps/kit_sdk_debug/dev",]
+
+[repo_build]
+entry_point = "${root}/tools/repoman/build.py:setup_repo_tool"
+build_configs = ["release"]
+default_build_config = ["release"]
+
+[repo_precache_exts]
+enabled = true
+kit_extra_args = [ "--portable-root", "${root}/_build/${platform}/${config}",]
+apps = [ "${root}/_build/${platform}/${config}/apps/precacheforbuild.kit"]
+ext_folders = [ "${root}/_build/${platform}/${config}/extsPhysics", "${root}/_build/${platform}/${config}/extsPhysicsRepo",]
+kit_path = "${root}/_build/${platform}/${config}/kit/kit${exe_ext}"
+cache_path = "${root}/_build/${platform}/${config}/exts"
+kit_parallel_pull = true
+generate_version_lock = false
+generate_version_lock_overwrite = false
+kit_omit_ext_version = true
+generated_app_path = ""
+
+[repo.tokens]
+abi = "2.35"
+
+[repo_build.premake]
+linux_x86_64_cxx_abi = true
+
+[repo_build.fetch]
+packman_host_files_to_pull = [ "${root}/deps/host-deps.packman.xml",]
+packman_target_files_to_pull = [ "${root}/deps/target-deps.packman.xml", "${root}/deps/kit-sdk-target-deps.packman.xml", "${root}/deps/kit-sdk-target-deps-import.packman.xml",]
+
+[repo_build.vscode]
+python = "${root}/_build/target-deps/python"
+write_python_paths_in_settings_json = true
+generate_python_env_file = false
+
+[repo_build.msbuild]
+sln_file = "Physics.sln"
+vs_version = "vs2019"
+link_host_toolchain = true
+
+# Uncomment below to set a specific WinSDK version if build fails with the autoselected one
+# winsdk_version = "10.0.19041.0"
+
+[repo_build.pre_build]
+commands = [ [ "${root}/repo${shell_ext}", "precache_exts", "-c", "${config}", "${precache_flag_0}",],]
+
+[repo_build.build]
+job_count = 16
+
+[repo_precache_exts.kit_env_vars]
+OMNI_TRUSTED_CERTIFICATE = "ALL"
+
+[repo_precache_exts.generated_app]
+add_test_deps = false
+
+[repo_build.vscode.python_env]
+PYTHONPATH = [ "$$$${PYTHONPATH}", "${env:PYTHONPATH}", "$root/_build/pip-packages", "$repo_deps/*", "$root/tools/repoman", "$root/_build/$platform/$config/kit/extscore/*", "$root/_build/$platform/$config/kit/kernel/py", "$root/_build/$platform/$config/exts/omni.kit.pip_archive/pip_prebundle", "$root/_build/$platform/$config/exts/*", "$root/_build/$platform/$config/extbuild/*", "$root/_build/$platform/$config/extsPhysics/*", "$root/_build/$platform/$config/extsPhysicsRepo/*", "$root/_build/target-deps/usd/$config/lib/python/*", "$root/_build/target-deps/usd_ext_physics/$config/lib/python/*",]
+PATH = [ "$$$${PATH}", "$root/_build/$platform/$config/kit", "$root/_build/$platform/$config/kit/plugins", "$root/_build/$platform/$config/kit/plugins/carb_gfx", "$root/_build/$platform/$config/kit/plugins/rtx", "$root/_build/$platform/$config/kit/exts/*/bin", "$root/_build/$platform/$config/kit/extscore/*/bin", "$root/_build/$platform/$config/exts/*/bin", "$root/_build/$platform/$config/extsPhysics/*/bin", "$root/_build/$platform/$config/extsPhysicsRepo/*/bin",]
+
+[repo_version_reset.exts.physx]
+include = [ "omni.convexdecomposition", "omni.physics.tensors", "omni.physx*", "omni.physics*", "omni.usd.schema.*", "omni.usdphysics*", "omni.kit.property.physx", "omni.usd.metrics.assembler.physics",]
+use_inclexcl_lists_as_lock_list = true
+kit_files = [ "apps/omni.bloky.physx.kit",]
+
+[repo_build.fetch.pip."platform_target:linux-aarch64"]
+gather_licenses_path = ""
+
+[repo_build.docker]
+enabled = false
+
+[repo_format]
+use_current_year_as_end_year = true
+license_preamble = '''
+SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause
+'''
+license_text = ""
+
+[repo_format.cpp]
+files.include = [
+    "extensions/**/*",
+    "include/**/*",
+]
+files.exclude = [
+  "extensions/runtime/source/omni.convexdecomposition/plugins/Vector.h",
+  "extensions/runtime/source/omni.convexdecomposition/plugins/Vector.inl",
+  "extensions/runtime/source/omni.convexdecomposition/plugins/Volume.cpp",
+  "extensions/runtime/source/omni.convexdecomposition/plugins/Volume.h",
+  "extensions/common/include/common/utilities/pyboost11.h",
+]
+files.extensions = [".h", ".inl", ".cpp", ".c", ".cu", ".cuh"]
+
+[repo_format.python]
+files.include = [
+    "extensions/**/*",
+    "tools/repoman/version_reset.py",
+    "tools/repoman/build.py",
+    "schema/tools/gen_unit_database.py",
+]
+maintain_legal_blurbs = true

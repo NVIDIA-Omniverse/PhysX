@@ -44,6 +44,24 @@ namespace physx
 {
 #endif
 	/*!
+	Allocation helper with cookie parameter that can be overloaded for pinned memory support
+	*/
+	template <class AllocT>
+	PX_INLINE void* PxBitMapAlloc(AllocT& a, PxU32 bytes, const char* file, int line, uint32_t* /*cookie*/)
+	{
+		return a.allocate(bytes, file, line);
+	}
+
+	/*!
+	Deallocation helper with cookie parameter that can be overloaded for pinned memory support
+	*/
+	template <class AllocT>
+	PX_INLINE void PxBitMapDealloc(AllocT& a, void* ptr, uint32_t* /*cookie*/)
+	{
+		a.deallocate(ptr);
+	}
+
+	/*!
 	Hold a bitmap with operations to set,reset or test given bit.
 
 	We inhibit copy to prevent unintentional copies. If a copy is desired copy() should be used or
@@ -76,7 +94,7 @@ namespace physx
 		PX_INLINE void release()
 		{
 			if(mMap && !isInUserMemory())
-				mAllocator.deallocate(mMap);
+				PxBitMapDealloc(mAllocator, mMap, NULL);
 			mMap = NULL;
 		}
 
@@ -445,15 +463,16 @@ namespace physx
 			const PxU32 newWordCount = (size + 31) >> 5;
 			if (newWordCount > getWordCount())
 			{
-				PxU32* newMap = reinterpret_cast<PxU32*>(mAllocator.allocate(newWordCount * sizeof(PxU32), PX_FL));
+				uint32_t cookie = 0;
+				void* newMap = PxBitMapAlloc(mAllocator, newWordCount * sizeof(PxU32), PX_FL, &cookie);
 				if (mMap)
 				{
 					PxMemCopy(newMap, mMap, getWordCount() * sizeof(PxU32));
 					if (!isInUserMemory())
-						mAllocator.deallocate(mMap);
+						PxBitMapDealloc(mAllocator, mMap, &cookie);
 				}
-				PxMemSet(newMap + getWordCount(), 0, (newWordCount - getWordCount()) * sizeof(PxU32));
-				mMap = newMap;
+				mMap = reinterpret_cast<PxU32*>(newMap);
+				PxMemSet(mMap + getWordCount(), 0, (newWordCount - getWordCount()) * sizeof(PxU32));
 				// also resets the isInUserMemory bit
 				mWordCount = newWordCount;
 			}
@@ -465,10 +484,11 @@ namespace physx
 			if (newWordCount > getWordCount())
 			{
 				if (mMap && !isInUserMemory())
-					mAllocator.deallocate(mMap);
+					PxBitMapDealloc(mAllocator, mMap, NULL);
 				// also resets the isInUserMemory bit
 				mWordCount = newWordCount;
-				mMap = reinterpret_cast<PxU32*>(mAllocator.allocate(mWordCount * sizeof(PxU32), PX_FL));
+				void* newMap = PxBitMapAlloc(mAllocator, mWordCount * sizeof(PxU32), PX_FL, NULL);
+				mMap = reinterpret_cast<PxU32*>(newMap);
 			}
 		}
 
@@ -503,7 +523,7 @@ namespace physx
 	};
 
 	typedef PxBitMapBase<PxAllocator> PxBitMap;
-	typedef PxBitMapBase<PxVirtualAllocator> PxBitMapPinned;
+
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

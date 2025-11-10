@@ -1,0 +1,41 @@
+[package]
+category = "simulation"
+authors = ["PhysX"]
+title = "PhysX Property Widget"
+description="View and edit PhysX property values"
+repository=""
+keywords = ["kit", "usd", "property", "physx"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usd" = {}
+"omni.ui" = {}
+"omni.kit.window.property" = {}
+"omni.kit.property.usd" = {}
+"omni.kit.property.material" = {}
+"omni.kit.material.library" = {}
+"omni.kit.usd_undo" = {}
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.commands" = { version = "107.3.0-oss.0", exact = true }
+
+[[python.module]]
+name = "omni.kit.property.physx"
+
+[[test]]
+dependencies = [
+]
+
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions."

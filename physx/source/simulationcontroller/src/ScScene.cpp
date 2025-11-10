@@ -583,7 +583,7 @@ namespace
 #endif
 }
 
-static Bp::AABBManagerBase* createAABBManagerCPU(const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PxFloatArrayPinned* contactDistances, PxVirtualAllocator& allocator, PxU64 contextID)
+static Bp::AABBManagerBase* createAABBManagerCPU(const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PxFloatArrayPinnedSafe* contactDistances, PxVirtualAllocator& allocator, PxU64 contextID)
 {
 	return PX_NEW(Bp::AABBManager)(*broadPhase, *boundsArray, *contactDistances,
 		desc.limits.maxNbAggregates, desc.limits.maxNbStaticShapes + desc.limits.maxNbDynamicShapes, allocator, contextID,
@@ -592,7 +592,7 @@ static Bp::AABBManagerBase* createAABBManagerCPU(const PxSceneDesc& desc, Bp::Br
 
 #if PX_SUPPORT_GPU_PHYSX
 static Bp::AABBManagerBase* createAABBManagerGPU(PxsKernelWranglerManager* kernelWrangler, PxCudaContextManager* cudaContextManager, PxsHeapMemoryAllocatorManager* heapMemoryAllocationManager,
-												const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PxFloatArrayPinned* contactDistances, PxVirtualAllocator& allocator, PxU64 contextID)
+												const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PxFloatArrayPinnedSafe* contactDistances, PxVirtualAllocator& allocator, PxU64 contextID)
 {
 	return PxvGetPhysXGpu(true)->createGpuAABBManager(
 		kernelWrangler,
@@ -870,7 +870,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		mBoundsArray = PX_NEW(Bp::BoundsArray)(allocator);
 	}
 	
-	mContactDistance = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxFloatArrayPinned), "ContactDistance"), PxFloatArrayPinned)(allocator);
+	mContactDistance = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxFloatArrayPinnedSafe), "ContactDistance"), PxFloatArrayPinnedSafe)(allocator.getCallback());
 	mHasContactDistanceChanged = false;
 
 	const bool useEnhancedDeterminism = mPublicFlags & PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
@@ -887,7 +887,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 			mDynamicsContext = createDynamicsContext
 			(&mLLContext->getNpMemBlockPool(), mLLContext->getScratchAllocator(),
 				mLLContext->getTaskPool(), mLLContext->getSimStats(), &mLLContext->getTaskManager(), allocatorCallback, &getMaterialManager(),
-				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.maxBiasCoefficient,
+				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST, desc.maxBiasCoefficient,
 				desc.flags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION, desc.getTolerancesScale().length,
 				desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
 		}
@@ -896,7 +896,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 			mDynamicsContext = createTGSDynamicsContext
 			(&mLLContext->getNpMemBlockPool(), mLLContext->getScratchAllocator(),
 				mLLContext->getTaskPool(), mLLContext->getSimStats(), &mLLContext->getTaskManager(), allocatorCallback, &getMaterialManager(),
-				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism,
+				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST,
 				desc.getTolerancesScale().length, desc.flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS,
 				desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
 		}
@@ -923,7 +923,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		// PT: why are we using mPublicFlags in one case and desc in other cases?
 
 		mDynamicsContext = physxGpu->createGpuDynamicsContext(mLLContext->getTaskPool(), mGpuWranglerManagers, mLLContext->getCudaContextManager(),
-			desc.gpuDynamicsConfig, *mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions, mEnableStabilization, useEnhancedDeterminism, 
+			desc.gpuDynamicsConfig, *mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST,
 			desc.maxBiasCoefficient, desc.gpuComputeVersion, mLLContext->getSimStats(), mHeapMemoryAllocationManager, 
 			desc.flags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION, desc.flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS,
 			desc.solverType, desc.getTolerancesScale().length, directAPI, contextID, desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
@@ -1148,7 +1148,7 @@ void Sc::Scene::release()
 	PX_DELETE(mLLContext);
 
 	// PT: TODO: revisit this
-	mContactDistance->~PxFloatArrayPinned();
+	mContactDistance->~PxFloatArrayPinnedSafe();
 	PX_FREE(mContactDistance);
 
 	PX_DELETE(mMemoryManager);

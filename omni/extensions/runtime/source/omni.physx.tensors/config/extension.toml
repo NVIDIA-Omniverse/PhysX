@@ -1,0 +1,29 @@
+[package]
+version = "107.3.0-oss.0"
+authors = ["PhysX"]
+
+title = "PhysX Tensor API Implementation"
+description="PhysX Tensor API Implementation"
+repository=""
+keywords = ["omniverse", "kit", "physics", "physx", "tensors"]
+category = "simulation"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.physics.tensors" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd" = {}
+
+[[native.plugin]]
+path = "bin/*.plugin"
+recursive = false

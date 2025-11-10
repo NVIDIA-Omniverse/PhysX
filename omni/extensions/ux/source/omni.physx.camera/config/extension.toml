@@ -1,0 +1,59 @@
+[package]
+title = "Physx Camera"
+description="Provide several camera behaviors that follow animated and simulated objects on the stage."
+repository = ""
+keywords = ["camera"]
+category = "simulation"
+
+version = "107.3.0-oss.0"
+authors = ["PhysX"]
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.ui" = {}
+"omni.kit.window.property" = {}
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.demos" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.viewport.utility" = {}
+"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.vehicle" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true, optional=true }
+
+[[python.module]]
+name = "omni.physxcamera"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[[test]]
+timeout = 1200
+dependencies = [
+   "omni.physx.tests",
+   "omni.hydra.rtx",
+]
+args = [
+   "--no-window",
+   "--/app/asyncRendering=false", 
+   "--/app/file/ignoreUnsavedOnExit=true" , 
+   "--/renderer/multiGpu/autoEnable=false",
+   "--/app/profilerBackend=\"\"",
+   "--/rtx/materialDb/syncLoads=true",
+   "--/omni.kit.plugin/syncUsdLoads=true",
+   "--/rtx/hydra/materialSyncLoads=true",
+   "--/app/renderer/resolution/width=64",
+   "--/app/renderer/resolution/height=64",
+   "--/rtx/rendermode=\"rtx\""
+]
+
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions."

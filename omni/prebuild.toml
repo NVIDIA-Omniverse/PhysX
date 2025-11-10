@@ -1,0 +1,34 @@
+########################################################################################################################
+# Common section:
+########################################################################################################################
+
+files = []
+link = [
+    ["_build/target-deps/kit_sdk_$config/", "_build/$platform/$config/kit"],
+    ["_build/target-deps/kit_sdk_$config/python", "_build/$platform/$config/python"],
+]
+
+########################################################################################################################
+# windows-x86_64 platform:
+########################################################################################################################
+
+[windows-x86_64]
+copy = [
+    ["_build/target-deps/kit_sdk_$config/python.bat", "_build/$platform/$config/"],
+]
+link = [
+]
+
+
+########################################################################################################################
+# linux-x86_64 platform:
+########################################################################################################################
+
+[linux-x86_64]
+copy = [
+    ["_build/target-deps/kit_sdk_$config/python.sh", "_build/$platform/$config/"],
+    # have a bat copy so it can be called from repo.toml-repo_docs-python_path
+    ["_build/target-deps/kit_sdk_$config/python.sh", "_build/$platform/$config/python.bat"],
+]
+link = [
+]

@@ -50,6 +50,8 @@ OMNI_PVD_ENUM_VALUE		(PxSceneFlag, eENABLE_GPU_DYNAMICS)
 OMNI_PVD_ENUM_VALUE		(PxSceneFlag, eENABLE_ENHANCED_DETERMINISM)
 OMNI_PVD_ENUM_VALUE		(PxSceneFlag, eENABLE_FRICTION_EVERY_ITERATION)
 OMNI_PVD_ENUM_VALUE		(PxSceneFlag, eENABLE_DIRECT_GPU_API)
+OMNI_PVD_ENUM_VALUE		(PxSceneFlag, eSOLVE_ARTICULATION_CONTACT_LAST)
+
 OMNI_PVD_ENUM_END		(PxSceneFlag)
 
 OMNI_PVD_ENUM_BEGIN		(PxMaterialFlag)
@@ -392,7 +394,7 @@ OMNI_PVD_CLASS_END              (PxAggregate)
 // PxConstraint
 ////////////////////////////////////////////////////////////////////////////////
 // Just a place holder class to be extended and improved in
-// https://jirasw.nvidia.com/browse/PX-3394
+// PX-3394
 ////////////////////////////////////////////////////////////////////////////////
 OMNI_PVD_CLASS_BEGIN				(PxConstraint)
 OMNI_PVD_CLASS_END					(PxConstraint)

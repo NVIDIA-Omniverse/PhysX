@@ -1,0 +1,40 @@
+[package]
+title = "PhysX Vehicle"
+description="Exposes PhysX vehicle authoring capability, default input control and samples."
+repository = ""
+keywords = ["physics", "physx", "vehicle"]
+category = "simulation"
+authors = ["PhysX"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme = "docs/README.md"
+
+support_level = "Example"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.ui" = {}
+"omni.kit.window.property" = {}
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.demos" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+
+[[python.module]]
+name = "omni.physxvehicle"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[[test]]
+dependencies = [
+]
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions."

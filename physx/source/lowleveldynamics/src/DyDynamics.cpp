@@ -98,11 +98,11 @@ struct SolverIslandObjects
 Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
 								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, 
 								PxsMaterialManager* materialManager, IG::SimpleIslandManager& islandManager, PxU64 contextID,
-								bool enableStabilization, bool useEnhancedDeterminism,
+								bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
 								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled)
 {
 	return PX_NEW(DynamicsContext)(	memBlockPool, scratchAllocator, taskPool, simStats, taskManager, allocatorCallback, materialManager, islandManager, contextID,
-									enableStabilization, useEnhancedDeterminism, maxBiasCoefficient, frictionEveryIteration, lengthScale, isResidualReportingEnabled);
+									enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, frictionEveryIteration, lengthScale, isResidualReportingEnabled);
 }
 
 void DynamicsContext::destroy()
@@ -122,11 +122,12 @@ DynamicsContext::DynamicsContext(	PxcNpMemBlockPool* memBlockPool,
 									PxU64 contextID,
 									bool enableStabilization,
 									bool useEnhancedDeterminism,
+									bool solveArticulationContactLast,
 									PxReal maxBiasCoefficient,
 									bool frictionEveryIteration,
 									PxReal lengthScale,
 									bool isResidualReportingEnabled) :
-	DynamicsContextBase				(memBlockPool, taskPool, simStats, allocatorCallback, materialManager, islandManager, contextID, maxBiasCoefficient, lengthScale, enableStabilization, useEnhancedDeterminism, isResidualReportingEnabled),
+	DynamicsContextBase				(memBlockPool, taskPool, simStats, allocatorCallback, materialManager, islandManager, contextID, maxBiasCoefficient, lengthScale, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, isResidualReportingEnabled),
 	mSolveFrictionEveryIteration	(frictionEveryIteration)
 {
 	createThresholdStream(*allocatorCallback);
@@ -1601,7 +1602,7 @@ public:
 					params.errorAccumulator = mContext.isResidualReportingEnabled() ? &mThreadContext.getSimStats().contactErrorAccumulator : NULL;
 
 					//Only one task - a small island so do a sequential solve (avoid the atomic overheads)
-					solveV_Blocks(params, mContext.solveFrictionEveryIteration());
+					solveV_Blocks(params, mContext.solveFrictionEveryIteration(), mContext.mSolveArticulationContactLast);
 
 					PxSolverBodyData* solverBodyData2 = solverBodyDatas + mSolverBodyOffset + 1;
 					integrate(mIslandSim, solverBodyData2, mObjects.bodies, mThreadContext.motionVelocityArray, solverBodies, mIslandContext.mCounts.bodies, mContext.mDt, mContext.mEnableStabilization);
@@ -2260,7 +2261,7 @@ void solveParallel(SOLVER_PARALLEL_METHOD_ARGS)
 void DynamicsContext::solveParallel(SolverIslandParams& params, IG::IslandSim& islandSim, 
 	Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator)
 {
-	solveVParallelAndWriteBack(params, deltaV, errorAccumulator, mSolveFrictionEveryIteration);
+	solveVParallelAndWriteBack(params, deltaV, errorAccumulator, mSolveFrictionEveryIteration, mSolveArticulationContactLast);
 	integrateCoreParallel(params, deltaV, islandSim);
 }
 

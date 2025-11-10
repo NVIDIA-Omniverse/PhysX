@@ -1,0 +1,151 @@
+# all folders starting with _ are local
+_*/
+# exclude local website repo, used for publishing
+website/
+
+# exclude version files generated during guide build
+VERSION_MAJOR_MINOR
+VERSION_MAJOR
+PHYSX_VERSION
+
+.lastrun
+.lastformat
+.lastverify
+.DS_Store
+**/.vscode/ipch
+Makefile
+*.swp
+*.swo
+
+# byte-compiled python files
+*.py[cod]
+
+# pip cache
+.cache
+
+# shader cache
+.nv
+
+# packman package files
+*@*.7z
+*@*.zip
+*@*.txt
+
+# packaged unittest archives
+/test_binaries-*.zip
+/tests-*.zip
+*.sh1
+outputs/fps.txt
+
+# patch files
+*.diff
+*.patch
+
+# binaries
+*.ico
+*.bmp
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.tga
+*.psd
+*.raw
+*.exr
+*.hdr
+*.dds
+*.ktx
+*.spv
+*.dxbc
+*.dxil
+*.gltf
+*.glb
+*.fbx
+*.usd
+*.usda
+*.usdz
+*.obj
+*.mat
+
+*.suo
+
+# ignore the autoexec.lst file
+autoexec.lst
+
+# don't ignore carb.usd folder
+!*.usd/
+
+NvfPerflog.txt
+imgui.ini
+CON
+
+# packman .user config
+*.packman.xml.user
+*.user.lua
+
+# ignore generated file from extension locking
+exts.deps.generated.kit
+
+# allow anything in data and docs/images (both under Git LFS management)
+!data/**
+!docs/images/**
+!extensions/**/data/**
+!extensions/**/docs/**
+!samples/clashdetection/**/data/**
+
+# allow anything in schema/source except __pycache__
+!schema/source/**
+schema/source/**/__pycache__/**
+
+# ignore the cache
+data/cache
+shadercache/
+
+# ignore inlined HLSL files and the generated rule files used to generate these
+generate_inline_shader_rule.*
+generate_inline_shader_header_rule.*
+*.inline
+
+/.vs
+
+.nvidia-omniverse/
+
+# ignore shaders
+shaders
+
+# ignore mdl
+mdl
+.vscode/settings.json
+omni_physics-LICENSE.txt
+
+# ignore test output
+test/
+.local/
+
+# ignore models directory and all subdirectories
+data/models/
+
+# ignore composed/copied tomls and deps for ux and runtime
+extensions/**/prebuild.toml
+extensions/**/repo.toml
+extensions/**/repo_tools.toml
+extensions/**/deps
+nsight_ut_vs_call.bat
+
+# ignore symlinked compile_commands in root
+/compile_commands.json
+
+# ignore clangd index
+.cache/clangd/index/*
+
+# docs generated version files
+VERSION_MAJOR
+VERSION_MAJOR_MINOR
+
+# EXCEPTIONS
+# readd image formats in the dev guide
+!dev_guide/**/*.png
+!dev_guide/**/*.jpg
+!dev_guide/**/*.jpeg
+!dev_guide/**/*.gif
+!extensions/doc_images/*.png

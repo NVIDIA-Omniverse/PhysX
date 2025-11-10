@@ -233,6 +233,14 @@ bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMe
 		}
 	}
 
+#if PX_CHECKED
+	if (!collisionMesh.checkTetrahedronIndices())
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Invalid tetrahedron indices.");
+		return false;
+	}	
+#endif
+
 	//copy the material index list if any:
 	if (collisionMeshDesc.materialIndices.data)
 	{

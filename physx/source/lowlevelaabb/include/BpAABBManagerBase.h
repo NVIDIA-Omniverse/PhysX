@@ -31,7 +31,7 @@
 
 #include "foundation/PxAllocator.h"
 #include "foundation/PxPinnedArray.h"
-#include "foundation/PxBitMap.h"
+#include "foundation/PxPinnedBitMap.h"
 #include "foundation/PxSList.h"
 #include "foundation/PxBitUtils.h"
 #include "BpVolumeData.h"
@@ -101,9 +101,9 @@ namespace Bp
 		}
 	};
 
-	typedef	PxPinnedArray<Bp::FilterGroup::Enum>	GroupsArrayPinned;
-	typedef	PxPinnedArray<VolumeData>				VolumeDataArrayPinned;
-	typedef	PxPinnedArray<ShapeHandle>				ShapeHandleArrayPinned;
+	typedef	PxPinnedArraySafe<Bp::FilterGroup::Enum>	GroupsArrayPinnedSafe;
+	typedef	PxPinnedArraySafe<VolumeData>				VolumeDataArrayPinnedSafe;
+	typedef	PxPinnedArraySafe<ShapeHandle>				ShapeHandleArrayPinnedSafe;
 
 	class BoundsArray : public PxUserAllocated
 	{
@@ -176,7 +176,7 @@ namespace Bp
 	{
 												PX_NOCOPY(AABBManagerBase)
 	public:
-												AABBManagerBase(BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinned& contactDistance,
+												AABBManagerBase(BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
 																PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
 																PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode);
 
@@ -297,10 +297,10 @@ namespace Bp
 
 		//ML: we create mGroups and mContactDistance in the AABBManager constructor. PxArray will take PxVirtualAllocator as a parameter. Therefore, if GPU BP is using,
 		//we will passed a pinned host memory allocator, otherwise, we will just pass a normal allocator.
-						GroupsArrayPinned		mGroups;				// NOTE: we stick Bp::FilterGroup::eINVALID in this slot to indicate that the entry is invalid (removed or never inserted.)
-						PxInt32ArrayPinned		mEnvIDs;				// PT: should ideally be in the GPU class
-						PxFloatArrayPinned& 	mContactDistance;
-						VolumeDataArrayPinned	mVolumeData;
+						GroupsArrayPinnedSafe	mGroups;				// NOTE: we stick Bp::FilterGroup::eINVALID in this slot to indicate that the entry is invalid (removed or never inserted.)
+						PxInt32ArrayPinnedSafe	mEnvIDs;				// PT: should ideally be in the GPU class
+						PxFloatArrayPinnedSafe&	mContactDistance;
+						VolumeDataArrayPinnedSafe	mVolumeData;
 						BpFilter				mFilters;
 
 		PX_FORCE_INLINE	void					initEntry(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userData)
@@ -334,9 +334,9 @@ namespace Bp
 												}
 
 		// PT: TODO: remove confusion between BoundsIndex and ShapeHandle here!
-						ShapeHandleArrayPinned	mAddedHandles;
-						ShapeHandleArrayPinned	mUpdatedHandles;	// PT: TODO: only on CPU
-						ShapeHandleArrayPinned	mRemovedHandles;
+						ShapeHandleArrayPinnedSafe	mAddedHandles;
+						ShapeHandleArrayPinnedSafe	mUpdatedHandles;	// PT: TODO: only on CPU
+						ShapeHandleArrayPinnedSafe	mRemovedHandles;
 
 						BroadPhase&				mBroadPhase;
 						BoundsArray&			mBoundsArray;

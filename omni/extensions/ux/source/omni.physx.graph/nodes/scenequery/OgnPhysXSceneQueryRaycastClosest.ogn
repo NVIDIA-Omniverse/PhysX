@@ -1,0 +1,138 @@
+{
+    "omni.physx.graph.SceneQueryRaycastClosest": {
+        "version": 1,
+        "description": "Finds the closest collider that is hit by the input ray.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Raycast, Closest",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "origin": {
+                "type": ["pointf[3]", "pointd[3]"],
+                "description": "Ray origin",
+                "uiName": "Origin",
+                "unvalidated": true
+            },
+            "direction": {
+                "type": ["vectorf[3]", "vectord[3]"],
+                "description": "Ray direction vector",
+                "uiName": "Direction",
+                "unvalidated": true
+            },
+            "raycastRange": {
+                "type": ["float", "double"],
+                "description": "Raycast distance. Use negative for infinite. If omitted, infinity is used.",
+                "uiName": "Distance",
+                "unvalidated": true
+            },
+            "bothSides": {
+                "type": "bool",
+                "description": "Sets whether backfaces of colliders should be included in checks.",
+                "uiName": "Both Sides",
+                "default": false
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "hit": {
+                "description": [
+                    "Returns true if any colliders are hit by the input ray."
+                ],
+                "type": "bool"
+            },
+            "colliderPrimPath": {
+                "uiName": "Collider Prim Path (deprecated)",
+                "description": [
+                    "Path of the closest collider prim that is hit by the input ray. Deprecated, please use the Collider Prim output instead."
+                ],
+                "type": "token",
+                "deprecated": "Use the Collider Prim output instead"
+            },
+            "colliderPrim": {
+                "uiName": "Collider Prim",
+                "description": [
+                    "Closest collider prim that is hit by the input ray."
+                ],
+                "type": "target"
+            },
+            "bodyPrimPath": {
+                "uiName": "Body Prim Path (deprecated)",
+                "description": [
+                    "Path of the associated body prim of the closest collider prim hit by the input ray. Deprecated, please use the Body Prim output instead."
+                ],
+                "type": "token",
+                "deprecated": "Use the Body Prim output instead"
+            },
+            "bodyPrim": {
+                "uiName": "Body Prim",
+                "description": [
+                    "Associated body prim of the closest collider prim hit by the input ray."
+                ],
+                "type": "target"
+            },
+            "position": {
+                "description": [
+                    "The position of the point hit."
+                ],
+                "type": "pointf[3]"
+            },
+            "normal": {
+                "description": [
+                    "The surface normal of the point hit."
+                ],
+                "type": "normalf[3]"
+            },       
+            "distance": {
+                "uiName": "Hit Distance",
+                "description": [
+                    "The distance from the origin to the point hit."
+                ],
+                "type": "float"
+            },
+            "faceIndex": {
+                "description": [
+                    "The face index of the point hit."
+                ],
+                "type": "int"
+            },
+            "materialPath": {
+                "uiName": "Material Path (deprecated)",
+                "description": [
+                    "Path of the physics material at the point hit. Deprecated, please use the Material Prim output instead."
+                ],
+                "type": "token",
+                "deprecated": "Use the Material Prim output instead"
+            },
+            "materialPrim": {
+                "uiName": "Material Prim",
+                "description": [
+                    "Physics material Prim at the point hit."
+                ],
+                "type": "target"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

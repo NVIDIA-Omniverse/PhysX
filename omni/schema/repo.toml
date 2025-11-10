@@ -1,0 +1,108 @@
+[repo]
+logging = "warn"
+
+[repo.tokens]
+# Sets the Linux glibc/ABI target to 2.35 (Ubuntu 22, _GLIBCXX_USE_CXX11_ABI=1)
+abi = "2.35"
+
+[repo_build.premake]
+linux_x86_64_cxx_abi = true
+
+[repo_build.docker]
+enabled = false
+
+[[repo_build.argument]]
+name = "--devschema"
+help = "Enable schema development. Runs schemagen automatically and uses local schema."
+kwargs.required = false
+kwargs.nargs = 0
+
+[[repo_build.argument]]
+name = "--devphysx"
+help = "Support calling devschema and devphysx together. No effect in the schema project."
+kwargs.required = false
+kwargs.const = ""
+kwargs.nargs = "?"
+
+[[repo_build.argument]]
+name = "--userphysx"
+help = "Support calling devschema and userphysx together. No effect in the schema project."
+kwargs.required = false
+kwargs.const = ""
+kwargs.nargs = "?"
+
+# common settings for repo_usd for all USD plug-ins
+[repo_usd]
+usd_root = "${root}/_build/target-deps/usd/%{cfg.buildcfg}"
+usd_python_root = "${root}/_build/target-deps/python"
+generate_plugin_buildfiles = false
+plugin_buildfile_format = "premake"
+
+[repo_usd.plugin.physxSchema]
+schema_file = "${root}/source/physxSchema/schema.usda"
+generate_dir = "${root}/source/physxSchema"
+plugin_dir = "${root}/source/physxSchema"
+install_root = "_build/%{cfg.system}-%{cfg.platform}/%{cfg.buildcfg}/schema/physxSchema"
+build_dir = "_build/physxSchema"
+package_info_file = "${root}/PACKAGE-INFO.yaml"
+library_prefix = "PhysxSchema"
+generate_module_deps_cpp_file = false
+usd_lib_dependencies = [
+    "usd_arch",
+    "usd_tf",
+    "usd_vt",
+    "usd_sdf",
+    "usd_usd",
+    "usd_Physics",
+    "usd_usdGeom"
+]
+
+[repo_usd.plugin.physxSchemaAddition]
+schema_file = "${root}/source/physxSchemaAddition/schema.usda"
+generate_dir = "${root}/source/physxSchemaAddition"
+plugin_dir = "${root}/source/physxSchemaAddition"
+install_root = "_build/%{cfg.system}-%{cfg.platform}/%{cfg.buildcfg}/schema/physxSchemaAddition"
+build_dir = "_build/physxSchemaAddition"
+package_info_file = "${root}/PACKAGE-INFO.yaml"
+library_prefix = "PhysxSchemaAddition"
+generate_module_deps_cpp_file = false
+is_codeless = true
+usd_lib_dependencies = [
+    "arch",
+    "tf",
+    "vt",
+    "sdf",
+    "usd",
+    "usdPhysics",
+    "usdGeom"
+]
+
+[repo_usd.plugin.omniUsdPhysicsDeformableSchema]
+schema_file = "${root}/source/omniUsdPhysicsDeformableSchema/schema.usda"
+generate_dir = "${root}/source/omniUsdPhysicsDeformableSchema"
+plugin_dir = "${root}/source/omniUsdPhysicsDeformableSchema"
+install_root = "_build/%{cfg.system}-%{cfg.platform}/%{cfg.buildcfg}/schema/omniUsdPhysicsDeformableSchema"
+build_dir = "_build/omniUsdPhysicsDeformableSchema"
+package_info_file = "${root}/PACKAGE-INFO.yaml"
+library_prefix = "OmniUsdPhysicsDeformableSchema"
+generate_module_deps_cpp_file = false
+is_codeless = true
+usd_lib_dependencies = [
+    "arch",
+    "tf",
+    "vt",
+    "sdf",
+    "usd",
+    "usdPhysics",
+    "usdGeom"
+]
+
+[repo_build.fetch]
+# override the default deps packages to load so that packages for extensions can be loaded as
+# well.  Note that we can't just add the new path here because TOML doesn't support appending
+# to arrays, only overwriting them.
+packman_target_files_to_pull = [
+    "${root}/deps/host-deps.packman.xml",
+    "${root}/deps/kit-kernel-deps.packman.xml",
+    "${root}/deps/usd-deps.packman.xml",
+]

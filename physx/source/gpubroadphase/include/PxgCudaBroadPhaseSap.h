@@ -252,10 +252,8 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 					PxgRadixSortDesc*			mRSDesc;
 					PxgRadixSortDesc*			mRSDescWOR; //wor :: without ranks
 	
-				    PxPinnedArray<PxgBroadPhasePair>	mFoundActorPairs;
-				    PxPinnedArray<PxgBroadPhasePair>	mLostActorPairs;
-					//PxArray<PxU32>				mHistogramBuffer;
-					//PxArray<PxgBroadPhasePair>	mTempPairBuffer;
+					PxPinnedArray<PxgBroadPhasePair>	mFoundActorPairs;
+					PxPinnedArray<PxgBroadPhasePair>	mLostActorPairs;
 
 					PxU32						mMaxFoundLostPairs;
 					PxU32						mMaxAggFoundLostPairs;

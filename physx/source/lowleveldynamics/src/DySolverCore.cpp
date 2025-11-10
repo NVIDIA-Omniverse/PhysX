@@ -56,7 +56,7 @@ void Dy::saveMotionVelocities(PxU32 nbBodies, const PxSolverBody* PX_RESTRICT so
 // See LegacyBenchmark/falling_spheres for example.
 void Dy::solveNoContactsCase(	PxU32 nbBodies, const PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
 								PxU32 nbArticulations, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
-								PxU32 nbPosIter, PxU32 nbVelIter, PxF32 dt, PxF32 invDt, bool residualReportingActive)
+								PxU32 nbPosIter, PxU32 nbVelIter, PxF32 dt, PxF32 invDt, bool residualReportingActive, bool solveArticulationContactLast)
 {
 	saveMotionVelocities(nbBodies, solverBodies, motionVelocityArray);
 
@@ -66,18 +66,41 @@ void Dy::solveNoContactsCase(	PxU32 nbBodies, const PxSolverBody* PX_RESTRICT so
 	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
 	const bool isTGS = false;
 
+	const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
+	
 	//Even thought there are no external constraints, there may still be internal constraints in the articulations...
 	for(PxU32 i=0; i<nbPosIter; i++)
+	{
 		for(PxU32 j=0; j<nbArticulations; j++)
-			articulationListStart[j].articulation->solveInternalConstraints(dt, dt, invDt, false, isTGS, 0.0f, biasCoefficient, residualReportingActive);
+		{
+			articulationListStart[j].articulation->mInternalErrorAccumulatorPosIter.reset();
+			articulationListStart[j].articulation->mContactErrorAccumulatorPosIter.reset();
+			articulationListStart[j].articulation->solveInternalConstraints(
+				dt, dt, invDt, 
+				false, isTGS, 			
+				singlePassArticulationConstraintProcessingConfig,
+				0.0f, 
+				biasCoefficient, 
+				residualReportingActive);
+		}
+	}
 
 	for(PxU32 i=0; i<nbArticulations; i++)
 		ArticulationPImpl::saveVelocity(articulationListStart[i].articulation, deltaV);
 
 	for(PxU32 i=0; i<nbVelIter; i++)
+	{
 		for(PxU32 j=0; j<nbArticulations; j++)
-			articulationListStart[j].articulation->solveInternalConstraints(dt, dt, invDt, true, isTGS, 0.0f, biasCoefficient, residualReportingActive);
-
+		{
+			articulationListStart[j].articulation->mInternalErrorAccumulatorVelIter.reset();
+			articulationListStart[j].articulation->mContactErrorAccumulatorVelIter.reset();
+			articulationListStart[j].articulation->solveInternalConstraints(
+				dt, dt, invDt, 
+				true, isTGS, 
+				singlePassArticulationConstraintProcessingConfig,
+				0.0f, biasCoefficient, residualReportingActive);
+		}
+	}
 	for(PxU32 j=0; j<nbArticulations; j++)
 		articulationListStart[j].articulation->writebackInternalConstraints(isTGS);
 }

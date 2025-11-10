@@ -1,0 +1,10 @@
+<project toolsVersion="5.6">  
+  <import path="../../deps/repo-deps.packman.xml">
+    <filter include="repo_man" />
+    <filter include="repo_usd" />
+    <filter include="repo_build" />
+  </import>
+  <dependency name="repo_man" linkPath="../_repo/deps/repo_man" />
+  <dependency name="repo_usd" linkPath="../_repo/deps/repo_usd" />
+  <dependency name="repo_build" linkPath="../_repo/deps/repo_build" />
+</project>

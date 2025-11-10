@@ -1,0 +1,48 @@
+{
+    "omni.physx.graph.ImmediateComputeGeometryBounds": {
+        "version": 1,
+        "description": "Computes bounding boxes for the input geometries (and cache cooking for future intersection tests)",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Compute Geometry Bounds",
+        "tags": ["physics", "physx", "simulation", "collision", "immediate" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\nand (optionally) 'meshHash', 'physics:approximation'"
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The same bundle passed as input\nwith the following attributes added:\n - bboxMaxCorner\n - bboxMinCorner\n - meshHash"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "normalf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "pointf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "float[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "double[3]": ["physx::PxVec3d", ["PxPhysicsAPI.h"]],
+                "float[4]": ["physx::PxVec4", ["PxPhysicsAPI.h"]],
+                "double[4]": ["physx::PxVec4d", ["PxPhysicsAPI.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

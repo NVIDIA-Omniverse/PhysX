@@ -1,0 +1,37 @@
+# Normalize text files on commit to LF endings by default
+* text=auto
+# Make sure Windows batch files preserve CR/LF line endings, otherwise they may not be able to execute.  Windows
+# batch files require a CR/LF for labels to work properly, otherwise they may fail when labels straddle 512-byte
+# block boundaries.  This is important when files are downloaded through a zip archive that was authored on a
+# Linux machine (the default behavior on GitHub)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+# Make sure shell scripts have LF line endings, even when checked out on a Windows client with autocrlf=true
+*.sh text eol=lf
+tools/packman/packman text eol=lf
+# Make sure schema files have LF line endings
+*.usda text eol=lf
+
+# LFS
+data/** filter=lfs diff=lfs merge=lfs -text
+data/**/*.py filter=text diff=text merge=text
+extensions/**/data/** filter=lfs diff=lfs merge=lfs -text
+extensions/**/data/*.py filter=text diff=text merge=text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.usda filter=lfs diff=lfs merge=lfs -text
+*.usd filter=lfs diff=lfs merge=lfs -text
+*.ovd filter=lfs diff=lfs merge=lfs -text
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.oga filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.hdr filter=lfs diff=lfs merge=lfs -text
+*.npy filter=lfs diff=lfs merge=lfs -text
+*.svg filter=lfs diff=lfs merge=lfs -text
+
+# LFS exclude
+schema/source/**/*.usda filter=text diff=text merge=text text

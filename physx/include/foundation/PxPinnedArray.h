@@ -125,7 +125,7 @@ namespace physx
 	typedef PxArray<PxBounds3, PxVirtualAllocator>			PxBoundsArrayPinned;
 	typedef	PxArray<PxReal, PxVirtualAllocator>				PxFloatArrayPinned;
 	typedef	PxArray<PxU32, PxVirtualAllocator>				PxInt32ArrayPinned;
-    typedef PxArray<PxU16, PxVirtualAllocator>				PxInt16ArrayPinned;
+	typedef PxArray<PxU16, PxVirtualAllocator>				PxInt16ArrayPinned;
 	typedef	PxArray<PxU8, PxVirtualAllocator>				PxInt8ArrayPinned;
 
 	// PT: new versions
@@ -136,7 +136,7 @@ namespace physx
 	typedef PxArray<PxBounds3, PxPinnedAllocator<PxBounds3> >					PxBoundsArrayPinnedSafe;
 	typedef	PxArray<PxReal, PxPinnedAllocator<PxReal> >							PxFloatArrayPinnedSafe;
 	typedef	PxArray<PxU32, PxPinnedAllocator<PxU32> >							PxInt32ArrayPinnedSafe;
-    typedef PxArray<PxU16, PxPinnedAllocator<PxU16> >							PxInt16ArrayPinnedSafe;
+	typedef PxArray<PxU16, PxPinnedAllocator<PxU16> >							PxInt16ArrayPinnedSafe;
 	typedef	PxArray<PxU8, PxPinnedAllocator<PxU8> >								PxInt8ArrayPinnedSafe;
 
 #if !PX_DOXYGEN

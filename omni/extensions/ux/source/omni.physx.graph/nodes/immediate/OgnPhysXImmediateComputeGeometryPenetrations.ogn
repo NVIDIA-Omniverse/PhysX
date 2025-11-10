@@ -1,0 +1,68 @@
+{
+    "omni.physx.graph.ImmediateComputeGeometryPenetrations": {
+        "version": 1,
+        "description": "Compute penetration depth and direction between geometries (currently supports meshes prims)",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Compute Geometry Penetrations",
+        "tags": ["physics", "physx", "simulation", "collision", "broadphase", "bounding", "immediate" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "primsBundle": {
+                "type": "bundle",
+                "memoryType": "cpu",
+                "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nPenetration vectors are not computed when both sides of a pair use triangle mesh approximation.\nPenetration computation only works if the (optional) 'physics:approximation'\nof one of the two overlap pair to check is not 'triangle mesh' (can be 'convex mesh').\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+            },
+            "overlapsPair0": {
+                "description": [ "Path of the first geometry from the Prims Bundle to check for penetration with corresponding item at same index in overlapsPair1 input attribute." ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            },
+            "overlapsPair1": {
+                "description": [ "Path of the second geometry from the Prims Bundle to check for penetration with corresponding item at same index in overlapsPair0 input attribute" ],
+                "memoryType": "cpu",
+                "type": "token[]"
+            }
+       },       
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "overlaps": {
+                "description": [ "Array of booleans where 'True' value signals that a corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index do actually overlap." ],
+                "memoryType": "cpu",
+                "type": "bool[]"
+            },
+            "penetrationVectors": {
+                "description": [ "Array of penetration normals of the corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index." ],
+                "memoryType": "cpu",
+                "type": "normalf[3][]"
+            },
+            "penetrationDepths": {
+                "description": [ "Array of penetration depths values of the corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index." ],
+                "memoryType": "cpu",
+                "type": "float[]"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "normalf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "pointf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "float[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "double[3]": ["physx::PxVec3d", ["PxPhysicsAPI.h"]],
+                "float[4]": ["physx::PxVec4", ["PxPhysicsAPI.h"]],
+                "double[4]": ["physx::PxVec4d", ["PxPhysicsAPI.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

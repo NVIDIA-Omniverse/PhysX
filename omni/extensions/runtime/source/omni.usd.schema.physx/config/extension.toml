@@ -1,0 +1,46 @@
+[core]
+reloadable = false
+# Load at the start, load all schemas with order -100 (with order -1000 the USD libs are loaded)
+order = -100
+
+[package]
+category = "Simulation"
+title = "USD PhysX schema"
+description="USD PhysX schema"
+keywords = ["physics", "usd"]
+toggleable = false
+
+version = "107.3.0-oss.0"
+authors = ["PhysX"]
+
+repository = ""
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Core"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usd.libs" = { }
+
+[[python.module]]
+name = "pxr.PhysxSchema"
+
+[[python.module]]
+name = "usd.schema.physx"
+
+[[python.module]]
+name = "pxr.PhysicsSchemaTools"
+
+[[native.library]]
+path = "bin/${lib_prefix}physxSchema${lib_ext}"
+
+[[native.library]]
+path = "bin/${lib_prefix}physicsSchemaTools${lib_ext}"
+

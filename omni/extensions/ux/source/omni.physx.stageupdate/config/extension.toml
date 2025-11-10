@@ -1,0 +1,53 @@
+[package]
+title = "OmniPhysX StageUpdate"
+description="OmniPhysX StageUpdate Connection."
+repository = ""
+keywords = ["physics", "physx"]
+category = "Simulation"
+authors = ["PhysX"]
+
+version = "107.3.0-oss.0"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+
+support_level = "Core"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd" = { }
+"omni.timeline.live_session" = { optional = true }
+"omni.kit.usd.layers" = { optional = true }
+"omni.ui" = {optional=true}
+"omni.physics.stageupdate" = { version = "107.3.0-oss.0", exact = true, optional = true }
+"omni.physics.physx" = { version = "107.3.0-oss.0", exact = true, optional = true }
+
+[[python.module]]
+name = "omni.physxstageupdate"
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[[test]]
+dependencies = [
+   "omni.physx.tests",
+   "omni.hydra.rtx",
+   "omni.kit.viewport.window",
+]
+
+timeout = 1200
+args = [
+   "--/app/file/ignoreUnsavedOnExit=true",
+   "--no-window",
+]
+waiver = "PhysX tests are running in a separate CI pipeline. Tests are in separate extensions." # FIXME: this is needed for Kit tests to go through
+stdoutFailPatterns.exclude = [
+    "*PhysX simulation is active through omni.physx umbrella extension.*",
+]

@@ -624,7 +624,7 @@ namespace physx
 	// solvePartitions).
 
 	void PxgArticulationCore::propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration,
-		const PxReal elapsedTime, const PxReal biasCoefficient, PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
+		const PxReal elapsedTime, const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
 		CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled)
 	{
 #if ARTI_GPU_DEBUG
@@ -644,14 +644,15 @@ namespace physx
 			const CUfunction artiPropagateRigidImpulseAndSolveSelfConstraintsFunction = isTGS ? wrangler->getCuFunction(PxgKernelIds::ARTI_PROPAGATE_RIGID_IMPULSES_AND_SOLVE_SELF_TGS) :
 																								wrangler->getCuFunction(PxgKernelIds::ARTI_PROPAGATE_RIGID_IMPULSES_AND_SOLVE_SELF);
 
+			const CUfunction artiSolveInternalTendonAndMimicJointConstraintsFunction = wrangler->getCuFunction(PxgKernelIds::ARTI_SOLVE_INTERNAL_TENDON_AND_MIMIC_JOINT);
+
 			const CUfunction artiSolveInternalConstraintsFunction = isTGS ? wrangler->getCuFunction(PxgKernelIds::ARTI_SOLVE_INTERNAL_CONSTRAINTS_TGS) :
 																			wrangler->getCuFunction(PxgKernelIds::ARTI_SOLVE_INTERNAL_CONSTRAINTS);
-
-			const CUfunction artiSolveInternalTendonAndMimicJointConstraintsFunction = wrangler->getCuFunction(PxgKernelIds::ARTI_SOLVE_INTERNAL_TENDON_AND_MIMIC_JOINT);
 
 			CUdeviceptr artiCoreDescptr = mArticulationCoreDescd.getDevicePtr();
 			CUdeviceptr solverCoreDescptr = mGpuContext->getGpuSolverCore()->getSolverCoreDescDeviceptr();
 
+			if(articulationConstraintProcessingConfig.mPropagateRigidBodyImpulsesAndSolveSelfConstraints)
 			{
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -671,6 +672,7 @@ namespace physx
 				gpuDebugStreamSync(mCudaContext, *mSolverStream, "GPU solveSelfConstraints kernel fail!\n");
 			}
 
+			if(articulationConstraintProcessingConfig.mDoSpatialTendonsFixedTendonsMimicJoints)
 			{
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -689,6 +691,10 @@ namespace physx
 				gpuDebugStreamSync(mCudaContext, *mSolverStream, "GPU artiSolveInternalTendonAndMimicJointConstraints1T kernel fail!\n");
 			}
 
+			if(articulationConstraintProcessingConfig.mDoFrictionDrivePosLimit || 
+				articulationConstraintProcessingConfig.mDoStaticContactsAnd1dConstraints || 
+				Dy::ArticulationConstraintProcessingConfig::VelLimit::eAFTER_STATIC_CONSTRAINTS == articulationConstraintProcessingConfig.mDoVelLimit || 
+				Dy::ArticulationConstraintProcessingConfig::VelLimit::eBEFORE_STATIC_CONSTRAINTS == articulationConstraintProcessingConfig.mDoVelLimit)
 			{
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -703,7 +709,10 @@ namespace physx
 					CUDA_KERNEL_PARAM(sharedDesc),
 					CUDA_KERNEL_PARAM(doFriction),
 					CUDA_KERNEL_PARAM(residualReportingEnabled),
-					CUDA_KERNEL_PARAM(isExternalForcesEveryTgsIterationEnabled)
+					CUDA_KERNEL_PARAM(isExternalForcesEveryTgsIterationEnabled),
+					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoFrictionDrivePosLimit),
+					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoVelLimit),
+					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoStaticContactsAnd1dConstraints)
 				};
 
 				const CUresult result = mCudaContext->launchKernel(artiSolveInternalConstraintsFunction, numBlocks, 1, 1, numThreadsPerWarp, numWarpsPerBlock, 1, 0, *mSolverStream, EPILOG);

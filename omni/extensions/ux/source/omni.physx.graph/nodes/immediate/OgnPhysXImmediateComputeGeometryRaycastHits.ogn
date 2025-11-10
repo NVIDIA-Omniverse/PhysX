@@ -1,0 +1,111 @@
+{
+    "omni.physx.graph.ImmediateComputeGeometryRaycastHits": {
+        "version": 1,
+        "description": "Compute geometry intersections with an input ray (currently supports mesh prims)",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Immediate Queries",
+        "uiName": "Compute Geometry Raycast Hits",
+        "tags": ["physics", "physx", "simulation", "raycast", "broadphase", "immediate" ],
+        "scheduling": ["usd-write"],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "origin": {
+                "type": ["pointf[3]", "pointd[3]"],
+                "description": "Ray origin",
+                "uiName": "Origin",
+                "unvalidated": true
+            },
+            "direction": {
+                "type": ["vectorf[3]", "vectord[3]"],
+                "description": "Ray direction vector",
+                "uiName": "Direction",
+                "unvalidated": true
+            },
+            "raycastRange": {
+                "type": ["float", "double"],
+                "description": "Raycast distance. Use negative for infinite. If omitted, infinity is used.",
+                "uiName": "Distance",
+                "unvalidated": true
+            },
+            "bothSides": {
+                "type": "bool",
+                "description": "Sets whether backfaces of meshes should be included in checks.",
+                "uiName": "Both sides",
+                "default": false
+            },     
+            "primsBundle": {
+                "type": "bundle",
+                "uiName": "Prims bundle (optional)",
+                "memoryType": "cpu",
+                "description": "The prims of interest as a bundle. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourcePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes",
+                "optional": true
+            },
+            "prims": {
+                "description": [ "Prims of interest (currently only supports mesh prims). \nNote: if this input is present, the Prims bundle input is ignored." ],
+                "memoryType": "cpu",
+                "type": "target",
+                "optional": true,
+                "metadata": {
+                    "allowMultiInputs": "1"
+                }                
+            }
+       },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "primsHit": {
+                "uiName": "Prims hit",
+                "description": [
+                    "A list of prims that are hit by the input ray."
+                ],
+                "type": "target"
+            },
+            "positions": {
+                "description": [
+                    "A list of positions of the points hit."
+                ],
+                "type": "pointf[3][]"
+            },
+            "normals": {
+                "description": [
+                    "A list of surface normals of the points hit."
+                ],
+                "type": "normalf[3][]"
+            },       
+            "distances": {
+                "description": [
+                    "A list of distances from the origin to the points hit."
+                ],
+                "uiName": "Hit distances",
+                "type": "float[]"
+            },
+            "faceIndexes": {
+                "description": [
+                    "A list of the face indexes of the points hit."
+                ],
+                "type": "int[]"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "normalf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "pointf[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "float[3]": ["physx::PxVec3", ["PxPhysicsAPI.h"]],
+                "double[3]": ["physx::PxVec3d", ["PxPhysicsAPI.h"]],
+                "float[4]": ["physx::PxVec4", ["PxPhysicsAPI.h"]],
+                "double[4]": ["physx::PxVec4d", ["PxPhysicsAPI.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

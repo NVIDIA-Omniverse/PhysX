@@ -629,6 +629,7 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 				addRigidActorToArray(a, mRigidStatics, mRigidActorIndexPool);
 				updateScStateAndSetupSq(this, getSQAPI(), a, a, a.getShapeManager(), false, shapeBounds.begin(), ps);
 				a.addConstraintsToScene();
+				OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*this), static_cast<PxActor &>(a))
 			}
 			else
 				addRigidStatic(a, NULL, ps);
@@ -647,6 +648,7 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 				addRigidActorToArray(a, mRigidDynamics, mRigidActorIndexPool);
 				updateScStateAndSetupSq(this, getSQAPI(), a, a, a.getShapeManager(), true, shapeBounds.begin(), ps);
 				a.addConstraintsToScene();
+				OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*this), static_cast<PxActor &>(a))
 			}
 			else
 				addRigidDynamic(a, NULL, ps);
@@ -1168,7 +1170,10 @@ bool NpScene::addFixedTendonInternal(NpArticulationReducedCoordinate* npaRC, Sc:
 bool NpScene::addArticulationMimicJointInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim)
 {
 	const PxU32 nbMimicJoints = npaRC->getNbMimicJoints();
-
+	
+#if PX_SUPPORT_OMNI_PVD
+	const OmniPvdPxSampler* ovdSampler = ::OmniPvdPxSampler::getSamplingInstance();
+#endif
 	for (PxU32 i = 0; i < nbMimicJoints; ++i)
 	{
 		NpArticulationMimicJoint* mimicJoint = npaRC->getMimicJoint(i);
@@ -1178,6 +1183,12 @@ bool NpScene::addArticulationMimicJointInternal(NpArticulationReducedCoordinate*
 		//add mimic joint sim to articulation sim
 		Sc::ArticulationMimicJointSim* mimicJointSim = mimicJoint->getMimicJointCore().getSim();
 		scArtSim->addMimicJoint(mimicJointSim, mimicJoint->getLinkA()->getLinkIndex(), mimicJoint->getLinkB()->getLinkIndex());
+		
+		#if PX_SUPPORT_OMNI_PVD
+		if (ovdSampler) {
+			streamArticulationMimicJoint(*mimicJoint);
+		}
+		#endif
 	}
 	return true;
 }

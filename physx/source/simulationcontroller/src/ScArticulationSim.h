@@ -30,12 +30,15 @@
 #define SC_ARTICULATION_SIM_H
 
 #include "foundation/PxUserAllocated.h"
+#include "foundation/PxPinnedArray.h"
+#include "foundation/PxPinnedBitMap.h"
 #include "ScArticulationCore.h" 
 #include "PxsSimpleIslandManager.h"
 #include "DyArticulationTendon.h"
 
 namespace physx
 {
+
 namespace Bp
 {
 	class BoundsArray;

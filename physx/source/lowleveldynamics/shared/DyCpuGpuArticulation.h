@@ -725,6 +725,197 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void computeMimicJointImpulses
 	jointImpB = gearRatio * lambda;
 }
 
+/**
+\brief The default constraint resolution order is as follows:
+
+  dynamic 1d constraints + dynamic contact constraints
+  spatial tendons + fixed tendons + mimic joints
+  friction	(per dof)
+  drive		(per dof)
+  pos limit	(per dof)
+  vel limit	(per dof)
+  static  1d constraints + static contact constraints 
+
+For grabbing scenarios, the following constraint resolution order can bring behaviour advantages:
+
+  spatial tendons + fixed tendons + mimic joints
+  friction	(per dof)
+  drive		(per dof)
+  pos limit	(per dof)
+  dynamic 1d constraints + dynamic contact constraints
+  static  1d constraints + static contact constraints 
+  vel limit	(per dof)
+
+The default constraint order requires a single pass through the articulations
+after completing dynamic contact.
+
+The grabbing constraint order requires two passes through the articulations, 
+one before dynamic contact and one after.
+
+ArticulationConstraintProcessingConfig controls the work that will be performed on articulations
+during each pass (either one pass or two passes) through the articulations.
+*/
+class ArticulationConstraintProcessingConfig
+{
+	public:
+
+	struct VelLimit
+	{	
+		enum Enum
+		{
+			eNONE,
+			eBEFORE_STATIC_CONSTRAINTS,
+			eAFTER_STATIC_CONSTRAINTS
+		};
+	};
+
+	protected:
+
+	ArticulationConstraintProcessingConfig(
+		bool doSpatialTendonsFixedTendonsMimicJoints,
+		bool doFrictionDrivePosLimit, 
+		VelLimit::Enum doVelLimit,
+		bool doStaticContactsAnd1dConstraints)
+	:   mDoSpatialTendonsFixedTendonsMimicJoints(doSpatialTendonsFixedTendonsMimicJoints),	
+		mDoFrictionDrivePosLimit(doFrictionDrivePosLimit),
+		mDoVelLimit(doVelLimit), 
+		mDoStaticContactsAnd1dConstraints(doStaticContactsAnd1dConstraints){}
+
+	public:
+
+	bool mDoSpatialTendonsFixedTendonsMimicJoints;
+	bool mDoFrictionDrivePosLimit;
+	VelLimit::Enum mDoVelLimit;
+	bool mDoStaticContactsAnd1dConstraints;
+};
+
+class ArticulationConstraintProcessingConfigCPU : public ArticulationConstraintProcessingConfig
+{
+	private:
+
+	ArticulationConstraintProcessingConfigCPU(
+		bool doSpatialTendonsFixedTendonsMimicJoints,
+		bool doFrictionDrivePosLimit, 
+		ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit,
+		bool doStaticContactsAnd1dConstraints) 
+	: ArticulationConstraintProcessingConfig(doSpatialTendonsFixedTendonsMimicJoints, doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints)
+	{}
+
+	public:
+
+	//There are 3 distinct regimes on CPU:
+	//1) default contact order 
+	//2) swapped contact order with no dynamic contact
+	//3) swapped contact order with dynamic contact
+
+	//1) sequence with default contact order:
+	//note that default contact order processes everything in a single pass.
+		//*dynamic contact*
+		//spatial tendons + fixed tendons + mimic joints
+		//friction + drive + pos limit
+		//vel limit
+		//static contact/1dconstraint
+		
+	//2) sequence with swapped contact order and no dynamic contact
+	//note that in absence of dynamic contact we can process everything in a single pass
+		//spatial tendons + fixed tendons + mimic joints
+		//friction + drive + pos limit
+		//static contact/1dconstraint
+		//vel limit
+
+	//3) sequence with swapped contact order and dynamic contact		
+	//Note that inclusion of dynamic contact requires 2 passes through the tree.
+		//spatial tendons + fixed tendons + mimic joints	(1st pass)
+		//friction + drive + pos limit						(1st pass)
+		//*dynamic contact*
+		//static contact/1d constraint						(2nd pass)
+		//vel limit											(2nd pass)
+
+	//Case 1) with false==solveArticulationContactLast and Case 2) with true==solveArticulationContactLast
+	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigCPU getSinglePassConfig(const bool solveArticulationContactLast)
+	{	
+		if(!solveArticulationContactLast)
+			return ArticulationConstraintProcessingConfigCPU(true, true, VelLimit::eBEFORE_STATIC_CONSTRAINTS, true);
+		else
+			return ArticulationConstraintProcessingConfigCPU(true, true, VelLimit::eAFTER_STATIC_CONSTRAINTS, true);
+	}
+
+	//Case 3)
+	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigCPU getFirstPassConfig()
+	{
+		return ArticulationConstraintProcessingConfigCPU(true, true, VelLimit::eNONE, false);
+	}
+
+	//Case 3)
+	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigCPU getSecondPassConfig()
+	{
+		return ArticulationConstraintProcessingConfigCPU(false, false, VelLimit::eAFTER_STATIC_CONSTRAINTS, true);
+	}		
+};
+
+struct ArticulationConstraintProcessingConfigGPU : public ArticulationConstraintProcessingConfig
+{
+	private:
+
+	ArticulationConstraintProcessingConfigGPU(
+		bool propagateRigidBodyImpulsesAndSolveSelfConstraints,
+		bool doSpatialTendonsFixedTendonsMimicJoints,
+		bool doFrictionDrivePosLimit, 
+		ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit,
+		bool doStaticContactsAnd1dConstraints) 
+	: ArticulationConstraintProcessingConfig(doSpatialTendonsFixedTendonsMimicJoints, doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints),
+	  mPropagateRigidBodyImpulsesAndSolveSelfConstraints(propagateRigidBodyImpulsesAndSolveSelfConstraints)
+	{}
+
+	public:
+
+	//There are 2 distinct regimes on GPU because we do not have a specific path in the absence of dynamic contact.
+	//1) default contact order 
+	//2) swapped contact order with/without dynamic contact
+
+	//1) sequence with default contact order:
+	//note that default contact order processes everything in a single pass.
+		//*dynamic contact*
+		//propagate impulses after dynamic contact
+		//spatial tendons + fixed tendons + mimic joints
+		//friction + drive + pos limit
+		//vel limit
+		//static contact/1dconstraint
+		
+	//2) sequence with swapped contact order and with/without dynamic contact		
+		//spatial tendons + fixed tendons + mimic joints	(1st pass)
+		//friction + drive + pos limit						(1st pass)
+		//*dynamic contact*
+		//propagate impulses after dynamic contact			(2nd pass)
+		//static contact/1d constraint						(2nd pass)
+		//vel limit											(2nd pass)
+
+
+	//Case 1)
+	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigGPU getSinglePassConfig()
+	{
+		ArticulationConstraintProcessingConfigGPU items(true, true, true, VelLimit::eBEFORE_STATIC_CONSTRAINTS, true);
+		return items; 
+	}
+
+	//Case 2)
+	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigGPU getFirstPassConfig()
+	{
+		ArticulationConstraintProcessingConfigGPU items(false, true, true, VelLimit::eNONE, false);
+		return items; 
+	}
+
+	//Case 2)
+	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigGPU getSecondPassConfig()
+	{
+		ArticulationConstraintProcessingConfigGPU items(true, false, false, VelLimit::eAFTER_STATIC_CONSTRAINTS, true);
+		return items; 
+	}
+
+	bool mPropagateRigidBodyImpulsesAndSolveSelfConstraints;
+};
+
+
 
 } //namespace Dy
 } //namespace physx

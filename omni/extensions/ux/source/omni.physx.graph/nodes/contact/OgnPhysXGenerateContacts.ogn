@@ -1,0 +1,85 @@
+{
+    "omni.physx.graph.GenerateContacts": {
+        "version": 1,
+        "description": "DEPRECATED - Use 'Generate Geometry Contacts'",
+        "metadata": {
+            "hidden": "true"
+        },
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Contacts",
+        "uiName": "(Deprecated) Generate Contacts",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "shape0": {
+                "type": "token",
+                "description": "Shape 0.",
+                "uiName": "Shape 0"
+            },
+            "shape1": {
+                "type": "token",
+                "description": "Shape 1.",
+                "uiName": "Shape 1"
+            },
+            "contactDistance": {
+                "type": "float",
+                "description": "Contact Distance.",
+                "uiName": "Contact Distance",
+                "default": 0.01
+            },
+            "meshContactMargin": {
+                "type": "float",
+                "description": "Mesh Contact Margin.",
+                "uiName": "Mesh Contact Margin",
+                "default": 0.01
+            },
+            "toleranceLength": {
+                "type": "float",
+                "description": "Tolerance Length.",
+                "uiName": "Tolerance Length",
+                "default": 0.1
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "contactCount": {
+                "description": [ "The number of contacts." ],
+                "type": "int"
+            },
+            "contactPoints": {
+                "description": [ "Contact positions." ],
+                "type": "pointf[3][]"
+            },
+            "contactNormals": {
+                "description": [ "Contact normals." ],
+                "type": "normalf[3][]"
+            },
+            "contactDepths": {
+                "description": [ "Contact depths." ],
+                "type": "float[]"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

@@ -343,6 +343,33 @@ struct PxSceneFlag
 		*/
 		eENABLE_SOLVER_RESIDUAL_REPORTING = (1 << 19),
 
+		/**
+		\brief Reorders articulation contact constraints and articulation joint maximum velocity constraints in the solver.
+
+		When this flag is raised, the solver will observe the following order:
+		- joint friction, joint drive, joint position limit
+		- link dynamic contact
+		- link static contact
+		- joint max velocity
+
+		When the flag is lowered, the solver will observe a modified order:
+		- link dynamic contact
+		- joint friction, joint drive, joint position limit
+		- joint max velocity
+		- link static contact
+
+		Raising the flag can be useful for certain simulation scenarios such as gripping, where it is desirable for dynamic contact 
+		to be resolved after joint drive but before max joint velocity.
+
+		\note Raising this flag may have a negative effect on simulation performance.
+
+		\note A goal of raising this flag is shallower contact penetration. This will in turn result in a reduced force 
+		reported by PxArticulationCache::linkIncomingJointForce.
+ 
+		<b>Default</b> false
+		*/
+		eSOLVE_ARTICULATION_CONTACT_LAST = (1 << 20),
+
 		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 	};
 };

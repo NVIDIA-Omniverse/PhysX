@@ -44,9 +44,9 @@ the solution forces are saved in a vector.
 state should not be stored, this function is safe to call from multiple threads.
 */
 void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator, 
-	bool solveFrictionEveryIteration);
+	bool solveFrictionEveryIteration, bool solveArticulationContactLast);
 
-void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration);
+void solveV_Blocks(SolverIslandParams& params, bool solveFrictionEveryIteration, bool solveArticulationContactLast);
 
 }
 }

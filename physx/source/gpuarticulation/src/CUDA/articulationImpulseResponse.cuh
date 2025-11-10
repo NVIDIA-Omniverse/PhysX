@@ -233,7 +233,7 @@ static __device__ PX_FORCE_INLINE void averageLinkImpulsesAndPropagate(uint2* PX
 					//nextDeferredZ = loadSpatialVector(artiLinks[nextIndex].mDeferredZ, threadIndexInWarp);
 				}
 
-				const Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW_0(PxVec3(child2Parentx, child2Parenty, child2Parentz),
+				const Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(child2Parentx, child2Parenty, child2Parentz),
 					dofData, Z,
 					dofCount, threadIndexInWarp);
 
@@ -356,7 +356,7 @@ static __device__ void averageLinkImpulsesAndPropagate2(uint2* PX_RESTRICT isSla
 				const Cm::UnAlignedSpatialVector parentScratchImpulse = loadSpatialVector(artiLinks[parent].mScratchImpulse, threadIndexInWarp);
 				const Cm::UnAlignedSpatialVector solverSpatialImpulse = loadSpatialVector(linkData.mSolverSpatialImpulse, threadIndexInWarp);
 
-				const Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW_0(PxVec3(child2Parentx, child2Parenty, child2Parentz),
+				const Cm::UnAlignedSpatialVector propagatedZ = propagateImpulseW<WriteToDeferredQstZ>(PxVec3(child2Parentx, child2Parenty, child2Parentz),
 					dofData, Z,
 					dofCount, threadIndexInWarp);
 

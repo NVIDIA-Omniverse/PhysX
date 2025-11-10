@@ -1,0 +1,622 @@
+#usda 1.0
+(
+    "Physx Schema Addition"
+    subLayers = [
+        @usdGeom/schema.usda@,
+    ]
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName      = "physxSchemaAddition"
+        string libraryPath      = "./"
+        string libraryPrefix    = "PhysxSchemaAddition"
+        bool skipCodeGeneration = true
+    }
+)
+{
+}
+
+class "PhysxJointAxisAPI"
+(
+    doc = """PhysX joint parameters defined per axis. Can be applied to a PhysicsJoint prim or
+        the derived classes PhysicsRevoluteJoint, PhysicsPrismaticJoint or PhysicsSphericalJoint.
+        For overlapping parameters with PhysxJointAPI, the parameters of PhysxJointAxisAPI take precedence for that axis. """
+    inherits = </APISchemaBase>
+     customData = {
+        token apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "physxJointAxis"
+    }
+)
+{
+    float maxJointVelocity = 1000000.0 (
+        customData = {
+            string apiName = "maxJointVelocity"
+        }
+        displayGroup = "Advanced"
+        displayName = "Maximum Joint Velocity"
+        doc = """Maximum joint velocity. Only applies to joints that are part of an articulation (see PhysicsArticulationRootAPI).            
+            The solver will apply appropriate joint-space impulses in order to enforce the per-axis joint-velocity limit.
+            Range: [0, inf)
+            Units: Linear joint - distance / seconds
+                   Angular joint - degrees / seconds"""
+    )
+
+    float armature = 0.0 (
+        customData = {
+            string apiName = "armature"
+        }
+        displayGroup = "Advanced"
+        displayName = "Armature"
+        doc = """Conceptually, armature represents the inertia of an actuator driving the joint. It is an artificial mass/inertia
+            that is added to the joint-space inertia and can help stabilize an articulation. Note that this parameter is used only
+            when the joint belongs to an articulation (see PhysicsArticulationRootAPI).
+            Range: [0, inf)
+            Units: Linear joint - mass
+                   Angular joint - mass * distance^2"""
+   )
+    
+    float staticFrictionEffort = 0.0 (
+        customData = {
+            string apiName = "staticFrictionEffort"
+        } 
+        displayGroup = "Advanced"
+        displayName = "Static Friction Effort"
+        doc = """Maximum static friction force or torque applied to resist motion in stationary joints. Only applies to joints that are part of an articulation (see PhysicsArticulationRootAPI).
+            Prevents motion initiation until the applied force exceeds this threshold.
+            Range: [0, inf)
+            Units: Linear joint - force (mass * distance / second^2)
+                   Angular joint - torque (mass * distance^2 / second^2)"""
+    )
+
+    float dynamicFrictionEffort = 0.0 (
+        customData = {
+            string apiName = "dynamicFrictionEffort"
+        } 
+        displayGroup = "Advanced"
+        displayName = "Dynamic Friction Effort"
+        doc = """Coulomb friction force or torque applied to resist motion in moving joints. Only applies to joints that are part of an articulation (see PhysicsArticulationRootAPI).
+            Should be less than or equal to staticFrictionEffort.
+            Range: [0, inf)
+            Units: Linear joint - force (mass * distance / second^2)
+                   Angular joint - torque (mass * distance^2 / second^2)"""
+    )
+
+    float viscousFrictionCoefficient = 0.0 (
+        customData = {
+            string apiName = "viscousFrictionCoefficient"
+        } 
+        displayGroup = "Advanced"
+        displayName = "Viscous Friction Coefficient"
+        doc = """Coefficient used to calculate velocity-dependent friction effort. Only applies to joints that are part of an articulation (see PhysicsArticulationRootAPI).
+            Total friction effort in moving joints = - sign(jointVelocity) * (dynamicFrictionEffort + viscousFrictionCoefficient * abs(jointVelocity))
+            Range: [0, inf)
+            Units: Linear joint - force * second / distance
+                   Angular joint - torque * second / degrees"""
+    )
+}
+
+class "PhysxDrivePerformanceEnvelopeAPI"
+(
+    doc = """PhysX drive performance envelope parameters. Can be applied to a PhysicsJoint prim or
+    the derived classes PhysicsRevoluteJoint, PhysicsPrismaticJoint (similar to PhysicsDriveAPI).
+    For the PhysxDrivePerformanceEnvelopeAPI to take effect, the PhysicsDriveAPI must also be defined for the same axis. This is because the maxForce parameter of the PhysicsDriveAPI is utilized by the PhysxDrivePerformanceEnvelopeAPI.
+    This API defines characteristics that limit the total joint force (drive force + external cached joint force)."""
+    inherits = </APISchemaBase>
+    customData = {
+        token apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "physxDrivePerformanceEnvelope"
+    }
+)
+{
+    float maxActuatorVelocity = inf (
+        customData = {
+            string apiName = "maxActuatorVelocity"
+        }
+        displayGroup = "Advanced"
+        displayName = "Max Actuator Velocity"
+        doc = """Defines speed limit above which actuator cannot produce any torque/force.
+            Range: [0, inf)
+            Units: Linear joint - distance / second
+                   Angular joint - degrees / second"""
+    )
+
+    float velocityDependentResistance = 0.0 (
+        customData = {
+            string apiName = "velocityDependentResistance"
+        }
+        displayGroup = "Advanced"
+        displayName = "Velocity Dependent Resistance"
+        doc = """Defines a slope of the maxForce line of the performance envelope:
+            |F| <= maxForce - velocityDependentResistance * |jointVelocity|
+            The available max force/torque decreases as velocity magnitude increases due to the effect of the power losses of the motor.
+            MaxForce parameter is defined in PhysicsDriveAPI.
+            Range: [0, inf)
+            Units: Linear joint - force * second / distance
+                   Angular joint - torque * second / degrees"""
+    )
+
+    float speedEffortGradient = 0.0 (
+        customData = {
+            string apiName = "speedEffortGradient"
+        }
+        displayGroup = "Advanced"
+        displayName = "Speed-Effort Gradient"
+        doc = """Defines how the maximum joint speed decreases as torque increases: 
+            |jointVelocity| <= maxActuatorVelocity - speedEffortGradient * |jointForce|
+            It incorporates back EMF effects of the motor.
+            Range: [0, inf)
+            Units: Linear joint - distance / second / force
+                   Angular joint - degrees / second / torque"""
+    )
+}
+
+class "PhysxSplinesSurfaceVelocityAPI"
+(
+    doc = """PhysxSplinesSurfaceVelocityAPI enables surface velocity simulation
+    that injects velocity to the solver through internal contact modify 
+    callback. Surface velocity can be used typically for conveyer belt 
+    simulation. It must be applied to a prim with UsdPhysicsRigidBodyAPI.
+    The motion is defined by a velocity magnitude and UsdGeomBasisCurves that
+    defines the motion direction.
+    """
+    inherits = </APISchemaBase>
+)
+{
+    bool physxSplinesSurfaceVelocity:surfaceVelocityEnabled = true (
+        customData = {
+            string apiName = "surfaceVelocityEnabled"
+        }
+        displayName = "Surface Velocity Enabled"
+        doc = """Whether surface velocity is enabled or not."""
+    )    
+
+    float physxSplinesSurfaceVelocity:surfaceVelocityMagnitude = 0.0 (
+        customData = {
+            string apiName = "surfaceVelocityMagnitude"
+        }
+        displayName = "Surface Velocity Magnitude"
+        doc = """Surface velocity magnitude applied through contact modify callback. 
+        Note that if objects are scaled, the surface velocity magnitude has to be
+        adjusted.
+        Units: distance/second."""
+    )
+
+    rel physxSplinesSurfaceVelocity:surfaceVelocityCurve (
+        customData = {
+            string apiName = "surfaceVelocityCurve"
+        }
+        displayName = "Surface Velocity Curve"
+        doc = """Relationship to UsdGeomBasisCurves that defines the motion direction.
+        When a contact is found the closest point on the spline is found and the
+        motion direction is derived as the tangent at that spline point.
+        
+        Note that only one spline is supported.
+        Note that runtime changes to the curve are not supported."""
+  )
+
+}
+
+// PhysxBaseDeformableBodyAPI vs. PhysxDeformableBodyAPI to resolve clash with legacy schema.
+// We should be able to resolve this when merging the codeless schema back into PhysxSchema.
+
+class "PhysxBaseDeformableBodyAPI"
+(
+    doc = """PhysxBaseDeformableBodyAPI provides PhysX specific parameters for simulating volume and surface deformables. 
+          It can be applied to a prim with OmniPhysicsDeformableBodyAPI."""
+    inherits = </APISchemaBase>
+)
+{
+    uint physxDeformableBody:solverPositionIterationCount = 16 (
+        customData = {
+            string apiName= "solverPositionIterationCount"
+        }
+        
+        displayGroup = "Advanced"
+        displayName = "Solver Position Iteration Count"
+        doc = """ Number of solver position iterations per time step.
+              Range: [1, 255]"""
+    )
+
+    float physxDeformableBody:linearDamping = 0.0 (
+        customData = {
+            string apiName= "linearDamping"
+        }
+        
+        displayName = "Linear Damping"
+        doc = """Linear damping coefficient.
+              Range: [0, inf)
+              Units: 1 / seconds"""
+    )
+
+    float physxDeformableBody:maxLinearVelocity = inf (
+        customData = {
+            string apiName = "maxLinearVelocity"
+        }
+
+        displayName = "Max Linear Velocity"
+        doc = """Maximum allowable linear velocity for the deformable body. 
+              For surface deformables: If set to a negative value, the simulation determines a default value.
+              Range: [0, inf)
+              Units: distance / seconds"""
+    )
+
+    float physxDeformableBody:settlingDamping = 10.0 (
+        customData = {
+            string apiName= "settlingDamping"
+        }
+        
+        displayGroup = "Advanced"
+        displayName = "Settling Damping"
+        doc = """Additional damping term if vertex velocity drops below settlingThreshold.
+              Range: [0, inf)
+              Units: 1 / seconds"""
+    )
+
+    float physxDeformableBody:settlingThreshold = 0.10 (
+        customData = {
+            string apiName= "settlingThreshold"
+        }
+        
+        displayGroup = "Advanced"
+        displayName = "Settling Threshold"
+        doc = """Threshold vertex velocity under which sleep damping is applied in addition to velocity damping.
+              Range: [0, inf]
+              Units: distance / seconds"""
+    )
+
+    float physxDeformableBody:sleepThreshold = 0.05 (
+        customData = {
+            string apiName= "sleepThreshold"
+        }
+        
+        displayName = "Sleep Threshold"
+        doc = """Velocity threshold under which the vertex becomes a candidate for sleeping.
+              Range: [0, inf)
+              Units: distance / seconds"""
+    )
+
+    float physxDeformableBody:maxDepenetrationVelocity = inf (
+        customData = {
+            string apiName = "maxDepenetrationVelocity"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Max Depenetration Velocity"
+        doc = """The maximum velocity permitted to be introduced by the solver to depenetrate intersections.
+              Range: [0, inf)
+              Units: distance / seconds"""
+    )
+
+    bool physxDeformableBody:selfCollision = False (
+        customData = {
+            string apiName= "selfCollision"
+        }
+        
+        displayName = "Enable Self Collision"
+        doc = """Enables self collisions on the deformable, preventing self intersections."""
+    )
+
+    float physxDeformableBody:selfCollisionFilterDistance = -inf (
+        customData = {
+            string apiName= "selfCollisionFilterDistance"
+        }
+        
+        displayGroup = "Advanced"
+        displayName = "Self Collision Filter Distance"
+        doc = """Distance under which self-collisions are disabled. Default value -inf means default is picked by the simulation.
+              Range: [2*physxCollision:restOffset, max_float]
+              Units: distance"""
+    )
+
+    bool physxDeformableBody:enableSpeculativeCCD = False (
+        customData = {
+            string apiName = "enableSpeculativeCCD"
+        }
+
+        displayName = "Enable Speculative CCD"
+        doc = """Register a deformable body to dynamically adjust contact offset based on velocity."""
+    )
+
+    bool physxDeformableBody:disableGravity = false (
+        customData = {
+            string apiName = "disableGravity"
+        }
+
+        displayName = "Disable Gravity"
+        doc = """Disable gravity for the deformable body."""
+    )
+
+}
+
+class "PhysxSurfaceDeformableBodyAPI"
+(
+    doc = """PhysxSurfaceDeformableBodyAPI provides PhysX specific parameters for simulating surface deformables. It can 
+          be applied to a prim with OmniPhysicsDeformableBodyAPI."""
+    inherits = </APISchemaBase>
+    prepend apiSchemas = ["PhysxBaseDeformableBodyAPI"]
+)
+{
+    uint physxDeformableBody:collisionPairUpdateFrequency = 1 (
+        customData = {
+            string apiName = "collisionPairUpdateFrequency"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Collision Pair Update Frequency"
+        doc = """Determines how often cloth-to-cloth collision pairs are updated during each time step. 
+              Increasing this value results in more frequent updates to the contact pairs, which provides better contact points. 
+              For example, a value of 2 means collision pairs are updated twice per time step: 
+              once at the beginning and once in the middle of the time step (i.e., during the middle solver iteration). 
+              If set to 0, the solver adaptively determines when to update the cloth-to-cloth contact pairs, instead of using a fixed frequency.
+              Range [1, solverPositionIterationCount]"""
+    )
+
+    uint physxDeformableBody:collisionIterationMultiplier = 1 (
+        customData = {
+            string apiName = "collisionIterationMultiplier"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Collision Iteration Multiplier"
+        doc = """Determines how many collision subiterations are used in each solver iteration.
+              By default, collision constraints are applied once per solver iteration.
+              Increasing this value applies collision constraints more frequently within each solver iteration.
+              For example, a value of 2 means collision constraints are applied twice per solver iteration 
+              (i.e., collision constraints are applied 2 x solverPositionIterationCount times per time step).
+              Increasing this value does not update collision pairs more frequently; refer to collisionPairUpdateFrequency for that.
+              Range [1, solverPositionIterationCount/2]"""
+    )
+}
+
+class "PhysxDeformableMaterialAPI"
+(
+    doc = """PhysxDeformableMaterialAPI provides PhysX specific material properties for volume and surface deformable
+          materials with OmniPhysicsDeformableMaterialAPI."""
+    inherits = </APISchemaBase>
+)
+{
+    float physxDeformableMaterial:elasticityDamping = 0.0 (
+        customData = {
+            string apiName = "elasticityDamping"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Elasticity Damping"
+        doc = """Elasticity Damping"""
+    )
+}
+
+class "PhysxSurfaceDeformableMaterialAPI"
+(
+    doc = """PhysxSurfaceDeformableMaterialAPI provides PhysX specific material properties for surface deformable
+          materials with OmniPhysicsSurfaceDeformableMaterialAPI."""
+    inherits = </APISchemaBase>
+    prepend apiSchemas = ["PhysxDeformableMaterialAPI"]
+)
+{
+    float physxDeformableMaterial:bendDamping = 0.0 (
+        customData = {
+            string apiName = "bendDamping"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Bend Damping"
+        doc = """Bend Damping"""
+    )
+}
+
+class "PhysxAutoDeformableBodyAPI"
+(
+    doc = """PhysxAutoDeformableBodyAPI is used to mark up a prim with OmniPhysicsDeformableBodyAPI for automatic, 
+          parameter driven generation of simulation and collision mesh geometry. See PhysxAutoDeformableHexahedralMeshAPI
+          and PhysxAutoDeformableMeshSimplificationAPI for more details. Only the geometry attributes are generated by
+          OmniPhysX - the simulation and collision mesh primitives with corresponding APIs need to be created by the
+          application."""
+    inherits = </APISchemaBase>
+)
+{
+    bool physxDeformableBody:autoDeformableBodyEnabled = true (
+        customData = {
+            string apiName = "autoDeformableBodyEnabled"
+        }
+
+        displayName = "Auto Deformable Body Enabled"
+        doc = """Determins whether automatic mesh generation is enabled"""
+    )
+
+    rel physxDeformableBody:cookingSourceMesh (
+        customData = {
+            string apiName = "cookingSourceMesh"
+        }
+        displayName = "Cooking Source Mesh"
+        doc = """Relationship to a single UsdGeomMesh prim that is used to generate the simulation and collision mesh
+              geometry. The source mesh can reside outside of the deformable body hierachy."""
+    )
+}
+
+class "PhysxAutoDeformableHexahedralMeshAPI"
+(
+    doc = """PhysxAutoDeformableHexahedralMeshAPI specifies parameters related to volume deformable hexahedral simulation
+          mesh generation. It is applied to a prim with OmniPhysicsDeformableBodyAPI and PhysxAutoDeformableBodyAPI."""
+    inherits = </APISchemaBase>
+)
+{
+    uint physxDeformableBody:resolution = 0 (
+        customData = {
+            string apiName = "resolution"
+        }
+
+        displayName = "Resolution"
+        doc = """The number of hexahedral elements along the longest edge of the simulation mesh. A value of 0 indicates
+              that the resolution is automatically determined"""
+    )
+}
+
+class "PhysxAutoDeformableMeshSimplificationAPI"
+(
+    doc = """PhysxAutoDeformableMeshSimplificationAPI specifies parameters related to mesh geometry simplification. The
+          simplification process is applied to the cooking source mesh specified by the PhysxAutoDeformableBodyAPI."""
+    inherits = </APISchemaBase>
+)
+{
+    bool physxDeformableBody:autoDeformableMeshSimplificationEnabled = true (
+        customData = {
+            string apiName = "autoDeformableMeshSimplificationEnabled"
+        }
+
+        displayName = "Mesh Simplification Enabled"
+        doc = """Determins whether mesh simplification is enabled"""
+    )
+
+    bool physxDeformableBody:remeshingEnabled = true (
+        customData = {
+            string apiName = "remeshingEnabled"
+        }
+
+        displayName = "Remeshing Enabled"
+        doc = """Determins whether remeshing is enabled"""
+    )
+    
+    uint physxDeformableBody:remeshingResolution = 0 (
+        customData = {
+            string apiName = "remeshingResolution"
+        }
+
+        displayName = "Remeshing Resolution"
+        doc = """Remeshing Resolution, 0 indicates that the resolution is automatically determined"""
+    )
+
+    uint physxDeformableBody:targetTriangleCount = 0 (
+        customData = {
+            string apiName = "targetTriangleCount"
+        }
+
+        displayName = "Target Triangle Count"
+        doc = """Target Triangle Count, 0 indicates that the target count is automatically determined"""
+    )
+
+    bool physxDeformableBody:forceConforming = false (
+        customData = {
+            string apiName = "forceConforming"
+        }
+
+        displayName = "Force Conforming"
+        doc = """Determins whether to force conformation with triangle surface. This parameter only affects the mesh
+              geometry generation for volume deformable bodies."""
+    )
+}
+
+class "PhysxAutoDeformableAttachmentAPI"
+(
+    customData = {
+        string className = "PhysxAutoDeformableAttachmentAPI"
+    }
+
+    doc = """PhysxAutoDeformableAttachmentAPI is used to control automatic attachment and element collision filter
+          generation and is applied to UsdGeomImageable prim. The necessary low level attachment and filter primitives,
+          e.g. OmniPhysicsVtxVtxAttachment and OmniPhysicsElementCollisionFilter are provided by the application and are 
+          assumed to be direct children of the prim this API is applied to.
+          Either one of the attachable primitives needs to have a UsdPhysicsDeformableBodyAPI. One attachable primitive can 
+          be an UsdGeomXformable."""
+    inherits = </APISchemaBase>
+)
+{
+    rel physxAutoDeformableAttachment:attachable0 (
+        customData = {
+            string apiName = "attachable0"
+        }
+        displayName = "Attachable 0"
+        doc = """Relationship to a prim which is either a UsdGeomXformable or has a UsdPhysicsDeformableBodyAPI."""
+    )
+
+    rel physxAutoDeformableAttachment:attachable1 (
+        customData = {
+            string apiName = "attachable1"
+        }
+        displayName = "Attachable 1"
+        doc = """Relationship to a prim which is either a UsdGeomXformable or has a UsdPhysicsDeformableBodyAPI."""
+    )
+
+    bool physxAutoDeformableAttachment:enableDeformableVertexAttachments = true (
+        customData = {
+            string apiName = "enableDeformableVertexAttachments"
+        }
+
+        displayName = "Enable Deformable Vertex Attachments"
+        doc = """Enables attaching deformable mesh vertices which overlap with the other actor's volume."""
+    )
+
+    float physxAutoDeformableAttachment:deformableVertexOverlapOffset = 0.0 (
+        customData = {
+            string apiName= "deformableVertexOverlapOffset"
+        }
+        
+        displayName = "Deformable Vertex Overlap Offset"
+        doc = """Deformable mesh vertices are attached if their distance to the other actor's volume is smaller than the offset.
+              Range: [0, inf)
+              Units: distance"""
+    )
+
+    bool physxAutoDeformableAttachment:enableRigidSurfaceAttachments = false (
+        customData = {
+            string apiName = "enableRigidSurfaceAttachments"
+        }
+
+        displayName = "Enable Rigid Surface Attachments"
+        doc = """Enables sampling attachment points on the rigid actor's surface."""
+    )
+
+    float physxAutoDeformableAttachment:rigidSurfaceSamplingDistance = -inf (
+        customData = {
+            string apiName= "rigidSurfaceSamplingDistance"
+        }
+        
+        displayName = "Rigid Surface Sampling Distance"
+        doc = """Attachment points on the rigid surface are positioned such that their typical neighbor distance matches the sampling distance. Use heuristic by default.
+              Range: [0, inf)
+              Units: distance"""
+    )
+
+    bool physxAutoDeformableAttachment:enableCollisionFiltering = true (
+        customData = {
+            string apiName = "enableCollisionFiltering"
+        }
+
+        displayName = "Enable Collision Filtering"
+        doc = """Enables adding collision filtering in the vicinity of the attachment points."""
+    )
+
+    float physxAutoDeformableAttachment:collisionFilteringOffset = -inf (
+        customData = {
+            string apiName= "collisionFilteringOffset"
+        }
+        
+        displayName = "Collision Filtering Offset"
+        doc = """Filtering ids are generated for deformable mesh vertices if their distance to the other actor's volume
+            is smaller than the offset. Use heuristic by default.
+            Range: [0, inf)
+            Units: distance"""
+    )
+
+   rel physxAutoDeformableAttachment:maskShapes (
+        customData = {
+            string apiName = "maskShapes"
+        }
+
+        displayName = "Mask Shapes"
+        doc = """Relationship to UsdGeomSphere, UsdGeomCube or UsdGeomCapsule geometries. The union of
+            the shapes defines a mask volume within which attachment points are generated."""
+   )
+
+    bool physxAutoDeformableAttachment:enableDeformableFilteringPairs = false (
+        customData = {
+            string apiName = "enableDeformableFilteringPairs"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Enable Deformable Collision Filtering Pairs"
+        doc = """Enables geometry pair based collision filtering for deformable-deformable attachments.
+            By default a filtered geometry of one actor is filtered against all geometries of the other actor."""
+    )
+}

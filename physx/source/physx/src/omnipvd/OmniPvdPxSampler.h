@@ -52,6 +52,7 @@ namespace physx
 	class PxArticulationJointReducedCoordinate;
 	class PxArticulationLink;
 	class PxRigidDynamic;
+	class PxArticulationMimicJoint;
 
 	class PxDeformableMaterial;
 	class PxDeformableSurfaceMaterial;
@@ -77,6 +78,8 @@ void streamShapeMaterials(const physx::PxShape&, physx::PxDeformableVolumeMateri
 void streamShapeMaterials(const physx::PxShape&, physx::PxPBDMaterial* const * mats, physx::PxU32 nbrMaterials);
 
 void streamDiffuseParticleParamsAttributes(const physx::PxDiffuseParticleParams& diffuseParams);
+
+void streamArticulationMimicJoint(const physx::PxArticulationMimicJoint& mj);
 
 enum OmniPvdSharedMeshEnum {
 	eOmniPvdTriMesh     = 0,
@@ -165,6 +168,7 @@ public:
 	void streamSceneContacts(physx::NpScene& scene);
 
 	static OmniPvdPxSampler* getInstance();
+	static OmniPvdPxSampler* getSamplingInstance();
 
 	void onObjectAdd(const physx::PxBase& object);
 	void onObjectRemove(const physx::PxBase& object);

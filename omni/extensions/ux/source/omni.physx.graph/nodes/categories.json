@@ -1,0 +1,11 @@
+{
+    "categoryDefinitions": {
+        "$description": "Nodes for PhysX queries.",
+        "PhysX Immediate Queries": "Nodes for PhysX immediate queries (without USD Physics).",
+        "PhysX Triggers": "Nodes for PhysX Triggers interception.",
+        "PhysX Scene Queries": "Nodes for PhysX scene queries.",
+        "PhysX Scene Vehicles": "Nodes for PhysX vehicle state queries.",
+        "PhysX Contacts": "Node for PhysX contact generation and tracking.",
+        "PhysX Property Queries": "Nodes for PhysX property queries."
+    }
+}

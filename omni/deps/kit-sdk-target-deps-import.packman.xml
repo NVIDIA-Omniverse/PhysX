@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.0">
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="pybind11" />
+    <filter include="glm" />
+    <filter include="python" />
+    <filter include="cxxopts" />
+    <filter include="doctest" />
+    <filter include="carb_sdk_plugins" />
+    <filter include="usd-${config}" />
+    <filter include="cuda" />
+    <filter include="imgui" />
+    <filter include="omni_client_library" />
+    <filter include="gsl" />
+    <filter include="premake" linkPath="../_build/host-deps/premake" />
+  </import>
+
+    <!-- override doctest version ,the kit one is not yet publicly available -->
+  <dependency name="doctest">
+    <package name="doctest" version="2.4.5+nv1-3" />
+  </dependency>
+
+  <dependency name="pybind11" linkPath="../_build/target-deps/pybind11" />
+  <dependency name="glm" linkPath="../_build/target-deps/glm" />
+  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <dependency name="cxxopts" linkPath="../_build/target-deps/cxxopts" />
+  <dependency name="doctest" linkPath="../_build/target-deps/doctest" />
+  <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins" tags="slim-package" />
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}" />
+  <dependency name="cuda" linkPath="../_build/target-deps/cuda" />
+  <dependency name="imgui" linkPath="../_build/target-deps/imgui" />
+  <dependency name="omni_client_library" linkPath="../_build/target-deps/client-library" />
+  <dependency name="gsl" linkPath="../_build/target-deps/gsl" />
+
+  </project>

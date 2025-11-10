@@ -1,0 +1,30 @@
+[package]
+title = "V-HACD Convex Decompostion"
+description="V-HACD Convex Decompostion"
+version = "107.3.0-oss.0"
+authors = ["PhysX"]
+repository = ""
+keywords = ["convex", "convexdecomposition"]
+category = "simulation"
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+support_level = "Core"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.assets.plugins" = {}
+"omni.usd.libs" = {}
+"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.kit.commands" = {optional=true}
+
+[[python.module]]
+name = "omni.convexdecomposition"
+
+[[native.plugin]]
+path = "bin/*.plugin"

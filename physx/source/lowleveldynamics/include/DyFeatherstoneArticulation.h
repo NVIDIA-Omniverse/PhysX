@@ -726,7 +726,7 @@ namespace Dy
 
 		static void updateBodies(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* tempDeltaV, PxReal dt, bool integrateJointPosition);
 
-		static void recordDeltaMotion(const ArticulationSolverDesc& desc, const PxReal dt, Cm::SpatialVectorF* deltaV, const PxReal totalInvDt);
+		static void recordDeltaMotion(const ArticulationSolverDesc& desc, const PxReal dt, Cm::SpatialVectorF* deltaV);
 
 		static void deltaMotionToMotionVelocity(const ArticulationSolverDesc& desc, PxReal invDt);
 
@@ -880,15 +880,25 @@ namespace Dy
 		void computeZ(const ArticulationData& data, const PxVec3& gravity, ScratchData& scratchData);
 		void computeZD(const ArticulationData& data, const PxVec3& gravity, ScratchData& scratchData);
 
-		void solveInternalConstraints(const PxReal dt, const PxReal stepDt, const PxReal invStepDt,
-			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive, bool isExternalForcesEveryTgsIterationEnabled = false);
+		void solveInternalConstraints(
+			const PxReal dt, const PxReal stepDt, const PxReal invStepDt,
+			bool velocityIteration, bool isTGS, 
+			const ArticulationConstraintProcessingConfigCPU& articulationConstraintProcessingConfig,
+			const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive, bool isExternalForcesEveryTgsIterationEnabled = false);
 
-		void solveInternalJointConstraints(const PxReal dt, const PxReal stepDt, const PxReal invStepDt,
-			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive, bool isExternalForcesEveryTgsIterationEnabled);
+		void solveInternalJointConstraints(
+			const PxReal dt, const PxReal stepDt, const PxReal invStepDt,
+			bool velocityIteration, bool isTGS, 
+			bool doFrictionDrivePosLimit, ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, bool doStaticContactAnd1dConstraint,
+			const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive, bool isExternalForcesEveryTgsIterationEnabled);
 
 	private:
-		Cm::SpatialVectorF solveInternalJointConstraintRecursive(const InternalConstraintSolverData& data, const PxU32 linkID,
-			const Cm::SpatialVectorF& parentDeltaV, PxU32& dofId, PxU32& limitId);
+
+		Cm::SpatialVectorF solveInternalJointConstraintRecursive(
+			const InternalConstraintSolverData& data, const PxU32 linkID,
+			const Cm::SpatialVectorF& parentDeltaV,
+			bool doFrictionDrivePosLimit, ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, bool doStaticContactAnd1dConstraint,
+			PxU32& dofId, PxU32& limitId);
 	public:
 		void solveInternalSpatialTendonConstraints(bool isTGS);
 

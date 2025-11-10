@@ -1,0 +1,26 @@
+[package]
+version = "107.3.0-oss.0"
+title = "Metrics Assembler Physics"
+description = "Metrics Assembler rules for physics"
+authors = ["PhysX"]
+category = "USD, Physics"
+repository=""
+readme  = "docs/README.md"
+keywords = ["usd","physics"]
+changelog = "docs/CHANGELOG.md"
+preview_image = "data/preview.png"
+icon = "data/icon.png"
+support_level = "Sample"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usd.metrics.assembler" = {}
+"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true, optional=true }
+
+[[python.module]]
+name = "omni.metrics.assembler.physics"

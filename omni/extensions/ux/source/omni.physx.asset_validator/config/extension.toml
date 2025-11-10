@@ -1,0 +1,38 @@
+[package]
+title = "Omni PhysX Asset Validator"
+description="Validate assets containing USD Physics API and attributes"
+changelog="docs/CHANGELOG.md"
+readme = "docs/README.md"
+repository = ""
+keywords = ["physics"]
+category = "simulation"
+version = "107.3.0-oss.0"
+preview_image = "data/icons/icon.png"
+icon = "data/icons/icon.png"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd.libs" = {}
+"omni.asset_validator.core" = {}
+"omni.asset_validator.ui" = { optional = true }
+"omni.timeline" = {}
+
+[[python.module]]
+name = "omni.physxassetvalidator"
+
+[[native.plugin]]
+path = "bin/omni.physx.asset_validator.plugin"
+
+[[test]]
+args = [
+    "--no-window",
+]
+dependencies = [
+    "omni.physx.tests",
+    "omni.usd",
+]

@@ -1,0 +1,113 @@
+{
+    "omni.physx.graph.SceneQuerySweepPrimClosest": {
+        "version": 1,
+        "description": "Finds the closest collider that is hit by the input sweep.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Queries",
+        "uiName": "Sweep, Prim, Closest",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "Input execution"
+            },
+            "prim": {
+                "type": "target",
+                "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+                "uiName": "Prim"
+            },
+            "direction": {
+                "type": ["vectorf[3]", "vectord[3]"],
+                "description": "Sweep direction vector",
+                "uiName": "Direction",
+                "unvalidated": true
+            },
+            "sweepRange": {
+                "type": ["float", "double"],
+                "description": "Sweep maximum distance. Use negative for infinite. If omitted, infinity is used.",
+                "uiName": "Distance",
+                "unvalidated": true
+            },
+            "bothSides": {
+                "type": "bool",
+                "description": "Sets whether backfaces of colliders should be included in checks.",
+                "uiName": "Both sides",
+                "default": false
+            }
+        },
+        "outputs": {
+            "execOut": {
+                "type": "execution",
+                "description": "Output execution"
+            },
+            "hit": {
+                "description": [
+                    "Returns true if any colliders are hit by the sweep."
+                ],
+                "type": "bool"
+            },
+            "colliderPrim": {
+                "uiName": "Collider Prim",
+                "description": [
+                    "Closest collider prim that is hit by the sweep."
+                ],
+                "type": "target"
+            },
+            "bodyPrim": {
+                "uiName": "Body Prim",
+                "description": [
+                    "Associated body prim of the closest collider prim hit by the sweep."
+                ],
+                "type": "target"
+            },
+            "position": {
+                "description": [
+                    "The position of the point hit."
+                ],
+                "type": "pointf[3]"
+            },
+            "normal": {
+                "description": [
+                    "The surface normal of the point hit."
+                ],
+                "type": "normalf[3]"
+            },       
+            "distance": {
+                "description": [
+                    "The distance from the origin to the point hit."
+                ],
+                "uiName": "Hit Distance",
+                "type": "float"
+            },
+            "faceIndex": {
+                "description": [
+                    "The face index of the point hit."
+                ],
+                "type": "int"
+            },
+            "materialPrim": {
+                "uiName": "Material Prim",
+                "description": [
+                    "Physics material Prim at the point hit."
+                ],
+                "type": "target"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },        
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

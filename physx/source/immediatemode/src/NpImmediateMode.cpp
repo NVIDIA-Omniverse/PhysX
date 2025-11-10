@@ -104,7 +104,11 @@ namespace
 		PX_FORCE_INLINE	void							immSolveInternalConstraints(PxReal dt, PxReal invDt, PxReal elapsedTime, bool velocityIteration, bool isTGS)
 														{
 															// PT: TODO: revisit the TGS coeff (PX-4516)
-															FeatherstoneArticulation::solveInternalConstraints(dt, dt, invDt, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT, false, false); //  pass correct flag value - PX-4744
+															FeatherstoneArticulation::solveInternalConstraints(
+																dt, dt, invDt, 
+																velocityIteration, isTGS,
+																ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(false),
+																elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT, false, false); //  pass correct flag value - PX-4744
 														}
 
 		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocitiesTGS(PxReal dt, PxReal totalDt, PxReal invDt, PxReal /*invTotalDt*/, const PxVec3& gravity, PxReal invLengthScale)
@@ -1684,7 +1688,7 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 			for(PxU32 j=0; j<nbSolverArticulations; ++j)
 			{
 				immArticulation* immArt = static_cast<immArticulation*>(solverArticulations[j]);
-				immArt->recordDeltaMotion(immArt->getSolverDesc(), dt, deltaV, invTotalDt);
+				immArt->recordDeltaMotion(immArt->getSolverDesc(), dt, deltaV);
 			}
 		}
 

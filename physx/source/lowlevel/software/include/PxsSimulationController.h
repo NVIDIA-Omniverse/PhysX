@@ -33,7 +33,7 @@
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxTransform.h"
-#include "foundation/PxBitMap.h"
+#include "foundation/PxPinnedBitMap.h"
 #include "foundation/PxPinnedArray.h"
 #include "foundation/PxUserAllocated.h"
 #include "PxScene.h"

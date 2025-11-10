@@ -747,7 +747,7 @@ namespace Sc
 					PxCoalescedHashSet<ConstraintCore*>		mConstraints;
 												
 					Bp::BoundsArray*						mBoundsArray;
-					PxFloatArrayPinned*						mContactDistance;
+					PxFloatArrayPinnedSafe*					mContactDistance;
 					bool									mHasContactDistanceChanged;
 					SqBoundsManager*						mSqBoundsManager;
 

@@ -284,7 +284,7 @@ namespace physx
 		virtual void nonRigidConstraintPrepare(PxU32 nbParticulations) = 0;
 
 		virtual void solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 maxPartitions,
-			PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity,
+			PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
 			PxReal* posIterResidualSharedMem, PxU32 posIterResidualSharedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
 			PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError) = 0;
 

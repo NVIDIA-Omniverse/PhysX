@@ -34,36 +34,148 @@
 #include "DyFeatherstoneArticulationUtils.h"
 #include "DyFeatherstoneArticulation.h"
 
-//This function stores Q-stZ to mDeferredQstZ
-static __device__ Cm::UnAlignedSpatialVector propagateImpulseW_0(const PxVec3& childToParent,
+class WriteToDeferredQstZ
+{
+public:
+	static __device__ void writeQstZ(PxgArticulationBlockDofData* PX_RESTRICT dofData, const PxU32 ind, const PxU32 threadIndexInWarp, const PxReal QstZ, const PxReal* providedQstZ) 
+	{
+		PX_UNUSED(providedQstZ);
+		dofData[ind].mDeferredQstZ[threadIndexInWarp] += QstZ;
+	}
+};
+
+class WriteToTempQstZ
+{
+public:
+	static __device__ void writeQstZ(PxgArticulationBlockDofData* PX_RESTRICT dofData, const PxU32 ind, const PxU32 threadIndexInWarp, const PxReal QstZ, const PxReal* providedQstZ) 
+	{
+		PX_UNUSED(providedQstZ);
+		dofData[ind].mTmpQstZ[threadIndexInWarp] += QstZ;
+	}
+};
+
+class WriteToProvidedQstZ
+{
+public:
+	static __device__ void writeQstZ(PxgArticulationBlockDofData* PX_RESTRICT dofData, const PxU32 ind, const PxU32 threadIndexInWarp, const PxReal QstZ, PxReal* providedQstZ) 
+	{
+		PX_UNUSED(dofData);
+		PX_UNUSED(threadIndexInWarp);
+		if(providedQstZ)
+			providedQstZ[ind] += QstZ;
+	}
+};
+
+class ReadFromDeferredQstZ
+{
+public:
+	static __device__ PxReal readFromQstZ(const PxgArticulationBlockDofData* PX_RESTRICT dofData, const PxU32 ind, const PxU32 threadIndexInWarp, const PxReal* providedQstZ)
+	{
+		PX_UNUSED(providedQstZ);
+		return dofData[ind].mDeferredQstZ[threadIndexInWarp];
+	}
+};
+
+class ReadFromTempQstZ
+{
+public:
+	static __device__ PxReal readFromQstZ(const PxgArticulationBlockDofData* PX_RESTRICT dofData, const PxU32 ind, const PxU32 threadIndexInWarp, const PxReal* providedQstZ)
+	{
+		PX_UNUSED(providedQstZ);
+		return dofData[ind].mTmpQstZ[threadIndexInWarp];
+	}
+};
+
+class ReadFromProvidedQstZ
+{
+public:
+	static __device__ PxReal readFromQstZ(const PxgArticulationBlockDofData* PX_RESTRICT dofData, const PxU32 ind, const PxU32 threadIndexInWarp, const PxReal* providedQstZ)
+	{
+		PX_UNUSED(dofData);
+		PX_UNUSED(threadIndexInWarp);
+		return providedQstZ[ind];
+	}
+};
+
+/**
+\brief Propagate to the parent link 
+a) a spatial impulse applied to a child link
+b) a joint impulse applied to the child link's inbound joint.
+The Mirtich equivalent is the equation for Y in Figure 5.7, page 141 but with a modification
+to account for a joint impulse applied to the child link's inbound joint.
+If the joint impulse is Q and the child link impulse is ZChildW then the parent link impulse has
+the form:
+YParentW = translateChildToParent{ ZChildW + (I * s) *(Q - s^T * ZChildW)/(s * I * s^T) }
+Optionally accumulate [Q - S^T * ZChildW] because this can be useful to reuse when propagating
+delta spatial velocity from parent link to child link.
+\param[in] parentToChild is the vector from parent link to child link such that childLinkPos == parentLinkPos + childToParent
+\param[in] Z is the link impulse to apply to the child link expressed in the world frame.
+\param[in] dofCount is the number of dofs of the child link's incoming joint.
+\param[in] threadIndexInWarp is index of the articulation in the warp.
+\param[in] jointForce is an optional of array joint impulses or forces ({Q}) to apply to each dof of the inbound joint of the child link. 
+If NULL is chosen, the jonit forces are assumed to be zero.
+\param[in] jointForceMultiplier is a multiplier to be applied to each element of jointForce. This is useful when applying a force for a finite timestep
+with the jointForceMultiplier acting as the duration of the timestep. A value of 1.0 for jointForceMultiplier corresponds to jointForceMultiplier representing 
+an array of dof impulses.
+\param[in] providedQstZ is an optional array that accumulates (Q - s^T * ZChildW) for the child link's inbound joint.
+\note providedQstZ is ignored unless WriteToProvidedQstZ is specified as the template parameter.
+\note If WriteToDeferredQstZ is the template parameter, the array PxgArticulationBlockDofData::mDeferredQstZ will be used to accumulate (Q - s^T * ZChildW)
+\note If WriteToTempQstZ is the template parameter, the array PxgArticulationBlockDofData::mTempQstZ will be used to accumulate (Q - s^T * ZChildW)
+\note If WriteToProvidedQstZ is the template parameter, the array providedQstZ will be used to accumulate (Q - s^T * ZChildW). The array providedQstZ is permitted to be NULL.
+\note jointForce and providedQstZ are either NULL or have dofCount entries ie one entry for each dof of the joint.
+\return The propagated spatial impulse in the world frame.
+*/
+template<class WriteQstZ>
+__device__ PX_FORCE_INLINE Cm::UnAlignedSpatialVector propagateImpulseW(const PxVec3& parentToChild,
 	PxgArticulationBlockDofData* PX_RESTRICT dofData, const Cm::UnAlignedSpatialVector& Z,
 	const PxU32 dofCount, const PxU32 threadIndexInWarp,
-	const PxReal* PX_RESTRICT jointForce = NULL, const PxReal jointForceMultiplier = 1.0f)
+	const PxReal* PX_RESTRICT jointForce = NULL, const PxReal jointForceMultiplier = 1.0f,
+	PxReal* providedQstZ = NULL)
 {
 	Cm::UnAlignedSpatialVector temp = Z;
-	Cm::UnAlignedSpatialVector sas[3];
-	Cm::UnAlignedSpatialVector isInvD[3];
-	PxReal jf[3];
 
-// the split into two separate loops is an optimization that allows dispatching the loads as early as possible.
-#pragma unroll 3
 	for (PxU32 ind = 0; ind < 3; ++ind)
 	{
 		if (ind < dofCount)
 		{
-			sas[ind] = loadSpatialVector(dofData[ind].mWorldMotionMatrix, threadIndexInWarp);
-			isInvD[ind] = loadSpatialVector(dofData[ind].mIsInvDW, threadIndexInWarp);
-			jf[ind] = (jointForce ? jointForce[ind] * jointForceMultiplier : 0.0f);
+			Cm::UnAlignedSpatialVector sas = loadSpatialVector(dofData[ind].mWorldMotionMatrix, threadIndexInWarp);
+			Cm::UnAlignedSpatialVector isInvD = loadSpatialVector(dofData[ind].mIsInvDW, threadIndexInWarp);
+			const PxReal jf = (jointForce ? jointForce[ind] * jointForceMultiplier : 0.0f);
+			const PxReal stZ = jf - sas.innerProduct(Z);
+			WriteQstZ::writeQstZ(dofData, ind, threadIndexInWarp, stZ, providedQstZ);
+			temp += isInvD * stZ;
 		}
 	}
 
-#pragma unroll 3
+	//parent space's spatial zero acceleration impulse
+	return Dy::FeatherstoneArticulation::translateSpatialVector(parentToChild, temp);
+}
+
+
+/**
+\brief Propagate to the parent link a spatial impulse applied to a child link.
+\note This function performs the same role as propagateImpulseW but with the following differences:
+1. The attributes isInvD and motionMatrix required for the computation are preloaded. 
+2. It is assumed that zero force/impulse is applied to the joint dofs.
+3. The optionally provided array qstZ will accumulate (Q - s^T * ZChildW)
+\note: This function is particularly useful when computing the link impulse response matrix because we propagate 6 orthogonal impulses to the
+same link, thereby reusing the same motionMatrix etc 6 times. 
+\note When computing the link impulse response matrix there is no need to accumulate (Q - s^T * ZChildW) 
+\note This function is the companion of propagateAccelerationW_everythingPreLoaded.
+\return The propagated spatial impulse in the world frame.
+*/
+static __device__ Cm::UnAlignedSpatialVector propagateImpulseW_everythingPreLoaded(const Cm::UnAlignedSpatialVector* isInvD, const PxVec3& childToParent,
+	const Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector& Z, const PxU32 dofCount, PxReal* qstZ)
+{
+	Cm::UnAlignedSpatialVector temp = Z;
+
+#pragma unroll (3)
 	for (PxU32 ind = 0; ind < 3; ++ind)
 	{
 		if (ind < dofCount)
 		{
-			const PxReal stZ = jf[ind] - sas[ind].innerProduct(Z);
-			dofData[ind].mDeferredQstZ[threadIndexInWarp] += stZ;
+			const PxReal stZ = -motionMatrix[ind].innerProduct(Z);
+			qstZ[ind] += stZ;
 			temp += isInvD[ind] * stZ;
 		}
 	}
@@ -72,64 +184,30 @@ static __device__ Cm::UnAlignedSpatialVector propagateImpulseW_0(const PxVec3& c
 	return Dy::FeatherstoneArticulation::translateSpatialVector(childToParent, temp);
 }
 
-static __device__ Cm::UnAlignedSpatialVector propagateImpulseWTemp(const PxVec3& childToParent,
-	PxgArticulationBlockDofData* PX_RESTRICT dofData, const Cm::UnAlignedSpatialVector& Z,
-	const PxU32 dofCount, const PxU32 threadIndexInWarp)
+/**
+/brief Propagate an acceleration (or velocity) from a parent link to a child link.
+\param[in] parentToChild is the vector from parent link to child link such that childLinkPos == parentLinkPos + parentToChild
+\param[in] invStISW is the Mirtich equivalent of 1/[S_i^T * I_i^A * S_i]
+param[in] motionMatrixW is the Mirth equivalent of S_i of the child link's inbound joint.
+param[in] parentLinkAccelerationW is the parent link acceleration (or velocity) expressed in the world frame.
+\param[in] dofCount is the number of dofs on the child links' inbound joint.
+\param[in] IsW is the Mirtich equvialent of I_i^A * S_i (== S_i^T * I_i^A)
+\param[in] QMinusSTZ is the equivalent of Q_i - S_i^T * ZA_i in Mirtich notiation with 
+	Q_i the joint force (or impulse) of the child link's inbound joint and ZA_i the child link 
+	zero acceleration force (or impulse)
+\return The spatial acceleration (or velocity) of the child link.
+\note See Mirtich p121 and equations for propagating forces/applying accelerations and
+	p141 for propagating velocities/applying impulses.
+\note This function is particularly useful when computing the link impulse response matrix because we propagate 6 orthogonal impulses to the
+same link, thereby reusing the same motionMatrix etc 6 times.
+\note This function is the companion of propagateImpulseW_everythingPreLoaded
+\note Call this function if 1) all necessary attributes are already loaded 2) Q-stZ is provided by the user.
+*/
+static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW_everythingPreLoaded(const PxVec3& parentToChild, const float3* invStISW,
+	const Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector& parentLinkAccelerationW, const PxU32 dofCount,
+	const Cm::UnAlignedSpatialVector* IsW, const PxReal* QMinusSTZ)
 {
-	Cm::UnAlignedSpatialVector temp = Z;
-
-	assert(dofCount<=3);
-	for (PxU32 ind = 0; ind < 3; ++ind)
-	{
-		if(ind<dofCount)
-		{
-			const Cm::UnAlignedSpatialVector sa = loadSpatialVector(dofData[ind].mWorldMotionMatrix, threadIndexInWarp);
-			const Cm::UnAlignedSpatialVector isInvD = loadSpatialVector(dofData[ind].mIsInvDW, threadIndexInWarp);
-			const PxReal stZ = -sa.innerProduct(Z);
-			dofData[ind].mTmpQstZ[threadIndexInWarp] += stZ;
-
-			temp += isInvD * stZ;
-		}
-	}
-
-	//parent space's spatial zero acceleration impulse
-	return Dy::FeatherstoneArticulation::translateSpatialVector(childToParent, temp);
-}
-
-static __device__ Cm::UnAlignedSpatialVector propagateImpulseW_1(
-	const PxVec3& childToParent,
-	const PxgArticulationBlockDofData* PX_RESTRICT dofData, 
-	const Cm::UnAlignedSpatialVector& Z,
-	const PxReal* jointDofImpulses, const PxU32 dofCount,
-	const PxU32 threadIndexInWarp, 
-	PxReal* qstZ)
-{
-	Cm::UnAlignedSpatialVector temp = Z;
-
-	assert(dofCount<=3);
-	for (PxU32 ind = 0; ind < 3; ++ind)
-	{
-		if(ind<dofCount)
-		{
-			const Cm::UnAlignedSpatialVector sa = loadSpatialVector(dofData[ind].mWorldMotionMatrix, threadIndexInWarp);
-			const Cm::UnAlignedSpatialVector isInvD = loadSpatialVector(dofData[ind].mIsInvDW, threadIndexInWarp);
-			const PxReal jointDofImpulse = jointDofImpulses ? jointDofImpulses[ind] : 0.0f;
-			const PxReal QMinusSTZ = jointDofImpulse - sa.innerProduct(Z);
-			qstZ[ind] += QMinusSTZ;
-
-			temp += isInvD * QMinusSTZ;
-		}
-	}
-
-	//parent space's spatial zero acceleration impulse
-	return Dy::FeatherstoneArticulation::translateSpatialVector(childToParent, temp);
-}
-
-static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(const PxVec3& c2p, const float3* invStIsT,
-	const Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector& hDeltaV, const PxU32 dofCount,
-	const Cm::UnAlignedSpatialVector* IsW, const PxReal* qstZ)
-{
-	Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(-c2p, hDeltaV); //parent velocity change
+	Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(-parentToChild, parentLinkAccelerationW); //parent velocity change
 
 	//Convert parent velocity change into an impulse
 	PxReal tJointDelta[3] = { 0.f, 0.f, 0.f };
@@ -141,7 +219,7 @@ static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(const PxVec3
 			//stI * pAcceleration
 			const PxReal temp = IsW[ind].innerProduct(pDeltaV);
 
-			tJointDelta[ind] = (qstZ[ind] - temp);
+			tJointDelta[ind] = (QMinusSTZ[ind] - temp);
 		}
 	}
 
@@ -150,7 +228,7 @@ static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(const PxVec3
 	{
 		if(ind<dofCount)
 		{
-			const float3 iStIsTi = invStIsT[ind];
+			const float3 iStIsTi = invStISW[ind];
 
 			const PxReal jDelta = iStIsTi.x * tJointDelta[0]
 								+ iStIsTi.y * tJointDelta[1]
@@ -163,11 +241,42 @@ static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(const PxVec3
 	return pDeltaV;
 }
 
-static __device__ Cm::UnAlignedSpatialVector computeSpatialJointDelta(
+/**
+/brief Propagate an acceleration (or velocity) from a parent link to a child link.
+\note This function performs the same role as propagateAccelerationW_everythingPreLoaded but with the following differences:
+1) The parameters invStISW and motionMatrixW have not been preloaded and therefore will be loaded afresh by this function.
+2) The accumulated QMinusSTZ may be read from PxgArticulationBlockDofData::mDeferredQstZ or PxgArticulationBlockDofData::mTmpQstZ
+or providedQMinusSTZ by selecting the corresponding template parameter.
+3) The delta to the joint dof speeds arising may be optionally recorded in the provided array jointDeltaDofSpeeds.
+\note Call this function if
+1) parentToChild is already loaded but all other necessary attributes still need to be loaded.
+) Q-stZ is to be loaded from either mDeferredQstZ, mTmpQstZ or user-provided array providedQstZ.
+3) It is required that PxgArticulationBlockDofData::mJointVelocities is *not* to be modified as a consequence of the propagation.
+*/
+template<class ReadFromQstZ>
+static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW_child2ParentPreLoaded(const PxVec3& parentToChild,
 	const PxgArticulationBlockDofData* PX_RESTRICT dofData,
-	const PxReal* PX_RESTRICT QSTZMinusISDotTranslatedParentDeltaV, PxReal* PX_RESTRICT jointDeltaDofSpeeds, const PxU32 dofCount, 
-	const PxU32 threadIndexInWarp)
+	const Cm::UnAlignedSpatialVector& parentLinkAccelerationW,
+	const PxU32 dofCount, const PxU32 threadIndexInWarp, const PxReal* providedQMinusSTZ, PxReal* jointDeltaDofSpeeds)
 {
+	const Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(-parentToChild, parentLinkAccelerationW); //parent velocity change
+
+	//[(Q - S^T *Z)] - [(I*S).innerProduct(translated(parentDeltaV))]
+	PxReal QSTZMinusISDotTranslatedParentDeltaV[3] = { 0.f, 0.f, 0.f };
+	Cm::UnAlignedSpatialVector IsW;
+#pragma unroll(3)
+	for (PxU32 ind = 0; ind < 3; ++ind)
+	{
+		if (ind < dofCount)
+		{
+			IsW = loadSpatialVector(dofData[ind].mIsW, threadIndexInWarp);
+			//stI * pAcceleration
+			const PxReal temp = IsW.innerProduct(pDeltaV);
+
+			QSTZMinusISDotTranslatedParentDeltaV[ind] = ReadFromQstZ::readFromQstZ(dofData, ind, threadIndexInWarp, providedQMinusSTZ)  - temp;
+		}
+	}
+
 	Cm::UnAlignedSpatialVector sas[3];
 
 	// the split into two separate loops is an optimization that allows dispatching the loads as early as possible.
@@ -201,107 +310,32 @@ static __device__ Cm::UnAlignedSpatialVector computeSpatialJointDelta(
 		}
 	}
 
-	return jointSpatialDeltaV;
-}
-
-//This function use mDeferredQstZ
-static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(const PxVec3& c2p,
-	const PxgArticulationBlockDofData* PX_RESTRICT dofData,
-	const Cm::UnAlignedSpatialVector& hDeltaV,
-	const PxU32 dofCount, PxReal* jointDeltaDofSpeeds, const PxU32 threadIndexInWarp)
-{
-	const Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(-c2p, hDeltaV); //parent velocity change
-
-	//[(Q - S^T *Z)] - [(I*S).innerProduct(translated(parentDeltaV))]
-	PxReal QSTZMinusISDotTranslatedParentDeltaV[3] = { 0.f, 0.f, 0.f };
-	Cm::UnAlignedSpatialVector IsW;
-#pragma unroll(3)
-	for (PxU32 ind = 0; ind < 3; ++ind)
-	{
-		if (ind < dofCount)
-		{
-			IsW = loadSpatialVector(dofData[ind].mIsW, threadIndexInWarp);
-			//stI * pAcceleration
-			const PxReal temp = IsW.innerProduct(pDeltaV);
-
-			QSTZMinusISDotTranslatedParentDeltaV[ind] = (dofData[ind].mDeferredQstZ[threadIndexInWarp] - temp);
-		}
-	}
-
-	const Cm::UnAlignedSpatialVector jointSpatialDeltaV = computeSpatialJointDelta(dofData, QSTZMinusISDotTranslatedParentDeltaV, jointDeltaDofSpeeds, dofCount, threadIndexInWarp);
-
 	return pDeltaV + jointSpatialDeltaV;
 }
 
-//This function use mTmpQstZ
-static __device__ Cm::UnAlignedSpatialVector propagateAccelerationWTemp(const PxVec3& c2p,
-	const PxgArticulationBlockDofData* PX_RESTRICT dofData,
-	const Cm::UnAlignedSpatialVector& hDeltaV,
-	const PxU32 dofCount, const PxU32 threadIndexInWarp)
-{
-	const Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(-c2p, hDeltaV); //parent velocity change
-
-	//[(Q - S^T *Z)] - [(I*S).innerProduct(translated(parentDeltaV))]
-	PxReal QSTZMinusISDotTransaltedParentDeltaV[3] = { 0.f, 0.f, 0.f };
-
-#pragma unroll(3)
-	for (PxU32 ind = 0; ind < 3; ++ind)
-	{
-		if (ind < dofCount)
-		{
-			const Cm::UnAlignedSpatialVector IsW = loadSpatialVector(dofData[ind].mIsW, threadIndexInWarp);
-			//stI * pAcceleration
-			const PxReal temp = IsW.innerProduct(pDeltaV);
-
-			QSTZMinusISDotTransaltedParentDeltaV[ind] = (dofData[ind].mTmpQstZ[threadIndexInWarp] - temp);
-		}
-	}
-
-	const Cm::UnAlignedSpatialVector jointSpatialDeltaV = computeSpatialJointDelta(dofData, QSTZMinusISDotTransaltedParentDeltaV, NULL, dofCount, threadIndexInWarp);
-
-	return pDeltaV + jointSpatialDeltaV;
-}
-
-//This function use qstZ as input
-static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(const PxVec3& c2p,
-	const PxgArticulationBlockDofData* PX_RESTRICT dofData,
-	const Cm::UnAlignedSpatialVector& hDeltaV,
-	const PxU32 dofCount, const PxU32 threadIndexInWarp,
-	const PxReal* qstZ)
-{
-	const Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(-c2p, hDeltaV); //parent velocity change
-
-	//[(Q - S^T *Z)] - [(I*S).innerProduct(translated(parentDeltaV))]
-	PxReal QSTZMinusISDotTransaltedParentDeltaV[3] = { 0.f, 0.f, 0.f };
-	Cm::UnAlignedSpatialVector IsW;
-#pragma unroll(3)
-	for (PxU32 ind = 0; ind < 3; ++ind)
-	{
-		if (ind < dofCount)
-		{
-			IsW = loadSpatialVector(dofData[ind].mIsW, threadIndexInWarp);
-			//stI * pAcceleration
-			const PxReal temp = IsW.innerProduct(pDeltaV);
-
-			QSTZMinusISDotTransaltedParentDeltaV[ind] = (qstZ[ind] - temp);
-		}
-	}
-
-	const Cm::UnAlignedSpatialVector jointSpatialDeltaV = computeSpatialJointDelta(dofData, QSTZMinusISDotTransaltedParentDeltaV, NULL, dofCount, threadIndexInWarp);
-
-	return pDeltaV + jointSpatialDeltaV;
-}
-
-static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(
+/**
+/brief Propagate an acceleration (or velocity) from a parent link to a child link.
+\note This function performs the same role as propagateAccelerationW_everythingPreLoaded but with the following differences:
+1) None of the necessary parameters have been pre-loaded (including parentToChild) and will therefore be loaded afresh by this function.
+2) The accumulated QMinusSTZ will be read from PxgArticulationBlockDofData::mDeferredQstZ
+3) PxgArticulationBlockDofData::mJointVelocities will be overwritten with the delta to the joint dof velocities.
+\note Call this function if 
+1) none of the necessary link and dof attributes are loaded.
+2) it is required that PxgArticulationBlockDofData::mJointVelocities is to be updated with the speed deltas of the joint dofs arising 
+from the propagation.
+\note This function is particularly useful when it is required to update the joint dof velocities either after 
+a solver step with TGS or a sim step with PGS.
+*/
+static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW_nothingpreloaded_updateJointDofVels(
 	PxgArticulationBlockLinkData& linkData,
 	PxgArticulationBlockDofData* dofData,
 	const PxU32 dofCount,
-	const Cm::UnAlignedSpatialVector& hDeltaV,
+	const Cm::UnAlignedSpatialVector& parentLinkAccelerationW,
 	const PxU32 threadIndexInWarp)
 {
-	const float c2px = linkData.mRw_x[threadIndexInWarp];
-	const float c2py = linkData.mRw_y[threadIndexInWarp];
-	const float c2pz = linkData.mRw_z[threadIndexInWarp];
+	const float parentToChildX = linkData.mRw_x[threadIndexInWarp];
+	const float parentToChildY = linkData.mRw_y[threadIndexInWarp];
+	const float parentToChildZ = linkData.mRw_z[threadIndexInWarp];
 
 	float3 invStIsT[3];
 	PxReal tJointDelta[3] = { 0.f, 0.f, 0.f };
@@ -323,7 +357,7 @@ static __device__ Cm::UnAlignedSpatialVector propagateAccelerationW(
 		}
 	}
 
-	Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(PxVec3(-c2px, -c2py, -c2pz), hDeltaV); //parent velocity change
+	Cm::UnAlignedSpatialVector pDeltaV = Dy::FeatherstoneArticulation::translateSpatialVector(PxVec3(-parentToChildX, -parentToChildY, -parentToChildZ), parentLinkAccelerationW); //parent velocity change
 	
 #pragma unroll 3
 	for (PxU32 ind = 0; ind < 3; ++ind)
@@ -420,7 +454,7 @@ static void __device__ PxcFsFlushVelocity(PxgArticulationBlockData& articulation
 			if (parent != (i - 1))
 				deltaV = loadSpatialVector(artiLinks[parent].mScratchDeltaV, threadIndexInWarp);
 
-			deltaV = propagateAccelerationW(tLink, dofs, nbDofs, deltaV, threadIndexInWarp);
+			deltaV = propagateAccelerationW_nothingpreloaded_updateJointDofVels(tLink, dofs, nbDofs, deltaV, threadIndexInWarp);
 
 			//Accumulate the DeltaVel arising from solver impulses applied to this link.
 			storeSpatialVector(tLink.mSolverSpatialDeltaVel, preloadedSolverSpatialDeltaVel + deltaV, threadIndexInWarp);

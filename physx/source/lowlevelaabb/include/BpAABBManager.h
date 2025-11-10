@@ -131,7 +131,7 @@ namespace Bp
 	{
 													PX_NOCOPY(AABBManager)
 	public:
-														AABBManager(BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinned& contactDistance,
+														AABBManager(BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
 																	PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
 																	PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode);
 

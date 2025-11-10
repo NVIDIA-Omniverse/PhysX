@@ -1,0 +1,62 @@
+{
+    "VehicleGetDriveState": {
+        "version": 1,
+        "description": [
+            "Retrieving drive related simulation state of an omni.physx vehicle"
+        ],
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Scene Vehicles",
+        "tags": [ "physics" ],
+        "uiName": "Get Vehicle Drive State",
+        "inputs": {
+            "vehiclePath": {
+                "type": "token",
+                "description": "The USD path of the vehicle prim to get the drive state for",
+                "uiName": "Vehicle USD Path"
+            }
+        },
+        "outputs": {
+            "accelerator": {
+                "type": "float",
+                "description": "The state of the accelerator pedal (in range [0, 1])",
+                "uiName": "Accelerator"
+            },
+            "brake0": {
+                "type": "float",
+                "description": "The state of the brake0 control (in range [0, 1])",
+                "uiName": "Brake0"
+            },
+            "brake1": {
+                "type": "float",
+                "description": "The state of the brake1 control (in range [0, 1])",
+                "uiName": "Brake1"
+            },
+            "steer": {
+                "type": "float",
+                "description": "The state of the steering wheel (in range [-1, 1])",
+                "uiName": "Steer"
+            },
+            "currentGear": {
+                "type": "int",
+                "description": "The current gear",
+                "uiName": "Current Gear"
+            },
+            "targetGear": {
+                "type": "int",
+                "description": "The target gear",
+                "uiName": "Target Gear"
+            },
+            "automaticTransmission": {
+                "type": "bool",
+                "description": "The state of the automatic transmission",
+                "uiName": "Automatic Transmission"
+            },
+            "engineRotationSpeed": {
+                "type": "float",
+                "description": "The engine rotation speed in radians per second",
+                "uiName": "Engine Rotation Speed"
+            }
+        },
+        "exclude": [ "tests", "usd" ]
+    }
+}

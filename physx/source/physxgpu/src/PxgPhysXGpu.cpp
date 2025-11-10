@@ -175,7 +175,7 @@ Bp::AABBManagerBase* PxgPhysXGpu::createGpuAABBManager(
 	PxsHeapMemoryAllocatorManager* heapMemoryManager,
 	Bp::BroadPhase& bp,
 	Bp::BoundsArray& boundsArray,
-	PxFloatArrayPinned& contactDistance,
+	PxFloatArrayPinnedSafe& contactDistance,
 	PxU32 maxNbAggregates, PxU32 maxNbShapes,
 	PxVirtualAllocator& allocator,
 	PxU64 contextID,
@@ -233,16 +233,16 @@ PxsSimulationController* PxgPhysXGpu::createGpuSimulationController(PxsKernelWra
 
 Dy::Context* PxgPhysXGpu::createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, 
 	const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, 
-	bool useEnhancedDeterminism, PxReal maxBiasCoefficient, PxU32 /*gpuComputeVersion*/, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
+	bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal maxBiasCoefficient, PxU32 /*gpuComputeVersion*/, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
 	bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled)
 {
 	if(solverType == PxSolverType::eTGS)
 		return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgTGSDynamicsContext), "PxgDynamicsContext"), PxgTGSDynamicsContext)(taskPool, gpuKernelWrangler, cudaContextManager, config, islandManager,
-			maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, maxBiasCoefficient, simStats, 
+			maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, simStats, 
 			static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), externalForcesEveryTgsIterationEnabled, lengthScale, enableDirectGPUAPI, contextID, isResidualReportingEnabled);
 	else
 		return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgDynamicsContext), "PxgDynamicsContext"), PxgDynamicsContext)(taskPool, gpuKernelWrangler, cudaContextManager, config, islandManager,
-			maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, maxBiasCoefficient, simStats, 
+			maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, simStats, 
 			static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), frictionEveryIteration, lengthScale, enableDirectGPUAPI, contextID, isResidualReportingEnabled);
 }
 

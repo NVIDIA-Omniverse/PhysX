@@ -1,0 +1,76 @@
+{
+    "omni.physx.graph.OnContactEventBasic": {
+        "version": 1,
+        "description": "PhysX contact event triggered execution.",
+        "categoryDefinitions": "../categories.json",
+        "categories": "PhysX Contacts",
+        "uiName": "On Contact Event",
+        "tags": ["physics", "physx", "simulation", "collision" ],
+        "scheduling": ["compute-on-request", "topology-read", "threadsafe"],
+        "inputs": {
+            "bodyPaths": {
+                "type": "token[]",
+                "description": "Body prim paths to check against.",
+                "uiName": "Body Paths",
+                "optional": true,
+                "metadata": {
+                    "literalOnly": "1"
+                }
+            },
+            "targetBodies": {
+                "type": "target",
+                "description": "Body prims to check against.",
+                "uiName": "Body Prims",
+                "optional": true,
+                "metadata": {
+                    "literalOnly": "1",
+                    "allowMultiInputs": "1"
+                }
+            }
+        },
+        "outputs": {
+            "foundExecOut": {
+                "type": "execution",
+                "description": "Output execution trigger for contact found events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+            },
+            "persistsExecOut": {
+                "type": "execution",
+                "description": "Output execution trigger for contact persists events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+            },
+            "lostExecOut": {
+                "type": "execution",
+                "description": "Output execution trigger for contact lost events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+            },
+            "contactingBody": {
+                "uiName": "Contacting Body",
+                "description": [
+                    "Path of the physics body that came in contact with a node input body to trigger the contact event."
+                ],
+                "type": "token"
+            },
+            "inputBody": {
+                "uiName": "Input Body",
+                "description": [
+                    "Path of the node input physics body that triggered the contact event."
+                ],
+                "type": "token"
+            }
+        },
+        "tokens": {
+        },
+        "typeDefinitions": {
+            "c++": {
+                "vectorf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "normalf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "pointf[3]": ["carb::Float3", ["carb/Types.h"]],
+                "float[3]": ["carb::Float3", ["carb/Types.h"]],
+                "double[3]": ["carb::Double3", ["carb/Types.h"]],
+                "float[4]": ["carb::Float4", ["carb/Types.h"]],
+                "double[4]": ["carb::Double4", ["carb/Types.h"]]
+            }
+        },
+        "tests": [
+        ],
+        "exclude": ["python", "tests"]
+    }
+}

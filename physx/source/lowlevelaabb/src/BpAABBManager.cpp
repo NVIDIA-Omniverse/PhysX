@@ -81,7 +81,7 @@ static PX_FORCE_INLINE uint32_t PxComputeHash(const AggPair& p)
 	return PxU32(physx::PxComputeHash( (p.mIndex0&0xffff)|(p.mIndex1<<16)) );
 }
 
-static PX_FORCE_INLINE bool shouldPairBeDeleted(const GroupsArrayPinned& groups, ShapeHandle h0, ShapeHandle h1)
+static PX_FORCE_INLINE bool shouldPairBeDeleted(const GroupsArrayPinnedSafe& groups, ShapeHandle h0, ShapeHandle h1)
 {
 	PX_ASSERT(h0<groups.size());
 	PX_ASSERT(h1<groups.size());
@@ -1029,7 +1029,7 @@ static void buildFreeBitmap(PxBitMap& bitmap, PxU32 currentFree, const PxArray<A
 #pragma warning(disable: 4355 )	// "this" used in base member initializer list
 #endif
 
-AABBManager::AABBManager(	BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinned& contactDistance,
+AABBManager::AABBManager(	BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
 							PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
 							PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode) :
 	AABBManagerBase			(bp, boundsArray, contactDistance, maxNbAggregates, maxNbShapes, allocator, contextID, kineKineFilteringMode, staticKineFilteringMode),

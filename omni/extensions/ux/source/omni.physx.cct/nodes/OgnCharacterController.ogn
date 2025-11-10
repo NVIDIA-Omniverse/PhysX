@@ -1,0 +1,68 @@
+{
+    "OgnCharacterController": {
+        "version": 1,
+        "description": "Activate or deactivate a Character Controller on a Capsule prim",
+        "language": "Python",
+        "uiName": "Character Controller",
+        "categoryDefinitions": "categories.json",
+        "categories": "Physx Character Controller",
+        "scheduling": "global-write,usd",
+        "inputs": {
+            "activate": {
+                "type": "execution",
+                "description": "Activate Character Controller on a Capsule. This can be done on e.g. Simulation Start Play event."
+            },
+            "deactivate": {
+                "type": "execution",
+                "description": "Deactivate Character Controller on a Capsule. This can be done on e.g. Simulation Stop Play event."
+            },
+            "gravity": {
+                "type": "bool",
+                "description": "Enable Gravity",
+                "uiName": "Enable Gravity",
+                "default": true
+            },
+            "speed": {
+                "type": "int",
+                "description": "Speed in units/s",
+                "uiName": "Speed",
+                "default": 500
+            },
+            "setupControls": {
+                "type": "token",
+                "description": "Setup controls: Auto will use default WASD/mouse/gamepad controls or Controls Settings keybinds if connected. Manual will skip control setup completely, leaving it to the user to do manually.",
+                "uiName": "Setup Controls",
+                "default": "Auto",
+                "metadata": {
+                    "allowedTokens": [ "Auto", "Manual" ]
+                }
+            },
+            "controlsSettings": {
+                "type": "bundle",
+                "optional": true,
+                "description": "Use Controls Settings to rebind controls."
+            },
+            "capsulePath": {
+                "type": "path",
+                "description": "Connect a path of a capsule to use as a character controller. Use Spawn Capsule node to dynamically spawn a capsule for you if needed.",
+                "uiName": "Capsule Path"
+            },
+            "fpCameraPathToken": {
+                "type": "token",
+                "description": "If a camera path is connected the character controller with use first person camera mode",
+                "optional": true,
+                "uiName": "First Person Camera Path"
+            }
+        },
+        "outputs": {
+            "done": {
+                "type": "execution",
+                "description": "The output execution",
+                "uiName": "Done"
+            }
+        },
+        "state": {
+            "$comment": "The existence of this state section, even if it contains no attributes, means there is internal state that is entirely managed by the node"
+        }
+    }
+}
