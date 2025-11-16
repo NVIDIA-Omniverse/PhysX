@@ -871,6 +871,18 @@ static void _calcSeparation(const ConvexV& convexA, const nvidia::NvTransform& a
     sep.plane.d = -sep.plane.d;
 }
 
+static NV_FORCE_INLINE void transposeStore(Vec3V v0, Vec3V v1, Vec3V v2, Vec3V v3, Vec4V* dst)
+{
+    Vec4V col0 = Vec4V_From_Vec3V(v0);
+    Vec4V col1 = Vec4V_From_Vec3V(v1);
+    Vec4V col2 = Vec4V_From_Vec3V(v2);
+    Vec4V col3 = Vec4V_From_Vec3V(v3);
+    V4Transpose(col0, col1, col2, col3);
+    dst[0] = col0;
+    dst[1] = col1;
+    dst[2] = col2;
+}
+
 static void _arrayVec3ToVec4(const NvVec3* src, Vec4V* dst, uint32_t num)
 {
     const uint32_t num4 = num >> 2;
@@ -880,12 +892,7 @@ static void _arrayVec3ToVec4(const NvVec3* src, Vec4V* dst, uint32_t num)
         Vec3V v1 = V3LoadU(&src[1].x);
         Vec3V v2 = V3LoadU(&src[2].x);
         Vec3V v3 = V3LoadU(&src[3].x);
-        // Transpose
-        V4Transpose(v0, v1, v2, v3);
-        // Save 
-        dst[0] = v0;
-        dst[1] = v1;
-        dst[2] = v2;
+        transposeStore(v0, v1, v2, v3, dst);
     }
     const uint32_t remain = num & 3;
     if (remain)
@@ -894,10 +901,7 @@ static void _arrayVec3ToVec4(const NvVec3* src, Vec4V* dst, uint32_t num)
         uint32_t i = 0;
         for (; i < remain; i++) work[i] = V3LoadU(&src[i].x);
         for (; i < 4; i++) work[i] = work[remain - 1];
-        V4Transpose(work[0], work[1], work[2], work[3]);
-        dst[0] = work[0];
-        dst[1] = work[1];
-        dst[2] = work[2];
+        transposeStore(work[0], work[1], work[2], work[3], dst);
     }
 }
 
@@ -917,12 +921,7 @@ static void _arrayVec3ToVec4(const NvVec3* src, const Vec3V& scale, Vec4V* dst, 
         Vec3V v1 = V3Mul(scale, V3LoadU(&src[1].x));
         Vec3V v2 = V3Mul(scale, V3LoadU(&src[2].x));
         Vec3V v3 = V3Mul(scale, V3LoadU(&src[3].x));
-        // Transpose
-        V4Transpose(v0, v1, v2, v3);
-        // Save 
-        dst[0] = v0;
-        dst[1] = v1;
-        dst[2] = v2;
+        transposeStore(v0, v1, v2, v3, dst);
     }
     const uint32_t remain = num & 3;
     if (remain)
@@ -931,10 +930,7 @@ static void _arrayVec3ToVec4(const NvVec3* src, const Vec3V& scale, Vec4V* dst, 
         uint32_t i = 0;
         for (; i < remain; i++) work[i] = V3Mul(scale, V3LoadU(&src[i].x));
         for (; i < 4; i++) work[i] = work[remain - 1];
-        V4Transpose(work[0], work[1], work[2], work[3]);
-        dst[0] = work[0];
-        dst[1] = work[1];
-        dst[2] = work[2];
+        transposeStore(work[0], work[1], work[2], work[3], dst);
     }
 }
 

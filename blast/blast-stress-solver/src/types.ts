@@ -1,3 +1,5 @@
+import type { BufferGeometry, Matrix4 } from 'three';
+
 /**
  * Public type definitions for the Blast Stress Solver JS/WASM bridge.
  *
@@ -36,6 +38,54 @@ export interface BondStress {
 
 /** Alias representing mapped stress severity percentages (0..1). */
 export type StressSeverity = BondStress;
+
+/** Bond generation modes used by authoring utilities. */
+export type BondingMode = 'exact' | 'average';
+
+/** Optional tuning parameters for bond generation. */
+export interface BondingConfig {
+  /** Algorithm used to build bond interfaces (defaults to 'exact'). */
+  mode?: BondingMode;
+  /** Maximum allowed gap between chunks when using 'average' mode (meters). */
+  maxSeparation?: number;
+}
+
+/** Triangle soup input for a single chunk. */
+export interface AuthoringChunkInput {
+  /**
+   * Flattened vertex positions (xyz triplets; 9 numbers per triangle) in asset-local space.
+   * Accepts either a Float32Array or any array-like of numbers.
+   */
+  triangles: Float32Array | ReadonlyArray<number>;
+  /**
+   * Marks the chunk as part of the support graph. Defaults to true when omitted.
+   */
+  isSupport?: boolean;
+}
+
+/** Options used when converting THREE.BufferGeometry to authoring chunks. */
+export interface BufferGeometryChunkOptions {
+  /** Flag to mark the chunk as support. */
+  isSupport?: boolean;
+  /**
+   * Optional transform applied before sampling (e.g., mesh.matrixWorld).
+   * The geometry is cloned before applying by default.
+   */
+  applyMatrix?: Matrix4;
+  /**
+   * Convert indexed geometries to non-indexed triangle lists (default true).
+   */
+  nonIndexed?: boolean;
+  /**
+   * Clone the geometry before any mutations (default true). Set to false to reuse the same instance.
+   */
+  cloneGeometry?: boolean;
+}
+
+/** Resolver used by helper utilities to determine per-geometry options. */
+export type BufferGeometryChunkResolver =
+  | BufferGeometryChunkOptions
+  | ((geometry: BufferGeometry, index: number) => BufferGeometryChunkOptions | void);
 
 /**
  * Material stress limits in Pascals used by StressLimits to classify failure modes.
@@ -398,6 +448,8 @@ export interface RuntimeSizes {
   extActor: number;
   /** sizeof(ExtSplitEvent). */
   extSplitEvent: number;
+  /** sizeof(ExtStressBondDesc) returned by authoring bridge. */
+  authoringBond?: number;
 }
 
 /**
@@ -475,6 +527,13 @@ export interface StressRuntime {
    * @see ExtStressSolver.applyFractureCommands
    */
   createExtSolver(description: ExtStressSolverDescription): ExtStressSolver;
+  /**
+   * Generate NvBlast-style bonds from prefractured triangle meshes.
+   *
+   * @param chunks Per-chunk triangle soups (local coordinates, meters) plus support flags.
+   * @param config Optional tuning: mode ('exact' | 'average') and maxSeparation for 'average'.
+   */
+  createBondsFromTriangles(chunks: AuthoringChunkInput[], config?: BondingConfig): ExtStressBondDesc[];
 }
 
 /** Options to customize module instantiation when loading the solver. */

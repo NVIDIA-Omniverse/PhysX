@@ -8,6 +8,7 @@ const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '..');
 const blastRoot = resolve(projectRoot, '..');
 const distDir = resolve(projectRoot, 'dist');
+const jsFfiDir = resolve(projectRoot, 'ffi');
 
 mkdirSync(distDir, { recursive: true });
 
@@ -21,11 +22,16 @@ const includeSharedDir = resolve(includeDir, 'shared');
 const includeLowLevelDir = resolve(includeDir, 'lowlevel');
 const includeExtensionsDir = resolve(includeDir, 'extensions');
 const includeStressExtDir = resolve(includeExtensionsDir, 'stress');
+const includeAuthoringDir = resolve(includeExtensionsDir, 'authoring');
+const includeAuthoringCommonDir = resolve(includeExtensionsDir, 'authoringCommon');
+const includeAssetUtilsDir = resolve(includeExtensionsDir, 'assetutils');
 const foundationDir = resolve(includeSharedDir, 'NvFoundation');
 const sdkCommonDir = resolve(blastRoot, 'source/sdk/common');
 const sdkGlobalsDir = resolve(blastRoot, 'source/sdk/globals');
 const sdkLowLevelDir = resolve(blastRoot, 'source/sdk/lowlevel');
 const sdkStressDir = resolve(blastRoot, 'source/sdk/extensions/stress');
+const sdkAuthoringDir = resolve(blastRoot, 'source/sdk/extensions/authoring');
+const sdkAuthoringCommonDir = resolve(blastRoot, 'source/sdk/extensions/authoringCommon');
 
 const exportedFunctions = [
   '_stress_processor_create',
@@ -74,6 +80,9 @@ const exportedFunctions = [
   '_ext_stress_sizeof_actor',
   '_ext_stress_sizeof_actor_buffer',
   '_ext_stress_sizeof_ext_split_event',
+  '_authoring_sizeof_ext_bond_desc',
+  '_authoring_bonds_from_prefractured_triangles',
+  '_authoring_free',
   '_malloc',
   '_free'
 ];
@@ -102,8 +111,13 @@ const exportedRuntimeMethods = [
 const commonArgs = [
   resolve(ffiDir, 'stress_bridge.cpp'),
   resolve(ffiDir, 'ext_stress_bridge.cpp'),
+  resolve(jsFfiDir, 'authoring_bridge.cpp'),
   resolve(solverDir, 'stress.cpp'),
   resolve(sdkStressDir, 'NvBlastExtStressSolver.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtAuthoring.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtAuthoringBondGeneratorImpl.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtTriangleProcessor.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtApexSharedParts.cpp'),
   resolve(sdkCommonDir, 'NvBlastAssert.cpp'),
   resolve(sdkCommonDir, 'NvBlastAtomic.cpp'),
   resolve(sdkCommonDir, 'NvBlastTime.cpp'),
@@ -126,15 +140,21 @@ const commonArgs = [
   '-I' + includeLowLevelDir,
   '-I' + includeExtensionsDir,
   '-I' + includeStressExtDir,
+  '-I' + includeAuthoringDir,
+  '-I' + includeAuthoringCommonDir,
+  '-I' + includeAssetUtilsDir,
   '-I' + foundationDir,
   '-I' + sdkCommonDir,
   '-I' + sdkGlobalsDir,
   '-I' + sdkLowLevelDir,
   '-I' + sdkStressDir,
+  '-I' + sdkAuthoringDir,
+  '-I' + sdkAuthoringCommonDir,
   '-DSTRESS_SOLVER_FORCE_SCALAR=1',
   '-DSTRESS_SOLVER_NO_SIMD=1',
   '-D__linux__=1',
-  '-D__x86_64__=1',
+  '-D__arm__=1',
+  '-DCOMPILE_VECTOR_INTRINSICS=0',
   '-DNDEBUG=1',
   '-std=c++17',
   '-O3',

@@ -1,6 +1,6 @@
 {
   "name": "blast-stress-solver",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -30,13 +30,15 @@
   "scripts": {
     "prebuild": "npm --prefix ../js_stress_example run build",
     "build": "tsup --config tsup.config.ts && node ./scripts/copy-dist.js",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "npm run build && vitest run"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "@types/three": "^0.164.0",
+    "vitest": "^3.2.4",
+    "three": "^0.164.0",
     "tsup": "^8.0.1",
     "typescript": "^5.9.3"
   }
 }
-
-

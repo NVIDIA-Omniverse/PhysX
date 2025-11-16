@@ -9,6 +9,10 @@
  */
 
 import type {
+  AuthoringChunkInput,
+  BufferGeometryChunkOptions,
+  BufferGeometryChunkResolver,
+  BondingConfig,
   BondStress,
   ExtDebugModeValue,
   ExtForceModeValue,
@@ -36,6 +40,7 @@ import type {
   Vec3,
   RuntimeSizes
 } from './types';
+import type { BufferGeometry, Matrix4 } from 'three';
 
 /** True when running under Node.js (CLI/SSR). */
 const isNode = typeof process !== 'undefined' && (process as any).release?.name === 'node';
@@ -340,7 +345,8 @@ function createRuntime(module: any): StressRuntime {
     extBondFracture: module.ccall('ext_stress_sizeof_ext_bond_fracture', 'number', [], []),
     extFractureCommands: module.ccall('ext_stress_sizeof_ext_fracture_commands', 'number', [], []),
     extActor: module.ccall('ext_stress_sizeof_actor_buffer', 'number', [], []),
-    extSplitEvent: module.ccall('ext_stress_sizeof_ext_split_event', 'number', [], [])
+    extSplitEvent: module.ccall('ext_stress_sizeof_ext_split_event', 'number', [], []),
+    authoringBond: module.ccall('authoring_sizeof_ext_bond_desc', 'number', [], [])
   };
 
   const memory = new ModuleMemory(module);
@@ -371,6 +377,9 @@ function createRuntime(module: any): StressRuntime {
     },
     createExtSolver(description: ExtStressSolverDescription): ExtStressSolverType {
       return new ExtStressSolver(module, memory, sizes, description);
+    },
+    createBondsFromTriangles(chunks: AuthoringChunkInput[], config?: BondingConfig) {
+      return generateBondsFromTriangles(module, memory, sizes, chunks, config);
     }
   };
 }
@@ -1060,6 +1069,16 @@ function writeExtBond(view: DataView, base: number, bond: ExtStressBondDesc) {
   view.setUint32(base + 32, bond.node1 >>> 0, true);
 }
 
+function readExtBond(view: DataView, base: number): ExtStressBondDesc {
+  return {
+    centroid: readVec3(view, base),
+    normal: readVec3(view, base + 12),
+    area: view.getFloat32(base + 24, true),
+    node0: view.getUint32(base + 28, true),
+    node1: view.getUint32(base + 32, true)
+  };
+}
+
 function writeExtSettings(view: DataView, base: number, settings: ExtStressSolverSettings) {
   view.setUint32(base, (settings.maxSolverIterationsPerFrame ?? 25) >>> 0, true);
   view.setUint32(base + 4, (settings.graphReductionLevel ?? 0) >>> 0, true);
@@ -1094,5 +1113,167 @@ function mapStressValue(stress: number, elastic: number, fatal: number) {
   return clamp(stress / fatalResolved, 0.0, 1.0);
 }
 function clamp(value: number, min: number, max: number) { return Math.min(Math.max(value, min), max); }
+
+function generateBondsFromTriangles(
+  module: any,
+  memory: ModuleMemory,
+  sizes: RuntimeSizes,
+  chunks: AuthoringChunkInput[],
+  config?: BondingConfig
+): ExtStressBondDesc[] {
+  if (!Array.isArray(chunks) || chunks.length === 0) {
+    return [];
+  }
+
+  const { offsets, triangles } = flattenTriangleChunks(chunks);
+  const supportFlags = new Uint8Array(chunks.length);
+  for (let i = 0; i < chunks.length; ++i) {
+    const chunk = chunks[i];
+    supportFlags[i] = chunk?.isSupport === undefined ? 1 : chunk.isSupport ? 1 : 0;
+  }
+
+  const geometryOffsetPtr = memory.alloc(offsets.byteLength);
+  const trianglesPtr = memory.alloc(triangles.byteLength);
+  const supportPtr = memory.alloc(Math.max(chunks.length, 1));
+  const outPtrPtr = memory.alloc(4);
+
+  module.HEAPU32.set(offsets, geometryOffsetPtr >>> 2);
+  module.HEAPF32.set(triangles, trianglesPtr >>> 2);
+  if (chunks.length > 0) {
+    module.HEAPU8.set(supportFlags, supportPtr);
+  }
+  module.HEAPU32[outPtrPtr >>> 2] = 0;
+
+  const bondMode = config?.mode === 'average' ? 1 : 0;
+  const maxSeparation = typeof config?.maxSeparation === 'number' ? config.maxSeparation : 0.0;
+
+  let bondCount = 0;
+  try {
+    bondCount = module.ccall(
+      'authoring_bonds_from_prefractured_triangles',
+      'number',
+      ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+      [chunks.length, geometryOffsetPtr, trianglesPtr, triangles.length, supportPtr, bondMode, maxSeparation, outPtrPtr]
+    );
+  } finally {
+    memory.free(geometryOffsetPtr);
+    memory.free(trianglesPtr);
+    memory.free(supportPtr);
+  }
+
+  const outPtr = module.HEAPU32[outPtrPtr >>> 2];
+  memory.free(outPtrPtr);
+
+  if (!bondCount || !outPtr) {
+    if (outPtr) {
+      module.ccall('authoring_free', null, ['number'], [outPtr]);
+    }
+    return [];
+  }
+
+  const structSize =
+    sizes.authoringBond && sizes.authoringBond > 0
+      ? sizes.authoringBond
+      : module.ccall('authoring_sizeof_ext_bond_desc', 'number', [], []);
+  const view = memory.view();
+  const bonds: ExtStressBondDesc[] = [];
+  for (let i = 0; i < bondCount; ++i) {
+    bonds.push(readExtBond(view, outPtr + i * structSize));
+  }
+
+  module.ccall('authoring_free', null, ['number'], [outPtr]);
+  return bonds;
+}
+
+function flattenTriangleChunks(chunks: AuthoringChunkInput[]) {
+  const chunkCount = chunks.length;
+  const offsets = new Uint32Array(chunkCount + 1);
+  const normalized: Float32Array[] = new Array(chunkCount);
+  let totalFloats = 0;
+
+  for (let i = 0; i < chunkCount; ++i) {
+    const chunk = normalizeTriangleChunk(chunks[i]?.triangles);
+    if (chunk.length % 9 !== 0) {
+      throw new Error('Triangle buffers must contain multiples of 9 floats');
+    }
+    offsets[i + 1] = offsets[i] + chunk.length / 9;
+    normalized[i] = chunk;
+    totalFloats += chunk.length;
+  }
+
+  const triangles = new Float32Array(totalFloats);
+  let cursor = 0;
+  for (let i = 0; i < chunkCount; ++i) {
+    const chunk = normalized[i];
+    triangles.set(chunk, cursor);
+    cursor += chunk.length;
+  }
+
+  return { offsets, triangles };
+}
+
+function normalizeTriangleChunk(chunk: Float32Array | ReadonlyArray<number>): Float32Array {
+  if (!chunk) {
+    throw new Error('Each chunk must provide triangle data');
+  }
+  if (chunk instanceof Float32Array) {
+    return chunk;
+  }
+  if (Array.isArray(chunk) || (typeof chunk === 'object' && 'length' in chunk)) {
+    return Float32Array.from(chunk as ArrayLike<number>);
+  }
+  throw new Error('Triangle chunk must be a Float32Array or array of numbers');
+}
+
+export function chunkFromBufferGeometry(
+  geometry: BufferGeometry,
+  options: BufferGeometryChunkOptions = {}
+): AuthoringChunkInput {
+  if (!geometry) {
+    throw new Error('chunkFromBufferGeometry requires a BufferGeometry instance');
+  }
+
+  const { isSupport, applyMatrix, nonIndexed = true, cloneGeometry = true } = options;
+  let working = cloneGeometry ? geometry.clone() : geometry;
+
+  if (nonIndexed !== false && working.index) {
+    working = working.toNonIndexed();
+  }
+
+  if (applyMatrix) {
+    const apply = (working as any).applyMatrix4;
+    if (typeof apply === 'function') {
+      apply.call(working, applyMatrix as Matrix4);
+    } else {
+      throw new Error('BufferGeometry.applyMatrix4 is unavailable in this environment');
+    }
+  }
+
+  const position = working.getAttribute('position');
+  if (!position) {
+    throw new Error('BufferGeometry is missing a position attribute');
+  }
+
+  const triangles = Float32Array.from(position.array as ArrayLike<number>);
+  if (cloneGeometry && working !== geometry) {
+    working.dispose?.();
+  }
+
+  return { triangles, isSupport };
+}
+
+export function chunksFromBufferGeometries(
+  geometries: BufferGeometry[],
+  options?: BufferGeometryChunkResolver
+): AuthoringChunkInput[] {
+  if (!Array.isArray(geometries) || geometries.length === 0) {
+    return [];
+  }
+  return geometries.map((geometry, index) => {
+    const resolvedOptions =
+      typeof options === 'function' ? options(geometry, index) ?? {} : options ?? {};
+    return chunkFromBufferGeometry(geometry, resolvedOptions);
+  });
+}
 
 

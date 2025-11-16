@@ -8,7 +8,9 @@ export {
   StressFailure,
   ExtForceMode,
   ExtDebugMode,
-  computeBondStress
+  computeBondStress,
+  chunkFromBufferGeometry,
+  chunksFromBufferGeometries
 } from './stress';
 
 export type * from './types';
