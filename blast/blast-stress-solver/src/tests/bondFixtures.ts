@@ -28,6 +28,25 @@ export function separatedCubeChunks(gap: number): ChunkInput[] {
   ];
 }
 
+export function preciseFaceSharingChunks(): ChunkInput[] {
+  return touchingCubeChunks();
+}
+
+export function preciseFaceSharingGeometry(overlap = 0.0): THREE.BufferGeometry[] {
+  const geomA = new THREE.BoxGeometry(1, 1, 1);
+  const geomB = new THREE.BoxGeometry(1, 1, 1);
+  geomA.translate(-0.5 - overlap * 0.5, 0, 0);
+  geomB.translate(0.5 + overlap * 0.5, 0, 0);
+  return [geomA, geomB];
+}
+
+export const preciseFaceBond = {
+  nodes: [0, 1],
+  area: 1.0,
+  centroid: { x: 0, y: 0, z: 0 },
+  normalX: 1
+};
+
 export function stackedCubeChunks(columns: number, rows: number, spacing = 1.0): ChunkInput[] {
   const chunks: ChunkInput[] = [];
   for (let row = 0; row < rows; row++) {
@@ -57,6 +76,15 @@ export function touchingBoxGeometries(): THREE.BufferGeometry[] {
   const geomB = new THREE.BoxGeometry(1, 1, 1);
   geomA.translate(-0.5, 0, 0);
   geomB.translate(0.5, 0, 0);
+  return [geomA, geomB];
+}
+
+export function separatedBoxGeometries(gap: number): THREE.BufferGeometry[] {
+  const geomA = new THREE.BoxGeometry(1, 1, 1);
+  const geomB = new THREE.BoxGeometry(1, 1, 1);
+  const offset = 0.5 + gap * 0.5;
+  geomA.translate(-offset, 0, 0);
+  geomB.translate(offset, 0, 0);
   return [geomA, geomB];
 }
 

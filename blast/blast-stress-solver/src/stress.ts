@@ -1125,6 +1125,10 @@ function generateBondsFromTriangles(
     return [];
   }
 
+  if (config?.mode === 'average' && (typeof config.maxSeparation !== 'number' || config.maxSeparation <= 0)) {
+    throw new Error('BondingConfig.maxSeparation must be > 0 when using mode: "average"');
+  }
+
   const { offsets, triangles } = flattenTriangleChunks(chunks);
   const supportFlags = new Uint8Array(chunks.length);
   for (let i = 0; i < chunks.length; ++i) {

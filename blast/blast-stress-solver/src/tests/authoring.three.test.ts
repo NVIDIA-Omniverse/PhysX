@@ -1,14 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import type * as Runtime from '..';
-import { touchingBoxGeometries, gridBoxGeometries } from './bondFixtures';
+import {
+  touchingBoxGeometries,
+  gridBoxGeometries,
+  separatedBoxGeometries,
+  preciseFaceBond,
+  preciseFaceSharingGeometry
+} from './bondFixtures';
 
 async function importRuntime(): Promise<typeof Runtime> {
   return (await import('../../dist/index.js')) as typeof Runtime;
 }
 
+function expectBondMatches(bond: Runtime.ExtStressBondDesc, expectedArea = preciseFaceBond.area) {
+  expect([preciseFaceBond.nodes[0], preciseFaceBond.nodes[1]]).toContain(bond.node0);
+  expect([preciseFaceBond.nodes[0], preciseFaceBond.nodes[1]]).toContain(bond.node1);
+  expect(Math.abs(bond.normal?.x ?? 0)).toBe(preciseFaceBond.normalX);
+  expect(bond.centroid).toBeTruthy();
+  expect(Math.abs((bond.centroid?.x ?? 0) - preciseFaceBond.centroid.x)).toBeLessThan(1e-6);
+  expect(Math.abs((bond.centroid?.y ?? 0) - preciseFaceBond.centroid.y)).toBeLessThan(1e-6);
+  expect(Math.abs((bond.centroid?.z ?? 0) - preciseFaceBond.centroid.z)).toBeLessThan(1e-6);
+  expect(Math.abs((bond.area ?? 0) - expectedArea)).toBeLessThan(1e-3);
+}
+
 describe('Three.js helpers (end-to-end)', () => {
   it('chunksFromBufferGeometries + bonding', async () => {
-    const [geomA, geomB] = touchingBoxGeometries();
+    const [geomA, geomB] = preciseFaceSharingGeometry();
     const { chunksFromBufferGeometries, loadStressSolver } = await importRuntime();
     const rt = await loadStressSolver();
     const chunks = chunksFromBufferGeometries([geomA, geomB], () => ({
@@ -19,6 +36,7 @@ describe('Three.js helpers (end-to-end)', () => {
 
     const bonds = rt.createBondsFromTriangles(chunks, { mode: 'exact' });
     expect(bonds).toHaveLength(1);
+    expectBondMatches(bonds[0]);
   });
 
   it('chunkFromBufferGeometry generates a usable chunk', async () => {
@@ -54,6 +72,21 @@ describe('Three.js helpers (end-to-end)', () => {
       expect([2, 3]).toContain(bond.node0);
       expect([2, 3]).toContain(bond.node1);
     }
+  });
+
+  it('supports average bonding for BufferGeometry chunks with small gaps', async () => {
+    const geoms = separatedBoxGeometries(0.1);
+    const { chunksFromBufferGeometries, loadStressSolver } = await importRuntime();
+    const rt = await loadStressSolver();
+    const chunks = chunksFromBufferGeometries(geoms, () => ({
+      isSupport: true,
+      nonIndexed: true,
+      cloneGeometry: true
+    }));
+
+    const bonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.5 });
+    expect(bonds).toHaveLength(1);
+    expectBondMatches(bonds[0], preciseFaceBond.area);
   });
 });
 

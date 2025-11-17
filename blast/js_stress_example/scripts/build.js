@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -211,4 +211,11 @@ for (const build of builds) {
     console.error(`Emscripten exited with code ${result.status} for ${build.name}`);
     process.exit(result.status ?? 1);
   }
+}
+
+const artifacts = ['stress_solver.cjs', 'stress_solver.mjs', 'stress_solver.wasm'];
+for (const file of artifacts) {
+  const src = resolve(distDir, file);
+  const dst = resolve(projectRoot, file);
+  copyFileSync(src, dst);
 }

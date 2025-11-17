@@ -4,10 +4,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <new>
 #include <vector>
 
 #include "extensions/authoring/NvBlastExtAuthoring.h"
 #include "extensions/authoring/NvBlastExtAuthoringBondGenerator.h"
+#include "extensions/authoringCommon/NvBlastExtAuthoringConvexMeshBuilder.h"
 #include "extensions/authoringCommon/NvBlastExtAuthoringTypes.h"
 #include "NvBlastGlobals.h"
 #include "NvBlastTypes.h"
@@ -48,6 +50,229 @@ inline StressVec3 toStressVec3(const float value[3])
 {
     return StressVec3{value[0], value[1], value[2]};
 }
+
+class SimpleConvexMeshBuilder final : public ConvexMeshBuilder
+{
+public:
+    CollisionHull* buildCollisionGeometry(uint32_t verticesCount, const NvcVec3* vertexData) override
+    {
+        Bounds bounds;
+        if (vertexData != nullptr)
+        {
+            for (uint32_t i = 0; i < verticesCount; ++i)
+            {
+                bounds.include(vertexData[i]);
+            }
+        }
+
+        if (!bounds.initialized)
+        {
+            bounds.include(NvcVec3{0.0f, 0.0f, 0.0f});
+        }
+
+        bounds.ensureExtent(kMinExtent);
+
+        const NvcVec3 corners[8] = {
+            {bounds.minimum.x, bounds.minimum.y, bounds.minimum.z},
+            {bounds.maximum.x, bounds.minimum.y, bounds.minimum.z},
+            {bounds.maximum.x, bounds.maximum.y, bounds.minimum.z},
+            {bounds.minimum.x, bounds.maximum.y, bounds.minimum.z},
+            {bounds.minimum.x, bounds.minimum.y, bounds.maximum.z},
+            {bounds.maximum.x, bounds.minimum.y, bounds.maximum.z},
+            {bounds.maximum.x, bounds.maximum.y, bounds.maximum.z},
+            {bounds.minimum.x, bounds.maximum.y, bounds.maximum.z}};
+
+        static constexpr uint32_t faceCount = 6;
+        static constexpr uint32_t vertsPerFace = 4;
+        static constexpr uint32_t faceIndices[faceCount][vertsPerFace] = {
+            {0, 1, 2, 3},  // -Z
+            {4, 5, 6, 7},  // +Z
+            {0, 3, 7, 4},  // -X
+            {1, 5, 6, 2},  // +X
+            {0, 4, 5, 1},  // -Y
+            {3, 2, 6, 7}   // +Y
+        };
+        static constexpr NvcVec3 normals[faceCount] = {
+            {0.0f, 0.0f, -1.0f},
+            {0.0f, 0.0f, 1.0f},
+            {-1.0f, 0.0f, 0.0f},
+            {1.0f, 0.0f, 0.0f},
+            {0.0f, -1.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f}};
+        const NvcVec3 facePoints[faceCount] = {
+            corners[0],
+            corners[4],
+            corners[0],
+            corners[1],
+            corners[0],
+            corners[3]};
+
+        CollisionHull* hull = allocateHull(faceCount, vertsPerFace);
+        if (hull == nullptr)
+        {
+            return nullptr;
+        }
+
+        for (uint32_t i = 0; i < 8; ++i)
+        {
+            hull->points[i] = corners[i];
+        }
+
+        for (uint32_t face = 0; face < faceCount; ++face)
+        {
+            const uint32_t base = face * vertsPerFace;
+            for (uint32_t v = 0; v < vertsPerFace; ++v)
+            {
+                hull->indices[base + v] = faceIndices[face][v];
+            }
+
+            HullPolygon& poly = hull->polygonData[face];
+            poly.vertexCount = static_cast<uint16_t>(vertsPerFace);
+            poly.indexBase = static_cast<uint16_t>(base);
+            writePlane(poly.plane, normals[face], facePoints[face]);
+        }
+
+        return hull;
+    }
+
+    void releaseCollisionHull(CollisionHull* hull) const override
+    {
+        if (hull == nullptr)
+        {
+            return;
+        }
+        NVBLAST_FREE(hull->points);
+        NVBLAST_FREE(hull->indices);
+        NVBLAST_FREE(hull->polygonData);
+        NVBLAST_FREE(hull);
+    }
+
+    void release() override
+    {
+        delete this;
+    }
+
+private:
+    struct Bounds
+    {
+        NvcVec3 minimum{0.0f, 0.0f, 0.0f};
+        NvcVec3 maximum{0.0f, 0.0f, 0.0f};
+        bool initialized{false};
+
+        void include(const NvcVec3& point)
+        {
+            if (!initialized)
+            {
+                minimum = maximum = point;
+                initialized = true;
+                return;
+            }
+
+            minimum.x = std::min(minimum.x, point.x);
+            minimum.y = std::min(minimum.y, point.y);
+            minimum.z = std::min(minimum.z, point.z);
+            maximum.x = std::max(maximum.x, point.x);
+            maximum.y = std::max(maximum.y, point.y);
+            maximum.z = std::max(maximum.z, point.z);
+        }
+
+        void ensureExtent(float epsilon)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+            expandAxis(minimum.x, maximum.x, epsilon);
+            expandAxis(minimum.y, maximum.y, epsilon);
+            expandAxis(minimum.z, maximum.z, epsilon);
+        }
+
+    private:
+        static void expandAxis(float& minValue, float& maxValue, float epsilon)
+        {
+            if ((maxValue - minValue) >= epsilon)
+            {
+                return;
+            }
+            const float delta = 0.5f * epsilon;
+            minValue -= delta;
+            maxValue += delta;
+        }
+    };
+
+    static CollisionHull* allocateHull(uint32_t faceCount, uint32_t vertsPerFace)
+    {
+        CollisionHull* hull = reinterpret_cast<CollisionHull*>(NVBLAST_ALLOC(sizeof(CollisionHull)));
+        if (hull == nullptr)
+        {
+            return nullptr;
+        }
+
+        hull->pointsCount = 8;
+        hull->indicesCount = faceCount * vertsPerFace;
+        hull->polygonDataCount = faceCount;
+
+        hull->points = reinterpret_cast<NvcVec3*>(NVBLAST_ALLOC(sizeof(NvcVec3) * hull->pointsCount));
+        hull->indices = reinterpret_cast<uint32_t*>(NVBLAST_ALLOC(sizeof(uint32_t) * hull->indicesCount));
+        hull->polygonData =
+            reinterpret_cast<HullPolygon*>(NVBLAST_ALLOC(sizeof(HullPolygon) * hull->polygonDataCount));
+
+        if (hull->points == nullptr || hull->indices == nullptr || hull->polygonData == nullptr)
+        {
+            releaseAllocatedHull(hull);
+            return nullptr;
+        }
+
+        return hull;
+    }
+
+    static void releaseAllocatedHull(CollisionHull* hull)
+    {
+        if (hull == nullptr)
+        {
+            return;
+        }
+        if (hull->points)
+        {
+            NVBLAST_FREE(hull->points);
+            hull->points = nullptr;
+        }
+        if (hull->indices)
+        {
+            NVBLAST_FREE(hull->indices);
+            hull->indices = nullptr;
+        }
+        if (hull->polygonData)
+        {
+            NVBLAST_FREE(hull->polygonData);
+            hull->polygonData = nullptr;
+        }
+        NVBLAST_FREE(hull);
+    }
+
+    static void writePlane(float plane[4], const NvcVec3& normal, const NvcVec3& point)
+    {
+        plane[0] = normal.x;
+        plane[1] = normal.y;
+        plane[2] = normal.z;
+        plane[3] = -(normal.x * point.x + normal.y * point.y + normal.z * point.z);
+    }
+
+    static constexpr float kMinExtent = 1.0e-3f;
+};
+
+struct ConvexBuilderDeleter
+{
+    void operator()(ConvexMeshBuilder* builder) const
+    {
+        if (builder != nullptr)
+        {
+            builder->release();
+        }
+    }
+};
+
+using ConvexBuilderPtr = std::unique_ptr<ConvexMeshBuilder, ConvexBuilderDeleter>;
 
 }  // namespace
 
@@ -109,8 +334,18 @@ extern "C" uint32_t authoring_bonds_from_prefractured_triangles(
                        : BondGenerationConfig::EXACT;
     cfg.maxSeparation = max_separation;
 
+    ConvexBuilderPtr convexBuilder;
+    if (cfg.bondMode == BondGenerationConfig::AVERAGE)
+    {
+        convexBuilder.reset(new (std::nothrow) SimpleConvexMeshBuilder());
+        if (!convexBuilder)
+        {
+            return 0;
+        }
+    }
+
     NvBlastBondDesc* bondDescs = nullptr;
-    BlastBondGenerator* generator = NvBlastExtAuthoringCreateBondGenerator(nullptr);
+    BlastBondGenerator* generator = NvBlastExtAuthoringCreateBondGenerator(convexBuilder.get());
     if (generator == nullptr)
     {
         return 0;
@@ -125,6 +360,7 @@ extern "C" uint32_t authoring_bonds_from_prefractured_triangles(
         cfg);
 
     generator->release();
+    convexBuilder.reset();
 
     if (bondCount <= 0 || bondDescs == nullptr)
     {

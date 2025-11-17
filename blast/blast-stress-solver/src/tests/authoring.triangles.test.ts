@@ -5,6 +5,8 @@ import {
   touchingCubeChunks,
   stackedCubeChunks,
   separatedCubeChunks,
+  preciseFaceSharingChunks,
+  preciseFaceBond,
   almostEqual
 } from './bondFixtures';
 
@@ -13,19 +15,21 @@ async function importRuntime(): Promise<typeof Runtime> {
 }
 
 describe('createBondsFromTriangles', () => {
-  it('produces a single bond for two cubes sharing one face', async () => {
+  it('produces a predictable bond for two cubes sharing one face', async () => {
     const { loadStressSolver } = await importRuntime();
     const rt = await loadStressSolver();
-    const chunks = touchingCubeChunks();
+    const chunks = preciseFaceSharingChunks();
     const bonds = rt.createBondsFromTriangles(chunks, { mode: 'exact' });
 
     expect(bonds).toHaveLength(1);
     const bond = bonds[0];
-    expect(bond.node0).toBe(0);
-    expect(bond.node1).toBe(1);
-    expect(almostEqual(bond.area ?? 0, 1.0)).toBe(true);
-    expect(almostEqual(bond.centroid?.x ?? 1e9, 0.0, 1e-6)).toBe(true);
-    expect(Math.abs(bond.normal?.x ?? 0)).toBe(1);
+    expect([preciseFaceBond.nodes[0], preciseFaceBond.nodes[1]]).toContain(bond.node0);
+    expect([preciseFaceBond.nodes[0], preciseFaceBond.nodes[1]]).toContain(bond.node1);
+    expect(almostEqual(bond.area ?? 0, preciseFaceBond.area, 1e-4)).toBe(true);
+    expect(almostEqual(bond.centroid?.x ?? 1e9, preciseFaceBond.centroid.x, 1e-6)).toBe(true);
+    expect(almostEqual(bond.centroid?.y ?? 1e9, preciseFaceBond.centroid.y, 1e-6)).toBe(true);
+    expect(almostEqual(bond.centroid?.z ?? 1e9, preciseFaceBond.centroid.z, 1e-6)).toBe(true);
+    expect(Math.abs(bond.normal?.x ?? 0)).toBe(preciseFaceBond.normalX);
   });
 
   it('returns zero bonds for a single isolated chunk', async () => {
@@ -91,9 +95,38 @@ describe('createBondsFromTriangles', () => {
     }
   });
 
-  // NOTE: Average-mode bonding from raw triangles requires a ConvexMeshBuilder
-  // implementation, which the current WASM bridge does not provide. For now we
-  // rely on exact-mode bonding only and leave average-mode coverage to the
-  // native C++ test suite.
+  it('requires maxSeparation when requesting average mode', async () => {
+    const { loadStressSolver } = await importRuntime();
+    const rt = await loadStressSolver();
+    expect(() => rt.createBondsFromTriangles(touchingCubeChunks(), { mode: 'average' })).toThrow(
+      /maxSeparation/i
+    );
+  });
+
+  it('uses maxSeparation to control bonding in average mode for slightly separated cubes', async () => {
+    const { loadStressSolver } = await importRuntime();
+    const rt = await loadStressSolver();
+
+    const chunks = separatedCubeChunks(0.1);
+
+    const tightLimit = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.02 });
+    const looseLimit = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.5 });
+
+    expect(tightLimit.length).toBe(0);
+    expect(looseLimit.length).toBeGreaterThan(0);
+  });
+
+  it('handles multiple chunks in average mode with small gaps', async () => {
+    const { loadStressSolver } = await importRuntime();
+    const rt = await loadStressSolver();
+
+    const chunks = stackedCubeChunks(2, 2, 1.05);
+    chunks.forEach((chunk) => {
+      chunk.isSupport = true;
+    });
+
+    const bonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.1 });
+    expect(bonds.length).toBeGreaterThan(0);
+  });
 });
 
