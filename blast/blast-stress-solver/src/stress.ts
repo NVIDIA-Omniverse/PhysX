@@ -746,17 +746,6 @@ class ExtStressSolver implements ExtStressSolverType {
     }
   }
 
-  /**
-   * Apply gravity to a specific Blast actor by supplying the acceleration in that actor’s local frame.
-   *
-   * Typical workflow:
-   * 1. Retrieve actors via {@link ExtStressSolver.actors} (or split-event payloads) and track the `actorIndex`.
-   * 2. Convert your world gravity vector into the actor’s local coordinates. In Three.js:
-   *    `const local = world.clone().applyQuaternion(actorWorldQuaternion.clone().invert());`
-   * 3. Call `addActorGravity(actorIndex, local)`. If the actor was destroyed/split, this returns `false`.
-   *
-   * Passing `{0,0,0}` is a no-op, so skip the call entirely when an actor should experience no local gravity.
-   */
   addActorGravity(actorIndex: number, localGravity?: Vec3): boolean {
     if (!this.handle) return false;
     const gravityPtr = this.memory.alloc(this.sizes.vec3);

@@ -390,9 +390,22 @@ export interface ExtStressSolver {
   reset(): void;
   /** Apply a force or acceleration at the nearest node to the supplied position. */
   addForce(nodeIndex: number, localPosition?: Vec3, localForce?: Vec3, mode?: ExtForceModeValue): void;
-  /** Apply gravity to each node in the actor (useful for static structures). */
+  /**
+   * Apply the same gravity vector to every actor currently tracked by the solver (useful when all actors share a static frame).
+   * For actor-specific gravity aligned to each body’s rotation, prefer {@link ExtStressSolver.addActorGravity}.
+   */
   addGravity(localGravity?: Vec3): void;
-  /** Apply gravity only to the specified actor’s nodes. Returns false if the actor is unknown. */
+  /**
+   * Apply gravity to a specific actor using that actor’s local coordinate frame.
+   *
+   * Typical workflow:
+   * 1. Fetch actors via {@link ExtStressSolver.actors} (or split-event payloads) and cache their `actorIndex`.
+   * 2. Convert your world gravity vector into the actor’s local space. Example (Three.js):
+   *    `const local = world.clone().applyQuaternion(actorWorldQuaternion.clone().invert());`
+   * 3. Call `addActorGravity(actorIndex, local)`. The method returns `false` if the actor no longer exists (e.g., split/destroyed).
+   *
+   * Passing `{0,0,0}` is a no-op, so skip the call entirely when you do not need to apply per-actor gravity for that frame.
+   */
   addActorGravity(actorIndex: number, localGravity?: Vec3): boolean;
   /** Run one solver update using previously applied forces/accelerations. */
   update(): void;
