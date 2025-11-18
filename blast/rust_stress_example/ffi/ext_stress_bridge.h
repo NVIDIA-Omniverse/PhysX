@@ -93,6 +93,10 @@ void ext_stress_solver_add_force(ExtStressSolverHandle* handle,
 void ext_stress_solver_add_gravity(ExtStressSolverHandle* handle,
                                    const StressVec3* local_gravity);
 
+uint8_t ext_stress_solver_add_actor_gravity(ExtStressSolverHandle* handle,
+                                            uint32_t actor_index,
+                                            const StressVec3* local_gravity);
+
 void ext_stress_solver_update(ExtStressSolverHandle* handle);
 
 uint32_t ext_stress_solver_overstressed_bond_count(const ExtStressSolverHandle* handle);

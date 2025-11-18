@@ -59,6 +59,7 @@ const exportedFunctions = [
   '_ext_stress_solver_reset',
   '_ext_stress_solver_add_force',
   '_ext_stress_solver_add_gravity',
+  '_ext_stress_solver_add_actor_gravity',
   '_ext_stress_solver_update',
   '_ext_stress_solver_overstressed_bond_count',
   '_ext_stress_solver_fill_debug_render',

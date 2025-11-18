@@ -16,9 +16,20 @@ import { loadStressSolver } from 'blast-stress-solver';
 const rt = await loadStressSolver();
 const solver = rt.createExtSolver({ nodes, bonds, settings: rt.defaultExtSettings() });
 solver.addGravity({ x: 0, y: -9.81, z: 0 });
+const [{ actorIndex }] = solver.actors();
+solver.addActorGravity(actorIndex, { x: 0, y: -9.81, z: 0 }); // per-actor helper
 solver.update();
 const cmds = solver.generateFractureCommands();
 ```
+
+If an actor is rotated relative to world space (e.g., a column rotated 90° so its local “down” axis points sideways), convert the world gravity vector using the actor’s rotation before calling `addActorGravity`:
+
+```ts
+const localGravity = worldGravity.clone().applyQuaternion(actorWorldQuaternion.clone().invert());
+solver.addActorGravity(actorIndex, localGravity);
+```
+
+This mirrors what the physics body experiences and lets the stress solver distinguish between compression along the column versus shear when it lies on its side.
 
 ## Usage (Node / SSR)
 
@@ -94,14 +105,16 @@ const chunks = [
   }
 ];
 
-const bonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.02 });
+const exactBonds = rt.createBondsFromTriangles(chunks); // defaults to mode: 'exact'
+const tolerantBonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.02 });
 
-const solver = rt.createExtSolver({ nodes, bonds, settings: rt.defaultExtSettings() });
+const solver = rt.createExtSolver({ nodes, bonds: tolerantBonds, settings: rt.defaultExtSettings() });
 ```
 
 - Every chunk entry is a flat array of local-space vertices (`[x0, y0, z0, x1, y1, z1, ...]`); each triangle consumes 9 floats.
 - Set `isSupport` on a chunk to opt-in/out of the support graph (default: `true`).
-- `mode: 'exact'` (default) computes the precise shared surface from triangle geometry. `'average'` projects against a mid-plane and uses `maxSeparation` to allow small gaps/noise.
+- `mode: 'exact'` (default) computes the precise shared surface from triangle geometry.
+- `mode: 'average'` approximates the bond interface using convex hulls and a `maxSeparation` tolerance so that slightly separated chunks (due to noise/gaps) can still be connected. Always supply a positive `maxSeparation` when using this mode.
 - The generated bonds already contain centroid, normal, area, and chunk indices, so they can be used directly when creating your solver or Blast asset.
 
 ### Three.js example
@@ -134,8 +147,8 @@ const rt = await loadStressSolver();
 const bonds = rt.createBondsFromTriangles([...chunks, extraChunk], { mode: 'exact' });
 ```
 
-- This example assumes every `BufferGeometry` already uses Triangle lists (most fracture tools export that). If yours uses indexed geometry, call `geometry.toNonIndexed()` first.
-- `chunkFromBufferGeometry` clones the geometry by default so your originals remain untouched. Pass `cloneGeometry: false` if you prefer to mutate in-place.
+- By default, `chunkFromBufferGeometry` converts indexed geometry to non-indexed triangle lists (`nonIndexed: true`), which is what the bond generator expects. Set `nonIndexed: false` if your data is already in triangle-list form.
+- `chunkFromBufferGeometry` clones the geometry by default (`cloneGeometry: true`) so your originals remain untouched. Pass `cloneGeometry: false` if you prefer to mutate in-place.
 - Supply any `Matrix4` (e.g., `mesh.matrixWorld`) via `applyMatrix` to bake transforms before sampling the triangle data.
 - You can precompute chunk centroids/masses separately and feed them into the solver nodes.
 
@@ -148,6 +161,12 @@ Run the full build + test suite (includes the WASM authoring helpers) with:
 npm install
 npm test
 ```
+
+## Implementation notes
+
+- The WASM build of Blast used by this package is compiled with SIMD intrinsics disabled (`COMPILE_VECTOR_INTRINSICS=0`), using the scalar math path for maximum portability across browsers.
+- Native C++ builds may use SSE/NEON for higher performance; future releases may enable WebAssembly SIMD behind the same JS API.
+- Average-mode bonding relies on a lightweight convex hull builder compiled into the WASM module. When using `'average'`, make sure to provide a reasonable `maxSeparation` so the helper knows how much gap/noise to tolerate.
 
 
 MIT

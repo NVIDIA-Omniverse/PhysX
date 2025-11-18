@@ -746,6 +746,29 @@ class ExtStressSolver implements ExtStressSolverType {
     }
   }
 
+  /**
+   * Apply gravity to a specific Blast actor by supplying the acceleration in that actor’s local frame.
+   *
+   * Typical workflow:
+   * 1. Retrieve actors via {@link ExtStressSolver.actors} (or split-event payloads) and track the `actorIndex`.
+   * 2. Convert your world gravity vector into the actor’s local coordinates. In Three.js:
+   *    `const local = world.clone().applyQuaternion(actorWorldQuaternion.clone().invert());`
+   * 3. Call `addActorGravity(actorIndex, local)`. If the actor was destroyed/split, this returns `false`.
+   *
+   * Passing `{0,0,0}` is a no-op, so skip the call entirely when an actor should experience no local gravity.
+   */
+  addActorGravity(actorIndex: number, localGravity?: Vec3): boolean {
+    if (!this.handle) return false;
+    const gravityPtr = this.memory.alloc(this.sizes.vec3);
+    try {
+      writeVec3(this.memory.view(), gravityPtr, localGravity ?? vec3());
+      const result = this.module.ccall('ext_stress_solver_add_actor_gravity', 'number', ['number', 'number', 'number'], [this.handle, actorIndex >>> 0, gravityPtr]) >>> 0;
+      return result !== 0;
+    } finally {
+      this.memory.free(gravityPtr);
+    }
+  }
+
   update(): void { if (!this.handle) return; this.module.ccall('ext_stress_solver_update', null, ['number'], [this.handle]); }
   overstressedBondCount(): number { if (!this.handle) return 0; return this.module.ccall('ext_stress_solver_overstressed_bond_count', 'number', ['number'], [this.handle]) >>> 0; }
 

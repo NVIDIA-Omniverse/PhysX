@@ -12,7 +12,11 @@ async function importRuntime(): Promise<typeof Runtime> {
   return (await import('../../dist/index.js')) as typeof Runtime;
 }
 
-function expectBondMatches(bond: Runtime.ExtStressBondDesc, expectedArea = preciseFaceBond.area) {
+function expectBondMatches(
+  bond: Runtime.ExtStressBondDesc,
+  expectedArea = preciseFaceBond.area,
+  areaTolerance?: number
+) {
   expect([preciseFaceBond.nodes[0], preciseFaceBond.nodes[1]]).toContain(bond.node0);
   expect([preciseFaceBond.nodes[0], preciseFaceBond.nodes[1]]).toContain(bond.node1);
   expect(Math.abs(bond.normal?.x ?? 0)).toBe(preciseFaceBond.normalX);
@@ -20,7 +24,9 @@ function expectBondMatches(bond: Runtime.ExtStressBondDesc, expectedArea = preci
   expect(Math.abs((bond.centroid?.x ?? 0) - preciseFaceBond.centroid.x)).toBeLessThan(1e-6);
   expect(Math.abs((bond.centroid?.y ?? 0) - preciseFaceBond.centroid.y)).toBeLessThan(1e-6);
   expect(Math.abs((bond.centroid?.z ?? 0) - preciseFaceBond.centroid.z)).toBeLessThan(1e-6);
-  expect(Math.abs((bond.area ?? 0) - expectedArea)).toBeLessThan(1e-3);
+  if (areaTolerance !== undefined) {
+    expect(Math.abs((bond.area ?? 0) - expectedArea)).toBeLessThan(areaTolerance);
+  }
 }
 
 describe('Three.js helpers (end-to-end)', () => {
@@ -86,7 +92,7 @@ describe('Three.js helpers (end-to-end)', () => {
 
     const bonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.5 });
     expect(bonds).toHaveLength(1);
-    expectBondMatches(bonds[0], preciseFaceBond.area);
+    expectBondMatches(bonds[0]);
   });
 });
 

@@ -252,6 +252,21 @@ const ExtStressSolverHandleImpl::ActorEntry* findActorByPointer(const ExtStressS
     return nullptr;
 }
 
+ExtStressSolverHandleImpl::ActorEntry* findActorOwningInputNode(ExtStressSolverHandleImpl& handle, uint32_t inputIndex)
+{
+    for (auto& entry : handle.actors)
+    {
+        for (uint32_t n : entry.inputNodes)
+        {
+            if (n == inputIndex)
+            {
+                return &entry;
+            }
+        }
+    }
+    return nullptr;
+}
+
 } // namespace
 
 extern "C" ExtStressSolverHandle*
@@ -491,15 +506,22 @@ ext_stress_solver_add_force(ExtStressSolverHandle* handlePtr,
     }
 
     const uint32_t graphIndex = handle->inputToGraph[node_index];
-    if (graphIndex == UINT32_MAX)
+    const NvcVec3 force = local_force ? toNvcVec3(*local_force) : NvcVec3{0.0f, 0.0f, 0.0f};
+    const NvcVec3 pos = local_position ? toNvcVec3(*local_position) : NvcVec3{0.0f, 0.0f, 0.0f};
+
+    if (auto* entry = findActorOwningInputNode(*handle, node_index))
     {
-        return;
+        if (entry->actor)
+        {
+            handle->solver->addForce(*entry->actor, pos, force, toForceMode(mode));
+            return;
+        }
     }
 
-    NV_UNUSED(local_position);
-    const NvcVec3 force = local_force ? toNvcVec3(*local_force) : NvcVec3{0.0f, 0.0f, 0.0f};
-
-    handle->solver->addForce(graphIndex, force, toForceMode(mode));
+    if (graphIndex != UINT32_MAX)
+    {
+        handle->solver->addForce(graphIndex, force, toForceMode(mode));
+    }
 }
 
 extern "C" void
@@ -519,6 +541,28 @@ ext_stress_solver_add_gravity(ExtStressSolverHandle* handlePtr, const StressVec3
             handle->solver->addGravity(*entry.actor, gravity);
         }
     }
+}
+
+extern "C" uint8_t
+ext_stress_solver_add_actor_gravity(ExtStressSolverHandle* handlePtr,
+                                    uint32_t actor_index,
+                                    const StressVec3* local_gravity)
+{
+    auto* handle = reinterpret_cast<ExtStressSolverHandleImpl*>(handlePtr);
+    if (!handle || !handle->solver)
+    {
+        return 0U;
+    }
+
+    auto* entry = findActorByIndex(*handle, actor_index);
+    if (!entry || !entry->actor)
+    {
+        return 0U;
+    }
+
+    const NvcVec3 gravity = local_gravity ? toNvcVec3(*local_gravity) : NvcVec3{0.0f, 0.0f, 0.0f};
+    handle->solver->addGravity(*entry->actor, gravity);
+    return 1U;
 }
 
 extern "C" void
@@ -594,8 +638,8 @@ ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handle
         return 0U;
     }
 
-    const auto* firstActorEntry = handle->actors.empty() ? nullptr : &handle->actors.front();
-    if (!firstActorEntry || !firstActorEntry->actor)
+    const uint32_t totalActors = static_cast<uint32_t>(handle->actors.size());
+    if (totalActors == 0U)
     {
         out_commands->bondFractures = nullptr;
         out_commands->bondFractureCount = 0U;
@@ -603,8 +647,30 @@ ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handle
         return 1U;
     }
 
-    NvBlastFractureBuffers commands{};
-    handle->solver->generateFractureCommands(*firstActorEntry->actor, commands);
+    std::vector<NvBlastFractureBuffers> buffers(totalActors);
+    std::vector<const NvBlastActor*> llActors(totalActors, nullptr);
+    const uint32_t generated = handle->solver->generateFractureCommandsPerActor(llActors.data(), buffers.data(), totalActors);
+
+    if (generated == 0U)
+    {
+        out_commands->bondFractures = nullptr;
+        out_commands->bondFractureCount = 0U;
+        out_commands->actorIndex = UINT32_MAX;
+        return 1U;
+    }
+
+    uint32_t best = 0U;
+    for (uint32_t i = 1; i < generated; ++i)
+    {
+        if (buffers[i].bondFractureCount > buffers[best].bondFractureCount)
+        {
+            best = i;
+        }
+    }
+
+    const NvBlastFractureBuffers& commands = buffers[best];
+    const auto* entry = findActorByPointer(*handle, llActors[best]);
+    const uint32_t actorIndex = entry ? entry->actorIndex : UINT32_MAX;
 
     const uint32_t available = commands.bondFractureCount;
     const uint32_t toCopy = std::min(available, max_bonds);
@@ -612,7 +678,7 @@ ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handle
     {
         out_commands->bondFractures = nullptr;
         out_commands->bondFractureCount = 0U;
-        out_commands->actorIndex = firstActorEntry->actorIndex;
+        out_commands->actorIndex = actorIndex;
         return 1U;
     }
 
@@ -621,7 +687,7 @@ ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handle
     {
         out_commands->bondFractures = nullptr;
         out_commands->bondFractureCount = 0U;
-        out_commands->actorIndex = firstActorEntry->actorIndex;
+        out_commands->actorIndex = actorIndex;
         return 1U;
     }
 
@@ -638,7 +704,7 @@ ext_stress_solver_generate_fracture_commands(const ExtStressSolverHandle* handle
 
     out_commands->bondFractures = bond_buffer;
     out_commands->bondFractureCount = toCopy;
-    out_commands->actorIndex = firstActorEntry->actorIndex;
+    out_commands->actorIndex = actorIndex;
     return available <= max_bonds ? 1U : 2U; // 2 indicates truncation
 }
 
@@ -828,12 +894,14 @@ extern "C" uint8_t ext_stress_solver_generate_fracture_commands_per_actor(const 
         buffers[i] = NvBlastFractureBuffers{};
     }
 
+    // The solver fills the first `generated` entries and also overwrites llActors[]
+    // so that buffers[i] corresponds to llActors[i].
     const uint32_t generated = handle->solver->generateFractureCommandsPerActor(llActors.data(), buffers.data(), totalActors);
 
     for (uint32_t i = 0; i < generated && commandCount < command_capacity; ++i)
     {
         const NvBlastFractureBuffers& buffer = buffers[i];
-        const auto* entry = handle->actors.empty() ? nullptr : &handle->actors[i];
+        const auto* entry = findActorByPointer(*handle, llActors[i]);
         const uint32_t actorIndex = entry ? entry->actorIndex : UINT32_MAX;
 
         const uint32_t bondCount = buffer.bondFractureCount;

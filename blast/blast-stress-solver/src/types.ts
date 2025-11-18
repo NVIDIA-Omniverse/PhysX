@@ -392,6 +392,8 @@ export interface ExtStressSolver {
   addForce(nodeIndex: number, localPosition?: Vec3, localForce?: Vec3, mode?: ExtForceModeValue): void;
   /** Apply gravity to each node in the actor (useful for static structures). */
   addGravity(localGravity?: Vec3): void;
+  /** Apply gravity only to the specified actor’s nodes. Returns false if the actor is unknown. */
+  addActorGravity(actorIndex: number, localGravity?: Vec3): boolean;
   /** Run one solver update using previously applied forces/accelerations. */
   update(): void;
   /** Count of bonds currently overstressed beyond elastic limits. */
