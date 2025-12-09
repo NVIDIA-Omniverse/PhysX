@@ -22,9 +22,9 @@ SET(EMCC_WASM_ARGS
 		-sEXPORT_NAME=PhysX
 		-sENVIRONMENT=web,worker
 		-sNO_FILESYSTEM=1
-		-sALLOW_TABLE_GROWTH=1
 		-sALLOW_MEMORY_GROWTH=1
-		-sTOTAL_MEMORY=268435456
+		-sINITIAL_MEMORY=67108864
+        -sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU16','HEAPU32','stackSave','stackRestore','stackAlloc']
 		-fno-rtti
 		-fno-exceptions
 		${WASM_EXPORTED_FUNCTIONS}
@@ -36,10 +36,8 @@ SET(EMCC_GLUE_ARGS
 		-c
 		-DNDEBUG
 		-O3
-		-msimd128
 		${PHYSX_WASM_PTHREAD}
 		-I${PHYSXWASM_INCLUDE_DIR}
-		# todo: maybe find a more elegant way to include generated glue.cpp
 		-I${PHYSX_ROOT_DIR}/compiler/emscripten-release/sdk_source_bin
 )
 
