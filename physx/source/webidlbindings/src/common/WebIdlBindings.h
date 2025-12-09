@@ -672,4 +672,25 @@ struct CustomSupport : physx::PxGjkQuery::Support {
         physx::PxVec3 supportBuffer;
 };
 
+struct PxConvexCoreGeometryFactory {
+    static physx::PxConvexCoreGeometry* createFromBox(const physx::PxConvexCore::Box& box, physx::PxReal margin) {
+        return new physx::PxConvexCoreGeometry(box, margin);
+    }
+    static physx::PxConvexCoreGeometry* createFromCone(const physx::PxConvexCore::Cone& cone, physx::PxReal margin) {
+        return new physx::PxConvexCoreGeometry(cone, margin);
+    }
+    static physx::PxConvexCoreGeometry* createFromCylinder(const physx::PxConvexCore::Cylinder& cylinder, physx::PxReal margin) {
+        return new physx::PxConvexCoreGeometry(cylinder, margin);
+    }
+    static physx::PxConvexCoreGeometry* createFromEllipsoid(const physx::PxConvexCore::Ellipsoid& ellipsoid, physx::PxReal margin) {
+        return new physx::PxConvexCoreGeometry(ellipsoid, margin);
+    }
+    static physx::PxConvexCoreGeometry* createFromPoint(const physx::PxConvexCore::Point& point, physx::PxReal margin) {
+        return new physx::PxConvexCoreGeometry(point, margin);
+    }
+    static physx::PxConvexCoreGeometry* createFromSegment(const physx::PxConvexCore::Segment& segment, physx::PxReal margin) {
+        return new physx::PxConvexCoreGeometry(segment, margin);
+    }
+};
+
 #endif

@@ -4,48 +4,48 @@
  */
 #include <jni.h>
 
-            static JavaVM* javaVm = NULL;
-            
-            class JniThreadEnv {
-                public:
-                    JniThreadEnv() : shouldDetach(false), env(NULL) { }
-                    JniThreadEnv(JNIEnv *env) : shouldDetach(false), env(env) { }
-                    ~JniThreadEnv() {
-                        if (shouldDetach) {
-                            javaVm->DetachCurrentThread();
-                        }
-                    }
-                    JNIEnv* getEnv() {
-                        if (env == NULL && javaVm != NULL) {
+static JavaVM* javaVm = NULL;
+
+class JniThreadEnv {
+    public:
+        JniThreadEnv() : shouldDetach(false), env(NULL) { }
+        JniThreadEnv(JNIEnv *env) : shouldDetach(false), env(env) { }
+        ~JniThreadEnv() {
+            if (shouldDetach) {
+                javaVm->DetachCurrentThread();
+            }
+        }
+        JNIEnv* getEnv() {
+            if (env == NULL && javaVm != NULL) {
 #ifndef __ANDROID__
-                            javaVm->AttachCurrentThreadAsDaemon((void**) &env, NULL);
+                javaVm->AttachCurrentThreadAsDaemon((void**) &env, NULL);
 #else
-                            javaVm->AttachCurrentThreadAsDaemon(&env, NULL);
+                javaVm->AttachCurrentThreadAsDaemon(&env, NULL);
 #endif
-                            shouldDetach = true;
-                        }
-                        return env;
-                    }
-                    
-                private:
-                    bool shouldDetach;
-                    JNIEnv *env;
-            };
-            
-            static thread_local JniThreadEnv jniThreadEnv;
-            
-            class JavaNativeRef {
-                public:
-                    JavaNativeRef(JNIEnv *env, jobject javaRef) {
-                        javaGlobalRef = env->NewGlobalRef(javaRef);
-                    }
-                    
-                    ~JavaNativeRef() {
-                        jniThreadEnv.getEnv()->DeleteGlobalRef(javaGlobalRef);
-                    }
-                    
-                    jobject javaGlobalRef;
-            };
+                shouldDetach = true;
+            }
+            return env;
+        }
+        
+    private:
+        bool shouldDetach;
+        JNIEnv *env;
+};
+
+static thread_local JniThreadEnv jniThreadEnv;
+
+class JavaNativeRef {
+    public:
+        JavaNativeRef(JNIEnv *env, jobject javaRef) {
+            javaGlobalRef = env->NewGlobalRef(javaRef);
+        }
+        
+        ~JavaNativeRef() {
+            jniThreadEnv.getEnv()->DeleteGlobalRef(javaGlobalRef);
+        }
+        
+        jobject javaGlobalRef;
+};
 
 class PxControllerBehaviorCallbackImpl : SimpleControllerBehaviorCallback {
     public:
@@ -5271,6 +5271,196 @@ JNIEXPORT void JNICALL Java_physx_geometry_PxContactPoint_00024Raw_setDamping(JN
     _self->damping = value;
 }
 
+// PxConvexCoreBox
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreBox__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCoreBox);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreBox_00024Raw_PxConvexCoreBox_1placed(JNIEnv*, jclass, jlong _placement_address, jfloat eX, jfloat eY, jfloat eZ) {
+    return (jlong) new((void*)_placement_address) PxConvexCoreBox(eX, eY, eZ);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreBox_00024Raw_PxConvexCoreBox(JNIEnv*, jclass, jfloat eX, jfloat eY, jfloat eZ) {
+    return (jlong) new PxConvexCoreBox(eX, eY, eZ);
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreBox_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCoreBox*) _address;
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreBox_00024Raw_getExtents(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreBox* _self = (PxConvexCoreBox*) _address;
+    return (jlong) &_self->extents;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreBox_00024Raw_setExtents(JNIEnv*, jclass, jlong _address, jlong value) {
+    PxConvexCoreBox* _self = (PxConvexCoreBox*) _address;
+    _self->extents = *((physx::PxVec3*) value);
+}
+
+// PxConvexCoreCone
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreCone__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCoreCone);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_PxConvexCoreCone_1placed(JNIEnv*, jclass, jlong _placement_address, jfloat height, jfloat radius) {
+    return (jlong) new((void*)_placement_address) PxConvexCoreCone(height, radius);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_PxConvexCoreCone(JNIEnv*, jclass, jfloat height, jfloat radius) {
+    return (jlong) new PxConvexCoreCone(height, radius);
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCoreCone*) _address;
+}
+JNIEXPORT jfloat JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_getHeight(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreCone* _self = (PxConvexCoreCone*) _address;
+    return (jfloat) _self->height;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_setHeight(JNIEnv*, jclass, jlong _address, jfloat value) {
+    PxConvexCoreCone* _self = (PxConvexCoreCone*) _address;
+    _self->height = value;
+}
+JNIEXPORT jfloat JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_getRadius(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreCone* _self = (PxConvexCoreCone*) _address;
+    return (jfloat) _self->radius;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreCone_00024Raw_setRadius(JNIEnv*, jclass, jlong _address, jfloat value) {
+    PxConvexCoreCone* _self = (PxConvexCoreCone*) _address;
+    _self->radius = value;
+}
+
+// PxConvexCoreCylinder
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreCylinder__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCoreCylinder);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_PxConvexCoreCylinder_1placed(JNIEnv*, jclass, jlong _placement_address, jfloat height, jfloat radius) {
+    return (jlong) new((void*)_placement_address) PxConvexCoreCylinder(height, radius);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_PxConvexCoreCylinder(JNIEnv*, jclass, jfloat height, jfloat radius) {
+    return (jlong) new PxConvexCoreCylinder(height, radius);
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCoreCylinder*) _address;
+}
+JNIEXPORT jfloat JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_getHeight(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreCylinder* _self = (PxConvexCoreCylinder*) _address;
+    return (jfloat) _self->height;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_setHeight(JNIEnv*, jclass, jlong _address, jfloat value) {
+    PxConvexCoreCylinder* _self = (PxConvexCoreCylinder*) _address;
+    _self->height = value;
+}
+JNIEXPORT jfloat JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_getRadius(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreCylinder* _self = (PxConvexCoreCylinder*) _address;
+    return (jfloat) _self->radius;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreCylinder_00024Raw_setRadius(JNIEnv*, jclass, jlong _address, jfloat value) {
+    PxConvexCoreCylinder* _self = (PxConvexCoreCylinder*) _address;
+    _self->radius = value;
+}
+
+// PxConvexCoreEllipsoid
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreEllipsoid__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCoreEllipsoid);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreEllipsoid_00024Raw_PxConvexCoreEllipsoid_1placed(JNIEnv*, jclass, jlong _placement_address, jfloat rX, jfloat rY, jfloat rZ) {
+    return (jlong) new((void*)_placement_address) PxConvexCoreEllipsoid(rX, rY, rZ);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreEllipsoid_00024Raw_PxConvexCoreEllipsoid(JNIEnv*, jclass, jfloat rX, jfloat rY, jfloat rZ) {
+    return (jlong) new PxConvexCoreEllipsoid(rX, rY, rZ);
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreEllipsoid_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCoreEllipsoid*) _address;
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreEllipsoid_00024Raw_getRadii(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreEllipsoid* _self = (PxConvexCoreEllipsoid*) _address;
+    return (jlong) &_self->radii;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreEllipsoid_00024Raw_setRadii(JNIEnv*, jclass, jlong _address, jlong value) {
+    PxConvexCoreEllipsoid* _self = (PxConvexCoreEllipsoid*) _address;
+    _self->radii = *((physx::PxVec3*) value);
+}
+
+// PxConvexCorePoint
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCorePoint__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCorePoint);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCorePoint_00024Raw_PxConvexCorePoint_1placed(JNIEnv*, jclass, jlong _placement_address) {
+    return (jlong) new((void*)_placement_address) PxConvexCorePoint();
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCorePoint_00024Raw_PxConvexCorePoint(JNIEnv*, jclass) {
+    return (jlong) new PxConvexCorePoint();
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCorePoint_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCorePoint*) _address;
+}
+
+// PxConvexCoreSegment
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreSegment__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCoreSegment);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreSegment_00024Raw_PxConvexCoreSegment_1placed(JNIEnv*, jclass, jlong _placement_address, jfloat length) {
+    return (jlong) new((void*)_placement_address) PxConvexCoreSegment(length);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreSegment_00024Raw_PxConvexCoreSegment(JNIEnv*, jclass, jfloat length) {
+    return (jlong) new PxConvexCoreSegment(length);
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreSegment_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCoreSegment*) _address;
+}
+JNIEXPORT jfloat JNICALL Java_physx_geometry_PxConvexCoreSegment_00024Raw_getLength(JNIEnv*, jclass, jlong _address) {
+    PxConvexCoreSegment* _self = (PxConvexCoreSegment*) _address;
+    return (jfloat) _self->length;
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreSegment_00024Raw_setLength(JNIEnv*, jclass, jlong _address, jfloat value) {
+    PxConvexCoreSegment* _self = (PxConvexCoreSegment*) _address;
+    _self->length = value;
+}
+
+// PxConvexCoreGeometry
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreGeometry__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(physx::PxConvexCoreGeometry);
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreGeometry_00024Raw_getCoreType(JNIEnv*, jclass, jlong _address) {
+    physx::PxConvexCoreGeometry* self = (physx::PxConvexCoreGeometry*) _address;
+    return (jint) self->getCoreType();
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometry_00024Raw_getCoreData(JNIEnv*, jclass, jlong _address) {
+    physx::PxConvexCoreGeometry* self = (physx::PxConvexCoreGeometry*) _address;
+    return (jlong) self->getCoreData();
+}
+JNIEXPORT jfloat JNICALL Java_physx_geometry_PxConvexCoreGeometry_00024Raw_getMargin(JNIEnv*, jclass, jlong _address) {
+    physx::PxConvexCoreGeometry* self = (physx::PxConvexCoreGeometry*) _address;
+    return (jfloat) self->getMargin();
+}
+JNIEXPORT jboolean JNICALL Java_physx_geometry_PxConvexCoreGeometry_00024Raw_isValid(JNIEnv*, jclass, jlong _address) {
+    physx::PxConvexCoreGeometry* self = (physx::PxConvexCoreGeometry*) _address;
+    return (jboolean) self->isValid();
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreGeometry_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (physx::PxConvexCoreGeometry*) _address;
+}
+
+// PxConvexCoreGeometryFactory
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory__1_1sizeOf(JNIEnv*, jclass) {
+    return sizeof(PxConvexCoreGeometryFactory);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_createFromBox(JNIEnv*, jclass, jlong box, jfloat margin) {
+    return (jlong) PxConvexCoreGeometryFactory::createFromBox(*((PxConvexCoreBox*) box), margin);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_createFromCone(JNIEnv*, jclass, jlong cone, jfloat margin) {
+    return (jlong) PxConvexCoreGeometryFactory::createFromCone(*((PxConvexCoreCone*) cone), margin);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_createFromCylinder(JNIEnv*, jclass, jlong cylinder, jfloat margin) {
+    return (jlong) PxConvexCoreGeometryFactory::createFromCylinder(*((PxConvexCoreCylinder*) cylinder), margin);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_createFromEllipsoid(JNIEnv*, jclass, jlong ellipsoid, jfloat margin) {
+    return (jlong) PxConvexCoreGeometryFactory::createFromEllipsoid(*((PxConvexCoreEllipsoid*) ellipsoid), margin);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_createFromPoint(JNIEnv*, jclass, jlong point, jfloat margin) {
+    return (jlong) PxConvexCoreGeometryFactory::createFromPoint(*((PxConvexCorePoint*) point), margin);
+}
+JNIEXPORT jlong JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_createFromSegment(JNIEnv*, jclass, jlong segment, jfloat margin) {
+    return (jlong) PxConvexCoreGeometryFactory::createFromSegment(*((PxConvexCoreSegment*) segment), margin);
+}
+JNIEXPORT void JNICALL Java_physx_geometry_PxConvexCoreGeometryFactory_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
+    delete (PxConvexCoreGeometryFactory*) _address;
+}
+
 // PxConvexMesh
 JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexMesh__1_1sizeOf(JNIEnv*, jclass) {
     return sizeof(physx::PxConvexMesh);
@@ -6494,6 +6684,26 @@ JNIEXPORT void JNICALL Java_physx_geometry_PxTriangleMeshGeometry_00024Raw_setTr
     _self->triangleMesh = (physx::PxTriangleMesh*) value;
 }
 
+// PxConvexCoreTypeEnum
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreTypeEnum__1getePOINT(JNIEnv*, jclass) {
+    return PxConvexCoreTypeEnum::ePOINT;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreTypeEnum__1geteSEGMENT(JNIEnv*, jclass) {
+    return PxConvexCoreTypeEnum::eSEGMENT;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreTypeEnum__1geteBOX(JNIEnv*, jclass) {
+    return PxConvexCoreTypeEnum::eBOX;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreTypeEnum__1geteELLIPSOID(JNIEnv*, jclass) {
+    return PxConvexCoreTypeEnum::eELLIPSOID;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreTypeEnum__1geteCYLINDER(JNIEnv*, jclass) {
+    return PxConvexCoreTypeEnum::eCYLINDER;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexCoreTypeEnum__1geteCONE(JNIEnv*, jclass) {
+    return PxConvexCoreTypeEnum::eCONE;
+}
+
 // PxConvexMeshGeometryFlagEnum
 JNIEXPORT jint JNICALL Java_physx_geometry_PxConvexMeshGeometryFlagEnum__1geteTIGHT_1BOUNDS(JNIEnv*, jclass) {
     return PxConvexMeshGeometryFlagEnum::eTIGHT_BOUNDS;
@@ -6512,8 +6722,17 @@ JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1geteCAPSULE(JNIE
 JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1geteBOX(JNIEnv*, jclass) {
     return PxGeometryTypeEnum::eBOX;
 }
+JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1geteCONVEXCORE(JNIEnv*, jclass) {
+    return PxGeometryTypeEnum::eCONVEXCORE;
+}
 JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1geteCONVEXMESH(JNIEnv*, jclass) {
     return PxGeometryTypeEnum::eCONVEXMESH;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1getePARTICLESYSTEM(JNIEnv*, jclass) {
+    return PxGeometryTypeEnum::ePARTICLESYSTEM;
+}
+JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1geteTETRAHEDRONMESH(JNIEnv*, jclass) {
+    return PxGeometryTypeEnum::eTETRAHEDRONMESH;
 }
 JNIEXPORT jint JNICALL Java_physx_geometry_PxGeometryTypeEnum__1geteTRIANGLEMESH(JNIEnv*, jclass) {
     return PxGeometryTypeEnum::eTRIANGLEMESH;
@@ -8791,6 +9010,10 @@ JNIEXPORT jlong JNICALL Java_physx_physics_PxOverlapResult_00024Raw_getTouch(JNI
     PxOverlapResult* self = (PxOverlapResult*) _address;
     return (jlong) &self->getTouch(index);
 }
+JNIEXPORT void JNICALL Java_physx_physics_PxOverlapResult_00024Raw_clear(JNIEnv*, jclass, jlong _address) {
+    PxOverlapResult* self = (PxOverlapResult*) _address;
+    self->clear();
+}
 JNIEXPORT void JNICALL Java_physx_physics_PxOverlapResult_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
     delete (PxOverlapResult*) _address;
 }
@@ -9039,6 +9262,10 @@ JNIEXPORT jint JNICALL Java_physx_physics_PxRaycastResult_00024Raw_getNbTouches(
 JNIEXPORT jlong JNICALL Java_physx_physics_PxRaycastResult_00024Raw_getTouch(JNIEnv*, jclass, jlong _address, jint index) {
     PxRaycastResult* self = (PxRaycastResult*) _address;
     return (jlong) &self->getTouch(index);
+}
+JNIEXPORT void JNICALL Java_physx_physics_PxRaycastResult_00024Raw_clear(JNIEnv*, jclass, jlong _address) {
+    PxRaycastResult* self = (PxRaycastResult*) _address;
+    self->clear();
 }
 JNIEXPORT void JNICALL Java_physx_physics_PxRaycastResult_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
     delete (PxRaycastResult*) _address;
@@ -9301,6 +9528,10 @@ JNIEXPORT jint JNICALL Java_physx_physics_PxSweepResult_00024Raw_getNbTouches(JN
 JNIEXPORT jlong JNICALL Java_physx_physics_PxSweepResult_00024Raw_getTouch(JNIEnv*, jclass, jlong _address, jint index) {
     PxSweepResult* self = (PxSweepResult*) _address;
     return (jlong) &self->getTouch(index);
+}
+JNIEXPORT void JNICALL Java_physx_physics_PxSweepResult_00024Raw_clear(JNIEnv*, jclass, jlong _address) {
+    PxSweepResult* self = (PxSweepResult*) _address;
+    self->clear();
 }
 JNIEXPORT void JNICALL Java_physx_physics_PxSweepResult_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
     delete (PxSweepResult*) _address;

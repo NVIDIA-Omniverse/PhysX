@@ -1182,6 +1182,55 @@ interface PxControllersHit {
 };
 PxControllersHit implements PxControllerHit;
 
+interface PxConvexCoreBox {
+    void PxConvexCoreBox(float eX, float eY, float eZ);
+    [Value] attribute PxVec3 extents;
+};
+
+interface PxConvexCoreCone {
+    void PxConvexCoreCone(float height, float radius);
+    attribute float height;
+    attribute float radius;
+};
+
+interface PxConvexCoreCylinder {
+    void PxConvexCoreCylinder(float height, float radius);
+    attribute float height;
+    attribute float radius;
+};
+
+interface PxConvexCoreEllipsoid {
+    void PxConvexCoreEllipsoid(float rX, float rY, float rZ);
+    [Value] attribute PxVec3 radii;
+};
+
+[Prefix="physx::"]
+interface PxConvexCoreGeometry {
+    PxConvexCoreTypeEnum getCoreType();
+    [Const] VoidPtr getCoreData();
+    float getMargin();
+    boolean isValid();
+};
+PxConvexCoreGeometry implements PxGeometry;
+
+interface PxConvexCoreGeometryFactory {
+    static PxConvexCoreGeometry createFromBox([Const, Ref] PxConvexCoreBox box, float margin);
+    static PxConvexCoreGeometry createFromCone([Const, Ref] PxConvexCoreCone cone, float margin);
+    static PxConvexCoreGeometry createFromCylinder([Const, Ref] PxConvexCoreCylinder cylinder, float margin);
+    static PxConvexCoreGeometry createFromEllipsoid([Const, Ref] PxConvexCoreEllipsoid ellipsoid, float margin);
+    static PxConvexCoreGeometry createFromPoint([Const, Ref] PxConvexCorePoint point, float margin);
+    static PxConvexCoreGeometry createFromSegment([Const, Ref] PxConvexCoreSegment segment, float margin);
+};
+
+interface PxConvexCorePoint {
+    void PxConvexCorePoint();
+};
+
+interface PxConvexCoreSegment {
+    void PxConvexCoreSegment(float length);
+    attribute float length;
+};
+
 [Prefix="physx::"]
 interface PxConvexFlags {
     void PxConvexFlags(unsigned short flags);
@@ -4031,6 +4080,15 @@ enum PxControllerShapeTypeEnum {
     "PxControllerShapeTypeEnum::eCAPSULE"
 };
 
+enum PxConvexCoreTypeEnum {
+    "PxConvexCoreTypeEnum::ePOINT",
+    "PxConvexCoreTypeEnum::eSEGMENT",
+    "PxConvexCoreTypeEnum::eBOX",
+    "PxConvexCoreTypeEnum::eELLIPSOID",
+    "PxConvexCoreTypeEnum::eCYLINDER",
+    "PxConvexCoreTypeEnum::eCONE"
+};
+
 enum PxConvexFlagEnum {
     "PxConvexFlagEnum::e16_BIT_INDICES",
     "PxConvexFlagEnum::eCOMPUTE_CONVEX",
@@ -4149,7 +4207,10 @@ enum PxGeometryTypeEnum {
     "PxGeometryTypeEnum::ePLANE",
     "PxGeometryTypeEnum::eCAPSULE",
     "PxGeometryTypeEnum::eBOX",
+    "PxGeometryTypeEnum::eCONVEXCORE",
     "PxGeometryTypeEnum::eCONVEXMESH",
+    "PxGeometryTypeEnum::ePARTICLESYSTEM",
+    "PxGeometryTypeEnum::eTETRAHEDRONMESH",
     "PxGeometryTypeEnum::eTRIANGLEMESH",
     "PxGeometryTypeEnum::eHEIGHTFIELD",
     "PxGeometryTypeEnum::eCUSTOM"

@@ -122,6 +122,7 @@ typedef physx::PxControllerBehaviorFlag::Enum PxControllerBehaviorFlagEnum;
 typedef physx::PxControllerCollisionFlag::Enum PxControllerCollisionFlagEnum;
 typedef physx::PxControllerNonWalkableMode::Enum PxControllerNonWalkableModeEnum;
 typedef physx::PxControllerShapeType::Enum PxControllerShapeTypeEnum;
+typedef physx::PxConvexCore::Type PxConvexCoreTypeEnum;
 typedef physx::PxConvexFlag::Enum PxConvexFlagEnum;
 typedef physx::PxConvexMeshCookingType::Enum PxConvexMeshCookingTypeEnum;
 typedef physx::PxConvexMeshGeometryFlag::Enum PxConvexMeshGeometryFlagEnum;
@@ -186,5 +187,12 @@ typedef physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams::Directio
 typedef physx::vehicle2::PxVehicleSimulationContextType::Enum PxVehicleSimulationContextTypeEnum;
 typedef physx::vehicle2::PxVehicleSuspensionJounceCalculationType::Enum PxVehicleSuspensionJounceCalculationTypeEnum;
 typedef physx::vehicle2::PxVehicleTireDirectionModes::Enum PxVehicleTireDirectionModesEnum;
+
+typedef physx::PxConvexCore::Box PxConvexCoreBox;
+typedef physx::PxConvexCore::Cone PxConvexCoreCone;
+typedef physx::PxConvexCore::Cylinder PxConvexCoreCylinder;
+typedef physx::PxConvexCore::Ellipsoid PxConvexCoreEllipsoid;
+typedef physx::PxConvexCore::Point PxConvexCorePoint;
+typedef physx::PxConvexCore::Segment PxConvexCoreSegment;
 
 #endif
