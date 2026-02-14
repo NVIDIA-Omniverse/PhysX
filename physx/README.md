@@ -53,7 +53,7 @@ sudo apt-get install -y cmake clang build-essential curl \
 
 **Note:** This build configuration uses system packages for OpenGL, GLUT, and RapidJSON instead of packman-managed versions.
 
-**Build (Without Packman - Recommended):**
+**Build (Packman-Free - Recommended):**
 ```bash
 cd physx
 ./generate_projects_no_packman.sh linux-clang-cpu-only
@@ -69,11 +69,14 @@ cd compiler/linux-clang-cpu-only-release
 make -j$(nproc)
 ```
 
-Built libraries will be in `bin/linux.x86_64/release/`
+Built libraries and executables will be in `bin/linux.x86_64/release/`
 
-**Available presets:** Run `./generate_projects_no_packman.sh` (or `./generate_projects.sh`) to see all options (linux-clang, linux-gcc, linux-clang-cpu-only, etc.)
+**Available presets:** Run `./generate_projects_no_packman.sh` (or `./generate_projects.sh`) to see all options:
+- `linux-clang-cpu-only` - CPU-only build with Clang (recommended)
+- `linux-clang` - Full build with GPU support
+- `linux-gcc` - Build with GCC compiler
 
-**Note:** The `generate_projects_no_packman.sh` script uses system packages and tools exclusively. Use this for packman-free builds.
+**Note:** The `generate_projects_no_packman.sh` script is **completely packman-free** and uses only system packages and tools. This is the recommended method for Linux builds.
 
 ### Windows / macOS
 
@@ -83,7 +86,16 @@ Run `generate_projects.bat` (Windows) or `generate_projects.sh` (macOS) and foll
 
 ### Note
 
-**Packman Dependency:** The PhysX distribution uses the packman package manager to download some binary content from Amazon CloudFront. For Linux builds, this dependency has been minimized - OpenGL, GLUT, and RapidJSON now use system packages instead. Packman is still used for some build tools and the metadata generation feature (which may be removed in the future).
+**Packman Status (Linux):** PhysX can now be built on Linux **without any packman dependencies** using the `generate_projects_no_packman.sh` script. All previously packman-managed dependencies (OpenGL, GLUT, RapidJSON, build tools, metadata generation) have been replaced with system packages or eliminated:
+
+- **OpenGL/GLUT**: System packages (`libglut-dev`, `libopengl-dev`)
+- **RapidJSON**: System package (`rapidjson-dev`)
+- **Build tools**: System CMake, Clang, and Make
+- **Metadata generation**: Auto-generated files are checked into the repository
+
+The traditional `generate_projects.sh` script still uses packman for backwards compatibility, but it is no longer required for Linux builds.
+
+**Windows/macOS:** These platforms still use packman for dependency management.
 
 ## Acknowledgements
 
@@ -92,10 +104,10 @@ For copyright details, please refer to the license files included in the package
 
 | Software                  | Copyright Holder                                                                    | Package / Source                          |
 |---------------------------|-------------------------------------------------------------------------------------|-------------------------------------------|
-| CMake                     | Kitware, Inc. and Contributors                                                      | cmake (packman or system)                 |
-| LLVM                      | University of Illinois at Urbana-Champaign                                          | clang-physxmetadata (packman)             |
+| CMake                     | Kitware, Inc. and Contributors                                                      | system package (Linux)<br>packman (Windows/macOS) |
+| LLVM/Clang                | University of Illinois at Urbana-Champaign                                          | system package (Linux)<br>clang-physxmetadata (optional, metadata regen only) |
 | Visual Studio Locator     | Microsoft Corporation                                                               | VsWhere (packman, Windows only)           |
-| Freeglut                  | Pawel W. Olszta                                                                     | system package (Linux)<br>freeglut-windows (Windows) |
+| Freeglut                  | Pawel W. Olszta                                                                     | system package (Linux)<br>freeglut-windows (packman, Windows) |
 | Mesa 3-D graphics library | Brian Paul                                                                          | system package (Linux)                    |
-| RapidJSON                 | THL A29 Limited, a Tencent company, and Milo Yip<br>Alexander Chemeris (msinttypes) | system package (Linux)<br>rapidjson (others) |
+| RapidJSON                 | THL A29 Limited, a Tencent company, and Milo Yip<br>Alexander Chemeris (msinttypes) | system package (Linux)<br>rapidjson (packman, Windows/macOS) |
 | OpenGL Ext Wrangler Lib   | Nigel Stewart, Milan Ikits, Marcelo E. Magallon, Lev Povalahev                      | [SDK_ROOT]/snippets/graphics              |

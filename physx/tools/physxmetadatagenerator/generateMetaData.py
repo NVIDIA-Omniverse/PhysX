@@ -121,6 +121,18 @@ except:
 # find SDK_ROOT and PX_SHARED
 sdkRoot = utils.find_root_path(scriptDir, "source")
 
+# Check if clang-physxmetadata tool is available
+if 'PM_clangMetadata_PATH' not in os.environ:
+	print("=" * 80)
+	print("WARNING: PM_clangMetadata_PATH environment variable not set.")
+	print("Metadata generation is disabled.")
+	print("")
+	print("The auto-generated metadata files are already checked into the repository,")
+	print("so this is not required for normal builds. Metadata generation is only")
+	print("needed if you modify PhysX API headers and need to regenerate metadata.")
+	print("=" * 80)
+	sys.exit(0)
+
 clangRoot = os.path.normpath(os.environ['PM_clangMetadata_PATH'])
 
 print("testmode:", args.test)
