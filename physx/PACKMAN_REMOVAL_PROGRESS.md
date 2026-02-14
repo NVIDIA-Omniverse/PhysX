@@ -516,6 +516,76 @@ Plus the earlier changes from Phases 1-4 for OpenGL, RapidJSON, and build script
 
 ---
 
+## Phase 6: Windows Support via vcpkg 🚧 IN PROGRESS
+
+### Goal
+Extend packman-free builds to Windows using Microsoft's vcpkg package manager.
+
+### Challenge
+Unlike Linux, Windows lacks a standard system package manager. The current packman-free solution only works on Linux because it relies on `apt-get` for dependencies like rapidjson and OpenGL/GLUT.
+
+### Solution Strategy: vcpkg
+
+**Why vcpkg:**
+- Official Microsoft C++ package manager
+- Integrates seamlessly with CMake and Visual Studio
+- Has all required dependencies (rapidjson, freeglut, etc.)
+- Most analogous to Linux's apt-get approach
+- Cross-platform (could unify Linux/Windows approach later)
+
+### Implementation Plan
+
+#### 1. Create Windows Build Script
+**File**: `generate_projects_vcpkg.bat`
+
+Features:
+- Check for vcpkg installation
+- Validate required packages are installed via vcpkg
+- Set up CMake toolchain file for vcpkg integration
+- Generate Visual Studio projects
+- Provide clear error messages if prerequisites missing
+
+#### 2. Update CMake Files
+**Files to modify**:
+- `snippets/compiler/cmake/SnippetVehicleTemplate.cmake`
+- `snippets/compiler/cmake/windows/SnippetVehicleTemplate.cmake`
+- Similar updates for SnippetTemplate.cmake and SnippetRender.cmake
+
+**Changes**:
+- Detect if vcpkg is being used (check CMAKE_TOOLCHAIN_FILE)
+- Use vcpkg-provided packages when available
+- Fall back to packman if vcpkg not detected
+- Maintain backward compatibility
+
+#### 3. Documentation
+**Files to update**:
+- `README.md` - Add Windows vcpkg build instructions
+- This file - Document implementation and testing
+
+### Required vcpkg Packages
+```bash
+vcpkg install rapidjson:x64-windows
+vcpkg install freeglut:x64-windows
+# Additional packages as needed
+```
+
+### Testing Checklist (For Windows Session)
+- [ ] Install vcpkg on Windows
+- [ ] Install required packages via vcpkg
+- [ ] Run `generate_projects_vcpkg.bat`
+- [ ] Verify CMake configuration succeeds
+- [ ] Build debug configuration
+- [ ] Build release configuration
+- [ ] Test snippet executables
+- [ ] Verify no packman invocation occurs
+
+### Status
+- 🚧 **Planning Complete** - Ready for Windows implementation
+- ⏳ **Windows Testing** - Pending
+- ⏳ **Documentation** - Pending
+
+---
+
 ## Post-Completion Improvements
 
 ### 2026-02-14: Added Prerequisite Validation
