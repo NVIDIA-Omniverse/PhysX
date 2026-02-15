@@ -19,13 +19,7 @@ echo.
 REM Check for vcpkg installation
 echo Checking for vcpkg installation...
 
-REM Try to find vcpkg in common locations
-set VCPKG_ROOT=
-if defined VCPKG_ROOT goto :vcpkg_found
-if exist "C:\vcpkg\vcpkg.exe" set VCPKG_ROOT=C:\vcpkg
-if exist "%USERPROFILE%\vcpkg\vcpkg.exe" set VCPKG_ROOT=%USERPROFILE%\vcpkg
-if exist "%LOCALAPPDATA%\vcpkg\vcpkg.exe" set VCPKG_ROOT=%LOCALAPPDATA%\vcpkg
-
+REM Check if VCPKG_ROOT environment variable is set
 if not defined VCPKG_ROOT (
     echo.
     echo ERROR: vcpkg not found!
@@ -45,7 +39,6 @@ if not defined VCPKG_ROOT (
     exit /b 1
 )
 
-:vcpkg_found
 echo Found vcpkg at: %VCPKG_ROOT%
 echo.
 
