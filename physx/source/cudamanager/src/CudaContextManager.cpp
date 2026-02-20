@@ -91,7 +91,8 @@ typedef unsigned int GLenum;
 typedef unsigned int GLuint;
 
 //#include <GL/gl.h>
-#include <cudaGL.h>
+// cudaGL.h removed: no CUDA-GL interop functions are called in this file;
+// the include transitively required GL/gl.h which is absent on headless machines.
 #include <assert.h>
 
 #include "foundation/PxErrors.h"
