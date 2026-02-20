@@ -398,18 +398,10 @@ def main():
 
     if len(sys.argv) != 2:
         presetName = noPresetProvided(physx_root_dir)  # Ensure this function returns the preset name
-        if sys.platform == 'win32':
-            print('Running generate_projects.bat ' + presetName)
-            cmd_path = os.path.join(physx_root_dir, 'generate_projects.bat')
-            cmd = f'"{cmd_path}" {presetName}'
-            result = subprocess.run(cmd, cwd=physx_root_dir, check=True, shell=True, universal_newlines=True)
-            # TODO: catch exception and add capture errors
+        if filterPreset(presetName):
+            presetProvided(presetName, physx_root_dir)
         else:
-            print('Running generate_projects.sh ' + presetName)
-            cmd_path = os.path.join(physx_root_dir, 'generate_projects.sh')
-            cmd = [cmd_path, presetName]
-            result = subprocess.run(cmd, cwd=physx_root_dir, check=True, universal_newlines=True)
-            # TODO: catch exception and add capture errors
+            print('Preset not supported on this build platform.')
     else:
         presetName = sys.argv[1]
         if filterPreset(presetName):
