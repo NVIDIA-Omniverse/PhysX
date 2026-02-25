@@ -3843,6 +3843,14 @@ JNIEXPORT void JNICALL Java_physx_extensions_PxD6Joint_00024Raw_getDriveVelocity
     physx::PxD6Joint* self = (physx::PxD6Joint*) _address;
     self->getDriveVelocity(*((physx::PxVec3*) linear), *((physx::PxVec3*) angular));
 }
+JNIEXPORT void JNICALL Java_physx_extensions_PxD6Joint_00024Raw_setAngularDriveConfig(JNIEnv*, jclass, jlong _address, jint config) {
+    physx::PxD6Joint* self = (physx::PxD6Joint*) _address;
+    self->setAngularDriveConfig((PxD6AngularDriveConfigEnum) config);
+}
+JNIEXPORT jint JNICALL Java_physx_extensions_PxD6Joint_00024Raw_getAngularDriveConfig(JNIEnv*, jclass, jlong _address) {
+    physx::PxD6Joint* self = (physx::PxD6Joint*) _address;
+    return (jint) self->getAngularDriveConfig();
+}
 JNIEXPORT void JNICALL Java_physx_extensions_PxD6Joint_00024Raw_destroy(JNIEnv*, jclass, jlong _address) {
     delete (physx::PxD6Joint*) _address;
 }
@@ -4962,6 +4970,17 @@ JNIEXPORT jint JNICALL Java_physx_extensions_PxSerializationRegistry__1_1sizeOf(
 JNIEXPORT void JNICALL Java_physx_extensions_PxSerializationRegistry_00024Raw_release(JNIEnv*, jclass, jlong _address) {
     physx::PxSerializationRegistry* self = (physx::PxSerializationRegistry*) _address;
     self->release();
+}
+
+// PxD6AngularDriveConfigEnum
+JNIEXPORT jint JNICALL Java_physx_extensions_PxD6AngularDriveConfigEnum__1geteSWING_1TWIST(JNIEnv*, jclass) {
+    return PxD6AngularDriveConfigEnum::eSWING_TWIST;
+}
+JNIEXPORT jint JNICALL Java_physx_extensions_PxD6AngularDriveConfigEnum__1geteSLERP(JNIEnv*, jclass) {
+    return PxD6AngularDriveConfigEnum::eSLERP;
+}
+JNIEXPORT jint JNICALL Java_physx_extensions_PxD6AngularDriveConfigEnum__1geteLEGACY(JNIEnv*, jclass) {
+    return PxD6AngularDriveConfigEnum::eLEGACY;
 }
 
 // PxD6AxisEnum

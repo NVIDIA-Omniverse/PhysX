@@ -126,6 +126,7 @@ typedef physx::PxConvexCore::Type PxConvexCoreTypeEnum;
 typedef physx::PxConvexFlag::Enum PxConvexFlagEnum;
 typedef physx::PxConvexMeshCookingType::Enum PxConvexMeshCookingTypeEnum;
 typedef physx::PxConvexMeshGeometryFlag::Enum PxConvexMeshGeometryFlagEnum;
+typedef physx::PxD6AngularDriveConfig::Enum PxD6AngularDriveConfigEnum;
 typedef physx::PxD6Axis::Enum PxD6AxisEnum;
 typedef physx::PxD6Drive::Enum PxD6DriveEnum;
 typedef physx::PxD6Motion::Enum PxD6MotionEnum;
