@@ -1,0 +1,84 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Test scene for heterogeneous (non-uniform) cloning"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    # Environment container
+    def Scope "envs"
+    {
+        # Source environment with 3 different objects
+        def Xform "env0"
+        {
+            double3 xformOp:translate = (1, 2, 3)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            # Robot (will be cloned to all environments)
+            def Xform "robot" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                bool physics:rigidBodyEnabled = 1
+                double3 xformOp:translate = (0, 0.5, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 5.0
+
+                def Cube "body" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    double size = 0.5
+                }
+            }
+
+            # Box (will be cloned to even environments only)
+            def Xform "box" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                bool physics:rigidBodyEnabled = 1
+                double3 xformOp:translate = (3, 0.5, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 2.0
+
+                def Cube "shape" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    double size = 0.4
+                }
+            }
+
+            # Sphere (will be cloned to odd environments only)
+            def Xform "sphere" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                bool physics:rigidBodyEnabled = 1
+                double3 xformOp:translate = (-3, 0.5, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1.5
+
+                def Sphere "shape" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    double radius = 0.3
+                }
+            }
+        }
+
+        # env1-env4 are created dynamically by the clone plugin
+        # Each will be spatially separated (10m apart in X) to prevent inter-environment collisions
+    }
+}

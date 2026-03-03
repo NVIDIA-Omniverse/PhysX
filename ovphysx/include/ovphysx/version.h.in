@@ -1,0 +1,61 @@
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef OVPHYSX_VERSION_H
+#define OVPHYSX_VERSION_H
+
+#include <stdint.h>
+#include "ovphysx/ovphysx_export.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    /*--------------------------------------------------*/
+    /* Version macros (compile-time) */
+    /* NOTE: This file is auto-generated from version.h.in file by CMake */
+    /*--------------------------------------------------*/
+
+    #define OVPHYSX_VERSION_MAJOR @OVPHYSX_VERSION_MAJOR@
+    #define OVPHYSX_VERSION_MINOR @OVPHYSX_VERSION_MINOR@
+    #define OVPHYSX_VERSION_PATCH @OVPHYSX_VERSION_PATCH@
+    
+    /* Pre-release identifier (e.g., "specialFeature" for version "0.1.4-specialFeature") */
+    /* Empty string if no pre-release suffix */
+    #define OVPHYSX_VERSION_PRERELEASE "@OVPHYSX_VERSION_PRERELEASE@"
+    
+    /* Full version string including pre-release (e.g., "0.1.4-specialFeature") */
+    #define OVPHYSX_VERSION_STRING "@OVPHYSX_VERSION@"
+
+    /*--------------------------------------------------*/
+    /* Version functions (runtime) */
+    /*--------------------------------------------------*/
+
+    /**
+     * Get runtime version of the library.
+     * Useful for checking ABI compatibility between headers and shared library.
+     * 
+     * @param out_major [out] Major version (must not be NULL)
+     * @param out_minor [out] Minor version (must not be NULL)
+     * @param out_patch [out] Patch version (must not be NULL)
+     */
+    OVPHYSX_API void ovphysx_get_version(
+        uint32_t* out_major,
+        uint32_t* out_minor,
+        uint32_t* out_patch
+    );
+
+    /**
+     * Get version as string (e.g., "0.1.0").
+     * 
+     * @return Version string with static storage duration (valid for lifetime of process, do not free)
+     */
+    OVPHYSX_API const char* ovphysx_get_version_string(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // OVPHYSX_VERSION_H
+
+

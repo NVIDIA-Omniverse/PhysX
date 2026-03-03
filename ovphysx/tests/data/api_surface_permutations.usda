@@ -1,0 +1,29 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Attribute permutations for Python API surface tests"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Xform "Perms"
+    {
+        float customFloat = 1.0
+        double customDouble = 2.0
+        int customInt = 3
+        int64 customInt64 = 4
+
+        float3 customVec3f = (1, 2, 3)
+        double3 customVec3d = (4, 5, 6)
+
+        float[] customFloatArray = [1, 2, 3]
+        double[] customDoubleArray = [4, 5, 6]
+        int[] customIntArray = [1, 2, 3]
+        int64[] customInt64Array = [4, 5, 6]
+
+        float3[] customVec3fArray = [(1, 2, 3), (4, 5, 6)]
+        double3[] customVec3dArray = [(7, 8, 9), (10, 11, 12)]
+    }
+}

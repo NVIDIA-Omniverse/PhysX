@@ -1,0 +1,112 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Simple physics test scene for ovphysx"
+    metersPerUnit = 1
+    upAxis = "Y"
+    kilogramsPerMass = 1
+)
+
+def Xform "World" (
+    kind = "component"
+)
+{
+    # Physics scene configuration
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    # Ground plane (static)
+    def Xform "Ground" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "GroundGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-50, -0.5, -50), (50, 0.5, 50)]
+            double size = 1
+            double3 xformOp:scale = (100, 1, 100)
+            double3 xformOp:translate = (0, -0.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    # Dynamic rigid body cube
+    def Xform "Cube1" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (0, 5, 0)
+        quatd xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        # Rigid body properties
+        float physics:mass = 1.0
+        vector3f physics:velocity = (0, 0, 0)
+        vector3f physics:angularVelocity = (0, 0, 0)
+
+        def Cube "CubeGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            double size = 1
+        }
+    }
+
+    # Another dynamic rigid body cube
+    def Xform "Cube2" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (2, 8, 0)
+        quatd xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        # Rigid body properties
+        float physics:mass = 2.0
+        vector3f physics:velocity = (0, 0, 0)
+        vector3f physics:angularVelocity = (0, 0, 0)
+
+        def Cube "CubeGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            double size = 1
+        }
+    }
+
+    # Sphere rigid body
+    def Xform "Sphere1" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (-2, 10, 0)
+        quatd xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        # Rigid body properties
+        float physics:mass = 1.5
+        vector3f physics:velocity = (0, 0, 0)
+        vector3f physics:angularVelocity = (0, 0, 0)
+
+        def Sphere "SphereGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            double radius = 0.5
+        }
+    }
+}

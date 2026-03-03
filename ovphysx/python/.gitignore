@@ -1,0 +1,36 @@
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.so
+
+# Virtual environment
+venv/
+.venv/
+
+# Generated version file
+ovphysx/_version.py
+
+# Test outputs
+pytest_results.xml
+
+# Bundled dependencies (generated during wheel build, NOT for git)
+ovphysx/deps/
+plugins/
+lib/
+ovphysx/carbonite_plugins/
+ovphysx/*.so
+ovphysx/*.dylib
+ovphysx/*.dll
+LICENSE.txt
+ovphysx-LICENSES.zip
+
+# Agent docs, skills, and shipped samples (generated during wheel build, NOT for git)
+ovphysx/AGENTS.md
+ovphysx/SKILLS.md
+ovphysx/skills/
+ovphysx/samples/
+ovphysx/docs/

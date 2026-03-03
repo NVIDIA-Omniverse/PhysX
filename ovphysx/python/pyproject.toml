@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ovphysx"
+dynamic = ["version"]
+description = "Python bindings for ovphysx C API"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "packaging>=20.0",  # PEP 440 version checking for USD compatibility
+]
+license = "LicenseRef-NVIDIA-Omniverse"
+license-files = ["LICENSE.txt", "ovphysx-LICENSES.zip"]
+authors = [{ name = "Omniverse Physics Team" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
+]
+
+[project.urls]
+Homepage = "https://github.com/NVIDIA-Omniverse/PhysX"
+
+[dependency-groups]
+dev = [
+  "build>=1.0.0", # for building a wheel
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "ovphysx._version.__version__"}
+
+[tool.setuptools]
+# Mark as platform-specific wheel (contains native binaries)
+# This prevents setuptools from creating a universal "py3-none-any" wheel
+# and instead creates platform-specific wheels like "py3-none-linux_x86_64"
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ovphysx*"]
+
+[tool.setuptools.package-data]
+# Bundle native libs and all dependencies for self-contained wheel
+# Structure matches _install/: lib/ (main library + config) + plugins/ (all carbonite/physx plugins)
+"ovphysx" = [
+  "lib/**/*",
+  "plugins/**/*",
+  "deps/**/*",  # Extension Python packages (v2/) and kernel/py packages (_kit_py/)
+  "SKILLS.md",
+  "skills/**/*",
+  "samples/**/*",
+  "docs/**/*",
+]
+
+

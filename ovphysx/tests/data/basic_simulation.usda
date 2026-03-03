@@ -1,0 +1,53 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Basic simulation scene for clone testing"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    # Environment container (matches PhysX test pattern)
+    def Scope "envs"
+    {
+        # Environment 0 - container for physics objects (this is what we'll clone)
+        def Xform "env0"
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            # Rigid body table inside the environment
+            def Xform "table" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                double3 xformOp:translate = (0, 1, 0)
+                quatd xformOp:orient = (1, 0, 0, 0)
+                double3 xformOp:scale = (1, 1, 1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                float physics:mass = 10.0
+                vector3f physics:velocity = (0, 0, 0)
+                vector3f physics:angularVelocity = (0, 0, 0)
+
+                def Cube "TableTop" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    float3[] extent = [(-1, -0.05, -0.75), (1, 0.05, 0.75)]
+                    double size = 1
+                    double3 xformOp:scale = (2, 0.1, 1.5)
+                    double3 xformOp:translate = (0, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+}
