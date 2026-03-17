@@ -2,6 +2,32 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
+"""ovphysx -- USD-based physics simulation with DLPack tensor interoperability.
+
+AI agent / LLM instructions:
+    This package ships skills (step-by-step playbooks) and code samples.
+    Start by reading the SKILLS.md index bundled alongside this file:
+
+        from pathlib import Path
+        skills_index = Path(__file__).parent / "SKILLS.md"
+        skills_dir   = Path(__file__).parent / "skills"
+        samples_dir  = Path(__file__).parent / "samples"
+
+    Or call ``ovphysx.ai_skills_path()`` to get the same paths as a dict.
+
+    Key classes: PhysX, tensors (submodule).
+    Full docs are in the ``docs/`` subdirectory of this package.
+
+Important notes for agents:
+    - ovphysx bundles its own OpenUSD libraries. It is not needed to install
+      ``usd-core`` as a dependency -- doing so may cause version conflicts.
+    - ovphysx exchanges tensor data via DLPack, so any framework that
+      understands DLPack can consume it. Common optional companions are
+      numpy (CPU tensors) and torch (GPU tensors), but they are not
+      dependencies of this package. Users should add whichever they need
+      to their own project requirements.
+"""
+
 # Set up bundled dependencies BEFORE importing anything else
 # Wheel structure matches _install/:
 #   ovphysx/
@@ -133,6 +159,37 @@ try:
 except Exception:  # noqa: BLE001
     __version__ = "unknown"
 
+
+def ai_skills_path():
+    """Return paths to the bundled SKILLS.md index, skills/, samples/, and docs/.
+
+    AI agents: call this function to locate the playbooks, code samples,
+    and documentation shipped with this package. No native loading required.
+
+    In an installed wheel all paths exist. In the source repo before a build
+    these files live at the project root (``omni/ovphysx/``) instead of under
+    ``python/ovphysx/``; the function falls back to the project root when the
+    wheel-side copies are absent.
+    """
+    from pathlib import Path
+    pkg = Path(__file__).parent
+    skills_index = pkg / "SKILLS.md"
+    if skills_index.exists():
+        return {
+            "skills_index": skills_index,
+            "skills_dir": pkg / "skills",
+            "samples_dir": pkg / "samples",
+            "docs_dir": pkg / "docs",
+        }
+    project_root = pkg.parent.parent
+    return {
+        "skills_index": project_root / "SKILLS.md",
+        "skills_dir": project_root / "skills",
+        "samples_dir": project_root / "tests" / "python_samples",
+        "docs_dir": project_root / "docs",
+    }
+
+
 # TensorAPI submodule - imports without side effects, plugins load on first use
 from . import tensors
 from ._bindings import (  # TensorBindingAPI tensor type constants and log levels
@@ -240,6 +297,7 @@ def _ensure_tensor_plugins_loaded():
 
 __all__ = [
     "__version__",
+    "ai_skills_path",
     "PhysX",
     # Logging API
     "set_log_level",

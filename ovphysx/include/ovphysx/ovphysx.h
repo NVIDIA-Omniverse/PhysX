@@ -48,6 +48,11 @@ extern "C" {
     * Memory visibility:
     *   - Writes from operation N are visible to operation N+1
     *   - Independent operations may execute concurrently internally for performance
+    *
+    * Documentation and skills:
+    *   Tutorials, guides, and AI-agent playbooks ship alongside this header.
+    *   See SKILLS.md in the package root for a skills index, and README.md
+    *   for a quick-start overview.
     */
 
     /*--------------------------------------------------*/
