@@ -318,7 +318,10 @@ class CMakePreset:
 
 def getCommonParams():
     outString = '--no-warn-unused-cli'
-    outString = outString + ' -DCMAKE_PREFIX_PATH=\"' + os.environ['PM_PATHS'] + '\"'
+    # Only set CMAKE_PREFIX_PATH if PM_PATHS is defined (packman mode)
+    # In vcpkg mode, the toolchain file handles package finding
+    if os.environ.get('PM_PATHS') is not None:
+        outString = outString + ' -DCMAKE_PREFIX_PATH=\"' + os.environ['PM_PATHS'] + '\"'
     outString = outString + ' -DPHYSX_ROOT_DIR=\"' + \
         os.environ['PHYSX_ROOT_DIR'] + '\"'
     outString = outString + ' -DPX_OUTPUT_LIB_DIR=\"' + \
@@ -341,7 +344,10 @@ def cleanupCompilerDir(compilerDirName):
 def presetProvided(pName, physx_root_dir):
     parsedPreset = CMakePreset(pName, physx_root_dir)
 
-    print('PM_PATHS: ' + os.environ['PM_PATHS'])
+    if os.environ.get('PM_PATHS') is not None:
+        print('PM_PATHS: ' + os.environ['PM_PATHS'])
+    else:
+        print('PM_PATHS: Not using packman (vcpkg mode)')
 
     if os.environ.get('PM_cmake_PATH') is not None:
         cmakeExec = os.environ['PM_cmake_PATH'] + '/bin/cmake' + cmakeExt()
@@ -398,18 +404,10 @@ def main():
 
     if len(sys.argv) != 2:
         presetName = noPresetProvided(physx_root_dir)  # Ensure this function returns the preset name
-        if sys.platform == 'win32':
-            print('Running generate_projects.bat ' + presetName)
-            cmd_path = os.path.join(physx_root_dir, 'generate_projects.bat')
-            cmd = f'"{cmd_path}" {presetName}'
-            result = subprocess.run(cmd, cwd=physx_root_dir, check=True, shell=True, universal_newlines=True)
-            # TODO: catch exception and add capture errors
+        if filterPreset(presetName):
+            presetProvided(presetName, physx_root_dir)
         else:
-            print('Running generate_projects.sh ' + presetName)
-            cmd_path = os.path.join(physx_root_dir, 'generate_projects.sh')
-            cmd = [cmd_path, presetName]
-            result = subprocess.run(cmd, cwd=physx_root_dir, check=True, universal_newlines=True)
-            # TODO: catch exception and add capture errors
+            print('Preset not supported on this build platform.')
     else:
         presetName = sys.argv[1]
         if filterPreset(presetName):
