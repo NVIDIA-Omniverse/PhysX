@@ -107,7 +107,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           npm i -g vercel@latest
-          url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN")
+          url=$(vercel deploy --yes --prebuilt --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Comment preview URL on PR
@@ -174,5 +174,5 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           npm i -g vercel@latest
-          url=$(vercel deploy --prod --prebuilt --token "$VERCEL_TOKEN")
+          url=$(vercel deploy --yes --prod --prebuilt --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
