@@ -1,6 +1,6 @@
-dist/
 node_modules/
 
+# WASM artifacts (large binaries, built from C++)
 stress_solver.cjs
 stress_solver.wasm
 stress_solver.mjs
