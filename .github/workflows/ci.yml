@@ -99,6 +99,9 @@ jobs:
       - name: Build demo site
         run: bash scripts/build-demo-site.sh
 
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
       - name: Deploy preview to Vercel
         id: deploy
         env:
@@ -106,7 +109,6 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm i -g vercel@latest
           url=$(vercel deploy --yes --prebuilt --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
@@ -166,6 +168,9 @@ jobs:
       - name: Build demo site
         run: bash scripts/build-demo-site.sh
 
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
       - name: Deploy production to Vercel
         id: deploy
         env:
@@ -173,6 +178,5 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm i -g vercel@latest
           url=$(vercel deploy --yes --prod --prebuilt --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
