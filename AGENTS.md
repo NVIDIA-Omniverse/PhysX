@@ -26,11 +26,14 @@ This is the NVIDIA PhysX monorepo containing PhysX, Blast, and Flow SDKs. The ac
 
 ### Browser demos
 
-After running `npm start` at the root, navigate to:
-- `http://localhost:8000/blast/js_stress_example/bridge-split-demo.html` — **Best demo**: Full-featured destructible bridge with config panel, reset, projectiles (requires `npx tsc` build)
-- `http://localhost:8000/blast/js_stress_example/bridge-ext.html` — Destructible bridge with two-phase fracture (requires `npx tsc` build)
-- `http://localhost:8000/blast/js_stress_example/bridge-demo.html` — Older demo with stress coloring only (fracture is disabled via early return in `simulation.js:117`)
-- `http://localhost:8000/demos/three-rapier.html` — Basic Three.js + Rapier physics demo (no Blast)
+After running `npm start` at the root, the **primary demo** is:
+
+- **`http://localhost:8000/blast/js_stress_example/bridge-split-demo.html`** — The most up-to-date and fully featured demo. Destructible bridge with real-time config panel, working reset, projectile spawning, and full fracture into independent physics bodies. Requires the `npx tsc` build step (step 2 above). **Always use this demo for testing and development.**
+
+Other demos (secondary/legacy):
+- `bridge-ext.html` — Older two-phase fracture demo (also requires `npx tsc`); less polished than `bridge-split-demo.html`
+- `bridge-demo.html` — Legacy demo with stress coloring only; fracture is disabled (`simulation.js:117` early return)
+- `/demos/three-rapier.html` — Basic Three.js + Rapier physics demo (no Blast)
 
 ### Gotchas
 
