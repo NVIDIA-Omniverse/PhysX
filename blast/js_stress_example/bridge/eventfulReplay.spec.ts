@@ -68,7 +68,14 @@ describe('Eventful replay (contacts+predefined splits)', () => {
       colliderToNode,
       activeContactColliders: active,
       pendingContactForces: new Map(),
+      pendingBodiesToCreate: [],
+      pendingColliderMigrations: [],
       disabledCollidersToRemove: new Set(),
+      bodiesToRemove: new Set(),
+      pendingSplitResults: [],
+      safeFrames: 0,
+      _handleSplitEventsCount: 0,
+      _splitLog: [],
       _justSplitFrames: 0
     };
 

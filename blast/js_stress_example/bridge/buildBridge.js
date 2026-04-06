@@ -137,7 +137,6 @@ export async function buildBridgeShared({ gravity = -9.81, strengthScale = 0.05 
 // The remainder of this file contains browser-only helpers used by the web demo.
 // Tests should import the headless builder above. Avoid importing DOM/Three in tests.
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d-compat';
 import RapierDebugRenderer from '../rapier-debug-renderer.js';
 
 import { BRIDGE_DIMENSIONS, CAR_PROPS, GRAVITY_DEFAULT, LIMITS_DEFAULTS, STRENGTH_DEFAULT, SOLVER_DEFAULTS } from './constants.js';

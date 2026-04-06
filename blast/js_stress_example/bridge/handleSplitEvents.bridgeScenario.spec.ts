@@ -45,7 +45,7 @@ describe('handleSplitEvents large bridge scenario', () => {
       colliderToNode.set(col.handle, c.nodeIndex); active.add(col.handle);
     }
 
-    const bridge = { world, chunks, actorMap: new Map([[0, { bodyHandle: parent.handle }]]), colliderToNode, activeContactColliders: active, solver: { actors: () => [] } };
+    const bridge = { world, chunks, actorMap: new Map([[0, { bodyHandle: parent.handle }]]), colliderToNode, activeContactColliders: active, solver: { actors: () => [] }, pendingBodiesToCreate: [] as any[], pendingColliderMigrations: [] as any[], pendingContactForces: new Map(), disabledCollidersToRemove: new Set<number>(), bodiesToRemove: new Set<number>(), pendingSplitResults: [] as any[], safeFrames: 0, _handleSplitEventsCount: 0, _splitLog: [] as any[] };
 
     // Build split results similar to the example: several groups of 4 nodes, then singletons, plus parent-actor child [0,1,2,3]
     const groups: Array<{ actorIndex: number; nodes: number[] }> = [];

@@ -44,6 +44,14 @@ function buildInitialWorld(grid: Array<{ x: number; y: number; z: number }>) {
     colliderToNode,
     activeContactColliders: active,
     pendingContactForces: new Map(),
+    pendingBodiesToCreate: [],
+    pendingColliderMigrations: [],
+    disabledCollidersToRemove: new Set(),
+    bodiesToRemove: new Set(),
+    pendingSplitResults: [],
+    safeFrames: 0,
+    _handleSplitEventsCount: 0,
+    _splitLog: [],
   };
   return { world, parent, bridge };
 }

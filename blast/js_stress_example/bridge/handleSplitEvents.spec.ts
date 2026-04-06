@@ -53,7 +53,16 @@ describe('handleSplitEvents (Rapier integration)', () => {
       actorMap: new Map<number, { bodyHandle: number }>([[0, { bodyHandle: parentBody.handle }]]),
       colliderToNode,
       activeContactColliders,
-      solver: { actors: () => [] }
+      solver: { actors: () => [] },
+      pendingBodiesToCreate: [] as any[],
+      pendingColliderMigrations: [] as any[],
+      pendingContactForces: new Map(),
+      disabledCollidersToRemove: new Set<number>(),
+      bodiesToRemove: new Set<number>(),
+      pendingSplitResults: [] as any[],
+      safeFrames: 0,
+      _handleSplitEventsCount: 0,
+      _splitLog: [] as any[],
     };
 
     const splitResults = [
