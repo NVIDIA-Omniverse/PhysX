@@ -22,7 +22,12 @@
         <canvas id="bridge-canvas"></canvas>
         <div id="overlay" class="overlay"></div>
       </section>
-      <aside class="sidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle settings panel">
+        <span class="icon-open">☰</span>
+        <span class="icon-close">✕</span>
+      </button>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+      <aside class="sidebar" id="sidebar">
         <header>
           <h1>🌉 Bridge Stress Tester</h1>
           <p>Adjust parameters in real-time. Change bridge → click Reset.</p>
@@ -375,6 +380,32 @@
         </section>
       </aside>
     </main>
+    <script>
+      // Mobile sidebar toggle
+      (function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          toggle.classList.remove('active');
+          backdrop.classList.remove('visible');
+        }
+        function openSidebar() {
+          sidebar.classList.add('open');
+          toggle.classList.add('active');
+          backdrop.classList.add('visible');
+        }
+        toggle.addEventListener('click', function() {
+          if (sidebar.classList.contains('open')) {
+            closeSidebar();
+          } else {
+            openSidebar();
+          }
+        });
+        backdrop.addEventListener('click', closeSidebar);
+      })();
+    </script>
     <script type="module" src="./dist/split-bridge-stress.js"></script>
   </body>
 </html>
