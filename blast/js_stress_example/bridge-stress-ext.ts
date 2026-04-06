@@ -207,7 +207,7 @@ async function init() {
         try { enqueueSplitResults(bridge, splits); } catch {}
       }
 
-      // try { applyPendingMigrations(bridge); } catch {}
+      try { applyPendingMigrations(bridge); } catch {}
       try { removeDisabledHandles(bridge); } catch {}
 
       // For safety with Rapier aliasing, skip mesh sync in safe frames
