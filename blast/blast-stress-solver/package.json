@@ -19,26 +19,54 @@
       "browser": "./dist/stress_solver.mjs",
       "node": "./dist/stress_solver.cjs",
       "default": "./dist/stress_solver.mjs"
+    },
+    "./rapier": {
+      "types": "./dist/rapier.d.ts",
+      "browser": "./dist/rapier.js",
+      "node": "./dist/rapier.cjs",
+      "default": "./dist/rapier.js"
+    },
+    "./three": {
+      "types": "./dist/three.d.ts",
+      "browser": "./dist/three.js",
+      "node": "./dist/three.cjs",
+      "default": "./dist/three.js"
     }
   },
   "files": [
     "dist/**",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs/**",
+    "examples/**"
   ],
   "sideEffects": false,
   "scripts": {
-    "prebuild": "npm --prefix ../js_stress_example run build",
-    "build": "tsup --config tsup.config.ts && node ./scripts/copy-dist.js",
+    "prebuild": "node ./scripts/prebuild-runtime.js",
+    "build": "npm run build:ts && node ./scripts/copy-dist.js",
     "prepare": "npm run build",
-    "test": "npm run build && vitest run"
+    "test": "npm run build && vitest run",
+    "build:ts": "tsup --config tsup.config.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/three": "^0.164.0",
+    "@types/three": "^0.181.0",
     "vitest": "^3.2.4",
-    "three": "^0.164.0",
+    "three": "^0.181.1",
     "tsup": "^8.0.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@dimforge/rapier3d-compat": "^0.19.2"
+  },
+  "peerDependencies": {
+    "@dimforge/rapier3d-compat": ">=0.19.0",
+    "three": ">=0.181.0"
+  },
+  "peerDependenciesMeta": {
+    "@dimforge/rapier3d-compat": {
+      "optional": true
+    },
+    "three": {
+      "optional": true
+    }
   }
 }

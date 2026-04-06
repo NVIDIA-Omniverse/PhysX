@@ -25,5 +25,3 @@ try {
   // eslint-disable-next-line no-console
   console.warn('[copy-dist] Failed to create browser MJS variant:', e?.message || e);
 }
-
-
