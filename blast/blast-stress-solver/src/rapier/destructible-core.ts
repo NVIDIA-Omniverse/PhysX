@@ -19,7 +19,7 @@ import type {
   OptimizationMode,
 } from './types';
 import { DestructibleDamageSystem, type DamageOptions, type DamageStateSnapshot } from './damage';
-import { planSplitMigration, type PlannerChild } from './splitMigrator';
+import { planSplitMigration, type PlannerChild, type ExistingBodyState } from './splitMigrator';
 import { createScenarioNodeSizeResolver } from './scenario';
 
 export type BuildDestructibleCoreOptions = {
@@ -765,7 +765,7 @@ export async function buildDestructibleCore({
       const splitEvents = profiledApplyFractureCommands(perActor);
 
       for (const split of splitEvents) {
-        const parentActorIndex = split.actorIndex;
+        const parentActorIndex = split.parentActorIndex;
         const parentEntry = actorMap.get(parentActorIndex);
         const parentBodyHandle = parentEntry?.bodyHandle ?? rootBody.handle;
 
@@ -774,7 +774,7 @@ export async function buildDestructibleCore({
           if (childNodes.length === 0) continue;
           const isChildSupport = childNodes.every((ni: number) => chunks[ni]?.isSupport);
           pendingBodiesToCreate.push({
-            actorIndex: child.newActorIndex,
+            actorIndex: child.actorIndex,
             inheritFromBodyHandle: parentBodyHandle,
             nodes: childNodes,
             isSupport: isChildSupport,
@@ -819,17 +819,25 @@ export async function buildDestructibleCore({
       const parentLinvel = parentBody?.linvel() ?? { x: 0, y: 0, z: 0 };
       const parentAngvel = parentBody?.angvel() ?? { x: 0, y: 0, z: 0 };
 
-      const plannerChildren: PlannerChild[] = [{ nodes: nodeList }];
-      const migration = planSplitMigration({
-        parentBodyHandle: inheritFromBodyHandle,
-        children: plannerChildren,
-        nodesByBodyHandle,
-      });
+      const existingBodies: ExistingBodyState[] = [];
+      for (const [handle, nodeSet] of nodesByBodyHandle) {
+        const eb = world.getRigidBody(handle);
+        if (eb) {
+          existingBodies.push({ handle, nodeIndices: nodeSet, isFixed: eb.isFixed() });
+        }
+      }
+      const plannerChildren: PlannerChild[] = [{
+        index: 0,
+        actorIndex,
+        nodes: nodeList,
+        isSupport: isSupport,
+      }];
+      const migration = planSplitMigration(existingBodies, plannerChildren);
 
       let bodyHandle: number;
-      const reuse = migration[0];
-      if (reuse?.reuseBodyHandle != null) {
-        bodyHandle = reuse.reuseBodyHandle;
+      const reuseEntry = migration.reuse.find(r => r.childIndex === 0);
+      if (reuseEntry) {
+        bodyHandle = reuseEntry.bodyHandle;
         const body = world.getRigidBody(bodyHandle);
         if (body) {
           if (isSupport) body.setBodyType(RAPIER.RigidBodyType.Fixed, true);
@@ -849,9 +857,9 @@ export async function buildDestructibleCore({
 
         if (sleepSettings.mode !== 'off') {
           const rb = world.getRigidBody(bodyHandle);
-          if (rb && typeof rb.setActivationState === 'function') {
+          if (rb && typeof (rb as any).setActivationState === 'function') {
             try {
-              (rb as unknown as { setActivationState: (s: number) => void }).setActivationState(0);
+              (rb as any).setActivationState(0);
             } catch {}
           }
         }
@@ -1014,8 +1022,8 @@ export async function buildDestructibleCore({
       if (body.isFixed()) return;
       if (!shouldApplyOptimization(sleepSettings.mode, body.handle)) return;
       try {
-        if (typeof body.setSleepThreshold === 'function') {
-          (body as unknown as { setSleepThreshold: (v: number) => void }).setSleepThreshold(
+        if (typeof (body as any).setSleepThreshold === 'function') {
+          (body as any).setSleepThreshold(
             Math.max(sleepSettings.linear, sleepSettings.angular)
           );
         }
@@ -1082,21 +1090,21 @@ export async function buildDestructibleCore({
 
     const previewT0 = startTiming();
     for (const c of bufferedExternalContacts) {
-      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, c.maxForceMagnitude);
+      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, dt);
     }
     for (const c of bufferedInternalContacts) {
-      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.bodyHandle, c.totalForceMagnitude, c.maxForceMagnitude);
+      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.totalForceMagnitude, dt);
     }
-    const previewResult = damageSystem.previewTick(dt);
+    const previewDestroyed = damageSystem.previewTick(dt);
     stopTiming(previewT0, 'damagePreviewMs');
 
-    if (previewResult.destroyed.length > 0 && resimulateOnDamageDestroy && damageSnapshot) {
+    if (previewDestroyed.length > 0 && resimulateOnDamageDestroy && damageSnapshot) {
       const restoreT0 = startTiming();
       damageSystem.restoreImpactState(damageSnapshot);
       stopTiming(restoreT0, 'damageRestoreMs');
 
       const preDestroyT0 = startTiming();
-      for (const ni of previewResult.destroyed) {
+      for (const ni of previewDestroyed) {
         const chunk = chunks[ni];
         if (!chunk) continue;
 
@@ -1134,7 +1142,7 @@ export async function buildDestructibleCore({
               if (!b) continue;
               if ((b.node0 === nodeA && b.node1 === nodeB) || (b.node0 === nodeB && b.node1 === nodeA)) {
                 if (!removedBondIndices.has(bi)) {
-                  solver.removeBondByUserdata?.(bi);
+                  (solver as any).removeBondByUserdata?.(bi);
                   removedBondIndices.add(bi);
                 }
                 break;
@@ -1150,15 +1158,15 @@ export async function buildDestructibleCore({
 
     const tickT0 = startTiming();
     for (const c of bufferedExternalContacts) {
-      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, c.maxForceMagnitude);
+      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, dt);
     }
     for (const c of bufferedInternalContacts) {
-      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.bodyHandle, c.totalForceMagnitude, c.maxForceMagnitude);
+      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.totalForceMagnitude, dt);
     }
-    const tickResult = damageSystem.tick(dt);
+    const tickDestroyed = damageSystem.tick(dt);
     stopTiming(tickT0, 'damageTickMs');
 
-    for (const ni of tickResult.destroyed) {
+    for (const ni of tickDestroyed) {
       const chunk = chunks[ni];
       if (!chunk) continue;
 
@@ -1318,7 +1326,7 @@ export async function buildDestructibleCore({
 
   function getSolverDebugLines(): Array<{ p0: Vec3; p1: Vec3; color0: number; color1: number }> {
     try {
-      return solver.getDebugLines?.() ?? [];
+      return (solver as any).getDebugLines?.() ?? [];
     } catch {
       return [];
     }
@@ -1331,13 +1339,13 @@ export async function buildDestructibleCore({
       .filter((bi) => !removedBondIndices.has(bi))
       .map((bi) => {
         const b = bondTable[bi];
-        return { bondIndex: bi, node0: b.node0, node1: b.node1, centroid: b.centroid, normal: b.normal, area: b.area };
+        return { index: bi, node0: b.node0, node1: b.node1, centroid: b.centroid, normal: b.normal, area: b.area };
       });
   }
 
   function cutBond(bondIndex: number): boolean {
     if (removedBondIndices.has(bondIndex)) return false;
-    solver.removeBondByUserdata?.(bondIndex);
+    (solver as any).removeBondByUserdata?.(bondIndex);
     removedBondIndices.add(bondIndex);
     return true;
   }
@@ -1348,7 +1356,7 @@ export async function buildDestructibleCore({
     let cut = false;
     for (const bi of indices) {
       if (!removedBondIndices.has(bi)) {
-        solver.removeBondByUserdata?.(bi);
+        (solver as any).removeBondByUserdata?.(bi);
         removedBondIndices.add(bi);
         cut = true;
       }
@@ -1385,7 +1393,7 @@ export async function buildDestructibleCore({
   }
 
   function getNodeHealth(nodeIndex: number) {
-    return damageSystem.getNodeHealth?.(nodeIndex) ?? null;
+    return damageSystem.getHealth(nodeIndex) ?? null;
   }
 
   // Adapt projectiles to the expected interface shape

@@ -109,26 +109,34 @@ export type ChunkData = {
   pendingDamage?: number;
   destroyed?: boolean;
   baseWorldPosition?: Vec3;
+  worldPosition?: Vec3;
+  worldQuaternion?: { x: number; y: number; z: number; w: number };
 };
 
 export type ProjectileSpawn = {
-  x: number;
-  z: number;
-  type: 'ball' | 'box';
-  radius: number;
-  mass: number;
+  position: Vec3;
+  velocity: Vec3;
+  radius?: number;
+  mass?: number;
+  ttl?: number;
+  // Legacy fields
+  x?: number;
+  z?: number;
+  type?: 'ball' | 'box';
   linvelY?: number;
   start?: Vec3;
   linvel?: Vec3;
-  friction: number;
-  restitution: number;
+  friction?: number;
+  restitution?: number;
 };
 
 export type ProjectileState = {
   bodyHandle: number;
   radius: number;
-  type: 'ball' | 'box';
-  spawnTime: number;
+  type?: 'ball' | 'box';
+  spawnTime?: number;
+  createdAt: number;
+  ttl: number;
   mesh?: unknown;
 };
 
@@ -142,8 +150,11 @@ export type BondRef = {
 };
 
 export type CoreProfilerPass = {
-  durationMs: number;
-  type: 'initial' | 'resim';
+  index: number;
+  solverMs: number;
+  fractureMs: number;
+  bodyCreateMs: number;
+  totalMs: number;
   reasons: string[];
 };
 
