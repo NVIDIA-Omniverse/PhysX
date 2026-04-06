@@ -32,13 +32,17 @@ jobs:
         working-directory: blast/blast-stress-solver
         run: npm install --ignore-scripts
 
+      - name: Install js_stress_example dependencies
+        working-directory: blast/js_stress_example
+        run: npm install
+
       - name: Build WASM + JS (js_stress_example)
         working-directory: blast/js_stress_example
         run: npm run build
 
       - name: Compile TypeScript demos (js_stress_example)
         working-directory: blast/js_stress_example
-        run: npx tsc
+        run: npx -y tsc
 
       - name: Build blast-stress-solver package
         working-directory: blast/blast-stress-solver
