@@ -85,72 +85,36 @@ This package ships TypeScript types generated from source; see `StressRuntime`, 
 
 ## Author bonds from prefractured meshes
 
-If you already have a fractured mesh (triangle soup per chunk), you can let the WASM bridge generate Blast-style bonds for you:
+Generate Blast-style bonds from prefractured triangle meshes:
 
 ```ts
 import { loadStressSolver } from 'blast-stress-solver';
 
 const rt = await loadStressSolver();
-const chunks = [
-  {
-    triangles: Float32Array.from([
-      // chunk 0 triangles (xyz per vertex, 9 floats per triangle)
-      -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5,
-      // ...
-    ])
-  },
-  {
-    triangles: Float32Array.from([/* chunk 1 triangles */]),
-    isSupport: true
-  }
-];
 
-const exactBonds = rt.createBondsFromTriangles(chunks); // defaults to mode: 'exact'
-const tolerantBonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.02 });
+// Exact mode (default) for geometry with shared faces
+const bonds = rt.createBondsFromTriangles(chunks, { mode: 'exact' });
 
-const solver = rt.createExtSolver({ nodes, bonds: tolerantBonds, settings: rt.defaultExtSettings() });
+// Average mode for geometry with small gaps
+const bonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.01 });
 ```
 
-- Every chunk entry is a flat array of local-space vertices (`[x0, y0, z0, x1, y1, z1, ...]`); each triangle consumes 9 floats.
-- Set `isSupport` on a chunk to opt-in/out of the support graph (default: `true`).
-- `mode: 'exact'` (default) computes the precise shared surface from triangle geometry.
-- `mode: 'average'` approximates the bond interface using convex hulls and a `maxSeparation` tolerance so that slightly separated chunks (due to noise/gaps) can still be connected. Always supply a positive `maxSeparation` when using this mode.
-- The generated bonds already contain centroid, normal, area, and chunk indices, so they can be used directly when creating your solver or Blast asset.
-
-### Three.js example
-
-If your chunks are `THREE.BufferGeometry` instances (often pre-fractured offline), convert them to triangle soups like so:
+### Three.js helpers
 
 ```ts
-import * as THREE from 'three';
-import {
-  loadStressSolver,
-  chunksFromBufferGeometries,
-  chunkFromBufferGeometry
-} from 'blast-stress-solver';
+import { chunksFromBufferGeometries, loadStressSolver } from 'blast-stress-solver';
 
-const chunkGeometries: THREE.BufferGeometry[] = /* your pre-fractured chunks */;
-
-// Option A: convert the full collection in one call
-const chunks = chunksFromBufferGeometries(chunkGeometries, (geometry, index) => ({
-  isSupport: index > 0, // simple predicate
-  applyMatrix: worldTransforms[index] // optional Matrix4 per chunk
+const chunks = chunksFromBufferGeometries(geometries, (geometry, index) => ({
+  isSupport: true,
+  applyMatrix: mesh.matrixWorld // bake world transforms
 }));
 
-// Option B: convert ad hoc
-const extraChunk = chunkFromBufferGeometry(chunkGeometries[0], {
-  isSupport: true,
-  nonIndexed: true
-});
-
 const rt = await loadStressSolver();
-const bonds = rt.createBondsFromTriangles([...chunks, extraChunk], { mode: 'exact' });
+const bonds = rt.createBondsFromTriangles(chunks);
 ```
 
-- By default, `chunkFromBufferGeometry` converts indexed geometry to non-indexed triangle lists (`nonIndexed: true`), which is what the bond generator expects. Set `nonIndexed: false` if your data is already in triangle-list form.
-- `chunkFromBufferGeometry` clones the geometry by default (`cloneGeometry: true`) so your originals remain untouched. Pass `cloneGeometry: false` if you prefer to mutate in-place.
-- Supply any `Matrix4` (e.g., `mesh.matrixWorld`) via `applyMatrix` to bake transforms before sampling the triangle data.
-- You can precompute chunk centroids/masses separately and feed them into the solver nodes.
+> **Tip:** If you get 0 bonds, try `{ mode: 'average', maxSeparation: 0.01 }` to handle floating-point gaps.
+> See JSDoc on `BondingConfig` and `createBondsFromTriangles` for detailed troubleshooting.
 
 ## License
 ## Tests

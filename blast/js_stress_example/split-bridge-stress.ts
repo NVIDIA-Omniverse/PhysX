@@ -57,6 +57,8 @@ const state = {
   clock: null,
   debugRenderer: null,
   debugHelper: null,
+  // Debug aim marker
+  aimMarker: null as THREE.Mesh | null,
   stats: null,
 
   // Bridge
@@ -182,15 +184,108 @@ async function init() {
   console.log('\n💡 Click anywhere to drop a heavy ball and watch the bridge fracture!');
 
   // IMPORTANT: no direct world mutation in handlers; just queue the spawn
-  canvas.addEventListener('pointerdown', (ev) => {
-    const { camera, renderer, raycaster, ndc, groundPlane } = state;
+  // Hover: update red debug marker in real-time at raycast hit point
+  canvas.addEventListener('pointermove', (ev) => {
+    const { camera, renderer, raycaster, ndc, groundPlane, scene } = state;
     const rect = renderer.domElement.getBoundingClientRect();
     ndc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
     ndc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(ndc, camera);
-    const point = new THREE.Vector3();
-    if (raycaster.ray.intersectPlane(groundPlane, point)) {
-      state.pendingBallSpawns.push({ x: point.x, z: point.z });
+
+    // Temporarily ignore the marker itself for intersections
+    const wasVisible = state.aimMarker?.visible ?? false;
+    if (state.aimMarker) state.aimMarker.visible = false;
+
+    let hitPoint: THREE.Vector3 | null = null;
+    try {
+      const hits = raycaster.intersectObjects(scene.children, true);
+      if (hits && hits.length > 0) {
+        // If marker has children in the future, filter them out too
+        const firstHit = hits.find(h => {
+          let o = h.object as THREE.Object3D | null;
+          while (o) {
+            if (o === state.aimMarker) return false;
+            o = o.parent;
+          }
+          return true;
+        }) || hits[0];
+        hitPoint = firstHit.point.clone();
+      }
+    } catch {}
+
+    // Restore marker visibility before possibly repositioning it
+    if (state.aimMarker) state.aimMarker.visible = wasVisible;
+
+    if (!hitPoint) {
+      const p = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, p)) {
+        hitPoint = p;
+      }
+    }
+
+    if (hitPoint) {
+      try {
+        let marker = state.aimMarker as THREE.Mesh | null;
+        if (!marker) {
+          const g = new THREE.SphereGeometry(0.08, 16, 16);
+          const m = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+          marker = new THREE.Mesh(g, m);
+          marker.renderOrder = 9999;
+          state.aimMarker = marker;
+          scene.add(marker);
+        }
+        marker.position.set(hitPoint.x, hitPoint.y, hitPoint.z);
+        marker.visible = true;
+      } catch {}
+    } else {
+      if (state.aimMarker) state.aimMarker.visible = false;
+    }
+  });
+
+  // Hide marker when leaving the canvas
+  canvas.addEventListener('pointerleave', () => {
+    if (state.aimMarker) state.aimMarker.visible = false;
+  });
+
+  canvas.addEventListener('pointerdown', (ev) => {
+    const { camera, renderer, raycaster, ndc, groundPlane, scene } = state;
+    const rect = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+
+    // Prefer precise mesh intersections; fall back to ground plane if none
+    let hitPoint: THREE.Vector3 | null = null;
+    try {
+      const hits = raycaster.intersectObjects(scene.children, true);
+      if (hits && hits.length > 0) {
+        hitPoint = hits[0].point.clone();
+      }
+    } catch {}
+    if (!hitPoint) {
+      const p = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, p)) {
+        hitPoint = p;
+      }
+    }
+    if (hitPoint) {
+      // Debug marker at intersection point
+      try {
+        let marker = state.aimMarker as THREE.Mesh | null;
+        if (!marker) {
+          const g = new THREE.SphereGeometry(0.08, 16, 16);
+          const m = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+          marker = new THREE.Mesh(g, m);
+          marker.renderOrder = 9999;
+          state.aimMarker = marker;
+          scene.add(marker);
+        }
+        marker.position.set(hitPoint.x, hitPoint.y, hitPoint.z);
+        marker.visible = true;
+      } catch {}
+
+      // Spawn directly above the clicked point: override Y in spawn function
+      state.pendingBallSpawns.push({ x: hitPoint.x, z: hitPoint.z });
       state.safeFrames = Math.max(state.safeFrames, SAFE_FRAMES_AFTER_SPAWN);
     }
   });
@@ -688,7 +783,6 @@ function buildBridge(scene, world) {
     world: world,
     scenario,
     gravity: currentConfig?.environment?.gravity ?? DEFAULT_CONFIG.environment.gravity,
-    strengthScale: 10_000_000.0, // Old
     solverSettings: solverConfig
   });
   
@@ -793,9 +887,11 @@ function loop() {
     }
     state.safeFrames -= 1;
 
-    applyPendingSpawns();       // create balls
-    applyPendingMigrations();   // create child bodies, migrate colliders
-    removeDisabledHandles();    // prune disabled colliders/bodies
+    if (physicsEnabled) {
+      applyPendingSpawns();       // create balls
+      applyPendingMigrations();   // create child bodies, migrate colliders
+      removeDisabledHandles();    // prune disabled colliders/bodies
+    }
 
     updateMeshes();
     updateStatus();
@@ -835,52 +931,73 @@ function loop() {
     return;
   }
 
-  // Drain contacts → solver forces (root-local). Avoid world.* during drain callback.
-  drainContactsAndApplyForces();
+  if (physicsEnabled) {
+    // Drain contacts → solver forces (root-local). Avoid world.* during drain callback.
+    drainContactsAndApplyForces();
 
-  // Gravity
-  state.solver.addGravity({ x: 0, y: GRAVITY, z: 0 });
+    // Gravity
+    // console.log('gravity', state.world.gravity);
+    // state.solver.addGravity({ x: 0, y: GRAVITY, z: 0 });
+    state.solver.addGravity(state.world.gravity);
 
-  // Solve
-  state.solver.update();
-  if (!state.solver.converged()) {
-    // console.log('solver not converged');
+    // Solve
     state.solver.update();
-  }
-  // console.log('converged?', state.solver.converged());
-  // state.solver.update();
-  // state.solver.update();
+    // if (!state.solver.converged()) {
+    //   // console.log('solver not converged');
+    //   state.solver.update();
+    // }
 
-  /*
-  // Iterate solver to convergence
-  let iterations = 0;
-  const maxIterations = state.solverSettings?.maxSolverIterationsPerFrame ?? 5;
-  let error = { lin: 0, ang: 0 };
-  
-  for (; iterations < maxIterations; ++iterations) {
-    state.solver.update();
-    error = state.solver.stressError();
-    if (state.solver.converged()) break;
-    if (error.lin <= state.solverSettings?.targetError && error.ang <= state.solverSettings?.targetError) break;
-  }
-  state.solver.iterationCount = iterations + 1;
-  state.solver.lastError = error;
-  */
+    /*
+    // Feed back excess forces/torques so pieces separate/sag and keep re-loading bonds
+    try {
+      for (const [actorIndex, mapping] of state.actorMap) {
+        const body = state.world.getRigidBody(mapping.bodyHandle);
+        if (!body || body.isFixed()) continue;
+        const t = body.translation();
+        const extra = state.solver.getExcessForces(actorIndex, { x: t.x, y: t.y, z: t.z });
+        if (extra && extra.force && extra.torque) {
+          body.applyForce({ x: extra.force.x, y: extra.force.y, z: extra.force.z }, true);
+          body.applyTorque({ x: extra.torque.x, y: extra.torque.y, z: extra.torque.z }, true);
+        }
+      }
+    } catch {}
+    */
 
-  // Optional: quick debug log if errors spike
-  // const err = state.solver.stressError();
-  // if (err.lin > 1e-3 || err.ang > 1e-3) console.debug('Stress error', err);
+    // console.log('converged?', state.solver.converged());
+    // state.solver.update();
+    // state.solver.update();
 
-  // Stress-based fracture & split
-  if (state.solver.overstressedBondCount() > 0) {
-    // console.log('Overstressed bond count:', state.solver.overstressedBondCount());
+    /*
+    // Iterate solver to convergence
+    let iterations = 0;
+    const maxIterations = state.solverSettings?.maxSolverIterationsPerFrame ?? 5;
+    let error = { lin: 0, ang: 0 };
+    
+    for (; iterations < maxIterations; ++iterations) {
+      state.solver.update();
+      error = state.solver.stressError();
+      if (state.solver.converged()) break;
+      if (error.lin <= state.solverSettings?.targetError && error.ang <= state.solverSettings?.targetError) break;
+    }
+    state.solver.iterationCount = iterations + 1;
+    state.solver.lastError = error;
+    */
 
-    const perActor = state.solver.generateFractureCommandsPerActor();
-    if (Array.isArray(perActor) && perActor.length > 0) {
-      const splitEvents = state.solver.applyFractureCommands(perActor);
-      if (Array.isArray(splitEvents) && splitEvents.length > 0) {
-        queueSplitResults(splitEvents);
-        state.safeFrames = Math.max(state.safeFrames, SAFE_FRAMES_AFTER_SPLIT);
+    // Optional: quick debug log if errors spike
+    // const err = state.solver.stressError();
+    // if (err.lin > 1e-3 || err.ang > 1e-3) console.debug('Stress error', err);
+
+    // Stress-based fracture & split
+    if (state.solver.overstressedBondCount() > 0) {
+      // console.log('Overstressed bond count:', state.solver.overstressedBondCount());
+
+      const perActor = state.solver.generateFractureCommandsPerActor();
+      if (Array.isArray(perActor) && perActor.length > 0) {
+        const splitEvents = state.solver.applyFractureCommands(perActor);
+        if (Array.isArray(splitEvents) && splitEvents.length > 0) {
+          queueSplitResults(splitEvents);
+          state.safeFrames = Math.max(state.safeFrames, SAFE_FRAMES_AFTER_SPLIT);
+        }
       }
     }
   }
@@ -1236,7 +1353,7 @@ function applyPendingMigrations() {
           .setTranslation(tx, ty, tz)
           .setActiveEvents(R.ActiveEvents.CONTACT_FORCE_EVENTS)
           .setContactForceEventThreshold(0.0)
-          // .setFriction(0.9)
+          // Lower friction so contacts don't carry load post-split
           .setFriction(0.25)
           .setRestitution(0.0),
         body
@@ -1258,6 +1375,16 @@ function applyPendingMigrations() {
         nodeIndex: seg.nodeIndex,
         createdAt: oldMetadata?.createdAt ?? Date.now()
       });
+
+      // Tiny random nudge for dynamic fragments to avoid contact "pinching"
+      try {
+        if (!seg.isSupport && body.isDynamic()) {
+          const nudge = 0.02;
+          const p = body.translation();
+          const dir = (Math.random() < 0.5 ? -1 : 1);
+          body.setTranslation({ x: p.x + dir * nudge, y: p.y, z: p.z }, true);
+        }
+      } catch {}
     }
   }
 

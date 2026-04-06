@@ -890,7 +890,7 @@ private:
             bond.centroid = *(NvVec3*)bonds[bond.blastBondIndex].centroid;
 
             // fix normal direction to point from node0 to node1
-            bond.normal *= std::copysign(1.0f, bond.normal.dot(node1.localPos - node1.localPos));
+            bond.normal *= std::copysign(1.0f, bond.normal.dot(node1.localPos - node0.localPos));
 
             if (node0.solverNode == node1.solverNode)
                 continue; // skip (internal)
@@ -1352,7 +1352,7 @@ bool ExtStressSolverImpl::getExcessForces(uint32_t actorIndex, const NvcVec3& co
             NVBLAST_ASSERT(blastBondIndex == bondData.blastBondIndex);
             uint32_t node0, node1;
             m_graphProcessor->getSolverInternalBondNodes(internalBondIndex, node0, node1);
-            NVBLAST_ASSERT(bondData.node0 == internalBondData.node0 && bondData.node1 == internalBondData.node1);
+            NVBLAST_ASSERT(bondData.node0 == node0 && bondData.node1 == node1);
 
             // accumulators for forces just from this bond
             nvidia::NvVec3 nvLinearPressure(0.0f);

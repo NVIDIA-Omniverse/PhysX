@@ -24,11 +24,16 @@ export interface BridgeConfig {
   deckMass: number;
   pierHeight: number;
   areaScale: number;
+  supportAreaFactor: number;
+  addDiagonals: number; // 0/1
+  diagScale: number;
+  bondJitter: number;
+  normalizeAreas: number; // 0/1
 }
 
 export interface SolverConfig {
+  materialScale: number;
   maxSolverIterationsPerFrame: number;
-  strengthScale: number;
   compressionElasticLimit: number;
   compressionFatalLimit: number;
   tensionElasticLimit: number;
@@ -69,18 +74,23 @@ export const DEFAULT_CONFIG: DemoConfig = {
     thicknessLayers: 2,
     deckMass: 60_000.0,
     pierHeight: 3.0,
-    areaScale: 0.05  // 0.01–0.03 is a nice interactive range
+    areaScale: 0.05,  // 0.01–0.03 is a nice interactive range
+    supportAreaFactor: 2.5,
+    addDiagonals: 1,
+    diagScale: 0.7,
+    bondJitter: 0.12,
+    normalizeAreas: 1
   },
   solver: {
-    maxSolverIterationsPerFrame: 25, //64,
-    strengthScale: 1_000.0,
-    // These are *unitless* solver-scale thresholds (roughly material "strength")
-    compressionElasticLimit: 0.009,   // was 3_000_000
-    compressionFatalLimit:  0.030,    // was 10_000_000
-    tensionElasticLimit:    0.0009,   // was 300_000
-    tensionFatalLimit:      0.0030,   // was 1_000_000
-    shearElasticLimit:      0.0012,   // was 400_000
-    shearFatalLimit:        0.0039,   // was 1_300_000
+    materialScale: 1.0,
+    maxSolverIterationsPerFrame: 64,
+    // Base “concrete-ish” shape (unitless). Ratios: C≈10×T, S≈3–4×T, fatal≈3×elastic
+    compressionElasticLimit: 0.009,
+    compressionFatalLimit:  0.027,
+    tensionElasticLimit:    0.0009,
+    tensionFatalLimit:      0.0027,
+    shearElasticLimit:      0.0012,
+    shearFatalLimit:        0.0036,
     graphReductionLevel: 0
   },
   environment: {
@@ -217,22 +227,62 @@ export const CONFIG_DESCRIPTORS: Record<string, Record<string, any>> = {
       step: 0.02,
       unit: '',
       immediate: false
+    },
+    supportAreaFactor: {
+      label: 'Support Area Factor',
+      min: 1.0,
+      max: 4.0,
+      step: 0.1,
+      unit: '×',
+      immediate: false
+    },
+    addDiagonals: {
+      label: 'Add Diagonals',
+      min: 0,
+      max: 1,
+      step: 1,
+      unit: '',
+      immediate: false
+    },
+    diagScale: {
+      label: 'Diagonal Strength',
+      min: 0.4,
+      max: 1.0,
+      step: 0.05,
+      unit: '',
+      immediate: false
+    },
+    bondJitter: {
+      label: 'Bond Jitter',
+      min: 0.0,
+      max: 0.25,
+      step: 0.01,
+      unit: '',
+      immediate: false
+    },
+    normalizeAreas: {
+      label: 'Normalize Areas',
+      min: 0,
+      max: 1,
+      step: 1,
+      unit: '',
+      immediate: false
     }
   },
   solver: {
+    materialScale: {
+      label: 'Material Scale',
+      min: 0.05,
+      max: 5,
+      step: 0.05,
+      unit: '×',
+      immediate: false
+    },
     maxSolverIterationsPerFrame: {
       label: 'Max Solver Iterations',
       min: 1,
       max: 256,
       step: 1,
-      unit: '',
-      immediate: false
-    },
-    strengthScale: {
-      label: 'Strength Scale',
-      min: 0.1,
-      max: 1_000_000.0,
-      step: 0.1,
       unit: '',
       immediate: false
     },

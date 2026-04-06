@@ -51,8 +51,15 @@ export function stackedCubeChunks(columns: number, rows: number, spacing = 1.0):
   const chunks: ChunkInput[] = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < columns; col++) {
-      const offset = col * spacing;
-      const chunk: ChunkInput = { triangles: cubeTriangles(offset), isSupport: row === rows - 1 };
+      const geom = new THREE.BoxGeometry(1, 1, 1);
+      geom.translate(col * spacing, row * spacing, 0);
+      const nonIndexed = geom.toNonIndexed() ?? geom;
+      const position = nonIndexed.getAttribute('position');
+      if (!position) {
+        throw new Error('geometry missing position attribute');
+      }
+      const triangles = Float32Array.from(position.array as ArrayLike<number>);
+      const chunk: ChunkInput = { triangles, isSupport: row === rows - 1 };
       chunks.push(chunk);
     }
   }

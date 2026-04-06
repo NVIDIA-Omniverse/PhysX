@@ -27,19 +27,17 @@ export function createBridgeCore({ runtime, world, scenario, gravity = -9.81, st
   
   // Apply solver settings from config if provided
   if (solverSettings) {
-    settings.maxSolverIterationsPerFrame = solverSettings.maxSolverIterationsPerFrame ?? 25; //64;
+    const m = solverSettings.materialScale ?? 1.0;
+    settings.maxSolverIterationsPerFrame = solverSettings.maxSolverIterationsPerFrame ?? 64;
     settings.graphReductionLevel = solverSettings.graphReductionLevel ?? 0;
-    
-    // Get strength scale from settings, default to 1.0 (no scaling)
-    const configStrengthScale = solverSettings.strengthScale ?? 1.0;
-    
-    // Apply strength scale multiplier to all limits
-    settings.compressionElasticLimit = (solverSettings.compressionElasticLimit ?? BASE_LIMITS.compressionElasticLimit) * configStrengthScale;
-    settings.compressionFatalLimit = (solverSettings.compressionFatalLimit ?? BASE_LIMITS.compressionFatalLimit) * configStrengthScale;
-    settings.tensionElasticLimit = (solverSettings.tensionElasticLimit ?? BASE_LIMITS.tensionElasticLimit) * configStrengthScale;
-    settings.tensionFatalLimit = (solverSettings.tensionFatalLimit ?? BASE_LIMITS.tensionFatalLimit) * configStrengthScale;
-    settings.shearElasticLimit = (solverSettings.shearElasticLimit ?? BASE_LIMITS.shearElasticLimit) * configStrengthScale;
-    settings.shearFatalLimit = (solverSettings.shearFatalLimit ?? BASE_LIMITS.shearFatalLimit) * configStrengthScale;
+
+    // Apply single material knob to all limits, preserving ratios
+    settings.compressionElasticLimit = (solverSettings.compressionElasticLimit ?? BASE_LIMITS.compressionElasticLimit) * m;
+    settings.compressionFatalLimit = (solverSettings.compressionFatalLimit ?? BASE_LIMITS.compressionFatalLimit) * m;
+    settings.tensionElasticLimit = (solverSettings.tensionElasticLimit ?? BASE_LIMITS.tensionElasticLimit) * m;
+    settings.tensionFatalLimit = (solverSettings.tensionFatalLimit ?? BASE_LIMITS.tensionFatalLimit) * m;
+    settings.shearElasticLimit = (solverSettings.shearElasticLimit ?? BASE_LIMITS.shearElasticLimit) * m;
+    settings.shearFatalLimit = (solverSettings.shearFatalLimit ?? BASE_LIMITS.shearFatalLimit) * m;
   } else {
     settings.maxSolverIterationsPerFrame = 25; //64;
     settings.graphReductionLevel = 0;

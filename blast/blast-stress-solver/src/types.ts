@@ -39,45 +39,139 @@ export interface BondStress {
 /** Alias representing mapped stress severity percentages (0..1). */
 export type StressSeverity = BondStress;
 
-/** Bond generation modes used by authoring utilities. */
+/**
+ * Bond generation modes used by {@link StressRuntime.createBondsFromTriangles}.
+ *
+ * - `'exact'` — Computes precise shared surfaces from triangle geometry. Requires chunks
+ *   to have coincident coplanar faces (shared vertices/edges). Best for Voronoi fracture
+ *   output or other pre-fractured meshes where chunks share exact geometry.
+ *
+ * - `'average'` — Approximates bond interfaces using convex hulls and a distance tolerance.
+ *   Requires {@link BondingConfig.maxSeparation} to be set. Use for manually placed bricks/blocks,
+ *   imported meshes that don't share exact vertices, or geometry with floating-point noise.
+ */
 export type BondingMode = 'exact' | 'average';
 
-/** Optional tuning parameters for bond generation. */
+/**
+ * Configuration for bond generation via {@link StressRuntime.createBondsFromTriangles}.
+ *
+ * @example
+ * ```ts
+ * // Exact mode (default) for pre-fractured geometry with shared faces
+ * rt.createBondsFromTriangles(chunks, { mode: 'exact' });
+ *
+ * // Average mode for geometry with small gaps (e.g., 1cm tolerance)
+ * rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.01 });
+ * ```
+ */
 export interface BondingConfig {
-  /** Algorithm used to build bond interfaces (defaults to 'exact'). */
+  /**
+   * Algorithm used to build bond interfaces.
+   *
+   * - `'exact'` (default): Precise triangle intersection. Fails silently if faces don't align exactly.
+   * - `'average'`: Hull-based approximation with distance tolerance. Requires `maxSeparation`.
+   *
+   * **Tip:** If you get 0 bonds with `'exact'`, try `'average'` with a small `maxSeparation`
+   * to handle floating-point gaps.
+   */
   mode?: BondingMode;
-  /** Maximum allowed gap between chunks when using 'average' mode (meters). */
+  /**
+   * Maximum face-to-face distance (meters) that will still form a bond in `'average'` mode.
+   *
+   * **Required** when `mode: 'average'`. Must be > 0. A 5cm gap needs `maxSeparation >= 0.05`.
+   *
+   * @throws Error if `mode: 'average'` and `maxSeparation` is missing or <= 0.
+   */
   maxSeparation?: number;
 }
 
-/** Triangle soup input for a single chunk. */
+/**
+ * Triangle soup input for a single chunk in bond generation.
+ *
+ * Each chunk represents one piece of a fractured object. Bonds are computed between
+ * chunks that share faces (exact mode) or are within `maxSeparation` distance (average mode).
+ *
+ * @example
+ * ```ts
+ * const chunk: AuthoringChunkInput = {
+ *   triangles: new Float32Array([
+ *     // Triangle 1: v0, v1, v2 (9 floats)
+ *     0, 0, 0,  1, 0, 0,  1, 1, 0,
+ *     // Triangle 2: ...
+ *   ]),
+ *   isSupport: true
+ * };
+ * ```
+ */
 export interface AuthoringChunkInput {
   /**
-   * Flattened vertex positions (xyz triplets; 9 numbers per triangle) in asset-local space.
-   * Accepts either a Float32Array or any array-like of numbers.
+   * Flattened vertex positions in asset-local space.
+   *
+   * Format: `[x0, y0, z0, x1, y1, z1, x2, y2, z2, ...]` where each group of 9 floats
+   * defines one triangle (3 vertices × 3 components). Must be divisible by 9.
    */
   triangles: Float32Array | ReadonlyArray<number>;
   /**
-   * Marks the chunk as part of the support graph. Defaults to true when omitted.
+   * Whether this chunk participates in bond generation.
+   *
+   * When `true`, the bond generator will look for adjacent chunks to connect via bonds.
+   * When `false`, no bonds will be generated to or from this chunk.
+   *
+   * **This is NOT the same as "anchored to ground."** To make a chunk act as a fixed
+   * anchor point (infinite mass, like the ground), set `mass: 0` on the corresponding
+   * {@link ExtStressNodeDesc} when creating the solver.
+   *
+   * @default true
    */
   isSupport?: boolean;
 }
 
-/** Options used when converting THREE.BufferGeometry to authoring chunks. */
+/**
+ * Options for converting a THREE.BufferGeometry to an {@link AuthoringChunkInput}.
+ *
+ * @example
+ * ```ts
+ * const chunk = chunkFromBufferGeometry(geometry, {
+ *   isSupport: true,
+ *   applyMatrix: mesh.matrixWorld, // bake world transform
+ *   nonIndexed: true,
+ *   cloneGeometry: true
+ * });
+ * ```
+ */
 export interface BufferGeometryChunkOptions {
-  /** Flag to mark the chunk as support. */
+  /**
+   * Whether this chunk participates in bond generation.
+   *
+   * **Note:** This controls bond generation only, not physics behavior.
+   * To make a chunk act as a fixed anchor (like the ground), set `mass: 0`
+   * on the corresponding {@link ExtStressNodeDesc}.
+   *
+   * @default true
+   */
   isSupport?: boolean;
   /**
-   * Optional transform applied before sampling (e.g., mesh.matrixWorld).
-   * The geometry is cloned before applying by default.
+   * World or local transform to apply before extracting triangle data.
+   *
+   * Pass `mesh.matrixWorld` to convert geometry from local to world space.
+   * The geometry is cloned first (unless `cloneGeometry: false`).
    */
   applyMatrix?: Matrix4;
   /**
-   * Convert indexed geometries to non-indexed triangle lists (default true).
+   * Convert indexed geometries to non-indexed triangle lists.
+   *
+   * The bond generator requires non-indexed triangles. Set to `false` only if
+   * your geometry is already in triangle-list form.
+   *
+   * @default true
    */
   nonIndexed?: boolean;
   /**
-   * Clone the geometry before any mutations (default true). Set to false to reuse the same instance.
+   * Clone the geometry before applying transforms or conversion.
+   *
+   * Set to `false` to mutate the original geometry in-place (faster but destructive).
+   *
+   * @default true
    */
   cloneGeometry?: boolean;
 }
@@ -270,13 +364,49 @@ export interface StressProcessor {
   destroy(): void;
 }
 
-/** Extended solver node description mirroring NvBlast support graph nodes. */
+/**
+ * Node descriptor for the ExtStressSolver, representing one chunk in the stress graph.
+ *
+ * @example
+ * ```ts
+ * // Dynamic chunk (participates in stress calculations)
+ * const dynamicNode: ExtStressNodeDesc = {
+ *   centroid: { x: 0, y: 1, z: 0 },
+ *   mass: 10,    // 10 kg
+ *   volume: 0.01 // 0.01 m³
+ * };
+ *
+ * // Static/anchored chunk (fixed to ground, infinite mass)
+ * const anchorNode: ExtStressNodeDesc = {
+ *   centroid: { x: 0, y: 0, z: 0 },
+ *   mass: 0,     // 0 = infinite mass = fixed anchor
+ *   volume: 0.01
+ * };
+ * ```
+ */
 export interface ExtStressNodeDesc {
   /** Chunk centroid in asset local coordinates (meters). */
   centroid?: Vec3;
-  /** Physical mass assigned to the support chunk (kg). */
+  /**
+   * Physical mass of the chunk (kg).
+   *
+   * - **Positive value**: Dynamic chunk that responds to forces and gravity.
+   * - **Zero (0)**: Static/anchored chunk with infinite mass. Acts as a fixed point
+   *   (like the ground or a wall). Gravity and forces pull other chunks against
+   *   these anchors, creating internal stresses in the bonds.
+   *
+   * @example
+   * ```ts
+   * // Ground-anchored chunks should have mass = 0
+   * const nodes = chunks.map((chunk, i) => ({
+   *   centroid: getCentroid(chunk),
+   *   mass: isGroundChunk(i) ? 0 : computeMass(chunk),
+   *   volume: computeVolume(chunk)
+   * }));
+   * ```
+   */
   mass?: number;
-  /** Volume of the support chunk (m³) used for derived densities. */
+  /** Volume of the chunk (m³), used for density-based calculations. */
   volume?: number;
 }
 
@@ -545,8 +675,40 @@ export interface StressRuntime {
   /**
    * Generate NvBlast-style bonds from prefractured triangle meshes.
    *
-   * @param chunks Per-chunk triangle soups (local coordinates, meters) plus support flags.
-   * @param config Optional tuning: mode ('exact' | 'average') and maxSeparation for 'average'.
+   * Analyzes triangle geometry across all chunks to find where they share faces
+   * (exact mode) or are close enough to be considered adjacent (average mode).
+   *
+   * **Common reasons for 0 bonds returned:**
+   * - Chunks don't actually touch (verify positions match up)
+   * - Using `'exact'` mode with floating-point gaps—try `'average'` with `maxSeparation`
+   * - All chunks have `isSupport: false`—bonds only connect support chunks
+   * - World transforms not applied—use `applyMatrix` in `chunksFromBufferGeometries`
+   *
+   * @param chunks Per-chunk triangle soups in local coordinates (meters). Each chunk
+   *   needs `triangles` (9 floats per triangle) and optionally `isSupport` (default true).
+   * @param config Bonding configuration. Use `mode: 'exact'` (default) for pre-fractured
+   *   geometry with shared faces, or `mode: 'average'` with `maxSeparation` for geometry
+   *   with gaps.
+   * @returns Array of bond descriptors with `centroid`, `normal`, `area`, `node0`, `node1`.
+   *   Returns empty array if no bonds found or fewer than 2 support chunks provided.
+   * @throws Error if `mode: 'average'` and `maxSeparation` is missing or <= 0.
+   * @throws Error if any chunk's triangle count is not divisible by 9.
+   *
+   * @example
+   * ```ts
+   * // Exact mode for Voronoi-fractured geometry
+   * const bonds = rt.createBondsFromTriangles(chunks, { mode: 'exact' });
+   *
+   * // Average mode for manually placed bricks with small gaps
+   * const bonds = rt.createBondsFromTriangles(chunks, {
+   *   mode: 'average',
+   *   maxSeparation: 0.01 // 1cm tolerance
+   * });
+   * ```
+   *
+   * @see AuthoringChunkInput
+   * @see BondingConfig
+   * @see chunksFromBufferGeometries - Helper to convert THREE.BufferGeometry arrays
    */
   createBondsFromTriangles(chunks: AuthoringChunkInput[], config?: BondingConfig): ExtStressBondDesc[];
 }

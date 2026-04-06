@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+
+- Must always prefer to use `read__file` tool, do not use `sed` or `nl` CLI shell commands.
+
