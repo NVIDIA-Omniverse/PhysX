@@ -13,7 +13,9 @@ mkdir -p "$OUT"
 DEMO_SRC="$ROOT/blast/js_stress_example"
 
 echo "Building TypeScript in js_stress_example..."
-(cd "$DEMO_SRC" && npm install --ignore-scripts 2>/dev/null; npx -y tsc)
+# noEmitOnError is false in tsconfig so tsc emits JS even with type errors,
+# but still exits non-zero. Ignore the exit code since the output is valid.
+(cd "$DEMO_SRC" && npm install --ignore-scripts 2>/dev/null; npx -y tsc || true)
 
 # ── Demo pages ──────────────────────────────────────────────
 
