@@ -1294,6 +1294,8 @@ export async function buildDestructibleCore({
           if (reusedBody) {
             if (entry.isSupport) reusedBody.setBodyType(RAPIER.RigidBodyType.Fixed, true);
             else reusedBody.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
+            // Reapply collision groups — body type and collider count may have changed
+            applyCollisionGroupsForBodyImpl(reusedBody, getCollisionGroupContext());
           }
         }
 

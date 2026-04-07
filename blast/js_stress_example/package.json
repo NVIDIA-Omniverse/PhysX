@@ -12,6 +12,7 @@
     "demo:ext": "npm run build --silent && node ./ext-demo.js",
     "demo:ext-cube": "npm run build --silent && node ./ext-cube-projectile.js",
     "demo:ext-bridge": "npm run build --silent && node ./ext-bridge-cars.js",
+    "serve": "node scripts/serve.js",
     "test:bridge-ui": "npx playwright test tests/stress.spec.js",
     "test:bridge-ui:headed": "npx playwright test tests/stress.spec.js --headed --project=chromium",
     "test:bridge-ui:ui": "npx playwright test tests/stress.spec.js --ui",
