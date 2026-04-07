@@ -2,6 +2,7 @@ export * from './three/autoBonding';
 export * from './three/bundle';
 export * from './three/destructible-adapter';
 export * from './three/fracture';
+export * from './three/fractureBuilders';
 export * from './three/foundation';
 export * from './three/geometryUtils';
 export * from './three/pinataFracture';
