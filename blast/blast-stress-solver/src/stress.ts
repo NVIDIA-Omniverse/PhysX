@@ -722,40 +722,25 @@ class ExtStressSolver implements ExtStressSolverType {
 
   addForce(nodeIndex: number, localPosition?: Vec3, localForce?: Vec3, mode: ExtForceModeValue = ExtForceMode.Force): void {
     if (!this.handle) return;
-    const positionPtr = this.memory.alloc(this.sizes.vec3);
-    const forcePtr = this.memory.alloc(this.sizes.vec3);
-    try {
-      const view = this.memory.view();
-      writeVec3(view, positionPtr, localPosition ?? vec3());
-      writeVec3(view, forcePtr, localForce ?? vec3());
-      this.module.ccall('ext_stress_solver_add_force', null, ['number', 'number', 'number', 'number', 'number'], [this.handle, nodeIndex >>> 0, positionPtr, forcePtr, mode >>> 0]);
-    } finally {
-      this.memory.free(positionPtr);
-      this.memory.free(forcePtr);
-    }
+    // Reuse pre-allocated scratch buffers (_torquePtr and _forcePtr) instead of
+    // allocating per call — eliminates 2 allocs + 2 frees per addForce invocation.
+    const view = this.memory.view();
+    writeVec3(view, this._torquePtr, localPosition ?? vec3());
+    writeVec3(view, this._forcePtr, localForce ?? vec3());
+    this.module.ccall('ext_stress_solver_add_force', null, ['number', 'number', 'number', 'number', 'number'], [this.handle, nodeIndex >>> 0, this._torquePtr, this._forcePtr, mode >>> 0]);
   }
 
   addGravity(localGravity?: Vec3): void {
     if (!this.handle) return;
-    const gravityPtr = this.memory.alloc(this.sizes.vec3);
-    try {
-      writeVec3(this.memory.view(), gravityPtr, localGravity ?? vec3());
-      this.module.ccall('ext_stress_solver_add_gravity', null, ['number', 'number'], [this.handle, gravityPtr]);
-    } finally {
-      this.memory.free(gravityPtr);
-    }
+    writeVec3(this.memory.view(), this._forcePtr, localGravity ?? vec3());
+    this.module.ccall('ext_stress_solver_add_gravity', null, ['number', 'number'], [this.handle, this._forcePtr]);
   }
 
   addActorGravity(actorIndex: number, localGravity?: Vec3): boolean {
     if (!this.handle) return false;
-    const gravityPtr = this.memory.alloc(this.sizes.vec3);
-    try {
-      writeVec3(this.memory.view(), gravityPtr, localGravity ?? vec3());
-      const result = this.module.ccall('ext_stress_solver_add_actor_gravity', 'number', ['number', 'number', 'number'], [this.handle, actorIndex >>> 0, gravityPtr]) >>> 0;
-      return result !== 0;
-    } finally {
-      this.memory.free(gravityPtr);
-    }
+    writeVec3(this.memory.view(), this._forcePtr, localGravity ?? vec3());
+    const result = this.module.ccall('ext_stress_solver_add_actor_gravity', 'number', ['number', 'number', 'number'], [this.handle, actorIndex >>> 0, this._forcePtr]) >>> 0;
+    return result !== 0;
   }
 
   update(): void { if (!this.handle) return; this.module.ccall('ext_stress_solver_update', null, ['number'], [this.handle]); }
