@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wall Demolition — blast-stress-solver Demo</title>
+    <link rel="stylesheet" href="./styles/demo-common.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/build/three.module.js",
+          "three/addons/": "/vendor/three/examples/jsm/",
+          "@dimforge/rapier3d-compat": "/vendor/rapier/rapier.mjs",
+          "blast-stress-solver": "/vendor/blast-stress-solver/index.js",
+          "blast-stress-solver/rapier": "/vendor/blast-stress-solver/rapier.js",
+          "blast-stress-solver/three": "/vendor/blast-stress-solver/three.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="viewport">
+        <canvas id="demo-canvas"></canvas>
+        <div class="viewport-hint">Click to shoot projectiles</div>
+      </section>
+
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle settings panel">
+        <span class="icon-open">☰</span>
+        <span class="icon-close">✕</span>
+      </button>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+      <aside class="sidebar" id="sidebar">
+        <header>
+          <a href="./demo-index.html" class="back-link">← All Demos</a>
+          <h1>🧱 Wall Demolition</h1>
+          <p>High-level blast-stress-solver/rapier + blast-stress-solver/three APIs</p>
+        </header>
+
+        <!-- Wall Config (deferred – needs Reset) -->
+        <section class="config-section">
+          <h2 class="section-title">Wall (Reset to apply)</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-columns">Columns</label>
+            <input type="range" id="cfg-columns" class="config-slider" min="4" max="20" step="1" value="12" />
+            <span class="config-value"><span id="cfg-columns-value">12</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-rows">Rows</label>
+            <input type="range" id="cfg-rows" class="config-slider" min="3" max="16" step="1" value="8" />
+            <span class="config-value"><span id="cfg-rows-value">8</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-bond-area">Bond Area</label>
+            <input type="range" id="cfg-bond-area" class="config-slider" min="0.005" max="0.1" step="0.001" value="0.04" />
+            <span class="config-value"><span id="cfg-bond-area-value">0.040</span></span>
+          </div>
+        </section>
+
+        <!-- Projectile (immediate) -->
+        <section class="config-section">
+          <h2 class="section-title">Projectile</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-proj-radius">Radius</label>
+            <input type="range" id="cfg-proj-radius" class="config-slider" min="0.1" max="1.0" step="0.05" value="0.4" />
+            <span class="config-value"><span id="cfg-proj-radius-value">0.40</span> m</span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-proj-mass">Mass</label>
+            <input type="range" id="cfg-proj-mass" class="config-slider" min="1000" max="30000" step="500" value="8000" />
+            <span class="config-value"><span id="cfg-proj-mass-value">8,000</span> kg</span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-proj-speed">Speed</label>
+            <input type="range" id="cfg-proj-speed" class="config-slider" min="5" max="60" step="1" value="25" />
+            <span class="config-value"><span id="cfg-proj-speed-value">25</span> m/s</span>
+          </div>
+        </section>
+
+        <!-- Solver (deferred) -->
+        <section class="config-section">
+          <h2 class="section-title">Solver (Reset to apply)</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-gravity">Gravity</label>
+            <input type="range" id="cfg-gravity" class="config-slider" min="-30" max="0" step="0.5" value="-9.81" />
+            <span class="config-value"><span id="cfg-gravity-value">-9.8</span> m/s²</span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-material">Material Scale</label>
+            <input type="range" id="cfg-material" class="config-slider" min="0.1" max="4" step="0.05" value="1.0" />
+            <span class="config-value"><span id="cfg-material-value">1.00</span>×</span>
+          </div>
+        </section>
+
+        <!-- Actions -->
+        <div class="control-actions">
+          <button id="btn-reset" class="button button-primary">↻ Reset Wall</button>
+          <button id="btn-debug" class="button">◇ Show Debug</button>
+        </div>
+
+        <!-- Status -->
+        <section class="status-panel">
+          <h2>Status</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Bodies</span>
+              <span class="status-value" id="stat-bodies">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Bonds</span>
+              <span class="status-value" id="stat-bonds">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Projectiles</span>
+              <span class="status-value" id="stat-projectiles">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Chunks</span>
+              <span class="status-value" id="stat-chunks">0</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script>
+      // Sidebar toggle
+      (function () {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        var layout = document.querySelector('.layout');
+        var mql = window.matchMedia('(max-width: 768px)');
+
+        function isMobile() { return mql.matches; }
+
+        function close() {
+          toggle.classList.remove('active');
+          if (isMobile()) { sidebar.classList.remove('open'); backdrop.classList.remove('visible'); }
+          else { layout.classList.add('sidebar-hidden'); }
+        }
+
+        function open() {
+          toggle.classList.add('active');
+          if (isMobile()) { sidebar.classList.add('open'); backdrop.classList.add('visible'); }
+          else { layout.classList.remove('sidebar-hidden'); }
+        }
+
+        function isOpen() {
+          return isMobile() ? sidebar.classList.contains('open') : !layout.classList.contains('sidebar-hidden');
+        }
+
+        toggle.addEventListener('click', function () { if (isOpen()) close(); else open(); });
+        backdrop.addEventListener('click', close);
+        if (!isMobile()) toggle.classList.add('active');
+      })();
+    </script>
+    <script type="module" src="./dist/wall-demolition.js"></script>
+  </body>
+</html>

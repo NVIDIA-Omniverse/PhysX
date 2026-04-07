@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>blast-stress-solver — Demos</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        color: #f5f7ff;
+        background: #030510;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem 1.5rem;
+      }
+      h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem;
+        letter-spacing: -0.02em;
+      }
+      .subtitle {
+        font-size: 0.85rem;
+        color: rgba(200, 210, 240, 0.55);
+        margin: 0 0 2.5rem;
+        max-width: 520px;
+        text-align: center;
+        line-height: 1.5;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+        width: 100%;
+        max-width: 900px;
+      }
+      .card {
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      }
+      .card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(107, 140, 255, 0.3);
+        transform: translateY(-2px);
+      }
+      .card-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+      .card h2 { margin: 0 0 0.35rem; font-size: 1rem; font-weight: 600; }
+      .card p {
+        margin: 0;
+        font-size: 0.78rem;
+        color: rgba(200, 210, 240, 0.55);
+        line-height: 1.5;
+        flex: 1;
+      }
+      .card .tag {
+        display: inline-block;
+        margin-top: 0.75rem;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        background: rgba(107, 140, 255, 0.1);
+        color: rgba(140, 170, 255, 0.8);
+        align-self: flex-start;
+      }
+      .tag.new {
+        background: rgba(80, 200, 120, 0.12);
+        color: rgba(120, 220, 160, 0.85);
+      }
+      footer {
+        margin-top: 3rem;
+        font-size: 0.7rem;
+        color: rgba(200, 210, 240, 0.3);
+      }
+      footer a { color: rgba(140, 170, 255, 0.5); text-decoration: none; }
+      footer a:hover { color: rgba(140, 170, 255, 0.8); }
+    </style>
+  </head>
+  <body>
+    <h1>blast-stress-solver</h1>
+    <p class="subtitle">
+      Interactive demos showcasing the NVIDIA Blast stress solver runtime —
+      physics-based destruction with Rapier &amp; Three.js.
+    </p>
+
+    <div class="grid">
+      <!-- New high-level API demos -->
+      <a class="card" href="./wall-demolition.html">
+        <div class="card-icon">🧱</div>
+        <h2>Wall Demolition</h2>
+        <p>
+          Destructible brick wall using the high-level
+          <code>buildDestructibleCore</code> + <code>createDestructibleThreeBundle</code> APIs.
+          Click to shoot projectiles.
+        </p>
+        <span class="tag new">NEW — rapier + three</span>
+      </a>
+
+      <a class="card" href="./tower-collapse.html">
+        <div class="card-icon">🏗️</div>
+        <h2>Tower Collapse</h2>
+        <p>
+          Tall tower with stress-based fracture. Shoot projectiles or increase gravity
+          to trigger cascading collapse via the packaged runtime.
+        </p>
+        <span class="tag new">NEW — rapier + three</span>
+      </a>
+
+      <!-- Existing demos -->
+      <a class="card" href="./bridge-split-demo.html">
+        <div class="card-icon">🌉</div>
+        <h2>Bridge Stress Tester</h2>
+        <p>
+          Full-featured bridge destruction demo with configurable geometry, solver
+          parameters, and real-time stress visualization.
+        </p>
+        <span class="tag">low-level solver</span>
+      </a>
+
+      <a class="card" href="./bridge-demo.html">
+        <div class="card-icon">🌉</div>
+        <h2>Bridge Demo (Classic)</h2>
+        <p>
+          Original bridge demo with basic stress visualization.
+        </p>
+        <span class="tag">low-level solver</span>
+      </a>
+
+      <a class="card" href="./bridge-ext.html">
+        <div class="card-icon">🔬</div>
+        <h2>Extended Stress Demo</h2>
+        <p>
+          Extended solver demo with additional visualization modes and
+          diagnostic tools.
+        </p>
+        <span class="tag">low-level solver</span>
+      </a>
+
+      <a class="card" href="./browser-demo.html">
+        <div class="card-icon">🌐</div>
+        <h2>Browser Demo</h2>
+        <p>
+          Minimal browser demo for testing WASM loading and basic solver functionality.
+        </p>
+        <span class="tag">low-level solver</span>
+      </a>
+    </div>
+
+    <footer>
+      <a href="https://github.com/glavin001/physx">GitHub</a> ·
+      blast-stress-solver
+    </footer>
+  </body>
+</html>
