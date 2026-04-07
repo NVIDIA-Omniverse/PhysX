@@ -235,7 +235,21 @@ bindSlider('cfg-proj-radius', CONFIG.projectile, 'radius', (v) => v.toFixed(2));
 bindSlider('cfg-proj-mass', CONFIG.projectile, 'mass', (v) => v.toLocaleString());
 bindSlider('cfg-proj-speed', CONFIG.projectile, 'speed', (v) => v.toFixed(0));
 bindSlider('cfg-gravity', CONFIG.solver, 'gravity', (v) => v.toFixed(1));
-bindSlider('cfg-material', CONFIG.solver, 'materialScale', (v) => v.toFixed(2));
+// Material scale uses a log slider: slider value is the exponent (log10)
+{
+  const slider = document.getElementById('cfg-material') as HTMLInputElement | null;
+  const display = document.getElementById('cfg-material-value');
+  if (slider) {
+    const exp = Math.log10(CONFIG.solver.materialScale);
+    slider.value = String(exp);
+    if (display) display.textContent = `1e${exp.toFixed(0)}`;
+    slider.addEventListener('input', () => {
+      const exp = parseFloat(slider.value);
+      CONFIG.solver.materialScale = Math.pow(10, exp);
+      if (display) display.textContent = `1e${exp.toFixed(1)}`;
+    });
+  }
+}
 
 // ── Render loop ───────────────────────────────────────────────
 
