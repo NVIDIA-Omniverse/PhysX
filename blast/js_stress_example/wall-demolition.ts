@@ -13,6 +13,7 @@ import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
   RapierDebugRenderer,
+  applyAutoBondingToScenario,
 } from 'blast-stress-solver/three';
 import { buildWallScenario } from 'blast-stress-solver/scenarios';
 
@@ -41,6 +42,7 @@ const CONFIG = {
     gravity: -9.81,
     materialScale: 1e8,
   },
+  autoBonds: false,
 };
 
 // ── Three.js setup ────────────────────────────────────────────
@@ -117,7 +119,27 @@ let rapierDebug: RapierDebugRenderer | null = null;
 let showDebug = false;
 
 async function initScene() {
-  const scenario = buildWallScenario(CONFIG.wall);
+  let scenario = buildWallScenario(CONFIG.wall);
+
+  // Attach fragment geometries for auto-bonding support
+  const sp = scenario.spacing!;
+  const fragmentGeometries = scenario.nodes.map(
+    () => new THREE.BoxGeometry(sp.x, sp.y, sp.z),
+  );
+  scenario = {
+    ...scenario,
+    parameters: { ...scenario.parameters, fragmentGeometries },
+  };
+
+  // Auto-bonding: replace manual grid bonds with geometry-derived bonds
+  if (CONFIG.autoBonds) {
+    scenario = await applyAutoBondingToScenario(scenario, { mode: 'average', maxSeparation: 0.01 });
+  }
+
+  console.log(
+    `Wall: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds` +
+      (CONFIG.autoBonds ? ' (auto-bonded)' : ' (manual)'),
+  );
 
   const core = await buildDestructibleCore({
     scenario,
@@ -152,10 +174,6 @@ async function initScene() {
 
   coreRef = core;
   visualsRef = visuals;
-
-  console.log(
-    `Wall built: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`,
-  );
 }
 
 // ── Projectile shooting ───────────────────────────────────────
@@ -246,6 +264,17 @@ bindSlider('cfg-gravity', CONFIG.solver, 'gravity', (v) => v.toFixed(1));
       const exp = parseFloat(slider.value);
       CONFIG.solver.materialScale = Math.pow(10, exp);
       if (display) display.textContent = `1e${exp.toFixed(1)}`;
+    });
+  }
+}
+
+// Auto-bonds toggle
+{
+  const checkbox = document.getElementById('cfg-auto-bonds') as HTMLInputElement | null;
+  if (checkbox) {
+    checkbox.checked = CONFIG.autoBonds;
+    checkbox.addEventListener('change', () => {
+      CONFIG.autoBonds = checkbox.checked;
     });
   }
 }
