@@ -10,7 +10,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildDestructibleCore } from 'blast-stress-solver/rapier';
-import { createDestructibleThreeBundle } from 'blast-stress-solver/three';
+import {
+  createDestructibleThreeBundle,
+  RapierDebugRenderer,
+} from 'blast-stress-solver/three';
 import type { ScenarioDesc } from 'blast-stress-solver/rapier';
 
 // ── Scenario builder ─────────────────────────────────────────
@@ -195,6 +198,7 @@ function updateStatus(core: any) {
 
 let coreRef: Awaited<ReturnType<typeof buildDestructibleCore>> | null = null;
 let visualsRef: ReturnType<typeof createDestructibleThreeBundle> | null = null;
+let rapierDebug: RapierDebugRenderer | null = null;
 let showDebug = false;
 
 async function initScene() {
@@ -228,6 +232,10 @@ async function initScene() {
     batchedMeshOptions: { enableBVH: false, bvhMargin: 5 },
     includeDebugLines: true,
   });
+
+  // Rapier collider wireframe overlay
+  rapierDebug?.dispose();
+  rapierDebug = new RapierDebugRenderer(scene, core.world as any, { enabled: showDebug });
 
   coreRef = core;
   visualsRef = visuals;
@@ -286,6 +294,7 @@ document.getElementById('btn-reset')?.addEventListener('click', async () => {
 
 document.getElementById('btn-debug')?.addEventListener('click', () => {
   showDebug = !showDebug;
+  rapierDebug?.setEnabled(showDebug);
   const btn = document.getElementById('btn-debug')!;
   btn.textContent = showDebug ? '◈ Hide Debug' : '◇ Show Debug';
 });
@@ -330,6 +339,7 @@ function loop() {
       updateBVH: false,
       updateProjectiles: true,
     });
+    rapierDebug?.update();
     updateStatus(coreRef);
   }
 
