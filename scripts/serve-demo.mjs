@@ -71,10 +71,13 @@ if (!Number.isInteger(port) || port <= 0 || port > 65535) {
 const rapierCompatDir = resolve(nodeModulesDir, '@dimforge/rapier3d-compat')
 const rapierDebugDir = resolve(projectRoot, 'deps/rapier.js/rapier-compat/builds/3d/pkg')
 
+const blastStressSolverDir = resolve(projectRoot, 'blast/blast-stress-solver/dist')
+
 const STATIC_ALIASES = [
     { prefix: '/vendor/three/', directory: resolve(nodeModulesDir, 'three') },
     { prefix: '/vendor/rapier/', directory: rapierCompatDir },
-    { prefix: '/vendor/rapier-debug/', directory: rapierDebugDir }
+    { prefix: '/vendor/rapier-debug/', directory: rapierDebugDir },
+    { prefix: '/vendor/blast-stress-solver/', directory: blastStressSolverDir }
 ]
 
 function resolveAliasedPath(pathname) {

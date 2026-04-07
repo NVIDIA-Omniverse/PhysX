@@ -5,7 +5,7 @@
  * compatibility with existing consumers. Also reconstructs legacy fields
  * (topColumnNodes, supportIndices, supportLinks) from the ScenarioDesc output.
  */
-import { buildBeamBridgeScenario } from '../blast-stress-solver/src/scenarios/bridgeScenario.js';
+import { buildBeamBridgeScenario } from 'blast-stress-solver/scenarios';
 
 export function buildBridgeScenario(options = {}) {
   const scenario = buildBeamBridgeScenario(options);
