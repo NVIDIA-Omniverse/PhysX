@@ -121,9 +121,7 @@ async function initScene() {
     materialScale: CONFIG.solver.materialScale,
     debrisCollisionMode: 'noDebrisPairs',
     damage: {
-      enabled: true,
-      autoDetachOnDestroy: true,
-      autoCleanupPhysics: true,
+      enabled: false,
     },
     debrisCleanup: {
       mode: 'always',

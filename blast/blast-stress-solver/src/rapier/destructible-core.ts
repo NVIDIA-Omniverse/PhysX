@@ -40,6 +40,9 @@ export type BuildDestructibleCoreOptions = {
   snapshotMode?: 'perBody' | 'world';
   onWorldReplaced?: (newWorld: RAPIER.World) => void;
   resimulateOnDamageDestroy?: boolean;
+  /** Scale factor for contact forces fed into the stress solver (default 30).
+   * Higher values make projectile impacts break more bonds. */
+  contactForceScale?: number;
   skipSingleBodies?: boolean;
   sleepLinearThreshold?: number;
   sleepAngularThreshold?: number;
@@ -103,6 +106,7 @@ export async function buildDestructibleCore({
   snapshotMode = 'perBody',
   onWorldReplaced,
   resimulateOnDamageDestroy = !!damage?.enabled,
+  contactForceScale = 30,
   skipSingleBodies = false,
   sleepLinearThreshold = 0.1,
   sleepAngularThreshold = 0.1,
@@ -564,6 +568,7 @@ export async function buildDestructibleCore({
     otherBodyHandle: number;
     totalForceMagnitude: number;
     maxForceMagnitude: number;
+    totalForceWorld?: Vec3;
   }> = [];
   const bufferedInternalContacts: Array<{
     nodeA: number;
@@ -585,6 +590,10 @@ export async function buildDestructibleCore({
       const node2 = colliderToNode.get(h2);
       const totalForce = ev.totalForceMagnitude();
       const maxForce = ev.maxForceMagnitude();
+      // Capture force vector for stress solver injection
+      const forceVec: Vec3 | undefined = typeof (ev as any).totalForce === 'function'
+        ? (ev as any).totalForce() as Vec3
+        : undefined;
 
       if (node1 != null && node2 != null) {
         const chunk1 = chunks[node1];
@@ -604,6 +613,7 @@ export async function buildDestructibleCore({
               otherBodyHandle: chunk2?.bodyHandle ?? -1,
               totalForceMagnitude: totalForce,
               maxForceMagnitude: maxForce,
+              totalForceWorld: forceVec,
             });
           }
           if (chunk2) {
@@ -612,6 +622,7 @@ export async function buildDestructibleCore({
               otherBodyHandle: chunk1?.bodyHandle ?? -1,
               totalForceMagnitude: totalForce,
               maxForceMagnitude: maxForce,
+              totalForceWorld: forceVec ? { x: -forceVec.x, y: -forceVec.y, z: -forceVec.z } : undefined,
             });
           }
         }
@@ -623,6 +634,7 @@ export async function buildDestructibleCore({
             otherBodyHandle: -1,
             totalForceMagnitude: totalForce,
             maxForceMagnitude: maxForce,
+            totalForceWorld: forceVec,
           });
           if (chunk.bodyHandle != null) bodiesCollidedWithGround.add(chunk.bodyHandle);
         }
@@ -634,6 +646,7 @@ export async function buildDestructibleCore({
             otherBodyHandle: -1,
             totalForceMagnitude: totalForce,
             maxForceMagnitude: maxForce,
+            totalForceWorld: forceVec ? { x: -forceVec.x, y: -forceVec.y, z: -forceVec.z } : undefined,
           });
           if (chunk.bodyHandle != null) bodiesCollidedWithGround.add(chunk.bodyHandle);
         }
@@ -755,6 +768,52 @@ export async function buildDestructibleCore({
         solver.addActorGravity(actor.actorIndex, { x: ix, y: iy, z: iz });
       }
     }
+
+    // Inject external contact forces (e.g. projectile impacts) into the stress solver.
+    // Converts world-space contact forces into body-local space and applies them
+    // to the impacted node plus nearby nodes (splash radius) so that bond stress
+    // reflects collision impacts, not just gravity.
+    for (const contact of bufferedExternalContacts) {
+      if (!contact.totalForceWorld) continue;
+      const hitChunk = chunks[contact.nodeIndex];
+      if (!hitChunk || !hitChunk.active || hitChunk.bodyHandle == null) continue;
+      const body = world.getRigidBody(hitChunk.bodyHandle);
+      if (!body) continue;
+      // Rotate force from world space to body-local space
+      const rot = body.rotation();
+      const qx = rot.x, qy = rot.y, qz = rot.z, qw = rot.w;
+      const fx = contact.totalForceWorld.x, fy = contact.totalForceWorld.y, fz = contact.totalForceWorld.z;
+      // Inverse quaternion rotation (conjugate)
+      const lx = qw * qw * fx - 2 * qy * qw * fz + 2 * qz * qw * fy + qx * qx * fx - 2 * qy * qx * fy - 2 * qz * qx * fz - qz * qz * fx - qy * qy * fx
+        + 2 * qx * qy * fy + 2 * qx * qz * fz;
+      const ly = -2 * qw * qz * fx + qw * qw * fy + 2 * qw * qx * fz + 2 * qx * qy * fx + qy * qy * fy - 2 * qz * qy * fz - qx * qx * fy - qz * qz * fy
+        + 2 * qy * qz * fz;
+      const lz = 2 * qw * qy * fx - 2 * qw * qx * fy + qw * qw * fz + 2 * qx * qz * fx + 2 * qy * qz * fy + qz * qz * fz - qx * qx * fz - qy * qy * fz;
+      const scaledForce = { x: lx * contactForceScale, y: ly * contactForceScale, z: lz * contactForceScale };
+
+      // Apply to hit node at full strength
+      solver.addForce(contact.nodeIndex, hitChunk.baseLocalOffset, scaledForce);
+
+      // Splash: apply attenuated force to neighboring nodes on the same body
+      const hitPos = hitChunk.baseLocalOffset;
+      const splashR = 2.0; // radius in local units
+      for (let ci = 0; ci < chunks.length; ci++) {
+        if (ci === contact.nodeIndex) continue;
+        const c = chunks[ci];
+        if (!c || !c.active || c.bodyHandle !== hitChunk.bodyHandle) continue;
+        const dx = (c.baseLocalOffset.x - hitPos.x);
+        const dy = (c.baseLocalOffset.y - hitPos.y);
+        const dz = (c.baseLocalOffset.z - hitPos.z);
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist > splashR) continue;
+        const falloff = Math.pow(Math.max(0, 1 - dist / splashR), 2);
+        if (falloff <= 0) continue;
+        solver.addForce(ci, c.baseLocalOffset, {
+          x: scaledForce.x * falloff, y: scaledForce.y * falloff, z: scaledForce.z * falloff,
+        });
+      }
+    }
+
     solver.update();
     stopTiming(solverT0, 'solverUpdateMs');
 

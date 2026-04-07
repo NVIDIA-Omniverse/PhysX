@@ -254,7 +254,8 @@ export function buildBeamBridgeScenario(opts: BeamBridgeOptions = {}): ScenarioD
     }
   }
 
-  // Per-axis area normalization
+  // Isotropic area normalization — apply uniform scale factor (geometric mean
+  // of per-axis scales) to avoid directional bond strength bias.
   if (normalizeAreas && bonds.length) {
     const size = { x: span, y: deckThickness + pierHeight + footingThickness, z: deckWidth };
     const target = { x: size.y * size.z, y: size.x * size.z, z: size.x * size.y };
@@ -264,12 +265,14 @@ export function buildBeamBridgeScenario(opts: BeamBridgeOptions = {}): ScenarioD
       return ax >= ay && ax >= az ? 'x' : (ay >= az ? 'y' : 'z');
     };
     for (const b of bonds) sum[pick(b.normal)] += b.area;
-    const scale = {
-      x: sum.x > 0 ? target.x / sum.x : 1,
-      y: sum.y > 0 ? target.y / sum.y : 1,
-      z: sum.z > 0 ? target.z / sum.z : 1,
-    };
-    for (const b of bonds) b.area *= scale[pick(b.normal)];
+    const axisScales: number[] = [];
+    for (const k of ['x', 'y', 'z'] as const) {
+      if (sum[k] > 0) axisScales.push(target[k] / sum[k]);
+    }
+    const uniformScale = axisScales.length > 0
+      ? Math.pow(axisScales.reduce((a, b) => a * b, 1), 1 / axisScales.length)
+      : 1;
+    for (const b of bonds) b.area *= uniformScale;
   }
 
   return {

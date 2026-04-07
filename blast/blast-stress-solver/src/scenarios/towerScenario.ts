@@ -148,7 +148,8 @@ export function buildTowerScenario(opts: TowerScenarioOptions = {}): ScenarioDes
     }
   }
 
-  // Area normalization — balance total resisting area per axis
+  // Area normalization — use isotropic scaling to avoid directional bias.
+  // Per-axis scaling caused horizontal layer separation under gravity.
   if (normalizeAreas && bonds.length) {
     const totalHeight = stories * spacing.y;
     const totalWidth = side * spacing.x;
@@ -164,12 +165,14 @@ export function buildTowerScenario(opts: TowerScenarioOptions = {}): ScenarioDes
       return ax >= ay && ax >= az ? 'x' : (ay >= az ? 'y' : 'z');
     };
     bonds.forEach((b) => { sum[pick(b.normal)] += b.area; });
-    const scale = {
-      x: sum.x > 0 ? target.x / sum.x : 1,
-      y: sum.y > 0 ? target.y / sum.y : 1,
-      z: sum.z > 0 ? target.z / sum.z : 1,
-    };
-    bonds.forEach((b) => { b.area *= scale[pick(b.normal)]; });
+    const axisScales: number[] = [];
+    for (const k of ['x', 'y', 'z'] as const) {
+      if (sum[k] > 0) axisScales.push(target[k] / sum[k]);
+    }
+    const uniformScale = axisScales.length > 0
+      ? Math.pow(axisScales.reduce((a, b) => a * b, 1), 1 / axisScales.length)
+      : 1;
+    bonds.forEach((b) => { b.area *= uniformScale; });
   }
 
   return { nodes, bonds, gridCoordinates, spacing };
