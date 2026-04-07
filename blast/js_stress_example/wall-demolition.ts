@@ -9,6 +9,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
@@ -98,6 +99,28 @@ groundMesh.rotation.x = -Math.PI / 2;
 groundMesh.position.y = -0.35;
 groundMesh.receiveShadow = true;
 scene.add(groundMesh);
+
+// ── Stats panel (FPS / MS / MB) ───────────────────────────────
+
+const stats = new Stats();
+stats.dom.style.position = 'absolute';
+stats.dom.style.top = '0';
+stats.dom.style.left = '0';
+(document.querySelector('.viewport') as HTMLElement)?.appendChild(stats.dom);
+
+// ── Perf tracking ─────────────────────────────────────────────
+
+let _physicsMs = 0;
+let _renderMs = 0;
+const EMA = 0.12; // exponential moving-average smoothing factor
+
+function updatePerfStats() {
+  const el = (id: string) => document.getElementById(id);
+  el('stat-physics-ms')!.textContent = _physicsMs.toFixed(1) + ' ms';
+  el('stat-render-ms')!.textContent = _renderMs.toFixed(1) + ' ms';
+  el('stat-draw-calls')!.textContent = String(renderer.info.render.calls);
+  el('stat-triangles')!.textContent = renderer.info.render.triangles.toLocaleString();
+}
 
 // ── Status HUD ────────────────────────────────────────────────
 
@@ -285,12 +308,16 @@ const clock = new THREE.Clock();
 
 function loop() {
   requestAnimationFrame(loop);
+  stats.begin();
 
   const dt = Math.min(clock.getDelta(), 1 / 30);
   controls.update();
 
   if (coreRef && visualsRef) {
+    const t0 = performance.now();
     coreRef.step(dt);
+    _physicsMs += ((performance.now() - t0) - _physicsMs) * EMA;
+
     visualsRef.update({
       debug: showDebug,
       updateBVH: false,
@@ -300,7 +327,12 @@ function loop() {
     updateStatus(coreRef);
   }
 
+  const t1 = performance.now();
   renderer.render(scene, camera);
+  _renderMs += ((performance.now() - t1) - _renderMs) * EMA;
+
+  updatePerfStats();
+  stats.end();
 }
 
 // ── Resize ────────────────────────────────────────────────────

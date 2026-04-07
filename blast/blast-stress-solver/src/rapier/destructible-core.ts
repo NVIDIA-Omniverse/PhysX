@@ -1149,16 +1149,15 @@ export async function buildDestructibleCore({
     for (const bodyHandle of toRemove) {
       const nodesOnBody = nodesByBodyHandle.get(bodyHandle);
       if (nodesOnBody) {
-        for (const ni of nodesOnBody) {
-          const chunk = chunks[ni];
-          if (chunk && chunk.colliderHandle != null) {
-            disabledCollidersToRemove.add(chunk.colliderHandle);
-            chunk.active = false;
-          }
+        for (const ni of Array.from(nodesOnBody)) {
+          handleNodeDestroyed(ni, 'manual');
         }
       }
       bodiesToRemove.add(bodyHandle);
       debrisCreationTimes.delete(bodyHandle);
+      nodesByBodyHandle.delete(bodyHandle);
+      bodiesCollidedWithGround.delete(bodyHandle);
+      smallBodiesPendingDamping.delete(bodyHandle);
     }
   }
 
@@ -1259,21 +1258,7 @@ export async function buildDestructibleCore({
 
         if (skipSingleBodiesEnabled && childNodes.length <= 1 && !isChildSupport) {
           const ni = childNodes[0];
-          const chunk = chunks[ni];
-          if (chunk) {
-            chunk.active = false;
-            chunk.destroyed = true;
-            if (chunk.health != null) chunk.health = 0;
-            if (chunk.colliderHandle != null) {
-              const oldC = world.getCollider(chunk.colliderHandle);
-              if (oldC) oldC.setEnabled(false);
-              colliderToNode.delete(chunk.colliderHandle);
-              disabledCollidersToRemove.add(chunk.colliderHandle);
-              chunk.colliderHandle = null;
-            }
-            unregisterNodeBodyLink(ni, chunk.bodyHandle);
-            onNodeDestroyed?.({ nodeIndex: ni, actorIndex: child.actorIndex, reason: 'manual' });
-          }
+          try { handleNodeDestroyed(ni, 'manual'); } catch {}
           continue;
         }
 
@@ -1423,12 +1408,7 @@ export async function buildDestructibleCore({
         }
 
         if (damageOptions.autoDetachOnDestroy) {
-          chunk.active = false;
-          chunk.detached = true;
-          if (chunk.colliderHandle != null) {
-            disabledCollidersToRemove.add(chunk.colliderHandle);
-          }
-          onNodeDestroyed?.({ nodeIndex: ni, actorIndex: nodeToActor.get(ni) ?? 0, reason: 'impact' });
+          try { handleNodeDestroyed(ni, 'impact'); } catch {}
         }
       }
       stopTiming(preDestroyT0, 'damagePreDestroyMs');
@@ -1446,16 +1426,10 @@ export async function buildDestructibleCore({
     stopTiming(tickT0, 'damageTickMs');
 
     for (const ni of tickDestroyed) {
-      const chunk = chunks[ni];
-      if (!chunk) continue;
+      if (!chunks[ni]) continue;
 
       if (damageOptions.autoDetachOnDestroy) {
-        chunk.active = false;
-        chunk.detached = true;
-        if (chunk.colliderHandle != null) {
-          disabledCollidersToRemove.add(chunk.colliderHandle);
-        }
-        onNodeDestroyed?.({ nodeIndex: ni, actorIndex: nodeToActor.get(ni) ?? 0, reason: 'impact' });
+        try { handleNodeDestroyed(ni, 'impact'); } catch {}
       }
     }
 
@@ -1463,6 +1437,33 @@ export async function buildDestructibleCore({
   }
 
   let lastStepDt = readWorldDt();
+
+  /**
+   * Pre-step sweep: remove zero-collider bodies and clean up stale colliderToNode entries.
+   * Matches vibe-city's preStepSweep pattern.
+   */
+  function preStepSweep() {
+    // Clean up stale colliderToNode mappings
+    for (const [h] of Array.from(colliderToNode.entries())) {
+      const c = world.getCollider(h);
+      if (!c) {
+        colliderToNode.delete(h);
+      }
+    }
+    // Remove bodies with zero colliders (all colliders migrated away)
+    world.forEachRigidBody((b: RAPIER.RigidBody) => {
+      if (!b) return;
+      const handle = b.handle;
+      if (handle === rootBody.handle || handle === groundBody.handle) return;
+      try {
+        const rb = b as RigidBodyWithColliderCount;
+        const count = typeof rb.numColliders === 'function' ? rb.numColliders() : 0;
+        if (count === 0) {
+          bodiesToRemove.add(handle);
+        }
+      } catch {}
+    });
+  }
 
   function step(dt: number) {
     if (activeProfilerSample && !activeProfilerSample.finalized) {
@@ -1478,6 +1479,7 @@ export async function buildDestructibleCore({
     const totalT0 = startTiming();
 
     const preStepT0 = startTiming();
+    preStepSweep();
     processDebrisCleanup();
     processSmallBodyDamping();
     processSleepThresholds();
@@ -1648,6 +1650,44 @@ export async function buildDestructibleCore({
       }
     }
     return cut;
+  }
+
+  /**
+   * Centralized node destruction handler. Marks the chunk as destroyed,
+   * cuts its bonds from the WASM solver, cleans up collider/body links,
+   * and notifies listeners. Matches vibe-city's handleNodeDestroyed pattern.
+   */
+  function handleNodeDestroyed(nodeIndex: number, reason: 'impact' | 'manual') {
+    const chunk = chunks[nodeIndex];
+    if (!chunk) return;
+
+    // Mark flags
+    chunk.destroyed = true;
+    chunk.active = false;
+    if (chunk.health != null) chunk.health = 0;
+
+    // Cut bonds from the WASM solver so fillDebugRender() stops returning stale lines
+    if (damageOptions.autoDetachOnDestroy) {
+      try { cutNodeBonds(nodeIndex); } catch {}
+    }
+
+    // Disable/remove collider
+    if (chunk.colliderHandle != null) {
+      const oldC = world.getCollider(chunk.colliderHandle);
+      if (oldC) oldC.setEnabled(false);
+      colliderToNode.delete(chunk.colliderHandle);
+      activeContactColliders.delete(chunk.colliderHandle);
+      disabledCollidersToRemove.add(chunk.colliderHandle);
+      chunk.colliderHandle = null;
+    }
+
+    // Unregister body link
+    unregisterNodeBodyLink(nodeIndex, chunk.bodyHandle);
+
+    // Notify
+    try {
+      onNodeDestroyed?.({ nodeIndex, actorIndex: nodeToActor.get(nodeIndex) ?? 0, reason });
+    } catch {}
   }
 
   function applyExternalForce(nodeIndex: number, worldPoint: Vec3, worldForce: Vec3) {
