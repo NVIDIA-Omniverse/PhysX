@@ -1,138 +1,303 @@
 # blast-stress-solver
 
-Dual-format (ESM + CJS) JavaScript/WASM package exposing the NVIDIA Blast Stress Solver bridge with first-class TypeScript types.
+TypeScript + WASM destruction toolkit built on the NVIDIA Blast stress solver.
+
+It now ships in three layers:
+
+- **`blast-stress-solver`** — low-level WASM bridge, solver types, bond authoring helpers.
+- **`blast-stress-solver/rapier`** — high-level Rapier destruction runtime for chunks, splitting, damage, debris handling, projectiles, and profiling.
+- **`blast-stress-solver/three`** — Three.js helpers for auto-bonding, chunk visuals, batched rendering, debug lines, and bundled scene integration.
+
+The goal is simple: move the hard-won destruction code out of app code and into the package, so projects like Vibe City can get to "spawn destructible structure and start simulating" with much less custom glue.
 
 ## Install
+
+Base package:
 
 ```bash
 npm install blast-stress-solver
 ```
 
-## Usage (browser)
+For Rapier + Three integrations:
+
+```bash
+npm install blast-stress-solver @dimforge/rapier3d-compat three
+```
+
+## Package layout
+
+```ts
+import { loadStressSolver } from 'blast-stress-solver';
+import { buildDestructibleCore } from 'blast-stress-solver/rapier';
+import { createDestructibleThreeBundle } from 'blast-stress-solver/three';
+```
+
+## Low-level solver usage
 
 ```ts
 import { loadStressSolver } from 'blast-stress-solver';
 
-const rt = await loadStressSolver();
-const solver = rt.createExtSolver({ nodes, bonds, settings: rt.defaultExtSettings() });
-solver.addGravity({ x: 0, y: -9.81, z: 0 });
-const [{ actorIndex }] = solver.actors();
-solver.addActorGravity(actorIndex, { x: 0, y: -9.81, z: 0 }); // per-actor helper
-solver.update();
-const cmds = solver.generateFractureCommands();
-```
-
-If an actor is rotated relative to world space (e.g., a column rotated 90° so its local “down” axis points sideways), convert the world gravity vector using the actor’s rotation before calling `addActorGravity`:
-
-```ts
-const localGravity = worldGravity.clone().applyQuaternion(actorWorldQuaternion.clone().invert());
-solver.addActorGravity(actorIndex, localGravity);
-```
-
-This mirrors what the physics body experiences and lets the stress solver distinguish between compression along the column versus shear when it lies on its side.
-
-## Usage (Node / SSR)
-
-```ts
-import { loadStressSolver } from 'blast-stress-solver';
-const rt = await loadStressSolver();
-```
-
-Works in Vite/Webpack/Next.js without custom config. The WASM is referenced via `new URL(..., import.meta.url)` so bundlers copy it automatically. To host the WASM from a custom path, override locateFile:
-
-```ts
-await loadStressSolver({
-  module: {
-    locateFile: (p) => (p.endsWith('.wasm') ? '/wasm/blast/stress_solver.wasm' : p)
-  }
+const runtime = await loadStressSolver();
+const solver = runtime.createExtSolver({
+  nodes,
+  bonds,
+  settings: runtime.defaultExtSettings(),
 });
-```
 
-## Next.js notes
+solver.addGravity({ x: 0, y: -9.81, z: 0 });
+solver.update();
 
-- Server (SSR) imports use the Node export automatically.
-- Client: import inside an effect or use dynamic import to avoid SSR hydration issues.
-
-Client-side example:
-
-```ts
-import { useEffect, useState } from 'react';
-import { loadStressSolver } from 'blast-stress-solver';
-
-export default function Component() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    (async () => {
-      const rt = await loadStressSolver();
-      // ... create solver, etc.
-      setReady(true);
-    })();
-  }, []);
-  return ready ? <div>Ready</div> : null;
+if (solver.overstressedBondCount() > 0) {
+  const fractureSets = solver.generateFractureCommandsPerActor();
+  const splitEvents = solver.applyFractureCommands(fractureSets);
+  console.log(splitEvents);
 }
 ```
 
-Or dynamically import on the client only:
+If an actor is rotated relative to world space, convert world gravity into that actor's local frame before calling `addActorGravity`:
 
 ```ts
-import dynamic from 'next/dynamic';
-const ClientOnly = dynamic(() => import('./ClientComponent'), { ssr: false });
+const localGravity = worldGravity
+  .clone()
+  .applyQuaternion(actorWorldQuaternion.clone().invert());
+
+solver.addActorGravity(actorIndex, localGravity);
 ```
-
-## Types
-
-This package ships TypeScript types generated from source; see `StressRuntime`, `ExtStressSolver`, and helpers in the API.
 
 ## Author bonds from prefractured meshes
-
-Generate Blast-style bonds from prefractured triangle meshes:
-
-```ts
-import { loadStressSolver } from 'blast-stress-solver';
-
-const rt = await loadStressSolver();
-
-// Exact mode (default) for geometry with shared faces
-const bonds = rt.createBondsFromTriangles(chunks, { mode: 'exact' });
-
-// Average mode for geometry with small gaps
-const bonds = rt.createBondsFromTriangles(chunks, { mode: 'average', maxSeparation: 0.01 });
-```
-
-### Three.js helpers
 
 ```ts
 import { chunksFromBufferGeometries, loadStressSolver } from 'blast-stress-solver';
 
-const chunks = chunksFromBufferGeometries(geometries, (geometry, index) => ({
+const chunkInputs = chunksFromBufferGeometries(geometries, (geometry, index) => ({
   isSupport: true,
-  applyMatrix: mesh.matrixWorld // bake world transforms
+  applyMatrix: meshes[index].matrixWorld,
+  cloneGeometry: true,
+  nonIndexed: true,
 }));
 
-const rt = await loadStressSolver();
-const bonds = rt.createBondsFromTriangles(chunks);
+const runtime = await loadStressSolver();
+const bonds = runtime.createBondsFromTriangles(chunkInputs, {
+  mode: 'average',
+  maxSeparation: 0.01,
+});
 ```
 
-> **Tip:** If you get 0 bonds, try `{ mode: 'average', maxSeparation: 0.01 }` to handle floating-point gaps.
-> See JSDoc on `BondingConfig` and `createBondsFromTriangles` for detailed troubleshooting.
+## Rapier quick start
 
-## License
-## Tests
+`buildDestructibleCore` ports the Vibe City runtime into the package.
 
-Run the full build + test suite (includes the WASM authoring helpers) with:
+Features included:
+
+- stress solver integration and fracture application
+- body reuse and split migration planning
+- contact-driven damage accumulation
+- optional direct node damage
+- debris collision modes, sleep tuning, damping, cleanup TTL
+- projectile spawning and cleanup
+- solver debug-line extraction
+- optional profiling callbacks
+
+```ts
+import { buildDestructibleCore } from 'blast-stress-solver/rapier';
+
+const core = await buildDestructibleCore({
+  scenario,
+  gravity: -9.81,
+  materialScale: 1.25,
+  debrisCollisionMode: 'noDebrisPairs',
+  damage: {
+    enabled: true,
+    autoDetachOnDestroy: true,
+    autoCleanupPhysics: true,
+    contactDamageScale: 1.0,
+    minImpulseThreshold: 50,
+  },
+});
+
+core.step(1 / 60);
+```
+
+### Automatic node sizing
+
+You no longer need to pass a custom `nodeSize` callback for common Vibe City scenarios.
+
+The Rapier runtime now resolves chunk size in this order:
+
+1. `scenario.parameters.fragmentSizes[nodeIndex]`
+2. `scenario.spacing`
+3. package fallback size
+
+Override it only when you need custom collider sizing:
+
+```ts
+const core = await buildDestructibleCore({
+  scenario,
+  nodeSize: (nodeIndex, scenario) => ({ x: 0.4, y: 0.2, z: 0.4 }),
+});
+```
+
+Or build a reusable resolver:
+
+```ts
+import { createScenarioNodeSizeResolver } from 'blast-stress-solver/rapier';
+
+const nodeSize = createScenarioNodeSizeResolver({
+  fallbackSize: { x: 0.5, y: 0.5, z: 0.32 },
+  minimumComponent: 0.05,
+});
+```
+
+### Solver settings overrides
+
+The runtime now accepts direct overrides for the underlying Blast solver settings:
+
+```ts
+const core = await buildDestructibleCore({
+  scenario,
+  solverSettings: {
+    maxSolverIterationsPerFrame: 48,
+    graphReductionLevel: 0,
+  },
+});
+```
+
+## Three.js quick start
+
+### Auto-bonding from fragment geometry
+
+```ts
+import { applyAutoBondingToScenario } from 'blast-stress-solver/three';
+
+const bondedScenario = await applyAutoBondingToScenario(scenario, {
+  mode: 'average',
+  maxSeparation: 0.01,
+});
+```
+
+### Build chunk visuals from a scenario
+
+The Three helpers can now read `scenario.parameters.fragmentGeometries` directly.
+
+```ts
+import {
+  buildBatchedChunkMeshFromScenario,
+  buildChunkMeshesFromScenario,
+} from 'blast-stress-solver/three';
+
+const batched = buildBatchedChunkMeshFromScenario(core, scenario, {
+  enableBVH: false,
+  bvhMargin: 5,
+});
+
+scene.add(batched.batchedMesh);
+```
+
+### Bundle the whole visual layer
+
+`createDestructibleThreeBundle` is the fastest way to get a Three scene wired up.
+
+```ts
+import { createDestructibleThreeBundle } from 'blast-stress-solver/three';
+
+const visuals = createDestructibleThreeBundle({
+  core,
+  scenario,
+  root: group,
+  useBatchedMesh: true,
+  batchedMeshOptions: {
+    enableBVH: false,
+    bvhMargin: 5,
+  },
+  includeDebugLines: true,
+});
+
+function tick(dt: number, showDebugLines: boolean) {
+  core.step(dt);
+  visuals.update({
+    debug: showDebugLines,
+    updateBVH: false,
+    updateProjectiles: true,
+  });
+}
+```
+
+On cleanup:
+
+```ts
+visuals.dispose();
+core.dispose();
+```
+
+## Vibe City migration
+
+See:
+
+- [`docs/vibe-city-upgrade.md`](./docs/vibe-city-upgrade.md)
+- [`examples/vibe-city-upgrade/destructible-scene-snippet.tsx`](./examples/vibe-city-upgrade/destructible-scene-snippet.tsx)
+
+The main migration path is:
+
+- move `src/lib/stress/core/destructible-core.ts` usage to `blast-stress-solver/rapier`
+- move `src/lib/stress/core/autoBonding.ts` usage to `blast-stress-solver/three`
+- move `src/lib/stress/three/destructible-adapter.ts` usage to `blast-stress-solver/three`
+- replace manual geometry branching with `build*FromScenario(...)`
+- replace manual scene glue with `createDestructibleThreeBundle(...)`
+
+## Next.js notes
+
+- Server imports use the Node export automatically.
+- Client components should create the runtime inside an effect or other client-only path.
+- The WASM is referenced with `new URL(..., import.meta.url)` so modern bundlers copy it automatically.
+
+Custom WASM hosting:
+
+```ts
+import { loadStressSolver } from 'blast-stress-solver';
+
+await loadStressSolver({
+  module: {
+    locateFile: (path) =>
+      path.endsWith('.wasm') ? '/wasm/blast/stress_solver.wasm' : path,
+  },
+});
+```
+
+## Local development
+
+### Full package build
 
 ```bash
-npm install
+npm run build
+```
+
+### TypeScript-only wrapper iteration
+
+If you are iterating on the TypeScript package surface and already have runtime artifacts available elsewhere, you can skip the C++/Emscripten prebuild step:
+
+```bash
+BLAST_STRESS_SOLVER_SKIP_WASM_BUILD=1 npm run build:ts
+```
+
+The final published package still requires:
+
+- `js_stress_example/dist/stress_solver.wasm`
+- `js_stress_example/dist/stress_solver.cjs`
+- `js_stress_example/dist/stress_solver.mjs`
+
+## Tests
+
+Run the full suite with:
+
+```bash
 npm test
 ```
 
-## Implementation notes
+Additional pure TypeScript tests were added for:
 
-- The WASM build of Blast used by this package is compiled with SIMD intrinsics disabled (`COMPILE_VECTOR_INTRINSICS=0`), using the scalar math path for maximum portability across browsers.
-- Native C++ builds may use SSE/NEON for higher performance; future releases may enable WebAssembly SIMD behind the same JS API.
-- Average-mode bonding relies on a lightweight convex hull builder compiled into the WASM module. When using `'average'`, make sure to provide a reasonable `maxSeparation` so the helper knows how much gap/noise to tolerate.
+- scenario node-size resolution
+- split migration planning
 
+## License
 
 MIT
-
-

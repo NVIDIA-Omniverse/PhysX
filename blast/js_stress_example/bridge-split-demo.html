@@ -22,7 +22,12 @@
         <canvas id="bridge-canvas"></canvas>
         <div id="overlay" class="overlay"></div>
       </section>
-      <aside class="sidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle settings panel">
+        <span class="icon-open">☰</span>
+        <span class="icon-close">✕</span>
+      </button>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+      <aside class="sidebar" id="sidebar">
         <header>
           <h1>🌉 Bridge Stress Tester</h1>
           <p>Adjust parameters in real-time. Change bridge → click Reset.</p>
@@ -375,6 +380,51 @@
         </section>
       </aside>
     </main>
+    <script>
+      // Sidebar toggle — works on both desktop and mobile
+      (function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        var layout = document.querySelector('.layout');
+        var mql = window.matchMedia('(max-width: 960px)');
+
+        function isMobile() { return mql.matches; }
+
+        function closeSidebar() {
+          toggle.classList.remove('active');
+          if (isMobile()) {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('visible');
+          } else {
+            layout.classList.add('sidebar-hidden');
+          }
+        }
+
+        function openSidebar() {
+          toggle.classList.add('active');
+          if (isMobile()) {
+            sidebar.classList.add('open');
+            backdrop.classList.add('visible');
+          } else {
+            layout.classList.remove('sidebar-hidden');
+          }
+        }
+
+        function isOpen() {
+          if (isMobile()) return sidebar.classList.contains('open');
+          return !layout.classList.contains('sidebar-hidden');
+        }
+
+        toggle.addEventListener('click', function() {
+          if (isOpen()) closeSidebar(); else openSidebar();
+        });
+        backdrop.addEventListener('click', closeSidebar);
+
+        // Sync toggle icon state on load — desktop sidebar starts open
+        if (!isMobile()) toggle.classList.add('active');
+      })();
+    </script>
     <script type="module" src="./dist/split-bridge-stress.js"></script>
   </body>
 </html>
