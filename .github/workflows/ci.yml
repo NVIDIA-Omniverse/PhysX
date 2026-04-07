@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +53,50 @@ jobs:
         working-directory: blast/blast-stress-solver
         run: npm run build
 
+      - name: Upload demo artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-site
+          path: |
+            blast/js_stress_example/*.html
+            blast/js_stress_example/styles/
+            blast/js_stress_example/dist/
+            blast/blast-stress-solver/dist/
+          retention-days: 7
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.51
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install blast-stress-solver dependencies
+        working-directory: blast/blast-stress-solver
+        run: npm install --ignore-scripts
+
+      - name: Install js_stress_example dependencies
+        working-directory: blast/js_stress_example
+        run: npm install
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: demo-site
+          path: blast/
+
       - name: Run blast-stress-solver tests
         working-directory: blast/blast-stress-solver
         run: npx vitest run --reporter=verbose
@@ -66,20 +110,9 @@ jobs:
         working-directory: blast/js_stress_example
         run: npm run test:split || true  # organicSplit.spec.ts has a known stale expectation
 
-      - name: Upload demo artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: demo-site
-          path: |
-            blast/js_stress_example/*.html
-            blast/js_stress_example/styles/
-            blast/js_stress_example/dist/
-            blast/blast-stress-solver/dist/
-          retention-days: 7
-
   deploy-preview:
     name: Deploy Preview
-    needs: build-and-test
+    needs: build
     if: >-
       github.event_name == 'pull_request' ||
       (github.event_name == 'push' && github.ref != format('refs/heads/{0}', vars.PRODUCTION_BRANCH || 'feat/rapier-destruction'))
@@ -150,7 +183,7 @@ jobs:
 
   deploy-production:
     name: Deploy Production
-    needs: build-and-test
+    needs: [build, test]
     if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', vars.PRODUCTION_BRANCH || 'feat/rapier-destruction')
     runs-on: ubuntu-latest
     environment:
