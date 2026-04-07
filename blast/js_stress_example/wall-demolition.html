@@ -13,7 +13,8 @@
           "@dimforge/rapier3d-compat": "/vendor/rapier/rapier.mjs",
           "blast-stress-solver": "/vendor/blast-stress-solver/index.js",
           "blast-stress-solver/rapier": "/vendor/blast-stress-solver/rapier.js",
-          "blast-stress-solver/three": "/vendor/blast-stress-solver/three.js"
+          "blast-stress-solver/three": "/vendor/blast-stress-solver/three.js",
+          "blast-stress-solver/scenarios": "/vendor/blast-stress-solver/scenarios.js"
         }
       }
     </script>
@@ -83,6 +84,15 @@
           </div>
         </section>
 
+        <!-- Bonding (deferred) -->
+        <section class="config-section">
+          <h2 class="section-title">Bonding (Reset to apply)</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-auto-bonds">Auto Bonds (experimental)</label>
+            <input type="checkbox" id="cfg-auto-bonds" />
+          </div>
+        </section>
+
         <!-- Solver (deferred) -->
         <section class="config-section">
           <h2 class="section-title">Solver (Reset to apply)</h2>
@@ -93,8 +103,8 @@
           </div>
           <div class="config-row">
             <label class="config-label" for="cfg-material">Material Scale</label>
-            <input type="range" id="cfg-material" class="config-slider" min="0.1" max="4" step="0.05" value="1.0" />
-            <span class="config-value"><span id="cfg-material-value">1.00</span>×</span>
+            <input type="range" id="cfg-material" class="config-slider" min="2" max="10" step="0.1" value="8" />
+            <span class="config-value"><span id="cfg-material-value">1e8</span></span>
           </div>
         </section>
 

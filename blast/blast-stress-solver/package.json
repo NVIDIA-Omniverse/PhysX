@@ -31,6 +31,12 @@
       "browser": "./dist/three.js",
       "node": "./dist/three.cjs",
       "default": "./dist/three.js"
+    },
+    "./scenarios": {
+      "types": "./dist/scenarios.d.ts",
+      "browser": "./dist/scenarios.js",
+      "node": "./dist/scenarios.cjs",
+      "default": "./dist/scenarios.js"
     }
   },
   "files": [

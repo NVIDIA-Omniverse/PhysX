@@ -13,141 +13,9 @@ import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
   RapierDebugRenderer,
+  applyAutoBondingToScenario,
 } from 'blast-stress-solver/three';
-import type { ScenarioDesc } from 'blast-stress-solver/rapier';
-
-// ── Scenario builder ─────────────────────────────────────────
-
-type TowerParams = {
-  /** Blocks per side of the square cross-section */
-  side: number;
-  /** Number of stories */
-  stories: number;
-  spacing: { x: number; y: number; z: number };
-  areaScale: number;
-  totalMass: number;
-  addDiagonals: boolean;
-  diagScale: number;
-};
-
-function buildTowerScenario(params: TowerParams): ScenarioDesc {
-  const { side, stories, spacing, areaScale, totalMass, addDiagonals, diagScale } = params;
-  const nodes: ScenarioDesc['nodes'] = [];
-  const bonds: ScenarioDesc['bonds'] = [];
-  const gridCoordinates: Array<{ ix: number; iy: number; iz: number }> = [];
-
-  const totalRows = stories + 1; // +1 for support row at bottom
-
-  // Per-node mass distributed across dynamic nodes
-  const dynamicNodeCount = side * stories * side;
-  const nodeMass = totalMass / Math.max(1, dynamicNodeCount);
-
-  // Index helper
-  const idx = (ix: number, iy: number, iz: number) =>
-    iz * side * totalRows + iy * side + ix;
-
-  // Create nodes
-  for (let iz = 0; iz < side; iz++) {
-    for (let iy = 0; iy < totalRows; iy++) {
-      for (let ix = 0; ix < side; ix++) {
-        const isSupport = iy === 0;
-        const centroid = {
-          x: (ix - (side - 1) / 2) * spacing.x,
-          y: (iy - 1) * spacing.y,
-          z: (iz - (side - 1) / 2) * spacing.z,
-        };
-        const volume = spacing.x * spacing.y * spacing.z;
-        nodes.push({
-          centroid,
-          mass: isSupport ? 0 : nodeMass,
-          volume: isSupport ? 0 : volume,
-        });
-        gridCoordinates.push({
-          ix,
-          iy: isSupport ? -1 : iy - 1,
-          iz,
-        });
-      }
-    }
-  }
-
-  // Bond areas scaled from cell dimensions (matches vibe-city pattern)
-  const areaXY = spacing.x * spacing.y * areaScale;
-  const areaYZ = spacing.y * spacing.z * areaScale;
-  const areaXZ = spacing.x * spacing.z * areaScale;
-
-  // Bonds: 6-connectivity (±x, ±y, ±z)
-  const offsets: [number, number, number, { x: number; y: number; z: number }, number][] = [
-    [1, 0, 0, { x: 1, y: 0, z: 0 }, areaYZ],
-    [0, 1, 0, { x: 0, y: 1, z: 0 }, areaXZ],
-    [0, 0, 1, { x: 0, y: 0, z: 1 }, areaXY],
-  ];
-
-  for (let iz = 0; iz < side; iz++) {
-    for (let iy = 0; iy < totalRows; iy++) {
-      for (let ix = 0; ix < side; ix++) {
-        const i = idx(ix, iy, iz);
-        for (const [dx, dy, dz, normal, area] of offsets) {
-          const nx = ix + dx;
-          const ny = iy + dy;
-          const nz = iz + dz;
-          if (nx < side && ny < totalRows && nz < side) {
-            const j = idx(nx, ny, nz);
-            const c0 = nodes[i].centroid;
-            const c1 = nodes[j].centroid;
-            bonds.push({
-              node0: i,
-              node1: j,
-              centroid: {
-                x: (c0.x + c1.x) / 2,
-                y: (c0.y + c1.y) / 2,
-                z: (c0.z + c1.z) / 2,
-              },
-              normal,
-              area,
-            });
-          }
-        }
-
-        // Diagonal bonds for structural integrity
-        if (addDiagonals) {
-          const diagArea = 0.5 * (areaXZ + areaYZ) * diagScale;
-          const diagOffsets: [number, number, number][] = [
-            [1, 1, 0], [1, -1, 0],
-            [0, 1, 1], [0, -1, 1],
-          ];
-          for (const [ddx, ddy, ddz] of diagOffsets) {
-            const nx = ix + ddx;
-            const ny = iy + ddy;
-            const nz = iz + ddz;
-            if (nx >= 0 && nx < side && ny >= 0 && ny < totalRows && nz >= 0 && nz < side) {
-              const j = idx(nx, ny, nz);
-              const c0 = nodes[i].centroid;
-              const c1 = nodes[j].centroid;
-              const dx2 = c1.x - c0.x;
-              const dy2 = c1.y - c0.y;
-              const dz2 = c1.z - c0.z;
-              const len = Math.sqrt(dx2 * dx2 + dy2 * dy2 + dz2 * dz2) || 1;
-              bonds.push({
-                node0: i,
-                node1: j,
-                centroid: {
-                  x: (c0.x + c1.x) / 2,
-                  y: (c0.y + c1.y) / 2,
-                  z: (c0.z + c1.z) / 2,
-                },
-                normal: { x: dx2 / len, y: dy2 / len, z: dz2 / len },
-                area: diagArea,
-              });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return { nodes, bonds, gridCoordinates, spacing };
-}
+import { buildTowerScenario } from 'blast-stress-solver/scenarios';
 
 // ── Config ────────────────────────────────────────────────────
 
@@ -156,10 +24,11 @@ const CONFIG = {
     side: 4,
     stories: 16,
     spacing: { x: 0.42, y: 0.42, z: 0.42 },
-    areaScale: 0.055,
-    totalMass: 24_000,
+    totalMass: 5_000,
+    areaScale: 0.05,
     addDiagonals: true,
     diagScale: 0.55,
+    normalizeAreas: true,
   },
   projectile: {
     radius: 0.35,
@@ -168,8 +37,9 @@ const CONFIG = {
   },
   solver: {
     gravity: -9.81,
-    materialScale: 1.0,
+    materialScale: 1e8,
   },
+  autoBonds: false,
 };
 
 // ── Three.js setup ────────────────────────────────────────────
@@ -245,7 +115,27 @@ let rapierDebug: RapierDebugRenderer | null = null;
 let showDebug = false;
 
 async function initScene() {
-  const scenario = buildTowerScenario(CONFIG.tower);
+  let scenario = buildTowerScenario(CONFIG.tower);
+
+  // Attach fragment geometries for auto-bonding support
+  const sp = scenario.spacing!;
+  const fragmentGeometries = scenario.nodes.map(
+    () => new THREE.BoxGeometry(sp.x, sp.y, sp.z),
+  );
+  scenario = {
+    ...scenario,
+    parameters: { ...scenario.parameters, fragmentGeometries },
+  };
+
+  // Auto-bonding: replace manual grid bonds with geometry-derived bonds
+  if (CONFIG.autoBonds) {
+    scenario = await applyAutoBondingToScenario(scenario, { mode: 'average', maxSeparation: 0.01 });
+  }
+
+  console.log(
+    `Tower: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds` +
+      (CONFIG.autoBonds ? ' (auto-bonded)' : ' (manual)'),
+  );
 
   const core = await buildDestructibleCore({
     scenario,
@@ -253,9 +143,7 @@ async function initScene() {
     materialScale: CONFIG.solver.materialScale,
     debrisCollisionMode: 'noDebrisPairs',
     damage: {
-      enabled: true,
-      autoDetachOnDestroy: true,
-      autoCleanupPhysics: true,
+      enabled: false,
     },
     debrisCleanup: {
       mode: 'always',
@@ -288,10 +176,6 @@ async function initScene() {
 
   coreRef = core;
   visualsRef = visuals;
-
-  console.log(
-    `Tower built: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`,
-  );
 }
 
 // ── Projectile shooting ───────────────────────────────────────
@@ -367,7 +251,32 @@ bindSlider('cfg-proj-radius', CONFIG.projectile, 'radius', (v) => v.toFixed(2));
 bindSlider('cfg-proj-mass', CONFIG.projectile, 'mass', (v) => v.toLocaleString());
 bindSlider('cfg-proj-speed', CONFIG.projectile, 'speed', (v) => v.toFixed(0));
 bindSlider('cfg-gravity', CONFIG.solver, 'gravity', (v) => v.toFixed(1));
-bindSlider('cfg-material', CONFIG.solver, 'materialScale', (v) => v.toFixed(2));
+// Material scale uses a log slider: slider value is the exponent (log10)
+{
+  const slider = document.getElementById('cfg-material') as HTMLInputElement | null;
+  const display = document.getElementById('cfg-material-value');
+  if (slider) {
+    const exp = Math.log10(CONFIG.solver.materialScale);
+    slider.value = String(exp);
+    if (display) display.textContent = `1e${exp.toFixed(0)}`;
+    slider.addEventListener('input', () => {
+      const exp = parseFloat(slider.value);
+      CONFIG.solver.materialScale = Math.pow(10, exp);
+      if (display) display.textContent = `1e${exp.toFixed(1)}`;
+    });
+  }
+}
+
+// Auto-bonds toggle
+{
+  const checkbox = document.getElementById('cfg-auto-bonds') as HTMLInputElement | null;
+  if (checkbox) {
+    checkbox.checked = CONFIG.autoBonds;
+    checkbox.addEventListener('change', () => {
+      CONFIG.autoBonds = checkbox.checked;
+    });
+  }
+}
 
 // ── Render loop ───────────────────────────────────────────────
 

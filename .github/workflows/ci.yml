@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - feat/rapier-destruction
   pull_request:
 
 # ── Change this to your default/production branch ──────────
@@ -55,6 +57,10 @@ jobs:
         working-directory: blast/blast-stress-solver
         run: npx vitest run --reporter=verbose
         continue-on-error: true  # integration tests have physics-dependent assertions that vary across environments
+
+      - name: Run headless scenario tests
+        working-directory: blast/blast-stress-solver
+        run: npx vitest run src/tests/rapier.headless-scenarios.test.ts --reporter=verbose
 
       - name: Run split/fracture tests
         working-directory: blast/js_stress_example
