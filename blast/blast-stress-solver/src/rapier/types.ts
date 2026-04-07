@@ -64,6 +64,41 @@ export type DebrisCleanupOptions = {
   maxCollidersForDebris?: number;
 };
 
+/**
+ * Controls how fractures are processed per frame — a spectrum from full realism
+ * to real-time performance. Each knob has a physical interpretation.
+ *
+ * All limits default to -1 (unlimited = original behavior).
+ */
+export type FracturePolicy = {
+  /** Max bonds to break per frame. Highest-stress bonds are prioritized.
+   *  Remaining overstressed bonds stay in graph and re-evaluate next frame —
+   *  some may relax as the load path changes (physically accurate).
+   *  Models "fracture propagation speed". -1 = unlimited. Default: -1 */
+  maxFracturesPerFrame?: number;
+
+  /** Max new rigid bodies to create per frame from splits.
+   *  Largest children (most visually important) are created first.
+   *  Remaining are deferred to subsequent frames.
+   *  Models "fragmentation rate". -1 = unlimited. Default: -1 */
+  maxNewBodiesPerFrame?: number;
+
+  /** Max collider migrations per frame. Remaining migrations are deferred.
+   *  Chunks stay on parent body briefly — appears as shockwave propagation.
+   *  Models "topology change speed". -1 = unlimited. Default: -1 */
+  maxColliderMigrationsPerFrame?: number;
+
+  /** Global cap on dynamic rigid bodies in the world. When reached, fracture
+   *  generation is suppressed (bonds stay intact until bodies are freed).
+   *  Models "simulation complexity budget". -1 = unlimited. Default: -1 */
+  maxDynamicBodies?: number;
+
+  /** Minimum node count for a split child to receive its own body.
+   *  Smaller children are destroyed (visual debris only, no physics body).
+   *  Models "material grain size". Default: 1 (every fragment gets a body) */
+  minChildNodeCount?: number;
+};
+
 // Builder that returns a Rapier collider descriptor for a node.
 // Static Rapier import is required by callers; this type reuses Rapier's own types.
 export type ColliderDescBuilder = () => ColliderDesc | null;
@@ -273,6 +308,9 @@ export type DestructibleCore = {
   applyNodeDamage?: (nodeIndex: number, amount: number, reason?: string) => void;
   getNodeHealth?: (nodeIndex: number) => { health: number; maxHealth: number; destroyed: boolean } | null;
   damageEnabled?: boolean;
+  // Fracture policy API - tune realism ↔ performance spectrum at runtime
+  setFracturePolicy?: (policy: FracturePolicy) => void;
+  getFracturePolicy?: () => Required<FracturePolicy>;
   dispose: () => void;
   setProfiler: (config: CoreProfilerConfig | null) => void;
   recordProjectileCleanupDuration?: (durationMs: number) => void;

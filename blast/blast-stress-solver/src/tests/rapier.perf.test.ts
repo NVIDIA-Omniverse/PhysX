@@ -663,6 +663,92 @@ describe.skipIf(!runtimeAvailable)('Destruction performance benchmarks (requires
   });
 
   // ────────────────────────────────────────────────────────────
+  // F. Fracture policy tuning
+  // ────────────────────────────────────────────────────────────
+
+  describe('F. Fracture policy tuning (medium tower 6x12)', () => {
+    const mediumTower = () => buildTowerScenario({ side: 6, stories: 12, totalMass: 5000 });
+    const towerHeight = 12 * 0.5;
+
+    it('unlimited (baseline)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Policy: unlimited (baseline)',
+        scenario: mediumTower(),
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 60_000);
+
+    it('maxFracturesPerFrame: 8 (progressive fracture)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Policy: maxFractures=8',
+        scenario: mediumTower(),
+        coreOpts: { fracturePolicy: { maxFracturesPerFrame: 8 } },
+        impactPlan: centerHit(towerHeight),
+        postImpactFrames: 300, // more frames to let progressive fracture complete
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 120_000);
+
+    it('maxFracturesPerFrame: 4 (slow propagation)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Policy: maxFractures=4',
+        scenario: mediumTower(),
+        coreOpts: { fracturePolicy: { maxFracturesPerFrame: 4 } },
+        impactPlan: centerHit(towerHeight),
+        postImpactFrames: 300,
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 120_000);
+
+    it('maxNewBodiesPerFrame: 8', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Policy: maxBodies=8',
+        scenario: mediumTower(),
+        coreOpts: { fracturePolicy: { maxNewBodiesPerFrame: 8 } },
+        impactPlan: centerHit(towerHeight),
+        postImpactFrames: 300,
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 120_000);
+
+    it('maxDynamicBodies: 20 (body cap)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Policy: maxDynBodies=20',
+        scenario: mediumTower(),
+        coreOpts: { fracturePolicy: { maxDynamicBodies: 20 } },
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+      // Body count should be capped
+      expect(result.maxRigidBodies).toBeLessThanOrEqual(22); // small margin for ground+root
+    }, 60_000);
+
+    it('combined: maxFractures=8, maxBodies=10, maxMigrations=32', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Policy: combined budget',
+        scenario: mediumTower(),
+        coreOpts: {
+          fracturePolicy: {
+            maxFracturesPerFrame: 8,
+            maxNewBodiesPerFrame: 10,
+            maxColliderMigrationsPerFrame: 32,
+          },
+        },
+        impactPlan: centerHit(towerHeight),
+        postImpactFrames: 360,
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 120_000);
+  });
+
+  // ────────────────────────────────────────────────────────────
   // Final summary
   // ────────────────────────────────────────────────────────────
 
@@ -701,6 +787,44 @@ describe.skipIf(!runtimeAvailable)('Destruction performance benchmarks (requires
         console.log(`    - ${r.name}: P95=${r.allStats.p95.toFixed(2)}ms`);
       }
     }
+
+    // ── Spike Analysis ──
+    console.log('\n  SPIKE ANALYSIS — Frames exceeding budget');
+    console.log('  ' + '-'.repeat(88));
+    console.log(
+      `  ${'Scenario'.padEnd(40)} ${'>16ms'.padStart(6)} ${'>33ms'.padStart(6)} ${'>100ms'.padStart(7)} ${'>500ms'.padStart(7)} ${'Worst Phase'.padStart(20)}`
+    );
+    console.log('  ' + '-'.repeat(88));
+
+    for (const r of allResults) {
+      const gt16 = r.samples.filter((s) => s.totalMs > 16.67).length;
+      const gt33 = r.samples.filter((s) => s.totalMs > 33.33).length;
+      const gt100 = r.samples.filter((s) => s.totalMs > 100).length;
+      const gt500 = r.samples.filter((s) => s.totalMs > 500).length;
+
+      // Find worst phase in the worst frame
+      let worstPhase = '';
+      if (r.samples.length > 0) {
+        const worstFrame = r.samples.reduce((a, b) => a.totalMs > b.totalMs ? a : b);
+        const phases = [
+          ['rapierStep', worstFrame.rapierStepMs],
+          ['solverUpdate', worstFrame.solverUpdateMs],
+          ['fracture', worstFrame.fractureMs],
+          ['contactDrain', worstFrame.contactDrainMs],
+          ['bodyCreate', worstFrame.bodyCreateMs],
+          ['colliderRebuild', worstFrame.colliderRebuildMs],
+          ['snapshot', worstFrame.snapshotCaptureMs],
+        ] as const;
+        const dominant = phases.reduce((a, b) => (a[1] ?? 0) > (b[1] ?? 0) ? a : b);
+        worstPhase = `${dominant[0]} (${(dominant[1] ?? 0).toFixed(0)}ms)`;
+      }
+
+      console.log(
+        `  ${r.name.padEnd(40)} ${String(gt16).padStart(6)} ${String(gt33).padStart(6)} ${String(gt100).padStart(7)} ${String(gt500).padStart(7)} ${worstPhase.padStart(20)}`
+      );
+    }
+
+    console.log('='.repeat(90));
     console.log('');
   });
 });
