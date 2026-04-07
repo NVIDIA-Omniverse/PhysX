@@ -43,18 +43,23 @@
           <h2 class="section-title">Tower (Reset to apply)</h2>
           <div class="config-row">
             <label class="config-label" for="cfg-side">Cross-section</label>
-            <input type="range" id="cfg-side" class="config-slider" min="2" max="6" step="1" value="3" />
-            <span class="config-value"><span id="cfg-side-value">3</span>×<span id="cfg-side-value2">3</span></span>
+            <input type="range" id="cfg-side" class="config-slider" min="2" max="6" step="1" value="4" />
+            <span class="config-value"><span id="cfg-side-value">4</span>×<span id="cfg-side-value2">4</span></span>
           </div>
           <div class="config-row">
             <label class="config-label" for="cfg-stories">Stories</label>
-            <input type="range" id="cfg-stories" class="config-slider" min="4" max="25" step="1" value="14" />
-            <span class="config-value"><span id="cfg-stories-value">14</span></span>
+            <input type="range" id="cfg-stories" class="config-slider" min="4" max="25" step="1" value="16" />
+            <span class="config-value"><span id="cfg-stories-value">16</span></span>
           </div>
           <div class="config-row">
-            <label class="config-label" for="cfg-bond-area">Bond Area</label>
-            <input type="range" id="cfg-bond-area" class="config-slider" min="0.005" max="0.1" step="0.001" value="0.035" />
-            <span class="config-value"><span id="cfg-bond-area-value">0.035</span></span>
+            <label class="config-label" for="cfg-area-scale">Area Scale</label>
+            <input type="range" id="cfg-area-scale" class="config-slider" min="0.01" max="0.15" step="0.005" value="0.055" />
+            <span class="config-value"><span id="cfg-area-scale-value">0.055</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-total-mass">Total Mass</label>
+            <input type="range" id="cfg-total-mass" class="config-slider" min="5000" max="100000" step="1000" value="24000" />
+            <span class="config-value"><span id="cfg-total-mass-value">24,000</span> kg</span>
           </div>
         </section>
 
@@ -68,13 +73,13 @@
           </div>
           <div class="config-row">
             <label class="config-label" for="cfg-proj-mass">Mass</label>
-            <input type="range" id="cfg-proj-mass" class="config-slider" min="1000" max="40000" step="500" value="12000" />
-            <span class="config-value"><span id="cfg-proj-mass-value">12,000</span> kg</span>
+            <input type="range" id="cfg-proj-mass" class="config-slider" min="1000" max="40000" step="500" value="15000" />
+            <span class="config-value"><span id="cfg-proj-mass-value">15,000</span> kg</span>
           </div>
           <div class="config-row">
             <label class="config-label" for="cfg-proj-speed">Speed</label>
-            <input type="range" id="cfg-proj-speed" class="config-slider" min="5" max="80" step="1" value="30" />
-            <span class="config-value"><span id="cfg-proj-speed-value">30</span> m/s</span>
+            <input type="range" id="cfg-proj-speed" class="config-slider" min="5" max="80" step="1" value="22" />
+            <span class="config-value"><span id="cfg-proj-speed-value">22</span> m/s</span>
           </div>
         </section>
 
