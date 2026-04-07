@@ -52,7 +52,10 @@
     "build": "npm run build:ts && node ./scripts/copy-dist.js",
     "prepare": "npm run build",
     "test": "npm run build && vitest run",
-    "build:ts": "tsup --config tsup.config.ts"
+    "build:ts": "tsup --config tsup.config.ts",
+    "bench": "node scripts/bench.mjs",
+    "bench:small": "node scripts/bench.mjs --small",
+    "bench:large": "node scripts/bench.mjs --large"
   },
   "devDependencies": {
     "@dgreenheck/three-pinata": "^2.0.1",
