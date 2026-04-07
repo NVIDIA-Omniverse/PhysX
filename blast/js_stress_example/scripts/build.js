@@ -159,6 +159,7 @@ const commonArgs = [
   '-DNDEBUG=1',
   '-std=c++17',
   '-O3',
+  '-msimd128',            // Enable WASM SIMD auto-vectorization for scalar math loops
   '-sWASM=1',
   '-sMODULARIZE=1',
   '-sALLOW_MEMORY_GROWTH=1',
