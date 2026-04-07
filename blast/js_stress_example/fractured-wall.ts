@@ -39,6 +39,19 @@ const CONFIG = {
     gravity: -9.81,
     materialScale: 1e8,
   },
+  physics: {
+    debrisCollisionMode: 'all' as string,
+    friction: 0.25,
+    restitution: 0.0,
+    contactForceScale: 30,
+    skipSingleBodies: false,
+  },
+  optimization: {
+    smallBodyDampingMode: 'always' as string,
+    debrisCleanupMode: 'always' as string,
+    debrisTtlMs: 10000,
+    maxCollidersForDebris: 2,
+  },
 };
 
 // ── Three.js setup ────────────────────────────────────────────
@@ -179,12 +192,22 @@ async function initScene() {
     scenario,
     gravity: CONFIG.solver.gravity,
     materialScale: CONFIG.solver.materialScale,
-    debrisCollisionMode: 'noDebrisPairs',
+    friction: CONFIG.physics.friction,
+    restitution: CONFIG.physics.restitution,
+    contactForceScale: CONFIG.physics.contactForceScale,
+    debrisCollisionMode: CONFIG.physics.debrisCollisionMode as any,
+    skipSingleBodies: CONFIG.physics.skipSingleBodies,
     damage: { enabled: false },
     debrisCleanup: {
-      mode: 'always',
-      debrisTtlMs: 8000,
-      maxCollidersForDebris: 2,
+      mode: CONFIG.optimization.debrisCleanupMode as any,
+      debrisTtlMs: CONFIG.optimization.debrisTtlMs,
+      maxCollidersForDebris: CONFIG.optimization.maxCollidersForDebris,
+    },
+    smallBodyDamping: {
+      mode: CONFIG.optimization.smallBodyDampingMode as any,
+      colliderCountThreshold: 3,
+      minLinearDamping: 2,
+      minAngularDamping: 2,
     },
   });
 
@@ -259,6 +282,26 @@ document.getElementById('btn-debug')?.addEventListener('click', () => {
 });
 
 // Config sliders
+function bindSelect(id: string, obj: Record<string, any>, key: string, onChange?: (v: string) => void) {
+  const select = document.getElementById(id) as HTMLSelectElement | null;
+  if (!select) return;
+  select.value = String(obj[key]);
+  select.addEventListener('change', () => {
+    obj[key] = select.value;
+    onChange?.(select.value);
+  });
+}
+
+function bindCheckbox(id: string, obj: Record<string, any>, key: string, onChange?: (v: boolean) => void) {
+  const checkbox = document.getElementById(id) as HTMLInputElement | null;
+  if (!checkbox) return;
+  checkbox.checked = !!obj[key];
+  checkbox.addEventListener('change', () => {
+    obj[key] = checkbox.checked;
+    onChange?.(checkbox.checked);
+  });
+}
+
 function bindSlider(id: string, obj: Record<string, any>, key: string, fmt?: (v: number) => string) {
   const slider = document.getElementById(id) as HTMLInputElement | null;
   const display = document.getElementById(id + '-value');
@@ -292,6 +335,25 @@ bindSlider('cfg-gravity', CONFIG.solver, 'gravity', (v) => v.toFixed(1));
     });
   }
 }
+
+// Physics controls
+bindSelect('cfg-debris-collision', CONFIG.physics, 'debrisCollisionMode', (v) => {
+  coreRef?.setDebrisCollisionMode(v as any);
+});
+bindSlider('cfg-friction', CONFIG.physics, 'friction', (v) => v.toFixed(2));
+bindSlider('cfg-restitution', CONFIG.physics, 'restitution', (v) => v.toFixed(2));
+bindSlider('cfg-contact-force', CONFIG.physics, 'contactForceScale', (v) => v.toFixed(0));
+bindCheckbox('cfg-skip-single', CONFIG.physics, 'skipSingleBodies');
+
+// Optimization controls
+bindSelect('cfg-damping-mode', CONFIG.optimization, 'smallBodyDampingMode', (v) => {
+  coreRef?.setSmallBodyDamping?.({ mode: v as any });
+});
+bindSelect('cfg-cleanup-mode', CONFIG.optimization, 'debrisCleanupMode', (v) => {
+  coreRef?.setDebrisCleanup?.({ mode: v as any, debrisTtlMs: CONFIG.optimization.debrisTtlMs });
+});
+bindSlider('cfg-debris-ttl', CONFIG.optimization, 'debrisTtlMs', (v) => (v / 1000).toFixed(1) + 's');
+bindSlider('cfg-max-debris-colliders', CONFIG.optimization, 'maxCollidersForDebris', (v) => v.toFixed(0));
 
 // ── Render loop ───────────────────────────────────────────────
 

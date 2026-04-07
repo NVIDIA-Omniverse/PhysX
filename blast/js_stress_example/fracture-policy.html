@@ -128,6 +128,70 @@
           </div>
         </section>
 
+        <!-- Physics -->
+        <section class="config-section">
+          <h2 class="section-title">Physics <small style="font-weight:normal;opacity:.5">★ = live</small></h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-debris-collision">Debris Collision ★</label>
+            <select id="cfg-debris-collision" class="config-select">
+              <option value="all" selected>All (full collisions)</option>
+              <option value="noDebrisPairs">No debris pairs</option>
+              <option value="debrisGroundOnly">Debris ↔ ground only</option>
+              <option value="debrisNone">Debris: none</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-friction">Friction</label>
+            <input type="range" id="cfg-friction" class="config-slider" min="0" max="2" step="0.05" value="0.25" />
+            <span class="config-value"><span id="cfg-friction-value">0.25</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-restitution">Restitution</label>
+            <input type="range" id="cfg-restitution" class="config-slider" min="0" max="1" step="0.05" value="0.00" />
+            <span class="config-value"><span id="cfg-restitution-value">0.00</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-contact-force">Contact Force Scale</label>
+            <input type="range" id="cfg-contact-force" class="config-slider" min="1" max="100" step="1" value="30" />
+            <span class="config-value"><span id="cfg-contact-force-value">30</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-skip-single">Skip Single Bodies</label>
+            <input type="checkbox" id="cfg-skip-single" />
+          </div>
+        </section>
+
+        <!-- Optimization -->
+        <section class="config-section">
+          <h2 class="section-title">Optimization <small style="font-weight:normal;opacity:.5">★ = live</small></h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-damping-mode">Small Body Damping ★</label>
+            <select id="cfg-damping-mode" class="config-select">
+              <option value="off">Off</option>
+              <option value="always" selected>Always</option>
+              <option value="afterGroundCollision">After ground hit</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-cleanup-mode">Debris Cleanup ★</label>
+            <select id="cfg-cleanup-mode" class="config-select">
+              <option value="off">Off</option>
+              <option value="always" selected>Always</option>
+              <option value="afterGroundCollision">After ground hit</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-debris-ttl">Debris TTL</label>
+            <input type="range" id="cfg-debris-ttl" class="config-slider" min="1000" max="30000" step="500" value="10000" />
+            <span class="config-value"><span id="cfg-debris-ttl-value">10.0s</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-max-debris-colliders">Max Debris Colliders</label>
+            <input type="range" id="cfg-max-debris-colliders" class="config-slider" min="1" max="10" step="1" value="2" />
+            <span class="config-value"><span id="cfg-max-debris-colliders-value">2</span></span>
+          </div>
+        </section>
+
         <!-- Actions -->
         <div class="control-actions">
           <button id="btn-reset" class="button button-primary">Reset Tower</button>
