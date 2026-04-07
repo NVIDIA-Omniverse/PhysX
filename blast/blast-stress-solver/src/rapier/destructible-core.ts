@@ -963,31 +963,12 @@ export async function buildDestructibleCore({
       const targetBody = world.getRigidBody(migration.targetBodyHandle);
       if (!targetBody) continue;
 
-      const bodyPos = targetBody.translation();
-      const bodyRot = targetBody.rotation();
-
-      const worldX = chunk.baseLocalOffset.x;
-      const worldY = chunk.baseLocalOffset.y;
-      const worldZ = chunk.baseLocalOffset.z;
-
-      const bqx = bodyRot.x, bqy = bodyRot.y, bqz = bodyRot.z, bqw = bodyRot.w;
-      const iqx = -bqx, iqy = -bqy, iqz = -bqz, iqw = bqw;
-      const dx = worldX - bodyPos.x;
-      const dy = worldY - bodyPos.y;
-      const dz = worldZ - bodyPos.z;
-
-      const tx = iqw * dx + iqy * dz - iqz * dy;
-      const ty = iqw * dy + iqz * dx - iqx * dz;
-      const tz = iqw * dz + iqx * dy - iqy * dx;
-      const tw = -(iqx * dx + iqy * dy + iqz * dz);
-
-      const localX = tw * (-iqx) + tx * iqw + ty * (-iqz) - tz * (-iqy);
-      const localY = tw * (-iqy) + ty * iqw + tz * (-iqx) - tx * (-iqz);
-      const localZ = tw * (-iqz) + tz * iqw + tx * (-iqy) - ty * (-iqx);
-
       colliderToNode.delete(oldHandle);
       activeContactColliders.delete(oldHandle);
       world.removeCollider(oldCollider, false);
+
+      // Skip creating colliders for destroyed chunks (matches vibe-city)
+      if (chunk.destroyed) continue;
 
       const size = nodeSize(chunk.nodeIndex, scenario);
       const halfX = Math.max(0.05, size.x * 0.5);
@@ -995,9 +976,11 @@ export async function buildDestructibleCore({
       const halfZ = Math.max(0.05, size.z * 0.5);
       const isSupport = chunk.isSupport;
 
+      // Use baseLocalOffset directly as collider translation to stay consistent
+      // with the Three.js adapter which also uses baseLocalOffset for mesh positioning.
       const desc = buildColliderDescForNode({ nodeIndex: chunk.nodeIndex, halfX, halfY, halfZ, isSupport })
         .setMass(scenario.nodes[chunk.nodeIndex]?.mass ?? 1)
-        .setTranslation(localX, localY, localZ)
+        .setTranslation(chunk.baseLocalOffset.x, chunk.baseLocalOffset.y, chunk.baseLocalOffset.z)
         .setFriction(friction)
         .setRestitution(restitution)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -1005,7 +988,7 @@ export async function buildDestructibleCore({
 
       const newCol = world.createCollider(desc, targetBody);
       chunk.colliderHandle = newCol.handle;
-      chunk.localOffset = { x: localX, y: localY, z: localZ };
+      chunk.localOffset = { x: chunk.baseLocalOffset.x, y: chunk.baseLocalOffset.y, z: chunk.baseLocalOffset.z };
       chunk.bodyHandle = migration.targetBodyHandle;
       colliderToNode.set(newCol.handle, chunk.nodeIndex);
       activeContactColliders.add(newCol.handle);
