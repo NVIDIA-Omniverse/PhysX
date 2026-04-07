@@ -16,12 +16,8 @@ import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
   RapierDebugRenderer,
-  setPinataModule,
 } from 'blast-stress-solver/three';
 import { buildFracturedBridgeScenario } from 'blast-stress-solver/scenarios';
-
-// Register pinata module for browser ESM
-setPinataModule(pinata as any);
 
 // ── Config ────────────────────────────────────────────────────
 
@@ -168,6 +164,7 @@ async function initScene() {
     fragmentCountPerDeck: CONFIG.bridge.fragmentCountPerDeck,
     fragmentCountPerPost: CONFIG.bridge.fragmentCountPerPost,
     deckMass: CONFIG.bridge.deckMass,
+    pinata: pinata as any,
   });
 
   console.log(

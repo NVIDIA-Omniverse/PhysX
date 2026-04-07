@@ -17,6 +17,7 @@
  */
 import type { ScenarioDesc } from '../rapier/types';
 import type { FragmentInfo, FragmentType } from '../three/fracture';
+import type { PinataModule } from '../three/pinataFracture';
 import type { AreaNormalizationMode } from '../three/scenarioFromFragments';
 import {
   buildWallFragments,
@@ -67,6 +68,16 @@ export type FracturedTowerOptions = {
   bondMode?: 'proximity' | 'auto';
   /** Bond area normalization mode (default: 'perAxis') */
   areaNormalization?: AreaNormalizationMode;
+  /**
+   * Pre-imported three-pinata module. Required in browser ESM environments where
+   * the scenarios bundle cannot dynamically import bare specifiers.
+   * @example
+   * ```ts
+   * import * as pinata from '@dgreenheck/three-pinata';
+   * buildFracturedTowerScenario({ pinata });
+   * ```
+   */
+  pinata?: PinataModule;
   /** Rapier module for convex hull colliders. If omitted, colliderDescForNode entries are null. */
   rapier?: { ColliderDesc: { cuboid(hx: number, hy: number, hz: number): unknown; convexHull(points: Float32Array): unknown | null } };
 };
@@ -100,6 +111,7 @@ export async function buildFracturedTowerScenario(
     deckMass,
     bondMode = 'proximity',
     areaNormalization = 'perAxis',
+    pinata,
     rapier,
   } = options ?? {};
 
@@ -165,7 +177,7 @@ export async function buildFracturedTowerScenario(
       span: width, height: wallHeight, thickness,
       fragmentCount: fragmentCountPerWall,
       centerX: 0, centerZ: -halfDepth + thickness * 0.5,
-      rotationY: 0, baseY: wallBottomY,
+      rotationY: 0, baseY: wallBottomY, pinata,
     }));
 
     // Back wall
@@ -173,7 +185,7 @@ export async function buildFracturedTowerScenario(
       span: width, height: wallHeight, thickness,
       fragmentCount: fragmentCountPerWall,
       centerX: 0, centerZ: halfDepth - thickness * 0.5,
-      rotationY: 0, baseY: wallBottomY,
+      rotationY: 0, baseY: wallBottomY, pinata,
     }));
 
     // Left wall (rotated 90 degrees)
@@ -181,7 +193,7 @@ export async function buildFracturedTowerScenario(
       span: sideWallSpan, height: wallHeight, thickness,
       fragmentCount: fragmentCountPerWall,
       centerX: -halfWidth + thickness * 0.5, centerZ: 0,
-      rotationY: Math.PI * 0.5, baseY: wallBottomY,
+      rotationY: Math.PI * 0.5, baseY: wallBottomY, pinata,
     }));
 
     // Right wall (rotated 90 degrees)
@@ -189,7 +201,7 @@ export async function buildFracturedTowerScenario(
       span: sideWallSpan, height: wallHeight, thickness,
       fragmentCount: fragmentCountPerWall,
       centerX: halfWidth - thickness * 0.5, centerZ: 0,
-      rotationY: Math.PI * 0.5, baseY: wallBottomY,
+      rotationY: Math.PI * 0.5, baseY: wallBottomY, pinata,
     }));
 
     // Interior columns for this floor section
@@ -197,7 +209,7 @@ export async function buildFracturedTowerScenario(
       allFragments.push(...buildColumnFragments({
         sizeX: columnSize, sizeZ: columnSize, height: wallHeight,
         fragmentCount: fragmentCountPerColumn,
-        centerX: colPos.x, baseY: wallBottomY, centerZ: colPos.z,
+        centerX: colPos.x, baseY: wallBottomY, centerZ: colPos.z, pinata,
       }));
     }
   }
@@ -207,7 +219,7 @@ export async function buildFracturedTowerScenario(
     allFragments.push(...buildFloorFragments({
       spanX: width, spanZ: depth, thickness: floorThickness,
       fragmentCount: fragmentCountPerFloor,
-      centerX: 0, centerY: floorHeights[floorIdx], centerZ: 0,
+      centerX: 0, centerY: floorHeights[floorIdx], centerZ: 0, pinata,
     }));
   }
 
@@ -217,7 +229,7 @@ export async function buildFracturedTowerScenario(
   allFragments.push(...buildFloorFragments({
     spanX: width, spanZ: depth, thickness: floorThickness,
     fragmentCount: fragmentCountPerFloor,
-    centerX: 0, centerY: roofY, centerZ: 0,
+    centerX: 0, centerY: roofY, centerZ: 0, pinata,
   }));
 
   // Grid foundation

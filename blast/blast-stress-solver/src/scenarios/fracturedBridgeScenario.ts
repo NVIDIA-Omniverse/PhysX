@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import type { ScenarioDesc } from '../rapier/types';
 import type { FragmentInfo } from '../three/fracture';
+import type { PinataModule } from '../three/pinataFracture';
 import type { AreaNormalizationMode } from '../three/scenarioFromFragments';
 import {
   buildFloorFragments,
@@ -50,6 +51,11 @@ export type FracturedBridgeOptions = {
   bondMode?: 'proximity' | 'auto';
   /** Bond area normalization mode (default: 'perAxis') */
   areaNormalization?: AreaNormalizationMode;
+  /**
+   * Pre-imported three-pinata module. Required in browser ESM environments where
+   * the scenarios bundle cannot dynamically import bare specifiers.
+   */
+  pinata?: PinataModule;
   /** Rapier module for convex hull colliders. If omitted, colliderDescForNode entries are null. */
   rapier?: { ColliderDesc: { cuboid(hx: number, hy: number, hz: number): unknown; convexHull(points: Float32Array): unknown | null } };
 };
@@ -77,6 +83,7 @@ export async function buildFracturedBridgeScenario(
     deckMass = 60_000,
     bondMode = 'proximity',
     areaNormalization = 'perAxis',
+    pinata,
     rapier,
   } = options ?? {};
 
@@ -95,6 +102,7 @@ export async function buildFracturedBridgeScenario(
     centerX: 0,
     centerY: deckCenterY,
     centerZ: 0,
+    pinata,
   }));
 
   // ── Support posts at each end ──────────────────────────────
@@ -125,6 +133,7 @@ export async function buildFracturedBridgeScenario(
         centerX: postX,
         baseY: groundClearance + footingThickness,
         centerZ: postZ,
+        pinata,
       }));
 
       // Footing support under each post (simple cuboid, mass=0)
