@@ -21,6 +21,18 @@ import type {
 import { DestructibleDamageSystem, type DamageOptions, type DamageStateSnapshot } from './damage';
 import { planSplitMigration, type PlannerChild, type ExistingBodyState } from './splitMigrator';
 import { createScenarioNodeSizeResolver } from './scenario';
+import { applyCollisionGroupsForBody as applyCollisionGroupsForBodyImpl, type CollisionGroupContext } from './collisionGroups';
+import { ContactBuffer } from './contactBuffer';
+import {
+  computeSpeedFactor,
+  computeRelativeSpeed,
+  getBodyForColliderHandle,
+  worldPointToBodyLocal,
+  chunkWorldCenter as chunkWorldCenterHelper,
+  fallbackContactPoint,
+  applyProjectileMomentumBoost,
+  type SpeedScalingOptions,
+} from './contactHelpers';
 
 export type BuildDestructibleCoreOptions = {
   scenario: ScenarioDesc;
@@ -563,6 +575,15 @@ export async function buildDestructibleCore({
     stopTiming(t0, 'rebuildColliderMapMs');
   }
 
+  function readWorldDt(): number {
+    try {
+      const w = world as WorldWithOptionalTimestep;
+      if (typeof w.timestep === 'number') return w.timestep;
+    } catch {}
+    return 1 / 60;
+  }
+
+  // --- Solver force injection (contact forces → stress solver) ---
   const bufferedExternalContacts: Array<{
     nodeIndex: number;
     otherBodyHandle: number;
@@ -578,10 +599,42 @@ export async function buildDestructibleCore({
     maxForceMagnitude: number;
   }> = [];
 
+  // --- Buffered contacts for damage rollback replay ---
+  const contactReplayBuffer = new ContactBuffer();
+  const speedScalingOpts: SpeedScalingOptions = {
+    speedMinExternal: damageOptions.speedMinExternal,
+    speedMinInternal: damageOptions.speedMinInternal,
+    speedMax: damageOptions.speedMax,
+    speedExponent: damageOptions.speedExponent,
+    slowSpeedFactor: damageOptions.slowSpeedFactor,
+    fastSpeedFactor: damageOptions.fastSpeedFactor,
+  };
+
+  function getChunkWorldCenter(nodeIndex: number): Vec3 | null {
+    const chunk = chunks[nodeIndex];
+    if (!chunk) return null;
+    const { body } = actorBodyForNode(nodeIndex);
+    if (!body) return null;
+    return chunkWorldCenterHelper(body, chunk.baseLocalOffset);
+  }
+
+  function getWorldPointToActorLocal(nodeIndex: number, worldPoint: Vec3): Vec3 | null {
+    try {
+      const { body } = actorBodyForNode(nodeIndex);
+      if (!body) return null;
+      return worldPointToBodyLocal(body, worldPoint);
+    } catch {
+      return null;
+    }
+  }
+
   function drainContactForces() {
     const t0 = startTiming();
     bufferedExternalContacts.length = 0;
     bufferedInternalContacts.length = 0;
+    contactReplayBuffer.clear();
+
+    const dt = readWorldDt();
 
     eventQueue.drainContactForceEvents((ev) => {
       const h1 = ev.collider1();
@@ -594,7 +647,60 @@ export async function buildDestructibleCore({
       const forceVec: Vec3 | undefined = typeof (ev as any).totalForce === 'function'
         ? (ev as any).totalForce() as Vec3
         : undefined;
+      // Extract world contact points (when available from Rapier)
+      const wp = typeof (ev as any).worldContactPoint === 'function'
+        ? (ev as any).worldContactPoint() as Vec3 | undefined
+        : undefined;
+      const wp2 = typeof (ev as any).worldContactPoint2 === 'function'
+        ? (ev as any).worldContactPoint2() as Vec3 | undefined
+        : undefined;
+      const p1 = wp ?? wp2 ?? fallbackContactPoint(world, h1);
+      const p2 = wp2 ?? wp ?? fallbackContactPoint(world, h2);
 
+      const isInternal = (node1 != null && node2 != null);
+      const pForNode1 = node1 != null ? (wp ?? wp2 ?? getChunkWorldCenter(node1) ?? p1) : undefined;
+      const pForNode2 = node2 != null ? (wp2 ?? wp ?? getChunkWorldCenter(node2) ?? p2) : undefined;
+      const relAnchor = pForNode1 ?? pForNode2 ?? p1 ?? p2;
+
+      // Speed-scaled effective magnitude
+      const relSpeed = computeRelativeSpeed(world, h1, h2, relAnchor);
+      const speedFactor = computeSpeedFactor(relSpeed, isInternal, speedScalingOpts);
+      let effMag = (totalForce ?? 0) * speedFactor;
+
+      // Projectile momentum boost
+      try {
+        const b1 = getBodyForColliderHandle(world, h1);
+        const b2 = getBodyForColliderHandle(world, h2);
+
+        // Track ground collisions for optimization modes
+        if (b1 && b2) {
+          const isB1Ground = b1.handle === groundBody.handle;
+          const isB2Ground = b2.handle === groundBody.handle;
+          if (isB1Ground && !isB2Ground && b2.handle !== rootBody.handle) {
+            const wasNew = !bodiesCollidedWithGround.has(b2.handle);
+            bodiesCollidedWithGround.add(b2.handle);
+            if (wasNew && smallBodyDampingSettings.mode === 'afterGroundCollision') {
+              applySmallBodyDampingToBody(b2.handle);
+            }
+          } else if (isB2Ground && !isB1Ground && b1.handle !== rootBody.handle) {
+            const wasNew = !bodiesCollidedWithGround.has(b1.handle);
+            bodiesCollidedWithGround.add(b1.handle);
+            if (wasNew && smallBodyDampingSettings.mode === 'afterGroundCollision') {
+              applySmallBodyDampingToBody(b1.handle);
+            }
+          }
+        }
+
+        if (node1 != null || node2 != null) {
+          effMag = applyProjectileMomentumBoost(b1, b2, relSpeed, dt, effMag);
+        }
+      } catch { /* defensive: don't let boost logic crash contact drain */ }
+
+      // Compute body-local contact points for splash AOE damage
+      const local1 = (node1 != null && pForNode1) ? getWorldPointToActorLocal(node1, pForNode1) : null;
+      const local2 = (node2 != null && pForNode2) ? getWorldPointToActorLocal(node2, pForNode2) : null;
+
+      // --- Buffer contacts for stress solver injection (unchanged logic) ---
       if (node1 != null && node2 != null) {
         const chunk1 = chunks[node1];
         const chunk2 = chunks[node2];
@@ -606,6 +712,12 @@ export async function buildDestructibleCore({
             totalForceMagnitude: totalForce,
             maxForceMagnitude: maxForce,
           });
+          // Buffer for damage replay with speed-scaled magnitude
+          contactReplayBuffer.recordInternal({
+            nodeA: node1, nodeB: node2, effMag, dt,
+            localPointA: local1 ?? undefined,
+            localPointB: local2 ?? undefined,
+          });
         } else {
           if (chunk1) {
             bufferedExternalContacts.push({
@@ -615,6 +727,10 @@ export async function buildDestructibleCore({
               maxForceMagnitude: maxForce,
               totalForceWorld: forceVec,
             });
+            contactReplayBuffer.recordExternal({
+              nodeIndex: node1, effMag, dt,
+              localPoint: local1 ?? undefined,
+            });
           }
           if (chunk2) {
             bufferedExternalContacts.push({
@@ -623,6 +739,10 @@ export async function buildDestructibleCore({
               totalForceMagnitude: totalForce,
               maxForceMagnitude: maxForce,
               totalForceWorld: forceVec ? { x: -forceVec.x, y: -forceVec.y, z: -forceVec.z } : undefined,
+            });
+            contactReplayBuffer.recordExternal({
+              nodeIndex: node2, effMag, dt,
+              localPoint: local2 ?? undefined,
             });
           }
         }
@@ -636,6 +756,10 @@ export async function buildDestructibleCore({
             maxForceMagnitude: maxForce,
             totalForceWorld: forceVec,
           });
+          contactReplayBuffer.recordExternal({
+            nodeIndex: node1, effMag, dt,
+            localPoint: local1 ?? undefined,
+          });
           if (chunk.bodyHandle != null) bodiesCollidedWithGround.add(chunk.bodyHandle);
         }
       } else if (node2 != null) {
@@ -647,6 +771,10 @@ export async function buildDestructibleCore({
             totalForceMagnitude: totalForce,
             maxForceMagnitude: maxForce,
             totalForceWorld: forceVec ? { x: -forceVec.x, y: -forceVec.y, z: -forceVec.z } : undefined,
+          });
+          contactReplayBuffer.recordExternal({
+            nodeIndex: node2, effMag, dt,
+            localPoint: local2 ?? undefined,
           });
           if (chunk.bodyHandle != null) bodiesCollidedWithGround.add(chunk.bodyHandle);
         }
@@ -986,6 +1114,9 @@ export async function buildDestructibleCore({
         }
       }
 
+      // Apply collision groups based on current debris mode
+      applyCollisionGroupsForBodyImpl(newBody, getCollisionGroupContext());
+
       actorMap.set(actorIndex, { bodyHandle });
 
       for (const ni of nodeList) {
@@ -1045,7 +1176,8 @@ export async function buildDestructibleCore({
       colliderToNode.set(newCol.handle, chunk.nodeIndex);
       activeContactColliders.add(newCol.handle);
 
-      applyCollisionGroupsForBody(migration.targetBodyHandle);
+      // Reapply collision groups after collider migration
+      applyCollisionGroupsForBodyImpl(targetBody, getCollisionGroupContext());
     }
     pendingColliderMigrations.length = 0;
     stopTiming(t0, 'colliderRebuildMs');
@@ -1182,13 +1314,9 @@ export async function buildDestructibleCore({
       : null;
     stopTiming(dSnapT0, 'damageSnapshotMs');
 
+    // Apply buffered contacts (with speed scaling + local points) via replay buffer
     const previewT0 = startTiming();
-    for (const c of bufferedExternalContacts) {
-      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, dt);
-    }
-    for (const c of bufferedInternalContacts) {
-      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.totalForceMagnitude, dt);
-    }
+    contactReplayBuffer.replay(damageSystem);
     const previewDestroyed = damageSystem.previewTick(dt);
     stopTiming(previewT0, 'damagePreviewMs');
 
@@ -1250,13 +1378,9 @@ export async function buildDestructibleCore({
       return true;
     }
 
+    // No rollback needed — replay buffered contacts into the real damage tick
     const tickT0 = startTiming();
-    for (const c of bufferedExternalContacts) {
-      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, dt);
-    }
-    for (const c of bufferedInternalContacts) {
-      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.totalForceMagnitude, dt);
-    }
+    contactReplayBuffer.replay(damageSystem);
     const tickDestroyed = damageSystem.tick(dt);
     stopTiming(tickT0, 'damageTickMs');
 
@@ -1474,12 +1598,38 @@ export async function buildDestructibleCore({
     solverGravityEnabled = v;
   }
 
+  function getCollisionGroupContext(): CollisionGroupContext {
+    return {
+      mode: debrisCollisionModeSetting,
+      groundBodyHandle: groundBody.handle,
+      maxCollidersForDebris: debrisCleanupSettings.maxCollidersForDebris,
+    };
+  }
+
+  function applyCollisionGroupsToAllBodies() {
+    const ctx = getCollisionGroupContext();
+    world.forEachRigidBody((b) => {
+      if (b.handle === rootBody.handle || b.handle === groundBody.handle) return;
+      applyCollisionGroupsForBodyImpl(b, ctx);
+    });
+    applyCollisionGroupsForBodyImpl(
+      world.getRigidBody(rootBody.handle)!,
+      ctx,
+    );
+    applyCollisionGroupsForBodyImpl(
+      world.getRigidBody(groundBody.handle)!,
+      ctx,
+    );
+  }
+
   function setSingleCollisionMode(mode: SingleCollisionMode) {
     debrisCollisionModeSetting = toDebrisCollisionMode(mode);
+    applyCollisionGroupsToAllBodies();
   }
 
   function setDebrisCollisionModeFn(mode: DebrisCollisionMode) {
     debrisCollisionModeSetting = mode;
+    applyCollisionGroupsToAllBodies();
   }
 
   function applyNodeDamage(nodeIndex: number, amount: number) {
@@ -1530,6 +1680,13 @@ export async function buildDestructibleCore({
       }
     }
   }
+
+  // Apply initial collision groups to root and ground bodies
+  try {
+    const initCtx = getCollisionGroupContext();
+    applyCollisionGroupsForBodyImpl(rootBody, initCtx);
+    applyCollisionGroupsForBodyImpl(groundBody, initCtx);
+  } catch { /* non-fatal */ }
 
   const originalStep = step;
   function wrappedStep(dtOverride?: number) {
@@ -1586,7 +1743,10 @@ export async function buildDestructibleCore({
     hasBodyCollidedWithGround: (bodyHandle: number) => bodiesCollidedWithGround.has(bodyHandle),
     setDebrisCleanup: updateDebrisCleanup,
     getDebrisCleanupSettings: () => ({ ...debrisCleanupSettings }),
-    setMaxCollidersForDebris: (n: number) => { debrisCleanupSettings.maxCollidersForDebris = Math.max(1, Math.floor(n)); },
+    setMaxCollidersForDebris: (n: number) => {
+      debrisCleanupSettings.maxCollidersForDebris = Math.max(1, Math.floor(n));
+      applyCollisionGroupsToAllBodies();
+    },
     applyNodeDamage: damageOptions.enabled ? applyNodeDamage : undefined,
     getNodeHealth: damageOptions.enabled ? getNodeHealth : undefined,
     damageEnabled: damageOptions.enabled,
@@ -1598,8 +1758,5 @@ export async function buildDestructibleCore({
   return core;
 }
 
-function applyCollisionGroupsForBody(_bodyHandle: number) {
-  // Collision group management is applied per-body based on the debris collision mode.
-  // In the current implementation, groups are set during collider creation and migration.
-  // This function is a hook for future per-body collision group updates.
-}
+// applyCollisionGroupsForBody is now provided by ./collisionGroups.ts
+// and called inline via applyCollisionGroupsForBodyImpl imported above.
