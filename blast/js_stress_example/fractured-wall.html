@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fractured Wall — blast-stress-solver Demo</title>
+    <link rel="stylesheet" href="./styles/demo-common.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/build/three.module.js",
+          "three/addons/": "/vendor/three/examples/jsm/",
+          "@dimforge/rapier3d-compat": "/vendor/rapier/rapier.mjs",
+          "@dgreenheck/three-pinata": "/vendor/three-pinata/three-pinata.es.js",
+          "blast-stress-solver": "/vendor/blast-stress-solver/index.js",
+          "blast-stress-solver/rapier": "/vendor/blast-stress-solver/rapier.js",
+          "blast-stress-solver/three": "/vendor/blast-stress-solver/three.js",
+          "blast-stress-solver/scenarios": "/vendor/blast-stress-solver/scenarios.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="viewport">
+        <canvas id="demo-canvas"></canvas>
+        <div class="viewport-hint">Click to shoot projectiles</div>
+      </section>
+
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle settings panel">
+        <span class="icon-open">☰</span>
+        <span class="icon-close">✕</span>
+      </button>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+      <aside class="sidebar" id="sidebar">
+        <header>
+          <a href="./demo-index.html" class="back-link">← All Demos</a>
+          <h1>💥 Fractured Wall</h1>
+          <p>Voronoi mesh fracturing via three-pinata with stress-based destruction</p>
+        </header>
+
+        <!-- Wall Config (deferred – needs Reset) -->
+        <section class="config-section">
+          <h2 class="section-title">Wall (Reset to apply)</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-fragments">Fragment Count</label>
+            <input type="range" id="cfg-fragments" class="config-slider" min="20" max="200" step="5" value="80" />
+            <span class="config-value"><span id="cfg-fragments-value">80</span></span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-total-mass">Total Mass</label>
+            <input type="range" id="cfg-total-mass" class="config-slider" min="2000" max="60000" step="1000" value="10000" />
+            <span class="config-value"><span id="cfg-total-mass-value">10,000</span> kg</span>
+          </div>
+        </section>
+
+        <!-- Projectile (immediate) -->
+        <section class="config-section">
+          <h2 class="section-title">Projectile</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-proj-radius">Radius</label>
+            <input type="range" id="cfg-proj-radius" class="config-slider" min="0.1" max="1.0" step="0.05" value="0.35" />
+            <span class="config-value"><span id="cfg-proj-radius-value">0.35</span> m</span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-proj-mass">Mass</label>
+            <input type="range" id="cfg-proj-mass" class="config-slider" min="1000" max="30000" step="500" value="15000" />
+            <span class="config-value"><span id="cfg-proj-mass-value">15,000</span> kg</span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-proj-speed">Speed</label>
+            <input type="range" id="cfg-proj-speed" class="config-slider" min="5" max="60" step="1" value="20" />
+            <span class="config-value"><span id="cfg-proj-speed-value">20</span> m/s</span>
+          </div>
+        </section>
+
+        <!-- Solver (deferred) -->
+        <section class="config-section">
+          <h2 class="section-title">Solver (Reset to apply)</h2>
+          <div class="config-row">
+            <label class="config-label" for="cfg-gravity">Gravity</label>
+            <input type="range" id="cfg-gravity" class="config-slider" min="-30" max="0" step="0.5" value="-9.81" />
+            <span class="config-value"><span id="cfg-gravity-value">-9.8</span> m/s²</span>
+          </div>
+          <div class="config-row">
+            <label class="config-label" for="cfg-material">Material Scale</label>
+            <input type="range" id="cfg-material" class="config-slider" min="2" max="10" step="0.1" value="8" />
+            <span class="config-value"><span id="cfg-material-value">1e8</span></span>
+          </div>
+        </section>
+
+        <!-- Actions -->
+        <div class="control-actions">
+          <button id="btn-reset" class="button button-primary">↻ Reset Wall</button>
+          <button id="btn-debug" class="button">◇ Show Debug</button>
+        </div>
+
+        <!-- Status -->
+        <section class="status-panel">
+          <h2>Simulation</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Bodies</span>
+              <span class="status-value" id="stat-bodies">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Bonds</span>
+              <span class="status-value" id="stat-bonds">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Fragments</span>
+              <span class="status-value" id="stat-fragments">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Projectiles</span>
+              <span class="status-value" id="stat-projectiles">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Chunks</span>
+              <span class="status-value" id="stat-chunks">0</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Performance -->
+        <section class="status-panel">
+          <h2>Performance</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Physics</span>
+              <span class="status-value" id="stat-physics-ms">— ms</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Render</span>
+              <span class="status-value" id="stat-render-ms">— ms</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Draw Calls</span>
+              <span class="status-value" id="stat-draw-calls">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Triangles</span>
+              <span class="status-value" id="stat-triangles">0</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script>
+      // Sidebar toggle
+      (function () {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        var layout = document.querySelector('.layout');
+        var mql = window.matchMedia('(max-width: 768px)');
+
+        function isMobile() { return mql.matches; }
+
+        function close() {
+          toggle.classList.remove('active');
+          if (isMobile()) { sidebar.classList.remove('open'); backdrop.classList.remove('visible'); }
+          else { layout.classList.add('sidebar-hidden'); }
+        }
+
+        function open() {
+          toggle.classList.add('active');
+          if (isMobile()) { sidebar.classList.add('open'); backdrop.classList.add('visible'); }
+          else { layout.classList.remove('sidebar-hidden'); }
+        }
+
+        function isOpen() {
+          return isMobile() ? sidebar.classList.contains('open') : !layout.classList.contains('sidebar-hidden');
+        }
+
+        toggle.addEventListener('click', function () { if (isOpen()) close(); else open(); });
+        backdrop.addEventListener('click', close);
+        if (!isMobile()) toggle.classList.add('active');
+      })();
+    </script>
+    <script type="module" src="./dist/fractured-wall.js"></script>
+  </body>
+</html>

@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { createReadStream } from 'node:fs'
+import { createReadStream, accessSync } from 'node:fs'
 import { constants as fsConstants } from 'node:fs'
 import { access, readdir, stat } from 'node:fs/promises'
 import { extname, join, resolve, sep } from 'node:path'
@@ -73,11 +73,20 @@ const rapierDebugDir = resolve(projectRoot, 'deps/rapier.js/rapier-compat/builds
 
 const blastStressSolverDir = resolve(projectRoot, 'blast/blast-stress-solver/dist')
 
+// three-pinata: prefer root node_modules, fall back to blast-stress-solver's node_modules
+const threePinataDir = (() => {
+    const rootPath = resolve(nodeModulesDir, '@dgreenheck/three-pinata/build')
+    const blastPath = resolve(projectRoot, 'blast/blast-stress-solver/node_modules/@dgreenheck/three-pinata/build')
+    try { accessSync(rootPath); return rootPath } catch {}
+    return blastPath
+})()
+
 const STATIC_ALIASES = [
     { prefix: '/vendor/three/', directory: resolve(nodeModulesDir, 'three') },
     { prefix: '/vendor/rapier/', directory: rapierCompatDir },
     { prefix: '/vendor/rapier-debug/', directory: rapierDebugDir },
-    { prefix: '/vendor/blast-stress-solver/', directory: blastStressSolverDir }
+    { prefix: '/vendor/blast-stress-solver/', directory: blastStressSolverDir },
+    { prefix: '/vendor/three-pinata/', directory: threePinataDir }
 ]
 
 function resolveAliasedPath(pathname) {

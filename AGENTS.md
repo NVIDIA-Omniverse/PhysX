@@ -52,6 +52,7 @@ npx tsc
 # Build wall/tower demo JS (esbuild, not tsc — they use import-map bare specifiers)
 npx esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm
 npx esbuild tower-collapse.ts --outfile=dist/tower-collapse.js --format=esm
+npx esbuild fractured-wall.ts --outfile=dist/fractured-wall.js --format=esm
 
 # Run tests
 cd ../blast-stress-solver
@@ -88,6 +89,7 @@ After running `npm start` at the root:
 **Primary demos (high-level API):**
 - **`/blast/js_stress_example/wall-demolition.html`** — Destructible brick wall. Click to shoot projectiles. Config panel for wall geometry, projectile params, material scale (log slider), and **Auto Bonds (experimental)** toggle.
 - **`/blast/js_stress_example/tower-collapse.html`** — Destructible tower. Same config panel pattern. Includes diagonal bonds and small-body damping.
+- **`/blast/js_stress_example/fractured-wall.html`** — Voronoi-fractured wall using `three-pinata`. Irregular fragments with proximity-based bond detection. Config panel for fragment count, projectile params, and material scale. Build with: `npx esbuild fractured-wall.ts --outfile=dist/fractured-wall.js --format=esm`
 
 **Bridge demos:**
 - **`bridge-split-demo.html`** — Fully featured destructible bridge with real-time config, projectile spawning, and full fracture into independent physics bodies. Requires `npx tsc` build step.

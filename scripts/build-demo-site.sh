@@ -17,6 +17,13 @@ echo "Building TypeScript in js_stress_example..."
 # but still exits non-zero. Ignore the exit code since the output is valid.
 (cd "$DEMO_SRC" && npm install --ignore-scripts 2>/dev/null; npx -y tsc || true)
 
+# Ensure blast-stress-solver dev deps (three-pinata) are installed for vendor copy
+BSS_DIR="$ROOT/blast/blast-stress-solver"
+if [ -d "$BSS_DIR" ] && [ ! -d "$BSS_DIR/node_modules/@dgreenheck/three-pinata" ]; then
+  echo "Installing blast-stress-solver dependencies for vendor assets..."
+  (cd "$BSS_DIR" && npm install --ignore-scripts 2>/dev/null || true)
+fi
+
 # ── Demo pages ──────────────────────────────────────────────
 
 # HTML files — use the demo index as the landing page
@@ -68,6 +75,19 @@ if [ -d "$BSS_DIST" ]; then
     [ -f "$f" ] && cp "$f" "$OUT/vendor/blast-stress-solver/"
   done
   echo "Copied blast-stress-solver dist to vendor/"
+fi
+
+# three-pinata (optional — used by fractured-wall demo)
+PINATA_DIR=""
+if [ -d "$NODE_MODULES/@dgreenheck/three-pinata/build" ]; then
+  PINATA_DIR="$NODE_MODULES/@dgreenheck/three-pinata/build"
+elif [ -d "$ROOT/blast/blast-stress-solver/node_modules/@dgreenheck/three-pinata/build" ]; then
+  PINATA_DIR="$ROOT/blast/blast-stress-solver/node_modules/@dgreenheck/three-pinata/build"
+fi
+if [ -n "$PINATA_DIR" ]; then
+  mkdir -p "$OUT/vendor/three-pinata"
+  cp "$PINATA_DIR"/*.js "$OUT/vendor/three-pinata/" 2>/dev/null || true
+  echo "Copied three-pinata to vendor/"
 fi
 
 # ── Other demo directories ──────────────────────────────────

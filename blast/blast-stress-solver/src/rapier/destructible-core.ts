@@ -463,8 +463,21 @@ export async function buildDestructibleCore({
     const builder = (scenario.colliderDescForNode && Array.isArray(scenario.colliderDescForNode)) ? (scenario.colliderDescForNode[nodeIndex] ?? null) : null;
     let desc = typeof builder === 'function' ? builder() : null;
     if (!desc) {
-      const s = isSupport ? 0.999 : 1.0;
-      desc = RAPIER.ColliderDesc.cuboid(halfX * s, halfY * s, halfZ * s);
+      // If fragmentGeometries are available, use convex hull for non-support fragments
+      const fragmentGeometries = (scenario.parameters?.fragmentGeometries ?? []) as Array<{ getAttribute?: (name: string) => { array?: unknown; count?: number } | null } | null>;
+      const fragGeom = fragmentGeometries[nodeIndex];
+      if (!isSupport && fragGeom) {
+        const posAttr = fragGeom.getAttribute?.('position');
+        const arr = posAttr?.array;
+        if (arr instanceof Float32Array && arr.length >= 9) {
+          desc = RAPIER.ColliderDesc.convexHull(arr);
+        }
+      }
+      // Fallback to cuboid if convexHull failed or not available
+      if (!desc) {
+        const s = isSupport ? 0.999 : 1.0;
+        desc = RAPIER.ColliderDesc.cuboid(halfX * s, halfY * s, halfZ * s);
+      }
     }
     return desc;
   }

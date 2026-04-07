@@ -19,6 +19,7 @@ export default defineConfig({
     './stress_solver.mjs',
     './stress_solver.browser.mjs',
     '@dimforge/rapier3d-compat',
+    '@dgreenheck/three-pinata',
     'three',
   ],
 });
