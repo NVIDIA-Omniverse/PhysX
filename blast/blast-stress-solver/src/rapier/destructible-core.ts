@@ -1085,9 +1085,12 @@ export async function buildDestructibleCore({
     }
 
     // Skip solver when idle: no external contacts, no recent fractures/topology changes,
-    // and not a resimulation pass. Saves the full solver cost (~15-20ms) on idle frames.
+    // solver has converged (no residual error from prior frames), and not a resimulation pass.
+    // Without the convergence check, the solver might skip frames where it hasn't fully
+    // resolved stress in large structures (CGNR may need multiple frames to converge).
     const hasExternalForces = bufferedExternalContacts.length > 0 || pendingExternalForces.length > 0;
-    const shouldSkipSolver = !hasExternalForces && solverFractureCountdown <= 0 && passIndex === 0 && safeFrames > 2;
+    const solverConverged = typeof solver.converged === 'function' ? solver.converged() : false;
+    const shouldSkipSolver = !hasExternalForces && solverFractureCountdown <= 0 && solverConverged && passIndex === 0 && safeFrames > 2;
     if (!shouldSkipSolver) {
       solver.update();
     }
