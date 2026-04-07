@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [feat/rapier-destruction]
   pull_request:
 
 # ── Change this to your default/production branch ──────────
@@ -75,7 +74,9 @@ jobs:
   deploy-preview:
     name: Deploy Preview
     needs: build-and-test
-    if: github.event_name == 'pull_request'
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref != format('refs/heads/{0}', vars.PRODUCTION_BRANCH || 'feat/rapier-destruction'))
     runs-on: ubuntu-latest
     environment:
       name: preview
@@ -113,7 +114,7 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Comment preview URL on PR
-        if: steps.deploy.outputs.url
+        if: github.event_name == 'pull_request' && steps.deploy.outputs.url
         uses: actions/github-script@v7
         with:
           script: |
