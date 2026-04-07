@@ -123,6 +123,12 @@ After running `npm start` at the root:
 - Projectile TTL is in **wall-clock seconds** (via `performance.now()`), not simulation time. In headless tests, use very short TTL values (e.g., 0.001) since physics steps execute much faster than real time.
 - `getActiveBondsCount()` uses JS-side tracking (`bondTable.length - removedBondIndices.size`) which may lag behind the WASM solver's internal bond state after `applyFractureCommands`. Multiple resimulation passes (controlled by `maxResimulationPasses`) help propagate fractures.
 - Bond areas directly affect stress: `stress = force / area`. Larger area = lower stress = harder to break. This is why isotropic normalization matters — asymmetric areas create directional weakness.
+- **Missing `stress_solver.cjs` / `stress_solver.wasm`:** Tests that load the WASM stress solver (authoring, gravity, damage, integration) will fail with `Cannot find module './stress_solver.cjs'` if the C++ → WASM build has not been run. This happens when the Emscripten SDK (`emcc`) is not installed or not on `PATH`. To resolve:
+  1. Install and activate emsdk (see **Prerequisites** above).
+  2. Run `cd blast/blast-stress-solver && npm run build` (the `prebuild` step compiles the WASM).
+  3. Alternatively, set `BLAST_STRESS_SOLVER_SKIP_WASM_BUILD=1` to skip the WASM compilation and iterate on TypeScript only — but WASM-dependent tests will still fail.
+  
+  The 7 test files that do **not** require the WASM binary (scenario builders, Three.js adapter, bundle exports, split migrator, headless scenarios) will pass regardless.
 
 ### CI
 
