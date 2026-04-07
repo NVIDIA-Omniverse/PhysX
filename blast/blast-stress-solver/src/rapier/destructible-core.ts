@@ -1396,17 +1396,44 @@ export async function buildDestructibleCore({
     return damageSystem.getHealth(nodeIndex) ?? null;
   }
 
-  // Adapt projectiles to the expected interface shape
+  // Adapt projectiles to the expected interface shape.
+  // Preserve existing entries so that external code (e.g. updateProjectileMeshes)
+  // can attach properties like `mesh` that survive across frames.
   const coreProjectiles: DestructibleCore['projectiles'] = [];
+  const coreProjectileByHandle = new Map<number, DestructibleCore['projectiles'][number]>();
   function syncProjectilesView() {
-    coreProjectiles.length = 0;
+    // Build set of live handles for quick lookup
+    const liveHandles = new Set<number>();
     for (const p of projectiles) {
-      coreProjectiles.push({
-        bodyHandle: p.bodyHandle,
-        radius: p.radius,
-        type: 'ball',
-        spawnTime: p.createdAt,
-      });
+      liveHandles.add(p.bodyHandle);
+    }
+
+    // Remove entries that no longer exist in the internal list
+    for (let i = coreProjectiles.length - 1; i >= 0; i--) {
+      if (!liveHandles.has(coreProjectiles[i].bodyHandle)) {
+        coreProjectileByHandle.delete(coreProjectiles[i].bodyHandle);
+        coreProjectiles.splice(i, 1);
+      }
+    }
+
+    // Add new entries, preserving existing ones
+    for (const p of projectiles) {
+      let existing = coreProjectileByHandle.get(p.bodyHandle);
+      if (!existing) {
+        existing = {
+          bodyHandle: p.bodyHandle,
+          radius: p.radius,
+          type: 'ball',
+          spawnTime: p.createdAt,
+        };
+        coreProjectiles.push(existing);
+        coreProjectileByHandle.set(p.bodyHandle, existing);
+      } else {
+        // Update mutable fields but keep the same object reference
+        existing.bodyHandle = p.bodyHandle;
+        existing.radius = p.radius;
+        existing.spawnTime = p.createdAt;
+      }
     }
   }
 
