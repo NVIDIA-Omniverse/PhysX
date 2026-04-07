@@ -55,20 +55,25 @@
     "build:ts": "tsup --config tsup.config.ts"
   },
   "devDependencies": {
+    "@dgreenheck/three-pinata": "^2.0.1",
+    "@dimforge/rapier3d-compat": "^0.19.2",
     "@types/node": "^20.11.0",
     "@types/three": "^0.181.0",
-    "vitest": "^3.2.4",
     "three": "^0.181.1",
     "tsup": "^8.0.1",
     "typescript": "^5.9.3",
-    "@dimforge/rapier3d-compat": "^0.19.2"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
+    "@dgreenheck/three-pinata": ">=0.6.0",
     "@dimforge/rapier3d-compat": ">=0.19.0",
     "three": ">=0.181.0"
   },
   "peerDependenciesMeta": {
     "@dimforge/rapier3d-compat": {
+      "optional": true
+    },
+    "@dgreenheck/three-pinata": {
       "optional": true
     },
     "three": {
