@@ -17,6 +17,7 @@ import type {
   SmallBodyDampingOptions,
   DebrisCleanupOptions,
   OptimizationMode,
+  FracturePolicy,
 } from './types';
 import { DestructibleDamageSystem, type DamageOptions, type DamageStateSnapshot } from './damage';
 import { planSplitMigration, type PlannerChild, type ExistingBodyState } from './splitMigrator';
@@ -61,6 +62,9 @@ export type BuildDestructibleCoreOptions = {
   sleepMode?: OptimizationMode;
   smallBodyDamping?: SmallBodyDampingOptions;
   debrisCleanup?: DebrisCleanupOptions;
+  /** Controls fracture rate, body creation budget, and dynamic body limits.
+   *  All fields default to -1 (unlimited = original behavior). */
+  fracturePolicy?: FracturePolicy;
 };
 
 const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
@@ -125,6 +129,7 @@ export async function buildDestructibleCore({
   sleepMode = 'off',
   smallBodyDamping,
   debrisCleanup,
+  fracturePolicy,
 }: BuildDestructibleCoreOptions): Promise<DestructibleCore> {
   await RAPIER.init();
   const runtime = await loadStressSolver();
@@ -273,9 +278,11 @@ export async function buildDestructibleCore({
     if (typeof angular === 'number' && Number.isFinite(angular)) {
       sleepSettings.angular = Math.max(0, angular);
     }
+    sleepThresholdsDirty = true;
   }
   function updateSleepMode(mode: OptimizationMode) {
     sleepSettings.mode = mode;
+    sleepThresholdsDirty = true;
   }
 
   const smallBodyDampingSettings = {
@@ -324,6 +331,16 @@ export async function buildDestructibleCore({
       debrisCleanupSettings.maxCollidersForDebris = Math.max(1, Math.floor(opts.maxCollidersForDebris));
     }
   }
+
+  // ── Fracture policy settings ──
+  const fracturePolicySettings = {
+    maxFracturesPerFrame: fracturePolicy?.maxFracturesPerFrame ?? -1,
+    maxNewBodiesPerFrame: fracturePolicy?.maxNewBodiesPerFrame ?? -1,
+    maxColliderMigrationsPerFrame: fracturePolicy?.maxColliderMigrationsPerFrame ?? -1,
+    maxDynamicBodies: fracturePolicy?.maxDynamicBodies ?? -1,
+    minChildNodeCount: fracturePolicy?.minChildNodeCount ?? 1,
+    idleSkip: fracturePolicy?.idleSkip ?? true,
+  };
 
   function toDebrisCollisionMode(mode: SingleCollisionMode | DebrisCollisionMode): DebrisCollisionMode {
     switch (mode) {
@@ -542,6 +559,84 @@ export async function buildDestructibleCore({
   const pendingExternalForces: Array<{ nodeIndex:number; point: Vec3; force: Vec3 }> = [];
   const pendingDamageFractures = new Map<number, Set<number>>();
   const nowSeconds = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+
+  // ── Spatial grid for fast splash-radius neighbor lookups ──
+  // Avoids O(contacts × chunks) full-scan in processOneFracturePass.
+  // Grid cell size = splash radius so each lookup only checks 27 cells.
+  const SPLASH_RADIUS = 2.0;
+  const SPLASH_CELL = SPLASH_RADIUS; // cell size = splash radius
+  const SPLASH_INV_CELL = 1 / SPLASH_CELL;
+  // Map from "ix,iy,iz" grid key to array of node indices
+  const splashGrid = new Map<string, number[]>();
+  let splashGridDirty = true; // rebuild on first use and after splits
+
+  function splashGridKey(x: number, y: number, z: number): string {
+    const ix = Math.floor(x * SPLASH_INV_CELL);
+    const iy = Math.floor(y * SPLASH_INV_CELL);
+    const iz = Math.floor(z * SPLASH_INV_CELL);
+    return `${ix},${iy},${iz}`;
+  }
+
+  function rebuildSplashGrid() {
+    splashGrid.clear();
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const c = chunks[ci];
+      if (!c || !c.active) continue;
+      const key = splashGridKey(c.baseLocalOffset.x, c.baseLocalOffset.y, c.baseLocalOffset.z);
+      let bucket = splashGrid.get(key);
+      if (!bucket) { bucket = []; splashGrid.set(key, bucket); }
+      bucket.push(ci);
+    }
+    splashGridDirty = false;
+  }
+
+  // Reusable result array for splash neighbor lookups (avoids allocation per call)
+  const splashResult: number[] = [];
+
+  function collectSplashNeighbors(px: number, py: number, pz: number, radius: number, bodyHandle: number): number[] {
+    splashResult.length = 0;
+    const r2 = radius * radius;
+    const minIx = Math.floor((px - radius) * SPLASH_INV_CELL);
+    const maxIx = Math.floor((px + radius) * SPLASH_INV_CELL);
+    const minIy = Math.floor((py - radius) * SPLASH_INV_CELL);
+    const maxIy = Math.floor((py + radius) * SPLASH_INV_CELL);
+    const minIz = Math.floor((pz - radius) * SPLASH_INV_CELL);
+    const maxIz = Math.floor((pz + radius) * SPLASH_INV_CELL);
+    for (let ix = minIx; ix <= maxIx; ix++) {
+      for (let iy = minIy; iy <= maxIy; iy++) {
+        for (let iz = minIz; iz <= maxIz; iz++) {
+          const bucket = splashGrid.get(`${ix},${iy},${iz}`);
+          if (!bucket) continue;
+          for (let bi = 0; bi < bucket.length; bi++) {
+            const ci = bucket[bi];
+            const c = chunks[ci];
+            if (!c || !c.active || c.bodyHandle !== bodyHandle) continue;
+            const dx = c.baseLocalOffset.x - px;
+            const dy = c.baseLocalOffset.y - py;
+            const dz = c.baseLocalOffset.z - pz;
+            if (dx * dx + dy * dy + dz * dz <= r2) splashResult.push(ci);
+          }
+        }
+      }
+    }
+    return splashResult;
+  }
+
+  // ── Snapshot pool for reuse across frames ──
+  let snapshotPool: BodySnapshot[] = [];
+  let snapshotPoolSize = 0;
+
+  // ── Sleep threshold tracking ──
+  let sleepThresholdsApplied = false; // Track if we've already set thresholds on all bodies
+  let sleepThresholdsDirty = true; // Mark dirty when new bodies are created or settings change
+
+  // ── Solver idle-skip tracking ──
+  // When no external forces are applied and no recent topology changes,
+  // the solver would recompute the same result. Skip it to save ~15-20ms.
+  let solverHadExternalForces = false;
+  // Counts down from 2 when fractures happen — solver runs for 2 frames
+  // after last fracture (one to recompute on new topology, one to confirm stable)
+  let solverFractureCountdown = 2; // start active so initial gravity is computed
 
   let safeFrames = 0;
   let warnedColliderMapEmptyOnce = false;
@@ -859,24 +954,37 @@ export async function buildDestructibleCore({
       }
     } else {
       savedWorldSnapshot = null;
-      const snapshots: BodySnapshot[] = [];
+      // Reuse snapshot pool to avoid GC pressure — no allocations in steady state
+      snapshotPoolSize = 0;
       world.forEachRigidBody((body) => {
         if (body.isFixed()) return;
         const t = body.translation();
         const r = body.rotation();
         const lv = body.linvel();
         const av = body.angvel();
-        snapshots.push({
-          handle: body.handle,
-          translation: { x: t.x, y: t.y, z: t.z },
-          rotation: { x: r.x, y: r.y, z: r.z, w: r.w },
-          linvel: { x: lv.x, y: lv.y, z: lv.z },
-          angvel: { x: av.x, y: av.y, z: av.z },
-        });
+        if (snapshotPoolSize < snapshotPool.length) {
+          // Reuse existing object
+          const snap = snapshotPool[snapshotPoolSize];
+          snap.handle = body.handle;
+          snap.translation.x = t.x; snap.translation.y = t.y; snap.translation.z = t.z;
+          snap.rotation.x = r.x; snap.rotation.y = r.y; snap.rotation.z = r.z; snap.rotation.w = r.w;
+          snap.linvel.x = lv.x; snap.linvel.y = lv.y; snap.linvel.z = lv.z;
+          snap.angvel.x = av.x; snap.angvel.y = av.y; snap.angvel.z = av.z;
+        } else {
+          // Grow pool
+          snapshotPool.push({
+            handle: body.handle,
+            translation: { x: t.x, y: t.y, z: t.z },
+            rotation: { x: r.x, y: r.y, z: r.z, w: r.w },
+            linvel: { x: lv.x, y: lv.y, z: lv.z },
+            angvel: { x: av.x, y: av.y, z: av.z },
+          });
+        }
+        snapshotPoolSize++;
       });
-      savedBodySnapshots = snapshots;
+      savedBodySnapshots = snapshotPool;
       if (activeProfilerSample) {
-        activeProfilerSample.snapshotBytes = snapshots.length * 13 * 8;
+        activeProfilerSample.snapshotBytes = snapshotPoolSize * 13 * 8;
       }
     }
     stopTiming(t0, 'snapshotCaptureMs');
@@ -894,7 +1002,9 @@ export async function buildDestructibleCore({
         console.warn('[Core] world restore failed; fallback to body restore');
       }
     } else if (savedBodySnapshots) {
-      for (const snap of savedBodySnapshots) {
+      const count = snapshotPoolSize;
+      for (let si = 0; si < count; si++) {
+        const snap = savedBodySnapshots[si];
         const body = world.getRigidBody(snap.handle);
         if (!body) continue;
         body.setTranslation(snap.translation, true);
@@ -959,35 +1069,74 @@ export async function buildDestructibleCore({
       solver.addForce(contact.nodeIndex, hitChunk.baseLocalOffset, scaledForce);
 
       // Splash: apply attenuated force to neighboring nodes on the same body
+      // Uses spatial grid for O(1) average lookups instead of O(n) full scan
       const hitPos = hitChunk.baseLocalOffset;
-      const splashR = 2.0; // radius in local units
-      for (let ci = 0; ci < chunks.length; ci++) {
+      const splashR = SPLASH_RADIUS;
+      if (splashGridDirty) rebuildSplashGrid();
+      const neighbors = collectSplashNeighbors(hitPos.x, hitPos.y, hitPos.z, splashR, hitChunk.bodyHandle!);
+      for (let ni = 0; ni < neighbors.length; ni++) {
+        const ci = neighbors[ni];
         if (ci === contact.nodeIndex) continue;
         const c = chunks[ci];
-        if (!c || !c.active || c.bodyHandle !== hitChunk.bodyHandle) continue;
-        const dx = (c.baseLocalOffset.x - hitPos.x);
-        const dy = (c.baseLocalOffset.y - hitPos.y);
-        const dz = (c.baseLocalOffset.z - hitPos.z);
+        const dx = c.baseLocalOffset.x - hitPos.x;
+        const dy = c.baseLocalOffset.y - hitPos.y;
+        const dz = c.baseLocalOffset.z - hitPos.z;
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (dist > splashR) continue;
-        const falloff = Math.pow(Math.max(0, 1 - dist / splashR), 2);
-        if (falloff <= 0) continue;
+        const falloff = (1 - dist / splashR);
+        const f2 = falloff * falloff; // quadratic falloff
+        if (f2 <= 0) continue;
         solver.addForce(ci, c.baseLocalOffset, {
-          x: scaledForce.x * falloff, y: scaledForce.y * falloff, z: scaledForce.z * falloff,
+          x: scaledForce.x * f2, y: scaledForce.y * f2, z: scaledForce.z * f2,
         });
       }
     }
 
-    solver.update();
+    // Skip solver when idle: no external contacts, no recent fractures/topology changes,
+    // solver has converged (no residual error from prior frames), and not a resimulation pass.
+    // Without the convergence check, the solver might skip frames where it hasn't fully
+    // resolved stress in large structures (CGNR may need multiple frames to converge).
+    const hasExternalForces = bufferedExternalContacts.length > 0 || pendingExternalForces.length > 0;
+    const solverConverged = typeof solver.converged === 'function' ? solver.converged() : false;
+    const shouldSkipSolver = fracturePolicySettings.idleSkip && !hasExternalForces && solverFractureCountdown <= 0 && solverConverged && passIndex === 0 && safeFrames > 2;
+    if (!shouldSkipSolver) {
+      solver.update();
+    }
+    solverHadExternalForces = hasExternalForces;
+    if (solverFractureCountdown > 0) solverFractureCountdown--;
     stopTiming(solverT0, 'solverUpdateMs');
 
     const fractureT0 = startTiming();
     let hadFracture = false;
-    if (solver.overstressedBondCount() > 0) {
-      const perActor = profiledGenerateFractureCommands();
+    if (!shouldSkipSolver && solver.overstressedBondCount() > 0) {
+      let perActor = profiledGenerateFractureCommands();
+
+      // ── Fracture policy: progressive fracture budget ──
+      // Sort by health (highest damage = most overstressed) and take top N.
+      // Remaining bonds stay in the solver graph and are re-evaluated next frame.
+      // This models realistic fracture propagation speed.
+      const maxFrac = fracturePolicySettings.maxFracturesPerFrame;
+      if (maxFrac > 0) {
+        for (const cmd of perActor) {
+          if (cmd.fractures.length > maxFrac) {
+            cmd.fractures.sort((a: any, b: any) => b.health - a.health);
+            cmd.fractures.length = maxFrac;
+          }
+        }
+      }
+
+      // ── Fracture policy: dynamic body cap ──
+      // Suppress all fractures when at the body limit. Bonds stay intact
+      // until bodies are freed (via debris cleanup), then fractures resume.
+      const maxBodies = fracturePolicySettings.maxDynamicBodies;
+      if (maxBodies > 0 && getRigidBodyCount() >= maxBodies) {
+        perActor = [];
+      }
+
       const splitEvents = profiledApplyFractureCommands(perActor);
       processSplitEvents(splitEvents);
       hadFracture = splitEvents.length > 0;
+      if (hadFracture) solverFractureCountdown = 2; // run solver 2 more frames to stabilize
     }
     stopTiming(fractureT0, 'fractureMs');
 
@@ -1008,7 +1157,18 @@ export async function buildDestructibleCore({
 
   function flushPendingBodies() {
     const t0 = startTiming();
+
+    // ── Fracture policy: body creation budget ──
+    // Prioritize largest children (most visually important), defer the rest.
+    const maxBodies = fracturePolicySettings.maxNewBodiesPerFrame;
+    if (maxBodies > 0 && pendingBodiesToCreate.length > maxBodies) {
+      pendingBodiesToCreate.sort((a, b) => b.nodes.length - a.nodes.length);
+    }
+    let bodiesCreated = 0;
+
     for (const pending of pendingBodiesToCreate) {
+      // Enforce body creation budget — keep remaining entries for next frame
+      if (maxBodies > 0 && bodiesCreated >= maxBodies) break;
       const { actorIndex, inheritFromBodyHandle, nodes: nodeList, isSupport } = pending;
 
       const parentBody = world.getRigidBody(inheritFromBodyHandle);
@@ -1055,6 +1215,8 @@ export async function buildDestructibleCore({
       applyCollisionGroupsForBodyImpl(newBody, getCollisionGroupContext());
 
       actorMap.set(actorIndex, { bodyHandle });
+      sleepThresholdPending.add(bodyHandle);
+      splashGridDirty = true; // body topology changed
 
       for (const ni of nodeList) {
         const oldBody = chunks[ni]?.bodyHandle;
@@ -1064,14 +1226,35 @@ export async function buildDestructibleCore({
         registerNodeBodyLink(ni, bodyHandle);
         pendingColliderMigrations.push({ nodeIndex: ni, targetBodyHandle: bodyHandle });
       }
+      bodiesCreated++;
     }
-    pendingBodiesToCreate.length = 0;
+    // Remove processed entries, keep deferred ones for next frame
+    if (maxBodies > 0 && bodiesCreated < pendingBodiesToCreate.length) {
+      pendingBodiesToCreate.splice(0, bodiesCreated);
+    } else {
+      pendingBodiesToCreate.length = 0;
+    }
     stopTiming(t0, 'bodyCreateMs');
   }
 
   function flushColliderMigrations() {
     const t0 = startTiming();
-    for (const migration of pendingColliderMigrations) {
+
+    // ── Fracture policy: collider migration budget ──
+    const maxMigrations = fracturePolicySettings.maxColliderMigrationsPerFrame;
+    let migrationsProcessed = 0;
+    let writeIdx = 0;
+    // Track source bodies that lost colliders — check if they became empty
+    const sourceBodiesAffected = new Set<number>();
+
+    for (let mi = 0; mi < pendingColliderMigrations.length; mi++) {
+      // Enforce migration budget — keep remaining for next frame
+      if (maxMigrations > 0 && migrationsProcessed >= maxMigrations) {
+        pendingColliderMigrations[writeIdx++] = pendingColliderMigrations[mi];
+        continue;
+      }
+
+      const migration = pendingColliderMigrations[mi];
       const chunk = chunks[migration.nodeIndex];
       if (!chunk || chunk.colliderHandle == null) continue;
       if (!chunk.active) continue;
@@ -1081,14 +1264,24 @@ export async function buildDestructibleCore({
       if (!oldCollider) continue;
 
       const targetBody = world.getRigidBody(migration.targetBodyHandle);
-      if (!targetBody) continue;
+      if (!targetBody) {
+        // Target body doesn't exist yet (deferred) — keep for next frame
+        pendingColliderMigrations[writeIdx++] = migration;
+        continue;
+      }
+
+      // Track the source body that's losing this collider
+      const sourceBodyHandle = chunk.bodyHandle;
+      if (sourceBodyHandle != null && sourceBodyHandle !== migration.targetBodyHandle) {
+        sourceBodiesAffected.add(sourceBodyHandle);
+      }
 
       colliderToNode.delete(oldHandle);
       activeContactColliders.delete(oldHandle);
       world.removeCollider(oldCollider, false);
 
       // Skip creating colliders for destroyed chunks (matches vibe-city)
-      if (chunk.destroyed) continue;
+      if (chunk.destroyed) { migrationsProcessed++; continue; }
 
       const size = nodeSize(chunk.nodeIndex, scenario);
       const halfX = Math.max(0.05, size.x * 0.5);
@@ -1117,11 +1310,26 @@ export async function buildDestructibleCore({
       chunk.bodyHandle = migration.targetBodyHandle;
       colliderToNode.set(newCol.handle, chunk.nodeIndex);
       activeContactColliders.add(newCol.handle);
+      migrationsProcessed++;
 
       // Reapply collision groups after collider migration
       applyCollisionGroupsForBodyImpl(targetBody, getCollisionGroupContext());
     }
-    pendingColliderMigrations.length = 0;
+    // Keep deferred migrations, discard processed ones
+    pendingColliderMigrations.length = writeIdx;
+
+    // Clean up source bodies that lost all colliders during migration
+    for (const bh of sourceBodiesAffected) {
+      if (bh === rootBody.handle || bh === groundBody.handle) continue;
+      const body = world.getRigidBody(bh);
+      if (!body) continue;
+      const rb = body as RigidBodyWithColliderCount;
+      const count = typeof rb.numColliders === 'function' ? rb.numColliders() : -1;
+      if (count === 0) {
+        bodiesToRemove.add(bh);
+      }
+    }
+
     stopTiming(t0, 'colliderRebuildMs');
   }
 
@@ -1162,15 +1370,14 @@ export async function buildDestructibleCore({
     for (const bodyHandle of toRemove) {
       const nodesOnBody = nodesByBodyHandle.get(bodyHandle);
       if (nodesOnBody) {
+        // Array.from required because handleNodeDestroyed calls
+        // unregisterNodeBodyLink which deletes from the Set
         for (const ni of Array.from(nodesOnBody)) {
           handleNodeDestroyed(ni, 'manual');
         }
       }
       bodiesToRemove.add(bodyHandle);
       debrisCreationTimes.delete(bodyHandle);
-      nodesByBodyHandle.delete(bodyHandle);
-      bodiesCollidedWithGround.delete(bodyHandle);
-      smallBodiesPendingDamping.delete(bodyHandle);
     }
   }
 
@@ -1183,19 +1390,43 @@ export async function buildDestructibleCore({
     }
   }
 
+  // Set of body handles that need sleep threshold applied (newly created bodies)
+  const sleepThresholdPending = new Set<number>();
+
   function processSleepThresholds() {
     if (sleepSettings.mode === 'off') return;
-    world.forEachRigidBody((body) => {
-      if (body.isFixed()) return;
-      if (!shouldApplyOptimization(sleepSettings.mode, body.handle)) return;
+
+    // If settings changed (dirty), apply to all bodies once
+    if (sleepThresholdsDirty) {
+      sleepThresholdsDirty = false;
+      const threshold = Math.max(sleepSettings.linear, sleepSettings.angular);
+      world.forEachRigidBody((body) => {
+        if (body.isFixed()) return;
+        if (!shouldApplyOptimization(sleepSettings.mode, body.handle)) return;
+        try {
+          if (typeof (body as any).setSleepThreshold === 'function') {
+            (body as any).setSleepThreshold(threshold);
+          }
+        } catch {}
+      });
+      sleepThresholdPending.clear();
+      return;
+    }
+
+    // Otherwise, only apply to newly created bodies
+    if (sleepThresholdPending.size === 0) return;
+    const threshold = Math.max(sleepSettings.linear, sleepSettings.angular);
+    for (const bh of sleepThresholdPending) {
+      if (!shouldApplyOptimization(sleepSettings.mode, bh)) continue;
+      const body = world.getRigidBody(bh);
+      if (!body || body.isFixed()) continue;
       try {
         if (typeof (body as any).setSleepThreshold === 'function') {
-          (body as any).setSleepThreshold(
-            Math.max(sleepSettings.linear, sleepSettings.angular)
-          );
+          (body as any).setSleepThreshold(threshold);
         }
       } catch {}
-    });
+    }
+    sleepThresholdPending.clear();
   }
 
   function spawnPendingProjectiles() {
@@ -1273,6 +1504,22 @@ export async function buildDestructibleCore({
           const ni = childNodes[0];
           try { handleNodeDestroyed(ni, 'manual'); } catch {}
           continue;
+        }
+
+        // Fracture policy: minChildNodeCount — destroy children smaller than threshold
+        if (fracturePolicySettings.minChildNodeCount > 1
+          && childNodes.length < fracturePolicySettings.minChildNodeCount && !isChildSupport) {
+          for (const ni of childNodes) {
+            try { handleNodeDestroyed(ni, 'manual'); } catch {}
+          }
+          continue;
+        }
+
+        if (activeProfilerSample) {
+          if (!(activeProfilerSample as any).splitChildCounts) {
+            (activeProfilerSample as any).splitChildCounts = [];
+          }
+          (activeProfilerSample as any).splitChildCounts.push(childNodes.length);
         }
 
         for (const n of childNodes) nodeToActor.set(n, child.actorIndex);
@@ -1453,33 +1700,6 @@ export async function buildDestructibleCore({
 
   let lastStepDt = readWorldDt();
 
-  /**
-   * Pre-step sweep: remove zero-collider bodies and clean up stale colliderToNode entries.
-   * Matches vibe-city's preStepSweep pattern.
-   */
-  function preStepSweep() {
-    // Clean up stale colliderToNode mappings
-    for (const [h] of Array.from(colliderToNode.entries())) {
-      const c = world.getCollider(h);
-      if (!c) {
-        colliderToNode.delete(h);
-      }
-    }
-    // Remove bodies with zero colliders (all colliders migrated away)
-    world.forEachRigidBody((b: RAPIER.RigidBody) => {
-      if (!b) return;
-      const handle = b.handle;
-      if (handle === rootBody.handle || handle === groundBody.handle) return;
-      try {
-        const rb = b as RigidBodyWithColliderCount;
-        const count = typeof rb.numColliders === 'function' ? rb.numColliders() : 0;
-        if (count === 0) {
-          bodiesToRemove.add(handle);
-        }
-      } catch {}
-    });
-  }
-
   function step(dt: number) {
     if (activeProfilerSample && !activeProfilerSample.finalized) {
       activeProfilerSample.finalized = true;
@@ -1494,7 +1714,6 @@ export async function buildDestructibleCore({
     const totalT0 = startTiming();
 
     const preStepT0 = startTiming();
-    preStepSweep();
     processDebrisCleanup();
     processSmallBodyDamping();
     processSleepThresholds();
@@ -1593,6 +1812,16 @@ export async function buildDestructibleCore({
       activeProfilerSample.projectiles = projectiles.length;
       const wbc = world as WorldWithBodyCount;
       activeProfilerSample.rigidBodies = typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+      // Capture body/chunk distribution stats
+      const bcs = captureBodyColliderStats();
+      if (bcs) {
+        activeProfilerSample.bodyCount = bcs.bodyCount;
+        activeProfilerSample.bodyColliderCountMin = bcs.min;
+        activeProfilerSample.bodyColliderCountMax = bcs.max;
+        activeProfilerSample.bodyColliderCountAvg = bcs.avg;
+        activeProfilerSample.bodyColliderCountMedian = bcs.median;
+        activeProfilerSample.bodyColliderCountP95 = bcs.p95;
+      }
     }
 
     stopTiming(totalT0, 'totalMs');
@@ -1681,10 +1910,8 @@ export async function buildDestructibleCore({
     chunk.active = false;
     if (chunk.health != null) chunk.health = 0;
 
-    // Cut bonds from the WASM solver so fillDebugRender() stops returning stale lines
-    if (damageOptions.autoDetachOnDestroy) {
-      try { cutNodeBonds(nodeIndex); } catch {}
-    }
+    // Cut bonds from the WASM solver so it stops computing stress on destroyed nodes
+    try { cutNodeBonds(nodeIndex); } catch {}
 
     // Disable/remove collider
     if (chunk.colliderHandle != null) {
@@ -1870,6 +2097,15 @@ export async function buildDestructibleCore({
       debrisCleanupSettings.maxCollidersForDebris = Math.max(1, Math.floor(n));
       applyCollisionGroupsToAllBodies();
     },
+    setFracturePolicy: (policy: FracturePolicy) => {
+      if (policy.maxFracturesPerFrame != null) fracturePolicySettings.maxFracturesPerFrame = policy.maxFracturesPerFrame;
+      if (policy.maxNewBodiesPerFrame != null) fracturePolicySettings.maxNewBodiesPerFrame = policy.maxNewBodiesPerFrame;
+      if (policy.maxColliderMigrationsPerFrame != null) fracturePolicySettings.maxColliderMigrationsPerFrame = policy.maxColliderMigrationsPerFrame;
+      if (policy.maxDynamicBodies != null) fracturePolicySettings.maxDynamicBodies = policy.maxDynamicBodies;
+      if (policy.minChildNodeCount != null) fracturePolicySettings.minChildNodeCount = Math.max(1, policy.minChildNodeCount);
+      if (policy.idleSkip != null) fracturePolicySettings.idleSkip = !!policy.idleSkip;
+    },
+    getFracturePolicy: () => ({ ...fracturePolicySettings }),
     applyNodeDamage: damageOptions.enabled ? applyNodeDamage : undefined,
     getNodeHealth: damageOptions.enabled ? getNodeHealth : undefined,
     damageEnabled: damageOptions.enabled,

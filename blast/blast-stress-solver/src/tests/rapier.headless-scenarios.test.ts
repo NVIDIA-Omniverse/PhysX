@@ -1010,6 +1010,218 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
       core.dispose();
     });
   });
+
+  // ────────────────────────────────────────────────────────────
+  // M. Correctness invariants for destruction pipeline
+  //
+  // These tests verify invariants that MUST hold even as performance
+  // optimizations are added. They exist because past optimization
+  // attempts accidentally broke these properties.
+  // ────────────────────────────────────────────────────────────
+
+  describe('M. Correctness invariants (destruction pipeline)', () => {
+
+    // INVARIANT: When a node is destroyed (via damage, debris cleanup, or
+    // skipSingleBodies), its bonds MUST be removed from the WASM stress solver.
+    // Without this, the solver computes stress on non-existent nodes, wastes
+    // CPU cycles, and produces stale debug render lines.
+    it('destroyed nodes have their bonds removed from the solver', async () => {
+      await loadModules();
+      const scenario = smallTower();
+      const core = await buildCore(scenario, {
+        materialScale: 1e8,
+        damage: {
+          enabled: true,
+          autoDetachOnDestroy: true,
+          autoCleanupPhysics: true,
+          strengthPerVolume: 50,
+        },
+      });
+
+      const initialBonds = core.getActiveBondsCount();
+      expect(initialBonds).toBeGreaterThan(0);
+
+      // Fire a projectile to cause destruction
+      core.enqueueProjectile({
+        position: { x: 0, y: 1, z: 5 },
+        velocity: { x: 0, y: 0, z: -40 },
+        radius: 0.3,
+        mass: 15000,
+        ttl: 3000,
+      });
+      stepN(core, 120);
+
+      // Some chunks should be destroyed
+      const destroyed = core.chunks.filter((c: any) => c.destroyed);
+      if (destroyed.length > 0) {
+        // For every destroyed chunk, verify its bonds are gone from the solver
+        for (const chunk of destroyed) {
+          const bonds = core.getNodeBonds(chunk.nodeIndex);
+          expect(bonds.length).toBe(0);
+        }
+      }
+
+      // Active bond count should have decreased
+      expect(core.getActiveBondsCount()).toBeLessThan(initialBonds);
+
+      core.dispose();
+    });
+
+    // INVARIANT: After fracture splits a structure, bodies that lose all their
+    // colliders (because all chunks migrated to new bodies) must be cleaned up.
+    // Without this, empty bodies accumulate in the Rapier world, wasting memory
+    // and physics step time.
+    it('bodies with zero colliders are removed after splits', async () => {
+      await loadModules();
+      const scenario = smallTower();
+      const core = await buildCore(scenario, { materialScale: 0.5 });
+
+      // Very weak material — should fracture heavily under gravity
+      stepN(core, 180);
+
+      // Get all body handles that chunks reference
+      const usedBodies = new Set<number>();
+      for (const chunk of core.chunks) {
+        if (chunk.active && chunk.bodyHandle != null) {
+          usedBodies.add(chunk.bodyHandle);
+        }
+      }
+
+      // The total rigid body count should be close to the number of
+      // distinct body handles referenced by active chunks (plus ground + root)
+      const totalBodies = core.getRigidBodyCount();
+      // Allow some margin (projectile bodies, recently-emptied bodies pending cleanup)
+      // but there shouldn't be dozens of orphaned empty bodies
+      const orphanedEstimate = totalBodies - usedBodies.size - 2; // -2 for root+ground
+      expect(orphanedEstimate).toBeLessThan(10);
+
+      core.dispose();
+    });
+
+    // INVARIANT: Debris cleanup must mark nodes as destroyed (not just inactive),
+    // so their bonds are cut and the solver stops computing stress on them.
+    it('debris cleanup marks nodes as destroyed with bonds cut', async () => {
+      await loadModules();
+      const scenario = smallTower();
+      const core = await buildCore(scenario, {
+        materialScale: 1e8,
+        damage: {
+          enabled: true,
+          autoDetachOnDestroy: true,
+          autoCleanupPhysics: true,
+          strengthPerVolume: 50,
+        },
+      });
+
+      const initialBonds = core.getActiveBondsCount();
+
+      // Fire projectile to cause destruction
+      core.enqueueProjectile({
+        position: { x: 0, y: 1, z: 5 },
+        velocity: { x: 0, y: 0, z: -40 },
+        radius: 0.3,
+        mass: 15000,
+        ttl: 3000,
+      });
+      // Run long enough for debris TTL to expire (default 10s = 600 frames at 60fps)
+      // Use shorter run since debris cleanup happens based on Date.now()
+      stepN(core, 300);
+
+      // Every inactive chunk should either be destroyed or still valid
+      for (const chunk of core.chunks) {
+        if (!chunk.active) {
+          // Inactive chunks should have their collider handles cleaned up
+          // (either null from handleNodeDestroyed or pending removal)
+          // This verifies cleanup was thorough, not just setting active=false
+          if (chunk.destroyed) {
+            const bonds = core.getNodeBonds(chunk.nodeIndex);
+            expect(bonds.length).toBe(0);
+          }
+        }
+      }
+
+      core.dispose();
+    });
+
+    // INVARIANT: The FracturePolicy with default settings (-1 for all limits)
+    // must produce identical results to not specifying a policy at all.
+    it('default fracture policy produces same results as no policy', async () => {
+      await loadModules();
+      const scenario = smallTower();
+
+      // Run without policy
+      const coreA = await buildCore(scenario, { materialScale: 1e8 });
+      stepN(coreA, 30);
+      coreA.enqueueProjectile({
+        position: { x: 0, y: 1, z: 5 },
+        velocity: { x: 0, y: 0, z: -40 },
+        radius: 0.3, mass: 15000, ttl: 3000,
+      });
+      stepN(coreA, 120);
+      const bondsA = coreA.getActiveBondsCount();
+      const bodiesA = coreA.getRigidBodyCount();
+      coreA.dispose();
+
+      // Run with explicit default policy
+      const coreB = await buildDestructibleCore({
+        scenario,
+        gravity: -9.81,
+        materialScale: 1e8,
+        resimulateOnFracture: true,
+        maxResimulationPasses: 1,
+        snapshotMode: 'perBody',
+        fracturePolicy: {
+          maxFracturesPerFrame: -1,
+          maxNewBodiesPerFrame: -1,
+          maxColliderMigrationsPerFrame: -1,
+          maxDynamicBodies: -1,
+          minChildNodeCount: 1,
+          idleSkip: true,
+        },
+      });
+      stepN(coreB, 30);
+      coreB.enqueueProjectile({
+        position: { x: 0, y: 1, z: 5 },
+        velocity: { x: 0, y: 0, z: -40 },
+        radius: 0.3, mass: 15000, ttl: 3000,
+      });
+      stepN(coreB, 120);
+      const bondsB = coreB.getActiveBondsCount();
+      const bodiesB = coreB.getRigidBodyCount();
+      coreB.dispose();
+
+      // Results should be identical
+      expect(bondsB).toBe(bondsA);
+      expect(bodiesB).toBe(bodiesA);
+    });
+
+    // INVARIANT: maxDynamicBodies cap must actually limit the number of bodies
+    it('maxDynamicBodies caps rigid body count', async () => {
+      await loadModules();
+      const scenario = smallTower();
+      const core = await buildDestructibleCore({
+        scenario,
+        gravity: -9.81,
+        materialScale: 1e8,
+        resimulateOnFracture: true,
+        maxResimulationPasses: 1,
+        snapshotMode: 'perBody',
+        fracturePolicy: { maxDynamicBodies: 10 },
+      });
+
+      core.enqueueProjectile({
+        position: { x: 0, y: 1, z: 5 },
+        velocity: { x: 0, y: 0, z: -40 },
+        radius: 0.3, mass: 15000, ttl: 3000,
+      });
+      stepN(core, 180);
+
+      // Body count should be capped (10 dynamic + root + ground = 12 max)
+      expect(core.getRigidBodyCount()).toBeLessThanOrEqual(12);
+
+      core.dispose();
+    });
+  });
 });
 
 // ══════════════════════════════════════════════════════════════

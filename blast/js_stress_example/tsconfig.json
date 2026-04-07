@@ -28,6 +28,7 @@
     "wall-demolition.ts",
     "tower-collapse.ts",
     "fractured-wall.ts",
+    "fracture-policy.ts",
     "rapier-debug-renderer.js",
     "extBridgeScenario.js",
     "bridge/types.ts",
