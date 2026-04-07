@@ -15,9 +15,13 @@ import { ensurePlainAttributes, prepareGeometryForFracture } from './geometryUti
 import { buildScenarioFromFragments, buildScenarioFromFragmentsAsync, type AreaNormalizationMode, type FragmentScenarioOptions } from './scenarioFromFragments';
 import { buildFoundationFragments, type FoundationOptions } from './foundation';
 
-// ── Dynamic three-pinata import ────────────────────────────────────────────
+// ── Three-pinata module resolution ─────────────────────────────────────────
 
-type PinataModule = {
+/**
+ * Minimal interface for the three-pinata module.
+ * Consumers can pass this directly to avoid bare-specifier dynamic imports.
+ */
+export type PinataModule = {
   DestructibleMesh: new (geometry: THREE.BufferGeometry, ...materials: THREE.Material[]) => {
     fracture(options: unknown): THREE.Mesh[];
   };
@@ -34,8 +38,8 @@ async function loadPinata(): Promise<PinataModule> {
     return mod;
   } catch {
     throw new Error(
-      '[blast-stress-solver] @dgreenheck/three-pinata is not installed. ' +
-      'Install it with: npm install @dgreenheck/three-pinata',
+      '[blast-stress-solver] @dgreenheck/three-pinata is not installed or could not be resolved. ' +
+      'Install it (npm install @dgreenheck/three-pinata), or pass the module directly via the `pinata` option.',
     );
   }
 }
@@ -51,7 +55,8 @@ function loadPinataSync(): PinataModule {
   } catch {
     throw new Error(
       '[blast-stress-solver] @dgreenheck/three-pinata is not installed or not pre-loaded. ' +
-      'Either install it (npm install @dgreenheck/three-pinata) or call ensurePinataLoaded() first.',
+      'Either pass the module via the `pinata` option, call ensurePinataLoaded() first, ' +
+      'or install three-pinata (npm install @dgreenheck/three-pinata).',
     );
   }
 }
@@ -62,6 +67,23 @@ function loadPinataSync(): PinataModule {
  */
 export async function ensurePinataLoaded(): Promise<void> {
   await loadPinata();
+}
+
+/**
+ * Register a pre-imported three-pinata module so all fracture functions
+ * can use it without dynamic import. Useful in browser ESM environments
+ * where bare specifiers in dynamic imports aren't resolved.
+ *
+ * @example
+ * ```ts
+ * import * as pinata from '@dgreenheck/three-pinata';
+ * import { setPinataModule, fractureGeometry } from 'blast-stress-solver/three';
+ * setPinataModule(pinata);
+ * const fragments = fractureGeometry(geometry, { fragmentCount: 50 });
+ * ```
+ */
+export function setPinataModule(mod: PinataModule): void {
+  pinataCache = mod;
 }
 
 // ── Fracturing ─────────────────────────────────────────────────────────────
@@ -75,6 +97,18 @@ export type FractureGeometryOptions = {
   worldOffset?: Vec3;
   /** Minimum half-extent for fragments to avoid degenerate physics (default: 0.05) */
   minHalfExtent?: number;
+  /**
+   * Pre-imported three-pinata module. If provided, bypasses the dynamic import()
+   * of '@dgreenheck/three-pinata'. Recommended for browser ESM environments where
+   * bare specifiers in dynamic imports may not resolve.
+   *
+   * @example
+   * ```ts
+   * import * as pinata from '@dgreenheck/three-pinata';
+   * fractureGeometry(geometry, { pinata, fragmentCount: 50 });
+   * ```
+   */
+  pinata?: PinataModule;
 };
 
 /**
@@ -89,6 +123,7 @@ export function fractureGeometry(
   geometry: THREE.BufferGeometry,
   options?: FractureGeometryOptions,
 ): FragmentInfo[] {
+  if (options?.pinata) pinataCache = options.pinata;
   const pinata = loadPinataSync();
   const {
     fragmentCount = 120,
@@ -144,7 +179,8 @@ export async function fractureGeometryAsync(
   geometry: THREE.BufferGeometry,
   options?: FractureGeometryOptions,
 ): Promise<FragmentInfo[]> {
-  await loadPinata();
+  if (options?.pinata) pinataCache = options.pinata;
+  else await loadPinata();
   return fractureGeometry(geometry, options);
 }
 

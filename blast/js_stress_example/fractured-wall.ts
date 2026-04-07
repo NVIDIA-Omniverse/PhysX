@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
+import * as pinata from '@dgreenheck/three-pinata';
 import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
@@ -142,6 +143,7 @@ async function initScene() {
   // 1. Fracture a box geometry using Voronoi tessellation (async — loads three-pinata dynamically)
   const geometry = new THREE.BoxGeometry(span, height, thickness, 2, 3, 1);
   const wallFragments = await fractureGeometryAsync(geometry, {
+    pinata,
     fragmentCount,
     voronoiMode: '3D',
     worldOffset: { x: 0, y: height * 0.5, z: 0 },
