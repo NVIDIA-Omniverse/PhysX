@@ -1,0 +1,303 @@
+/* Common styles for blast-stress-solver demo pages */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: #f5f7ff;
+  background: #030510;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  height: 100vh;
+}
+
+.layout.sidebar-hidden {
+  grid-template-columns: 1fr;
+}
+
+.layout.sidebar-hidden .sidebar {
+  display: none;
+}
+
+/* ── Viewport ─────────────────────────────────────────── */
+
+.viewport {
+  position: relative;
+  background: radial-gradient(circle at 50% 15%, rgba(20, 30, 60, 0.35), rgba(5, 7, 12, 1));
+  cursor: crosshair;
+}
+
+#demo-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.viewport-hint {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: rgba(200, 210, 240, 0.5);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Sidebar ──────────────────────────────────────────── */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar header {
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(91, 198, 255, 0.05), rgba(185, 123, 255, 0.05));
+}
+
+.sidebar header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.sidebar header p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(200, 210, 240, 0.6);
+}
+
+.sidebar header .back-link {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  color: rgba(140, 170, 255, 0.7);
+  text-decoration: none;
+}
+
+.sidebar header .back-link:hover {
+  color: rgba(140, 170, 255, 1);
+}
+
+/* ── Config sections ──────────────────────────────────── */
+
+.config-section {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(180, 195, 255, 0.7);
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.config-label {
+  flex: 0 0 90px;
+  font-size: 0.72rem;
+  color: rgba(200, 210, 240, 0.75);
+  white-space: nowrap;
+}
+
+.config-slider {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.config-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6b8cff;
+  cursor: pointer;
+}
+
+.config-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6b8cff;
+  border: none;
+  cursor: pointer;
+}
+
+.config-value {
+  flex: 0 0 60px;
+  font-size: 0.7rem;
+  color: rgba(180, 195, 255, 0.6);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Actions ──────────────────────────────────────────── */
+
+.control-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.button {
+  flex: 1;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #dde5ff;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.button-primary {
+  background: rgba(75, 111, 232, 0.15);
+  border-color: rgba(75, 111, 232, 0.3);
+}
+
+.button-primary:hover {
+  background: rgba(75, 111, 232, 0.25);
+}
+
+/* ── Status panel ─────────────────────────────────────── */
+
+.status-panel {
+  padding: 0.75rem 1rem;
+}
+
+.status-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(180, 195, 255, 0.7);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+}
+
+.status-label {
+  color: rgba(200, 210, 240, 0.5);
+}
+
+.status-value {
+  color: rgba(200, 210, 240, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Sidebar toggle ───────────────────────────────────── */
+
+.sidebar-toggle {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 100;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #dde5ff;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+
+.sidebar-toggle .icon-close { display: none; }
+.sidebar-toggle.active .icon-open { display: none; }
+.sidebar-toggle.active .icon-close { display: inline; }
+
+/* ── Mobile ───────────────────────────────────────────── */
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    z-index: 90;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .sidebar-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

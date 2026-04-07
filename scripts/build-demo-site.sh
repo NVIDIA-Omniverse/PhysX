@@ -19,8 +19,8 @@ echo "Building TypeScript in js_stress_example..."
 
 # ── Demo pages ──────────────────────────────────────────────
 
-# HTML files
-cp "$DEMO_SRC/bridge-split-demo.html" "$OUT/index.html"
+# HTML files — use the demo index as the landing page
+cp "$DEMO_SRC/demo-index.html" "$OUT/index.html"
 for f in "$DEMO_SRC"/*.html; do
   cp "$f" "$OUT/$(basename "$f")"
 done
@@ -57,6 +57,17 @@ if [ -d "$RAPIER_DIR" ]; then
   for ext in js mjs wasm; do
     find "$RAPIER_DIR" -maxdepth 1 -name "*.$ext" -exec cp {} "$OUT/vendor/rapier/" \; 2>/dev/null || true
   done
+fi
+
+# blast-stress-solver package (high-level rapier + three APIs)
+BSS_DIST="$ROOT/blast/blast-stress-solver/dist"
+if [ -d "$BSS_DIST" ]; then
+  mkdir -p "$OUT/vendor/blast-stress-solver"
+  # Copy ESM bundles and WASM — the import maps in the new demos resolve here
+  for f in "$BSS_DIST"/*.mjs "$BSS_DIST"/*.wasm "$BSS_DIST"/*.js; do
+    [ -f "$f" ] && cp "$f" "$OUT/vendor/blast-stress-solver/"
+  done
+  echo "Copied blast-stress-solver dist to vendor/"
 fi
 
 # ── Other demo directories ──────────────────────────────────
