@@ -1326,7 +1326,7 @@ export async function buildDestructibleCore({
 
   function getSolverDebugLines(): Array<{ p0: Vec3; p1: Vec3; color0: number; color1: number }> {
     try {
-      return (solver as any).getDebugLines?.() ?? [];
+      return (solver as any).fillDebugRender?.({ mode: 0 /* ExtDebugMode.Max */, scale: 1.0 }) ?? [];
     } catch {
       return [];
     }
