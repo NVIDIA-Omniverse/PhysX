@@ -228,10 +228,10 @@ function bindSlider(id: string, obj: Record<string, any>, key: string, fmt?: (v:
   });
 }
 
-bindSlider('cfg-columns', CONFIG.wall, 'columns');
-bindSlider('cfg-rows', CONFIG.wall, 'rows');
+bindSlider('cfg-columns', CONFIG.wall, 'spanSegments');
+bindSlider('cfg-rows', CONFIG.wall, 'heightSegments');
 bindSlider('cfg-area-scale', CONFIG.wall, 'areaScale', (v) => v.toFixed(3));
-bindSlider('cfg-total-mass', CONFIG.wall, 'totalMass', (v) => v.toLocaleString());
+bindSlider('cfg-total-mass', CONFIG.wall, 'deckMass', (v) => v.toLocaleString());
 bindSlider('cfg-proj-radius', CONFIG.projectile, 'radius', (v) => v.toFixed(2));
 bindSlider('cfg-proj-mass', CONFIG.projectile, 'mass', (v) => v.toLocaleString());
 bindSlider('cfg-proj-speed', CONFIG.projectile, 'speed', (v) => v.toFixed(0));
