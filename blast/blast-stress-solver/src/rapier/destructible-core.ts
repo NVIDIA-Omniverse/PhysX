@@ -590,31 +590,36 @@ export async function buildDestructibleCore({
     splashGridDirty = false;
   }
 
-  function* splashNeighbors(px: number, py: number, pz: number, radius: number, bodyHandle: number): Generator<number> {
-    const r = radius;
-    const r2 = r * r;
-    const minIx = Math.floor((px - r) * SPLASH_INV_CELL);
-    const maxIx = Math.floor((px + r) * SPLASH_INV_CELL);
-    const minIy = Math.floor((py - r) * SPLASH_INV_CELL);
-    const maxIy = Math.floor((py + r) * SPLASH_INV_CELL);
-    const minIz = Math.floor((pz - r) * SPLASH_INV_CELL);
-    const maxIz = Math.floor((pz + r) * SPLASH_INV_CELL);
+  // Reusable result array for splash neighbor lookups (avoids allocation per call)
+  const splashResult: number[] = [];
+
+  function collectSplashNeighbors(px: number, py: number, pz: number, radius: number, bodyHandle: number): number[] {
+    splashResult.length = 0;
+    const r2 = radius * radius;
+    const minIx = Math.floor((px - radius) * SPLASH_INV_CELL);
+    const maxIx = Math.floor((px + radius) * SPLASH_INV_CELL);
+    const minIy = Math.floor((py - radius) * SPLASH_INV_CELL);
+    const maxIy = Math.floor((py + radius) * SPLASH_INV_CELL);
+    const minIz = Math.floor((pz - radius) * SPLASH_INV_CELL);
+    const maxIz = Math.floor((pz + radius) * SPLASH_INV_CELL);
     for (let ix = minIx; ix <= maxIx; ix++) {
       for (let iy = minIy; iy <= maxIy; iy++) {
         for (let iz = minIz; iz <= maxIz; iz++) {
           const bucket = splashGrid.get(`${ix},${iy},${iz}`);
           if (!bucket) continue;
-          for (const ci of bucket) {
+          for (let bi = 0; bi < bucket.length; bi++) {
+            const ci = bucket[bi];
             const c = chunks[ci];
             if (!c || !c.active || c.bodyHandle !== bodyHandle) continue;
             const dx = c.baseLocalOffset.x - px;
             const dy = c.baseLocalOffset.y - py;
             const dz = c.baseLocalOffset.z - pz;
-            if (dx * dx + dy * dy + dz * dz <= r2) yield ci;
+            if (dx * dx + dy * dy + dz * dz <= r2) splashResult.push(ci);
           }
         }
       }
     }
+    return splashResult;
   }
 
   // ── Snapshot pool for reuse across frames ──
@@ -1068,7 +1073,9 @@ export async function buildDestructibleCore({
       const hitPos = hitChunk.baseLocalOffset;
       const splashR = SPLASH_RADIUS;
       if (splashGridDirty) rebuildSplashGrid();
-      for (const ci of splashNeighbors(hitPos.x, hitPos.y, hitPos.z, splashR, hitChunk.bodyHandle!)) {
+      const neighbors = collectSplashNeighbors(hitPos.x, hitPos.y, hitPos.z, splashR, hitChunk.bodyHandle!);
+      for (let ni = 0; ni < neighbors.length; ni++) {
+        const ci = neighbors[ni];
         if (ci === contact.nodeIndex) continue;
         const c = chunks[ci];
         const dx = c.baseLocalOffset.x - hitPos.x;
@@ -1342,15 +1349,16 @@ export async function buildDestructibleCore({
     for (const bodyHandle of toRemove) {
       const nodesOnBody = nodesByBodyHandle.get(bodyHandle);
       if (nodesOnBody) {
-        for (const ni of Array.from(nodesOnBody)) {
-          handleNodeDestroyed(ni, 'manual');
+        for (const ni of nodesOnBody) {
+          const chunk = chunks[ni];
+          if (chunk && chunk.colliderHandle != null) {
+            disabledCollidersToRemove.add(chunk.colliderHandle);
+            chunk.active = false;
+          }
         }
       }
       bodiesToRemove.add(bodyHandle);
       debrisCreationTimes.delete(bodyHandle);
-      nodesByBodyHandle.delete(bodyHandle);
-      bodiesCollidedWithGround.delete(bodyHandle);
-      smallBodiesPendingDamping.delete(bodyHandle);
     }
   }
 
@@ -1673,33 +1681,6 @@ export async function buildDestructibleCore({
 
   let lastStepDt = readWorldDt();
 
-  /**
-   * Pre-step sweep: remove zero-collider bodies and clean up stale colliderToNode entries.
-   * Matches vibe-city's preStepSweep pattern.
-   */
-  function preStepSweep() {
-    // Clean up stale colliderToNode mappings
-    for (const [h] of Array.from(colliderToNode.entries())) {
-      const c = world.getCollider(h);
-      if (!c) {
-        colliderToNode.delete(h);
-      }
-    }
-    // Remove bodies with zero colliders (all colliders migrated away)
-    world.forEachRigidBody((b: RAPIER.RigidBody) => {
-      if (!b) return;
-      const handle = b.handle;
-      if (handle === rootBody.handle || handle === groundBody.handle) return;
-      try {
-        const rb = b as RigidBodyWithColliderCount;
-        const count = typeof rb.numColliders === 'function' ? rb.numColliders() : 0;
-        if (count === 0) {
-          bodiesToRemove.add(handle);
-        }
-      } catch {}
-    });
-  }
-
   function step(dt: number) {
     if (activeProfilerSample && !activeProfilerSample.finalized) {
       activeProfilerSample.finalized = true;
@@ -1714,7 +1695,6 @@ export async function buildDestructibleCore({
     const totalT0 = startTiming();
 
     const preStepT0 = startTiming();
-    preStepSweep();
     processDebrisCleanup();
     processSmallBodyDamping();
     processSleepThresholds();
@@ -1788,24 +1768,13 @@ export async function buildDestructibleCore({
 
     cleanupExpiredProjectiles();
 
-    // Batch body lookups: cache per-handle to avoid redundant getRigidBody calls
-    // When many chunks share the same body, this avoids N lookups for the same handle
-    const bodyCache = new Map<number, { pos: { x: number; y: number; z: number }; rot: { x: number; y: number; z: number; w: number } } | null>();
     for (let ci = 0; ci < chunks.length; ci++) {
       const chunk = chunks[ci];
       if (!chunk.active || chunk.bodyHandle == null) continue;
-      let cached = bodyCache.get(chunk.bodyHandle);
-      if (cached === undefined) {
-        const body = world.getRigidBody(chunk.bodyHandle);
-        if (!body) { bodyCache.set(chunk.bodyHandle, null); continue; }
-        const p = body.translation();
-        const r = body.rotation();
-        cached = { pos: { x: p.x, y: p.y, z: p.z }, rot: { x: r.x, y: r.y, z: r.z, w: r.w } };
-        bodyCache.set(chunk.bodyHandle, cached);
-      }
-      if (!cached) continue;
-      const pos = cached.pos;
-      const rot = cached.rot;
+      const body = world.getRigidBody(chunk.bodyHandle);
+      if (!body) continue;
+      const pos = body.translation();
+      const rot = body.rotation();
       const lx = chunk.localOffset.x, ly = chunk.localOffset.y, lz = chunk.localOffset.z;
       const qx = rot.x, qy = rot.y, qz = rot.z, qw = rot.w;
       const rx = qw * lx + qy * lz - qz * ly;
@@ -1921,11 +1890,6 @@ export async function buildDestructibleCore({
     chunk.destroyed = true;
     chunk.active = false;
     if (chunk.health != null) chunk.health = 0;
-
-    // Cut bonds from the WASM solver so fillDebugRender() stops returning stale lines
-    if (damageOptions.autoDetachOnDestroy) {
-      try { cutNodeBonds(nodeIndex); } catch {}
-    }
 
     // Disable/remove collider
     if (chunk.colliderHandle != null) {
