@@ -624,6 +624,14 @@ export async function buildDestructibleCore({
   let sleepThresholdsApplied = false; // Track if we've already set thresholds on all bodies
   let sleepThresholdsDirty = true; // Mark dirty when new bodies are created or settings change
 
+  // ── Solver idle-skip tracking ──
+  // When no external forces are applied and no recent topology changes,
+  // the solver would recompute the same result. Skip it to save ~15-20ms.
+  let solverHadExternalForces = false;
+  // Counts down from 2 when fractures happen — solver runs for 2 frames
+  // after last fracture (one to recompute on new topology, one to confirm stable)
+  let solverFractureCountdown = 2; // start active so initial gravity is computed
+
   let safeFrames = 0;
   let warnedColliderMapEmptyOnce = false;
   let solverGravityEnabled = true;
@@ -1076,12 +1084,20 @@ export async function buildDestructibleCore({
       }
     }
 
-    solver.update();
+    // Skip solver when idle: no external contacts, no recent fractures/topology changes,
+    // and not a resimulation pass. Saves the full solver cost (~15-20ms) on idle frames.
+    const hasExternalForces = bufferedExternalContacts.length > 0 || pendingExternalForces.length > 0;
+    const shouldSkipSolver = !hasExternalForces && solverFractureCountdown <= 0 && passIndex === 0 && safeFrames > 2;
+    if (!shouldSkipSolver) {
+      solver.update();
+    }
+    solverHadExternalForces = hasExternalForces;
+    if (solverFractureCountdown > 0) solverFractureCountdown--;
     stopTiming(solverT0, 'solverUpdateMs');
 
     const fractureT0 = startTiming();
     let hadFracture = false;
-    if (solver.overstressedBondCount() > 0) {
+    if (!shouldSkipSolver && solver.overstressedBondCount() > 0) {
       let perActor = profiledGenerateFractureCommands();
 
       // ── Fracture policy: progressive fracture budget ──
@@ -1109,6 +1125,7 @@ export async function buildDestructibleCore({
       const splitEvents = profiledApplyFractureCommands(perActor);
       processSplitEvents(splitEvents);
       hadFracture = splitEvents.length > 0;
+      if (hadFracture) solverFractureCountdown = 2; // run solver 2 more frames to stabilize
     }
     stopTiming(fractureT0, 'fractureMs');
 
