@@ -1244,6 +1244,8 @@ export async function buildDestructibleCore({
     const maxMigrations = fracturePolicySettings.maxColliderMigrationsPerFrame;
     let migrationsProcessed = 0;
     let writeIdx = 0;
+    // Track source bodies that lost colliders — check if they became empty
+    const sourceBodiesAffected = new Set<number>();
 
     for (let mi = 0; mi < pendingColliderMigrations.length; mi++) {
       // Enforce migration budget — keep remaining for next frame
@@ -1266,6 +1268,12 @@ export async function buildDestructibleCore({
         // Target body doesn't exist yet (deferred) — keep for next frame
         pendingColliderMigrations[writeIdx++] = migration;
         continue;
+      }
+
+      // Track the source body that's losing this collider
+      const sourceBodyHandle = chunk.bodyHandle;
+      if (sourceBodyHandle != null && sourceBodyHandle !== migration.targetBodyHandle) {
+        sourceBodiesAffected.add(sourceBodyHandle);
       }
 
       colliderToNode.delete(oldHandle);
@@ -1309,6 +1317,19 @@ export async function buildDestructibleCore({
     }
     // Keep deferred migrations, discard processed ones
     pendingColliderMigrations.length = writeIdx;
+
+    // Clean up source bodies that lost all colliders during migration
+    for (const bh of sourceBodiesAffected) {
+      if (bh === rootBody.handle || bh === groundBody.handle) continue;
+      const body = world.getRigidBody(bh);
+      if (!body) continue;
+      const rb = body as RigidBodyWithColliderCount;
+      const count = typeof rb.numColliders === 'function' ? rb.numColliders() : -1;
+      if (count === 0) {
+        bodiesToRemove.add(bh);
+      }
+    }
+
     stopTiming(t0, 'colliderRebuildMs');
   }
 
@@ -1349,12 +1370,10 @@ export async function buildDestructibleCore({
     for (const bodyHandle of toRemove) {
       const nodesOnBody = nodesByBodyHandle.get(bodyHandle);
       if (nodesOnBody) {
-        for (const ni of nodesOnBody) {
-          const chunk = chunks[ni];
-          if (chunk && chunk.colliderHandle != null) {
-            disabledCollidersToRemove.add(chunk.colliderHandle);
-            chunk.active = false;
-          }
+        // Array.from required because handleNodeDestroyed calls
+        // unregisterNodeBodyLink which deletes from the Set
+        for (const ni of Array.from(nodesOnBody)) {
+          handleNodeDestroyed(ni, 'manual');
         }
       }
       bodiesToRemove.add(bodyHandle);
@@ -1890,6 +1909,9 @@ export async function buildDestructibleCore({
     chunk.destroyed = true;
     chunk.active = false;
     if (chunk.health != null) chunk.health = 0;
+
+    // Cut bonds from the WASM solver so it stops computing stress on destroyed nodes
+    try { cutNodeBonds(nodeIndex); } catch {}
 
     // Disable/remove collider
     if (chunk.colliderHandle != null) {
