@@ -92,7 +92,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: demo-site
-          path: .
+          path: blast/
 
       - name: Install root dependencies (for vendor libs)
         run: npm install
@@ -161,7 +161,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: demo-site
-          path: .
+          path: blast/
 
       - name: Install root dependencies (for vendor libs)
         run: npm install
