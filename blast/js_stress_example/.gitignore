@@ -1,2 +1,6 @@
 dist/
 node_modules/
+
+stress_solver.cjs
+stress_solver.wasm
+stress_solver.mjs

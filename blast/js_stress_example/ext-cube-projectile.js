@@ -148,6 +148,19 @@ async function main() {
   const overstressed = solver.overstressedBondCount();
   console.log(`\nProjectile impact produced ${overstressed} overstressed bonds`);
 
+  const actors = solver.actors();
+  console.log(`Tracked actors: ${actors.length}`);
+  actors.slice(0, 4).forEach((actor, index) => {
+    console.log(`  actor ${index} -> id ${actor.actorIndex}, nodes ${actor.nodes.join(', ')}`);
+  });
+
+  const fractureSets = solver.generateFractureCommandsPerActor({ maxBonds: solver.bondCapacity() });
+  console.log(`Fracture sets generated: ${fractureSets.length}`);
+  if (fractureSets.length > 0) {
+    const firstSet = fractureSets[0];
+    console.log(`  first set: actor ${firstSet.actorIndex}, fractures ${firstSet.fractures.length}`);
+  }
+
   const debugLines = solver.fillDebugRender({ mode: runtime.ExtDebugMode.Max, scale: 1.0 });
   console.log(`Debug render emitted ${debugLines.length} lines (showing top ${Math.min(5, debugLines.length)})`);
   logDebugLines(debugLines);

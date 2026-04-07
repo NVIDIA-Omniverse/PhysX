@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,7 @@ const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '..');
 const blastRoot = resolve(projectRoot, '..');
 const distDir = resolve(projectRoot, 'dist');
+const jsFfiDir = resolve(projectRoot, 'ffi');
 
 mkdirSync(distDir, { recursive: true });
 
@@ -21,11 +22,16 @@ const includeSharedDir = resolve(includeDir, 'shared');
 const includeLowLevelDir = resolve(includeDir, 'lowlevel');
 const includeExtensionsDir = resolve(includeDir, 'extensions');
 const includeStressExtDir = resolve(includeExtensionsDir, 'stress');
+const includeAuthoringDir = resolve(includeExtensionsDir, 'authoring');
+const includeAuthoringCommonDir = resolve(includeExtensionsDir, 'authoringCommon');
+const includeAssetUtilsDir = resolve(includeExtensionsDir, 'assetutils');
 const foundationDir = resolve(includeSharedDir, 'NvFoundation');
 const sdkCommonDir = resolve(blastRoot, 'source/sdk/common');
 const sdkGlobalsDir = resolve(blastRoot, 'source/sdk/globals');
 const sdkLowLevelDir = resolve(blastRoot, 'source/sdk/lowlevel');
 const sdkStressDir = resolve(blastRoot, 'source/sdk/extensions/stress');
+const sdkAuthoringDir = resolve(blastRoot, 'source/sdk/extensions/authoring');
+const sdkAuthoringCommonDir = resolve(blastRoot, 'source/sdk/extensions/authoringCommon');
 
 const exportedFunctions = [
   '_stress_processor_create',
@@ -53,9 +59,16 @@ const exportedFunctions = [
   '_ext_stress_solver_reset',
   '_ext_stress_solver_add_force',
   '_ext_stress_solver_add_gravity',
+  '_ext_stress_solver_add_actor_gravity',
   '_ext_stress_solver_update',
   '_ext_stress_solver_overstressed_bond_count',
   '_ext_stress_solver_fill_debug_render',
+  '_ext_stress_solver_generate_fracture_commands',
+  '_ext_stress_solver_actor_count',
+  '_ext_stress_solver_collect_actors',
+  '_ext_stress_solver_generate_fracture_commands_per_actor',
+  '_ext_stress_solver_apply_fracture_commands',
+  '_ext_stress_solver_get_excess_forces',
   '_ext_stress_solver_get_linear_error',
   '_ext_stress_solver_get_angular_error',
   '_ext_stress_solver_converged',
@@ -63,9 +76,20 @@ const exportedFunctions = [
   '_ext_stress_sizeof_ext_bond_desc',
   '_ext_stress_sizeof_ext_settings',
   '_ext_stress_sizeof_ext_debug_line',
+  '_ext_stress_sizeof_ext_bond_fracture',
+  '_ext_stress_sizeof_ext_fracture_commands',
+  '_ext_stress_sizeof_actor',
+  '_ext_stress_sizeof_actor_buffer',
+  '_ext_stress_sizeof_ext_split_event',
+  '_authoring_sizeof_ext_bond_desc',
+  '_authoring_bonds_from_prefractured_triangles',
+  '_authoring_free',
   '_malloc',
   '_free'
 ];
+
+const enableAssertions = process.env.EMCC_ASSERTIONS !== '0';
+const enableProfiling = process.env.EMCC_PROFILING === '1';
 
 const exportedRuntimeMethods = [
   'cwrap',
@@ -88,8 +112,13 @@ const exportedRuntimeMethods = [
 const commonArgs = [
   resolve(ffiDir, 'stress_bridge.cpp'),
   resolve(ffiDir, 'ext_stress_bridge.cpp'),
+  resolve(jsFfiDir, 'authoring_bridge.cpp'),
   resolve(solverDir, 'stress.cpp'),
   resolve(sdkStressDir, 'NvBlastExtStressSolver.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtAuthoring.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtAuthoringBondGeneratorImpl.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtTriangleProcessor.cpp'),
+  resolve(sdkAuthoringDir, 'NvBlastExtApexSharedParts.cpp'),
   resolve(sdkCommonDir, 'NvBlastAssert.cpp'),
   resolve(sdkCommonDir, 'NvBlastAtomic.cpp'),
   resolve(sdkCommonDir, 'NvBlastTime.cpp'),
@@ -112,15 +141,21 @@ const commonArgs = [
   '-I' + includeLowLevelDir,
   '-I' + includeExtensionsDir,
   '-I' + includeStressExtDir,
+  '-I' + includeAuthoringDir,
+  '-I' + includeAuthoringCommonDir,
+  '-I' + includeAssetUtilsDir,
   '-I' + foundationDir,
   '-I' + sdkCommonDir,
   '-I' + sdkGlobalsDir,
   '-I' + sdkLowLevelDir,
   '-I' + sdkStressDir,
+  '-I' + sdkAuthoringDir,
+  '-I' + sdkAuthoringCommonDir,
   '-DSTRESS_SOLVER_FORCE_SCALAR=1',
   '-DSTRESS_SOLVER_NO_SIMD=1',
   '-D__linux__=1',
-  '-D__x86_64__=1',
+  '-D__arm__=1',
+  '-DCOMPILE_VECTOR_INTRINSICS=0',
   '-DNDEBUG=1',
   '-std=c++17',
   '-O3',
@@ -130,6 +165,16 @@ const commonArgs = [
   `-sEXPORTED_FUNCTIONS=[${exportedFunctions.map((fn) => `"${fn}"`).join(',')}]`,
   `-sEXPORTED_RUNTIME_METHODS=[${exportedRuntimeMethods.map((name) => `"${name}"`).join(',')}]`
 ];
+
+if (enableAssertions) {
+  console.log('Building with assertions');
+  commonArgs.push('-sASSERTIONS=1');
+}
+
+if (enableProfiling) {
+  console.log('Building with profiling symbols');
+  commonArgs.push('--profiling');
+}
 
 const builds = [
   {
@@ -167,4 +212,11 @@ for (const build of builds) {
     console.error(`Emscripten exited with code ${result.status} for ${build.name}`);
     process.exit(result.status ?? 1);
   }
+}
+
+const artifacts = ['stress_solver.cjs', 'stress_solver.mjs', 'stress_solver.wasm'];
+for (const file of artifacts) {
+  const src = resolve(distDir, file);
+  const dst = resolve(projectRoot, file);
+  copyFileSync(src, dst);
 }

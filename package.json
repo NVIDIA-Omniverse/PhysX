@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run serve:demos",
-    "serve:demos": "node scripts/serve-demo.mjs"
+    "serve:demos": "node scripts/serve-demo.mjs",
+    "build:profiling": "EMCC_PROFILING=1 npm run build --workspace blast/js_stress_example",
+    "test:bridge": "npm --prefix blast/js_stress_example run test"
   },
   "author": "",
   "license": "ISC",

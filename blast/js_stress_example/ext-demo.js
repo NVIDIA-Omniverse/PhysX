@@ -57,6 +57,19 @@ async function main() {
 
   console.log(`\nOverstressed bonds reported: ${solver.overstressedBondCount()}`);
 
+  const actorCount = solver.actorCount();
+  console.log(`Tracked actors: ${actorCount}`);
+  const actors = solver.actors();
+  actors.slice(0, 3).forEach((actor, index) => {
+    console.log(`  actor ${index} | id ${actor.actorIndex} | nodes ${actor.nodes.join(', ')}`);
+  });
+
+  const fractureSets = solver.generateFractureCommandsPerActor();
+  console.log(`Fracture command sets generated: ${fractureSets.length}`);
+  if (fractureSets.length > 0) {
+    console.log(`  first set -> actor ${fractureSets[0].actorIndex}, fractures ${fractureSets[0].fractures.length}`);
+  }
+
   const debugLines = solver.fillDebugRender({ mode: runtime.ExtDebugMode.Max, scale: 1.0 });
   console.log(`Debug render lines: ${debugLines.length}`);
   debugLines.slice(0, 3).forEach((line, index) => {

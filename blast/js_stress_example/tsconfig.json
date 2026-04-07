@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "lib": ["ES2020", "DOM"],
+    "allowJs": true,
+    "checkJs": false,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "removeComments": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": false,
+    "noEmitOnError": false
+  },
+  "include": [
+    "bridge-stress-ext.ts",
+    "stress.js",
+    "split-bridge-stress.ts",
+    "rapier-debug-renderer.js",
+    "extBridgeScenario.js",
+    "bridge/types.ts",
+    "bridge/coreLogic.ts",
+    "bridge/rapierHierarchyApplier.ts",
+    "bridge/buildBridge.headless.ts",
+    "bridge/dynamics.js",
+    "bridge/ui.js",
+    "bridge/constants.js",
+    "bridge/simulation.js",
+    "bridge/spawning.js",
+    "bridge/factory.js",
+    "bridge/transformUtils.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

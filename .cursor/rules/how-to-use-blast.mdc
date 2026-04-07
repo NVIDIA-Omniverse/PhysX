@@ -277,6 +277,68 @@ void tickDestruction(ExtStressSolver& stress, TkFamily& family)
 
 ---
 
+### 2.5. Canonical fracture lifecycle (low‑level C++)
+
+If you are working at the low‑level API (no Tk groups), use this exact loop whenever `overstressedBondCount > 0`:
+
+1) Update the solver (forces/accelerations already applied) and query per‑actor fracture commands.
+2) For each actor with commands:
+   - Call `NvBlastActorApplyFracture` to apply health/damage.
+   - If `NvBlastActorIsSplitRequired` is true, split with `NvBlastActorSplit` using scratch from `NvBlastActorGetRequiredScratchForSplit`.
+   - Destroy the parent’s rigid body; create rigid bodies for all returned child actors.
+   - Notify the stress solver: `notifyActorDestroyed(parent)` and `notifyActorCreated(child)` for each new low‑level actor.
+   - Optionally, call `ExtStressSolver::getExcessForces(actorIndex, com, force, torque)` for immediate post‑break impulses on the physics side.
+
+Minimal pattern:
+
+```cpp
+// 1) Solve
+stress->update();
+if (stress->getOverstressedBondCount() == 0) return;
+
+// 2) Generate commands per LL actor
+std::vector<const NvBlastActor*> llActors(familyCount);
+std::vector<NvBlastFractureBuffers> commands(familyCount);
+uint32_t count = stress->generateFractureCommandsPerActor(llActors.data(), commands.data(), (uint32_t)commands.size());
+
+for (uint32_t i = 0; i < count; ++i) {
+    NvBlastActor* parent = const_cast<NvBlastActor*>(llActors[i]);
+    NvBlastActorApplyFracture(/*events*/nullptr, parent, &commands[i], /*log*/nullptr, /*timers*/nullptr);
+
+    if (NvBlastActorIsSplitRequired(parent, nullptr)) {
+        size_t scratchSize = NvBlastActorGetRequiredScratchForSplit(parent, nullptr);
+        std::vector<uint8_t> scratch(scratchSize);
+        uint32_t maxChildren = NvBlastActorGetMaxActorCountForSplit(parent, nullptr);
+        std::vector<NvBlastActor*> children(maxChildren);
+        NvBlastActorSplitEvent splitEvt{ nullptr, children.data() };
+        uint32_t created = NvBlastActorSplit(&splitEvt, parent, maxChildren, scratch.data(), nullptr, nullptr);
+
+        // Physics: remove parent body, spawn child bodies (visible chunks → shapes)
+        // ...
+
+        // Solver notifications
+        stress->notifyActorDestroyed(*parent);
+        for (uint32_t c = 0; c < created; ++c) {
+            stress->notifyActorCreated(*children[c]);
+        }
+
+        // Optional: apply excess forces returned by the solver
+        for (uint32_t c = 0; c < created; ++c) {
+            NvcVec3 com{0,0,0}, F{}, T{};
+            if (stress->getExcessForces(NvBlastActorGetIndex(children[c], nullptr), com, F, T)) {
+                // Apply F/T to child rigid body
+            }
+        }
+    }
+}
+```
+
+Notes:
+- You do not manually prune broken bonds in the stress solver. After health reaches 0, the solver prunes those bonds internally on the next `update()`.
+- If you use Tk, the same flow happens inside a `TkGroup` and you receive `TkSplitEvent` from the family.
+
+---
+
 ## 3) Making the cube *move* (physics integration)
 
 Blast doesn’t move bodies. To see fragments fly and fall, integrate with a physics engine like **PhysX 5**:
@@ -288,6 +350,20 @@ Blast doesn’t move bodies. To see fragments fly and fall, integrate with a phy
 The Tk user guide explains families, groups and events; TkActor exposes helpers like `getVisibleChunkIndices`, and TkFamily provides `addListener` to receive split events. You can also query low‑level pointers via `TkActor::getActorLL()` and the family via `TkActor::getFamily()`. ([NVIDIA Omniverse][1])
 
 > **Collision hulls**: Use the Authoring toolchain to produce per‑chunk convex hulls (via the convex builder and `NvBlastExtAuthoringProcessFracture`). Each child actor’s visible chunks correspond to a set of hulls that you convert to your physics engine’s convex meshes. The extension functions and `AuthoringResult` hold the hulls and offsets. ([NVIDIA Omniverse][3])
+
+---
+
+### 3.1. Practical split handling in physics
+
+- Before fracture: a single actor often maps to one rigid body holding multiple colliders (one per visible chunk) at local offsets.
+- After split: for each child actor returned by Blast:
+  - Compute center of mass (COM) and spawn a dynamic rigid body at the parent’s pose/velocity.
+  - Attach colliders corresponding to the child’s visible chunks (local offsets preserved).
+  - Update your mapping `visibleChunkIndex → rigidBody` so rendering and contacts remain correct.
+- Remove the parent rigid body once its chunks have been reassigned.
+- If using `getExcessForces`, apply the returned force/torque to the child bodies immediately after spawning.
+
+Tip: The low‑level API exposes `NvBlastActorGetVisibleChunkIndices` and `NvBlastActorGetGraphNodeIndices`. Use these to build your colliders per child actor deterministically after splits.
 
 ---
 
@@ -304,6 +380,14 @@ The Tk user guide explains families, groups and events; TkActor exposes helpers 
 **For static structures breaking under weight (optional)**
 
 * If you want the cube “glued” to the world and breaking from gravity (no rigid body motion), add **world bonds** (asset utilities), mark world nodes static, and then call `addGravity(actor, localGravity)` each frame. The solver treats static nodes as anchors and computes internal stresses; when limits are exceeded, bonds break. (The authoring utilities include functions to add bonds to the world; the Stress Solver provides `addGravity` and mentions static nodes through the “external” node concept.) ([NVIDIA Omniverse][8])
+
+---
+
+### 4.1. Notifications and automatic bond pruning
+
+- Always notify the solver when actors are created or destroyed: `notifyActorDestroyed(old)` and `notifyActorCreated(child)`.
+- You do not remove broken bonds yourself. The solver detects bonds whose family health is zero and prunes them internally on the next `update()` (this keeps the internal stress graph consistent and fast).
+- If you use TkGroups, the group processing drives damage application and splitting, and your `TkFamily` listener is the right place to forward notifications to the solver.
 
 ---
 
@@ -496,7 +580,21 @@ Use **ExtSerialization** to save/load low‑level and Tk assets (Cap’n Proto b
 
 ---
 
-## 12) Where to look in the docs (by task)
+## 12) Toolkit events (what you receive and when)
+
+When using Tk, you’ll receive events via `TkFamily::addListener(listener)` during `TkGroup::endProcess()`:
+
+- `TkSplitEvent`: A parent actor has split into children.
+  - `parentData` provides family, parent index, and user data (safe to remove the parent’s physics body now).
+  - `children[]` are valid `TkActor*` for the new actors; create physics for them here.
+- `TkFractureCommands` / `TkFractureEvents`: Useful if you need to propagate fracture commands between systems/clients.
+- `TkJointUpdateEvent`: Internal joints becoming external, joint endpoints changing, or joints becoming unreferenced.
+
+The recommended pattern is: consume `TkSplitEvent` → rebuild rigid bodies → forward `notifyActorDestroyed/Created` to the stress solver for the underlying low‑level actors.
+
+---
+
+## 13) Where to look in the docs (by task)
 
 * **Tk overview & flow** – framework, assets, actors, families, groups, events, damage: *High‑Level (Toolkit) API user’s guide*. ([NVIDIA Omniverse][1])
 * **Authoring tools** – `FractureTool`, `BlastBondGenerator`, mesh restrictions, hull builder, one‑shot authoring helpers: *Asset Authoring (NvBlastExtAuthoring)* + `AuthoringResult`. ([NVIDIA Omniverse][6])
@@ -517,3 +615,17 @@ Use **ExtSerialization** to save/load low‑level and Tk assets (Cap’n Proto b
 [9]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/extensions/ext_shaders.html "Damage Shaders (NvBlastExtShaders) — blast-sdk 5.0.6 documentation"
 [10]: https://nvidia-omniverse.github.io/PhysX/blast/_build/docs/blast-sdk/latest/function__nv_blast_ext_authoring_8h_1a83bd2e459926ad7fa302b2a75ccc7bf9.html "NvBlastExtAuthoringCreateMesh — blast-sdk 5.0.6 documentation"
 [11]: https://nvidia-omniverse.github.io/PhysX/blast/docs/api/extensions/ext_serialization.html "Serialization (NvBlastExtSerialization) — blast-sdk 5.0.6 documentation"
+
+---
+
+## Appendix: JS/WASM bridge notes (for engine integrations)
+
+If you bridge Blast to JavaScript/Web (e.g., using Emscripten), mirror the low‑level flow:
+
+- Expose solver factories and per‑frame APIs: `createExtSolver`, `addForce`, `addGravity`, `update`, `overstressedBondCount`.
+- Provide per‑actor fracture output: `generateFractureCommandsPerActor()` returns `{ actorId, fractures[] }`.
+- Provide an "apply + split" bridge: given per‑actor fractures, call `NvBlastActorApplyFracture` and `NvBlastActorSplit` internally, update the bridge’s actor table, and return split events (parent id, child ids, node/visible-chunk lists).
+- Surface `actors()` to snapshot current actors (ids + nodes) and `getExcessForces(actorIndex, com)` for post‑break impulses.
+- Forward solver notifications inside the bridge after splits: `notifyActorDestroyed/notifyActorCreated`.
+
+This keeps a browser demo in lock‑step with the official Blast lifecycle while keeping physics entirely on the JS side (e.g., Rapier/Ammo/PhysX WASM).

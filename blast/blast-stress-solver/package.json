@@ -1,0 +1,44 @@
+{
+  "name": "blast-stress-solver",
+  "version": "0.3.1",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.js",
+      "node": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./stress_solver.wasm": "./dist/stress_solver.wasm",
+    "./stress_solver.mjs": {
+      "browser": "./dist/stress_solver.mjs",
+      "node": "./dist/stress_solver.cjs",
+      "default": "./dist/stress_solver.mjs"
+    }
+  },
+  "files": [
+    "dist/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "prebuild": "npm --prefix ../js_stress_example run build",
+    "build": "tsup --config tsup.config.ts && node ./scripts/copy-dist.js",
+    "prepare": "npm run build",
+    "test": "npm run build && vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/three": "^0.164.0",
+    "vitest": "^3.2.4",
+    "three": "^0.164.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.9.3"
+  }
+}

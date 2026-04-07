@@ -152,12 +152,12 @@ async function main() {
 
   const runtime = await loadStressSolver();
   const settings = runtime.defaultExtSettings();
-  settings.compressionElasticLimit = 0.05;
-  settings.compressionFatalLimit = 0.1;
-  settings.tensionElasticLimit = 0.05;
-  settings.tensionFatalLimit = 0.1;
-  settings.shearElasticLimit = 0.05;
-  settings.shearFatalLimit = 0.1;
+  settings.compressionElasticLimit = 0.01;
+  settings.compressionFatalLimit = 0.02;
+  settings.tensionElasticLimit = 0.01;
+  settings.tensionFatalLimit = 0.02;
+  settings.shearElasticLimit = 0.01;
+  settings.shearFatalLimit = 0.02;
 
   const solver = runtime.createExtSolver({
     nodes: scenario.nodes,
@@ -166,8 +166,8 @@ async function main() {
   });
 
   const gravity = vec3(0.0, -6.0, 0.0);
-  const carMass = 5200.0;
-  const impactMultiplier = 3.5;
+  const carMass = 7200.0;
+  const impactMultiplier = 5.0;
 
   const segments = scenario.spanSegments;
   const contactsPerStep = [];
@@ -179,11 +179,10 @@ async function main() {
   let failureDetected = false;
   for (let index = 0; index < contactsPerStep.length; ++index) {
     const contact = contactsPerStep[index];
-    solver.reset();
     solver.addGravity(gravity);
 
     const baseForcePerNode = (carMass * 9.81) / contact.length;
-    const severity = 1.0 + index * 1.4;
+    const severity = 2.0 + index * 2.0;
     contact.forEach((nodeIndex, contactIdx) => {
       const dynamicBoost = contactIdx < contact.length / 2 ? 1.0 : impactMultiplier;
       const downwardForce = baseForcePerNode * severity * dynamicBoost;
@@ -209,6 +208,12 @@ async function main() {
       `  contact group ${String(index + 1).padStart(2)} on columns ${index}-${index + 1} produced ${overstressed} overstressed bonds`
     );
 
+    const actors = solver.actors();
+    console.log(`    actors tracked: ${actors.length}`);
+    actors.slice(0, 4).forEach((actor, idx) => {
+      console.log(`      actor ${idx} -> id ${actor.actorIndex}, nodes ${actor.nodes.join(', ')}`);
+    });
+
     const debugLines = solver.fillDebugRender({ mode: runtime.ExtDebugMode.Max, scale: 1.0 });
     const highlights = summarizeLines(debugLines, 4);
     highlights.forEach((line, highlightIndex) => {
@@ -222,9 +227,30 @@ async function main() {
     });
 
     if (overstressed > 0) {
-      console.log('  -> Bridge deck predicted to fail under this car position. Stopping simulation.');
-      failureDetected = true;
-      break;
+      const fractureSets = solver.generateFractureCommandsPerActor();
+      console.log(`    fracture sets generated: ${fractureSets.length}`);
+
+      let splitEvents = [];
+      if (fractureSets.length > 0) {
+        splitEvents = solver.applyFractureCommands(fractureSets);
+        console.log(`    split events returned: ${splitEvents.length}`);
+        splitEvents.forEach((evt, evtIndex) => {
+          console.log(`      event ${evtIndex} -> parent ${evt.parentActorIndex}, children ${evt.children.length}`);
+          evt.children.forEach((child, childIdx) => {
+            console.log(`        child ${childIdx}: actor ${child.actorIndex}, nodes ${child.nodes.join(', ')}`);
+          });
+        });
+      } else {
+        console.log('    solver reported overstress but generated no fracture commands.');
+      }
+
+      if (splitEvents.length > 0) {
+        console.log('  -> Bridge deck fractured under this car position. Stopping simulation.');
+        failureDetected = true;
+        break;
+      }
+
+      console.log('    Bonds damaged but no splits yet — continuing sweep for additional accumulation.');
     }
   }
 

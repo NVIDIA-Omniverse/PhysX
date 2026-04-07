@@ -1,0 +1,18 @@
+{
+  "initial": {
+    "nodeCount": 4,
+    "grid": [
+      { "x": -0.55, "y": -0.55, "z": 0 },
+      { "x":  0.55, "y": -0.55, "z": 0 },
+      { "x": -0.55, "y":  0.55, "z": 0 },
+      { "x":  0.55, "y":  0.55, "z": 0 }
+    ]
+  },
+  "splits": [
+    { "parentActorIndex": 0, "children": [ { "actorIndex": 1, "nodes": [0] }, { "actorIndex": 2, "nodes": [1,2,3] } ] },
+    { "parentActorIndex": 2, "children": [ { "actorIndex": 3, "nodes": [1] }, { "actorIndex": 4, "nodes": [2,3] } ] },
+    { "parentActorIndex": 4, "children": [ { "actorIndex": 5, "nodes": [2] }, { "actorIndex": 6, "nodes": [3] } ] }
+  ]
+}
+
+
