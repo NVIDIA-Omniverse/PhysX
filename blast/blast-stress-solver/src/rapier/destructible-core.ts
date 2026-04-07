@@ -967,6 +967,9 @@ export async function buildDestructibleCore({
       activeContactColliders.delete(oldHandle);
       world.removeCollider(oldCollider, false);
 
+      // Skip creating colliders for destroyed chunks (matches vibe-city)
+      if (chunk.destroyed) continue;
+
       const size = nodeSize(chunk.nodeIndex, scenario);
       const halfX = Math.max(0.05, size.x * 0.5);
       const halfY = Math.max(0.05, size.y * 0.5);
