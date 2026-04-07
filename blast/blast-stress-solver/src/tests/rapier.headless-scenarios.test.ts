@@ -212,23 +212,33 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
   // ────────────────────────────────────────────────────────────
 
   describe('C. Projectile collision and bond breaking', () => {
+    // Projectile collisions break bonds via the damage system (contact forces
+    // → damageSystem.onImpact → node health decrement → bond removal).
+    // The stress solver only handles gravity-induced stress.
+    // Use low strengthPerVolume so a single projectile hit destroys nodes
+    // (default 10000 gives ~2400hp per node; damage per hit is ~137).
+    const damageOpts = {
+      enabled: true,
+      autoDetachOnDestroy: true,
+      autoCleanupPhysics: true,
+      strengthPerVolume: 50,
+    };
+
     it('projectile breaks wall bonds on impact', async () => {
       await loadModules();
       const scenario = smallWall();
-      // Use weak material: strong enough to survive a few steps of gravity
-      // but weak enough that projectile collision triggers fractures
-      const core = await buildCore(scenario, { materialScale: 1.0 });
+      const core = await buildCore(scenario, { materialScale: 1e8, damage: damageOpts });
 
-      stepN(core, 5);
+      stepN(core, 30);
       const bondsAfterSettle = core.getActiveBondsCount();
       expect(bondsAfterSettle).toBeGreaterThan(0);
 
-      // Fire projectile at center of wall (from +Z toward -Z)
+      // Fire heavy projectile at center of wall (from +Z toward -Z)
       core.enqueueProjectile({
         position: { x: 0, y: 1.5, z: 5 },
         velocity: { x: 0, y: 0, z: -40 },
         radius: 0.3,
-        mass: 5000,
+        mass: 15000,
         ttl: 3000,
       });
 
@@ -241,17 +251,17 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
     it('projectile breaks tower bonds on impact', async () => {
       await loadModules();
       const scenario = smallTower();
-      const core = await buildCore(scenario, { materialScale: 1.0 });
+      const core = await buildCore(scenario, { materialScale: 1e8, damage: damageOpts });
 
-      stepN(core, 5);
+      stepN(core, 30);
       const bondsAfterSettle = core.getActiveBondsCount();
 
-      // Fire projectile at mid-height of tower (from +X toward -X)
+      // Fire heavy projectile at mid-height of tower (from +X toward -X)
       core.enqueueProjectile({
         position: { x: 5, y: 1.0, z: 0 },
         velocity: { x: -40, y: 0, z: 0 },
         radius: 0.3,
-        mass: 5000,
+        mass: 15000,
         ttl: 3000,
       });
 
@@ -264,17 +274,17 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
     it('projectile breaks bridge bonds on impact', async () => {
       await loadModules();
       const scenario = smallBridge();
-      const core = await buildCore(scenario, { materialScale: 1.0 });
+      const core = await buildCore(scenario, { materialScale: 1e8, damage: damageOpts });
 
-      stepN(core, 5);
+      stepN(core, 30);
       const bondsAfterSettle = core.getActiveBondsCount();
 
-      // Fire projectile downward at center of bridge deck
+      // Fire heavy projectile downward at center of bridge deck
       core.enqueueProjectile({
         position: { x: 0, y: 10, z: 0 },
         velocity: { x: 0, y: -50, z: 0 },
         radius: 0.4,
-        mass: 10000,
+        mass: 20000,
         ttl: 3000,
       });
 
