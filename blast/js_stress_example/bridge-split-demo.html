@@ -381,29 +381,48 @@
       </aside>
     </main>
     <script>
-      // Mobile sidebar toggle
+      // Sidebar toggle — works on both desktop and mobile
       (function() {
         var toggle = document.getElementById('sidebar-toggle');
         var sidebar = document.getElementById('sidebar');
         var backdrop = document.getElementById('sidebar-backdrop');
+        var layout = document.querySelector('.layout');
+        var mql = window.matchMedia('(max-width: 960px)');
+
+        function isMobile() { return mql.matches; }
+
         function closeSidebar() {
-          sidebar.classList.remove('open');
           toggle.classList.remove('active');
-          backdrop.classList.remove('visible');
-        }
-        function openSidebar() {
-          sidebar.classList.add('open');
-          toggle.classList.add('active');
-          backdrop.classList.add('visible');
-        }
-        toggle.addEventListener('click', function() {
-          if (sidebar.classList.contains('open')) {
-            closeSidebar();
+          if (isMobile()) {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('visible');
           } else {
-            openSidebar();
+            layout.classList.add('sidebar-hidden');
           }
+        }
+
+        function openSidebar() {
+          toggle.classList.add('active');
+          if (isMobile()) {
+            sidebar.classList.add('open');
+            backdrop.classList.add('visible');
+          } else {
+            layout.classList.remove('sidebar-hidden');
+          }
+        }
+
+        function isOpen() {
+          if (isMobile()) return sidebar.classList.contains('open');
+          return !layout.classList.contains('sidebar-hidden');
+        }
+
+        toggle.addEventListener('click', function() {
+          if (isOpen()) closeSidebar(); else openSidebar();
         });
         backdrop.addEventListener('click', closeSidebar);
+
+        // Sync toggle icon state on load — desktop sidebar starts open
+        if (!isMobile()) toggle.classList.add('active');
       })();
     </script>
     <script type="module" src="./dist/split-bridge-stress.js"></script>

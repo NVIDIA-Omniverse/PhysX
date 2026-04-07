@@ -1,3 +1,7 @@
+body {
+  margin: 0;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -409,9 +413,9 @@
   background: rgba(91, 198, 255, 0.35);
 }
 
-/* Mobile sidebar toggle button */
+/* Sidebar toggle button — always visible */
 .sidebar-toggle {
-  display: none;
+  display: flex;
   position: fixed;
   top: 0.75rem;
   right: 0.75rem;
@@ -437,23 +441,51 @@
   border-color: rgba(91, 198, 255, 0.5);
 }
 
-.sidebar-toggle .icon-open,
+/* Icon state: show open icon by default, close when active */
+.sidebar-toggle .icon-open  { display: block; }
 .sidebar-toggle .icon-close { display: none; }
+.sidebar-toggle.active .icon-open  { display: none; }
+.sidebar-toggle.active .icon-close { display: block; }
 
+/* Desktop: sidebar starts visible; toggle button repositions when sidebar is open */
+.sidebar-toggle.active {
+  right: calc(360px + 0.75rem);
+}
+
+/* Desktop collapsed state: hide sidebar column, canvas goes full width */
+.layout.sidebar-hidden {
+  grid-template-columns: 1fr;
+}
+
+.layout.sidebar-hidden .sidebar {
+  display: none;
+}
+
+/* Backdrop — only used on mobile */
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ── Mobile overrides ── */
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
   }
 
-  .sidebar-toggle {
+  /* Undo the desktop column-hide approach; mobile uses overlay */
+  .layout.sidebar-hidden {
+    grid-template-columns: 1fr;
+  }
+  .layout.sidebar-hidden .sidebar {
     display: flex;
   }
 
-  .sidebar-toggle .icon-open { display: block; }
-  .sidebar-toggle .icon-close { display: none; }
-  .sidebar-toggle.active .icon-open { display: none; }
-  .sidebar-toggle.active .icon-close { display: block; }
+  /* Toggle button always top-right on mobile */
+  .sidebar-toggle,
+  .sidebar-toggle.active {
+    right: 0.75rem;
+  }
 
   .viewport {
     grid-column: 1;
@@ -477,7 +509,6 @@
     transform: translateX(0);
   }
 
-  /* Backdrop overlay when sidebar is open */
   .sidebar-backdrop {
     display: none;
     position: fixed;
