@@ -14,8 +14,9 @@ import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
   RapierDebugRenderer,
-  ensurePinataLoaded,
-  buildFracturedScenario,
+  fractureGeometryAsync,
+  buildScenarioFromFragments,
+  buildFoundationFragments,
 } from 'blast-stress-solver/three';
 
 // ── Config ────────────────────────────────────────────────────
@@ -136,23 +137,37 @@ let rapierDebug: RapierDebugRenderer | null = null;
 let showDebug = false;
 
 async function initScene() {
-  // Pre-load three-pinata
-  await ensurePinataLoaded();
-
   const { span, height, thickness, fragmentCount, deckMass } = CONFIG.wall;
 
-  // Fracture a box geometry using Voronoi tessellation
+  // 1. Fracture a box geometry using Voronoi tessellation (async — loads three-pinata dynamically)
   const geometry = new THREE.BoxGeometry(span, height, thickness, 2, 3, 1);
-  const scenario = buildFracturedScenario(geometry, {
+  const wallFragments = await fractureGeometryAsync(geometry, {
     fragmentCount,
     voronoiMode: '3D',
+    worldOffset: { x: 0, y: height * 0.5, z: 0 },
+  });
+  geometry.dispose();
+
+  // 2. Add foundation support slab
+  const { fragments: foundationFragments, foundationTopY } = buildFoundationFragments({
+    span: { x: span, y: height, z: thickness },
+  });
+
+  // Lift wall fragments so they sit on top of the foundation
+  const minY = Math.min(...wallFragments.map(f => f.worldPosition.y - f.halfExtents.y));
+  const liftY = foundationTopY - minY + 0.0005;
+  const liftedFragments = wallFragments.map(f => ({
+    ...f,
+    worldPosition: { ...f.worldPosition, y: f.worldPosition.y + liftY },
+  }));
+  const allFragments = [...liftedFragments, ...foundationFragments];
+
+  // 3. Build scenario from fragments
+  const scenario = buildScenarioFromFragments(allFragments, {
     totalMass: deckMass,
     areaNormalization: 'perAxis',
     dimensions: { x: span, y: height, z: thickness },
-    worldOffset: { x: 0, y: height * 0.5, z: 0 },
-    foundation: { enabled: true },
   });
-  geometry.dispose();
 
   console.log(
     `Fractured wall: ${scenario.nodes.length} nodes (${fragmentCount} fragments), ${scenario.bonds.length} bonds`,
@@ -322,4 +337,8 @@ window.addEventListener('resize', onResize);
 
 // ── Boot ──────────────────────────────────────────────────────
 
-initScene().then(() => loop());
+initScene().then(() => loop()).catch((err) => {
+  console.error('Failed to initialize fractured wall demo:', err);
+  const hint = document.querySelector('.viewport-hint');
+  if (hint) hint.textContent = `Error: ${err.message}`;
+});
