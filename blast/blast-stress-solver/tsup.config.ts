@@ -5,6 +5,7 @@ export default defineConfig({
     index: 'src/index.ts',
     rapier: 'src/rapier.ts',
     three: 'src/three.ts',
+    scenarios: 'src/scenarios/index.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

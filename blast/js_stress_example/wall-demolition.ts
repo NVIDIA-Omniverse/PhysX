@@ -14,154 +14,23 @@ import {
   createDestructibleThreeBundle,
   RapierDebugRenderer,
 } from 'blast-stress-solver/three';
-import type { ScenarioDesc } from 'blast-stress-solver/rapier';
-
-// ── Scenario builder ─────────────────────────────────────────
-
-type WallParams = {
-  columns: number;
-  rows: number;
-  depth: number;
-  spacing: { x: number; y: number; z: number };
-  areaScale: number;
-  totalMass: number;
-  addDiagonals: boolean;
-  diagScale: number;
-};
-
-function buildWallScenario(params: WallParams): ScenarioDesc {
-  const { columns, rows, depth, spacing, areaScale, totalMass, addDiagonals, diagScale } = params;
-  const nodes: ScenarioDesc['nodes'] = [];
-  const bonds: ScenarioDesc['bonds'] = [];
-  const gridCoordinates: Array<{ ix: number; iy: number; iz: number }> = [];
-
-  // Total grid dimensions
-  const totalCols = columns;
-  const totalRows = rows + 1; // +1 for support row at bottom
-  const totalDepth = depth;
-
-  // Index helper
-  const idx = (ix: number, iy: number, iz: number) =>
-    iz * totalCols * totalRows + iy * totalCols + ix;
-
-  // Per-node mass (only non-support nodes carry mass)
-  const dynamicNodeCount = totalCols * rows * totalDepth;
-  const nodeMass = totalMass / Math.max(1, dynamicNodeCount);
-
-  // Create nodes
-  for (let iz = 0; iz < totalDepth; iz++) {
-    for (let iy = 0; iy < totalRows; iy++) {
-      for (let ix = 0; ix < totalCols; ix++) {
-        const isSupport = iy === 0;
-        const centroid = {
-          x: (ix - (totalCols - 1) / 2) * spacing.x,
-          y: (iy - 1) * spacing.y, // support row at y below 0
-          z: (iz - (totalDepth - 1) / 2) * spacing.z,
-        };
-        const volume = spacing.x * spacing.y * spacing.z;
-        nodes.push({
-          centroid,
-          mass: isSupport ? 0 : nodeMass,
-          volume: isSupport ? 0 : volume,
-        });
-        gridCoordinates.push({
-          ix,
-          iy: isSupport ? -1 : iy - 1,
-          iz,
-        });
-      }
-    }
-  }
-
-  // Bond area scaled from cell dimensions (matches vibe-city pattern)
-  const areaXY = spacing.x * spacing.y * areaScale;
-  const areaYZ = spacing.y * spacing.z * areaScale;
-  const areaXZ = spacing.x * spacing.z * areaScale;
-
-  // Create bonds between adjacent nodes (6-connectivity)
-  const offsets: [number, number, number, { x: number; y: number; z: number }, number][] = [
-    [1, 0, 0, { x: 1, y: 0, z: 0 }, areaYZ],
-    [0, 1, 0, { x: 0, y: 1, z: 0 }, areaXZ],
-    [0, 0, 1, { x: 0, y: 0, z: 1 }, areaXY],
-  ];
-
-  for (let iz = 0; iz < totalDepth; iz++) {
-    for (let iy = 0; iy < totalRows; iy++) {
-      for (let ix = 0; ix < totalCols; ix++) {
-        const i = idx(ix, iy, iz);
-        for (const [dx, dy, dz, normal, area] of offsets) {
-          const nx = ix + dx;
-          const ny = iy + dy;
-          const nz = iz + dz;
-          if (nx < totalCols && ny < totalRows && nz < totalDepth) {
-            const j = idx(nx, ny, nz);
-            const c0 = nodes[i].centroid;
-            const c1 = nodes[j].centroid;
-            bonds.push({
-              node0: i,
-              node1: j,
-              centroid: {
-                x: (c0.x + c1.x) / 2,
-                y: (c0.y + c1.y) / 2,
-                z: (c0.z + c1.z) / 2,
-              },
-              normal,
-              area,
-            });
-          }
-        }
-
-        // Diagonal bonds for structural integrity
-        if (addDiagonals) {
-          const diagArea = 0.5 * (areaXZ + areaYZ) * diagScale;
-          const diagOffsets: [number, number, number][] = [
-            [1, 1, 0], [1, -1, 0],
-          ];
-          for (const [ddx, ddy, ddz] of diagOffsets) {
-            const nx = ix + ddx;
-            const ny = iy + ddy;
-            const nz = iz + ddz;
-            if (nx >= 0 && nx < totalCols && ny >= 0 && ny < totalRows && nz >= 0 && nz < totalDepth) {
-              const j = idx(nx, ny, nz);
-              const c0 = nodes[i].centroid;
-              const c1 = nodes[j].centroid;
-              const dx2 = c1.x - c0.x;
-              const dy2 = c1.y - c0.y;
-              const dz2 = c1.z - c0.z;
-              const len = Math.sqrt(dx2 * dx2 + dy2 * dy2 + dz2 * dz2) || 1;
-              bonds.push({
-                node0: i,
-                node1: j,
-                centroid: {
-                  x: (c0.x + c1.x) / 2,
-                  y: (c0.y + c1.y) / 2,
-                  z: (c0.z + c1.z) / 2,
-                },
-                normal: { x: dx2 / len, y: dy2 / len, z: dz2 / len },
-                area: diagArea,
-              });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return { nodes, bonds, gridCoordinates, spacing };
-}
+import { buildWallScenario } from 'blast-stress-solver/scenarios';
 
 // ── Config ────────────────────────────────────────────────────
 
 const CONFIG = {
   wall: {
-    columns: 12,
-    rows: 6,
-    depth: 1,
-    spacing: { x: 0.5, y: 0.5, z: 0.32 },
+    span: 6.0,
+    height: 3.0,
+    thickness: 0.32,
+    spanSegments: 12,
+    heightSegments: 6,
+    layers: 1,
+    deckMass: 10_000,
     areaScale: 0.05,
-    totalMass: 10_000,
     addDiagonals: false,
-    diagScale: 0.6,
+    diagScale: 0.75,
+    normalizeAreas: true,
   },
   projectile: {
     radius: 0.35,
@@ -170,7 +39,7 @@ const CONFIG = {
   },
   solver: {
     gravity: -9.81,
-    materialScale: 1.0,
+    materialScale: 1e8,
   },
 };
 

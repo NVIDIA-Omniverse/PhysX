@@ -56,6 +56,10 @@ jobs:
         run: npx vitest run --reporter=verbose
         continue-on-error: true  # integration tests have physics-dependent assertions that vary across environments
 
+      - name: Run headless scenario tests
+        working-directory: blast/blast-stress-solver
+        run: npx vitest run src/tests/rapier.headless-scenarios.test.ts --reporter=verbose
+
       - name: Run split/fracture tests
         working-directory: blast/js_stress_example
         run: npm run test:split || true  # organicSplit.spec.ts has a known stale expectation
