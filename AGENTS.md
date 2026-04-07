@@ -8,15 +8,66 @@ This is the NVIDIA PhysX monorepo containing PhysX, Blast, and Flow SDKs. The ac
 
 ### Prerequisites
 
-- **Emscripten SDK** must be installed at `/opt/emsdk` and sourced (`source /opt/emsdk/emsdk_env.sh`) before building the WASM artifacts. The `~/.bashrc` sources it automatically.
 - **Node.js** (v22+) is available via nvm.
+- **Emscripten SDK** is required for WASM compilation. It should be installed at `/opt/emsdk`. If not present, install it:
+  ```bash
+  git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
+  cd /opt/emsdk
+  ./emsdk install 3.1.51
+  ./emsdk activate 3.1.51
+  source /opt/emsdk/emsdk_env.sh
+  ```
+  The `~/.bashrc` should source it automatically. Verify with `emcc --version`.
 
-### Build chain (dependency order)
+### First-time setup
 
-1. `cd blast/js_stress_example && npm run build` — compiles C++ stress solver to WASM via `emcc`, outputs `dist/stress_solver.{cjs,mjs,wasm}`
-2. `cd blast/js_stress_example && npx tsc` — compiles TypeScript demo sources (`bridge-stress-ext.ts`, `split-bridge-stress.ts`, etc.) to `dist/`. Required for `bridge-ext.html` and `bridge-split-demo.html`. Pre-existing type errors are expected; `noEmitOnError: false` ensures output is still generated.
-3. `cd blast/blast-stress-solver && npm run build` — runs step 1 as `prebuild`, then bundles TypeScript with `tsup`, copies WASM to `dist/`
-4. Wall/tower demo JS: `cd blast/js_stress_example && npx esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm` (repeat for `tower-collapse.ts`). These use import-map bare specifiers so **esbuild** is used instead of tsc.
+```bash
+# 1. Install root dependencies (three.js, etc.)
+cd /home/user/PhysX
+npm install
+
+# 2. Install blast-stress-solver dependencies
+cd blast/blast-stress-solver
+npm install --ignore-scripts   # avoid triggering full WASM rebuild on install
+
+# 3. Install js_stress_example dependencies
+cd ../js_stress_example
+npm install
+```
+
+### Full build (from scratch)
+
+```bash
+# Ensure emsdk is sourced
+source /opt/emsdk/emsdk_env.sh
+
+# Build the blast-stress-solver package (WASM + TypeScript)
+cd /home/user/PhysX/blast/blast-stress-solver
+npm run build
+
+# Build bridge demo TypeScript (for bridge-split-demo.html, bridge-ext.html)
+cd ../js_stress_example
+npx tsc
+
+# Build wall/tower demo JS (esbuild, not tsc — they use import-map bare specifiers)
+npx esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm
+npx esbuild tower-collapse.ts --outfile=dist/tower-collapse.js --format=esm
+
+# Run tests
+cd ../blast-stress-solver
+npm test
+
+# Serve demos
+cd /home/user/PhysX
+npm start   # http://localhost:8000
+```
+
+### Build chain details
+
+1. `cd blast/js_stress_example && npm run build` — compiles C++ stress solver to WASM via `emcc`, outputs `dist/stress_solver.{cjs,mjs,wasm}`. Takes ~20 seconds (two targets: node-cjs + browser-esm).
+2. `cd blast/blast-stress-solver && npm run build` — runs step 1 as `prebuild`, then bundles TypeScript with `tsup`, copies WASM to `dist/`
+3. `cd blast/js_stress_example && npx tsc` — compiles bridge demo TS to `dist/`. Pre-existing type errors are expected; `noEmitOnError: false` ensures output is still generated.
+4. Wall/tower demo JS: `npx esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm` (repeat for `tower-collapse.ts`). These use import-map bare specifiers so **esbuild** is used instead of tsc.
 5. `npm start` (root) — starts static file server on port 8000, serves demos and vendor aliases for three.js/rapier
 
 ### Running tests
