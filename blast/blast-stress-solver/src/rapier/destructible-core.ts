@@ -1803,6 +1803,16 @@ export async function buildDestructibleCore({
       activeProfilerSample.projectiles = projectiles.length;
       const wbc = world as WorldWithBodyCount;
       activeProfilerSample.rigidBodies = typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+      // Capture body/chunk distribution stats
+      const bcs = captureBodyColliderStats();
+      if (bcs) {
+        activeProfilerSample.bodyCount = bcs.bodyCount;
+        activeProfilerSample.bodyColliderCountMin = bcs.min;
+        activeProfilerSample.bodyColliderCountMax = bcs.max;
+        activeProfilerSample.bodyColliderCountAvg = bcs.avg;
+        activeProfilerSample.bodyColliderCountMedian = bcs.median;
+        activeProfilerSample.bodyColliderCountP95 = bcs.p95;
+      }
     }
 
     stopTiming(totalT0, 'totalMs');

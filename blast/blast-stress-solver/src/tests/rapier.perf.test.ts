@@ -302,6 +302,17 @@ async function runPerfScenario(opts: {
     console.log(`\n  Resimulation: ${framesWithResim.length} frames had resim passes (mean ${resimPassStats.mean.toFixed(1)}, max ${resimPassStats.max})`);
   }
 
+  // Body group distribution summary
+  const bodySamples = samples.filter((s) => (s as any).bodyCount > 0);
+  if (bodySamples.length > 0) {
+    const lastSample = bodySamples[bodySamples.length - 1] as any;
+    const maxBodyCount = Math.max(...bodySamples.map((s) => (s as any).bodyCount ?? 0));
+    const maxChunksPerBody = Math.max(...bodySamples.map((s) => (s as any).bodyColliderCountMax ?? 0));
+    console.log(`\n  Body distribution (final frame): ${lastSample.bodyCount} bodies`);
+    console.log(`    Chunks/body: min=${lastSample.bodyColliderCountMin} max=${lastSample.bodyColliderCountMax} avg=${(lastSample.bodyColliderCountAvg ?? 0).toFixed(1)} median=${lastSample.bodyColliderCountMedian} p95=${lastSample.bodyColliderCountP95}`);
+    console.log(`    Peak: ${maxBodyCount} bodies, largest group: ${maxChunksPerBody} chunks`);
+  }
+
   allResults.push(result);
   return result;
 }
@@ -746,6 +757,47 @@ describe.skipIf(!runtimeAvailable)('Destruction performance benchmarks (requires
       });
       expect(result.samples.length).toBeGreaterThan(0);
     }, 120_000);
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // G. Solver iteration tuning
+  // ────────────────────────────────────────────────────────────
+
+  describe('G. Solver iteration tuning (medium tower 6x12)', () => {
+    const mediumTower = () => buildTowerScenario({ side: 6, stories: 12, totalMass: 5000 });
+    const towerHeight = 12 * 0.5;
+
+    it('24 iterations (default)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Solver: 24 iterations',
+        scenario: mediumTower(),
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 60_000);
+
+    it('12 iterations (halved)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Solver: 12 iterations',
+        scenario: mediumTower(),
+        coreOpts: { solverSettings: { maxSolverIterationsPerFrame: 12 } },
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 60_000);
+
+    it('8 iterations (aggressive)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'Solver: 8 iterations',
+        scenario: mediumTower(),
+        coreOpts: { solverSettings: { maxSolverIterationsPerFrame: 8 } },
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 60_000);
   });
 
   // ────────────────────────────────────────────────────────────
