@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - feat/rapier-destruction
   pull_request:
 
 # ── Change this to your default/production branch ──────────
