@@ -832,7 +832,13 @@ export async function buildDestructibleCore({
         for (const child of split.children) {
           const childNodes: number[] = child.nodes ?? [];
           if (childNodes.length === 0) continue;
-          const isChildSupport = childNodes.every((ni: number) => chunks[ni]?.isSupport);
+          // Match vibe-city: a child is "support" if ANY node is support (mass=0)
+          const isChildSupport = childNodes.some((ni: number) => {
+            const ch = chunks[ni];
+            if (ch?.isSupport) return true;
+            const mass = scenario.nodes[ni]?.mass ?? 0;
+            return !(mass > 0);
+          });
 
           // skipSingleBodies: destroy single non-support nodes instead of leaving on rootBody
           if (skipSingleBodiesEnabled && childNodes.length <= 1 && !isChildSupport) {
@@ -840,12 +846,26 @@ export async function buildDestructibleCore({
             const chunk = chunks[ni];
             if (chunk) {
               chunk.active = false;
+              chunk.destroyed = true;
+              if (chunk.health != null) chunk.health = 0;
               if (chunk.colliderHandle != null) {
+                const oldC = world.getCollider(chunk.colliderHandle);
+                if (oldC) oldC.setEnabled(false);
+                colliderToNode.delete(chunk.colliderHandle);
                 disabledCollidersToRemove.add(chunk.colliderHandle);
+                chunk.colliderHandle = null;
               }
+              unregisterNodeBodyLink(ni, chunk.bodyHandle);
               onNodeDestroyed?.({ nodeIndex: ni, actorIndex: child.actorIndex, reason: 'manual' });
             }
             continue;
+          }
+
+          if (activeProfilerSample) {
+            if (!(activeProfilerSample as any).splitChildCounts) {
+              (activeProfilerSample as any).splitChildCounts = [];
+            }
+            (activeProfilerSample as any).splitChildCounts.push(childNodes.length);
           }
 
           for (const n of childNodes) nodeToActor.set(n, child.actorIndex);
@@ -862,12 +882,20 @@ export async function buildDestructibleCore({
           const parentNodes = nodesByBodyHandle.get(parentBodyHandle) ?? new Set<number>();
           const parentRigidBody = world.getRigidBody(parentBodyHandle);
           const parentIsFixed = !!parentRigidBody?.isFixed?.();
+          let plannerDuration = 0;
           const migration = planSplitMigration(
             [{ handle: parentBodyHandle, nodeIndices: parentNodes, isFixed: parentIsFixed }],
             plannerChildren,
+            { onDuration: (ms: number) => { plannerDuration += ms; } },
           );
+          if (activeProfilerSample) {
+            (activeProfilerSample as any).splitPlannerMs =
+              ((activeProfilerSample as any).splitPlannerMs ?? 0) + plannerDuration;
+          }
 
-          // Reused children: assign body handle, set correct type, queue collider migrations
+          // Reused children: assign body handle, set correct type.
+          // No collider migration needed — the reused body already has these colliders.
+          // Colliders for nodes moving to OTHER children get migrated when those bodies are created.
           for (const reuse of migration.reuse) {
             const entry = plannerChildren[reuse.childIndex];
             if (!entry) continue;
@@ -877,15 +905,6 @@ export async function buildDestructibleCore({
             if (reusedBody) {
               if (entry.isSupport) reusedBody.setBodyType(RAPIER.RigidBodyType.Fixed, true);
               else reusedBody.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
-            }
-
-            for (const ni of entry.nodes) {
-              const oldBody = chunks[ni]?.bodyHandle;
-              unregisterNodeBodyLink(ni, oldBody);
-              nodeToActor.set(ni, entry.actorIndex);
-              chunks[ni].bodyHandle = reuse.bodyHandle;
-              registerNodeBodyLink(ni, reuse.bodyHandle);
-              pendingColliderMigrations.push({ nodeIndex: ni, targetBodyHandle: reuse.bodyHandle });
             }
           }
 
@@ -932,11 +951,15 @@ export async function buildDestructibleCore({
       const parentRot = parentBody?.rotation() ?? { x: 0, y: 0, z: 0, w: 1 };
       const parentLinvel = parentBody?.linvel() ?? { x: 0, y: 0, z: 0 };
       const parentAngvel = parentBody?.angvel() ?? { x: 0, y: 0, z: 0 };
+      const parentLinDamp = parentBody && typeof parentBody.linearDamping === 'function' ? parentBody.linearDamping() : undefined;
+      const parentAngDamp = parentBody && typeof parentBody.angularDamping === 'function' ? parentBody.angularDamping() : undefined;
 
       const desc = isSupport
         ? RAPIER.RigidBodyDesc.fixed().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot)
         : RAPIER.RigidBodyDesc.dynamic().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot)
             .setLinvel(parentLinvel.x, parentLinvel.y, parentLinvel.z).setAngvel(parentAngvel);
+      if (typeof parentLinDamp === 'number') desc.setLinearDamping(parentLinDamp);
+      if (typeof parentAngDamp === 'number') desc.setAngularDamping(parentAngDamp);
 
       if (!isSupport) {
         try { (desc as MaybeCcdBodyDesc).setCcdEnabled?.(true); } catch {}
