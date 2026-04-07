@@ -827,17 +827,80 @@ export async function buildDestructibleCore({
         const parentActorIndex = split.parentActorIndex;
         const parentEntry = actorMap.get(parentActorIndex);
         const parentBodyHandle = parentEntry?.bodyHandle ?? rootBody.handle;
+        const plannerChildren: PlannerChild[] = [];
 
         for (const child of split.children) {
           const childNodes: number[] = child.nodes ?? [];
           if (childNodes.length === 0) continue;
           const isChildSupport = childNodes.every((ni: number) => chunks[ni]?.isSupport);
-          pendingBodiesToCreate.push({
+
+          // skipSingleBodies: destroy single non-support nodes instead of leaving on rootBody
+          if (skipSingleBodiesEnabled && childNodes.length <= 1 && !isChildSupport) {
+            const ni = childNodes[0];
+            const chunk = chunks[ni];
+            if (chunk) {
+              chunk.active = false;
+              if (chunk.colliderHandle != null) {
+                disabledCollidersToRemove.add(chunk.colliderHandle);
+              }
+              onNodeDestroyed?.({ nodeIndex: ni, actorIndex: child.actorIndex, reason: 'manual' });
+            }
+            continue;
+          }
+
+          for (const n of childNodes) nodeToActor.set(n, child.actorIndex);
+          plannerChildren.push({
+            index: plannerChildren.length,
             actorIndex: child.actorIndex,
-            inheritFromBodyHandle: parentBodyHandle,
             nodes: childNodes,
             isSupport: isChildSupport,
           });
+        }
+
+        if (plannerChildren.length > 0) {
+          // Batch: single planSplitMigration call per split event, only parent body
+          const parentNodes = nodesByBodyHandle.get(parentBodyHandle) ?? new Set<number>();
+          const parentRigidBody = world.getRigidBody(parentBodyHandle);
+          const parentIsFixed = !!parentRigidBody?.isFixed?.();
+          const migration = planSplitMigration(
+            [{ handle: parentBodyHandle, nodeIndices: parentNodes, isFixed: parentIsFixed }],
+            plannerChildren,
+          );
+
+          // Reused children: assign body handle, set correct type, queue collider migrations
+          for (const reuse of migration.reuse) {
+            const entry = plannerChildren[reuse.childIndex];
+            if (!entry) continue;
+            actorMap.set(entry.actorIndex, { bodyHandle: reuse.bodyHandle });
+
+            const reusedBody = world.getRigidBody(reuse.bodyHandle);
+            if (reusedBody) {
+              if (entry.isSupport) reusedBody.setBodyType(RAPIER.RigidBodyType.Fixed, true);
+              else reusedBody.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
+            }
+
+            for (const ni of entry.nodes) {
+              const oldBody = chunks[ni]?.bodyHandle;
+              unregisterNodeBodyLink(ni, oldBody);
+              nodeToActor.set(ni, entry.actorIndex);
+              chunks[ni].bodyHandle = reuse.bodyHandle;
+              registerNodeBodyLink(ni, reuse.bodyHandle);
+              pendingColliderMigrations.push({ nodeIndex: ni, targetBodyHandle: reuse.bodyHandle });
+            }
+          }
+
+          // Non-reused children: queue for body creation
+          for (const create of migration.create) {
+            const entry = plannerChildren[create.childIndex];
+            if (!entry) continue;
+            pendingBodiesToCreate.push({
+              actorIndex: entry.actorIndex,
+              inheritFromBodyHandle: parentBodyHandle,
+              nodes: entry.nodes,
+              isSupport: entry.isSupport,
+            });
+            actorMap.set(entry.actorIndex, { bodyHandle: parentBodyHandle });
+          }
         }
       }
       hadFracture = splitEvents.length > 0;
@@ -864,63 +927,39 @@ export async function buildDestructibleCore({
     for (const pending of pendingBodiesToCreate) {
       const { actorIndex, inheritFromBodyHandle, nodes: nodeList, isSupport } = pending;
 
-      if (skipSingleBodiesEnabled && nodeList.length <= 1 && !isSupport) {
-        for (const ni of nodeList) {
-          nodeToActor.set(ni, actorIndex);
-          actorMap.set(actorIndex, { bodyHandle: rootBody.handle });
-        }
-        continue;
-      }
-
       const parentBody = world.getRigidBody(inheritFromBodyHandle);
       const parentPos = parentBody?.translation() ?? { x: 0, y: 0, z: 0 };
       const parentRot = parentBody?.rotation() ?? { x: 0, y: 0, z: 0, w: 1 };
       const parentLinvel = parentBody?.linvel() ?? { x: 0, y: 0, z: 0 };
       const parentAngvel = parentBody?.angvel() ?? { x: 0, y: 0, z: 0 };
 
-      const existingBodies: ExistingBodyState[] = [];
-      for (const [handle, nodeSet] of nodesByBodyHandle) {
-        const eb = world.getRigidBody(handle);
-        if (eb) {
-          existingBodies.push({ handle, nodeIndices: nodeSet, isFixed: eb.isFixed() });
-        }
+      const desc = isSupport
+        ? RAPIER.RigidBodyDesc.fixed().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot)
+        : RAPIER.RigidBodyDesc.dynamic().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot)
+            .setLinvel(parentLinvel.x, parentLinvel.y, parentLinvel.z).setAngvel(parentAngvel);
+
+      if (!isSupport) {
+        try { (desc as MaybeCcdBodyDesc).setCcdEnabled?.(true); } catch {}
       }
-      const plannerChildren: PlannerChild[] = [{
-        index: 0,
-        actorIndex,
-        nodes: nodeList,
-        isSupport: isSupport,
-      }];
-      const migration = planSplitMigration(existingBodies, plannerChildren);
 
-      let bodyHandle: number;
-      const reuseEntry = migration.reuse.find(r => r.childIndex === 0);
-      if (reuseEntry) {
-        bodyHandle = reuseEntry.bodyHandle;
-        const body = world.getRigidBody(bodyHandle);
-        if (body) {
-          if (isSupport) body.setBodyType(RAPIER.RigidBodyType.Fixed, true);
-        } else {
-          const desc = isSupport
-            ? RAPIER.RigidBodyDesc.fixed().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot)
-            : RAPIER.RigidBodyDesc.dynamic().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot).setLinvel(parentLinvel.x, parentLinvel.y, parentLinvel.z).setAngvel(parentAngvel);
-          const newBody = world.createRigidBody(desc);
-          bodyHandle = newBody.handle;
+      const newBody = world.createRigidBody(desc);
+      const bodyHandle = newBody.handle;
+
+      // Apply small body damping immediately for 'always' mode
+      if (!isSupport) {
+        const isSmall = nodeList.length <= smallBodyDampingSettings.colliderCountThreshold;
+        if (isSmall && smallBodyDampingSettings.mode === 'always') {
+          try {
+            const curLin = typeof newBody.linearDamping === 'function' ? newBody.linearDamping() : 0;
+            const curAng = typeof newBody.angularDamping === 'function' ? newBody.angularDamping() : 0;
+            newBody.setLinearDamping(Math.max(curLin, smallBodyDampingSettings.minLinearDamping));
+            newBody.setAngularDamping(Math.max(curAng, smallBodyDampingSettings.minAngularDamping));
+          } catch {}
         }
-      } else {
-        const desc = isSupport
-          ? RAPIER.RigidBodyDesc.fixed().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot)
-          : RAPIER.RigidBodyDesc.dynamic().setTranslation(parentPos.x, parentPos.y, parentPos.z).setRotation(parentRot).setLinvel(parentLinvel.x, parentLinvel.y, parentLinvel.z).setAngvel(parentAngvel);
-        const newBody = world.createRigidBody(desc);
-        bodyHandle = newBody.handle;
+        if (isSmall) smallBodiesPendingDamping.add(bodyHandle);
 
-        if (sleepSettings.mode !== 'off') {
-          const rb = world.getRigidBody(bodyHandle);
-          if (rb && typeof (rb as any).setActivationState === 'function') {
-            try {
-              (rb as any).setActivationState(0);
-            } catch {}
-          }
+        if (nodeList.length <= debrisCleanupSettings.maxCollidersForDebris) {
+          debrisCreationTimes.set(bodyHandle, Date.now());
         }
       }
 
@@ -934,17 +973,6 @@ export async function buildDestructibleCore({
         registerNodeBodyLink(ni, bodyHandle);
         pendingColliderMigrations.push({ nodeIndex: ni, targetBodyHandle: bodyHandle });
       }
-
-      if (!isSupport) {
-        const isSmall = nodeList.length <= smallBodyDampingSettings.colliderCountThreshold;
-        if (isSmall) smallBodiesPendingDamping.add(bodyHandle);
-
-        const now = Date.now();
-        const colliderCount = nodeList.length;
-        if (colliderCount <= debrisCleanupSettings.maxCollidersForDebris) {
-          debrisCreationTimes.set(bodyHandle, now);
-        }
-      }
     }
     pendingBodiesToCreate.length = 0;
     stopTiming(t0, 'bodyCreateMs');
@@ -955,6 +983,7 @@ export async function buildDestructibleCore({
     for (const migration of pendingColliderMigrations) {
       const chunk = chunks[migration.nodeIndex];
       if (!chunk || chunk.colliderHandle == null) continue;
+      if (!chunk.active) continue;
 
       const oldHandle = chunk.colliderHandle;
       const oldCollider = world.getCollider(oldHandle);
