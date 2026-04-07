@@ -1438,9 +1438,10 @@ export async function buildDestructibleCore({
       return true;
     }
 
-    // No rollback needed — replay buffered contacts into the real damage tick
+    // No rollback needed — the first replay() above already accumulated contacts
+    // into pendingDamage. previewTick(preview:true) did NOT consume them, so
+    // tick() will process them correctly. Do NOT replay again (would double-count).
     const tickT0 = startTiming();
-    contactReplayBuffer.replay(damageSystem);
     const tickDestroyed = damageSystem.tick(dt);
     stopTiming(tickT0, 'damageTickMs');
 

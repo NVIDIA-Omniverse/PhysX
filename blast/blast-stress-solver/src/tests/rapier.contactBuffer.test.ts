@@ -146,4 +146,80 @@ describe('ContactBuffer', () => {
     expect(calls[1][0]).toBe(1);
     expect(calls[2][0]).toBe(2);
   });
+
+  it('mixed external + internal contacts all replay in one call', () => {
+    const buf = new ContactBuffer();
+    const ds = mockDamageSystem();
+
+    buf.recordExternal({ nodeIndex: 0, effMag: 100, dt: 1 / 60 });
+    buf.recordInternal({ nodeA: 1, nodeB: 2, effMag: 200, dt: 1 / 60 });
+    buf.recordExternal({ nodeIndex: 3, effMag: 300, dt: 1 / 60, localPoint: { x: 1, y: 0, z: 0 } });
+    buf.recordInternal({ nodeA: 4, nodeB: 5, effMag: 400, dt: 1 / 60, localPointA: { x: 0, y: 1, z: 0 } });
+
+    buf.replay(ds);
+
+    expect(ds.onImpact).toHaveBeenCalledTimes(2);
+    expect(ds.onInternalImpact).toHaveBeenCalledTimes(2);
+
+    // Verify ordering: externals first, then internals
+    expect(ds.onImpact.mock.calls[0][0]).toBe(0); // nodeIndex 0
+    expect(ds.onImpact.mock.calls[1][0]).toBe(3); // nodeIndex 3
+    expect(ds.onInternalImpact.mock.calls[0][0]).toBe(1); // nodeA 1
+    expect(ds.onInternalImpact.mock.calls[1][0]).toBe(4); // nodeA 4
+  });
+
+  it('handles 500 contacts without error', () => {
+    const buf = new ContactBuffer();
+    const ds = mockDamageSystem();
+
+    for (let i = 0; i < 300; i++) {
+      buf.recordExternal({ nodeIndex: i % 50, effMag: i * 10, dt: 1 / 60 });
+    }
+    for (let i = 0; i < 200; i++) {
+      buf.recordInternal({ nodeA: i % 25, nodeB: (i + 1) % 25, effMag: i * 5, dt: 1 / 60 });
+    }
+
+    expect(buf.externalCount).toBe(300);
+    expect(buf.internalCount).toBe(200);
+
+    buf.replay(ds);
+
+    expect(ds.onImpact).toHaveBeenCalledTimes(300);
+    expect(ds.onInternalImpact).toHaveBeenCalledTimes(200);
+  });
+
+  it('preserves effMag exactly (no re-computation on replay)', () => {
+    const buf = new ContactBuffer();
+    const ds = mockDamageSystem();
+
+    // Use a very precise value that would change if re-computed
+    const preciseEffMag = 123.456789012345;
+    buf.recordExternal({ nodeIndex: 0, effMag: preciseEffMag, dt: 1 / 60 });
+
+    buf.replay(ds);
+
+    // Verify the exact value is passed through, not recomputed
+    expect(ds.onImpact.mock.calls[0][1]).toBe(preciseEffMag);
+  });
+
+  it('snapshot-restore-replay produces identical damage calls', () => {
+    // Simulates the rollback flow: replay → snapshot → restore → replay
+    const buf = new ContactBuffer();
+    const ds1 = mockDamageSystem();
+    const ds2 = mockDamageSystem();
+
+    buf.recordExternal({ nodeIndex: 0, effMag: 100, dt: 1 / 60, localPoint: { x: 1, y: 2, z: 3 } });
+    buf.recordExternal({ nodeIndex: 1, effMag: 200, dt: 1 / 60 });
+    buf.recordInternal({ nodeA: 2, nodeB: 3, effMag: 50, dt: 1 / 60 });
+
+    // First replay (preview pass)
+    buf.replay(ds1);
+
+    // Second replay (after restore — same contacts should produce same calls)
+    buf.replay(ds2);
+
+    // Both should have received identical calls
+    expect(ds1.onImpact.mock.calls).toEqual(ds2.onImpact.mock.calls);
+    expect(ds1.onInternalImpact.mock.calls).toEqual(ds2.onInternalImpact.mock.calls);
+  });
 });
