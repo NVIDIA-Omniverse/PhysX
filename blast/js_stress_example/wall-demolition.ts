@@ -177,6 +177,16 @@ async function initScene() {
       (CONFIG.autoBonds ? ' (auto-bonded)' : ' (manual)'),
   );
 
+  console.log('[wall-demolition] buildDestructibleCore config:', {
+    debrisCollisionMode: CONFIG.physics.debrisCollisionMode,
+    friction: CONFIG.physics.friction,
+    restitution: CONFIG.physics.restitution,
+    contactForceScale: CONFIG.physics.contactForceScale,
+    skipSingleBodies: CONFIG.physics.skipSingleBodies,
+    smallBodyDampingMode: CONFIG.optimization.smallBodyDampingMode,
+    debrisCleanupMode: CONFIG.optimization.debrisCleanupMode,
+  });
+
   const core = await buildDestructibleCore({
     scenario,
     gravity: CONFIG.solver.gravity,
