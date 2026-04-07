@@ -339,6 +339,7 @@ export async function buildDestructibleCore({
     maxColliderMigrationsPerFrame: fracturePolicy?.maxColliderMigrationsPerFrame ?? -1,
     maxDynamicBodies: fracturePolicy?.maxDynamicBodies ?? -1,
     minChildNodeCount: fracturePolicy?.minChildNodeCount ?? 1,
+    idleSkip: fracturePolicy?.idleSkip ?? true,
   };
 
   function toDebrisCollisionMode(mode: SingleCollisionMode | DebrisCollisionMode): DebrisCollisionMode {
@@ -1090,7 +1091,7 @@ export async function buildDestructibleCore({
     // resolved stress in large structures (CGNR may need multiple frames to converge).
     const hasExternalForces = bufferedExternalContacts.length > 0 || pendingExternalForces.length > 0;
     const solverConverged = typeof solver.converged === 'function' ? solver.converged() : false;
-    const shouldSkipSolver = !hasExternalForces && solverFractureCountdown <= 0 && solverConverged && passIndex === 0 && safeFrames > 2;
+    const shouldSkipSolver = fracturePolicySettings.idleSkip && !hasExternalForces && solverFractureCountdown <= 0 && solverConverged && passIndex === 0 && safeFrames > 2;
     if (!shouldSkipSolver) {
       solver.update();
     }

@@ -801,6 +801,37 @@ describe.skipIf(!runtimeAvailable)('Destruction performance benchmarks (requires
   });
 
   // ────────────────────────────────────────────────────────────
+  // H. Idle-skip comparison
+  // ────────────────────────────────────────────────────────────
+
+  describe('H. Idle-skip comparison (medium tower 6x12)', () => {
+    const mediumTower = () => buildTowerScenario({ side: 6, stories: 12, totalMass: 5000 });
+    const towerHeight = 12 * 0.5;
+
+    it('idle-skip ON (default)', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'IdleSkip: ON',
+        scenario: mediumTower(),
+        coreOpts: { fracturePolicy: { idleSkip: true } },
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 60_000);
+
+    it('idle-skip OFF', async () => {
+      await loadModules();
+      const result = await runPerfScenario({
+        name: 'IdleSkip: OFF',
+        scenario: mediumTower(),
+        coreOpts: { fracturePolicy: { idleSkip: false } },
+        impactPlan: centerHit(towerHeight),
+      });
+      expect(result.samples.length).toBeGreaterThan(0);
+    }, 60_000);
+  });
+
+  // ────────────────────────────────────────────────────────────
   // Final summary
   // ────────────────────────────────────────────────────────────
 

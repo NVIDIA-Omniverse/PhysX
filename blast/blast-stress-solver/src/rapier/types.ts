@@ -97,6 +97,12 @@ export type FracturePolicy = {
    *  Smaller children are destroyed (visual debris only, no physics body).
    *  Models "material grain size". Default: 1 (every fragment gets a body) */
   minChildNodeCount?: number;
+
+  /** Enable idle-frame solver skip optimization. When true, the stress solver
+   *  is skipped on frames with no external forces and no recent fractures.
+   *  Saves ~15ms/frame when idle but may cause jitter during active destruction.
+   *  Default: true */
+  idleSkip?: boolean;
 };
 
 // Builder that returns a Rapier collider descriptor for a node.

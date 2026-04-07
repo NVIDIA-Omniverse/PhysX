@@ -45,6 +45,7 @@ const CONFIG = {
     maxColliderMigrationsPerFrame: -1,
     maxDynamicBodies: -1,
     minChildNodeCount: 1,
+    idleSkip: true,
   },
 };
 
@@ -300,6 +301,18 @@ bindSlider('cfg-max-dynamic', CONFIG.fracturePolicy, 'maxDynamicBodies', {
 bindSlider('cfg-min-child', CONFIG.fracturePolicy, 'minChildNodeCount', {
   onChange: applyFracturePolicy,
 });
+
+// Idle-skip toggle
+{
+  const checkbox = document.getElementById('cfg-idle-skip') as HTMLInputElement | null;
+  if (checkbox) {
+    checkbox.checked = CONFIG.fracturePolicy.idleSkip;
+    checkbox.addEventListener('change', () => {
+      CONFIG.fracturePolicy.idleSkip = checkbox.checked;
+      applyFracturePolicy();
+    });
+  }
+}
 
 // Solver config (needs reset)
 bindSlider('cfg-gravity', CONFIG.solver, 'gravity', { fmt: (v) => v.toFixed(1) });
