@@ -21,6 +21,18 @@ import type {
 import { DestructibleDamageSystem, type DamageOptions, type DamageStateSnapshot } from './damage';
 import { planSplitMigration, type PlannerChild, type ExistingBodyState } from './splitMigrator';
 import { createScenarioNodeSizeResolver } from './scenario';
+import { applyCollisionGroupsForBody as applyCollisionGroupsForBodyImpl, type CollisionGroupContext } from './collisionGroups';
+import { ContactBuffer } from './contactBuffer';
+import {
+  computeSpeedFactor,
+  computeRelativeSpeed,
+  getBodyForColliderHandle,
+  worldPointToBodyLocal,
+  chunkWorldCenter as chunkWorldCenterHelper,
+  fallbackContactPoint,
+  applyProjectileMomentumBoost,
+  type SpeedScalingOptions,
+} from './contactHelpers';
 
 export type BuildDestructibleCoreOptions = {
   scenario: ScenarioDesc;
@@ -563,6 +575,38 @@ export async function buildDestructibleCore({
     stopTiming(t0, 'rebuildColliderMapMs');
   }
 
+  const MIN_STEP_DT = 1e-4;
+  const MAX_STEP_DT = 1 / 30;
+  function clampStepDt(value: number): number {
+    return Math.min(MAX_STEP_DT, Math.max(MIN_STEP_DT, value));
+  }
+
+  function readWorldDt(): number {
+    try {
+      const w = world as WorldWithOptionalTimestep;
+      if (typeof w.timestep === 'number') return w.timestep;
+    } catch {}
+    try {
+      const params = (world as any).integrationParameters;
+      const dt = params?.dt;
+      if (typeof dt === 'number' && dt > 0) return dt;
+    } catch {}
+    return 1 / 60;
+  }
+
+  function setWorldDtValue(dt: number) {
+    try {
+      const w = world as WorldWithOptionalTimestep;
+      if (typeof w.timestep === 'number') w.timestep = dt;
+    } catch {}
+    try {
+      if ((world as any).integrationParameters) {
+        (world as any).integrationParameters.dt = dt;
+      }
+    } catch {}
+  }
+
+  // --- Solver force injection (contact forces → stress solver) ---
   const bufferedExternalContacts: Array<{
     nodeIndex: number;
     otherBodyHandle: number;
@@ -578,10 +622,42 @@ export async function buildDestructibleCore({
     maxForceMagnitude: number;
   }> = [];
 
+  // --- Buffered contacts for damage rollback replay ---
+  const contactReplayBuffer = new ContactBuffer();
+  const speedScalingOpts: SpeedScalingOptions = {
+    speedMinExternal: damageOptions.speedMinExternal,
+    speedMinInternal: damageOptions.speedMinInternal,
+    speedMax: damageOptions.speedMax,
+    speedExponent: damageOptions.speedExponent,
+    slowSpeedFactor: damageOptions.slowSpeedFactor,
+    fastSpeedFactor: damageOptions.fastSpeedFactor,
+  };
+
+  function getChunkWorldCenter(nodeIndex: number): Vec3 | null {
+    const chunk = chunks[nodeIndex];
+    if (!chunk) return null;
+    const { body } = actorBodyForNode(nodeIndex);
+    if (!body) return null;
+    return chunkWorldCenterHelper(body, chunk.baseLocalOffset);
+  }
+
+  function getWorldPointToActorLocal(nodeIndex: number, worldPoint: Vec3): Vec3 | null {
+    try {
+      const { body } = actorBodyForNode(nodeIndex);
+      if (!body) return null;
+      return worldPointToBodyLocal(body, worldPoint);
+    } catch {
+      return null;
+    }
+  }
+
   function drainContactForces() {
     const t0 = startTiming();
     bufferedExternalContacts.length = 0;
     bufferedInternalContacts.length = 0;
+    contactReplayBuffer.clear();
+
+    const dt = lastStepDt;
 
     eventQueue.drainContactForceEvents((ev) => {
       const h1 = ev.collider1();
@@ -594,7 +670,60 @@ export async function buildDestructibleCore({
       const forceVec: Vec3 | undefined = typeof (ev as any).totalForce === 'function'
         ? (ev as any).totalForce() as Vec3
         : undefined;
+      // Extract world contact points (when available from Rapier)
+      const wp = typeof (ev as any).worldContactPoint === 'function'
+        ? (ev as any).worldContactPoint() as Vec3 | undefined
+        : undefined;
+      const wp2 = typeof (ev as any).worldContactPoint2 === 'function'
+        ? (ev as any).worldContactPoint2() as Vec3 | undefined
+        : undefined;
+      const p1 = wp ?? wp2 ?? fallbackContactPoint(world, h1);
+      const p2 = wp2 ?? wp ?? fallbackContactPoint(world, h2);
 
+      const isInternal = (node1 != null && node2 != null);
+      const pForNode1 = node1 != null ? (wp ?? wp2 ?? getChunkWorldCenter(node1) ?? p1) : undefined;
+      const pForNode2 = node2 != null ? (wp2 ?? wp ?? getChunkWorldCenter(node2) ?? p2) : undefined;
+      const relAnchor = pForNode1 ?? pForNode2 ?? p1 ?? p2;
+
+      // Speed-scaled effective magnitude
+      const relSpeed = computeRelativeSpeed(world, h1, h2, relAnchor);
+      const speedFactor = computeSpeedFactor(relSpeed, isInternal, speedScalingOpts);
+      let effMag = (totalForce ?? 0) * speedFactor;
+
+      // Projectile momentum boost
+      try {
+        const b1 = getBodyForColliderHandle(world, h1);
+        const b2 = getBodyForColliderHandle(world, h2);
+
+        // Track ground collisions for optimization modes
+        if (b1 && b2) {
+          const isB1Ground = b1.handle === groundBody.handle;
+          const isB2Ground = b2.handle === groundBody.handle;
+          if (isB1Ground && !isB2Ground && b2.handle !== rootBody.handle) {
+            const wasNew = !bodiesCollidedWithGround.has(b2.handle);
+            bodiesCollidedWithGround.add(b2.handle);
+            if (wasNew && smallBodyDampingSettings.mode === 'afterGroundCollision') {
+              applySmallBodyDampingToBody(b2.handle);
+            }
+          } else if (isB2Ground && !isB1Ground && b1.handle !== rootBody.handle) {
+            const wasNew = !bodiesCollidedWithGround.has(b1.handle);
+            bodiesCollidedWithGround.add(b1.handle);
+            if (wasNew && smallBodyDampingSettings.mode === 'afterGroundCollision') {
+              applySmallBodyDampingToBody(b1.handle);
+            }
+          }
+        }
+
+        if (node1 != null || node2 != null) {
+          effMag = applyProjectileMomentumBoost(b1, b2, relSpeed, dt, effMag);
+        }
+      } catch { /* defensive: don't let boost logic crash contact drain */ }
+
+      // Compute body-local contact points for splash AOE damage
+      const local1 = (node1 != null && pForNode1) ? getWorldPointToActorLocal(node1, pForNode1) : null;
+      const local2 = (node2 != null && pForNode2) ? getWorldPointToActorLocal(node2, pForNode2) : null;
+
+      // --- Buffer contacts for stress solver injection (unchanged logic) ---
       if (node1 != null && node2 != null) {
         const chunk1 = chunks[node1];
         const chunk2 = chunks[node2];
@@ -606,6 +735,12 @@ export async function buildDestructibleCore({
             totalForceMagnitude: totalForce,
             maxForceMagnitude: maxForce,
           });
+          // Buffer for damage replay with speed-scaled magnitude
+          contactReplayBuffer.recordInternal({
+            nodeA: node1, nodeB: node2, effMag, dt,
+            localPointA: local1 ?? undefined,
+            localPointB: local2 ?? undefined,
+          });
         } else {
           if (chunk1) {
             bufferedExternalContacts.push({
@@ -615,6 +750,10 @@ export async function buildDestructibleCore({
               maxForceMagnitude: maxForce,
               totalForceWorld: forceVec,
             });
+            contactReplayBuffer.recordExternal({
+              nodeIndex: node1, effMag, dt,
+              localPoint: local1 ?? undefined,
+            });
           }
           if (chunk2) {
             bufferedExternalContacts.push({
@@ -623,6 +762,10 @@ export async function buildDestructibleCore({
               totalForceMagnitude: totalForce,
               maxForceMagnitude: maxForce,
               totalForceWorld: forceVec ? { x: -forceVec.x, y: -forceVec.y, z: -forceVec.z } : undefined,
+            });
+            contactReplayBuffer.recordExternal({
+              nodeIndex: node2, effMag, dt,
+              localPoint: local2 ?? undefined,
             });
           }
         }
@@ -636,6 +779,10 @@ export async function buildDestructibleCore({
             maxForceMagnitude: maxForce,
             totalForceWorld: forceVec,
           });
+          contactReplayBuffer.recordExternal({
+            nodeIndex: node1, effMag, dt,
+            localPoint: local1 ?? undefined,
+          });
           if (chunk.bodyHandle != null) bodiesCollidedWithGround.add(chunk.bodyHandle);
         }
       } else if (node2 != null) {
@@ -647,6 +794,10 @@ export async function buildDestructibleCore({
             totalForceMagnitude: totalForce,
             maxForceMagnitude: maxForce,
             totalForceWorld: forceVec ? { x: -forceVec.x, y: -forceVec.y, z: -forceVec.z } : undefined,
+          });
+          contactReplayBuffer.recordExternal({
+            nodeIndex: node2, effMag, dt,
+            localPoint: local2 ?? undefined,
           });
           if (chunk.bodyHandle != null) bodiesCollidedWithGround.add(chunk.bodyHandle);
         }
@@ -822,92 +973,7 @@ export async function buildDestructibleCore({
     if (solver.overstressedBondCount() > 0) {
       const perActor = profiledGenerateFractureCommands();
       const splitEvents = profiledApplyFractureCommands(perActor);
-
-      for (const split of splitEvents) {
-        const parentActorIndex = split.parentActorIndex;
-        const parentEntry = actorMap.get(parentActorIndex);
-        const parentBodyHandle = parentEntry?.bodyHandle ?? rootBody.handle;
-        const plannerChildren: PlannerChild[] = [];
-
-        for (const child of split.children) {
-          const childNodes: number[] = child.nodes ?? [];
-          if (childNodes.length === 0) continue;
-          // Match vibe-city: a child is "support" if ANY node is support (mass=0)
-          const isChildSupport = childNodes.some((ni: number) => {
-            const ch = chunks[ni];
-            if (ch?.isSupport) return true;
-            const mass = scenario.nodes[ni]?.mass ?? 0;
-            return !(mass > 0);
-          });
-
-          // skipSingleBodies: destroy single non-support nodes instead of leaving on rootBody
-          if (skipSingleBodiesEnabled && childNodes.length <= 1 && !isChildSupport) {
-            const ni = childNodes[0];
-            try { handleNodeDestroyed(ni, 'manual'); } catch {}
-            continue;
-          }
-
-          if (activeProfilerSample) {
-            if (!(activeProfilerSample as any).splitChildCounts) {
-              (activeProfilerSample as any).splitChildCounts = [];
-            }
-            (activeProfilerSample as any).splitChildCounts.push(childNodes.length);
-          }
-
-          for (const n of childNodes) nodeToActor.set(n, child.actorIndex);
-          plannerChildren.push({
-            index: plannerChildren.length,
-            actorIndex: child.actorIndex,
-            nodes: childNodes,
-            isSupport: isChildSupport,
-          });
-        }
-
-        if (plannerChildren.length > 0) {
-          // Batch: single planSplitMigration call per split event, only parent body
-          const parentNodes = nodesByBodyHandle.get(parentBodyHandle) ?? new Set<number>();
-          const parentRigidBody = world.getRigidBody(parentBodyHandle);
-          const parentIsFixed = !!parentRigidBody?.isFixed?.();
-          let plannerDuration = 0;
-          const migration = planSplitMigration(
-            [{ handle: parentBodyHandle, nodeIndices: parentNodes, isFixed: parentIsFixed }],
-            plannerChildren,
-            { onDuration: (ms: number) => { plannerDuration += ms; } },
-          );
-          if (activeProfilerSample) {
-            (activeProfilerSample as any).splitPlannerMs =
-              ((activeProfilerSample as any).splitPlannerMs ?? 0) + plannerDuration;
-          }
-
-          // Reused children: assign body handle, set correct type.
-          // No collider migration needed — the reused body already has these colliders.
-          // Colliders for nodes moving to OTHER children get migrated when those bodies are created.
-          for (const reuse of migration.reuse) {
-            const entry = plannerChildren[reuse.childIndex];
-            if (!entry) continue;
-            actorMap.set(entry.actorIndex, { bodyHandle: reuse.bodyHandle });
-
-            const reusedBody = world.getRigidBody(reuse.bodyHandle);
-            if (reusedBody) {
-              if (entry.isSupport) reusedBody.setBodyType(RAPIER.RigidBodyType.Fixed, true);
-              else reusedBody.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
-            }
-          }
-
-          // Non-reused children: queue for body creation
-          for (const create of migration.create) {
-            const entry = plannerChildren[create.childIndex];
-            if (!entry) continue;
-            pendingBodiesToCreate.push({
-              actorIndex: entry.actorIndex,
-              inheritFromBodyHandle: parentBodyHandle,
-              nodes: entry.nodes,
-              isSupport: entry.isSupport,
-            });
-            actorMap.set(entry.actorIndex, { bodyHandle: parentBodyHandle });
-          }
-        }
-      }
+      processSplitEvents(splitEvents);
       hadFracture = splitEvents.length > 0;
     }
     stopTiming(fractureT0, 'fractureMs');
@@ -972,6 +1038,9 @@ export async function buildDestructibleCore({
         }
       }
 
+      // Apply collision groups based on current debris mode
+      applyCollisionGroupsForBodyImpl(newBody, getCollisionGroupContext());
+
       actorMap.set(actorIndex, { bodyHandle });
 
       for (const ni of nodeList) {
@@ -1014,11 +1083,16 @@ export async function buildDestructibleCore({
       const halfZ = Math.max(0.05, size.z * 0.5);
       const isSupport = chunk.isSupport;
 
-      // Use baseLocalOffset directly as collider translation to stay consistent
-      // with the Three.js adapter which also uses baseLocalOffset for mesh positioning.
+      // Support nodes use baseWorldPosition (absolute) when available;
+      // dynamic nodes use baseLocalOffset (relative to body).
+      const useWorldPos = isSupport && chunk.baseWorldPosition;
+      const tx = useWorldPos ? chunk.baseWorldPosition!.x : chunk.baseLocalOffset.x;
+      const ty = useWorldPos ? chunk.baseWorldPosition!.y : chunk.baseLocalOffset.y;
+      const tz = useWorldPos ? chunk.baseWorldPosition!.z : chunk.baseLocalOffset.z;
+
       const desc = buildColliderDescForNode({ nodeIndex: chunk.nodeIndex, halfX, halfY, halfZ, isSupport })
         .setMass(scenario.nodes[chunk.nodeIndex]?.mass ?? 1)
-        .setTranslation(chunk.baseLocalOffset.x, chunk.baseLocalOffset.y, chunk.baseLocalOffset.z)
+        .setTranslation(tx, ty, tz)
         .setFriction(friction)
         .setRestitution(restitution)
         .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -1026,12 +1100,13 @@ export async function buildDestructibleCore({
 
       const newCol = world.createCollider(desc, targetBody);
       chunk.colliderHandle = newCol.handle;
-      chunk.localOffset = { x: chunk.baseLocalOffset.x, y: chunk.baseLocalOffset.y, z: chunk.baseLocalOffset.z };
+      chunk.localOffset = { x: tx, y: ty, z: tz };
       chunk.bodyHandle = migration.targetBodyHandle;
       colliderToNode.set(newCol.handle, chunk.nodeIndex);
       activeContactColliders.add(newCol.handle);
 
-      applyCollisionGroupsForBody(migration.targetBodyHandle);
+      // Reapply collision groups after collider migration
+      applyCollisionGroupsForBodyImpl(targetBody, getCollisionGroupContext());
     }
     pendingColliderMigrations.length = 0;
     stopTiming(t0, 'colliderRebuildMs');
@@ -1158,6 +1233,144 @@ export async function buildDestructibleCore({
     stopTiming(t0, 'projectileCleanupMs');
   }
 
+  /**
+   * Process a list of split events from the fracture pipeline.
+   * Shared between stress-driven and damage-driven fractures.
+   */
+  function processSplitEvents(
+    splitEvents: Array<{ parentActorIndex: number; children: Array<{ actorIndex: number; nodes: number[] }> }>,
+  ) {
+    for (const split of splitEvents) {
+      const parentActorIndex = split.parentActorIndex;
+      const parentEntry = actorMap.get(parentActorIndex);
+      const parentBodyHandle = parentEntry?.bodyHandle ?? rootBody.handle;
+      const plannerChildren: PlannerChild[] = [];
+
+      for (const child of split.children) {
+        const childNodes: number[] = child.nodes ?? [];
+        if (childNodes.length === 0) continue;
+        const isChildSupport = childNodes.some((ni: number) => {
+          const ch = chunks[ni];
+          if (ch?.isSupport) return true;
+          const mass = scenario.nodes[ni]?.mass ?? 0;
+          return !(mass > 0);
+        });
+
+        if (skipSingleBodiesEnabled && childNodes.length <= 1 && !isChildSupport) {
+          const ni = childNodes[0];
+          try { handleNodeDestroyed(ni, 'manual'); } catch {}
+          continue;
+        }
+
+        for (const n of childNodes) nodeToActor.set(n, child.actorIndex);
+        plannerChildren.push({
+          index: plannerChildren.length,
+          actorIndex: child.actorIndex,
+          nodes: childNodes,
+          isSupport: isChildSupport,
+        });
+      }
+
+      if (plannerChildren.length > 0) {
+        const parentNodes = nodesByBodyHandle.get(parentBodyHandle) ?? new Set<number>();
+        const parentRigidBody = world.getRigidBody(parentBodyHandle);
+        const parentIsFixed = !!parentRigidBody?.isFixed?.();
+        let plannerDuration = 0;
+        const migration = planSplitMigration(
+          [{ handle: parentBodyHandle, nodeIndices: parentNodes, isFixed: parentIsFixed }],
+          plannerChildren,
+          { onDuration: (ms: number) => { plannerDuration += ms; } },
+        );
+        if (activeProfilerSample) {
+          (activeProfilerSample as any).splitPlannerMs =
+            ((activeProfilerSample as any).splitPlannerMs ?? 0) + plannerDuration;
+        }
+
+        for (const reuse of migration.reuse) {
+          const entry = plannerChildren[reuse.childIndex];
+          if (!entry) continue;
+          actorMap.set(entry.actorIndex, { bodyHandle: reuse.bodyHandle });
+          const reusedBody = world.getRigidBody(reuse.bodyHandle);
+          if (reusedBody) {
+            if (entry.isSupport) reusedBody.setBodyType(RAPIER.RigidBodyType.Fixed, true);
+            else reusedBody.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
+            // Reapply collision groups — body type and collider count may have changed
+            applyCollisionGroupsForBodyImpl(reusedBody, getCollisionGroupContext());
+          }
+        }
+
+        for (const create of migration.create) {
+          const entry = plannerChildren[create.childIndex];
+          if (!entry) continue;
+          pendingBodiesToCreate.push({
+            actorIndex: entry.actorIndex,
+            inheritFromBodyHandle: parentBodyHandle,
+            nodes: entry.nodes,
+            isSupport: entry.isSupport,
+          });
+          actorMap.set(entry.actorIndex, { bodyHandle: parentBodyHandle });
+        }
+      }
+    }
+  }
+
+  /**
+   * Process pending damage-driven fractures through the full split pipeline.
+   *
+   * Groups damaged bonds by actor, calls applyFractureCommands to generate
+   * split events, then processes splits with body creation + collider migration.
+   * This ensures damage-caused fractures properly separate physics bodies.
+   */
+  function flushPendingDamageFractures() {
+    if (pendingDamageFractures.size === 0) return;
+    const t0 = startTiming();
+
+    // Group fractures by actor index for the fracture command format
+    const fracturesByActor = new Map<number, Array<{ userdata: number; nodeIndex0: number; nodeIndex1: number; health: number }>>();
+    for (const [nodeA, partners] of pendingDamageFractures) {
+      for (const nodeB of partners) {
+        const bondList = bondsByNode.get(nodeA);
+        if (!bondList) continue;
+        for (const bi of bondList) {
+          const b = bondTable[bi];
+          if (!b) continue;
+          if ((b.node0 === nodeA && b.node1 === nodeB) || (b.node0 === nodeB && b.node1 === nodeA)) {
+            if (removedBondIndices.has(bi)) break;
+            const actorIndex = nodeToActor.get(nodeA) ?? 0;
+            let fractures = fracturesByActor.get(actorIndex);
+            if (!fractures) { fractures = []; fracturesByActor.set(actorIndex, fractures); }
+            fractures.push({ userdata: bi, nodeIndex0: b.node0, nodeIndex1: b.node1, health: 1e9 });
+            removedBondIndices.add(bi);
+            break;
+          }
+        }
+      }
+    }
+    pendingDamageFractures.clear();
+
+    const commands: Array<{ actorIndex: number; fractures: Array<{ userdata: number; nodeIndex0: number; nodeIndex1: number; health: number }> }> = [];
+    for (const [actorIndex, fractures] of fracturesByActor) {
+      if (fractures.length > 0) commands.push({ actorIndex, fractures });
+    }
+    if (commands.length === 0) {
+      stopTiming(t0, 'damageFlushMs');
+      return;
+    }
+
+    try {
+      const splitEvents = profiledApplyFractureCommands(commands as FractureCommands);
+      if (splitEvents.length > 0) {
+        processSplitEvents(splitEvents);
+        flushPendingBodies();
+        flushColliderMigrations();
+        cleanupDisabledColliders();
+      }
+    } catch (e) {
+      if (isDev) console.error('[Core] flushPendingDamageFractures failed', e);
+    }
+    stopTiming(t0, 'damageFlushMs');
+  }
+
   function damageDrivePass(dt: number) {
     if (!damageOptions.enabled) return false;
 
@@ -1167,13 +1380,9 @@ export async function buildDestructibleCore({
       : null;
     stopTiming(dSnapT0, 'damageSnapshotMs');
 
+    // Apply buffered contacts (with speed scaling + local points) via replay buffer
     const previewT0 = startTiming();
-    for (const c of bufferedExternalContacts) {
-      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, dt);
-    }
-    for (const c of bufferedInternalContacts) {
-      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.totalForceMagnitude, dt);
-    }
+    contactReplayBuffer.replay(damageSystem);
     const previewDestroyed = damageSystem.previewTick(dt);
     stopTiming(previewT0, 'damagePreviewMs');
 
@@ -1206,37 +1415,15 @@ export async function buildDestructibleCore({
       }
       stopTiming(preDestroyT0, 'damagePreDestroyMs');
 
-      if (pendingDamageFractures.size > 0) {
-        for (const [nodeA, partners] of pendingDamageFractures) {
-          for (const nodeB of partners) {
-            const bondList = bondsByNode.get(nodeA);
-            if (!bondList) continue;
-            for (const bi of bondList) {
-              const b = bondTable[bi];
-              if (!b) continue;
-              if ((b.node0 === nodeA && b.node1 === nodeB) || (b.node0 === nodeB && b.node1 === nodeA)) {
-                if (!removedBondIndices.has(bi)) {
-                  (solver as any).removeBondByUserdata?.(bi);
-                  removedBondIndices.add(bi);
-                }
-                break;
-              }
-            }
-          }
-        }
-        pendingDamageFractures.clear();
-      }
+      flushPendingDamageFractures();
 
       return true;
     }
 
+    // No rollback needed — the first replay() above already accumulated contacts
+    // into pendingDamage. previewTick(preview:true) did NOT consume them, so
+    // tick() will process them correctly. Do NOT replay again (would double-count).
     const tickT0 = startTiming();
-    for (const c of bufferedExternalContacts) {
-      damageSystem.onImpact(c.nodeIndex, c.totalForceMagnitude, dt);
-    }
-    for (const c of bufferedInternalContacts) {
-      damageSystem.onInternalImpact(c.nodeA, c.nodeB, c.totalForceMagnitude, dt);
-    }
     const tickDestroyed = damageSystem.tick(dt);
     stopTiming(tickT0, 'damageTickMs');
 
@@ -1250,6 +1437,8 @@ export async function buildDestructibleCore({
 
     return false;
   }
+
+  let lastStepDt = readWorldDt();
 
   /**
    * Pre-step sweep: remove zero-collider bodies and clean up stale colliderToNode entries.
@@ -1282,7 +1471,12 @@ export async function buildDestructibleCore({
     if (activeProfilerSample && !activeProfilerSample.finalized) {
       activeProfilerSample.finalized = true;
     }
-    activeProfilerSample = profiler.enabled ? createProfilerSample(dt) : null;
+
+    const prevDt = readWorldDt();
+    const clampedDt = clampStepDt(dt);
+    lastStepDt = clampedDt;
+
+    activeProfilerSample = profiler.enabled ? createProfilerSample(clampedDt) : null;
 
     const totalT0 = startTiming();
 
@@ -1302,11 +1496,8 @@ export async function buildDestructibleCore({
     }
 
     const initialT0 = startTiming();
-    const w = world as WorldWithOptionalTimestep;
-    if (typeof w.timestep === 'number') w.timestep = dt;
-    else if (typeof (world as unknown as { step: (dt?: number) => void }).step === 'function') {
-      // timestep may be set via property in newer Rapier
-    }
+    // Set the clamped dt on the world, restore original afterwards
+    setWorldDtValue(clampedDt);
     const rapierT0 = startTiming();
     world.step(eventQueue);
     stopTiming(rapierT0, 'rapierStepMs');
@@ -1397,6 +1588,9 @@ export async function buildDestructibleCore({
       activeProfilerSample.finalized = true;
       profiler.onSample?.(activeProfilerSample);
     }
+
+    // Restore original world dt if we overrode it
+    setWorldDtValue(prevDt);
 
     safeFrames++;
     if (safeFrames === 1 && colliderToNode.size === 0 && !warnedColliderMapEmptyOnce) {
@@ -1514,12 +1708,38 @@ export async function buildDestructibleCore({
     solverGravityEnabled = v;
   }
 
+  function getCollisionGroupContext(): CollisionGroupContext {
+    return {
+      mode: debrisCollisionModeSetting,
+      groundBodyHandle: groundBody.handle,
+      maxCollidersForDebris: debrisCleanupSettings.maxCollidersForDebris,
+    };
+  }
+
+  function applyCollisionGroupsToAllBodies() {
+    const ctx = getCollisionGroupContext();
+    world.forEachRigidBody((b) => {
+      if (b.handle === rootBody.handle || b.handle === groundBody.handle) return;
+      applyCollisionGroupsForBodyImpl(b, ctx);
+    });
+    applyCollisionGroupsForBodyImpl(
+      world.getRigidBody(rootBody.handle)!,
+      ctx,
+    );
+    applyCollisionGroupsForBodyImpl(
+      world.getRigidBody(groundBody.handle)!,
+      ctx,
+    );
+  }
+
   function setSingleCollisionMode(mode: SingleCollisionMode) {
     debrisCollisionModeSetting = toDebrisCollisionMode(mode);
+    applyCollisionGroupsToAllBodies();
   }
 
   function setDebrisCollisionModeFn(mode: DebrisCollisionMode) {
     debrisCollisionModeSetting = mode;
+    applyCollisionGroupsToAllBodies();
   }
 
   function applyNodeDamage(nodeIndex: number, amount: number) {
@@ -1570,6 +1790,13 @@ export async function buildDestructibleCore({
       }
     }
   }
+
+  // Apply initial collision groups to root and ground bodies
+  try {
+    const initCtx = getCollisionGroupContext();
+    applyCollisionGroupsForBodyImpl(rootBody, initCtx);
+    applyCollisionGroupsForBodyImpl(groundBody, initCtx);
+  } catch { /* non-fatal */ }
 
   const originalStep = step;
   function wrappedStep(dtOverride?: number) {
@@ -1626,7 +1853,10 @@ export async function buildDestructibleCore({
     hasBodyCollidedWithGround: (bodyHandle: number) => bodiesCollidedWithGround.has(bodyHandle),
     setDebrisCleanup: updateDebrisCleanup,
     getDebrisCleanupSettings: () => ({ ...debrisCleanupSettings }),
-    setMaxCollidersForDebris: (n: number) => { debrisCleanupSettings.maxCollidersForDebris = Math.max(1, Math.floor(n)); },
+    setMaxCollidersForDebris: (n: number) => {
+      debrisCleanupSettings.maxCollidersForDebris = Math.max(1, Math.floor(n));
+      applyCollisionGroupsToAllBodies();
+    },
     applyNodeDamage: damageOptions.enabled ? applyNodeDamage : undefined,
     getNodeHealth: damageOptions.enabled ? getNodeHealth : undefined,
     damageEnabled: damageOptions.enabled,
@@ -1638,8 +1868,5 @@ export async function buildDestructibleCore({
   return core;
 }
 
-function applyCollisionGroupsForBody(_bodyHandle: number) {
-  // Collision group management is applied per-body based on the debris collision mode.
-  // In the current implementation, groups are set during collider creation and migration.
-  // This function is a hook for future per-body collision group updates.
-}
+// applyCollisionGroupsForBody is now provided by ./collisionGroups.ts
+// and called inline via applyCollisionGroupsForBodyImpl imported above.

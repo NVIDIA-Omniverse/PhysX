@@ -155,6 +155,21 @@ body {
   cursor: pointer;
 }
 
+.config-select {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(200, 210, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.config-select:focus {
+  outline: 1px solid rgba(107, 140, 255, 0.5);
+}
+
 .config-value {
   flex: 0 0 60px;
   font-size: 0.7rem;

@@ -205,6 +205,137 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
       expect(core.getActiveBondsCount()).toBeLessThan(initial);
       core.dispose();
     });
+
+    it('detached blocks collide with each other (no interpenetration)', async () => {
+      await loadModules();
+      // Use a small wall with weak material so it fractures quickly under gravity
+      const scenario = smallWall({ spanSegments: 4, heightSegments: 4 });
+      const core = await buildDestructibleCore({
+        scenario,
+        gravity: -9.81,
+        materialScale: 0.1,  // very weak so it fractures under gravity
+        debrisCollisionMode: 'all',
+        debrisCleanup: { mode: 'off' },
+        resimulateOnFracture: true,
+        maxResimulationPasses: 1,
+        snapshotMode: 'perBody',
+      });
+
+      const initialBonds = core.getActiveBondsCount();
+      expect(initialBonds).toBeGreaterThan(0);
+
+      // Let gravity fracture the wall and blocks settle
+      stepN(core, 300);
+
+      // Confirm fracture actually happened
+      const bondsAfter = core.getActiveBondsCount();
+      expect(bondsAfter).toBeLessThan(initialBonds);
+
+      // Count distinct body handles across active dynamic chunks
+      const dynamicChunks = core.chunks.filter(
+        (c: any) => c.active && !c.destroyed && !c.isSupport && c.worldPosition,
+      );
+      const bodyHandles = new Set(dynamicChunks.map((c: any) => c.bodyHandle));
+      expect(bodyHandles.size).toBeGreaterThan(0);
+
+      // Check that no two dynamic chunks on DIFFERENT bodies occupy the same space
+      let overlaps = 0;
+      for (let i = 0; i < dynamicChunks.length; i++) {
+        for (let j = i + 1; j < dynamicChunks.length; j++) {
+          const a = dynamicChunks[i];
+          const b = dynamicChunks[j];
+          if (a.bodyHandle === b.bodyHandle) continue;
+          const pa = a.worldPosition;
+          const pb = b.worldPosition;
+          const dx = pa.x - pb.x;
+          const dy = pa.y - pb.y;
+          const dz = pa.z - pb.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          // Each chunk is roughly size.x × size.y; overlap if closer than 30% of min dimension
+          const minDim = Math.min(a.size.x, a.size.y, b.size.x, b.size.y);
+          if (dist < minDim * 0.3) {
+            overlaps++;
+            if (overlaps <= 3) {
+              console.log(`OVERLAP: nodes ${a.nodeIndex}/${b.nodeIndex} dist=${dist.toFixed(4)} minDim=${minDim.toFixed(4)} bodies=${a.bodyHandle}/${b.bodyHandle} posA=(${pa.x.toFixed(2)},${pa.y.toFixed(2)},${pa.z.toFixed(2)}) posB=(${pb.x.toFixed(2)},${pb.y.toFixed(2)},${pb.z.toFixed(2)})`);
+            }
+          }
+        }
+      }
+
+      expect(overlaps).toBe(0);
+      core.dispose();
+    });
+
+    it('projectile-fractured blocks collide with each other (no interpenetration)', async () => {
+      await loadModules();
+      // Moderate material so projectile causes significant fracture
+      const scenario = smallWall({ spanSegments: 6, heightSegments: 4 });
+      const core = await buildDestructibleCore({
+        scenario,
+        gravity: -9.81,
+        materialScale: 1e6,
+        debrisCollisionMode: 'all',
+        debrisCleanup: { mode: 'off' },
+        resimulateOnFracture: true,
+        maxResimulationPasses: 2,
+        snapshotMode: 'perBody',
+        contactForceScale: 30,
+      });
+
+      const initialBonds = core.getActiveBondsCount();
+
+      // Let the wall settle
+      stepN(core, 30);
+
+      // Fire a heavy projectile at the wall center
+      core.enqueueProjectile({
+        position: { x: 0, y: 1.0, z: 5 },
+        velocity: { x: 0, y: 0, z: -30 },
+        radius: 0.35,
+        mass: 15000,
+        ttl: 6000,
+      });
+
+      // Step through impact and settling — give blocks time to fall and interact
+      stepN(core, 400);
+
+      const bondsAfter = core.getActiveBondsCount();
+      // Confirm bonds actually broke from impact
+      expect(bondsAfter).toBeLessThan(initialBonds);
+
+      const dynamicChunks = core.chunks.filter(
+        (c: any) => c.active && !c.destroyed && !c.isSupport && c.worldPosition,
+      );
+      const bodyHandles = new Set(dynamicChunks.map((c: any) => c.bodyHandle));
+      console.log(`After projectile: ${bodyHandles.size} distinct bodies, ${dynamicChunks.length} dynamic chunks, ${bondsAfter}/${initialBonds} bonds`);
+
+      // Check for overlapping blocks on different bodies
+      let overlaps = 0;
+      for (let i = 0; i < dynamicChunks.length; i++) {
+        for (let j = i + 1; j < dynamicChunks.length; j++) {
+          const a = dynamicChunks[i];
+          const b = dynamicChunks[j];
+          if (a.bodyHandle === b.bodyHandle) continue;
+          const pa = a.worldPosition;
+          const pb = b.worldPosition;
+          const dx = pa.x - pb.x;
+          const dy = pa.y - pb.y;
+          const dz = pa.z - pb.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          const minDim = Math.min(a.size.x, a.size.y, b.size.x, b.size.y);
+          if (dist < minDim * 0.3) {
+            overlaps++;
+            if (overlaps <= 5) {
+              console.log(`OVERLAP: nodes ${a.nodeIndex}/${b.nodeIndex} dist=${dist.toFixed(4)} minDim=${minDim.toFixed(4)} bodies=${a.bodyHandle}/${b.bodyHandle} posA=(${pa.x.toFixed(2)},${pa.y.toFixed(2)},${pa.z.toFixed(2)}) posB=(${pb.x.toFixed(2)},${pb.y.toFixed(2)},${pb.z.toFixed(2)})`);
+            }
+          }
+        }
+      }
+
+      console.log(`Total overlapping pairs: ${overlaps}`);
+      expect(overlaps).toBe(0);
+      core.dispose();
+    });
   });
 
   // ────────────────────────────────────────────────────────────

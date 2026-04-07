@@ -36,6 +36,19 @@ const CONFIG = {
         gravity: -9.81,
         materialScale: 1e8,
     },
+    physics: {
+        debrisCollisionMode: 'all',
+        friction: 0.25,
+        restitution: 0.0,
+        contactForceScale: 30,
+        skipSingleBodies: false,
+    },
+    optimization: {
+        smallBodyDampingMode: 'off',
+        debrisCleanupMode: 'always',
+        debrisTtlMs: 8000,
+        maxCollidersForDebris: 2,
+    },
     autoBonds: false,
 };
 // ── Three.js setup ────────────────────────────────────────────
@@ -126,18 +139,34 @@ async function initScene() {
     }
     console.log(`Wall: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds` +
         (CONFIG.autoBonds ? ' (auto-bonded)' : ' (manual)'));
+    console.log('[wall-demolition] buildDestructibleCore config:', {
+        debrisCollisionMode: CONFIG.physics.debrisCollisionMode,
+        friction: CONFIG.physics.friction,
+        restitution: CONFIG.physics.restitution,
+        contactForceScale: CONFIG.physics.contactForceScale,
+        skipSingleBodies: CONFIG.physics.skipSingleBodies,
+        smallBodyDampingMode: CONFIG.optimization.smallBodyDampingMode,
+        debrisCleanupMode: CONFIG.optimization.debrisCleanupMode,
+    });
     const core = await buildDestructibleCore({
         scenario,
         gravity: CONFIG.solver.gravity,
         materialScale: CONFIG.solver.materialScale,
-        debrisCollisionMode: 'noDebrisPairs',
+        friction: CONFIG.physics.friction,
+        restitution: CONFIG.physics.restitution,
+        contactForceScale: CONFIG.physics.contactForceScale,
+        debrisCollisionMode: CONFIG.physics.debrisCollisionMode,
+        skipSingleBodies: CONFIG.physics.skipSingleBodies,
         damage: {
             enabled: false,
         },
+        smallBodyDamping: {
+            mode: CONFIG.optimization.smallBodyDampingMode,
+        },
         debrisCleanup: {
-            mode: 'always',
-            debrisTtlMs: 8000,
-            maxCollidersForDebris: 2,
+            mode: CONFIG.optimization.debrisCleanupMode,
+            debrisTtlMs: CONFIG.optimization.debrisTtlMs,
+            maxCollidersForDebris: CONFIG.optimization.maxCollidersForDebris,
         },
     });
     const group = new THREE.Group();
@@ -219,6 +248,26 @@ function bindSlider(id, obj, key, fmt) {
             display.textContent = fmt ? fmt(v) : String(v);
     });
 }
+function bindSelect(id, obj, key, onChange) {
+    const select = document.getElementById(id);
+    if (!select)
+        return;
+    select.value = String(obj[key]);
+    select.addEventListener('change', () => {
+        obj[key] = select.value;
+        onChange?.(select.value);
+    });
+}
+function bindCheckbox(id, obj, key, onChange) {
+    const checkbox = document.getElementById(id);
+    if (!checkbox)
+        return;
+    checkbox.checked = !!obj[key];
+    checkbox.addEventListener('change', () => {
+        obj[key] = checkbox.checked;
+        onChange?.(checkbox.checked);
+    });
+}
 bindSlider('cfg-columns', CONFIG.wall, 'spanSegments');
 bindSlider('cfg-rows', CONFIG.wall, 'heightSegments');
 bindSlider('cfg-area-scale', CONFIG.wall, 'areaScale', (v) => v.toFixed(3));
@@ -254,6 +303,23 @@ bindSlider('cfg-gravity', CONFIG.solver, 'gravity', (v) => v.toFixed(1));
         });
     }
 }
+// Physics controls
+bindSelect('cfg-debris-collision', CONFIG.physics, 'debrisCollisionMode', (v) => {
+    coreRef?.setDebrisCollisionMode(v);
+});
+bindSlider('cfg-friction', CONFIG.physics, 'friction', (v) => v.toFixed(2));
+bindSlider('cfg-restitution', CONFIG.physics, 'restitution', (v) => v.toFixed(2));
+bindSlider('cfg-contact-force', CONFIG.physics, 'contactForceScale', (v) => v.toFixed(0));
+bindCheckbox('cfg-skip-single', CONFIG.physics, 'skipSingleBodies');
+// Optimization controls
+bindSelect('cfg-damping-mode', CONFIG.optimization, 'smallBodyDampingMode', (v) => {
+    coreRef?.setSmallBodyDamping({ mode: v });
+});
+bindSelect('cfg-cleanup-mode', CONFIG.optimization, 'debrisCleanupMode', (v) => {
+    coreRef?.setDebrisCleanup({ mode: v, debrisTtlMs: CONFIG.optimization.debrisTtlMs });
+});
+bindSlider('cfg-debris-ttl', CONFIG.optimization, 'debrisTtlMs', (v) => (v / 1000).toFixed(1) + 's');
+bindSlider('cfg-max-debris-colliders', CONFIG.optimization, 'maxCollidersForDebris', (v) => v.toFixed(0));
 // ── Render loop ───────────────────────────────────────────────
 const clock = new THREE.Clock();
 function loop() {
