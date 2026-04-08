@@ -12,10 +12,12 @@ rapier = ["dep:rapier3d"]
 scenarios = []
 
 [dependencies]
-rapier3d = { version = "0.22", optional = true }
+rapier3d = { version = "0.30", features = ["simd-stable"], optional = true }
 
 [build-dependencies]
 cc = "1.0"
 
 [dev-dependencies]
-rapier3d = "0.22"
+rapier3d = { version = "0.30", features = ["simd-stable"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,82 @@
+{
+  "wall_default": {
+    "nodeCount": 72,
+    "bondCount": 126,
+    "supportCount": 12,
+    "dynamicCount": 60,
+    "firstNodeCentroid": {
+      "x": -2.75,
+      "y": 0.25,
+      "z": 0
+    },
+    "lastNodeCentroid": {
+      "x": 2.75,
+      "y": 2.75,
+      "z": 0
+    },
+    "firstBondArea": 0.02157439559882373,
+    "lastBondArea": 0.02157439559882373
+  },
+  "tower_default": {
+    "nodeCount": 144,
+    "bondCount": 728,
+    "supportCount": 16,
+    "dynamicCount": 128
+  },
+  "bridge_default": {
+    "nodeCount": 908,
+    "bondCount": 3070,
+    "supportCount": 28,
+    "dynamicCount": 880
+  },
+  "wall_strong_gravity": {
+    "frames": 60,
+    "totalFractures": 0,
+    "actorCount": 1,
+    "converged": true
+  },
+  "wall_weak_gravity": {
+    "frames": 60,
+    "totalFractures": 86,
+    "actorCount": 32,
+    "converged": true
+  },
+  "tower_strong_gravity": {
+    "frames": 60,
+    "totalFractures": 0,
+    "actorCount": 1,
+    "converged": true
+  },
+  "tower_weak_gravity": {
+    "frames": 60,
+    "totalFractures": 706,
+    "actorCount": 129,
+    "converged": true
+  },
+  "column_gravity_down": {
+    "overstressedBondCount": 1,
+    "converged": true,
+    "linearError": 0,
+    "angularError": 0
+  },
+  "determinism": {
+    "run1_actorCount": 21,
+    "run2_actorCount": 21,
+    "run1_totalFractures": 86,
+    "run2_totalFractures": 86,
+    "match": true
+  },
+  "wall_force_impact": {
+    "centerNode": 36,
+    "overstressedAfterForce": 0,
+    "fracturesFromForce": 0,
+    "actorCountAfterForce": 1
+  },
+  "material_strength_comparison": {
+    "weak_fractures": 70,
+    "weak_actors": 12,
+    "strong_fractures": 67,
+    "strong_actors": 7,
+    "stronger_has_fewer_fractures": true
+  }
+}
