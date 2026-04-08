@@ -9,3 +9,9 @@ export type { BeamBridgeOptions } from './bridgeScenario';
 
 export { buildFracturedWallScenario, DEFAULT_FRACTURED_WALL_OPTIONS } from './fracturedWallScenario';
 export type { FracturedWallOptions } from './fracturedWallScenario';
+
+export { buildFracturedTowerScenario } from './fracturedTowerScenario';
+export type { FracturedTowerOptions } from './fracturedTowerScenario';
+
+export { buildFracturedBridgeScenario } from './fracturedBridgeScenario';
+export type { FracturedBridgeOptions } from './fracturedBridgeScenario';

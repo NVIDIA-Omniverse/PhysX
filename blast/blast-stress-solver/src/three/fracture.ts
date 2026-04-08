@@ -10,11 +10,16 @@ import type { ScenarioBond, Vec3 } from '../rapier/types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+/** Fragment structural role, used for bond strength multipliers in multi-component scenarios. */
+export type FragmentType = 'column' | 'floor' | 'wall' | 'foundation';
+
 export type FragmentInfo = {
   worldPosition: Vec3;
   halfExtents: Vec3;
   geometry: THREE.BufferGeometry;
   isSupport: boolean;
+  /** Optional structural type for bond strength scaling (column > floor > wall). */
+  fragmentType?: FragmentType;
 };
 
 export type BondDetectionOptions = {
