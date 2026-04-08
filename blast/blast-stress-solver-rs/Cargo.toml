@@ -1,0 +1,21 @@
+[package]
+name = "blast-stress-solver"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+description = "NVIDIA Blast stress solver for destructible structures, with optional Rapier3D integration"
+links = "blast_stress_solver_ffi"
+
+[features]
+default = []
+rapier = ["dep:rapier3d"]
+scenarios = []
+
+[dependencies]
+rapier3d = { version = "0.22", optional = true }
+
+[build-dependencies]
+cc = "1.0"
+
+[dev-dependencies]
+rapier3d = "0.22"
