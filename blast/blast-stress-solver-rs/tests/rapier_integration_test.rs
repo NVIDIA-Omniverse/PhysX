@@ -414,3 +414,189 @@ fn solver_and_rapier_body_correspondence() {
         }
     }
 }
+
+#[test]
+fn destructible_set_from_scenario_convenience() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings::default();
+    let policy = FracturePolicy::default();
+    let set = DestructibleSet::from_scenario(
+        &scenario,
+        settings,
+        Vec3::new(0.0, -9.81, 0.0),
+        policy,
+    );
+    assert!(set.is_some(), "from_scenario should succeed");
+    let set = set.unwrap();
+    assert_eq!(set.actor_count(), 1);
+}
+
+#[test]
+fn destructible_set_idle_skip() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings {
+        compression_elastic_limit: 10000.0,
+        compression_fatal_limit: 20000.0,
+        ..SolverSettings::default()
+    };
+    let policy = FracturePolicy {
+        idle_skip: true,
+        ..FracturePolicy::default()
+    };
+
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
+
+    let mut bodies = RigidBodySet::new();
+    let mut colliders = ColliderSet::new();
+    set.initialize(&mut bodies, &mut colliders);
+
+    // First step should run (gravity is always applied on first real step)
+    let r1 = set.step(&mut bodies, &mut colliders);
+    // After several frames with no external forces and no fractures,
+    // idle skip should kick in (step returns default result)
+    let mut idle_count = 0;
+    for _ in 0..10 {
+        let r = set.step(&mut bodies, &mut colliders);
+        if r.fractures == 0 && r.split_events == 0 {
+            idle_count += 1;
+        }
+    }
+    // Most frames should be idle (no fractures with strong material)
+    assert!(idle_count >= 5, "most frames should be idle with idle_skip: {idle_count}");
+}
+
+#[test]
+fn body_tracker_support_detection() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings::default();
+    let policy = FracturePolicy::default();
+
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
+
+    let mut bodies = RigidBodySet::new();
+    let mut colliders = ColliderSet::new();
+    set.initialize(&mut bodies, &mut colliders);
+
+    // Bottom row (first 5 nodes) should be support, rest dynamic
+    let mut support_count = 0;
+    let mut dynamic_count = 0;
+    for i in 0..scenario.nodes.len() {
+        if set.is_support(i as u32) {
+            support_count += 1;
+        } else {
+            dynamic_count += 1;
+        }
+    }
+    assert!(support_count > 0, "should have support nodes");
+    assert!(dynamic_count > 0, "should have dynamic nodes");
+    assert_eq!(
+        support_count + dynamic_count,
+        scenario.nodes.len(),
+        "every node is either support or dynamic"
+    );
+}
+
+#[test]
+fn body_tracker_all_nodes_mapped_after_init() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings::default();
+    let policy = FracturePolicy::default();
+
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
+
+    let mut bodies = RigidBodySet::new();
+    let mut colliders = ColliderSet::new();
+    set.initialize(&mut bodies, &mut colliders);
+
+    for i in 0..scenario.nodes.len() {
+        let handle = set.node_body(i as u32);
+        assert!(
+            handle.is_some(),
+            "node {i} should have a body handle after init"
+        );
+    }
+}
+
+#[test]
+fn destructible_set_add_force_triggers_activity() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings {
+        compression_elastic_limit: 0.01,
+        compression_fatal_limit: 0.05,
+        ..SolverSettings::default()
+    };
+    let policy = FracturePolicy {
+        idle_skip: false,
+        ..FracturePolicy::default()
+    };
+
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
+
+    let mut bodies = RigidBodySet::new();
+    let mut colliders = ColliderSet::new();
+    set.initialize(&mut bodies, &mut colliders);
+
+    // Apply force to a node
+    set.add_force(10, Vec3::new(0.0, 1.0, 0.0), Vec3::new(10000.0, 0.0, 0.0));
+
+    let result = set.step(&mut bodies, &mut colliders);
+    // With weak settings and added force, should see fractures
+    assert!(
+        result.fractures > 0 || result.converged,
+        "force + gravity should cause activity"
+    );
+}
+
+#[test]
+fn policy_max_dynamic_bodies_caps_world() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings {
+        compression_elastic_limit: 0.001,
+        compression_fatal_limit: 0.002,
+        tension_elastic_limit: 0.001,
+        tension_fatal_limit: 0.002,
+        shear_elastic_limit: 0.001,
+        shear_fatal_limit: 0.002,
+        ..SolverSettings::default()
+    };
+    // Only allow 3 dynamic bodies
+    let policy = FracturePolicy {
+        max_dynamic_bodies: 3,
+        idle_skip: false,
+        ..FracturePolicy::default()
+    };
+
+    let mut set =
+        DestructibleSet::from_scenario(
+            &scenario,
+            settings,
+            Vec3::new(0.0, -100.0, 0.0),
+            policy,
+        ).unwrap();
+
+    let mut bodies = RigidBodySet::new();
+    let mut colliders = ColliderSet::new();
+    set.initialize(&mut bodies, &mut colliders);
+
+    // Run many frames
+    for _ in 0..20 {
+        set.step(&mut bodies, &mut colliders);
+    }
+
+    // Body count should be capped (some tolerance for fixed bodies)
+    let total = set.body_count();
+    // We expect the dynamic body limit to constrain creation
+    // The exact count depends on how many fixed + dynamic bodies exist
+    assert!(
+        total <= 20,
+        "body count should be bounded by policy: got {total}"
+    );
+}

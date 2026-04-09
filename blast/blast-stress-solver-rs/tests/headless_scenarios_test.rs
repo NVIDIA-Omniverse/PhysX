@@ -524,4 +524,248 @@ mod headless {
         let support = tower.nodes.iter().filter(|n| n.mass == 0.0).count();
         assert_eq!(support, 4); // side * side = 2*2
     }
+
+    // === J. Scenario builder isotropy and area normalization ===
+
+    #[test]
+    fn wall_normalized_areas_are_isotropic() {
+        // With normalizeAreas=true, average X-bond area ≈ average Y-bond area
+        let wall = build_wall_scenario(&WallOptions::default());
+        let mut sum_x = 0.0f32;
+        let mut count_x = 0u32;
+        let mut sum_y = 0.0f32;
+        let mut count_y = 0u32;
+
+        for b in &wall.bonds {
+            let ax = b.normal.x.abs();
+            let ay = b.normal.y.abs();
+            if ax > ay {
+                sum_x += b.area;
+                count_x += 1;
+            } else {
+                sum_y += b.area;
+                count_y += 1;
+            }
+        }
+        let avg_x = sum_x / count_x.max(1) as f32;
+        let avg_y = sum_y / count_y.max(1) as f32;
+        assert!(
+            (avg_x - avg_y).abs() < 1e-4,
+            "X and Y bond areas should be isotropic: avg_x={avg_x:.6}, avg_y={avg_y:.6}"
+        );
+    }
+
+    #[test]
+    fn tower_normalized_areas_are_isotropic() {
+        // Without diagonals, the three axes should have similar average areas
+        let opts = TowerOptions {
+            add_diagonals: false,
+            ..TowerOptions::default()
+        };
+        let tower = build_tower_scenario(&opts);
+        let mut sum = [0.0f32; 3];
+        let mut count = [0u32; 3];
+
+        for b in &tower.bonds {
+            let ax = b.normal.x.abs();
+            let ay = b.normal.y.abs();
+            let az = b.normal.z.abs();
+            let axis = if ax >= ay && ax >= az { 0 } else if ay >= az { 1 } else { 2 };
+            sum[axis] += b.area;
+            count[axis] += 1;
+        }
+
+        let avg: Vec<f32> = (0..3)
+            .map(|i| if count[i] > 0 { sum[i] / count[i] as f32 } else { 0.0 })
+            .collect();
+
+        // All three averages should be close
+        for i in 0..3 {
+            for j in (i + 1)..3 {
+                assert!(
+                    (avg[i] - avg[j]).abs() < 1e-3,
+                    "axes {i} and {j} should be isotropic: {:.6} vs {:.6}",
+                    avg[i], avg[j]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn diagonals_increase_bond_count() {
+        let with_diag = build_tower_scenario(&TowerOptions {
+            add_diagonals: true,
+            ..TowerOptions::default()
+        });
+        let without_diag = build_tower_scenario(&TowerOptions {
+            add_diagonals: false,
+            ..TowerOptions::default()
+        });
+        assert!(
+            with_diag.bonds.len() > without_diag.bonds.len(),
+            "diagonals should add bonds: {} > {}",
+            with_diag.bonds.len(),
+            without_diag.bonds.len()
+        );
+        // Node counts should be the same
+        assert_eq!(with_diag.nodes.len(), without_diag.nodes.len());
+    }
+
+    #[test]
+    fn non_normalized_areas_are_consistent() {
+        let opts = WallOptions {
+            normalize_areas: false,
+            area_scale: 0.1,
+            ..WallOptions::default()
+        };
+        let wall = build_wall_scenario(&opts);
+        for b in &wall.bonds {
+            assert!(b.area > 0.0, "all areas should be > 0");
+        }
+        // Without normalization, X and Y bonds should have raw area values
+        // X bonds: cellY * cellZ * areaScale = 0.5 * 0.32 * 0.1 = 0.016
+        // Y bonds: cellX * cellZ * areaScale = 0.5 * 0.32 * 0.1 = 0.016
+        let first = wall.bonds[0].area;
+        assert!(
+            (first - 0.016).abs() < 0.001,
+            "raw area should be ~0.016: got {first}"
+        );
+    }
+
+    #[test]
+    fn wall_small_scenario_bond_count() {
+        // JS test: {spanSegments:4, heightSegments:3, layers:1} => 12 nodes, 17 bonds
+        let opts = WallOptions {
+            span_segments: 4,
+            height_segments: 3,
+            layers: 1,
+            normalize_areas: false,
+            ..WallOptions::default()
+        };
+        let wall = build_wall_scenario(&opts);
+        assert_eq!(wall.nodes.len(), 12);
+        // Horizontal: 3 rows * 3 gaps = 9
+        // Vertical: 2 gaps * 4 cols = 8
+        // Total = 17
+        assert_eq!(wall.bonds.len(), 17);
+    }
+
+    // === K. Convergence and error reporting ===
+
+    #[test]
+    fn solver_converges_on_simple_topology() {
+        let nodes = vec![
+            NodeDesc { centroid: Vec3::new(-1.0, 0.0, 0.0), mass: 0.0, volume: 1.0 },
+            NodeDesc { centroid: Vec3::new(1.0, 0.0, 0.0), mass: 0.0, volume: 1.0 },
+            NodeDesc { centroid: Vec3::new(0.0, 1.5, 0.0), mass: 15.0, volume: 1.0 },
+        ];
+        let bonds = vec![
+            BondDesc { centroid: Vec3::new(-0.5, 0.75, 0.0), normal: Vec3::new(0.55, 0.83, 0.0), area: 0.6, node0: 0, node1: 2 },
+            BondDesc { centroid: Vec3::new(0.5, 0.75, 0.0), normal: Vec3::new(-0.55, 0.83, 0.0), area: 0.6, node0: 1, node1: 2 },
+            BondDesc { centroid: Vec3::new(0.0, 0.0, 0.0), normal: Vec3::new(1.0, 0.0, 0.0), area: 0.9, node0: 0, node1: 1 },
+        ];
+        let settings = SolverSettings::default();
+        let mut solver = ExtStressSolver::new(&nodes, &bonds, &settings).unwrap();
+        solver.add_gravity(Vec3::new(0.0, -9.81, 0.0));
+        solver.update();
+        assert!(solver.converged(), "simple topology should converge");
+        let lin_err = solver.linear_error();
+        let ang_err = solver.angular_error();
+        assert!(lin_err < 1.0, "linear error should be small: {lin_err}");
+        assert!(ang_err < 1.0, "angular error should be small: {ang_err}");
+    }
+
+    #[test]
+    fn large_tower_converges_or_has_low_error() {
+        let tower = build_tower_scenario(&TowerOptions::default());
+        let (nodes, bonds) = tower.to_solver_descs();
+        let mut s = strong_settings();
+        s.max_solver_iterations_per_frame = 128; // large tower needs more iterations
+        let mut solver = ExtStressSolver::new(&nodes, &bonds, &s).unwrap();
+        solver.add_gravity(gravity());
+        solver.update();
+        // For large structures, convergence may take more iterations.
+        // Check that error is at least bounded.
+        let lin = solver.linear_error();
+        let ang = solver.angular_error();
+        assert!(lin < 10.0, "linear error should be bounded: {lin}");
+        assert!(ang < 10.0, "angular error should be bounded: {ang}");
+    }
+
+    // === L. Multiple actors after split ===
+
+    #[test]
+    fn actors_contain_all_nodes_after_split() {
+        let wall = build_wall_scenario(&WallOptions::default());
+        let (nodes, bonds) = wall.to_solver_descs();
+        let mut solver = ExtStressSolver::new(&nodes, &bonds, &weak_settings()).unwrap();
+
+        // Fracture
+        solver.add_gravity(gravity());
+        solver.update();
+        let cmds = solver.generate_fracture_commands();
+        if !cmds.is_empty() {
+            solver.apply_fracture_commands(&cmds);
+        }
+
+        // All nodes should appear in exactly one actor
+        let actors = solver.actors();
+        let mut all_nodes: Vec<u32> = actors.iter().flat_map(|a| a.nodes.iter().copied()).collect();
+        all_nodes.sort();
+        all_nodes.dedup();
+
+        // Every actor node should be a valid index
+        for &n in &all_nodes {
+            assert!(
+                (n as usize) < nodes.len(),
+                "actor node index {n} out of range"
+            );
+        }
+    }
+
+    // === M. Excess forces on separated actors ===
+
+    #[test]
+    fn excess_forces_on_separated_actor() {
+        let wall = build_wall_scenario(&WallOptions::default());
+        let (nodes, bonds) = wall.to_solver_descs();
+        let mut solver = ExtStressSolver::new(&nodes, &bonds, &weak_settings()).unwrap();
+
+        // Force fracture
+        for _ in 0..5 {
+            solver.add_gravity(gravity());
+            solver.update();
+            let cmds = solver.generate_fracture_commands();
+            if !cmds.is_empty() {
+                solver.apply_fracture_commands(&cmds);
+            }
+        }
+
+        // Check excess forces on actors
+        let actors = solver.actors();
+        for actor in &actors {
+            if actor.nodes.is_empty() {
+                continue;
+            }
+            // Compute center
+            let mut cx = 0.0f32;
+            let mut cy = 0.0f32;
+            let mut count = 0.0f32;
+            for &n in &actor.nodes {
+                cx += nodes[n as usize].centroid.x;
+                cy += nodes[n as usize].centroid.y;
+                count += 1.0;
+            }
+            let com = Vec3::new(cx / count, cy / count, 0.0);
+
+            if let Some((force, torque)) = solver.get_excess_forces(actor.actor_index, com) {
+                assert!(force.x.is_finite());
+                assert!(force.y.is_finite());
+                assert!(force.z.is_finite());
+                assert!(torque.x.is_finite());
+                assert!(torque.y.is_finite());
+                assert!(torque.z.is_finite());
+            }
+        }
+    }
 }

@@ -507,3 +507,393 @@ fn full_lifecycle_gravity_fracture_split() {
         solver.actor_count()
     );
 }
+
+// ============================================================================
+// Edge cases
+// ============================================================================
+
+#[test]
+fn ext_solver_empty_input_rejected() {
+    let settings = SolverSettings::default();
+    assert!(ExtStressSolver::new(&[], &[], &settings).is_none());
+    let nodes = vec![NodeDesc {
+        centroid: Vec3::ZERO,
+        mass: 1.0,
+        volume: 1.0,
+    }];
+    assert!(ExtStressSolver::new(&nodes, &[], &settings).is_none());
+    let bonds = vec![BondDesc {
+        centroid: Vec3::ZERO,
+        normal: Vec3::new(0.0, 1.0, 0.0),
+        area: 1.0,
+        node0: 0,
+        node1: 1,
+    }];
+    assert!(ExtStressSolver::new(&[], &bonds, &settings).is_none());
+}
+
+#[test]
+fn ext_solver_multiple_fracture_rounds() {
+    let (nodes, bonds) = triangle_nodes_and_bonds();
+    let settings = SolverSettings {
+        compression_elastic_limit: 0.0001,
+        compression_fatal_limit: 0.0002,
+        tension_elastic_limit: 0.0001,
+        tension_fatal_limit: 0.0002,
+        shear_elastic_limit: 0.0001,
+        shear_fatal_limit: 0.0002,
+        ..SolverSettings::default()
+    };
+    let mut solver = ExtStressSolver::new(&nodes, &bonds, &settings).unwrap();
+
+    let mut round = 0;
+    loop {
+        solver.add_gravity(Vec3::new(0.0, -50.0, 0.0));
+        solver.update();
+        if solver.overstressed_bond_count() == 0 {
+            break;
+        }
+        let cmds = solver.generate_fracture_commands();
+        if cmds.is_empty() {
+            break;
+        }
+        solver.apply_fracture_commands(&cmds);
+        round += 1;
+        if round > 20 {
+            break;
+        }
+    }
+    // Should have gone through at least one round and ended with more actors
+    assert!(round >= 1, "should fracture at least once");
+    assert!(solver.actor_count() > 1, "should split");
+}
+
+#[test]
+fn ext_solver_actor_gravity() {
+    // Test per-actor gravity application
+    let (nodes, bonds) = triangle_nodes_and_bonds();
+    let settings = SolverSettings {
+        compression_elastic_limit: 0.5,
+        compression_fatal_limit: 1.0,
+        tension_elastic_limit: 0.5,
+        tension_fatal_limit: 1.0,
+        shear_elastic_limit: 1e6,
+        shear_fatal_limit: 1e6,
+        ..SolverSettings::default()
+    };
+    let mut solver = ExtStressSolver::new(&nodes, &bonds, &settings).unwrap();
+
+    let actors = solver.actors();
+    assert!(!actors.is_empty());
+
+    // Add gravity to the specific actor
+    let ok = solver.add_actor_gravity(actors[0].actor_index, Vec3::new(0.0, -5.0, 0.0));
+    assert!(ok, "add_actor_gravity should succeed");
+
+    solver.update();
+    assert!(solver.overstressed_bond_count() > 0, "actor gravity should overstress");
+}
+
+#[test]
+fn ext_solver_actor_gravity_invalid_index() {
+    let (nodes, bonds) = triangle_nodes_and_bonds();
+    let settings = SolverSettings::default();
+    let mut solver = ExtStressSolver::new(&nodes, &bonds, &settings).unwrap();
+
+    // Invalid actor index should return false
+    let ok = solver.add_actor_gravity(9999, Vec3::new(0.0, -5.0, 0.0));
+    assert!(!ok, "invalid actor index should return false");
+}
+
+// ============================================================================
+// Bond stress computation — deeper tests
+// ============================================================================
+
+#[test]
+fn bond_stress_zero_area_returns_default() {
+    let nodes = vec![
+        StressNodeDesc { com: Vec3::new(0.0, 0.0, 0.0), mass: 10.0, inertia: 1.0 },
+        StressNodeDesc { com: Vec3::new(0.0, 1.0, 0.0), mass: 10.0, inertia: 1.0 },
+    ];
+    let bond = StressBondDesc {
+        centroid: Vec3::new(0.0, 0.5, 0.0),
+        node0: 0,
+        node1: 1,
+    };
+    let impulse = StressImpulse {
+        ang: Vec3::ZERO,
+        lin: Vec3::new(0.0, 100.0, 0.0),
+    };
+    let result = compute_bond_stress(&bond, &impulse, &nodes, 0.0);
+    assert_eq!(result.compression, 0.0);
+    assert_eq!(result.tension, 0.0);
+    assert_eq!(result.shear, 0.0);
+}
+
+#[test]
+fn bond_stress_out_of_range_returns_default() {
+    let nodes = vec![
+        StressNodeDesc { com: Vec3::ZERO, mass: 10.0, inertia: 1.0 },
+    ];
+    let bond = StressBondDesc {
+        centroid: Vec3::ZERO,
+        node0: 0,
+        node1: 5, // out of range
+    };
+    let impulse = StressImpulse {
+        ang: Vec3::ZERO,
+        lin: Vec3::new(100.0, 0.0, 0.0),
+    };
+    let result = compute_bond_stress(&bond, &impulse, &nodes, 1.0);
+    assert_eq!(result.compression, 0.0);
+    assert_eq!(result.tension, 0.0);
+    assert_eq!(result.shear, 0.0);
+}
+
+#[test]
+fn bond_stress_angular_impulse_twist() {
+    // Pure twist around the bond normal should contribute to shear
+    let nodes = vec![
+        StressNodeDesc { com: Vec3::new(0.0, 0.0, 0.0), mass: 10.0, inertia: 1.0 },
+        StressNodeDesc { com: Vec3::new(0.0, 1.0, 0.0), mass: 10.0, inertia: 1.0 },
+    ];
+    let bond = StressBondDesc {
+        centroid: Vec3::new(0.0, 0.5, 0.0),
+        node0: 0,
+        node1: 1,
+    };
+    // Angular impulse aligned with bond normal (Y axis) = pure twist
+    let impulse = StressImpulse {
+        ang: Vec3::new(0.0, 100.0, 0.0),
+        lin: Vec3::ZERO,
+    };
+    let result = compute_bond_stress(&bond, &impulse, &nodes, 1.0);
+    assert!(result.shear > 0.0, "twist should produce shear: {}", result.shear);
+    assert!(result.compression < 0.01, "twist shouldn't produce compression");
+    assert!(result.tension < 0.01, "twist shouldn't produce tension");
+}
+
+#[test]
+fn bond_stress_angular_impulse_bend() {
+    // Angular impulse perpendicular to bond normal = bending
+    let nodes = vec![
+        StressNodeDesc { com: Vec3::new(0.0, 0.0, 0.0), mass: 10.0, inertia: 1.0 },
+        StressNodeDesc { com: Vec3::new(0.0, 1.0, 0.0), mass: 10.0, inertia: 1.0 },
+    ];
+    let bond = StressBondDesc {
+        centroid: Vec3::new(0.0, 0.5, 0.0),
+        node0: 0,
+        node1: 1,
+    };
+    // Angular impulse perpendicular to bond normal (X axis) = bending
+    let impulse = StressImpulse {
+        ang: Vec3::new(100.0, 0.0, 0.0),
+        lin: Vec3::ZERO,
+    };
+    let result = compute_bond_stress(&bond, &impulse, &nodes, 1.0);
+    // Bending contributes to normal stress (compression or tension)
+    assert!(
+        result.compression > 0.0 || result.tension > 0.0,
+        "bending should produce normal stress: comp={} tens={}",
+        result.compression, result.tension
+    );
+}
+
+#[test]
+fn bond_stress_combined_linear_angular() {
+    let nodes = vec![
+        StressNodeDesc { com: Vec3::new(0.0, 0.0, 0.0), mass: 10.0, inertia: 1.0 },
+        StressNodeDesc { com: Vec3::new(0.0, 1.0, 0.0), mass: 10.0, inertia: 1.0 },
+    ];
+    let bond = StressBondDesc {
+        centroid: Vec3::new(0.0, 0.5, 0.0),
+        node0: 0,
+        node1: 1,
+    };
+    // Combined: tension from linear + shear from twist + bending
+    let impulse = StressImpulse {
+        ang: Vec3::new(50.0, 30.0, 0.0),
+        lin: Vec3::new(20.0, 80.0, 0.0),
+    };
+    let result = compute_bond_stress(&bond, &impulse, &nodes, 1.0);
+    assert!(result.tension > 0.0, "should have tension from linear Y");
+    assert!(result.shear > 0.0, "should have shear from linear X + twist");
+}
+
+// ============================================================================
+// Stress limits — deeper tests
+// ============================================================================
+
+#[test]
+fn stress_limits_severity_below_elastic() {
+    let limits = StressLimits {
+        compression_elastic_limit: 100.0,
+        compression_fatal_limit: 200.0,
+        ..StressLimits::default()
+    };
+    let stress = BondStressResult {
+        compression: 50.0, // half of elastic
+        tension: 0.0,
+        shear: 0.0,
+    };
+    let severity = limits.severity(&stress);
+    assert!(severity.compression < 0.5, "below elastic should be < 0.5: {}", severity.compression);
+    assert!(severity.compression > 0.0, "non-zero stress should have non-zero severity");
+}
+
+#[test]
+fn stress_limits_severity_between_elastic_fatal() {
+    let limits = StressLimits {
+        compression_elastic_limit: 100.0,
+        compression_fatal_limit: 200.0,
+        ..StressLimits::default()
+    };
+    let stress = BondStressResult {
+        compression: 150.0, // between elastic and fatal
+        tension: 0.0,
+        shear: 0.0,
+    };
+    let severity = limits.severity(&stress);
+    assert!(severity.compression >= 0.5, "between elastic/fatal should be >= 0.5: {}", severity.compression);
+    assert!(severity.compression <= 1.0, "should be <= 1.0");
+}
+
+#[test]
+fn stress_limits_severity_at_fatal() {
+    let limits = StressLimits {
+        compression_elastic_limit: 100.0,
+        compression_fatal_limit: 200.0,
+        ..StressLimits::default()
+    };
+    let stress = BondStressResult {
+        compression: 200.0, // at fatal
+        tension: 0.0,
+        shear: 0.0,
+    };
+    let severity = limits.severity(&stress);
+    assert!(
+        (severity.compression - 1.0).abs() < 0.01,
+        "at fatal should be ~1.0: {}",
+        severity.compression
+    );
+}
+
+#[test]
+fn stress_limits_default_fallback_behavior() {
+    // When limits are -1, they should fall back to compression values
+    let limits = StressLimits {
+        compression_elastic_limit: 100.0,
+        compression_fatal_limit: 200.0,
+        tension_elastic_limit: -1.0,
+        tension_fatal_limit: -1.0,
+        shear_elastic_limit: -1.0,
+        shear_fatal_limit: -1.0,
+    };
+    // Tension should use compression fallback
+    assert_eq!(limits.tension_elastic(), 100.0);
+    assert_eq!(limits.tension_fatal(), 200.0);
+    assert_eq!(limits.shear_elastic(), 100.0);
+    assert_eq!(limits.shear_fatal(), 200.0);
+}
+
+#[test]
+fn stress_limits_all_failure_modes() {
+    let limits = StressLimits {
+        compression_elastic_limit: 10.0,
+        compression_fatal_limit: 20.0,
+        tension_elastic_limit: 10.0,
+        tension_fatal_limit: 20.0,
+        shear_elastic_limit: 10.0,
+        shear_fatal_limit: 20.0,
+    };
+
+    // No failure below all limits
+    assert!(limits.failure_mode(&BondStressResult { compression: 5.0, tension: 5.0, shear: 5.0 }).is_none());
+
+    // Compression checked first
+    assert_eq!(
+        limits.failure_mode(&BondStressResult { compression: 25.0, tension: 25.0, shear: 25.0 }),
+        Some(StressFailure::Compression)
+    );
+
+    // Tension checked second
+    assert_eq!(
+        limits.failure_mode(&BondStressResult { compression: 5.0, tension: 25.0, shear: 25.0 }),
+        Some(StressFailure::Tension)
+    );
+
+    // Shear checked last
+    assert_eq!(
+        limits.failure_mode(&BondStressResult { compression: 5.0, tension: 5.0, shear: 25.0 }),
+        Some(StressFailure::Shear)
+    );
+}
+
+#[test]
+fn stress_processor_remove_bond() {
+    let nodes = vec![
+        StressNodeDesc { com: Vec3::new(0.0, 0.0, 0.0), mass: 10.0, inertia: 1.0 },
+        StressNodeDesc { com: Vec3::new(1.0, 0.0, 0.0), mass: 10.0, inertia: 1.0 },
+        StressNodeDesc { com: Vec3::new(0.5, 1.0, 0.0), mass: 10.0, inertia: 1.0 },
+    ];
+    let bonds = vec![
+        StressBondDesc { centroid: Vec3::new(0.5, 0.0, 0.0), node0: 0, node1: 1 },
+        StressBondDesc { centroid: Vec3::new(0.25, 0.5, 0.0), node0: 0, node1: 2 },
+        StressBondDesc { centroid: Vec3::new(0.75, 0.5, 0.0), node0: 1, node1: 2 },
+    ];
+    let params = StressDataParams { equalize_masses: true, center_bonds: true };
+    let mut solver = StressProcessor::new(&nodes, &bonds, params).unwrap();
+    assert_eq!(solver.bond_count(), 3);
+
+    assert!(solver.remove_bond(0));
+    assert_eq!(solver.bond_count(), 2);
+
+    assert!(solver.remove_bond(0));
+    assert_eq!(solver.bond_count(), 1);
+}
+
+#[test]
+fn stress_processor_empty_rejected() {
+    let params = StressDataParams::default();
+    assert!(StressProcessor::new(&[], &[], params).is_none());
+}
+
+#[test]
+fn vec3_math_operations() {
+    let a = Vec3::new(1.0, 2.0, 3.0);
+    let b = Vec3::new(4.0, 5.0, 6.0);
+
+    let sum = a + b;
+    assert_eq!(sum.x, 5.0);
+    assert_eq!(sum.y, 7.0);
+    assert_eq!(sum.z, 9.0);
+
+    let diff = b - a;
+    assert_eq!(diff.x, 3.0);
+    assert_eq!(diff.y, 3.0);
+    assert_eq!(diff.z, 3.0);
+
+    let scaled = a * 2.0;
+    assert_eq!(scaled.x, 2.0);
+    assert_eq!(scaled.y, 4.0);
+    assert_eq!(scaled.z, 6.0);
+
+    let dot = a.dot(b);
+    assert_eq!(dot, 32.0); // 4+10+18
+
+    let mag = Vec3::new(3.0, 4.0, 0.0).magnitude();
+    assert!((mag - 5.0).abs() < 1e-6);
+
+    let norm = Vec3::new(0.0, 0.0, 5.0).normalize();
+    assert!((norm.z - 1.0).abs() < 1e-6);
+    assert_eq!(norm.x, 0.0);
+
+    let neg = -a;
+    assert_eq!(neg.x, -1.0);
+    assert_eq!(neg.y, -2.0);
+    assert_eq!(neg.z, -3.0);
+
+    assert_eq!(Vec3::ZERO.magnitude(), 0.0);
+    let zero_norm = Vec3::ZERO.normalize();
+    assert_eq!(zero_norm.x, 0.0);
+}
