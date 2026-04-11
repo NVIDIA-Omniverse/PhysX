@@ -89,6 +89,32 @@ fn rapier_world() -> (
     )
 }
 
+fn dynamic_pair_scenario() -> ScenarioDesc {
+    let size = Vec3::new(0.5, 0.5, 0.5);
+    ScenarioDesc {
+        nodes: vec![
+            ScenarioNode {
+                centroid: Vec3::new(-0.25, 0.5, 0.0),
+                mass: 1.0,
+                volume: 0.125,
+            },
+            ScenarioNode {
+                centroid: Vec3::new(0.25, 0.5, 0.0),
+                mass: 1.0,
+                volume: 0.125,
+            },
+        ],
+        bonds: vec![ScenarioBond {
+            node0: 0,
+            node1: 1,
+            centroid: Vec3::new(0.0, 0.5, 0.0),
+            normal: Vec3::new(1.0, 0.0, 0.0),
+            area: 0.25,
+        }],
+        node_sizes: vec![size, size],
+    }
+}
+
 #[test]
 fn destructible_set_initializes() {
     let scenario = wall_scenario();
@@ -151,7 +177,10 @@ fn destructible_set_step_stable() {
             &mut impulse_joints,
             &mut multibody_joints,
         );
-        assert_eq!(result.fractures, 0, "strong wall should not fracture under normal gravity");
+        assert_eq!(
+            result.fractures, 0,
+            "strong wall should not fracture under normal gravity"
+        );
         assert_eq!(result.split_events, 0);
     }
 
@@ -177,13 +206,9 @@ fn destructible_set_fractures_under_heavy_gravity() {
         ..FracturePolicy::default()
     };
 
-    let mut set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -100.0, 0.0),
-        policy,
-    )
-    .unwrap();
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -100.0, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -231,13 +256,9 @@ fn destructible_set_force_impact() {
         ..FracturePolicy::default()
     };
 
-    let mut set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -9.81, 0.0),
-        policy,
-    )
-    .unwrap();
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -284,13 +305,9 @@ fn fracture_policy_limits_bodies() {
         ..FracturePolicy::default()
     };
 
-    let mut set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -100.0, 0.0),
-        policy,
-    )
-    .unwrap();
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -100.0, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -331,13 +348,9 @@ fn end_to_end_wall_destruction_full_pipeline() {
         ..FracturePolicy::default()
     };
 
-    let mut set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -9.81, 0.0),
-        policy,
-    )
-    .unwrap();
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -368,11 +381,7 @@ fn end_to_end_wall_destruction_full_pipeline() {
             let top_center = 17u32; // row 3, col 2
             if top_center < scenario.nodes.len() as u32 {
                 let pos = scenario.nodes[top_center as usize].centroid;
-                set.add_force(
-                    top_center,
-                    pos,
-                    Vec3::new(0.0, -(frame as f32 * 10.0), 0.0),
-                );
+                set.add_force(top_center, pos, Vec3::new(0.0, -(frame as f32 * 10.0), 0.0));
             }
         }
 
@@ -432,13 +441,9 @@ fn solver_and_rapier_body_correspondence() {
         ..FracturePolicy::default()
     };
 
-    let mut set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -50.0, 0.0),
-        policy,
-    )
-    .unwrap();
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -50.0, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -484,13 +489,9 @@ fn rapier_world_remains_valid_after_split_body_removal() {
         ..FracturePolicy::default()
     };
 
-    let mut set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -9.81, 0.0),
-        policy,
-    )
-    .unwrap();
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -545,12 +546,8 @@ fn destructible_set_from_scenario_convenience() {
     let scenario = wall_scenario();
     let settings = SolverSettings::default();
     let policy = FracturePolicy::default();
-    let set = DestructibleSet::from_scenario(
-        &scenario,
-        settings,
-        Vec3::new(0.0, -9.81, 0.0),
-        policy,
-    );
+    let set =
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy);
     assert!(set.is_some(), "from_scenario should succeed");
     let set = set.unwrap();
     assert_eq!(set.actor_count(), 1);
@@ -601,7 +598,10 @@ fn destructible_set_idle_skip() {
         }
     }
     // Most frames should be idle (no fractures with strong material)
-    assert!(idle_count >= 5, "most frames should be idle with idle_skip: {idle_count}");
+    assert!(
+        idle_count >= 5,
+        "most frames should be idle with idle_skip: {idle_count}"
+    );
 }
 
 #[test]
@@ -716,12 +716,8 @@ fn policy_max_dynamic_bodies_caps_world() {
     };
 
     let mut set =
-        DestructibleSet::from_scenario(
-            &scenario,
-            settings,
-            Vec3::new(0.0, -100.0, 0.0),
-            policy,
-        ).unwrap();
+        DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -100.0, 0.0), policy)
+            .unwrap();
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
@@ -746,4 +742,134 @@ fn policy_max_dynamic_bodies_caps_world() {
         total <= 20,
         "body count should be bounded by policy: got {total}"
     );
+}
+
+#[test]
+fn resimulation_snapshot_restores_pose_velocity_and_sleep_state() {
+    let scenario = dynamic_pair_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_resimulation_options(ResimulationOptions {
+        enabled: true,
+        max_passes: 2,
+    });
+
+    let (mut bodies, mut colliders, ..) = rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let body_handle = set
+        .node_body(0)
+        .expect("dynamic pair should create one body");
+    let snapshot = set.capture_resimulation_snapshot(&bodies);
+
+    {
+        let body = bodies.get_mut(body_handle).unwrap();
+        body.set_position(Isometry::translation(3.0, 4.0, 5.0), true);
+        body.set_linvel(vector![7.0, 8.0, 9.0], true);
+        body.set_angvel(vector![1.0, 2.0, 3.0], true);
+        body.set_linear_damping(4.0);
+        body.set_angular_damping(5.0);
+        body.set_enabled(false);
+        body.sleep();
+    }
+
+    snapshot.restore(&mut bodies);
+
+    let body = bodies.get(body_handle).unwrap();
+    let pos = body.translation();
+    assert!((pos.x + 0.0).abs() < 1.0e-5);
+    assert!((pos.y - 0.5).abs() < 1.0e-5);
+    assert!((pos.z - 0.0).abs() < 1.0e-5);
+    assert_eq!(*body.linvel(), vector![0.0, 0.0, 0.0]);
+    assert_eq!(*body.angvel(), vector![0.0, 0.0, 0.0]);
+    assert!(body.is_enabled());
+    assert!(!body.is_sleeping());
+    assert!(body.linear_damping() < 4.0);
+    assert!(body.angular_damping() < 5.0);
+}
+
+#[test]
+fn support_contact_promotes_small_body_damping() {
+    let scenario = dynamic_pair_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_small_body_damping(SmallBodyDampingOptions {
+        mode: OptimizationMode::AfterGroundCollision,
+        collider_count_threshold: 2,
+        min_linear_damping: 2.0,
+        min_angular_damping: 2.0,
+    });
+
+    let (mut bodies, mut colliders, ..) = rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let body_handle = set
+        .node_body(0)
+        .expect("dynamic pair should create one body");
+    {
+        let body = bodies.get(body_handle).unwrap();
+        assert!(body.linear_damping() < 2.0);
+        assert!(body.angular_damping() < 2.0);
+    }
+
+    let changed = set.mark_body_support_contact(body_handle, 1.0, &mut bodies);
+    assert!(changed, "first support contact should promote damping");
+
+    let body = bodies.get(body_handle).unwrap();
+    assert!(body.linear_damping() >= 2.0);
+    assert!(body.angular_damping() >= 2.0);
+}
+
+#[test]
+fn debris_cleanup_removes_small_bodies_after_ttl() {
+    let scenario = dynamic_pair_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_debris_cleanup(DebrisCleanupOptions {
+        mode: OptimizationMode::Always,
+        debris_ttl_secs: 0.5,
+        max_colliders_for_debris: 2,
+    });
+
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let no_cleanup = set.process_optimizations(
+        0.25,
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert!(no_cleanup.removed_bodies.is_empty());
+
+    let cleanup = set.process_optimizations(
+        0.75,
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert_eq!(cleanup.removed_bodies.len(), 1);
+    assert_eq!(cleanup.removed_nodes.len(), 2);
+    assert!(set.node_body(0).is_none());
+    assert!(set.node_body(1).is_none());
 }

@@ -5,6 +5,8 @@ use crate::types::*;
 
 use super::body_tracker::BodyTracker;
 use super::fracture_policy::FracturePolicy;
+use super::optimization::{DebrisCleanupOptions, OptimizationResult, SmallBodyDampingOptions};
+use super::resimulation::{BodySnapshots, ResimulationOptions};
 
 /// Configuration for creating a `DestructibleSet`.
 pub struct DestructibleConfig {
@@ -14,6 +16,9 @@ pub struct DestructibleConfig {
     pub solver_settings: SolverSettings,
     pub gravity: Vec3,
     pub fracture_policy: FracturePolicy,
+    pub resimulation: ResimulationOptions,
+    pub small_body_damping: SmallBodyDampingOptions,
+    pub debris_cleanup: DebrisCleanupOptions,
 }
 
 /// Result of a single step.
@@ -39,6 +44,9 @@ pub struct DestructibleSet {
     policy: FracturePolicy,
     gravity: Vec3,
     initialized: bool,
+    resimulation: ResimulationOptions,
+    small_body_damping: SmallBodyDampingOptions,
+    debris_cleanup: DebrisCleanupOptions,
     /// Track whether forces were applied this frame (for idle skip).
     forces_applied: bool,
     /// Number of frames since the last fracture (for idle skip).
@@ -50,8 +58,7 @@ impl DestructibleSet {
     ///
     /// You must call `initialize()` after creating the Rapier world to set up the initial bodies.
     pub fn new(config: DestructibleConfig) -> Option<Self> {
-        let solver =
-            ExtStressSolver::new(&config.nodes, &config.bonds, &config.solver_settings)?;
+        let solver = ExtStressSolver::new(&config.nodes, &config.bonds, &config.solver_settings)?;
 
         let scenario_nodes: Vec<ScenarioNode> = config
             .nodes
@@ -71,6 +78,9 @@ impl DestructibleSet {
             policy: config.fracture_policy,
             gravity: config.gravity,
             initialized: false,
+            resimulation: config.resimulation,
+            small_body_damping: config.small_body_damping,
+            debris_cleanup: config.debris_cleanup,
             forces_applied: false,
             frames_since_fracture: u32::MAX,
         })
@@ -110,6 +120,9 @@ impl DestructibleSet {
             solver_settings: settings,
             gravity,
             fracture_policy: policy,
+            resimulation: ResimulationOptions::default(),
+            small_body_damping: SmallBodyDampingOptions::default(),
+            debris_cleanup: DebrisCleanupOptions::default(),
         })
     }
 
@@ -122,7 +135,13 @@ impl DestructibleSet {
         colliders: &mut ColliderSet,
     ) -> Vec<RigidBodyHandle> {
         let actors = self.solver.actors();
-        let handles = self.tracker.create_initial_bodies(&actors, bodies, colliders);
+        let handles = self.tracker.create_initial_bodies(
+            &actors,
+            bodies,
+            colliders,
+            0.0,
+            self.small_body_damping,
+        );
         self.initialized = true;
         handles
     }
@@ -141,15 +160,31 @@ impl DestructibleSet {
         impulse_joints: &mut ImpulseJointSet,
         multibody_joints: &mut MultibodyJointSet,
     ) -> StepResult {
+        self.step_with_time(
+            0.0,
+            bodies,
+            colliders,
+            island_manager,
+            impulse_joints,
+            multibody_joints,
+        )
+    }
+
+    pub fn step_with_time(
+        &mut self,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> StepResult {
         assert!(self.initialized, "call initialize() before step()");
 
         let mut result = StepResult::default();
 
         // Idle skip optimization
-        if self.policy.idle_skip
-            && !self.forces_applied
-            && self.frames_since_fracture > 2
-        {
+        if self.policy.idle_skip && !self.forces_applied && self.frames_since_fracture > 2 {
             return result;
         }
 
@@ -222,6 +257,8 @@ impl DestructibleSet {
                 island_manager,
                 impulse_joints,
                 multibody_joints,
+                now_secs,
+                self.small_body_damping,
                 |node_count| {
                     if budget == 0 {
                         return false;
@@ -286,6 +323,10 @@ impl DestructibleSet {
         self.tracker.body_nodes(body_handle)
     }
 
+    pub fn body_has_support(&self, body_handle: RigidBodyHandle) -> bool {
+        self.tracker.body_has_support(body_handle)
+    }
+
     /// Whether a node is a fixed support.
     pub fn is_support(&self, node_index: u32) -> bool {
         self.tracker.is_support(node_index)
@@ -321,6 +362,64 @@ impl DestructibleSet {
         self.policy = policy;
     }
 
+    pub fn resimulation_options(&self) -> ResimulationOptions {
+        self.resimulation
+    }
+
+    pub fn set_resimulation_options(&mut self, options: ResimulationOptions) {
+        self.resimulation = options;
+    }
+
+    pub fn small_body_damping(&self) -> SmallBodyDampingOptions {
+        self.small_body_damping
+    }
+
+    pub fn set_small_body_damping(&mut self, options: SmallBodyDampingOptions) {
+        self.small_body_damping = options;
+    }
+
+    pub fn debris_cleanup(&self) -> DebrisCleanupOptions {
+        self.debris_cleanup
+    }
+
+    pub fn set_debris_cleanup(&mut self, options: DebrisCleanupOptions) {
+        self.debris_cleanup = options;
+    }
+
+    pub fn capture_resimulation_snapshot(&self, bodies: &RigidBodySet) -> BodySnapshots {
+        BodySnapshots::capture(bodies)
+    }
+
+    pub fn mark_body_support_contact(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+    ) -> bool {
+        self.tracker
+            .mark_support_contact(body_handle, now_secs, bodies, self.small_body_damping)
+    }
+
+    pub fn process_optimizations(
+        &mut self,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> OptimizationResult {
+        self.tracker.cleanup_expired_bodies(
+            now_secs,
+            self.debris_cleanup,
+            bodies,
+            colliders,
+            island_manager,
+            impulse_joints,
+            multibody_joints,
+        )
+    }
+
     fn apply_excess_forces(&self, bodies: &mut RigidBodySet) {
         let actors = self.solver.actors();
         for actor in &actors {
@@ -339,9 +438,7 @@ impl DestructibleSet {
             let pos = body.translation();
             let com = Vec3::new(pos.x, pos.y, pos.z);
 
-            if let Some((force, torque)) =
-                self.solver.get_excess_forces(actor.actor_index, com)
-            {
+            if let Some((force, torque)) = self.solver.get_excess_forces(actor.actor_index, com) {
                 let force_mag = force.magnitude_squared();
                 let torque_mag = torque.magnitude_squared();
                 if force_mag > 1.0e-6 || torque_mag > 1.0e-6 {

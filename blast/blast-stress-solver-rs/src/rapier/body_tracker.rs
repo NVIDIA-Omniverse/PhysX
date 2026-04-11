@@ -2,6 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use rapier3d::prelude::*;
 
+use super::optimization::{
+    DebrisCleanupOptions, OptimizationMode, OptimizationResult, SmallBodyDampingOptions,
+};
 use crate::types::*;
 
 #[derive(Clone, Copy)]
@@ -11,6 +14,14 @@ struct BodyState {
     angvel: Vector<Real>,
     linear_damping: Real,
     angular_damping: Real,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct BodyMetadata {
+    created_at: f32,
+    first_support_contact_at: Option<f32>,
+    damping_promoted: bool,
+    has_support: bool,
 }
 
 /// Tracks the mapping between stress graph nodes and Rapier rigid bodies.
@@ -33,6 +44,8 @@ pub struct BodyTracker {
     node_masses: Vec<f32>,
     /// Per-node local offset relative to its owning body.
     node_local_offsets: Vec<Vec3>,
+    /// Per-body lifecycle metadata used for replay stabilization.
+    body_metadata: HashMap<RigidBodyHandle, BodyMetadata>,
 }
 
 impl BodyTracker {
@@ -58,6 +71,7 @@ impl BodyTracker {
             node_centroids,
             node_masses,
             node_local_offsets: vec![Vec3::ZERO; nodes.len()],
+            body_metadata: HashMap::new(),
         }
     }
 
@@ -70,6 +84,8 @@ impl BodyTracker {
         actors: &[Actor],
         bodies: &mut RigidBodySet,
         colliders: &mut ColliderSet,
+        created_at: f32,
+        small_body_damping: SmallBodyDampingOptions,
     ) -> Vec<RigidBodyHandle> {
         let mut handles = Vec::new();
 
@@ -78,10 +94,7 @@ impl BodyTracker {
                 continue;
             }
 
-            let has_support = actor
-                .nodes
-                .iter()
-                .any(|n| self.support_nodes.contains(n));
+            let has_support = actor.nodes.iter().any(|n| self.support_nodes.contains(n));
 
             // Compute center of mass for the actor
             let com = self.compute_actor_com(&actor.nodes);
@@ -89,9 +102,7 @@ impl BodyTracker {
             let body = if has_support {
                 bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
             } else {
-                bodies.insert(
-                    RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]),
-                )
+                bodies.insert(RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]))
             };
 
             // Create colliders for each node
@@ -108,7 +119,9 @@ impl BodyTracker {
                 let half = vector![size.x * 0.5, size.y * 0.5, size.z * 0.5];
                 let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
                     .translation(vector![local_x, local_y, local_z])
-                    .active_events(ActiveEvents::CONTACT_FORCE_EVENTS)
+                    .active_events(
+                        ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS,
+                    )
                     .contact_force_event_threshold(0.0)
                     .friction(0.25)
                     .restitution(0.0);
@@ -120,11 +133,17 @@ impl BodyTracker {
                 };
 
                 let collider_handle = colliders.insert_with_parent(collider, body, bodies);
-                self.attach_node(node_idx, body, collider_handle, Vec3::new(local_x, local_y, local_z));
+                self.attach_node(
+                    node_idx,
+                    body,
+                    collider_handle,
+                    Vec3::new(local_x, local_y, local_z),
+                );
             }
 
-            self.body_to_nodes
-                .insert(body, actor.nodes.clone());
+            self.body_to_nodes.insert(body, actor.nodes.clone());
+            self.update_body_metadata(body, &actor.nodes, created_at);
+            self.promote_small_body_damping(body, bodies, &small_body_damping);
             handles.push(body);
         }
 
@@ -142,6 +161,8 @@ impl BodyTracker {
         island_manager: &mut IslandManager,
         impulse_joints: &mut ImpulseJointSet,
         multibody_joints: &mut MultibodyJointSet,
+        created_at: f32,
+        small_body_damping: SmallBodyDampingOptions,
         mut policy_filter: impl FnMut(u32) -> bool,
     ) -> Vec<RigidBodyHandle> {
         let mut new_handles = Vec::new();
@@ -195,10 +216,7 @@ impl BodyTracker {
                     .filter(|(_, bh)| **bh == Some(h))
                     .map(|(i, _)| i as u32)
                     .collect(),
-                is_fixed: bodies
-                    .get(h)
-                    .map(|b| !b.is_dynamic())
-                    .unwrap_or(false),
+                is_fixed: bodies.get(h).map(|b| !b.is_dynamic()).unwrap_or(false),
             })
             .collect();
 
@@ -212,6 +230,8 @@ impl BodyTracker {
             for &n in &child.nodes {
                 self.node_to_body[n as usize] = Some(entry.body_handle);
             }
+            self.update_body_metadata(entry.body_handle, &child.nodes, created_at);
+            self.promote_small_body_damping(entry.body_handle, bodies, &small_body_damping);
         }
 
         // Remove bodies that weren't reused
@@ -238,6 +258,7 @@ impl BodyTracker {
                     multibody_joints,
                     true,
                 );
+                self.body_metadata.remove(&bh);
             }
         }
 
@@ -249,10 +270,7 @@ impl BodyTracker {
                 continue;
             }
 
-            let has_support = child
-                .nodes
-                .iter()
-                .any(|n| self.support_nodes.contains(n));
+            let has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
 
             let source_body = child
                 .nodes
@@ -276,14 +294,10 @@ impl BodyTracker {
                 bodies.insert(builder)
             } else if has_support {
                 let com = self.compute_actor_com(&child.nodes);
-                bodies.insert(
-                    RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]),
-                )
+                bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
             } else {
                 let com = self.compute_actor_com(&child.nodes);
-                bodies.insert(
-                    RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]),
-                )
+                bodies.insert(RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]))
             };
 
             for &node_idx in &child.nodes {
@@ -294,7 +308,9 @@ impl BodyTracker {
                 let half = vector![size.x * 0.5, size.y * 0.5, size.z * 0.5];
                 let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
                     .translation(vector![local_offset.x, local_offset.y, local_offset.z])
-                    .active_events(ActiveEvents::CONTACT_FORCE_EVENTS)
+                    .active_events(
+                        ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS,
+                    )
                     .contact_force_event_threshold(0.0)
                     .friction(0.25)
                     .restitution(0.0);
@@ -306,16 +322,12 @@ impl BodyTracker {
                 };
 
                 let collider_handle = colliders.insert_with_parent(collider, body_handle, bodies);
-                self.attach_node(
-                    node_idx,
-                    body_handle,
-                    collider_handle,
-                    local_offset,
-                );
+                self.attach_node(node_idx, body_handle, collider_handle, local_offset);
             }
 
-            self.body_to_nodes
-                .insert(body_handle, child.nodes.clone());
+            self.body_to_nodes.insert(body_handle, child.nodes.clone());
+            self.update_body_metadata(body_handle, &child.nodes, created_at);
+            self.promote_small_body_damping(body_handle, bodies, &small_body_damping);
             new_handles.push(body_handle);
         }
 
@@ -324,12 +336,18 @@ impl BodyTracker {
 
     /// Get the body handle for a node.
     pub fn node_body(&self, node_index: u32) -> Option<RigidBodyHandle> {
-        self.node_to_body.get(node_index as usize).copied().flatten()
+        self.node_to_body
+            .get(node_index as usize)
+            .copied()
+            .flatten()
     }
 
     /// Get the collider handle for a node.
     pub fn node_collider(&self, node_index: u32) -> Option<ColliderHandle> {
-        self.node_to_collider.get(node_index as usize).copied().flatten()
+        self.node_to_collider
+            .get(node_index as usize)
+            .copied()
+            .flatten()
     }
 
     /// Get the node owning a collider.
@@ -355,6 +373,13 @@ impl BodyTracker {
             .unwrap_or_default()
     }
 
+    pub fn body_has_support(&self, body_handle: RigidBodyHandle) -> bool {
+        self.body_metadata
+            .get(&body_handle)
+            .map(|metadata| metadata.has_support)
+            .unwrap_or(false)
+    }
+
     /// Whether a node is a support (fixed) node.
     pub fn is_support(&self, node_index: u32) -> bool {
         self.support_nodes.contains(&node_index)
@@ -371,6 +396,94 @@ impl BodyTracker {
             .keys()
             .filter(|h| bodies.get(**h).map(|b| b.is_dynamic()).unwrap_or(false))
             .count()
+    }
+
+    pub fn mark_support_contact(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+        damping: SmallBodyDampingOptions,
+    ) -> bool {
+        let collider_count = self.body_nodes(body_handle).len();
+        let Some(metadata) = self.body_metadata.get_mut(&body_handle) else {
+            return false;
+        };
+        if metadata.has_support {
+            return false;
+        }
+        metadata.first_support_contact_at.get_or_insert(now_secs);
+        if damping.mode == OptimizationMode::AfterGroundCollision
+            && !metadata.damping_promoted
+            && collider_count <= damping.collider_count_threshold
+        {
+            if Self::apply_small_body_damping(bodies, body_handle, &damping) {
+                metadata.damping_promoted = true;
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn cleanup_expired_bodies(
+        &mut self,
+        now_secs: f32,
+        cleanup: DebrisCleanupOptions,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> OptimizationResult {
+        let mut result = OptimizationResult::default();
+        if cleanup.mode == OptimizationMode::Off {
+            return result;
+        }
+
+        let mut expired = Vec::new();
+        for (&body_handle, metadata) in &self.body_metadata {
+            if metadata.has_support {
+                continue;
+            }
+            let Some(body) = bodies.get(body_handle) else {
+                continue;
+            };
+            if !body.is_dynamic() {
+                continue;
+            }
+            if self.body_nodes(body_handle).len() > cleanup.max_colliders_for_debris {
+                continue;
+            }
+
+            let anchor = match cleanup.mode {
+                OptimizationMode::Off => None,
+                OptimizationMode::Always => Some(metadata.created_at),
+                OptimizationMode::AfterGroundCollision => metadata.first_support_contact_at,
+            };
+            let Some(anchor) = anchor else {
+                continue;
+            };
+            if now_secs - anchor >= cleanup.debris_ttl_secs {
+                expired.push(body_handle);
+            }
+        }
+
+        for body_handle in expired {
+            let removed_nodes = self.remove_body(
+                body_handle,
+                bodies,
+                colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
+            );
+            if !removed_nodes.is_empty() {
+                result.removed_bodies.push(body_handle);
+                result.removed_nodes.extend(removed_nodes);
+            }
+        }
+
+        result
     }
 
     fn compute_actor_com(&self, nodes: &[u32]) -> Vec3 {
@@ -405,5 +518,95 @@ impl BodyTracker {
         }
         self.node_to_body[idx] = None;
         self.node_local_offsets[idx] = Vec3::ZERO;
+    }
+
+    fn update_body_metadata(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        nodes: &[u32],
+        created_at: f32,
+    ) {
+        let has_support = nodes.iter().any(|node| self.support_nodes.contains(node));
+        self.body_metadata.insert(
+            body_handle,
+            BodyMetadata {
+                created_at,
+                first_support_contact_at: None,
+                damping_promoted: false,
+                has_support,
+            },
+        );
+    }
+
+    fn promote_small_body_damping(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        bodies: &mut RigidBodySet,
+        damping: &SmallBodyDampingOptions,
+    ) {
+        if damping.mode != OptimizationMode::Always {
+            return;
+        }
+        if self.body_nodes(body_handle).len() > damping.collider_count_threshold {
+            return;
+        }
+        if Self::apply_small_body_damping(bodies, body_handle, damping) {
+            if let Some(metadata) = self.body_metadata.get_mut(&body_handle) {
+                metadata.damping_promoted = true;
+            }
+        }
+    }
+
+    fn apply_small_body_damping(
+        bodies: &mut RigidBodySet,
+        body_handle: RigidBodyHandle,
+        damping: &SmallBodyDampingOptions,
+    ) -> bool {
+        let Some(body) = bodies.get_mut(body_handle) else {
+            return false;
+        };
+        if !body.is_dynamic() {
+            return false;
+        }
+        let mut changed = false;
+        if body.linear_damping() < damping.min_linear_damping {
+            body.set_linear_damping(damping.min_linear_damping);
+            changed = true;
+        }
+        if body.angular_damping() < damping.min_angular_damping {
+            body.set_angular_damping(damping.min_angular_damping);
+            changed = true;
+        }
+        if changed {
+            body.wake_up(true);
+        }
+        changed
+    }
+
+    fn remove_body(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> Vec<u32> {
+        let nodes = self.body_to_nodes.remove(&body_handle).unwrap_or_default();
+        for node in &nodes {
+            self.detach_node(*node);
+        }
+        self.body_metadata.remove(&body_handle);
+        if bodies.get(body_handle).is_some() {
+            bodies.remove(
+                body_handle,
+                island_manager,
+                colliders,
+                impulse_joints,
+                multibody_joints,
+                true,
+            );
+        }
+        nodes
     }
 }

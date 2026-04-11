@@ -1,8 +1,7 @@
 use std::{
     any::Any,
     collections::HashMap,
-    env,
-    panic,
+    env, panic,
     sync::{
         mpsc::{channel, Receiver, Sender},
         Arc,
@@ -10,17 +9,20 @@ use std::{
     time::Duration,
 };
 
-use bevy::math::primitives::{Cuboid as BevyCuboid, Sphere};
 use bevy::app::{AppExit, ScheduleRunnerPlugin};
 use bevy::ecs::message::{MessageReader, MessageWriter};
 use bevy::input::mouse::{MouseMotion, MouseWheel};
+use bevy::math::primitives::{Cuboid as BevyCuboid, Sphere};
 use bevy::prelude::*;
 use bevy::transform::TransformPlugin;
 use bevy::window::PrimaryWindow;
-use blast_stress_solver::rapier::{DestructibleSet, FracturePolicy};
+use blast_stress_solver::rapier::{
+    DebrisCleanupOptions, DestructibleSet, FracturePolicy, OptimizationMode, ResimulationOptions,
+    SmallBodyDampingOptions,
+};
 use blast_stress_solver::scenarios::{
-    build_bridge_scenario, build_tower_scenario, build_wall_scenario, BridgeOptions,
-    TowerOptions, WallOptions,
+    build_bridge_scenario, build_tower_scenario, build_wall_scenario, BridgeOptions, TowerOptions,
+    WallOptions,
 };
 use blast_stress_solver::{ScenarioDesc, SolverSettings, Vec3 as SolverVec3};
 use rapier3d::prelude::*;
@@ -30,7 +32,6 @@ const CONTACT_FORCE_SCALE: f32 = 30.0;
 const SPLASH_RADIUS: f32 = 2.0;
 const DEFAULT_HEADLESS_FRAMES: u32 = 180;
 const DEFAULT_PROJECTILE_TTL: f32 = 6.0;
-const MAX_RESIMULATION_PASSES: usize = 1;
 
 const BASE_COMPRESSION_ELASTIC: f32 = 0.0009;
 const BASE_COMPRESSION_FATAL: f32 = 0.0027;
@@ -67,6 +68,9 @@ struct DemoConfig {
     material_scale: f32,
     camera_target: Vec3,
     camera_distance: f32,
+    resimulation: ResimulationOptions,
+    small_body_damping: SmallBodyDampingOptions,
+    debris_cleanup: DebrisCleanupOptions,
 }
 
 #[derive(Resource, Clone)]
@@ -139,14 +143,6 @@ struct ProjectileState {
     body_handle: RigidBodyHandle,
     collider_handle: ColliderHandle,
     ttl: f32,
-}
-
-#[derive(Clone, Copy)]
-struct BodySnapshot {
-    handle: RigidBodyHandle,
-    position: Isometry<f32>,
-    linvel: Vector<f32>,
-    angvel: Vector<f32>,
 }
 
 struct DemoPhysicsState {
@@ -291,6 +287,19 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             material_scale: 1.0e10,
             camera_target: Vec3::new(0.0, 1.5, 0.0),
             camera_distance: 14.0,
+            resimulation: ResimulationOptions {
+                enabled: true,
+                max_passes: 1,
+            },
+            small_body_damping: SmallBodyDampingOptions {
+                mode: OptimizationMode::Off,
+                ..SmallBodyDampingOptions::default()
+            },
+            debris_cleanup: DebrisCleanupOptions {
+                mode: OptimizationMode::Always,
+                debris_ttl_secs: 8.0,
+                max_colliders_for_debris: 2,
+            },
         },
         DemoScenarioKind::Tower => DemoConfig {
             title: "Tower Collapse",
@@ -302,6 +311,21 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             material_scale: 1.0e10,
             camera_target: Vec3::new(0.0, 1.5, 0.0),
             camera_distance: 20.0,
+            resimulation: ResimulationOptions {
+                enabled: true,
+                max_passes: 1,
+            },
+            small_body_damping: SmallBodyDampingOptions {
+                mode: OptimizationMode::Always,
+                collider_count_threshold: 3,
+                min_linear_damping: 2.0,
+                min_angular_damping: 2.0,
+            },
+            debris_cleanup: DebrisCleanupOptions {
+                mode: OptimizationMode::Always,
+                debris_ttl_secs: 10.0,
+                max_colliders_for_debris: 2,
+            },
         },
         DemoScenarioKind::Bridge => DemoConfig {
             title: "Bridge Stress",
@@ -313,6 +337,21 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             material_scale: 1.0e10,
             camera_target: Vec3::new(0.0, 2.5, 0.0),
             camera_distance: 24.0,
+            resimulation: ResimulationOptions {
+                enabled: true,
+                max_passes: 1,
+            },
+            small_body_damping: SmallBodyDampingOptions {
+                mode: OptimizationMode::Always,
+                collider_count_threshold: 3,
+                min_linear_damping: 2.0,
+                min_angular_damping: 2.0,
+            },
+            debris_cleanup: DebrisCleanupOptions {
+                mode: OptimizationMode::Always,
+                debris_ttl_secs: 10.0,
+                max_colliders_for_debris: 2,
+            },
         },
     }
 }
@@ -324,13 +363,12 @@ fn build_demo_physics(config: DemoConfig) -> DemoPhysicsState {
         apply_excess_forces: false,
         ..FracturePolicy::default()
     };
-    let mut destructible = DestructibleSet::from_scenario(
-        &config.scenario,
-        settings,
-        gravity,
-        policy,
-    )
-    .expect("failed to create destructible set");
+    let mut destructible =
+        DestructibleSet::from_scenario(&config.scenario, settings, gravity, policy)
+            .expect("failed to create destructible set");
+    destructible.set_resimulation_options(config.resimulation);
+    destructible.set_small_body_damping(config.small_body_damping);
+    destructible.set_debris_cleanup(config.debris_cleanup);
 
     let mut bodies = RigidBodySet::new();
     let mut colliders = ColliderSet::new();
@@ -339,6 +377,7 @@ fn build_demo_physics(config: DemoConfig) -> DemoPhysicsState {
     let ground_body = bodies.insert(RigidBodyBuilder::fixed().translation(vector![0.0, 0.0, 0.0]));
     let ground = ColliderBuilder::cuboid(100.0, 0.025, 100.0)
         .translation(vector![0.0, -0.025, 0.0])
+        .active_events(ActiveEvents::COLLISION_EVENTS)
         .friction(0.9)
         .restitution(0.0);
     colliders.insert_with_parent(ground, ground_body, &mut bodies);
@@ -456,11 +495,7 @@ fn setup_scene(
     ambient_light.color = Color::srgb(0.92, 0.94, 1.0);
     ambient_light.brightness = 700.0;
 
-    commands.spawn((
-        Camera3d::default(),
-        camera_transform(&orbit),
-        MainCamera,
-    ));
+    commands.spawn((Camera3d::default(), camera_transform(&orbit), MainCamera));
 
     commands.spawn((
         PointLight {
@@ -691,7 +726,7 @@ fn shoot_projectile_system(
             .mass(projectile_mass)
             .friction(0.25)
             .restitution(0.0)
-            .active_events(ActiveEvents::CONTACT_FORCE_EVENTS)
+            .active_events(ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS)
             .contact_force_event_threshold(0.0),
         body_handle,
         bodies,
@@ -700,7 +735,9 @@ fn shoot_projectile_system(
     let entity = commands
         .spawn((
             Transform::from_translation(origin),
-            ProjectileVisual { radius: projectile_radius },
+            ProjectileVisual {
+                radius: projectile_radius,
+            },
             Mesh3d(meshes.add(Sphere::new(projectile_radius))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color: Color::srgb(0.96, 0.84, 0.16),
@@ -727,11 +764,55 @@ fn physics_step_system(
     mut state: NonSendMut<DemoPhysicsState>,
 ) {
     let dt = time.delta_secs().clamp(1.0 / 240.0, 1.0 / 30.0);
-    let pre_step_snapshot = capture_body_snapshots(&state.bodies);
-    step_rapier_world(&mut state, dt);
-    drain_contact_forces(&mut state);
+    let now_secs = time.elapsed_secs();
+    let resimulation = state.destructible.resimulation_options();
+    let mut remaining_resim_passes = if resimulation.enabled {
+        resimulation.max_passes
+    } else {
+        0
+    };
+    let mut snapshot = state
+        .destructible
+        .capture_resimulation_snapshot(&state.bodies);
 
-    let fracture_result = {
+    loop {
+        step_rapier_world(&mut state, dt);
+        drain_collision_events(&mut state, now_secs);
+        drain_contact_forces(&mut state);
+
+        let fracture_result = {
+            let DemoPhysicsState {
+                destructible,
+                bodies,
+                colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
+                ..
+            } = &mut *state;
+            destructible.step_with_time(
+                now_secs,
+                bodies,
+                colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
+            )
+        };
+
+        let fractured = fracture_result.split_events > 0 || fracture_result.new_bodies > 0;
+        if !fractured || remaining_resim_passes == 0 {
+            break;
+        }
+
+        snapshot.restore(&mut state.bodies);
+        snapshot = state
+            .destructible
+            .capture_resimulation_snapshot(&state.bodies);
+        remaining_resim_passes = remaining_resim_passes.saturating_sub(1);
+    }
+
+    let removed_nodes = {
         let DemoPhysicsState {
             destructible,
             bodies,
@@ -741,20 +822,21 @@ fn physics_step_system(
             multibody_joints,
             ..
         } = &mut *state;
-            destructible.step(
+        destructible
+            .process_optimizations(
+                now_secs,
                 bodies,
                 colliders,
                 island_manager,
                 impulse_joints,
                 multibody_joints,
             )
+            .removed_nodes
     };
 
-    if fracture_result.split_events > 0 || fracture_result.new_bodies > 0 {
-        for _ in 0..MAX_RESIMULATION_PASSES {
-            restore_body_snapshots(&mut state.bodies, &pre_step_snapshot);
-            step_rapier_world(&mut state, dt);
-            drain_contact_forces(&mut state);
+    for node_index in removed_nodes {
+        if let Some(entity) = state.node_to_entity.remove(&node_index) {
+            commands.entity(entity).despawn();
         }
     }
 
@@ -774,7 +856,6 @@ fn step_rapier_world(state: &mut DemoPhysicsState, dt: f32) {
         multibody_joints,
         ccd_solver,
         collision_send,
-        collision_recv,
         contact_send,
         ..
     } = state;
@@ -798,38 +879,66 @@ fn step_rapier_world(state: &mut DemoPhysicsState, dt: f32) {
         &(),
         &event_handler,
     );
-
-    while collision_recv.try_recv().is_ok() {}
 }
 
-fn capture_body_snapshots(bodies: &RigidBodySet) -> Vec<BodySnapshot> {
-    bodies
-        .iter()
-        .filter_map(|(handle, body)| {
-            if body.is_fixed() {
-                None
-            } else {
-                Some(BodySnapshot {
-                    handle,
-                    position: *body.position(),
-                    linvel: *body.linvel(),
-                    angvel: *body.angvel(),
-                })
-            }
-        })
-        .collect()
-}
-
-fn restore_body_snapshots(bodies: &mut RigidBodySet, snapshots: &[BodySnapshot]) {
-    for snapshot in snapshots {
-        let Some(body) = bodies.get_mut(snapshot.handle) else {
+fn drain_collision_events(state: &mut DemoPhysicsState, now_secs: f32) {
+    while let Ok(event) = state.collision_recv.try_recv() {
+        let CollisionEvent::Started(collider1, collider2, flags) = event else {
             continue;
         };
-        body.set_position(snapshot.position, true);
-        body.set_linvel(snapshot.linvel, true);
-        body.set_angvel(snapshot.angvel, true);
-        body.reset_forces(true);
-        body.reset_torques(true);
+        if flags.contains(CollisionEventFlags::SENSOR) {
+            continue;
+        }
+        register_support_contact(state, collider1, collider2, now_secs);
+        register_support_contact(state, collider2, collider1, now_secs);
+    }
+}
+
+fn register_support_contact(
+    state: &mut DemoPhysicsState,
+    tracked_collider: ColliderHandle,
+    other_collider: ColliderHandle,
+    now_secs: f32,
+) {
+    let Some(node_index) = state.destructible.collider_node(tracked_collider) else {
+        return;
+    };
+    if state.destructible.is_support(node_index) {
+        return;
+    }
+
+    let Some(body_handle) = state.destructible.node_body(node_index) else {
+        return;
+    };
+
+    let support_contact = {
+        let Some(other) = state.colliders.get(other_collider) else {
+            return;
+        };
+        let Some(other_parent) = other.parent() else {
+            return;
+        };
+        if other_parent == body_handle {
+            return;
+        }
+
+        state
+            .bodies
+            .get(other_parent)
+            .map(|body| body.is_fixed())
+            .unwrap_or(false)
+            || state
+                .destructible
+                .collider_node(other_collider)
+                .map(|other_node| state.destructible.is_support(other_node))
+                .unwrap_or(false)
+            || state.destructible.body_has_support(other_parent)
+    };
+
+    if support_contact {
+        state
+            .destructible
+            .mark_body_support_contact(body_handle, now_secs, &mut state.bodies);
     }
 }
 
@@ -856,12 +965,20 @@ fn drain_contact_forces(state: &mut DemoPhysicsState) {
             continue;
         };
         let projectile_velocity = projectile.linvel();
-        let velocity_vec = Vec3::new(projectile_velocity.x, projectile_velocity.y, projectile_velocity.z);
+        let velocity_vec = Vec3::new(
+            projectile_velocity.x,
+            projectile_velocity.y,
+            projectile_velocity.z,
+        );
         let direction = if velocity_vec.length_squared() > 1.0e-6 {
             velocity_vec.normalize()
         } else {
-            Vec3::new(event.total_force.x, event.total_force.y, event.total_force.z)
-                .normalize_or_zero()
+            Vec3::new(
+                event.total_force.x,
+                event.total_force.y,
+                event.total_force.z,
+            )
+            .normalize_or_zero()
         };
         if direction == Vec3::ZERO {
             continue;
@@ -916,11 +1033,7 @@ fn drain_contact_forces(state: &mut DemoPhysicsState) {
     }
 }
 
-fn cleanup_projectiles(
-    state: &mut DemoPhysicsState,
-    commands: &mut Commands,
-    dt: f32,
-) {
+fn cleanup_projectiles(state: &mut DemoPhysicsState, commands: &mut Commands, dt: f32) {
     let mut keep = Vec::with_capacity(state.projectiles.len());
 
     for mut projectile in state.projectiles.drain(..) {
@@ -928,9 +1041,7 @@ fn cleanup_projectiles(
         let remove_for_ttl = projectile.ttl <= 0.0;
         let body = state.bodies.get(projectile.body_handle);
         let remove_for_body = body.is_none();
-        let remove_for_fall = body
-            .map(|rb| rb.translation().y < -20.0)
-            .unwrap_or(false);
+        let remove_for_fall = body.map(|rb| rb.translation().y < -20.0).unwrap_or(false);
 
         if remove_for_ttl || remove_for_body || remove_for_fall {
             if body.is_some() {
@@ -943,7 +1054,9 @@ fn cleanup_projectiles(
                     true,
                 );
             }
-            state.projectile_colliders.remove(&projectile.collider_handle);
+            state
+                .projectile_colliders
+                .remove(&projectile.collider_handle);
             if let Some(entity) = state.projectile_entities.remove(&projectile.body_handle) {
                 commands.entity(entity).despawn();
             }
@@ -959,7 +1072,12 @@ fn cleanup_projectiles(
 fn sync_visuals_system(
     state: NonSend<DemoPhysicsState>,
     mut chunk_q: Query<
-        (&ChunkVisual, &mut Transform, &mut ChunkTint, Option<&ChunkMaterial>),
+        (
+            &ChunkVisual,
+            &mut Transform,
+            &mut ChunkTint,
+            Option<&ChunkMaterial>,
+        ),
         Without<ProjectileVisual>,
     >,
     mut projectile_q: Query<&mut Transform, (With<ProjectileVisual>, Without<ChunkVisual>)>,
@@ -1138,7 +1256,9 @@ fn headless_exit_system(
     }
 
     if budget.frames_remaining == 0 {
-        let actors = state.as_ref().map_or(0, |state| state.destructible.actor_count());
+        let actors = state
+            .as_ref()
+            .map_or(0, |state| state.destructible.actor_count());
         eprintln!("Headless simulation complete. Actor count: {actors}.");
         app_exit_writer.write(AppExit::Success);
     }
