@@ -24,6 +24,7 @@ pub struct DestructibleConfig {
     pub sleep_thresholds: SleepThresholdOptions,
     pub small_body_damping: SmallBodyDampingOptions,
     pub debris_cleanup: DebrisCleanupOptions,
+    pub dynamic_body_ccd_enabled: bool,
 }
 
 /// Result of a single step.
@@ -54,6 +55,7 @@ pub struct DestructibleSet {
     sleep_thresholds: SleepThresholdOptions,
     small_body_damping: SmallBodyDampingOptions,
     debris_cleanup: DebrisCleanupOptions,
+    dynamic_body_ccd_enabled: bool,
     bond_table: Vec<BondDesc>,
     node_bonds: Vec<Vec<u32>>,
     removed_bonds: Vec<bool>,
@@ -93,6 +95,8 @@ impl DestructibleSet {
             .collect();
 
         let tracker = BodyTracker::new(&scenario_nodes, config.node_sizes);
+        let mut tracker = tracker;
+        tracker.set_dynamic_body_ccd_enabled(config.dynamic_body_ccd_enabled);
 
         Some(Self {
             solver,
@@ -105,6 +109,7 @@ impl DestructibleSet {
             sleep_thresholds: config.sleep_thresholds,
             small_body_damping: config.small_body_damping,
             debris_cleanup: config.debris_cleanup,
+            dynamic_body_ccd_enabled: config.dynamic_body_ccd_enabled,
             bond_table: config.bonds,
             node_bonds,
             removed_bonds: vec![false; node_count],
@@ -154,6 +159,7 @@ impl DestructibleSet {
             sleep_thresholds: SleepThresholdOptions::default(),
             small_body_damping: SmallBodyDampingOptions::default(),
             debris_cleanup: DebrisCleanupOptions::default(),
+            dynamic_body_ccd_enabled: false,
         })
     }
 
@@ -374,6 +380,30 @@ impl DestructibleSet {
         self.tracker.body_count()
     }
 
+    pub fn collider_count(&self) -> usize {
+        self.tracker.collider_count()
+    }
+
+    pub fn dynamic_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.tracker.dynamic_body_count(bodies)
+    }
+
+    pub fn awake_dynamic_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.tracker.awake_dynamic_body_count(bodies)
+    }
+
+    pub fn sleeping_dynamic_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.tracker.sleeping_dynamic_body_count(bodies)
+    }
+
+    pub fn support_body_count(&self) -> usize {
+        self.tracker.support_body_count()
+    }
+
+    pub fn ccd_enabled_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.tracker.ccd_enabled_body_count(bodies)
+    }
+
     /// Access the underlying solver for advanced use.
     pub fn solver(&self) -> &ExtStressSolver {
         &self.solver
@@ -432,6 +462,37 @@ impl DestructibleSet {
 
     pub fn set_debris_cleanup(&mut self, options: DebrisCleanupOptions) {
         self.debris_cleanup = options;
+    }
+
+    pub fn dynamic_body_ccd_enabled(&self) -> bool {
+        self.dynamic_body_ccd_enabled
+    }
+
+    pub fn set_dynamic_body_ccd_enabled(&mut self, enabled: bool) {
+        self.dynamic_body_ccd_enabled = enabled;
+        self.tracker.set_dynamic_body_ccd_enabled(enabled);
+    }
+
+    pub fn pending_split_event_count(&self) -> usize {
+        self.pending_split_events.len()
+    }
+
+    pub fn pending_new_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.pending_split_events
+            .iter()
+            .map(|event| self.tracker.estimate_split_cost(event, bodies).create_bodies)
+            .sum()
+    }
+
+    pub fn pending_collider_migration_count(&self, bodies: &RigidBodySet) -> usize {
+        self.pending_split_events
+            .iter()
+            .map(|event| {
+                self.tracker
+                    .estimate_split_cost(event, bodies)
+                    .collider_migrations
+            })
+            .sum()
     }
 
     pub fn capture_resimulation_snapshot(&self, bodies: &RigidBodySet) -> BodySnapshots {

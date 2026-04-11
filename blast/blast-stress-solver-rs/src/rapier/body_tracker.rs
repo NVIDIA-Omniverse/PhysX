@@ -54,6 +54,8 @@ pub struct BodyTracker {
     node_local_offsets: Vec<Vec3>,
     /// Per-body lifecycle metadata used for replay stabilization.
     body_metadata: HashMap<RigidBodyHandle, BodyMetadata>,
+    /// Whether newly created dynamic bodies should enable CCD.
+    dynamic_body_ccd_enabled: bool,
 }
 
 impl BodyTracker {
@@ -80,7 +82,12 @@ impl BodyTracker {
             node_masses,
             node_local_offsets: vec![Vec3::ZERO; nodes.len()],
             body_metadata: HashMap::new(),
+            dynamic_body_ccd_enabled: false,
         }
+    }
+
+    pub fn set_dynamic_body_ccd_enabled(&mut self, enabled: bool) {
+        self.dynamic_body_ccd_enabled = enabled;
     }
 
     /// Create initial Rapier bodies from the actor table.
@@ -111,7 +118,11 @@ impl BodyTracker {
             let body = if has_support {
                 bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
             } else {
-                bodies.insert(RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]))
+                bodies.insert(
+                    RigidBodyBuilder::dynamic()
+                        .translation(vector![com.x, com.y, com.z])
+                        .ccd_enabled(self.dynamic_body_ccd_enabled),
+                )
             };
 
             // Create colliders for each node
@@ -297,6 +308,7 @@ impl BodyTracker {
                         .angvel(source.angvel)
                         .linear_damping(source.linear_damping)
                         .angular_damping(source.angular_damping)
+                        .ccd_enabled(self.dynamic_body_ccd_enabled)
                 };
                 bodies.insert(builder)
             } else if has_support {
@@ -304,7 +316,11 @@ impl BodyTracker {
                 bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
             } else {
                 let com = self.compute_actor_com(&child.nodes);
-                bodies.insert(RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]))
+                bodies.insert(
+                    RigidBodyBuilder::dynamic()
+                        .translation(vector![com.x, com.y, com.z])
+                        .ccd_enabled(self.dynamic_body_ccd_enabled),
+                )
             };
 
             for &node_idx in &child.nodes {
@@ -398,11 +414,57 @@ impl BodyTracker {
         self.body_to_nodes.len()
     }
 
+    /// Number of tracked colliders owned by destructible nodes.
+    pub fn collider_count(&self) -> usize {
+        self.node_to_collider
+            .iter()
+            .filter(|handle| handle.is_some())
+            .count()
+    }
+
     /// Number of dynamic bodies.
     pub fn dynamic_body_count(&self, bodies: &RigidBodySet) -> usize {
         self.body_to_nodes
             .keys()
             .filter(|h| bodies.get(**h).map(|b| b.is_dynamic()).unwrap_or(false))
+            .count()
+    }
+
+    pub fn awake_dynamic_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.body_to_nodes
+            .keys()
+            .filter(|h| {
+                bodies
+                    .get(**h)
+                    .map(|b| b.is_dynamic() && !b.is_sleeping())
+                    .unwrap_or(false)
+            })
+            .count()
+    }
+
+    pub fn sleeping_dynamic_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.body_to_nodes
+            .keys()
+            .filter(|h| {
+                bodies
+                    .get(**h)
+                    .map(|b| b.is_dynamic() && b.is_sleeping())
+                    .unwrap_or(false)
+            })
+            .count()
+    }
+
+    pub fn support_body_count(&self) -> usize {
+        self.body_metadata
+            .values()
+            .filter(|metadata| metadata.has_support)
+            .count()
+    }
+
+    pub fn ccd_enabled_body_count(&self, bodies: &RigidBodySet) -> usize {
+        self.body_to_nodes
+            .keys()
+            .filter(|h| bodies.get(**h).map(|b| b.is_ccd_enabled()).unwrap_or(false))
             .count()
     }
 

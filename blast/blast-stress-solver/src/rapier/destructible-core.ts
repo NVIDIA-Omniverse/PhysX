@@ -56,6 +56,10 @@ export type BuildDestructibleCoreOptions = {
   /** Scale factor for contact forces fed into the stress solver (default 30).
    * Higher values make projectile impacts break more bonds. */
   contactForceScale?: number;
+  /** Whether newly created split bodies should enable CCD (default true for compatibility). */
+  fractureBodyCcdEnabled?: boolean;
+  /** Whether spawned projectiles should enable CCD (default true). */
+  projectileCcdEnabled?: boolean;
   skipSingleBodies?: boolean;
   sleepLinearThreshold?: number;
   sleepAngularThreshold?: number;
@@ -123,6 +127,8 @@ export async function buildDestructibleCore({
   onWorldReplaced,
   resimulateOnDamageDestroy = !!damage?.enabled,
   contactForceScale = 30,
+  fractureBodyCcdEnabled = true,
+  projectileCcdEnabled = true,
   skipSingleBodies = false,
   sleepLinearThreshold = 0.1,
   sleepAngularThreshold = 0.1,
@@ -1196,7 +1202,7 @@ export async function buildDestructibleCore({
       if (typeof parentLinDamp === 'number') desc.setLinearDamping(parentLinDamp);
       if (typeof parentAngDamp === 'number') desc.setAngularDamping(parentAngDamp);
 
-      if (!isSupport) {
+      if (!isSupport && fractureBodyCcdEnabled) {
         try { (desc as MaybeCcdBodyDesc).setCcdEnabled?.(true); } catch {}
       }
 
@@ -1447,9 +1453,11 @@ export async function buildDestructibleCore({
         .setTranslation(spawn.position.x, spawn.position.y, spawn.position.z)
         .setLinvel(spawn.velocity.x, spawn.velocity.y, spawn.velocity.z)
         .setUserData({ projectile: true });
-      const ccdDesc = bodyDesc as MaybeCcdBodyDesc;
-      if (typeof ccdDesc.setCcdEnabled === 'function') {
-        ccdDesc.setCcdEnabled(true);
+      if (projectileCcdEnabled) {
+        const ccdDesc = bodyDesc as MaybeCcdBodyDesc;
+        if (typeof ccdDesc.setCcdEnabled === 'function') {
+          ccdDesc.setCcdEnabled(true);
+        }
       }
       const body = world.createRigidBody(bodyDesc);
       const colDesc = RAPIER.ColliderDesc.ball(r)
