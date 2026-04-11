@@ -7,8 +7,9 @@ description = "3D desktop demo of the Blast stress solver wall destruction with 
 
 [dependencies]
 bevy = { version = "0.18", default-features = false, features = [
-    "bevy_winit", "bevy_render", "bevy_core_pipeline", "bevy_pbr",
-    "bevy_gizmos", "bevy_text", "bevy_ui", "bevy_state",
+    "bevy_winit", "bevy_render", "bevy_core_pipeline", "bevy_pbr", "bevy_image",
+    "bevy_shader",
+    "bevy_camera", "bevy_light", "bevy_gizmos", "bevy_gizmos_render", "bevy_text", "bevy_ui", "bevy_ui_render", "bevy_state",
     "bevy_input_focus", "bevy_picking", "bevy_mesh",
     "x11", "default_font",
     "multi_threaded", "bevy_asset",

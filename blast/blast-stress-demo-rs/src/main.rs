@@ -1,15 +1,21 @@
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap, env, panic, sync::Arc, time::Duration};
 
+use bevy::app::{AppExit, ScheduleRunnerPlugin};
+use bevy::color::LinearRgba;
+use bevy::ecs::message::{MessageReader, MessageWriter};
 use bevy::input::mouse::{MouseMotion, MouseWheel};
+use bevy::pbr::{Material, MaterialPlugin};
 use bevy::prelude::*;
-use bevy::ecs::message::MessageReader;
+use bevy::reflect::TypePath;
+use bevy::render::render_resource::AsBindGroup;
+use bevy::shader::ShaderRef;
+use bevy::transform::TransformPlugin;
 use bevy::window::PrimaryWindow;
 use bevy_rapier3d::prelude::*;
 
 use blast_stress_solver::ext_stress_solver::ExtStressSolver;
 use blast_stress_solver::types::{
-    BondDesc, ForceMode, NodeDesc, SolverSettings,
-    Vec3 as SolverVec3,
+    BondDesc, ForceMode, NodeDesc, SolverSettings, Vec3 as SolverVec3,
 };
 
 // ---------------------------------------------------------------------------
@@ -37,6 +43,20 @@ const PROJECTILE_SPEED: f32 = 20.0;
 const PROJECTILE_TTL: f32 = 6.0;
 
 const CONTACT_FORCE_SCALE: f32 = 30.0;
+const DEFAULT_HEADLESS_FRAMES: u32 = 180;
+const BODY_SHADER_ASSET_PATH: &str = "shaders/body_material.wgsl";
+
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+struct BodyMaterial {
+    #[uniform(0)]
+    color: LinearRgba,
+}
+
+impl Material for BodyMaterial {
+    fn fragment_shader() -> ShaderRef {
+        BODY_SHADER_ASSET_PATH.into()
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Components
@@ -61,6 +81,16 @@ struct HudText;
 // ---------------------------------------------------------------------------
 // Resources
 // ---------------------------------------------------------------------------
+
+#[derive(Resource, Clone, Copy)]
+struct RunMode {
+    headless: bool,
+}
+
+#[derive(Resource)]
+struct HeadlessRunBudget {
+    frames_remaining: u32,
+}
 
 #[derive(Resource)]
 struct StressSolverState {
@@ -93,66 +123,197 @@ impl Default for CameraOrbit {
 // App
 // ---------------------------------------------------------------------------
 
-fn main() {
-    App::new()
-        .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.15)))
-        .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Blast Stress Solver - Wall Demolition".into(),
-                    ..default()
-                }),
+fn main() -> AppExit {
+    if should_start_headless() {
+        eprintln!(
+            "Starting in headless simulation mode for {} frames.",
+            headless_frame_budget()
+        );
+        return run_app(true);
+    }
+
+    let default_panic_hook = Arc::new(panic::take_hook());
+    let filtered_hook = default_panic_hook.clone();
+    panic::set_hook(Box::new(move |info| {
+        if is_missing_gpu_panic(info.payload()) {
+            return;
+        }
+
+        (filtered_hook)(info);
+    }));
+
+    match panic::catch_unwind(|| run_app(false)) {
+        Ok(exit) => {
+            restore_panic_hook(default_panic_hook);
+            exit
+        }
+        Err(payload) if is_missing_gpu_panic(payload.as_ref()) => {
+            restore_panic_hook(default_panic_hook);
+            eprintln!(
+                "No GPU adapter available; restarting in headless simulation mode for {} frames.",
+                headless_frame_budget()
+            );
+            run_app(true)
+        }
+        Err(payload) => {
+            restore_panic_hook(default_panic_hook);
+            panic::resume_unwind(payload)
+        }
+    }
+}
+
+fn run_app(headless: bool) -> AppExit {
+    let mut app = App::new();
+    app.insert_resource(RunMode { headless });
+    app.insert_resource(CameraOrbit::default());
+    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
+    app.add_systems(Startup, setup_wall);
+    app.add_systems(Update, stress_solver_step_system);
+
+    if headless {
+        app.add_plugins((
+            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
+                1.0 / 60.0,
+            ))),
+            TransformPlugin,
+        ));
+        app.insert_resource(HeadlessRunBudget {
+            frames_remaining: headless_frame_budget(),
+        });
+        app.add_systems(Startup, setup_physics_world);
+        app.add_systems(Update, headless_exit_system);
+    } else {
+        app.insert_resource(ClearColor(Color::srgb(0.07, 0.08, 0.10)));
+        app.add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Blast Stress Solver - Wall Demolition".into(),
                 ..default()
             }),
-            RapierPhysicsPlugin::<NoUserData>::default(),
-            RapierDebugRenderPlugin::default(),
-        ))
-        .insert_resource(CameraOrbit::default())
-        .add_systems(Startup, (setup_scene, setup_wall))
-        .add_systems(Update, (camera_orbit_system, shoot_projectile_system))
-        .add_systems(Update, (projectile_cleanup_system, stress_solver_step_system))
-        .add_systems(Update, hud_system)
-        .run();
+            ..default()
+        }));
+        app.add_plugins(MaterialPlugin::<BodyMaterial>::default());
+        if debug_render_enabled() {
+            app.add_plugins(RapierDebugRenderPlugin::default());
+        }
+        app.add_systems(Startup, (setup_scene, setup_physics_world));
+        app.add_systems(
+            Update,
+            (
+                camera_orbit_system,
+                gizmo_render_system,
+                shoot_projectile_system,
+                projectile_cleanup_system,
+                hud_system,
+            ),
+        );
+    }
+
+    app.run()
+}
+
+fn headless_frame_budget() -> u32 {
+    env::var("BLAST_STRESS_DEMO_HEADLESS_FRAMES")
+        .ok()
+        .and_then(|value| value.parse::<u32>().ok())
+        .filter(|&frames| frames > 0)
+        .unwrap_or(DEFAULT_HEADLESS_FRAMES)
+}
+
+fn should_start_headless() -> bool {
+    match env_flag("BLAST_STRESS_DEMO_HEADLESS") {
+        Some(value) => value,
+        None => is_headless_environment(),
+    }
+}
+
+fn env_flag(name: &str) -> Option<bool> {
+    let value = env::var(name).ok()?;
+    let normalized = value.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" => Some(false),
+        _ => None,
+    }
+}
+
+fn debug_render_enabled() -> bool {
+    env_flag("BLAST_STRESS_DEMO_DEBUG_RENDER").unwrap_or(false)
+}
+
+fn mesh_visuals_enabled() -> bool {
+    env_flag("BLAST_STRESS_DEMO_SHOW_MESHES").unwrap_or(false)
+}
+
+fn is_missing_gpu_panic(payload: &(dyn Any + Send)) -> bool {
+    panic_message(payload).is_some_and(|message| message.contains("Unable to find a GPU"))
+}
+
+fn panic_message(payload: &(dyn Any + Send)) -> Option<&str> {
+    if let Some(message) = payload.downcast_ref::<&'static str>() {
+        Some(*message)
+    } else if let Some(message) = payload.downcast_ref::<String>() {
+        Some(message.as_str())
+    } else {
+        None
+    }
+}
+
+fn restore_panic_hook(default_hook: Arc<Box<dyn Fn(&panic::PanicHookInfo<'_>) + Sync + Send>>) {
+    panic::set_hook(Box::new(move |info| {
+        (default_hook)(info);
+    }));
+}
+
+#[cfg(target_os = "linux")]
+fn is_headless_environment() -> bool {
+    env::var_os("DISPLAY").is_none()
+        && env::var_os("WAYLAND_DISPLAY").is_none()
+        && env::var_os("WAYLAND_SOCKET").is_none()
+}
+
+#[cfg(not(target_os = "linux"))]
+fn is_headless_environment() -> bool {
+    false
 }
 
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
 
-fn setup_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn setup_scene(mut commands: Commands, mut ambient_light: ResMut<GlobalAmbientLight>) {
+    *ambient_light = GlobalAmbientLight {
+        color: Color::srgb(0.92, 0.94, 1.0),
+        brightness: 650.0,
+        ..default()
+    };
+
     // Camera
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0.0, 3.0, 14.0).looking_at(Vec3::new(0.0, 1.5, 0.0), Vec3::Y),
+        Transform::from_xyz(-4.5, 4.2, 11.0).looking_at(Vec3::new(0.0, 1.4, 0.0), Vec3::Y),
         MainCamera,
     ));
 
-    // Light
     commands.spawn((
-        DirectionalLight {
-            illuminance: 8000.0,
+        PointLight {
+            color: Color::WHITE,
+            intensity: 18_000_000.0,
+            range: 60.0,
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(5.0, 10.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(5.5, 10.0, 8.0),
     ));
 
-    // Ground physics
     commands.spawn((
-        Transform::from_xyz(0.0, -0.025, 0.0),
-        Collider::cuboid(100.0, 0.025, 100.0),
-        RigidBody::Fixed,
-        Friction::coefficient(0.9),
-    ));
-
-    // Ground visual
-    commands.spawn((
-        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(30.0)))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.15, 0.18, 0.25),
-            perceptual_roughness: 0.9,
+        PointLight {
+            color: Color::srgb(0.86, 0.92, 1.0),
+            intensity: 6_000_000.0,
+            range: 50.0,
+            shadows_enabled: false,
             ..default()
-        })),
+        },
+        Transform::from_xyz(-8.0, 6.5, -6.0),
     ));
 
     // HUD text
@@ -170,10 +331,46 @@ fn setup_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mat
     ));
 }
 
+fn setup_physics_world(
+    mut commands: Commands,
+    mode: Res<RunMode>,
+    meshes: Option<ResMut<Assets<Mesh>>>,
+    materials: Option<ResMut<Assets<BodyMaterial>>>,
+) {
+    commands.spawn((
+        Transform::from_xyz(0.0, -0.025, 0.0),
+        Collider::cuboid(100.0, 0.025, 100.0),
+        RigidBody::Fixed,
+        Friction::coefficient(0.9),
+    ));
+
+    if mode.headless {
+        return;
+    }
+
+    if !mesh_visuals_enabled() {
+        return;
+    }
+
+    let (Some(mut meshes), Some(mut materials)) = (meshes, materials) else {
+        return;
+    };
+
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(30.0, 0.05, 30.0))),
+        MeshMaterial3d(materials.add(BodyMaterial {
+            color: LinearRgba::from(Color::srgb(0.18, 0.22, 0.28)),
+        })),
+        Transform::from_xyz(0.0, -0.025, 0.0),
+        ColliderDebugColor(Color::hsla(210.0, 0.20, 0.62, 1.0).into()),
+    ));
+}
+
 fn setup_wall(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mode: Res<RunMode>,
+    meshes: Option<ResMut<Assets<Mesh>>>,
+    materials: Option<ResMut<Assets<BodyMaterial>>>,
 ) {
     let (nodes, bonds) = build_wall_scenario();
 
@@ -188,62 +385,92 @@ fn setup_wall(
         ..SolverSettings::default()
     };
 
-    let solver = ExtStressSolver::new(&nodes, &bonds, &settings)
-        .expect("Failed to create stress solver");
+    let solver =
+        ExtStressSolver::new(&nodes, &bonds, &settings).expect("Failed to create stress solver");
 
     let row_colors = [
-        Color::srgb(0.85, 0.55, 0.35),
-        Color::srgb(0.75, 0.50, 0.30),
-        Color::srgb(0.80, 0.45, 0.25),
-        Color::srgb(0.70, 0.42, 0.28),
-        Color::srgb(0.82, 0.52, 0.32),
-        Color::srgb(0.78, 0.48, 0.30),
+        Color::srgb(0.78, 0.62, 0.42),
+        Color::srgb(0.74, 0.58, 0.39),
+        Color::srgb(0.82, 0.66, 0.45),
+        Color::srgb(0.76, 0.60, 0.41),
+        Color::srgb(0.80, 0.64, 0.43),
+        Color::srgb(0.72, 0.56, 0.37),
     ];
 
-    let brick_mesh = meshes.add(Cuboid::new(BRICK_W * 0.98, BRICK_H * 0.98, BRICK_D * 0.98));
-    let brick_mats: Vec<_> = row_colors
-        .iter()
-        .map(|&c| materials.add(StandardMaterial {
-            base_color: c,
-            perceptual_roughness: 0.7,
-            ..default()
-        }))
-        .collect();
+    let (brick_mesh, support_mat, brick_mats) = if mode.headless || !mesh_visuals_enabled() {
+        (None, None, Vec::new())
+    } else {
+        match (meshes, materials) {
+            (Some(mut meshes), Some(mut materials)) => {
+                let brick_mesh =
+                    meshes.add(Cuboid::new(BRICK_W * 0.98, BRICK_H * 0.98, BRICK_D * 0.98));
+                let support_mat = materials.add(BodyMaterial {
+                    color: LinearRgba::from(Color::srgb(0.20, 0.24, 0.30)),
+                });
+                let brick_mats = row_colors
+                    .iter()
+                    .map(|&c| materials.add(BodyMaterial { color: c.into() }))
+                    .collect();
+                (Some(brick_mesh), Some(support_mat), brick_mats)
+            }
+            _ => (None, None, Vec::new()),
+        }
+    };
 
     let mut node_to_entity = HashMap::new();
 
     for (i, node) in nodes.iter().enumerate() {
         let row = i as u32 / WALL_COLUMNS;
         let is_support = node.mass == 0.0;
-        let mat = brick_mats[row as usize % brick_mats.len()].clone();
-
         let pos = Vec3::new(node.centroid.x, node.centroid.y, node.centroid.z);
 
-        let entity = if is_support {
+        let mut entity = if is_support {
             commands.spawn((
-                Mesh3d(brick_mesh.clone()),
-                MeshMaterial3d(mat),
                 Transform::from_translation(pos),
                 RigidBody::Fixed,
                 Collider::cuboid(BRICK_W * 0.5, BRICK_H * 0.5, BRICK_D * 0.5),
                 Friction::coefficient(0.25),
                 Restitution::coefficient(0.0),
-                Brick { node_index: i as u32 },
-            )).id()
+                Brick {
+                    node_index: i as u32,
+                },
+            ))
         } else {
             commands.spawn((
-                Mesh3d(brick_mesh.clone()),
-                MeshMaterial3d(mat),
                 Transform::from_translation(pos),
                 RigidBody::Dynamic,
                 Collider::cuboid(BRICK_W * 0.5, BRICK_H * 0.5, BRICK_D * 0.5),
                 ColliderMassProperties::Mass(node.mass),
                 Friction::coefficient(0.25),
                 Restitution::coefficient(0.0),
-                Brick { node_index: i as u32 },
-            )).id()
+                Brick {
+                    node_index: i as u32,
+                },
+            ))
         };
-        node_to_entity.insert(i as u32, entity);
+
+        if let Some(mesh) = brick_mesh.clone() {
+            let material_handle = if is_support {
+                support_mat
+                    .as_ref()
+                    .cloned()
+                    .unwrap_or_else(|| brick_mats[row as usize % brick_mats.len()].clone())
+            } else {
+                brick_mats[row as usize % brick_mats.len()].clone()
+            };
+            let collider_color = if is_support {
+                Color::hsla(210.0, 0.25, 0.86, 1.0)
+            } else {
+                Color::hsla(28.0, 0.65, 0.18, 1.0)
+            };
+            entity.insert((
+                Mesh3d(mesh),
+                MeshMaterial3d(material_handle),
+                ColliderDebugColor(collider_color.into()),
+            ));
+        }
+
+        node_to_entity.insert(i as u32, entity.id());
     }
 
     commands.insert_resource(StressSolverState {
@@ -368,35 +595,49 @@ fn shoot_projectile_system(
     camera_q: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     window_q: Query<&Window, With<PrimaryWindow>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<BodyMaterial>>,
 ) {
     if !mouse_button.just_pressed(MouseButton::Left) {
         return;
     }
 
-    let Ok((camera, cam_tf)) = camera_q.single() else { return };
-    let Ok(window) = window_q.single() else { return };
-    let Some(cursor_pos) = window.cursor_position() else { return };
-    let Ok(ray) = camera.viewport_to_world(cam_tf, cursor_pos) else { return };
+    let Ok((camera, cam_tf)) = camera_q.single() else {
+        return;
+    };
+    let Ok(window) = window_q.single() else {
+        return;
+    };
+    let Some(cursor_pos) = window.cursor_position() else {
+        return;
+    };
+    let Ok(ray) = camera.viewport_to_world(cam_tf, cursor_pos) else {
+        return;
+    };
 
     let origin = ray.origin;
     let direction = ray.direction.as_vec3();
 
-    commands.spawn((
-        Mesh3d(meshes.add(Sphere::new(PROJECTILE_RADIUS))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.2, 0.2, 0.9),
-            metallic: 0.5,
-            ..default()
-        })),
+    let mut entity = commands.spawn((
         Transform::from_translation(origin),
         RigidBody::Dynamic,
         Collider::ball(PROJECTILE_RADIUS),
+        ColliderDebugColor(Color::hsla(55.0, 0.90, 0.76, 1.0).into()),
         ColliderMassProperties::Mass(PROJECTILE_MASS),
         Velocity::linear(direction * PROJECTILE_SPEED),
         Ccd::enabled(),
-        Projectile { ttl: PROJECTILE_TTL },
+        Projectile {
+            ttl: PROJECTILE_TTL,
+        },
     ));
+
+    if mesh_visuals_enabled() {
+        entity.insert((
+            Mesh3d(meshes.add(Sphere::new(PROJECTILE_RADIUS))),
+            MeshMaterial3d(materials.add(BodyMaterial {
+                color: LinearRgba::from(Color::srgb(0.96, 0.84, 0.16)),
+            })),
+        ));
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -413,6 +654,117 @@ fn projectile_cleanup_system(
         if proj.ttl <= 0.0 {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+fn gizmo_render_system(
+    mut gizmos: Gizmos,
+    brick_q: Query<(&Brick, &Transform)>,
+    projectile_q: Query<&Transform, With<Projectile>>,
+) {
+    draw_floor_gizmo(&mut gizmos);
+
+    for (brick, transform) in &brick_q {
+        let color = if brick.node_index < WALL_COLUMNS {
+            Color::srgb(0.52, 0.72, 0.92)
+        } else {
+            Color::srgb(0.92, 0.72, 0.38)
+        };
+        draw_box_gizmo(
+            &mut gizmos,
+            transform.translation,
+            transform.rotation,
+            Vec3::new(BRICK_W, BRICK_H, BRICK_D),
+            color,
+        );
+    }
+
+    for transform in &projectile_q {
+        let isometry = Isometry3d::from_translation(transform.translation);
+        gizmos
+            .sphere(isometry, PROJECTILE_RADIUS, Color::srgb(1.0, 0.95, 0.32))
+            .resolution(20);
+        gizmos.line(
+            transform.translation + Vec3::X * PROJECTILE_RADIUS,
+            transform.translation - Vec3::X * PROJECTILE_RADIUS,
+            Color::WHITE,
+        );
+        gizmos.line(
+            transform.translation + Vec3::Y * PROJECTILE_RADIUS,
+            transform.translation - Vec3::Y * PROJECTILE_RADIUS,
+            Color::WHITE,
+        );
+        gizmos.line(
+            transform.translation + Vec3::Z * PROJECTILE_RADIUS,
+            transform.translation - Vec3::Z * PROJECTILE_RADIUS,
+            Color::WHITE,
+        );
+    }
+}
+
+fn draw_floor_gizmo(gizmos: &mut Gizmos) {
+    let y = 0.0;
+    let half = 8.0;
+    let edge_color = Color::srgb(0.50, 0.56, 0.66);
+    let grid_color = Color::srgb(0.24, 0.28, 0.34);
+
+    let corners = [
+        Vec3::new(-half, y, -half),
+        Vec3::new(half, y, -half),
+        Vec3::new(half, y, half),
+        Vec3::new(-half, y, half),
+    ];
+
+    for i in 0..corners.len() {
+        gizmos.line(corners[i], corners[(i + 1) % corners.len()], edge_color);
+    }
+
+    for step in -8..=8 {
+        let offset = step as f32;
+        gizmos.line(
+            Vec3::new(offset, y, -half),
+            Vec3::new(offset, y, half),
+            grid_color,
+        );
+        gizmos.line(
+            Vec3::new(-half, y, offset),
+            Vec3::new(half, y, offset),
+            grid_color,
+        );
+    }
+}
+
+fn draw_box_gizmo(gizmos: &mut Gizmos, center: Vec3, rotation: Quat, size: Vec3, color: Color) {
+    let half = size * 0.5;
+    let corners = [
+        Vec3::new(-half.x, -half.y, -half.z),
+        Vec3::new(half.x, -half.y, -half.z),
+        Vec3::new(half.x, half.y, -half.z),
+        Vec3::new(-half.x, half.y, -half.z),
+        Vec3::new(-half.x, -half.y, half.z),
+        Vec3::new(half.x, -half.y, half.z),
+        Vec3::new(half.x, half.y, half.z),
+        Vec3::new(-half.x, half.y, half.z),
+    ]
+    .map(|corner| center + rotation * corner);
+
+    const EDGES: [(usize, usize); 12] = [
+        (0, 1),
+        (1, 2),
+        (2, 3),
+        (3, 0),
+        (4, 5),
+        (5, 6),
+        (6, 7),
+        (7, 4),
+        (0, 4),
+        (1, 5),
+        (2, 6),
+        (3, 7),
+    ];
+
+    for (start, end) in EDGES {
+        gizmos.line(corners[start], corners[end], color);
     }
 }
 
@@ -471,9 +823,10 @@ fn stress_solver_step_system(
 
         // Apply excess forces to actors separated from supports
         for actor in &actors {
-            let has_support = actor.nodes.iter().any(|&n| {
-                (n as usize) < state.nodes.len() && state.nodes[n as usize].mass == 0.0
-            });
+            let has_support = actor
+                .nodes
+                .iter()
+                .any(|&n| (n as usize) < state.nodes.len() && state.nodes[n as usize].mass == 0.0);
             if has_support {
                 continue;
             }
@@ -491,9 +844,7 @@ fn stress_solver_step_system(
                 com = com / count;
             }
 
-            if let Some((force, _torque)) =
-                state.solver.get_excess_forces(actor.actor_index, com)
-            {
+            if let Some((force, _torque)) = state.solver.get_excess_forces(actor.actor_index, com) {
                 let force_mag = force.x * force.x + force.y * force.y + force.z * force.z;
                 if force_mag > 1.0 {
                     for &n in &actor.nodes {
@@ -510,14 +861,27 @@ fn stress_solver_step_system(
     }
 }
 
+fn headless_exit_system(
+    mut budget: ResMut<HeadlessRunBudget>,
+    state: Option<Res<StressSolverState>>,
+    mut app_exit_writer: MessageWriter<AppExit>,
+) {
+    if budget.frames_remaining > 0 {
+        budget.frames_remaining -= 1;
+    }
+
+    if budget.frames_remaining == 0 {
+        let actors = state.as_ref().map_or(0, |state| state.solver.actor_count());
+        eprintln!("Headless simulation complete. Actor count: {actors}.");
+        app_exit_writer.write(AppExit::Success);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // HUD
 // ---------------------------------------------------------------------------
 
-fn hud_system(
-    state: Option<Res<StressSolverState>>,
-    mut text_q: Query<&mut Text, With<HudText>>,
-) {
+fn hud_system(state: Option<Res<StressSolverState>>, mut text_q: Query<&mut Text, With<HudText>>) {
     let Some(state) = state else { return };
     if let Ok(mut text) = text_q.single_mut() {
         let actors = state.solver.actor_count();
