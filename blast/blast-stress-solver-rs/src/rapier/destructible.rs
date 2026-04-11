@@ -356,6 +356,14 @@ impl DestructibleSet {
         self.tracker.body_nodes(body_handle)
     }
 
+    pub fn body_nodes_slice(&self, body_handle: RigidBodyHandle) -> &[u32] {
+        self.tracker.body_nodes_slice(body_handle)
+    }
+
+    pub fn body_node_count(&self, body_handle: RigidBodyHandle) -> usize {
+        self.tracker.body_node_count(body_handle)
+    }
+
     pub fn body_has_support(&self, body_handle: RigidBodyHandle) -> bool {
         self.tracker.body_has_support(body_handle)
     }
@@ -493,6 +501,17 @@ impl DestructibleSet {
                     .collider_migrations
             })
             .sum()
+    }
+
+    pub fn needs_resimulation_snapshot(&self) -> bool {
+        if !self.resimulation.enabled {
+            return false;
+        }
+
+        !(self.policy.idle_skip
+            && !self.forces_applied
+            && self.frames_since_fracture > 2
+            && self.pending_split_events.is_empty())
     }
 
     pub fn capture_resimulation_snapshot(&self, bodies: &RigidBodySet) -> BodySnapshots {

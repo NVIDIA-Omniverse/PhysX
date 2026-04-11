@@ -2,7 +2,6 @@
 
 #![cfg(feature = "rapier")]
 
-use std::collections::HashSet;
 use rapier3d::prelude::*;
 
 use blast_stress_solver::rapier::*;
@@ -117,7 +116,7 @@ fn empty_children_empty_plan() {
 }
 
 #[test]
-fn partial_overlap_creates_new() {
+fn partial_overlap_reuses_existing_body() {
     let (_, handles) = make_body_set_with_n(1);
 
     let bodies = vec![ExistingBodyState {
@@ -133,7 +132,28 @@ fn partial_overlap_creates_new() {
     }];
 
     let plan = plan_split_migration(&bodies, &children);
-    // Subset doesn't match — should create (hash won't match)
+    assert_eq!(plan.reuse.len(), 1, "overlap should prefer reusing the existing body");
+    assert_eq!(plan.create.len(), 0);
+}
+
+#[test]
+fn fixed_body_is_not_reused_for_dynamic_child() {
+    let (_, handles) = make_body_set_with_n(1);
+
+    let bodies = vec![ExistingBodyState {
+        handle: handles[0],
+        node_indices: [0, 1, 2].into_iter().collect(),
+        is_fixed: true,
+    }];
+
+    let children = vec![SplitChild {
+        actor_index: 10,
+        nodes: vec![0, 1],
+    }];
+
+    let support = vec![PlannerChildSupport { is_support: false }];
+    let plan = plan_split_migration_with_support(&bodies, &children, &support);
+    assert_eq!(plan.reuse.len(), 0);
     assert_eq!(plan.create.len(), 1);
 }
 

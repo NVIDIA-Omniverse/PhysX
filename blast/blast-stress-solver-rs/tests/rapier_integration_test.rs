@@ -1064,8 +1064,8 @@ fn collider_migration_budget_defers_split_until_budget_is_available() {
         &mut multibody_joints,
     );
     assert_eq!(
-        second.new_bodies, 2,
-        "pending split should flush once migration budget is available"
+        second.new_bodies, 1,
+        "pending split should flush once migration budget is available while reusing one parent body"
     );
     assert_eq!(set.body_count(), 2);
 }

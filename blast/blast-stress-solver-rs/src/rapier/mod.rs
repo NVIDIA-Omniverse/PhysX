@@ -14,5 +14,6 @@ pub use optimization::{
 };
 pub use resimulation::{BodySnapshots, ResimulationOptions};
 pub use split_migrator::{
-    plan_split_migration, CreateEntry, ExistingBodyState, ReuseEntry, SplitMigrationPlan,
+    plan_split_migration, plan_split_migration_with_support, CreateEntry, ExistingBodyState,
+    PlannerChildSupport, ReuseEntry, SplitMigrationPlan,
 };

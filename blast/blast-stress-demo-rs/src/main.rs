@@ -96,8 +96,8 @@ struct DemoRuntimeToggles {
 impl DemoRuntimeToggles {
     fn from_env(scenario: DemoScenarioKind, config: &mut DemoConfig) -> Self {
         let show_meshes = mesh_visuals_enabled();
-        let resimulation_enabled = env_flag("BLAST_STRESS_DEMO_RESIM")
-            .unwrap_or(config.resimulation.enabled);
+        let resimulation_enabled =
+            env_flag("BLAST_STRESS_DEMO_RESIM").unwrap_or(config.resimulation.enabled);
         let max_resimulation_passes = env_usize("BLAST_STRESS_DEMO_MAX_RESIM_PASSES")
             .unwrap_or(config.resimulation.max_passes);
         config.resimulation.enabled = resimulation_enabled;
@@ -129,10 +129,8 @@ impl DemoRuntimeToggles {
             scenario,
             resimulation_enabled,
             max_resimulation_passes,
-            contact_force_injection_enabled: env_flag(
-                "BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION",
-            )
-            .unwrap_or(true),
+            contact_force_injection_enabled: env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION")
+                .unwrap_or(true),
             gizmos_enabled: env_flag("BLAST_STRESS_DEMO_GIZMOS").unwrap_or(true),
             projectile_ccd_enabled: env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(true),
             body_ccd_enabled: env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false),
@@ -236,10 +234,7 @@ impl PerfLogWriter {
             std::process::id(),
             timestamp_ms
         ));
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)?;
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
         Ok(Self {
             path,
             writer: BufWriter::with_capacity(64 * 1024, file),
@@ -466,8 +461,7 @@ impl DebugProfiler {
         self.contact_forces
             .observe_ms(self.current.contact_forces_ms);
         self.solver.observe_ms(self.current.solver_ms);
-        self.resim_restore
-            .observe_ms(self.current.resim_restore_ms);
+        self.resim_restore.observe_ms(self.current.resim_restore_ms);
         self.resim_snapshot
             .observe_ms(self.current.resim_snapshot_ms);
         self.optimization.observe_ms(self.current.optimization_ms);
@@ -661,21 +655,17 @@ impl DebugProfiler {
         let destructible_bodies_med = median_ms(&mut self.median_window.destructible_bodies);
         let support_bodies_med = median_ms(&mut self.median_window.support_bodies);
         let dynamic_bodies_med = median_ms(&mut self.median_window.dynamic_bodies);
-        let awake_dynamic_bodies_med =
-            median_ms(&mut self.median_window.awake_dynamic_bodies);
+        let awake_dynamic_bodies_med = median_ms(&mut self.median_window.awake_dynamic_bodies);
         let sleeping_dynamic_bodies_med =
             median_ms(&mut self.median_window.sleeping_dynamic_bodies);
         let world_colliders_med = median_ms(&mut self.median_window.world_colliders);
-        let destructible_colliders_med =
-            median_ms(&mut self.median_window.destructible_colliders);
+        let destructible_colliders_med = median_ms(&mut self.median_window.destructible_colliders);
         let projectile_count_med = median_ms(&mut self.median_window.projectile_count);
         let ccd_bodies_med = median_ms(&mut self.median_window.ccd_bodies);
         let contact_pairs_med = median_ms(&mut self.median_window.contact_pairs);
-        let active_contact_pairs_med =
-            median_ms(&mut self.median_window.active_contact_pairs);
+        let active_contact_pairs_med = median_ms(&mut self.median_window.active_contact_pairs);
         let contact_manifolds_med = median_ms(&mut self.median_window.contact_manifolds);
-        let pending_split_events_med =
-            median_ms(&mut self.median_window.pending_split_events);
+        let pending_split_events_med = median_ms(&mut self.median_window.pending_split_events);
         let pending_new_bodies_med = median_ms(&mut self.median_window.pending_new_bodies);
         let pending_collider_migrations_med =
             median_ms(&mut self.median_window.pending_collider_migrations);
@@ -1104,7 +1094,11 @@ fn env_usize(name: &str) -> Option<usize> {
 }
 
 fn flag_bit(value: bool) -> u8 {
-    if value { 1 } else { 0 }
+    if value {
+        1
+    } else {
+        0
+    }
 }
 
 fn mesh_visuals_enabled() -> bool {
@@ -1234,7 +1228,13 @@ fn setup_visuals(
         }
     }
 
-    spawn_chunk_visuals(&mut commands, &mut state, show_meshes, &mut meshes, &mut materials);
+    spawn_chunk_visuals(
+        &mut commands,
+        &mut state,
+        show_meshes,
+        &mut meshes,
+        &mut materials,
+    );
 }
 
 fn spawn_chunk_visuals(
@@ -1499,9 +1499,17 @@ fn physics_step_system(
     } else {
         0
     };
-    let mut snapshot = state
-        .destructible
-        .capture_resimulation_snapshot(&state.bodies);
+    let mut snapshot = if state.destructible.needs_resimulation_snapshot() {
+        let snapshot_started_at = Instant::now();
+        let captured = state
+            .destructible
+            .capture_resimulation_snapshot(&state.bodies);
+        profiler.current.resim_snapshot_ms +=
+            snapshot_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+        Some(captured)
+    } else {
+        None
+    };
     let mut rapier_passes = 0u32;
     let mut collision_events = 0usize;
     let mut contact_events = 0usize;
@@ -1521,10 +1529,7 @@ fn physics_step_system(
             collision_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
 
         let contact_started_at = Instant::now();
-        contact_events += drain_contact_forces(
-            &mut state,
-            toggles.contact_force_injection_enabled,
-        );
+        contact_events += drain_contact_forces(&mut state, toggles.contact_force_injection_enabled);
         profiler.current.contact_forces_ms +=
             contact_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
 
@@ -1558,18 +1563,29 @@ fn physics_step_system(
             break;
         }
 
+        let Some(current_snapshot) = snapshot.as_ref() else {
+            break;
+        };
+
         let restore_started_at = Instant::now();
-        snapshot.restore(&mut state.bodies);
+        current_snapshot.restore(&mut state.bodies);
         profiler.current.resim_restore_ms +=
             restore_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
 
+        remaining_resim_passes = remaining_resim_passes.saturating_sub(1);
+        if remaining_resim_passes == 0 {
+            snapshot = None;
+            continue;
+        }
+
         let snapshot_started_at = Instant::now();
-        snapshot = state
-            .destructible
-            .capture_resimulation_snapshot(&state.bodies);
+        snapshot = Some(
+            state
+                .destructible
+                .capture_resimulation_snapshot(&state.bodies),
+        );
         profiler.current.resim_snapshot_ms +=
             snapshot_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-        remaining_resim_passes = remaining_resim_passes.saturating_sub(1);
     }
 
     let optimization_started_at = Instant::now();
@@ -1782,9 +1798,9 @@ fn drain_contact_forces(state: &mut DemoPhysicsState, inject_forces: bool) -> us
         let Some(hit_local) = state.destructible.node_local_offset(node_index) else {
             continue;
         };
-        let body_nodes = state.destructible.body_nodes(body_handle);
-
-        for other_node in body_nodes {
+        let mut impacted_nodes =
+            Vec::with_capacity(state.destructible.body_node_count(body_handle));
+        for &other_node in state.destructible.body_nodes_slice(body_handle) {
             let Some(other_local) = state.destructible.node_local_offset(other_node) else {
                 continue;
             };
@@ -1806,6 +1822,10 @@ fn drain_contact_forces(state: &mut DemoPhysicsState, inject_forces: bool) -> us
                 continue;
             }
 
+            impacted_nodes.push((other_node, other_local, falloff));
+        }
+
+        for (other_node, other_local, falloff) in impacted_nodes {
             state.destructible.add_force(
                 other_node,
                 other_local,
@@ -1884,8 +1904,9 @@ fn update_scene_counters(state: &DemoPhysicsState, frame: &mut FrameBreakdown) {
     frame.support_bodies = state.destructible.support_body_count();
     frame.dynamic_bodies = state.destructible.dynamic_body_count(&state.bodies);
     frame.awake_dynamic_bodies = state.destructible.awake_dynamic_body_count(&state.bodies);
-    frame.sleeping_dynamic_bodies =
-        state.destructible.sleeping_dynamic_body_count(&state.bodies);
+    frame.sleeping_dynamic_bodies = state
+        .destructible
+        .sleeping_dynamic_body_count(&state.bodies);
     frame.world_colliders = state.colliders.len();
     frame.destructible_colliders = state.destructible.collider_count();
     frame.projectile_count = state.projectiles.len();
@@ -1931,10 +1952,12 @@ fn sync_visuals_system(
             .node_body(chunk.node_index)
             .map(|handle| body_color(handle, chunk.is_support))
             .unwrap_or_else(|| default_chunk_color(chunk.is_support));
-        tint.color = color;
-        if let Some(material) = material {
-            if let Some(standard_material) = materials.get_mut(&material.handle) {
-                standard_material.base_color = color;
+        if tint.color != color {
+            tint.color = color;
+            if let Some(material) = material {
+                if let Some(standard_material) = materials.get_mut(&material.handle) {
+                    standard_material.base_color = color;
+                }
             }
         }
     }
