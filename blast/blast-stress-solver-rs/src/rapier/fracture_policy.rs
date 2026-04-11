@@ -9,6 +9,8 @@ pub struct FracturePolicy {
     pub max_new_bodies_per_frame: i32,
     /// Global cap on dynamic rigid bodies. -1 = unlimited.
     pub max_dynamic_bodies: i32,
+    /// Max collider migrations to apply per frame. -1 = unlimited.
+    pub max_collider_migrations_per_frame: i32,
     /// Minimum node count for a split child to get a body. Default: 1.
     pub min_child_node_count: u32,
     /// Skip solver on idle frames (no forces, no recent fractures). Default: true.
@@ -23,6 +25,7 @@ impl Default for FracturePolicy {
             max_fractures_per_frame: -1,
             max_new_bodies_per_frame: -1,
             max_dynamic_bodies: -1,
+            max_collider_migrations_per_frame: -1,
             min_child_node_count: 1,
             idle_skip: true,
             apply_excess_forces: true,
@@ -56,6 +59,15 @@ impl FracturePolicy {
             count
         } else {
             count.min(self.max_new_bodies_per_frame as usize)
+        }
+    }
+
+    /// Clamp collider migrations to the per-frame budget.
+    pub fn clamp_collider_migrations(&self, count: usize) -> usize {
+        if self.max_collider_migrations_per_frame < 0 {
+            count
+        } else {
+            count.min(self.max_collider_migrations_per_frame as usize)
         }
     }
 

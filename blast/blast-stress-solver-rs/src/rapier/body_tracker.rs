@@ -3,7 +3,8 @@ use std::collections::{HashMap, HashSet};
 use rapier3d::prelude::*;
 
 use super::optimization::{
-    DebrisCleanupOptions, OptimizationMode, OptimizationResult, SmallBodyDampingOptions,
+    DebrisCleanupOptions, OptimizationMode, OptimizationResult, SleepThresholdOptions,
+    SmallBodyDampingOptions,
 };
 use crate::types::*;
 
@@ -21,7 +22,14 @@ struct BodyMetadata {
     created_at: f32,
     first_support_contact_at: Option<f32>,
     damping_promoted: bool,
+    sleep_threshold_configured: bool,
     has_support: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SplitCost {
+    pub create_bodies: usize,
+    pub collider_migrations: usize,
 }
 
 /// Tracks the mapping between stress graph nodes and Rapier rigid bodies.
@@ -86,6 +94,7 @@ impl BodyTracker {
         colliders: &mut ColliderSet,
         created_at: f32,
         small_body_damping: SmallBodyDampingOptions,
+        sleep_thresholds: SleepThresholdOptions,
     ) -> Vec<RigidBodyHandle> {
         let mut handles = Vec::new();
 
@@ -144,6 +153,7 @@ impl BodyTracker {
             self.body_to_nodes.insert(body, actor.nodes.clone());
             self.update_body_metadata(body, &actor.nodes, created_at);
             self.promote_small_body_damping(body, bodies, &small_body_damping);
+            self.configure_sleep_thresholds(body, bodies, &sleep_thresholds);
             handles.push(body);
         }
 
@@ -163,7 +173,7 @@ impl BodyTracker {
         multibody_joints: &mut MultibodyJointSet,
         created_at: f32,
         small_body_damping: SmallBodyDampingOptions,
-        mut policy_filter: impl FnMut(u32) -> bool,
+        sleep_thresholds: SleepThresholdOptions,
     ) -> Vec<RigidBodyHandle> {
         let mut new_handles = Vec::new();
         let previous_node_bodies = self.node_to_body.clone();
@@ -232,6 +242,7 @@ impl BodyTracker {
             }
             self.update_body_metadata(entry.body_handle, &child.nodes, created_at);
             self.promote_small_body_damping(entry.body_handle, bodies, &small_body_damping);
+            self.configure_sleep_thresholds(entry.body_handle, bodies, &sleep_thresholds);
         }
 
         // Remove bodies that weren't reused
@@ -265,10 +276,6 @@ impl BodyTracker {
         // Create new bodies for unmatched children
         for entry in &plan.create {
             let child = &event.children[entry.child_index];
-
-            if !policy_filter(child.nodes.len() as u32) {
-                continue;
-            }
 
             let has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
 
@@ -328,6 +335,7 @@ impl BodyTracker {
             self.body_to_nodes.insert(body_handle, child.nodes.clone());
             self.update_body_metadata(body_handle, &child.nodes, created_at);
             self.promote_small_body_damping(body_handle, bodies, &small_body_damping);
+            self.configure_sleep_thresholds(body_handle, bodies, &sleep_thresholds);
             new_handles.push(body_handle);
         }
 
@@ -398,12 +406,48 @@ impl BodyTracker {
             .count()
     }
 
+    pub fn estimate_split_cost(&self, event: &SplitEvent, bodies: &RigidBodySet) -> SplitCost {
+        let parent_nodes: HashSet<u32> = event
+            .children
+            .iter()
+            .flat_map(|child| child.nodes.iter().copied())
+            .collect();
+        let parent_bodies: HashSet<RigidBodyHandle> = parent_nodes
+            .iter()
+            .filter_map(|node| self.node_to_body[*node as usize])
+            .collect();
+        let existing: Vec<super::split_migrator::ExistingBodyState> = parent_bodies
+            .iter()
+            .map(|&handle| super::split_migrator::ExistingBodyState {
+                handle,
+                node_indices: self
+                    .node_to_body
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, bh)| **bh == Some(handle))
+                    .map(|(i, _)| i as u32)
+                    .collect(),
+                is_fixed: bodies.get(handle).map(|b| !b.is_dynamic()).unwrap_or(false),
+            })
+            .collect();
+        let plan = super::split_migrator::plan_split_migration(&existing, &event.children);
+        SplitCost {
+            create_bodies: plan.create.len(),
+            collider_migrations: plan
+                .create
+                .iter()
+                .map(|entry| event.children[entry.child_index].nodes.len())
+                .sum(),
+        }
+    }
+
     pub fn mark_support_contact(
         &mut self,
         body_handle: RigidBodyHandle,
         now_secs: f32,
         bodies: &mut RigidBodySet,
         damping: SmallBodyDampingOptions,
+        sleep_thresholds: SleepThresholdOptions,
     ) -> bool {
         let collider_count = self.body_nodes(body_handle).len();
         let Some(metadata) = self.body_metadata.get_mut(&body_handle) else {
@@ -413,16 +457,25 @@ impl BodyTracker {
             return false;
         }
         metadata.first_support_contact_at.get_or_insert(now_secs);
+        let mut changed = false;
         if damping.mode == OptimizationMode::AfterGroundCollision
             && !metadata.damping_promoted
             && collider_count <= damping.collider_count_threshold
         {
             if Self::apply_small_body_damping(bodies, body_handle, &damping) {
                 metadata.damping_promoted = true;
-                return true;
+                changed = true;
             }
         }
-        false
+        if sleep_thresholds.mode == OptimizationMode::AfterGroundCollision
+            && !metadata.sleep_threshold_configured
+        {
+            if Self::apply_sleep_thresholds(bodies, body_handle, &sleep_thresholds) {
+                metadata.sleep_threshold_configured = true;
+                changed = true;
+            }
+        }
+        changed
     }
 
     pub fn cleanup_expired_bodies(
@@ -486,6 +539,65 @@ impl BodyTracker {
         result
     }
 
+    pub fn destroy_nodes(
+        &mut self,
+        nodes: &[u32],
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> Vec<u32> {
+        let mut removed = Vec::new();
+        let mut affected_bodies = HashSet::new();
+
+        for &node_index in nodes {
+            let idx = node_index as usize;
+            let Some(body_handle) = self.node_to_body[idx] else {
+                continue;
+            };
+            if let Some(collider_handle) = self.node_to_collider[idx] {
+                colliders.remove(collider_handle, island_manager, bodies, true);
+            }
+            self.detach_node(node_index);
+            if let Some(body_nodes) = self.body_to_nodes.get_mut(&body_handle) {
+                body_nodes.retain(|node| *node != node_index);
+            }
+            affected_bodies.insert(body_handle);
+            removed.push(node_index);
+        }
+
+        for body_handle in affected_bodies {
+            let should_remove = self
+                .body_to_nodes
+                .get(&body_handle)
+                .map(|nodes| nodes.is_empty())
+                .unwrap_or(true);
+            if should_remove {
+                self.body_to_nodes.remove(&body_handle);
+                self.body_metadata.remove(&body_handle);
+                if bodies.get(body_handle).is_some() {
+                    bodies.remove(
+                        body_handle,
+                        island_manager,
+                        colliders,
+                        impulse_joints,
+                        multibody_joints,
+                        true,
+                    );
+                }
+            } else if let Some(metadata) = self.body_metadata.get_mut(&body_handle) {
+                metadata.has_support = self
+                    .body_to_nodes
+                    .get(&body_handle)
+                    .map(|nodes| nodes.iter().any(|node| self.support_nodes.contains(node)))
+                    .unwrap_or(false);
+            }
+        }
+
+        removed
+    }
+
     fn compute_actor_com(&self, nodes: &[u32]) -> Vec3 {
         if nodes.is_empty() {
             return Vec3::ZERO;
@@ -533,6 +645,7 @@ impl BodyTracker {
                 created_at,
                 first_support_contact_at: None,
                 damping_promoted: false,
+                sleep_threshold_configured: false,
                 has_support,
             },
         );
@@ -557,6 +670,22 @@ impl BodyTracker {
         }
     }
 
+    fn configure_sleep_thresholds(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        bodies: &mut RigidBodySet,
+        sleep_thresholds: &SleepThresholdOptions,
+    ) {
+        if sleep_thresholds.mode != OptimizationMode::Always {
+            return;
+        }
+        if Self::apply_sleep_thresholds(bodies, body_handle, sleep_thresholds) {
+            if let Some(metadata) = self.body_metadata.get_mut(&body_handle) {
+                metadata.sleep_threshold_configured = true;
+            }
+        }
+    }
+
     fn apply_small_body_damping(
         bodies: &mut RigidBodySet,
         body_handle: RigidBodyHandle,
@@ -577,6 +706,31 @@ impl BodyTracker {
             body.set_angular_damping(damping.min_angular_damping);
             changed = true;
         }
+        if changed {
+            body.wake_up(true);
+        }
+        changed
+    }
+
+    fn apply_sleep_thresholds(
+        bodies: &mut RigidBodySet,
+        body_handle: RigidBodyHandle,
+        sleep_thresholds: &SleepThresholdOptions,
+    ) -> bool {
+        let Some(body) = bodies.get_mut(body_handle) else {
+            return false;
+        };
+        if !body.is_dynamic() {
+            return false;
+        }
+        let activation = body.activation_mut();
+        let desired_linear = sleep_thresholds.linear_threshold.max(0.0);
+        let desired_angular = sleep_thresholds.angular_threshold.max(0.0);
+        let changed =
+            (activation.normalized_linear_threshold - desired_linear).abs() > Real::EPSILON
+                || (activation.angular_threshold - desired_angular).abs() > Real::EPSILON;
+        activation.normalized_linear_threshold = desired_linear;
+        activation.angular_threshold = desired_angular;
         if changed {
             body.wake_up(true);
         }

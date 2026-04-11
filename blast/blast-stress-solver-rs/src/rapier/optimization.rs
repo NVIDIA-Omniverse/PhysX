@@ -49,9 +49,27 @@ impl Default for DebrisCleanupOptions {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct SleepThresholdOptions {
+    pub mode: OptimizationMode,
+    pub linear_threshold: f32,
+    pub angular_threshold: f32,
+}
+
+impl Default for SleepThresholdOptions {
+    fn default() -> Self {
+        Self {
+            mode: OptimizationMode::Off,
+            linear_threshold: 0.1,
+            angular_threshold: 0.1,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct OptimizationResult {
     pub damped_bodies: Vec<RigidBodyHandle>,
+    pub sleep_tuned_bodies: Vec<RigidBodyHandle>,
     pub removed_bodies: Vec<RigidBodyHandle>,
     pub removed_nodes: Vec<u32>,
 }

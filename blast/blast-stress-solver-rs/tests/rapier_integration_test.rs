@@ -115,6 +115,65 @@ fn dynamic_pair_scenario() -> ScenarioDesc {
     }
 }
 
+fn dynamic_triangle_scenario() -> ScenarioDesc {
+    let size = Vec3::new(0.5, 0.5, 0.5);
+    ScenarioDesc {
+        nodes: vec![
+            ScenarioNode {
+                centroid: Vec3::new(-0.5, 0.0, 0.0),
+                mass: 1.0,
+                volume: 0.125,
+            },
+            ScenarioNode {
+                centroid: Vec3::new(0.5, 0.0, 0.0),
+                mass: 1.0,
+                volume: 0.125,
+            },
+            ScenarioNode {
+                centroid: Vec3::new(0.0, 0.866, 0.0),
+                mass: 1.0,
+                volume: 0.125,
+            },
+        ],
+        bonds: vec![
+            ScenarioBond {
+                node0: 0,
+                node1: 1,
+                centroid: Vec3::new(0.0, 0.0, 0.0),
+                normal: Vec3::new(1.0, 0.0, 0.0),
+                area: 0.25,
+            },
+            ScenarioBond {
+                node0: 0,
+                node1: 2,
+                centroid: Vec3::new(-0.25, 0.433, 0.0),
+                normal: Vec3::new(0.5, 0.866, 0.0),
+                area: 0.25,
+            },
+            ScenarioBond {
+                node0: 1,
+                node1: 2,
+                centroid: Vec3::new(0.25, 0.433, 0.0),
+                normal: Vec3::new(-0.5, 0.866, 0.0),
+                area: 0.25,
+            },
+        ],
+        node_sizes: vec![size; 3],
+    }
+}
+
+fn weak_impact_settings() -> SolverSettings {
+    SolverSettings {
+        compression_elastic_limit: 0.01,
+        compression_fatal_limit: 0.05,
+        tension_elastic_limit: 0.01,
+        tension_fatal_limit: 0.05,
+        shear_elastic_limit: 0.01,
+        shear_fatal_limit: 0.05,
+        ..SolverSettings::default()
+    }
+}
+
 #[test]
 fn destructible_set_initializes() {
     let scenario = wall_scenario();
@@ -831,8 +890,46 @@ fn support_contact_promotes_small_body_damping() {
 }
 
 #[test]
-fn debris_cleanup_removes_small_bodies_after_ttl() {
+fn support_contact_configures_sleep_thresholds() {
     let scenario = dynamic_pair_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_sleep_thresholds(SleepThresholdOptions {
+        mode: OptimizationMode::AfterGroundCollision,
+        linear_threshold: 1.25,
+        angular_threshold: 0.75,
+    });
+
+    let (mut bodies, mut colliders, ..) = rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let body_handle = set
+        .node_body(0)
+        .expect("dynamic pair should create one body");
+    {
+        let body = bodies.get(body_handle).unwrap();
+        let activation = body.activation();
+        assert!((activation.normalized_linear_threshold - 1.25).abs() > 1.0e-6);
+        assert!((activation.angular_threshold - 0.75).abs() > 1.0e-6);
+    }
+
+    let changed = set.mark_body_support_contact(body_handle, 1.0, &mut bodies);
+    assert!(changed, "first support contact should configure sleep thresholds");
+
+    let body = bodies.get(body_handle).unwrap();
+    let activation = body.activation();
+    assert!((activation.normalized_linear_threshold - 1.25).abs() < 1.0e-6);
+    assert!((activation.angular_threshold - 0.75).abs() < 1.0e-6);
+}
+
+#[test]
+fn debris_cleanup_removes_small_bodies_and_solver_bonds_after_ttl() {
+    let scenario = dynamic_triangle_scenario();
     let mut set = DestructibleSet::from_scenario(
         &scenario,
         SolverSettings::default(),
@@ -843,12 +940,13 @@ fn debris_cleanup_removes_small_bodies_after_ttl() {
     set.set_debris_cleanup(DebrisCleanupOptions {
         mode: OptimizationMode::Always,
         debris_ttl_secs: 0.5,
-        max_colliders_for_debris: 2,
+        max_colliders_for_debris: 3,
     });
 
     let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
         rapier_world();
     set.initialize(&mut bodies, &mut colliders);
+    assert_eq!(set.active_bond_count(), 3);
 
     let no_cleanup = set.process_optimizations(
         0.25,
@@ -869,7 +967,105 @@ fn debris_cleanup_removes_small_bodies_after_ttl() {
         &mut multibody_joints,
     );
     assert_eq!(cleanup.removed_bodies.len(), 1);
-    assert_eq!(cleanup.removed_nodes.len(), 2);
+    assert_eq!(cleanup.removed_nodes.len(), 3);
+    assert_eq!(set.body_count(), 0);
     assert!(set.node_body(0).is_none());
     assert!(set.node_body(1).is_none());
+    assert!(set.node_body(2).is_none());
+    assert_eq!(
+        set.active_bond_count(),
+        0,
+        "cleanup should retire all tracked bonds for destroyed debris nodes"
+    );
+}
+
+#[test]
+fn skip_single_bodies_drops_singleton_children_instead_of_spawning_bodies() {
+    let scenario = dynamic_pair_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, weak_impact_settings(), Vec3::ZERO, policy)
+            .unwrap();
+    set.set_skip_single_bodies(true);
+
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let impact_pos = scenario.nodes[0].centroid;
+    set.add_force(0, impact_pos, Vec3::new(10_000.0, 0.0, 0.0));
+
+    let mut fractured = false;
+    for _ in 0..8 {
+        let step = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
+        fractured |= step.fractures > 0;
+        if set.body_count() == 0 {
+            break;
+        }
+    }
+
+    assert!(fractured, "expected the pair bond to fracture");
+    assert_eq!(set.body_count(), 0);
+    assert!(set.node_body(0).is_none());
+    assert!(set.node_body(1).is_none());
+}
+
+#[test]
+fn collider_migration_budget_defers_split_until_budget_is_available() {
+    let scenario = dynamic_pair_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        max_collider_migrations_per_frame: 0,
+        ..FracturePolicy::default()
+    };
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, weak_impact_settings(), Vec3::ZERO, policy)
+            .unwrap();
+
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let impact_pos = scenario.nodes[0].centroid;
+    set.add_force(0, impact_pos, Vec3::new(10_000.0, 0.0, 0.0));
+
+    let first = set.step(
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert!(first.fractures > 0, "impact should fracture the pair");
+    assert_eq!(first.new_bodies, 0, "split should be deferred by zero migration budget");
+    assert_eq!(set.actor_count(), 2, "solver split should still have happened");
+    assert_eq!(set.body_count(), 1, "Rapier bodies should remain unsplit until replay budget allows it");
+
+    let mut updated_policy = *set.policy();
+    updated_policy.max_collider_migrations_per_frame = 2;
+    set.set_policy(updated_policy);
+
+    let second = set.step(
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert_eq!(
+        second.new_bodies, 2,
+        "pending split should flush once migration budget is available"
+    );
+    assert_eq!(set.body_count(), 2);
 }

@@ -9,7 +9,8 @@ pub use body_tracker::BodyTracker;
 pub use destructible::{DestructibleConfig, DestructibleSet, StepResult};
 pub use fracture_policy::FracturePolicy;
 pub use optimization::{
-    DebrisCleanupOptions, OptimizationMode, OptimizationResult, SmallBodyDampingOptions,
+    DebrisCleanupOptions, OptimizationMode, OptimizationResult, SleepThresholdOptions,
+    SmallBodyDampingOptions,
 };
 pub use resimulation::{BodySnapshots, ResimulationOptions};
 pub use split_migrator::{
