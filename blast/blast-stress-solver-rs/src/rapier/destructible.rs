@@ -88,12 +88,19 @@ impl DestructibleSet {
         let (nodes, bonds) = scenario.to_solver_descs();
 
         let node_sizes: Vec<Vec3> = scenario
-            .nodes
+            .node_sizes
             .iter()
-            .map(|n| {
-                let side = n.volume.cbrt().max(0.01);
-                Vec3::new(side, side, side)
-            })
+            .copied()
+            .chain(
+                scenario
+                    .nodes
+                    .iter()
+                    .skip(scenario.node_sizes.len())
+                    .map(|n| {
+                        let side = n.volume.cbrt().max(0.01);
+                        Vec3::new(side, side, side)
+                    }),
+            )
             .collect();
 
         Self::new(DestructibleConfig {
@@ -130,6 +137,9 @@ impl DestructibleSet {
         &mut self,
         bodies: &mut RigidBodySet,
         colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
     ) -> StepResult {
         assert!(self.initialized, "call initialize() before step()");
 
@@ -209,6 +219,9 @@ impl DestructibleSet {
                 event,
                 bodies,
                 colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
                 |node_count| {
                     if budget == 0 {
                         return false;
@@ -224,8 +237,10 @@ impl DestructibleSet {
             new_bodies_created += new_handles.len();
         }
 
-        // Apply excess forces from the solver to newly separated actors
-        self.apply_excess_forces(bodies);
+        // Optional: kick separated actors with solver-reported excess forces.
+        if self.policy.apply_excess_forces {
+            self.apply_excess_forces(bodies);
+        }
 
         result.new_bodies = new_bodies_created;
         self.frames_since_fracture = 0;
@@ -249,6 +264,26 @@ impl DestructibleSet {
     /// Get the Rapier body handle for a node.
     pub fn node_body(&self, node_index: u32) -> Option<RigidBodyHandle> {
         self.tracker.node_body(node_index)
+    }
+
+    /// Get the Rapier collider handle for a node.
+    pub fn node_collider(&self, node_index: u32) -> Option<ColliderHandle> {
+        self.tracker.node_collider(node_index)
+    }
+
+    /// Get the node index owning a collider.
+    pub fn collider_node(&self, collider: ColliderHandle) -> Option<u32> {
+        self.tracker.collider_node(collider)
+    }
+
+    /// Get the node's local offset relative to its owning Rapier body.
+    pub fn node_local_offset(&self, node_index: u32) -> Option<Vec3> {
+        self.tracker.node_local_offset(node_index)
+    }
+
+    /// Get the node indices attached to a Rapier body.
+    pub fn body_nodes(&self, body_handle: RigidBodyHandle) -> Vec<u32> {
+        self.tracker.body_nodes(body_handle)
     }
 
     /// Whether a node is a fixed support.

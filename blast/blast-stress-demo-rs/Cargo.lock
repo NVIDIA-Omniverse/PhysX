@@ -685,7 +685,6 @@ dependencies = [
  "bevy_ptr",
  "bevy_reflect",
  "bevy_render",
- "bevy_scene",
  "bevy_shader",
  "bevy_sprite",
  "bevy_sprite_render",
@@ -889,19 +888,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7a9329e8dc4e01ced480eeec4902e6d7cb56e56ec37f6fbc4323e5c937290a7"
 
 [[package]]
-name = "bevy_rapier3d"
-version = "0.33.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea1aada7322af63b68f5697c08b04bf916348e7f748ece298417fd13968215a1"
-dependencies = [
- "bevy",
- "bitflags 2.11.0",
- "log",
- "nalgebra",
- "rapier3d",
-]
-
-[[package]]
 name = "bevy_reflect"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1003,28 +989,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "bevy_scene"
-version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34cc1047d85ec8048261b63ef675c12f1e6b5782dc0b422fbcee0c140d026bd4"
-dependencies = [
- "bevy_app",
- "bevy_asset",
- "bevy_camera",
- "bevy_derive",
- "bevy_ecs",
- "bevy_platform",
- "bevy_reflect",
- "bevy_transform",
- "bevy_utils",
- "derive_more",
- "ron",
- "serde",
- "thiserror 2.0.18",
- "uuid",
 ]
 
 [[package]]
@@ -1376,8 +1340,8 @@ name = "blast-stress-demo"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_rapier3d",
  "blast-stress-solver",
+ "rapier3d",
 ]
 
 [[package]]
@@ -1385,6 +1349,7 @@ name = "blast-stress-solver"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "rapier3d",
 ]
 
 [[package]]
@@ -3283,6 +3248,7 @@ dependencies = [
  "either",
  "ena",
  "foldhash 0.2.0",
+ "glam 0.30.10",
  "hashbrown 0.16.1",
  "log",
  "nalgebra",
@@ -3545,9 +3511,9 @@ checksum = "973443cf09a9c8656b574a866ab68dfa19f0867d0340648c7d2f6a71b8a8ea68"
 
 [[package]]
 name = "rapier3d"
-version = "0.31.0"
+version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68073fdc88f6b709002767ce8deffffb05ac06824bf9f98a23e270bcea64ba9f"
+checksum = "5bd27b8eb36d0833fa0f2aea40164fabfad0fc34b9932286ae9e84f3452f5364"
 dependencies = [
  "approx",
  "arrayvec",
@@ -3565,6 +3531,7 @@ dependencies = [
  "simba",
  "static_assertions",
  "thiserror 2.0.18",
+ "vec_map",
  "wide",
 ]
 
@@ -4343,6 +4310,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "vec_map"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"

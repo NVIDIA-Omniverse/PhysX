@@ -374,6 +374,9 @@ pub struct ScenarioBond {
 pub struct ScenarioDesc {
     pub nodes: Vec<ScenarioNode>,
     pub bonds: Vec<ScenarioBond>,
+    /// Optional exact per-node collider sizes for Rapier integration.
+    /// When omitted, Rapier helpers fall back to cube-root volume estimates.
+    pub node_sizes: Vec<Vec3>,
 }
 
 impl ScenarioDesc {

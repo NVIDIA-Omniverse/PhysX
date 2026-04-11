@@ -475,6 +475,16 @@ export async function buildDestructibleCore({
     return { bodyCount, min: counts[0], max: counts[counts.length - 1], avg, median, p95 };
   }
 
+  function countRigidBodies(): number {
+    let count = 0;
+    try {
+      world.forEachRigidBody(() => { count += 1; });
+      if (count > 0) return count;
+    } catch {}
+    const wbc = world as WorldWithBodyCount;
+    return typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+  }
+
   function buildColliderDescForNode(args: { nodeIndex: number; halfX: number; halfY: number; halfZ: number; isSupport: boolean }) {
     const { nodeIndex, halfX, halfY, halfZ, isSupport } = args;
     const builder = (scenario.colliderDescForNode && Array.isArray(scenario.colliderDescForNode)) ? (scenario.colliderDescForNode[nodeIndex] ?? null) : null;
@@ -1810,8 +1820,7 @@ export async function buildDestructibleCore({
 
     if (activeProfilerSample) {
       activeProfilerSample.projectiles = projectiles.length;
-      const wbc = world as WorldWithBodyCount;
-      activeProfilerSample.rigidBodies = typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+      activeProfilerSample.rigidBodies = countRigidBodies();
       // Capture body/chunk distribution stats
       const bcs = captureBodyColliderStats();
       if (bcs) {
@@ -1848,8 +1857,7 @@ export async function buildDestructibleCore({
   }
 
   function getRigidBodyCount(): number {
-    const wbc = world as WorldWithBodyCount;
-    return typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+    return countRigidBodies();
   }
 
   function getActiveBondsCount(): number {

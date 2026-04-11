@@ -4,10 +4,23 @@ use rapier3d::prelude::*;
 
 use crate::types::*;
 
+#[derive(Clone, Copy)]
+struct BodyState {
+    position: Isometry<Real>,
+    linvel: Vector<Real>,
+    angvel: Vector<Real>,
+    linear_damping: Real,
+    angular_damping: Real,
+}
+
 /// Tracks the mapping between stress graph nodes and Rapier rigid bodies.
 pub struct BodyTracker {
     /// For each node index, which body it belongs to (if any).
     node_to_body: Vec<Option<RigidBodyHandle>>,
+    /// For each node index, which collider it belongs to (if any).
+    node_to_collider: Vec<Option<ColliderHandle>>,
+    /// For each collider handle, which node index it belongs to.
+    collider_to_node: HashMap<ColliderHandle, u32>,
     /// For each body handle, which node indices it contains.
     body_to_nodes: HashMap<RigidBodyHandle, Vec<u32>>,
     /// Set of support (fixed, mass=0) node indices.
@@ -16,6 +29,10 @@ pub struct BodyTracker {
     node_sizes: Vec<Vec3>,
     /// Per-node centroid.
     node_centroids: Vec<Vec3>,
+    /// Per-node mass.
+    node_masses: Vec<f32>,
+    /// Per-node local offset relative to its owning body.
+    node_local_offsets: Vec<Vec3>,
 }
 
 impl BodyTracker {
@@ -29,13 +46,18 @@ impl BodyTracker {
             .collect();
 
         let node_centroids = nodes.iter().map(|n| n.centroid).collect();
+        let node_masses = nodes.iter().map(|n| n.mass).collect();
 
         Self {
             node_to_body: vec![None; nodes.len()],
+            node_to_collider: vec![None; nodes.len()],
+            collider_to_node: HashMap::new(),
             body_to_nodes: HashMap::new(),
             support_nodes,
             node_sizes,
             node_centroids,
+            node_masses,
+            node_local_offsets: vec![Vec3::ZERO; nodes.len()],
         }
     }
 
@@ -56,15 +78,15 @@ impl BodyTracker {
                 continue;
             }
 
-            let all_support = actor
+            let has_support = actor
                 .nodes
                 .iter()
-                .all(|n| self.support_nodes.contains(n));
+                .any(|n| self.support_nodes.contains(n));
 
             // Compute center of mass for the actor
             let com = self.compute_actor_com(&actor.nodes);
 
-            let body = if all_support {
+            let body = if has_support {
                 bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
             } else {
                 bodies.insert(
@@ -86,10 +108,19 @@ impl BodyTracker {
                 let half = vector![size.x * 0.5, size.y * 0.5, size.z * 0.5];
                 let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
                     .translation(vector![local_x, local_y, local_z])
-                    .density(1.0);
+                    .active_events(ActiveEvents::CONTACT_FORCE_EVENTS)
+                    .contact_force_event_threshold(0.0)
+                    .friction(0.25)
+                    .restitution(0.0);
 
-                colliders.insert_with_parent(collider, body, bodies);
-                self.node_to_body[ni] = Some(body);
+                let collider = if self.support_nodes.contains(&node_idx) {
+                    collider.mass(0.0)
+                } else {
+                    collider.mass(self.node_masses[ni].max(0.0))
+                };
+
+                let collider_handle = colliders.insert_with_parent(collider, body, bodies);
+                self.attach_node(node_idx, body, collider_handle, Vec3::new(local_x, local_y, local_z));
             }
 
             self.body_to_nodes
@@ -108,9 +139,14 @@ impl BodyTracker {
         event: &SplitEvent,
         bodies: &mut RigidBodySet,
         colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
         mut policy_filter: impl FnMut(u32) -> bool,
     ) -> Vec<RigidBodyHandle> {
         let mut new_handles = Vec::new();
+        let previous_node_bodies = self.node_to_body.clone();
+        let previous_local_offsets = self.node_local_offsets.clone();
 
         // Find and remove the parent body
         // The parent actor's nodes may be spread across the children
@@ -124,6 +160,22 @@ impl BodyTracker {
         let parent_bodies: HashSet<RigidBodyHandle> = parent_nodes
             .iter()
             .filter_map(|n| self.node_to_body[*n as usize])
+            .collect();
+        let parent_states: HashMap<RigidBodyHandle, BodyState> = parent_bodies
+            .iter()
+            .filter_map(|&handle| {
+                let body = bodies.get(handle)?;
+                Some((
+                    handle,
+                    BodyState {
+                        position: *body.position(),
+                        linvel: *body.linvel(),
+                        angvel: *body.angvel(),
+                        linear_damping: body.linear_damping(),
+                        angular_damping: body.angular_damping(),
+                    },
+                ))
+            })
             .collect();
 
         // Remove parent body entries from tracking (but keep the bodies alive for reuse)
@@ -167,7 +219,25 @@ impl BodyTracker {
             plan.reuse.iter().map(|r| r.body_handle).collect();
         for &bh in &parent_bodies {
             if !reused_handles.contains(&bh) {
-                bodies.remove(bh, &mut IslandManager::new(), colliders, &mut ImpulseJointSet::new(), &mut MultibodyJointSet::new(), true);
+                if let Some(nodes) = self.body_to_nodes.get(&bh).cloned() {
+                    for node in nodes {
+                        self.detach_node(node);
+                    }
+                } else {
+                    for node in &parent_nodes {
+                        if self.node_to_body[*node as usize] == Some(bh) {
+                            self.detach_node(*node);
+                        }
+                    }
+                }
+                bodies.remove(
+                    bh,
+                    island_manager,
+                    colliders,
+                    impulse_joints,
+                    multibody_joints,
+                    true,
+                );
             }
         }
 
@@ -179,18 +249,38 @@ impl BodyTracker {
                 continue;
             }
 
-            let all_support = child
+            let has_support = child
                 .nodes
                 .iter()
-                .all(|n| self.support_nodes.contains(n));
+                .any(|n| self.support_nodes.contains(n));
 
-            let com = self.compute_actor_com(&child.nodes);
-
-            let body_handle = if all_support {
+            let source_body = child
+                .nodes
+                .first()
+                .and_then(|node| previous_node_bodies[*node as usize])
+                .and_then(|handle| parent_states.get(&handle).copied());
+            let body_handle = if let Some(source) = source_body {
+                let builder = if has_support {
+                    RigidBodyBuilder::fixed()
+                        .pose(source.position)
+                        .linear_damping(source.linear_damping)
+                        .angular_damping(source.angular_damping)
+                } else {
+                    RigidBodyBuilder::dynamic()
+                        .pose(source.position)
+                        .linvel(source.linvel)
+                        .angvel(source.angvel)
+                        .linear_damping(source.linear_damping)
+                        .angular_damping(source.angular_damping)
+                };
+                bodies.insert(builder)
+            } else if has_support {
+                let com = self.compute_actor_com(&child.nodes);
                 bodies.insert(
                     RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]),
                 )
             } else {
+                let com = self.compute_actor_com(&child.nodes);
                 bodies.insert(
                     RigidBodyBuilder::dynamic().translation(vector![com.x, com.y, com.z]),
                 )
@@ -199,19 +289,29 @@ impl BodyTracker {
             for &node_idx in &child.nodes {
                 let ni = node_idx as usize;
                 let size = self.node_sizes[ni];
-                let centroid = self.node_centroids[ni];
-
-                let local_x = centroid.x - com.x;
-                let local_y = centroid.y - com.y;
-                let local_z = centroid.z - com.z;
+                let local_offset = previous_local_offsets[ni];
 
                 let half = vector![size.x * 0.5, size.y * 0.5, size.z * 0.5];
                 let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
-                    .translation(vector![local_x, local_y, local_z])
-                    .density(1.0);
+                    .translation(vector![local_offset.x, local_offset.y, local_offset.z])
+                    .active_events(ActiveEvents::CONTACT_FORCE_EVENTS)
+                    .contact_force_event_threshold(0.0)
+                    .friction(0.25)
+                    .restitution(0.0);
 
-                colliders.insert_with_parent(collider, body_handle, bodies);
-                self.node_to_body[ni] = Some(body_handle);
+                let collider = if self.support_nodes.contains(&node_idx) {
+                    collider.mass(0.0)
+                } else {
+                    collider.mass(self.node_masses[ni].max(0.0))
+                };
+
+                let collider_handle = colliders.insert_with_parent(collider, body_handle, bodies);
+                self.attach_node(
+                    node_idx,
+                    body_handle,
+                    collider_handle,
+                    local_offset,
+                );
             }
 
             self.body_to_nodes
@@ -225,6 +325,34 @@ impl BodyTracker {
     /// Get the body handle for a node.
     pub fn node_body(&self, node_index: u32) -> Option<RigidBodyHandle> {
         self.node_to_body.get(node_index as usize).copied().flatten()
+    }
+
+    /// Get the collider handle for a node.
+    pub fn node_collider(&self, node_index: u32) -> Option<ColliderHandle> {
+        self.node_to_collider.get(node_index as usize).copied().flatten()
+    }
+
+    /// Get the node owning a collider.
+    pub fn collider_node(&self, collider: ColliderHandle) -> Option<u32> {
+        self.collider_to_node.get(&collider).copied()
+    }
+
+    /// Get the node local offset relative to its owning body.
+    pub fn node_local_offset(&self, node_index: u32) -> Option<Vec3> {
+        let idx = node_index as usize;
+        if self.node_to_body.get(idx).copied().flatten().is_some() {
+            self.node_local_offsets.get(idx).copied()
+        } else {
+            None
+        }
+    }
+
+    /// Get the node indices attached to a body.
+    pub fn body_nodes(&self, body_handle: RigidBodyHandle) -> Vec<u32> {
+        self.body_to_nodes
+            .get(&body_handle)
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Whether a node is a support (fixed) node.
@@ -254,5 +382,28 @@ impl BodyTracker {
             sum += self.node_centroids[n as usize];
         }
         sum / nodes.len() as f32
+    }
+
+    fn attach_node(
+        &mut self,
+        node_index: u32,
+        body: RigidBodyHandle,
+        collider: ColliderHandle,
+        local_offset: Vec3,
+    ) {
+        let idx = node_index as usize;
+        self.node_to_body[idx] = Some(body);
+        self.node_to_collider[idx] = Some(collider);
+        self.collider_to_node.insert(collider, node_index);
+        self.node_local_offsets[idx] = local_offset;
+    }
+
+    fn detach_node(&mut self, node_index: u32) {
+        let idx = node_index as usize;
+        if let Some(collider) = self.node_to_collider[idx].take() {
+            self.collider_to_node.remove(&collider);
+        }
+        self.node_to_body[idx] = None;
+        self.node_local_offsets[idx] = Vec3::ZERO;
     }
 }

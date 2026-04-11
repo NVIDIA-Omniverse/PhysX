@@ -89,6 +89,7 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
 
     let mut nodes: Vec<ScenarioNode> = Vec::new();
     let mut bonds: Vec<ScenarioBond> = Vec::new();
+    let mut node_sizes: Vec<Vec3> = Vec::new();
 
     let cell_x = span / (span_segments.max(1) as f64);
     let cell_y = height / (height_segments.max(1) as f64);
@@ -124,6 +125,7 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
                     mass: if is_support { 0.0 } else { mass_per_node as f32 },
                     volume: if is_support { 0.0 } else { volume_per_node as f32 },
                 });
+                node_sizes.push(Vec3::new(cell_x as f32, cell_y as f32, cell_z as f32));
                 index_3d[ix as usize][iy as usize][iz as usize] = index;
             }
         }
@@ -232,5 +234,9 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
         }
     }
 
-    ScenarioDesc { nodes, bonds }
+    ScenarioDesc {
+        nodes,
+        bonds,
+        node_sizes,
+    }
 }

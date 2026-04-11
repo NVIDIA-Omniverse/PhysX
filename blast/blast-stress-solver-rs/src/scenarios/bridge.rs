@@ -141,6 +141,7 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
 
     let mut nodes: Vec<ScenarioNode> = Vec::new();
     let mut bonds: Vec<ScenarioBond> = Vec::new();
+    let mut node_sizes: Vec<Vec3> = Vec::new();
 
     // Build deck nodes
     let deck_cell_volume = (cell_x * cell_y * cell_z) as f32;
@@ -157,6 +158,7 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
                     mass: deck_cell_volume,
                     volume: deck_cell_volume,
                 });
+                node_sizes.push(Vec3::new(cell_x as f32, cell_y as f32, cell_z as f32));
                 grid_deck[ix as usize][iy as usize][iz as usize] = node_idx;
                 deck_total_volume += deck_cell_volume as f64;
             }
@@ -331,6 +333,7 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
                             mass: volume * mass_scale as f32,
                             volume,
                         });
+                        node_sizes.push(Vec3::new(cell_x as f32, cell_y as f32, cell_z as f32));
                         post_map.insert((ixp, py, iz), node_idx);
 
                         if py > 0 {
@@ -355,6 +358,7 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
                         mass: 0.0,
                         volume: 0.0,
                     });
+                    node_sizes.push(Vec3::new(cell_x as f32, footing_thickness as f32, cell_z as f32));
                     if let Some(&lowest_post_idx) =
                         post_map.get(&(ixp, post_layers as i32 - 1, iz))
                     {
@@ -422,5 +426,9 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
         }
     }
 
-    ScenarioDesc { nodes, bonds }
+    ScenarioDesc {
+        nodes,
+        bonds,
+        node_sizes,
+    }
 }

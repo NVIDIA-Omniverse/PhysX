@@ -66,7 +66,27 @@ fn wall_scenario() -> ScenarioDesc {
         }
     }
 
-    ScenarioDesc { nodes, bonds }
+    ScenarioDesc {
+        nodes,
+        bonds,
+        node_sizes: vec![Vec3::new(bw, bh, bd); (columns * rows) as usize],
+    }
+}
+
+fn rapier_world() -> (
+    RigidBodySet,
+    ColliderSet,
+    IslandManager,
+    ImpulseJointSet,
+    MultibodyJointSet,
+) {
+    (
+        RigidBodySet::new(),
+        ColliderSet::new(),
+        IslandManager::new(),
+        ImpulseJointSet::new(),
+        MultibodyJointSet::new(),
+    )
 }
 
 #[test]
@@ -83,8 +103,7 @@ fn destructible_set_initializes() {
         DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
             .expect("should create set");
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, ..) = rapier_world();
 
     let handles = set.initialize(&mut bodies, &mut colliders);
     assert!(!handles.is_empty(), "should create initial bodies");
@@ -119,13 +138,19 @@ fn destructible_set_step_stable() {
         DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
             .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Step several frames — with high limits, no fractures should occur
     for _ in 0..10 {
-        let result = set.step(&mut bodies, &mut colliders);
+        let result = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
         assert_eq!(result.fractures, 0, "strong wall should not fracture under normal gravity");
         assert_eq!(result.split_events, 0);
     }
@@ -160,19 +185,22 @@ fn destructible_set_fractures_under_heavy_gravity() {
     )
     .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     let initial_actor_count = set.actor_count();
     let mut total_fractures = 0;
-    let mut total_new_bodies = 0;
-
     // Run several steps
     for _ in 0..20 {
-        let result = set.step(&mut bodies, &mut colliders);
+        let result = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
         total_fractures += result.fractures;
-        total_new_bodies += result.new_bodies;
     }
 
     assert!(
@@ -211,8 +239,8 @@ fn destructible_set_force_impact() {
     )
     .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Apply a large force to the top-center node (node 12 = row 2, col 2)
@@ -222,7 +250,13 @@ fn destructible_set_force_impact() {
 
     let mut fractured = false;
     for _ in 0..10 {
-        let result = set.step(&mut bodies, &mut colliders);
+        let result = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
         if result.fractures > 0 {
             fractured = true;
         }
@@ -258,12 +292,18 @@ fn fracture_policy_limits_bodies() {
     )
     .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Step once — new bodies should be capped at 2
-    let result = set.step(&mut bodies, &mut colliders);
+    let result = set.step(
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
     assert!(
         result.new_bodies <= 2,
         "policy should limit new bodies to 2, got {}",
@@ -299,8 +339,8 @@ fn end_to_end_wall_destruction_full_pipeline() {
     )
     .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
 
     // Initialize
     let initial_handles = set.initialize(&mut bodies, &mut colliders);
@@ -336,7 +376,13 @@ fn end_to_end_wall_destruction_full_pipeline() {
             }
         }
 
-        let result = set.step(&mut bodies, &mut colliders);
+        let result = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
         total_fractures += result.fractures;
         total_splits += result.split_events;
         total_new_bodies += result.new_bodies;
@@ -394,13 +440,19 @@ fn solver_and_rapier_body_correspondence() {
     )
     .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Step a few times to cause fractures
     for _ in 0..10 {
-        set.step(&mut bodies, &mut colliders);
+        set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
     }
 
     // Every node should still map to a valid body
@@ -413,6 +465,79 @@ fn solver_and_rapier_body_correspondence() {
             );
         }
     }
+}
+
+#[test]
+fn rapier_world_remains_valid_after_split_body_removal() {
+    let scenario = wall_scenario();
+    let settings = SolverSettings {
+        compression_elastic_limit: 0.01,
+        compression_fatal_limit: 0.05,
+        tension_elastic_limit: 0.01,
+        tension_fatal_limit: 0.05,
+        shear_elastic_limit: 0.01,
+        shear_fatal_limit: 0.05,
+        ..SolverSettings::default()
+    };
+    let policy = FracturePolicy {
+        idle_skip: false,
+        ..FracturePolicy::default()
+    };
+
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        settings,
+        Vec3::new(0.0, -9.81, 0.0),
+        policy,
+    )
+    .unwrap();
+
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let target_node = 12u32;
+    let target_pos = scenario.nodes[target_node as usize].centroid;
+    set.add_force(target_node, target_pos, Vec3::new(5000.0, 0.0, 0.0));
+
+    let mut saw_split = false;
+    for _ in 0..10 {
+        let result = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
+        if result.split_events > 0 {
+            saw_split = true;
+            break;
+        }
+    }
+
+    assert!(saw_split, "expected impact to create at least one split");
+
+    let gravity = vector![0.0, -9.81, 0.0];
+    let integration_parameters = IntegrationParameters::default();
+    let mut physics_pipeline = PhysicsPipeline::new();
+    let mut broad_phase = BroadPhaseBvh::new();
+    let mut narrow_phase = NarrowPhase::new();
+    let mut ccd_solver = CCDSolver::new();
+
+    physics_pipeline.step(
+        &gravity,
+        &integration_parameters,
+        &mut island_manager,
+        &mut broad_phase,
+        &mut narrow_phase,
+        &mut bodies,
+        &mut colliders,
+        &mut impulse_joints,
+        &mut multibody_joints,
+        &mut ccd_solver,
+        &(),
+        &(),
+    );
 }
 
 #[test]
@@ -448,17 +573,29 @@ fn destructible_set_idle_skip() {
         DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
             .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // First step should run (gravity is always applied on first real step)
-    let r1 = set.step(&mut bodies, &mut colliders);
+    let _r1 = set.step(
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
     // After several frames with no external forces and no fractures,
     // idle skip should kick in (step returns default result)
     let mut idle_count = 0;
     for _ in 0..10 {
-        let r = set.step(&mut bodies, &mut colliders);
+        let r = set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
         if r.fractures == 0 && r.split_events == 0 {
             idle_count += 1;
         }
@@ -477,8 +614,7 @@ fn body_tracker_support_detection() {
         DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
             .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, ..) = rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Bottom row (first 5 nodes) should be support, rest dynamic
@@ -510,8 +646,7 @@ fn body_tracker_all_nodes_mapped_after_init() {
         DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
             .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, ..) = rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     for i in 0..scenario.nodes.len() {
@@ -540,14 +675,20 @@ fn destructible_set_add_force_triggers_activity() {
         DestructibleSet::from_scenario(&scenario, settings, Vec3::new(0.0, -9.81, 0.0), policy)
             .unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Apply force to a node
     set.add_force(10, Vec3::new(0.0, 1.0, 0.0), Vec3::new(10000.0, 0.0, 0.0));
 
-    let result = set.step(&mut bodies, &mut colliders);
+    let result = set.step(
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
     // With weak settings and added force, should see fractures
     assert!(
         result.fractures > 0 || result.converged,
@@ -582,13 +723,19 @@ fn policy_max_dynamic_bodies_caps_world() {
             policy,
         ).unwrap();
 
-    let mut bodies = RigidBodySet::new();
-    let mut colliders = ColliderSet::new();
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
     set.initialize(&mut bodies, &mut colliders);
 
     // Run many frames
     for _ in 0..20 {
-        set.step(&mut bodies, &mut colliders);
+        set.step(
+            &mut bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
     }
 
     // Body count should be capped (some tolerance for fixed bodies)

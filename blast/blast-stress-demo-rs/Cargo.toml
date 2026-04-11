@@ -14,5 +14,5 @@ bevy = { version = "0.18", default-features = false, features = [
     "x11", "default_font",
     "multi_threaded", "bevy_asset",
 ] }
-bevy_rapier3d = { version = "0.33", features = ["debug-render-3d"] }
-blast-stress-solver = { path = "../blast-stress-solver-rs", features = ["scenarios"] }
+blast-stress-solver = { path = "../blast-stress-solver-rs", features = ["scenarios", "rapier"] }
+rapier3d = { version = "0.30", features = ["simd-stable"] }

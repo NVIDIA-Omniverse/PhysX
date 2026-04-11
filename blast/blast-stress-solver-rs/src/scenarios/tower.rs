@@ -76,6 +76,7 @@ pub fn build_tower_scenario(opts: &TowerOptions) -> ScenarioDesc {
 
     let mut nodes: Vec<ScenarioNode> = Vec::new();
     let mut bonds: Vec<ScenarioBond> = Vec::new();
+    let mut node_sizes: Vec<Vec3> = Vec::new();
 
     let total_rows = stories + 1; // +1 for support row at bottom
 
@@ -103,6 +104,11 @@ pub fn build_tower_scenario(opts: &TowerOptions) -> ScenarioDesc {
                     mass: if is_support { 0.0 } else { node_mass as f32 },
                     volume: if is_support { 0.0 } else { volume },
                 });
+                node_sizes.push(Vec3::new(
+                    spacing_x as f32,
+                    spacing_y as f32,
+                    spacing_z as f32,
+                ));
             }
         }
     }
@@ -218,5 +224,9 @@ pub fn build_tower_scenario(opts: &TowerOptions) -> ScenarioDesc {
         }
     }
 
-    ScenarioDesc { nodes, bonds }
+    ScenarioDesc {
+        nodes,
+        bonds,
+        node_sizes,
+    }
 }

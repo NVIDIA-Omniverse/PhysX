@@ -13,6 +13,8 @@ pub struct FracturePolicy {
     pub min_child_node_count: u32,
     /// Skip solver on idle frames (no forces, no recent fractures). Default: true.
     pub idle_skip: bool,
+    /// Apply solver-reported excess forces to newly separated bodies. Default: true.
+    pub apply_excess_forces: bool,
 }
 
 impl Default for FracturePolicy {
@@ -23,6 +25,7 @@ impl Default for FracturePolicy {
             max_dynamic_bodies: -1,
             min_child_node_count: 1,
             idle_skip: true,
+            apply_excess_forces: true,
         }
     }
 }
