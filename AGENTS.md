@@ -22,17 +22,27 @@ This is the NVIDIA PhysX monorepo containing PhysX, Blast, and Flow SDKs. The ac
 ### First-time setup
 
 ```bash
-# 1. Install root dependencies (three.js, etc.)
+# 1. Install everything needed for the demos
 cd /home/user/PhysX
-npm install
+npm run setup:demos
+```
 
-# 2. Install blast-stress-solver dependencies
-cd blast/blast-stress-solver
-npm install --ignore-scripts   # avoid triggering full WASM rebuild on install
+### Fast path for demos
 
-# 3. Install js_stress_example dependencies
-cd ../js_stress_example
-npm install
+```bash
+# Ensure emsdk is sourced
+source /opt/emsdk/emsdk_env.sh
+
+# Build everything required for the browser demos and start the server
+cd /home/user/PhysX
+npm start   # checks toolchain/deps, builds assets, then serves http://localhost:8000
+```
+
+If the assets are already built and you only need the server:
+
+```bash
+cd /home/user/PhysX
+npm run serve:demos
 ```
 
 ### Full build (from scratch)
@@ -45,31 +55,27 @@ source /opt/emsdk/emsdk_env.sh
 cd /home/user/PhysX/blast/blast-stress-solver
 npm run build
 
-# Build bridge demo TypeScript (for bridge-split-demo.html, bridge-ext.html)
+# Build browser demo assets (bridge TS + esbuild entrypoints)
 cd ../js_stress_example
-npx tsc
-
-# Build wall/tower demo JS (esbuild, not tsc — they use import-map bare specifiers)
-npx esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm
-npx esbuild tower-collapse.ts --outfile=dist/tower-collapse.js --format=esm
-npx esbuild fractured-wall.ts --outfile=dist/fractured-wall.js --format=esm
+npm run build:web
 
 # Run tests
 cd ../blast-stress-solver
 npm test
 
-# Serve demos
+# Serve demos without rebuilding
 cd /home/user/PhysX
-npm start   # http://localhost:8000
+npm run serve:demos   # http://localhost:8000
 ```
 
 ### Build chain details
 
 1. `cd blast/js_stress_example && npm run build` — compiles C++ stress solver to WASM via `emcc`, outputs `dist/stress_solver.{cjs,mjs,wasm}`. Takes ~20 seconds (two targets: node-cjs + browser-esm).
 2. `cd blast/blast-stress-solver && npm run build` — runs step 1 as `prebuild`, then bundles TypeScript with `tsup`, copies WASM to `dist/`
-3. `cd blast/js_stress_example && npx tsc` — compiles bridge demo TS to `dist/`. Pre-existing type errors are expected; `noEmitOnError: false` ensures output is still generated.
-4. Wall/tower demo JS: `npx esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm` (repeat for `tower-collapse.ts`). These use import-map bare specifiers so **esbuild** is used instead of tsc.
-5. `npm start` (root) — starts static file server on port 8000, serves demos and vendor aliases for three.js/rapier
+3. `cd blast/js_stress_example && npm run build:web` — runs `build:ts` for the bridge-style TS outputs and `build:demo:*` for `wall-demolition`, `tower-collapse`, and `fractured-wall`. The `build:ts` step tolerates the pre-existing TypeScript errors because `tsc` still emits usable JS, and those three entrypoints use import-map bare specifiers so they are rebuilt with **esbuild** instead of relying on the emitted `tsc` output.
+4. `cd /home/user/PhysX && npm run build:demos` — runs the blast-stress-solver build plus `blast/js_stress_example`'s `build:web` script from the repo root.
+5. `cd /home/user/PhysX && npm run check:demos` — verifies that native optional dependencies (`rollup`, `esbuild`) match the current platform and that Emscripten is available when the WASM runtime needs to be rebuilt.
+6. `npm start` (root) — runs `npm run check:demos`, then `npm run build:demos`, then starts the static file server on port 8000. Use `npm run serve:demos` if you only want to serve already-built assets.
 
 ### Running tests
 
@@ -89,11 +95,11 @@ After running `npm start` at the root:
 **Primary demos (high-level API):**
 - **`/blast/js_stress_example/wall-demolition.html`** — Destructible brick wall. Click to shoot projectiles. Config panel for wall geometry, projectile params, material scale (log slider), and **Auto Bonds (experimental)** toggle.
 - **`/blast/js_stress_example/tower-collapse.html`** — Destructible tower. Same config panel pattern. Includes diagonal bonds and small-body damping.
-- **`/blast/js_stress_example/fractured-wall.html`** — Voronoi-fractured wall using `three-pinata`. Irregular fragments with proximity-based bond detection. Config panel for fragment count, projectile params, and material scale. Build with: `npx esbuild fractured-wall.ts --outfile=dist/fractured-wall.js --format=esm`
+- **`/blast/js_stress_example/fractured-wall.html`** — Voronoi-fractured wall using `three-pinata`. Irregular fragments with proximity-based bond detection. Config panel for fragment count, projectile params, and material scale.
 
 **Bridge demos:**
-- **`bridge-split-demo.html`** — Fully featured destructible bridge with real-time config, projectile spawning, and full fracture into independent physics bodies. Requires `npx tsc` build step.
-- `bridge-ext.html` — Older two-phase fracture demo (also requires `npx tsc`)
+- **`bridge-split-demo.html`** — Fully featured destructible bridge with real-time config, projectile spawning, and full fracture into independent physics bodies. Included in `npm run build:web`.
+- `bridge-ext.html` — Older two-phase fracture demo (also included in `npm run build:web`)
 
 **Legacy:** `bridge-demo.html` — Stress coloring only; fracture disabled at `simulation.js:117`.
 
@@ -118,10 +124,12 @@ After running `npm start` at the root:
 ### Gotchas
 
 - The `blast/blast-stress-solver` build has benign `import.meta` CJS warnings from tsup — these do not affect functionality.
-- TypeScript strict checking (`tsc --noEmit`) in `blast/js_stress_example` shows pre-existing type errors; `noEmitOnError: false` in tsconfig ensures files are still emitted.
+- TypeScript strict checking (`tsc --noEmit`) in `blast/js_stress_example` shows pre-existing type errors; `noEmitOnError: false` in tsconfig ensures files are still emitted, and `npm run build:ts` intentionally continues so `npm run build:web` can finish.
 - The WASM build takes ~20 seconds per run (two targets: node-cjs + browser-esm).
+- `npm run setup:demos` installs root dependencies, `blast-stress-solver` dependencies with `--ignore-scripts`, and `js_stress_example` dependencies in one step.
 - `npm install --ignore-scripts` is used for `blast/blast-stress-solver` during dependency refresh to avoid triggering a full rebuild on install.
-- Wall/tower demo dist JS files are built with **esbuild** (not tsc). They use bare import specifiers resolved by the HTML import map at runtime.
+- `blast/js_stress_example`'s `build:web` script uses **esbuild** for `wall-demolition`, `tower-collapse`, and `fractured-wall` because those demos rely on bare import specifiers resolved by the HTML import map at runtime.
+- If `npm start` fails in `check:demos` with a native dependency mismatch, reinstall the affected package's `node_modules` on the current machine instead of copying `node_modules` across platforms.
 - Projectile TTL is in **wall-clock seconds** (via `performance.now()`), not simulation time. In headless tests, use very short TTL values (e.g., 0.001) since physics steps execute much faster than real time.
 - `getActiveBondsCount()` uses JS-side tracking (`bondTable.length - removedBondIndices.size`) which may lag behind the WASM solver's internal bond state after `applyFractureCommands`. Multiple resimulation passes (controlled by `maxResimulationPasses`) help propagate fractures.
 - Bond areas directly affect stress: `stress = force / area`. Larger area = lower stress = harder to break. This is why isotropic normalization matters — asymmetric areas create directional weakness.

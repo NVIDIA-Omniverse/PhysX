@@ -6,7 +6,14 @@
   "scripts": {
     "test": "npm run build && npm run demo && npm run demo:ext && npm run demo:ext-cube && npm run demo:ext-bridge",
     "build": "node ./scripts/build.js",
-    "build:ts": "npx -y tsc",
+    "build:ts": "npx -y tsc || true",
+    "build:demo:wall": "esbuild wall-demolition.ts --outfile=dist/wall-demolition.js --format=esm",
+    "build:demo:tower": "esbuild tower-collapse.ts --outfile=dist/tower-collapse.js --format=esm",
+    "build:demo:fractured-wall": "esbuild fractured-wall.ts --outfile=dist/fractured-wall.js --format=esm",
+    "build:demo:fractured-tower": "esbuild fractured-tower.ts --outfile=dist/fractured-tower.js --format=esm",
+    "build:demo:fractured-bridge": "esbuild fractured-bridge.ts --outfile=dist/fractured-bridge.js --format=esm",
+    "build:demo:fracture-policy": "esbuild fracture-policy.ts --outfile=dist/fracture-policy.js --format=esm",
+    "build:web": "npm run build:ts && npm run build:demo:wall && npm run build:demo:tower && npm run build:demo:fractured-wall && npm run build:demo:fractured-tower && npm run build:demo:fractured-bridge && npm run build:demo:fracture-policy",
     "build:debug": "EMCC_PROFILING=1 EMCC_ASSERTIONS=1 node ./scripts/build.js",
     "demo": "npm run build --silent && node ./demo.js",
     "demo:ext": "npm run build --silent && node ./ext-demo.js",
@@ -21,6 +28,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
+    "esbuild": "^0.25.10",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }

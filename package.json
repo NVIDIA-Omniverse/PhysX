@@ -4,9 +4,13 @@
   "description": "Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.",
   "main": "index.js",
   "scripts": {
-    "start": "npm run serve:demos",
+    "start": "npm run demo",
+    "demo": "npm run check:demos && npm run build:demos && npm run serve:demos",
+    "check:demos": "node scripts/check-demo-env.mjs",
+    "setup:demos": "npm install && npm --prefix blast/blast-stress-solver install --ignore-scripts && npm --prefix blast/js_stress_example install",
+    "build:demos": "npm --prefix blast/blast-stress-solver run build && npm --prefix blast/js_stress_example run build:web",
     "serve:demos": "node scripts/serve-demo.mjs",
-    "build:profiling": "EMCC_PROFILING=1 npm run build --workspace blast/js_stress_example",
+    "build:profiling": "EMCC_PROFILING=1 npm --prefix blast/blast-stress-solver run build && npm --prefix blast/js_stress_example run build:web",
     "test:bridge": "npm --prefix blast/js_stress_example run test"
   },
   "author": "",

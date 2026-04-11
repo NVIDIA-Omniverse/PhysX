@@ -34,12 +34,12 @@ const CONFIG = {
   },
   projectile: {
     radius: 0.5,
-    mass: 20_000,
+    mass: 1_000,
     speed: 25,
   },
   solver: {
     gravity: -9.81,
-    materialScale: 1e8,
+    materialScale: 1e10,
   },
   physics: {
     debrisCollisionMode: 'noDebrisPairs' as string,
