@@ -129,7 +129,7 @@ NV_FOUNDATION_API void disableFPExceptions();
 
 #if NV_WINDOWS_FAMILY || NV_XBOXONE
 #include "platform/windows/NsWindowsFPU.h"
-#elif defined(__EMSCRIPTEN__)
+#elif defined(__EMSCRIPTEN__) || defined(STRESS_SOLVER_NO_SIMD)
 NV_INLINE nvidia::shdfnd::SIMDGuard::SIMDGuard()
 {
 }

@@ -270,7 +270,7 @@ Assert macro
 DLL export macros
 */
 #ifndef NV_C_EXPORT
-#if NV_WINDOWS_FAMILY || NV_LINUX
+#if defined(__cplusplus)
 #define NV_C_EXPORT extern "C"
 #else
 #define NV_C_EXPORT
