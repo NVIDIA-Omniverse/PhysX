@@ -42,6 +42,21 @@ struct SplitPlanningData {
     node_sources: HashMap<u32, NodeSourceState>,
 }
 
+#[derive(Clone, Copy)]
+enum PlannedBodyTarget {
+    Existing(RigidBodyHandle),
+    Recycled(RigidBodyHandle),
+    Created(RigidBodyHandle),
+}
+
+impl PlannedBodyTarget {
+    fn handle(self) -> RigidBodyHandle {
+        match self {
+            Self::Existing(handle) | Self::Recycled(handle) | Self::Created(handle) => handle,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SplitCost {
     pub create_bodies: usize,
@@ -57,8 +72,10 @@ pub struct SplitEditStats {
     pub collider_insert_ms: f32,
     pub body_retire_ms: f32,
     pub reused_bodies: usize,
+    pub recycled_bodies: usize,
     pub created_bodies: usize,
     pub retired_bodies: usize,
+    pub body_type_flips: usize,
     pub moved_colliders: usize,
     pub inserted_colliders: usize,
     pub removed_colliders: usize,
@@ -302,120 +319,124 @@ impl BodyTracker {
             .iter()
             .map(|entry| (entry.body_handle, entry.child_index))
             .collect();
+        let mut recycled_fixed = Vec::new();
+        let mut recycled_dynamic = Vec::new();
+        for &body_handle in &planning.parent_bodies {
+            if reused_by_body.contains_key(&body_handle) {
+                continue;
+            }
+            if bodies
+                .get(body_handle)
+                .map(|body| body.is_dynamic())
+                .unwrap_or(false)
+            {
+                recycled_dynamic.push(body_handle);
+            } else {
+                recycled_fixed.push(body_handle);
+            }
+        }
+
+        let mut child_targets: HashMap<usize, PlannedBodyTarget> = HashMap::new();
+        let mut target_poses: HashMap<RigidBodyHandle, Isometry<Real>> = HashMap::new();
         let apply_started_at = Instant::now();
 
-        // Reattach adopted nodes to reused bodies and refresh metadata.
         for entry in &plan.reuse {
             let child = &event.children[entry.child_index];
-            let target_body = match bodies.get(entry.body_handle) {
-                Some(body) => body,
-                None => continue,
+            let child_has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
+            let flipped =
+                self.reconcile_reused_body_type(entry.body_handle, child_has_support, bodies);
+            result.stats.body_type_flips += usize::from(flipped);
+            let target_pose = bodies
+                .get(entry.body_handle)
+                .map(|body| *body.position())
+                .unwrap_or_else(Isometry::identity);
+            target_poses.insert(entry.body_handle, target_pose);
+            child_targets.insert(
+                entry.child_index,
+                PlannedBodyTarget::Existing(entry.body_handle),
+            );
+        }
+
+        for entry in &plan.create {
+            let child = &event.children[entry.child_index];
+            let child_has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
+            let source_state = self.source_state_for_child(child, &planning);
+
+            let recycled_handle = if child_has_support {
+                recycled_fixed.pop().or_else(|| recycled_dynamic.pop())
+            } else {
+                recycled_dynamic.pop().or_else(|| recycled_fixed.pop())
             };
-            let target_pose = *target_body.position();
+
+            if let Some(body_handle) = recycled_handle {
+                let flipped = self.reinitialize_recycled_body(
+                    body_handle,
+                    child_has_support,
+                    source_state,
+                    bodies,
+                );
+                result.stats.body_type_flips += usize::from(flipped);
+                result.stats.recycled_bodies += 1;
+                let target_pose = bodies
+                    .get(body_handle)
+                    .map(|body| *body.position())
+                    .unwrap_or_else(Isometry::identity);
+                target_poses.insert(body_handle, target_pose);
+                child_targets.insert(entry.child_index, PlannedBodyTarget::Recycled(body_handle));
+                continue;
+            }
+
+            let body_create_started_at = Instant::now();
+            let body_handle = self.create_body_for_child(child, source_state, bodies);
+            result.stats.body_create_ms +=
+                body_create_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+            result.stats.created_bodies += 1;
+            result.new_handles.push(body_handle);
+            let target_pose = bodies
+                .get(body_handle)
+                .map(|body| *body.position())
+                .unwrap_or_else(Isometry::identity);
+            target_poses.insert(body_handle, target_pose);
+            child_targets.insert(entry.child_index, PlannedBodyTarget::Created(body_handle));
+        }
+
+        for (child_index, target) in child_targets.iter().map(|(k, v)| (*k, *v)) {
+            let child = &event.children[child_index];
+            let target_body = target.handle();
+            let target_pose = *target_poses
+                .get(&target_body)
+                .unwrap_or_else(|| panic!("missing target pose for body {:?}", target_body));
 
             for &n in &child.nodes {
-                let already_on_target = self.node_body(n) == Some(entry.body_handle);
-                if already_on_target {
-                    continue;
-                }
                 let Some(source) = planning.node_sources.get(&n) else {
                     continue;
                 };
                 let local_offset = self.local_offset_for_pose(source, &target_pose);
-                let move_started_at = Instant::now();
-                let collider_handle = self.move_node_collider_to_body(
-                    n,
-                    entry.body_handle,
-                    source.collider_handle,
-                    local_offset,
-                    bodies,
-                    colliders,
-                );
-                let move_ms = move_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-                if source.collider_handle.is_some() {
-                    result.stats.moved_colliders += 1;
-                    result.stats.collider_move_ms += move_ms;
-                } else {
-                    result.stats.inserted_colliders += 1;
-                    result.stats.collider_insert_ms += move_ms;
-                }
-                self.attach_node(n, entry.body_handle, collider_handle, local_offset);
-            }
-
-            self.body_to_nodes
-                .insert(entry.body_handle, child.nodes.clone());
-            self.update_body_metadata(entry.body_handle, &child.nodes, created_at);
-            self.promote_small_body_damping(entry.body_handle, bodies, &small_body_damping);
-            self.configure_sleep_thresholds(entry.body_handle, bodies, &sleep_thresholds);
-            self.apply_collision_groups(
-                entry.body_handle,
-                bodies,
-                colliders,
-                max_colliders_for_debris,
-            );
-        }
-
-        // Create new bodies for unmatched children
-        for entry in &plan.create {
-            let child = &event.children[entry.child_index];
-
-            let has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
-
-            let source_body = child
-                .nodes
-                .first()
-                .and_then(|node| planning.node_sources.get(node))
-                .and_then(|source| planning.parent_states.get(&source.body_handle).copied());
-            let body_create_started_at = Instant::now();
-            let body_handle = if let Some(source) = source_body {
-                let builder = if has_support {
-                    RigidBodyBuilder::fixed()
-                        .pose(source.position)
-                        .linear_damping(source.linear_damping)
-                        .angular_damping(source.angular_damping)
-                } else {
-                    RigidBodyBuilder::dynamic()
-                        .pose(source.position)
-                        .linvel(source.linvel)
-                        .angvel(source.angvel)
-                        .linear_damping(source.linear_damping)
-                        .angular_damping(source.angular_damping)
-                        .ccd_enabled(self.dynamic_body_ccd_enabled)
-                };
-                bodies.insert(builder)
-            } else if has_support {
-                let com = self.compute_actor_com(&child.nodes);
-                bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
-            } else {
-                let com = self.compute_actor_com(&child.nodes);
-                bodies.insert(
-                    RigidBodyBuilder::dynamic()
-                        .translation(vector![com.x, com.y, com.z])
-                        .ccd_enabled(self.dynamic_body_ccd_enabled),
-                )
-            };
-            result.stats.body_create_ms +=
-                body_create_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-            result.stats.created_bodies += 1;
-            let body_pose = bodies
-                .get(body_handle)
-                .map(|body| *body.position())
-                .unwrap_or_else(Isometry::identity);
-
-            for &node_idx in &child.nodes {
-                let Some(source) = planning.node_sources.get(&node_idx) else {
+                let already_on_target = self.node_body(n) == Some(target_body);
+                if already_on_target
+                    && self.node_local_offset(n).is_some_and(|current| {
+                        (current - local_offset).magnitude_squared() <= 1.0e-8
+                    })
+                {
                     continue;
-                };
-                let local_offset = self.local_offset_for_pose(source, &body_pose);
+                }
                 let move_started_at = Instant::now();
-                let collider_handle = self.move_node_collider_to_body(
-                    node_idx,
-                    body_handle,
-                    source.collider_handle,
-                    local_offset,
-                    bodies,
-                    colliders,
-                );
+                let collider_handle = if already_on_target {
+                    self.update_node_collider_local_pose(
+                        source.collider_handle,
+                        local_offset,
+                        colliders,
+                    )
+                } else {
+                    self.move_node_collider_to_body(
+                        n,
+                        target_body,
+                        source.collider_handle,
+                        local_offset,
+                        bodies,
+                        colliders,
+                    )
+                };
                 let move_ms = move_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
                 if source.collider_handle.is_some() {
                     result.stats.moved_colliders += 1;
@@ -424,20 +445,27 @@ impl BodyTracker {
                     result.stats.inserted_colliders += 1;
                     result.stats.collider_insert_ms += move_ms;
                 }
-                self.attach_node(node_idx, body_handle, collider_handle, local_offset);
+                self.attach_node(n, target_body, collider_handle, local_offset);
             }
 
-            self.body_to_nodes.insert(body_handle, child.nodes.clone());
-            self.update_body_metadata(body_handle, &child.nodes, created_at);
-            self.promote_small_body_damping(body_handle, bodies, &small_body_damping);
-            self.configure_sleep_thresholds(body_handle, bodies, &sleep_thresholds);
-            self.apply_collision_groups(body_handle, bodies, colliders, max_colliders_for_debris);
-            result.new_handles.push(body_handle);
+            self.body_to_nodes.insert(target_body, child.nodes.clone());
+            let reset_metadata = !matches!(target, PlannedBodyTarget::Existing(_));
+            self.refresh_body_metadata(target_body, &child.nodes, created_at, reset_metadata);
+            self.promote_small_body_damping(target_body, bodies, &small_body_damping);
+            self.configure_sleep_thresholds(target_body, bodies, &sleep_thresholds);
+            self.apply_collision_groups(target_body, bodies, colliders, max_colliders_for_debris);
         }
 
         let reused_handles: HashSet<RigidBodyHandle> = reused_by_body.keys().copied().collect();
+        let recycled_handles: HashSet<RigidBodyHandle> = child_targets
+            .values()
+            .filter_map(|target| match target {
+                PlannedBodyTarget::Recycled(handle) => Some(*handle),
+                _ => None,
+            })
+            .collect();
         for &body_handle in &planning.parent_bodies {
-            if reused_handles.contains(&body_handle) {
+            if reused_handles.contains(&body_handle) || recycled_handles.contains(&body_handle) {
                 continue;
             }
             let retire_started_at = Instant::now();
@@ -600,8 +628,9 @@ impl BodyTracker {
             &event.children,
             &child_support,
         );
+        let recyclable_bodies = existing.len().saturating_sub(plan.reuse.len());
         SplitCost {
-            create_bodies: plan.create.len(),
+            create_bodies: plan.create.len().saturating_sub(recyclable_bodies),
             collider_migrations: event.children.iter().map(|child| child.nodes.len()).sum(),
         }
     }
@@ -785,6 +814,111 @@ impl BodyTracker {
         sum / nodes.len() as f32
     }
 
+    fn source_state_for_child(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+    ) -> Option<BodyState> {
+        child
+            .nodes
+            .first()
+            .and_then(|node| planning.node_sources.get(node))
+            .and_then(|source| planning.parent_states.get(&source.body_handle).copied())
+    }
+
+    fn desired_body_type(has_support: bool) -> RigidBodyType {
+        if has_support {
+            RigidBodyType::Fixed
+        } else {
+            RigidBodyType::Dynamic
+        }
+    }
+
+    fn reconcile_reused_body_type(
+        &self,
+        body_handle: RigidBodyHandle,
+        has_support: bool,
+        bodies: &mut RigidBodySet,
+    ) -> bool {
+        let desired = Self::desired_body_type(has_support);
+        let Some(body) = bodies.get_mut(body_handle) else {
+            return false;
+        };
+        if body.body_type() == desired {
+            return false;
+        }
+        body.set_body_type(desired, true);
+        if desired == RigidBodyType::Dynamic {
+            body.wake_up(true);
+        }
+        true
+    }
+
+    fn reinitialize_recycled_body(
+        &self,
+        body_handle: RigidBodyHandle,
+        has_support: bool,
+        source: Option<BodyState>,
+        bodies: &mut RigidBodySet,
+    ) -> bool {
+        let desired = Self::desired_body_type(has_support);
+        let Some(body) = bodies.get_mut(body_handle) else {
+            return false;
+        };
+        let flipped = body.body_type() != desired;
+        if flipped {
+            body.set_body_type(desired, true);
+        }
+        if let Some(source) = source {
+            body.set_position(source.position, false);
+            body.set_linear_damping(source.linear_damping);
+            body.set_angular_damping(source.angular_damping);
+            if desired == RigidBodyType::Dynamic {
+                body.set_linvel(source.linvel, false);
+                body.set_angvel(source.angvel, false);
+                body.wake_up(true);
+            }
+        }
+        flipped
+    }
+
+    fn create_body_for_child(
+        &self,
+        child: &SplitChild,
+        source: Option<BodyState>,
+        bodies: &mut RigidBodySet,
+    ) -> RigidBodyHandle {
+        let has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
+        if let Some(source) = source {
+            let builder = if has_support {
+                RigidBodyBuilder::fixed()
+                    .pose(source.position)
+                    .linear_damping(source.linear_damping)
+                    .angular_damping(source.angular_damping)
+            } else {
+                RigidBodyBuilder::dynamic()
+                    .pose(source.position)
+                    .linvel(source.linvel)
+                    .angvel(source.angvel)
+                    .linear_damping(source.linear_damping)
+                    .angular_damping(source.angular_damping)
+                    .ccd_enabled(self.dynamic_body_ccd_enabled)
+            };
+            return bodies.insert(builder);
+        }
+
+        let com = self.compute_actor_com(&child.nodes);
+        if has_support {
+            bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
+        } else {
+            bodies.insert(
+                RigidBodyBuilder::dynamic()
+                    .translation(vector![com.x, com.y, com.z])
+                    .ccd_enabled(self.dynamic_body_ccd_enabled),
+            )
+        }
+    }
+
     fn attach_node(
         &mut self,
         node_index: u32,
@@ -825,6 +959,30 @@ impl BodyTracker {
                 has_support,
             },
         );
+    }
+
+    fn refresh_body_metadata(
+        &mut self,
+        body_handle: RigidBodyHandle,
+        nodes: &[u32],
+        created_at: f32,
+        reset: bool,
+    ) {
+        if reset || !self.body_metadata.contains_key(&body_handle) {
+            self.update_body_metadata(body_handle, nodes, created_at);
+            return;
+        }
+
+        let has_support = nodes.iter().any(|node| self.support_nodes.contains(node));
+        if let Some(metadata) = self.body_metadata.get_mut(&body_handle) {
+            let support_changed = metadata.has_support != has_support;
+            metadata.has_support = has_support;
+            if support_changed && !has_support {
+                metadata.first_support_contact_at = None;
+                metadata.damping_promoted = false;
+                metadata.sleep_threshold_configured = false;
+            }
+        }
     }
 
     fn promote_small_body_damping(
@@ -1088,6 +1246,23 @@ impl BodyTracker {
         } else {
             self.insert_node_collider(node_index, body_handle, local_offset, bodies, colliders)
         }
+    }
+
+    fn update_node_collider_local_pose(
+        &self,
+        collider_handle: Option<ColliderHandle>,
+        local_offset: Vec3,
+        colliders: &mut ColliderSet,
+    ) -> ColliderHandle {
+        let collider_handle = collider_handle.expect("existing node collider should exist");
+        if let Some(collider) = colliders.get_mut(collider_handle) {
+            collider.set_position_wrt_parent(Isometry::translation(
+                local_offset.x,
+                local_offset.y,
+                local_offset.z,
+            ));
+        }
+        collider_handle
     }
 
     fn apply_collision_groups(

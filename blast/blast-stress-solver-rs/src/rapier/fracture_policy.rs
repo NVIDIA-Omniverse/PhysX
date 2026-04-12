@@ -70,6 +70,11 @@ impl FracturePolicy {
         }
     }
 
+    /// Whether split admission budgets are fully disabled.
+    pub fn split_budgets_unlimited(&self) -> bool {
+        self.max_new_bodies_per_frame < 0 && self.max_collider_migrations_per_frame < 0
+    }
+
     /// Whether a child with the given node count should receive a body.
     pub fn child_qualifies(&self, node_count: u32) -> bool {
         node_count >= self.min_child_node_count

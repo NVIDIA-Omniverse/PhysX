@@ -35,8 +35,10 @@ pub struct PlannerChildSupport {
 
 /// Plan body reuse vs. creation for split children.
 ///
-/// Uses hash-based matching: if a child's node set exactly matches an existing body,
-/// reuse that body. Otherwise, create a new one. Largest children are prioritized.
+/// The planner optimizes for minimal edit distance on the Rapier side:
+/// preserve exact matches first, then maximize node overlap with existing bodies.
+/// Support status is handled during reconciliation by changing the body type
+/// in-place if needed, so fixed bodies may be reused for dynamic children.
 pub fn plan_split_migration(
     bodies: &[ExistingBodyState],
     children: &[SplitChild],
@@ -51,7 +53,7 @@ pub fn plan_split_migration(
 pub fn plan_split_migration_with_support(
     bodies: &[ExistingBodyState],
     children: &[SplitChild],
-    child_support: &[PlannerChildSupport],
+    _child_support: &[PlannerChildSupport],
 ) -> SplitMigrationPlan {
     if bodies.is_empty() || children.is_empty() {
         return SplitMigrationPlan {
@@ -83,15 +85,6 @@ pub fn plan_split_migration_with_support(
                 if assigned_bodies.contains(&bi) {
                     continue;
                 }
-                if bodies[bi].is_fixed
-                    && !child_support
-                        .get(ci)
-                        .copied()
-                        .unwrap_or_default()
-                        .is_support
-                {
-                    continue;
-                }
                 if bodies[bi].node_indices == child_set {
                     reuse.push(ReuseEntry {
                         child_index: ci,
@@ -115,13 +108,8 @@ pub fn plan_split_migration_with_support(
         .collect();
 
     if !unmatched_bodies.is_empty() && !unmatched_children.is_empty() {
-        let overlap = build_overlap_matrix(
-            bodies,
-            &unmatched_bodies,
-            children,
-            &unmatched_children,
-            child_support,
-        );
+        let overlap =
+            build_overlap_matrix(bodies, &unmatched_bodies, children, &unmatched_children);
         let assignments = hungarian_max(&overlap);
         let mut reused_children = HashSet::new();
 
@@ -179,7 +167,6 @@ fn build_overlap_matrix(
     unmatched_bodies: &[usize],
     children: &[SplitChild],
     unmatched_children: &[usize],
-    child_support: &[PlannerChildSupport],
 ) -> Vec<Vec<usize>> {
     unmatched_bodies
         .iter()
@@ -188,16 +175,6 @@ fn build_overlap_matrix(
             unmatched_children
                 .iter()
                 .map(|&child_idx| {
-                    if body.is_fixed
-                        && !child_support
-                            .get(child_idx)
-                            .copied()
-                            .unwrap_or_default()
-                            .is_support
-                    {
-                        return 0;
-                    }
-
                     children[child_idx]
                         .nodes
                         .iter()

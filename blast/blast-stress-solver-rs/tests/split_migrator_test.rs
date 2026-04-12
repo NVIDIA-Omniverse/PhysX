@@ -165,7 +165,7 @@ fn partial_overlap_reuses_existing_body() {
 }
 
 #[test]
-fn fixed_body_is_not_reused_for_dynamic_child() {
+fn fixed_body_can_be_reused_for_dynamic_child_when_it_minimizes_edits() {
     let (_, handles) = make_body_set_with_n(1);
 
     let bodies = vec![ExistingBodyState {
@@ -181,8 +181,8 @@ fn fixed_body_is_not_reused_for_dynamic_child() {
 
     let support = vec![PlannerChildSupport { is_support: false }];
     let plan = plan_split_migration_with_support(&bodies, &children, &support);
-    assert_eq!(plan.reuse.len(), 0);
-    assert_eq!(plan.create.len(), 1);
+    assert_eq!(plan.reuse.len(), 1);
+    assert_eq!(plan.create.len(), 0);
 }
 
 // ============================================================================
