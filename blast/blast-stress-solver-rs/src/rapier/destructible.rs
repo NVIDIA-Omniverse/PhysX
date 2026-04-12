@@ -5,7 +5,7 @@ use rapier3d::prelude::*;
 use crate::ext_stress_solver::ExtStressSolver;
 use crate::types::*;
 
-use super::body_tracker::BodyTracker;
+use super::body_tracker::{BodyTracker, SplitEditStats};
 use super::collision_groups::DebrisCollisionMode;
 use super::fracture_policy::FracturePolicy;
 use super::optimization::SleepThresholdOptions;
@@ -39,6 +39,12 @@ pub struct StepResult {
     pub split_events: usize,
     /// Whether the solver converged.
     pub converged: bool,
+    /// Detailed split-edit instrumentation for this step.
+    pub split_edits: SplitEditStats,
+    /// Time spent sanitizing split events.
+    pub split_sanitize_ms: f32,
+    /// Time spent estimating split admission cost.
+    pub split_estimate_ms: f32,
 }
 
 /// Main orchestrator for destructible structures with Rapier integration.
@@ -647,6 +653,7 @@ impl DestructibleSet {
             let Some(event) = self.pending_split_events.pop_front() else {
                 break;
             };
+            let sanitize_started_at = std::time::Instant::now();
             let Some(filtered_event) = self.sanitize_split_event(
                 &event,
                 bodies,
@@ -655,10 +662,17 @@ impl DestructibleSet {
                 impulse_joints,
                 multibody_joints,
             ) else {
+                result.split_sanitize_ms +=
+                    sanitize_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
                 continue;
             };
+            result.split_sanitize_ms +=
+                sanitize_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
 
+            let estimate_started_at = std::time::Instant::now();
             let cost = self.tracker.estimate_split_cost(&filtered_event, bodies);
+            result.split_estimate_ms +=
+                estimate_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
             if cost.create_bodies > *remaining_new_bodies
                 || cost.collider_migrations > *remaining_collider_migrations
             {
@@ -666,7 +680,7 @@ impl DestructibleSet {
                 break;
             }
 
-            let new_handles = self.tracker.handle_split(
+            let split_result = self.tracker.handle_split(
                 &filtered_event,
                 bodies,
                 colliders,
@@ -682,7 +696,19 @@ impl DestructibleSet {
             *remaining_new_bodies = (*remaining_new_bodies).saturating_sub(cost.create_bodies);
             *remaining_collider_migrations =
                 (*remaining_collider_migrations).saturating_sub(cost.collider_migrations);
-            result.new_bodies += new_handles.len();
+            result.new_bodies += split_result.new_handles.len();
+            result.split_edits.plan_ms += split_result.stats.plan_ms;
+            result.split_edits.apply_ms += split_result.stats.apply_ms;
+            result.split_edits.body_create_ms += split_result.stats.body_create_ms;
+            result.split_edits.collider_move_ms += split_result.stats.collider_move_ms;
+            result.split_edits.collider_insert_ms += split_result.stats.collider_insert_ms;
+            result.split_edits.body_retire_ms += split_result.stats.body_retire_ms;
+            result.split_edits.reused_bodies += split_result.stats.reused_bodies;
+            result.split_edits.created_bodies += split_result.stats.created_bodies;
+            result.split_edits.retired_bodies += split_result.stats.retired_bodies;
+            result.split_edits.moved_colliders += split_result.stats.moved_colliders;
+            result.split_edits.inserted_colliders += split_result.stats.inserted_colliders;
+            result.split_edits.removed_colliders += split_result.stats.removed_colliders;
         }
     }
 

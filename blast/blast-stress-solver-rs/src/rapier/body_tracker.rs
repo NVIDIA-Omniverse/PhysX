@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 
 use rapier3d::prelude::*;
 
@@ -45,6 +46,28 @@ struct SplitPlanningData {
 pub struct SplitCost {
     pub create_bodies: usize,
     pub collider_migrations: usize,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SplitEditStats {
+    pub plan_ms: f32,
+    pub apply_ms: f32,
+    pub body_create_ms: f32,
+    pub collider_move_ms: f32,
+    pub collider_insert_ms: f32,
+    pub body_retire_ms: f32,
+    pub reused_bodies: usize,
+    pub created_bodies: usize,
+    pub retired_bodies: usize,
+    pub moved_colliders: usize,
+    pub inserted_colliders: usize,
+    pub removed_colliders: usize,
+}
+
+#[derive(Debug, Default)]
+pub struct SplitApplyResult {
+    pub new_handles: Vec<RigidBodyHandle>,
+    pub stats: SplitEditStats,
 }
 
 /// Tracks the mapping between stress graph nodes and Rapier rigid bodies.
@@ -256,9 +279,10 @@ impl BodyTracker {
         small_body_damping: SmallBodyDampingOptions,
         sleep_thresholds: SleepThresholdOptions,
         max_colliders_for_debris: usize,
-    ) -> Vec<RigidBodyHandle> {
-        let mut new_handles = Vec::new();
+    ) -> SplitApplyResult {
+        let mut result = SplitApplyResult::default();
         let planning = self.collect_split_planning_data(event, bodies);
+        let plan_started_at = Instant::now();
         let child_support: Vec<super::split_migrator::PlannerChildSupport> = event
             .children
             .iter()
@@ -271,55 +295,14 @@ impl BodyTracker {
             &event.children,
             &child_support,
         );
+        result.stats.plan_ms = plan_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+        result.stats.reused_bodies = plan.reuse.len();
         let reused_by_body: HashMap<RigidBodyHandle, usize> = plan
             .reuse
             .iter()
             .map(|entry| (entry.body_handle, entry.child_index))
             .collect();
-
-        // First detach nodes that no longer belong to reused bodies while the
-        // original body/collider mappings are still intact.
-        for entry in &plan.reuse {
-            let child = &event.children[entry.child_index];
-            let previous_nodes = self
-                .body_to_nodes
-                .get(&entry.body_handle)
-                .cloned()
-                .unwrap_or_default();
-            let retained: HashSet<u32> = child.nodes.iter().copied().collect();
-
-            for node in previous_nodes {
-                if retained.contains(&node) {
-                    continue;
-                }
-                self.remove_node_collider_from_body(node, bodies, colliders, island_manager);
-                self.detach_node(node);
-            }
-        }
-
-        // Remove bodies that aren't reused. Nodes that survive this split will
-        // be reattached below using the saved source state.
-        let reused_handles: HashSet<RigidBodyHandle> = reused_by_body.keys().copied().collect();
-        for &bh in &planning.parent_bodies {
-            if !reused_handles.contains(&bh) {
-                if let Some(nodes) = self.body_to_nodes.remove(&bh) {
-                    for node in nodes {
-                        if self.node_to_body[node as usize] == Some(bh) {
-                            self.detach_node(node);
-                        }
-                    }
-                }
-                bodies.remove(
-                    bh,
-                    island_manager,
-                    colliders,
-                    impulse_joints,
-                    multibody_joints,
-                    true,
-                );
-                self.body_metadata.remove(&bh);
-            }
-        }
+        let apply_started_at = Instant::now();
 
         // Reattach adopted nodes to reused bodies and refresh metadata.
         for entry in &plan.reuse {
@@ -338,15 +321,24 @@ impl BodyTracker {
                 let Some(source) = planning.node_sources.get(&n) else {
                     continue;
                 };
-                self.remove_stale_collider_mapping(source.collider_handle);
                 let local_offset = self.local_offset_for_pose(source, &target_pose);
-                let collider_handle = self.insert_node_collider(
+                let move_started_at = Instant::now();
+                let collider_handle = self.move_node_collider_to_body(
                     n,
                     entry.body_handle,
+                    source.collider_handle,
                     local_offset,
                     bodies,
                     colliders,
                 );
+                let move_ms = move_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+                if source.collider_handle.is_some() {
+                    result.stats.moved_colliders += 1;
+                    result.stats.collider_move_ms += move_ms;
+                } else {
+                    result.stats.inserted_colliders += 1;
+                    result.stats.collider_insert_ms += move_ms;
+                }
                 self.attach_node(n, entry.body_handle, collider_handle, local_offset);
             }
 
@@ -374,6 +366,7 @@ impl BodyTracker {
                 .first()
                 .and_then(|node| planning.node_sources.get(node))
                 .and_then(|source| planning.parent_states.get(&source.body_handle).copied());
+            let body_create_started_at = Instant::now();
             let body_handle = if let Some(source) = source_body {
                 let builder = if has_support {
                     RigidBodyBuilder::fixed()
@@ -401,6 +394,9 @@ impl BodyTracker {
                         .ccd_enabled(self.dynamic_body_ccd_enabled),
                 )
             };
+            result.stats.body_create_ms +=
+                body_create_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+            result.stats.created_bodies += 1;
             let body_pose = bodies
                 .get(body_handle)
                 .map(|body| *body.position())
@@ -410,15 +406,24 @@ impl BodyTracker {
                 let Some(source) = planning.node_sources.get(&node_idx) else {
                     continue;
                 };
-                self.remove_stale_collider_mapping(source.collider_handle);
                 let local_offset = self.local_offset_for_pose(source, &body_pose);
-                let collider_handle = self.insert_node_collider(
+                let move_started_at = Instant::now();
+                let collider_handle = self.move_node_collider_to_body(
                     node_idx,
                     body_handle,
+                    source.collider_handle,
                     local_offset,
                     bodies,
                     colliders,
                 );
+                let move_ms = move_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+                if source.collider_handle.is_some() {
+                    result.stats.moved_colliders += 1;
+                    result.stats.collider_move_ms += move_ms;
+                } else {
+                    result.stats.inserted_colliders += 1;
+                    result.stats.collider_insert_ms += move_ms;
+                }
                 self.attach_node(node_idx, body_handle, collider_handle, local_offset);
             }
 
@@ -427,10 +432,34 @@ impl BodyTracker {
             self.promote_small_body_damping(body_handle, bodies, &small_body_damping);
             self.configure_sleep_thresholds(body_handle, bodies, &sleep_thresholds);
             self.apply_collision_groups(body_handle, bodies, colliders, max_colliders_for_debris);
-            new_handles.push(body_handle);
+            result.new_handles.push(body_handle);
         }
 
-        new_handles
+        let reused_handles: HashSet<RigidBodyHandle> = reused_by_body.keys().copied().collect();
+        for &body_handle in &planning.parent_bodies {
+            if reused_handles.contains(&body_handle) {
+                continue;
+            }
+            let retire_started_at = Instant::now();
+            self.body_to_nodes.remove(&body_handle);
+            self.body_metadata.remove(&body_handle);
+            if bodies.get(body_handle).is_some() {
+                bodies.remove(
+                    body_handle,
+                    island_manager,
+                    colliders,
+                    impulse_joints,
+                    multibody_joints,
+                    true,
+                );
+                result.stats.retired_bodies += 1;
+            }
+            result.stats.body_retire_ms +=
+                retire_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+        }
+
+        result.stats.apply_ms = apply_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+        result
     }
 
     /// Get the body handle for a node.
@@ -997,26 +1026,6 @@ impl BodyTracker {
         }
     }
 
-    fn remove_node_collider_from_body(
-        &mut self,
-        node_index: u32,
-        bodies: &mut RigidBodySet,
-        colliders: &mut ColliderSet,
-        island_manager: &mut IslandManager,
-    ) {
-        let idx = node_index as usize;
-        if let Some(collider_handle) = self.node_to_collider[idx] {
-            self.collider_to_node.remove(&collider_handle);
-            colliders.remove(collider_handle, island_manager, bodies, true);
-        }
-    }
-
-    fn remove_stale_collider_mapping(&mut self, collider_handle: Option<ColliderHandle>) {
-        if let Some(handle) = collider_handle {
-            self.collider_to_node.remove(&handle);
-        }
-    }
-
     fn local_offset_for_pose(
         &self,
         source: &NodeSourceState,
@@ -1055,6 +1064,30 @@ impl BodyTracker {
         };
 
         colliders.insert_with_parent(collider, body_handle, bodies)
+    }
+
+    fn move_node_collider_to_body(
+        &self,
+        node_index: u32,
+        body_handle: RigidBodyHandle,
+        collider_handle: Option<ColliderHandle>,
+        local_offset: Vec3,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+    ) -> ColliderHandle {
+        if let Some(collider_handle) = collider_handle {
+            colliders.set_parent(collider_handle, Some(body_handle), bodies);
+            if let Some(collider) = colliders.get_mut(collider_handle) {
+                collider.set_position_wrt_parent(Isometry::translation(
+                    local_offset.x,
+                    local_offset.y,
+                    local_offset.z,
+                ));
+            }
+            collider_handle
+        } else {
+            self.insert_node_collider(node_index, body_handle, local_offset, bodies, colliders)
+        }
     }
 
     fn apply_collision_groups(

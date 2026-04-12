@@ -1255,3 +1255,51 @@ fn collider_migration_budget_defers_split_until_budget_is_available() {
     );
     assert_eq!(set.body_count(), 2);
 }
+
+#[test]
+fn split_reuses_existing_collider_handles_instead_of_recreating_colliders() {
+    let scenario = dynamic_pair_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut set =
+        DestructibleSet::from_scenario(&scenario, weak_impact_settings(), Vec3::ZERO, policy)
+            .unwrap();
+
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let original_collider_0 = set.node_collider(0).expect("node 0 collider should exist");
+    let original_collider_1 = set.node_collider(1).expect("node 1 collider should exist");
+
+    let impact_pos = scenario.nodes[0].centroid;
+    set.add_force(0, impact_pos, Vec3::new(10_000.0, 0.0, 0.0));
+
+    let step = set.step(
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert!(step.fractures > 0, "impact should fracture the pair");
+    assert_eq!(step.split_events, 1);
+    assert_eq!(step.split_edits.inserted_colliders, 0);
+    assert_eq!(step.split_edits.removed_colliders, 0);
+    assert_eq!(step.split_edits.created_bodies, 1);
+    assert_eq!(step.split_edits.reused_bodies, 1);
+
+    assert_eq!(set.node_collider(0), Some(original_collider_0));
+    assert_eq!(set.node_collider(1), Some(original_collider_1));
+    assert!(
+        colliders.get(original_collider_0).is_some(),
+        "original collider handle for node 0 should still exist"
+    );
+    assert!(
+        colliders.get(original_collider_1).is_some(),
+        "original collider handle for node 1 should still exist"
+    );
+}
