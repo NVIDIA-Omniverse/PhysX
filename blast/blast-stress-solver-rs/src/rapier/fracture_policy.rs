@@ -36,8 +36,7 @@ impl Default for FracturePolicy {
 impl FracturePolicy {
     /// Whether fracture generation should be suppressed this frame.
     pub fn should_suppress(&self, current_dynamic_bodies: usize) -> bool {
-        if self.max_dynamic_bodies > 0
-            && current_dynamic_bodies >= self.max_dynamic_bodies as usize
+        if self.max_dynamic_bodies > 0 && current_dynamic_bodies >= self.max_dynamic_bodies as usize
         {
             return true;
         }

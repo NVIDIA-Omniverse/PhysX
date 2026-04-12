@@ -16,11 +16,7 @@ unsafe impl Sync for ExtStressSolver {}
 
 impl ExtStressSolver {
     /// Create a solver from node and bond descriptors with the given settings.
-    pub fn new(
-        nodes: &[NodeDesc],
-        bonds: &[BondDesc],
-        settings: &SolverSettings,
-    ) -> Option<Self> {
+    pub fn new(nodes: &[NodeDesc], bonds: &[BondDesc], settings: &SolverSettings) -> Option<Self> {
         if nodes.is_empty() || bonds.is_empty() {
             return None;
         }
@@ -95,9 +91,7 @@ impl ExtStressSolver {
 
     /// Apply gravity to a specific actor.
     pub fn add_actor_gravity(&mut self, actor_index: u32, gravity: Vec3) -> bool {
-        unsafe {
-            ffi::ext_stress_solver_add_actor_gravity(self.handle, actor_index, &gravity) != 0
-        }
+        unsafe { ffi::ext_stress_solver_add_actor_gravity(self.handle, actor_index, &gravity) != 0 }
     }
 
     /// Run one solver update (computes stresses from accumulated forces).
@@ -205,8 +199,7 @@ impl ExtStressSolver {
             };
             actor_count as usize
         ];
-        let mut bond_buffer =
-            vec![ffi::FfiExtStressBondFracture::default(); bond_count as usize];
+        let mut bond_buffer = vec![ffi::FfiExtStressBondFracture::default(); bond_count as usize];
         let mut out_command_count = 0u32;
         let mut out_bond_count = 0u32;
 
@@ -256,8 +249,7 @@ impl ExtStressSolver {
 
         // Flatten bond fractures into a contiguous buffer
         let total_bonds: usize = commands.iter().map(|c| c.bond_fractures.len()).sum();
-        let mut flat_bonds =
-            vec![ffi::FfiExtStressBondFracture::default(); total_bonds];
+        let mut flat_bonds = vec![ffi::FfiExtStressBondFracture::default(); total_bonds];
         let mut ffi_commands = Vec::with_capacity(commands.len());
         let mut offset = 0usize;
 

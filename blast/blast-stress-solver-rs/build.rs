@@ -41,8 +41,14 @@ fn main() {
     for src in bridge_sources.iter().chain(blast_sources.iter()) {
         println!("cargo:rerun-if-changed={}", src.display());
     }
-    println!("cargo:rerun-if-changed={}", ffi_dir.join("stress_bridge.h").display());
-    println!("cargo:rerun-if-changed={}", ffi_dir.join("ext_stress_bridge.h").display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        ffi_dir.join("stress_bridge.h").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        ffi_dir.join("ext_stress_bridge.h").display()
+    );
 
     // --- Build ---
     let mut build = cc::Build::new();

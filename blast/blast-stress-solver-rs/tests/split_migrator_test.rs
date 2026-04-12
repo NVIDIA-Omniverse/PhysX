@@ -39,8 +39,14 @@ fn reuses_exact_body_match() {
     ];
 
     let children = vec![
-        SplitChild { actor_index: 10, nodes: vec![0, 1, 2] },
-        SplitChild { actor_index: 11, nodes: vec![3, 4] },
+        SplitChild {
+            actor_index: 10,
+            nodes: vec![0, 1, 2],
+        },
+        SplitChild {
+            actor_index: 11,
+            nodes: vec![3, 4],
+        },
     ];
 
     let plan = plan_split_migration(&bodies, &children);
@@ -60,8 +66,14 @@ fn creates_unmatched_children() {
 
     // Children have completely different node sets
     let children = vec![
-        SplitChild { actor_index: 10, nodes: vec![5, 6] },
-        SplitChild { actor_index: 11, nodes: vec![7, 8] },
+        SplitChild {
+            actor_index: 10,
+            nodes: vec![5, 6],
+        },
+        SplitChild {
+            actor_index: 11,
+            nodes: vec![7, 8],
+        },
     ];
 
     let plan = plan_split_migration(&bodies, &children);
@@ -80,8 +92,14 @@ fn no_double_assignment() {
 
     // Two children with the same node set — only one should reuse
     let children = vec![
-        SplitChild { actor_index: 10, nodes: vec![0, 1] },
-        SplitChild { actor_index: 11, nodes: vec![0, 1] },
+        SplitChild {
+            actor_index: 10,
+            nodes: vec![0, 1],
+        },
+        SplitChild {
+            actor_index: 11,
+            nodes: vec![0, 1],
+        },
     ];
 
     let plan = plan_split_migration(&bodies, &children);
@@ -92,8 +110,14 @@ fn no_double_assignment() {
 #[test]
 fn empty_bodies_all_create() {
     let children = vec![
-        SplitChild { actor_index: 10, nodes: vec![0, 1] },
-        SplitChild { actor_index: 11, nodes: vec![2, 3] },
+        SplitChild {
+            actor_index: 10,
+            nodes: vec![0, 1],
+        },
+        SplitChild {
+            actor_index: 11,
+            nodes: vec![2, 3],
+        },
     ];
 
     let plan = plan_split_migration(&[], &children);
@@ -132,7 +156,11 @@ fn partial_overlap_reuses_existing_body() {
     }];
 
     let plan = plan_split_migration(&bodies, &children);
-    assert_eq!(plan.reuse.len(), 1, "overlap should prefer reusing the existing body");
+    assert_eq!(
+        plan.reuse.len(),
+        1,
+        "overlap should prefer reusing the existing body"
+    );
     assert_eq!(plan.create.len(), 0);
 }
 

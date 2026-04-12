@@ -104,10 +104,8 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
     let volume_per_node = cell_x * cell_y * cell_z;
 
     // index3D[ix][iy][iz] -> node index
-    let mut index_3d: Vec<Vec<Vec<usize>>> = vec![
-        vec![vec![0usize; layers as usize]; height_segments as usize];
-        span_segments as usize
-    ];
+    let mut index_3d: Vec<Vec<Vec<usize>>> =
+        vec![vec![vec![0usize; layers as usize]; height_segments as usize]; span_segments as usize];
 
     // Node creation: ix outer, iy middle, iz inner (matches JS)
     for ix in 0..span_segments {
@@ -122,8 +120,16 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
                 let index = nodes.len();
                 nodes.push(ScenarioNode {
                     centroid,
-                    mass: if is_support { 0.0 } else { mass_per_node as f32 },
-                    volume: if is_support { 0.0 } else { volume_per_node as f32 },
+                    mass: if is_support {
+                        0.0
+                    } else {
+                        mass_per_node as f32
+                    },
+                    volume: if is_support {
+                        0.0
+                    } else {
+                        volume_per_node as f32
+                    },
                 });
                 node_sizes.push(Vec3::new(cell_x as f32, cell_y as f32, cell_z as f32));
                 index_3d[ix as usize][iy as usize][iz as usize] = index;
@@ -171,8 +177,7 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
                 }
                 if add_diagonals {
                     if ix + 1 < span_segments && iy + 1 < height_segments {
-                        let neighbor =
-                            index_3d[(ix + 1) as usize][(iy + 1) as usize][iz as usize];
+                        let neighbor = index_3d[(ix + 1) as usize][(iy + 1) as usize][iz as usize];
                         add_bond(
                             &mut bonds,
                             current,
@@ -181,8 +186,7 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
                         );
                     }
                     if ix + 1 < span_segments && iz + 1 < layers {
-                        let neighbor =
-                            index_3d[(ix + 1) as usize][iy as usize][(iz + 1) as usize];
+                        let neighbor = index_3d[(ix + 1) as usize][iy as usize][(iz + 1) as usize];
                         add_bond(
                             &mut bonds,
                             current,
@@ -191,8 +195,7 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
                         );
                     }
                     if iy + 1 < height_segments && iz + 1 < layers {
-                        let neighbor =
-                            index_3d[ix as usize][(iy + 1) as usize][(iz + 1) as usize];
+                        let neighbor = index_3d[ix as usize][(iy + 1) as usize][(iz + 1) as usize];
                         add_bond(
                             &mut bonds,
                             current,

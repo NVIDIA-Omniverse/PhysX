@@ -36,9 +36,21 @@ mod parity {
         let first = &wall.nodes[0].centroid;
         let last = &wall.nodes[wall.nodes.len() - 1].centroid;
         // JS: first = (-2.75, 0.25, 0), last = (2.75, 2.75, 0)
-        assert!(approx_eq(first.x, -2.75), "first.x = {} expected -2.75", first.x);
-        assert!(approx_eq(first.y, 0.25), "first.y = {} expected 0.25", first.y);
-        assert!(approx_eq(first.z, 0.0), "first.z = {} expected 0.0", first.z);
+        assert!(
+            approx_eq(first.x, -2.75),
+            "first.x = {} expected -2.75",
+            first.x
+        );
+        assert!(
+            approx_eq(first.y, 0.25),
+            "first.y = {} expected 0.25",
+            first.y
+        );
+        assert!(
+            approx_eq(first.z, 0.0),
+            "first.z = {} expected 0.0",
+            first.z
+        );
         assert!(approx_eq(last.x, 2.75), "last.x = {} expected 2.75", last.x);
         assert!(approx_eq(last.y, 2.75), "last.y = {} expected 2.75", last.y);
         assert!(approx_eq(last.z, 0.0), "last.z = {} expected 0.0", last.z);
@@ -274,8 +286,16 @@ mod parity {
     fn column_gravity_down_parity() {
         // JS reference: overstressed=1, converged=true, linearError=0, angularError=0
         let nodes = vec![
-            NodeDesc { centroid: Vec3::new(0.0, 0.0, 0.0), mass: 0.0, volume: 1.0 },
-            NodeDesc { centroid: Vec3::new(0.0, 1.0, 0.0), mass: 1.0, volume: 1.0 },
+            NodeDesc {
+                centroid: Vec3::new(0.0, 0.0, 0.0),
+                mass: 0.0,
+                volume: 1.0,
+            },
+            NodeDesc {
+                centroid: Vec3::new(0.0, 1.0, 0.0),
+                mass: 1.0,
+                volume: 1.0,
+            },
         ];
         let bonds = vec![BondDesc {
             centroid: Vec3::new(0.0, 0.5, 0.0),
@@ -299,10 +319,7 @@ mod parity {
         solver.add_gravity(Vec3::new(0.0, -5.0, 0.0));
         solver.update();
 
-        assert_eq!(
-            solver.overstressed_bond_count(), 1,
-            "JS: overstressed=1"
-        );
+        assert_eq!(solver.overstressed_bond_count(), 1, "JS: overstressed=1");
         assert!(solver.converged(), "JS: converged=true");
         assert!(solver.linear_error() < 1e-4, "JS: linearError≈0");
         assert!(solver.angular_error() < 1e-4, "JS: angularError≈0");

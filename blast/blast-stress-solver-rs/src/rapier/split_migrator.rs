@@ -84,7 +84,11 @@ pub fn plan_split_migration_with_support(
                     continue;
                 }
                 if bodies[bi].is_fixed
-                    && !child_support.get(ci).copied().unwrap_or_default().is_support
+                    && !child_support
+                        .get(ci)
+                        .copied()
+                        .unwrap_or_default()
+                        .is_support
                 {
                     continue;
                 }
@@ -111,7 +115,13 @@ pub fn plan_split_migration_with_support(
         .collect();
 
     if !unmatched_bodies.is_empty() && !unmatched_children.is_empty() {
-        let overlap = build_overlap_matrix(bodies, &unmatched_bodies, children, &unmatched_children, child_support);
+        let overlap = build_overlap_matrix(
+            bodies,
+            &unmatched_bodies,
+            children,
+            &unmatched_children,
+            child_support,
+        );
         let assignments = hungarian_max(&overlap);
         let mut reused_children = HashSet::new();
 

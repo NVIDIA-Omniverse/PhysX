@@ -881,7 +881,7 @@ fn support_contact_promotes_small_body_damping() {
         assert!(body.angular_damping() < 2.0);
     }
 
-    let changed = set.mark_body_support_contact(body_handle, 1.0, &mut bodies);
+    let changed = set.mark_body_support_contact(body_handle, 1.0, &mut bodies, &mut colliders);
     assert!(changed, "first support contact should promote damping");
 
     let body = bodies.get(body_handle).unwrap();
@@ -918,8 +918,11 @@ fn support_contact_configures_sleep_thresholds() {
         assert!((activation.angular_threshold - 0.75).abs() > 1.0e-6);
     }
 
-    let changed = set.mark_body_support_contact(body_handle, 1.0, &mut bodies);
-    assert!(changed, "first support contact should configure sleep thresholds");
+    let changed = set.mark_body_support_contact(body_handle, 1.0, &mut bodies, &mut colliders);
+    assert!(
+        changed,
+        "first support contact should configure sleep thresholds"
+    );
 
     let body = bodies.get(body_handle).unwrap();
     let activation = body.activation();
@@ -976,6 +979,178 @@ fn debris_cleanup_removes_small_bodies_and_solver_bonds_after_ttl() {
         set.active_bond_count(),
         0,
         "cleanup should retire all tracked bonds for destroyed debris nodes"
+    );
+}
+
+#[test]
+fn debris_cleanup_after_support_contact_requires_sleeping_body() {
+    let scenario = dynamic_triangle_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_debris_cleanup(DebrisCleanupOptions {
+        mode: OptimizationMode::AfterGroundCollision,
+        debris_ttl_secs: 0.5,
+        max_colliders_for_debris: 3,
+    });
+
+    let (mut bodies, mut colliders, mut island_manager, mut impulse_joints, mut multibody_joints) =
+        rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let body_handle = set
+        .node_body(0)
+        .expect("triangle should initialize into one dynamic body");
+
+    let before_contact = set.process_optimizations(
+        1.0,
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert!(
+        before_contact.removed_bodies.is_empty(),
+        "cleanup should wait for support contact in after-ground mode"
+    );
+
+    set.mark_body_support_contact(body_handle, 0.25, &mut bodies, &mut colliders);
+    let while_awake = set.process_optimizations(
+        1.0,
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert!(
+        while_awake.removed_bodies.is_empty(),
+        "cleanup should not remove moving debris immediately after support contact"
+    );
+
+    bodies
+        .get_mut(body_handle)
+        .expect("body should still exist")
+        .sleep();
+
+    let after_sleep = set.process_optimizations(
+        1.0,
+        &mut bodies,
+        &mut colliders,
+        &mut island_manager,
+        &mut impulse_joints,
+        &mut multibody_joints,
+    );
+    assert_eq!(after_sleep.removed_bodies.len(), 1);
+    assert_eq!(after_sleep.removed_nodes.len(), 3);
+}
+
+#[test]
+fn no_debris_pairs_activates_only_after_support_contact() {
+    let scenario = dynamic_triangle_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_debris_cleanup(DebrisCleanupOptions {
+        mode: OptimizationMode::AfterGroundCollision,
+        debris_ttl_secs: 10.0,
+        max_colliders_for_debris: 3,
+    });
+    set.set_debris_collision_mode(DebrisCollisionMode::NoDebrisPairs);
+
+    let (mut bodies, mut colliders, ..) = rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let ground = bodies.insert(RigidBodyBuilder::fixed());
+    colliders.insert_with_parent(
+        ColliderBuilder::cuboid(10.0, 0.5, 10.0),
+        ground,
+        &mut bodies,
+    );
+    set.set_ground_body_handle(Some(ground));
+    set.refresh_collision_groups(&bodies, &mut colliders);
+
+    let body_handle = set
+        .node_body(0)
+        .expect("triangle should initialize into one dynamic body");
+    let before_groups = colliders
+        .get(bodies[body_handle].colliders()[0])
+        .expect("body collider should exist")
+        .collision_groups();
+    assert_eq!(before_groups.memberships, Group::GROUP_3);
+    assert_eq!(
+        before_groups.filter,
+        Group::GROUP_1 | Group::GROUP_2 | Group::GROUP_3
+    );
+
+    set.mark_body_support_contact(body_handle, 0.25, &mut bodies, &mut colliders);
+
+    let after_groups = colliders
+        .get(bodies[body_handle].colliders()[0])
+        .expect("body collider should exist")
+        .collision_groups();
+    assert_eq!(after_groups.memberships, Group::GROUP_2);
+    assert_eq!(after_groups.filter, Group::GROUP_1 | Group::GROUP_3);
+}
+
+#[test]
+fn debris_ground_only_assigns_small_dynamic_bodies_to_ground_only_groups() {
+    let scenario = dynamic_triangle_scenario();
+    let mut set = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .unwrap();
+    set.set_debris_cleanup(DebrisCleanupOptions {
+        mode: OptimizationMode::Always,
+        debris_ttl_secs: 10.0,
+        max_colliders_for_debris: 3,
+    });
+    set.set_debris_collision_mode(DebrisCollisionMode::DebrisGroundOnly);
+
+    let (mut bodies, mut colliders, ..) = rapier_world();
+    set.initialize(&mut bodies, &mut colliders);
+
+    let ground = bodies.insert(RigidBodyBuilder::fixed());
+    let ground_collider = colliders.insert_with_parent(
+        ColliderBuilder::cuboid(10.0, 0.5, 10.0),
+        ground,
+        &mut bodies,
+    );
+
+    set.set_ground_body_handle(Some(ground));
+    set.refresh_collision_groups(&bodies, &mut colliders);
+
+    let body_handle = set
+        .node_body(0)
+        .expect("triangle should initialize into one dynamic body");
+    set.mark_body_support_contact(body_handle, 0.25, &mut bodies, &mut colliders);
+    let body_groups = colliders
+        .get(bodies[body_handle].colliders()[0])
+        .expect("body collider should exist")
+        .collision_groups();
+    let ground_groups = colliders
+        .get(ground_collider)
+        .expect("ground collider should exist")
+        .collision_groups();
+
+    assert_eq!(body_groups.memberships, Group::GROUP_2);
+    assert_eq!(body_groups.filter, Group::GROUP_1);
+    assert_eq!(ground_groups.memberships, Group::GROUP_1);
+    assert_eq!(
+        ground_groups.filter,
+        Group::GROUP_1 | Group::GROUP_2 | Group::GROUP_3
     );
 }
 
@@ -1048,9 +1223,20 @@ fn collider_migration_budget_defers_split_until_budget_is_available() {
         &mut multibody_joints,
     );
     assert!(first.fractures > 0, "impact should fracture the pair");
-    assert_eq!(first.new_bodies, 0, "split should be deferred by zero migration budget");
-    assert_eq!(set.actor_count(), 2, "solver split should still have happened");
-    assert_eq!(set.body_count(), 1, "Rapier bodies should remain unsplit until replay budget allows it");
+    assert_eq!(
+        first.new_bodies, 0,
+        "split should be deferred by zero migration budget"
+    );
+    assert_eq!(
+        set.actor_count(),
+        2,
+        "solver split should still have happened"
+    );
+    assert_eq!(
+        set.body_count(),
+        1,
+        "Rapier bodies should remain unsplit until replay budget allows it"
+    );
 
     let mut updated_policy = *set.policy();
     updated_policy.max_collider_migrations_per_frame = 2;

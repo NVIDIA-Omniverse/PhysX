@@ -134,10 +134,8 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
     let deck_origin_z = -deck_width * 0.5 + 0.5 * cell_z;
 
     // gridDeck[ix][iy][iz] -> node index (-1 means empty)
-    let mut grid_deck: Vec<Vec<Vec<i32>>> = vec![
-        vec![vec![-1i32; seg_z as usize]; seg_y as usize];
-        seg_x as usize
-    ];
+    let mut grid_deck: Vec<Vec<Vec<i32>>> =
+        vec![vec![vec![-1i32; seg_z as usize]; seg_y as usize]; seg_x as usize];
 
     let mut nodes: Vec<ScenarioNode> = Vec::new();
     let mut bonds: Vec<ScenarioBond> = Vec::new();
@@ -186,26 +184,27 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
 
     // Closure to add a bond between two node indices
     // We use a macro-like approach since closures borrowing nodes and bonds simultaneously is tricky
-    let add_bond = |bonds: &mut Vec<ScenarioBond>, nodes: &[ScenarioNode], a: i32, b: i32, area: f32| {
-        if a < 0 || b < 0 {
-            return;
-        }
-        let na = &nodes[a as usize];
-        let nb = &nodes[b as usize];
-        let c = Vec3::new(
-            (na.centroid.x + nb.centroid.x) * 0.5,
-            (na.centroid.y + nb.centroid.y) * 0.5,
-            (na.centroid.z + nb.centroid.z) * 0.5,
-        );
-        let n = nrm(sub(nb.centroid, na.centroid));
-        bonds.push(ScenarioBond {
-            node0: a as u32,
-            node1: b as u32,
-            centroid: c,
-            normal: n,
-            area: area.max(EPS),
-        });
-    };
+    let add_bond =
+        |bonds: &mut Vec<ScenarioBond>, nodes: &[ScenarioNode], a: i32, b: i32, area: f32| {
+            if a < 0 || b < 0 {
+                return;
+            }
+            let na = &nodes[a as usize];
+            let nb = &nodes[b as usize];
+            let c = Vec3::new(
+                (na.centroid.x + nb.centroid.x) * 0.5,
+                (na.centroid.y + nb.centroid.y) * 0.5,
+                (na.centroid.z + nb.centroid.z) * 0.5,
+            );
+            let n = nrm(sub(nb.centroid, na.centroid));
+            bonds.push(ScenarioBond {
+                node0: a as u32,
+                node1: b as u32,
+                centroid: c,
+                normal: n,
+                area: area.max(EPS),
+            });
+        };
 
     // Deck connectivity
     for ix in 0..seg_x {
@@ -358,9 +357,12 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
                         mass: 0.0,
                         volume: 0.0,
                     });
-                    node_sizes.push(Vec3::new(cell_x as f32, footing_thickness as f32, cell_z as f32));
-                    if let Some(&lowest_post_idx) =
-                        post_map.get(&(ixp, post_layers as i32 - 1, iz))
+                    node_sizes.push(Vec3::new(
+                        cell_x as f32,
+                        footing_thickness as f32,
+                        cell_z as f32,
+                    ));
+                    if let Some(&lowest_post_idx) = post_map.get(&(ixp, post_layers as i32 - 1, iz))
                     {
                         add_bond(&mut bonds, &nodes, f_idx, lowest_post_idx, area_y);
                     }

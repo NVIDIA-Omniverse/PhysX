@@ -38,8 +38,7 @@ pub fn compute_bond_stress(
     let normal_component_angular = angular.dot(bond_normal).abs();
     let angular_mag_sq = angular.magnitude_squared();
     let twist = normal_component_angular / bond_area;
-    let bend_sq =
-        (angular_mag_sq - normal_component_angular * normal_component_angular).max(0.0);
+    let bend_sq = (angular_mag_sq - normal_component_angular * normal_component_angular).max(0.0);
     let bend = bend_sq.sqrt() / bond_area;
 
     let twist_contribution = twist * 2.0 / node_distance;

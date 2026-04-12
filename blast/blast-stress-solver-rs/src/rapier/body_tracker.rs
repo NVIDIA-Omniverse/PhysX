@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use rapier3d::prelude::*;
 
+use super::collision_groups::{apply_collision_groups_for_body, DebrisCollisionMode};
 use super::optimization::{
     DebrisCleanupOptions, OptimizationMode, OptimizationResult, SleepThresholdOptions,
     SmallBodyDampingOptions,
@@ -70,6 +71,10 @@ pub struct BodyTracker {
     body_metadata: HashMap<RigidBodyHandle, BodyMetadata>,
     /// Whether newly created dynamic bodies should enable CCD.
     dynamic_body_ccd_enabled: bool,
+    /// Collision filtering mode for small debris bodies.
+    debris_collision_mode: DebrisCollisionMode,
+    /// Optional ground body used by debris-ground-only filtering.
+    ground_body_handle: Option<RigidBodyHandle>,
 }
 
 impl BodyTracker {
@@ -97,11 +102,60 @@ impl BodyTracker {
             node_local_offsets: vec![Vec3::ZERO; nodes.len()],
             body_metadata: HashMap::new(),
             dynamic_body_ccd_enabled: false,
+            debris_collision_mode: DebrisCollisionMode::All,
+            ground_body_handle: None,
         }
     }
 
     pub fn set_dynamic_body_ccd_enabled(&mut self, enabled: bool) {
         self.dynamic_body_ccd_enabled = enabled;
+    }
+
+    pub fn debris_collision_mode(&self) -> DebrisCollisionMode {
+        self.debris_collision_mode
+    }
+
+    pub fn set_debris_collision_mode(&mut self, mode: DebrisCollisionMode) {
+        self.debris_collision_mode = mode;
+    }
+
+    pub fn ground_body_handle(&self) -> Option<RigidBodyHandle> {
+        self.ground_body_handle
+    }
+
+    pub fn set_ground_body_handle(&mut self, handle: Option<RigidBodyHandle>) {
+        self.ground_body_handle = handle;
+    }
+
+    pub fn refresh_collision_groups(
+        &self,
+        bodies: &RigidBodySet,
+        colliders: &mut ColliderSet,
+        max_colliders_for_debris: usize,
+    ) {
+        if let Some(ground_body_handle) = self.ground_body_handle {
+            apply_collision_groups_for_body(
+                ground_body_handle,
+                bodies,
+                colliders,
+                self.ground_body_handle,
+                self.debris_collision_mode,
+                true,
+                max_colliders_for_debris,
+            );
+        }
+
+        for &body_handle in self.body_to_nodes.keys() {
+            apply_collision_groups_for_body(
+                body_handle,
+                bodies,
+                colliders,
+                self.ground_body_handle,
+                self.debris_collision_mode,
+                self.debris_collision_active(body_handle),
+                max_colliders_for_debris,
+            );
+        }
     }
 
     /// Create initial Rapier bodies from the actor table.
@@ -116,6 +170,7 @@ impl BodyTracker {
         created_at: f32,
         small_body_damping: SmallBodyDampingOptions,
         sleep_thresholds: SleepThresholdOptions,
+        max_colliders_for_debris: usize,
     ) -> Vec<RigidBodyHandle> {
         let mut handles = Vec::new();
 
@@ -179,6 +234,7 @@ impl BodyTracker {
             self.update_body_metadata(body, &actor.nodes, created_at);
             self.promote_small_body_damping(body, bodies, &small_body_damping);
             self.configure_sleep_thresholds(body, bodies, &sleep_thresholds);
+            self.apply_collision_groups(body, bodies, colliders, max_colliders_for_debris);
             handles.push(body);
         }
 
@@ -199,6 +255,7 @@ impl BodyTracker {
         created_at: f32,
         small_body_damping: SmallBodyDampingOptions,
         sleep_thresholds: SleepThresholdOptions,
+        max_colliders_for_debris: usize,
     ) -> Vec<RigidBodyHandle> {
         let mut new_handles = Vec::new();
         let planning = self.collect_split_planning_data(event, bodies);
@@ -235,12 +292,7 @@ impl BodyTracker {
                 if retained.contains(&node) {
                     continue;
                 }
-                self.remove_node_collider_from_body(
-                    node,
-                    bodies,
-                    colliders,
-                    island_manager,
-                );
+                self.remove_node_collider_from_body(node, bodies, colliders, island_manager);
                 self.detach_node(node);
             }
         }
@@ -298,10 +350,17 @@ impl BodyTracker {
                 self.attach_node(n, entry.body_handle, collider_handle, local_offset);
             }
 
-            self.body_to_nodes.insert(entry.body_handle, child.nodes.clone());
+            self.body_to_nodes
+                .insert(entry.body_handle, child.nodes.clone());
             self.update_body_metadata(entry.body_handle, &child.nodes, created_at);
             self.promote_small_body_damping(entry.body_handle, bodies, &small_body_damping);
             self.configure_sleep_thresholds(entry.body_handle, bodies, &sleep_thresholds);
+            self.apply_collision_groups(
+                entry.body_handle,
+                bodies,
+                colliders,
+                max_colliders_for_debris,
+            );
         }
 
         // Create new bodies for unmatched children
@@ -353,8 +412,13 @@ impl BodyTracker {
                 };
                 self.remove_stale_collider_mapping(source.collider_handle);
                 let local_offset = self.local_offset_for_pose(source, &body_pose);
-                let collider_handle =
-                    self.insert_node_collider(node_idx, body_handle, local_offset, bodies, colliders);
+                let collider_handle = self.insert_node_collider(
+                    node_idx,
+                    body_handle,
+                    local_offset,
+                    bodies,
+                    colliders,
+                );
                 self.attach_node(node_idx, body_handle, collider_handle, local_offset);
             }
 
@@ -362,6 +426,7 @@ impl BodyTracker {
             self.update_body_metadata(body_handle, &child.nodes, created_at);
             self.promote_small_body_damping(body_handle, bodies, &small_body_damping);
             self.configure_sleep_thresholds(body_handle, bodies, &sleep_thresholds);
+            self.apply_collision_groups(body_handle, bodies, colliders, max_colliders_for_debris);
             new_handles.push(body_handle);
         }
 
@@ -517,8 +582,10 @@ impl BodyTracker {
         body_handle: RigidBodyHandle,
         now_secs: f32,
         bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
         damping: SmallBodyDampingOptions,
         sleep_thresholds: SleepThresholdOptions,
+        max_colliders_for_debris: usize,
     ) -> bool {
         let collider_count = self.body_node_count(body_handle);
         let Some(metadata) = self.body_metadata.get_mut(&body_handle) else {
@@ -545,6 +612,12 @@ impl BodyTracker {
                 metadata.sleep_threshold_configured = true;
                 changed = true;
             }
+        }
+        if metadata.first_support_contact_at == Some(now_secs)
+            && self.debris_collision_mode != DebrisCollisionMode::All
+        {
+            self.apply_collision_groups(body_handle, bodies, colliders, max_colliders_for_debris);
+            changed = true;
         }
         changed
     }
@@ -587,6 +660,9 @@ impl BodyTracker {
             let Some(anchor) = anchor else {
                 continue;
             };
+            if cleanup.mode == OptimizationMode::AfterGroundCollision && !body.is_sleeping() {
+                continue;
+            }
             if now_secs - anchor >= cleanup.debris_ttl_secs {
                 expired.push(body_handle);
             }
@@ -797,9 +873,9 @@ impl BodyTracker {
         let activation = body.activation_mut();
         let desired_linear = sleep_thresholds.linear_threshold.max(0.0);
         let desired_angular = sleep_thresholds.angular_threshold.max(0.0);
-        let changed =
-            (activation.normalized_linear_threshold - desired_linear).abs() > Real::EPSILON
-                || (activation.angular_threshold - desired_angular).abs() > Real::EPSILON;
+        let changed = (activation.normalized_linear_threshold - desired_linear).abs()
+            > Real::EPSILON
+            || (activation.angular_threshold - desired_angular).abs() > Real::EPSILON;
         activation.normalized_linear_threshold = desired_linear;
         activation.angular_threshold = desired_angular;
         if changed {
@@ -881,9 +957,11 @@ impl BodyTracker {
                     continue;
                 };
                 let local_offset = self.node_local_offsets[idx];
-                let world = body
-                    .position()
-                    .transform_point(&point![local_offset.x, local_offset.y, local_offset.z]);
+                let world = body.position().transform_point(&point![
+                    local_offset.x,
+                    local_offset.y,
+                    local_offset.z
+                ]);
                 parent_bodies.insert(body_handle);
                 node_sources.entry(node).or_insert(NodeSourceState {
                     body_handle,
@@ -977,5 +1055,30 @@ impl BodyTracker {
         };
 
         colliders.insert_with_parent(collider, body_handle, bodies)
+    }
+
+    fn apply_collision_groups(
+        &self,
+        body_handle: RigidBodyHandle,
+        bodies: &RigidBodySet,
+        colliders: &mut ColliderSet,
+        max_colliders_for_debris: usize,
+    ) {
+        apply_collision_groups_for_body(
+            body_handle,
+            bodies,
+            colliders,
+            self.ground_body_handle,
+            self.debris_collision_mode,
+            self.debris_collision_active(body_handle),
+            max_colliders_for_debris,
+        );
+    }
+
+    fn debris_collision_active(&self, body_handle: RigidBodyHandle) -> bool {
+        self.body_metadata
+            .get(&body_handle)
+            .and_then(|metadata| metadata.first_support_contact_at)
+            .is_some()
     }
 }

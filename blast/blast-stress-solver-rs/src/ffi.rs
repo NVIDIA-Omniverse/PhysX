@@ -211,9 +211,7 @@ extern "C" {
         settings: *const FfiExtStressSolverSettingsDesc,
     );
 
-    pub(crate) fn ext_stress_solver_graph_node_count(
-        handle: *const ExtStressSolverHandle,
-    ) -> u32;
+    pub(crate) fn ext_stress_solver_graph_node_count(handle: *const ExtStressSolverHandle) -> u32;
 
     pub(crate) fn ext_stress_solver_bond_count(handle: *const ExtStressSolverHandle) -> u32;
 
@@ -289,13 +287,9 @@ extern "C" {
         out_torque: *mut Vec3,
     ) -> u8;
 
-    pub(crate) fn ext_stress_solver_get_linear_error(
-        handle: *const ExtStressSolverHandle,
-    ) -> f32;
+    pub(crate) fn ext_stress_solver_get_linear_error(handle: *const ExtStressSolverHandle) -> f32;
 
-    pub(crate) fn ext_stress_solver_get_angular_error(
-        handle: *const ExtStressSolverHandle,
-    ) -> f32;
+    pub(crate) fn ext_stress_solver_get_angular_error(handle: *const ExtStressSolverHandle) -> f32;
 
     pub(crate) fn ext_stress_solver_converged(handle: *const ExtStressSolverHandle) -> u8;
 }

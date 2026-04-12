@@ -21,8 +21,8 @@ use bevy::prelude::*;
 use bevy::transform::TransformPlugin;
 use bevy::window::PrimaryWindow;
 use blast_stress_solver::rapier::{
-    DebrisCleanupOptions, DestructibleSet, FracturePolicy, OptimizationMode, ResimulationOptions,
-    SleepThresholdOptions, SmallBodyDampingOptions,
+    DebrisCleanupOptions, DebrisCollisionMode, DestructibleSet, FracturePolicy, OptimizationMode,
+    ResimulationOptions, SleepThresholdOptions, SmallBodyDampingOptions,
 };
 use blast_stress_solver::scenarios::{
     build_bridge_scenario, build_tower_scenario, build_wall_scenario, BridgeOptions, TowerOptions,
@@ -72,25 +72,22 @@ struct DemoConfig {
     material_scale: f32,
     camera_target: Vec3,
     camera_distance: f32,
+    policy: FracturePolicy,
     resimulation: ResimulationOptions,
     sleep_thresholds: SleepThresholdOptions,
     small_body_damping: SmallBodyDampingOptions,
     debris_cleanup: DebrisCleanupOptions,
+    debris_collision_mode: DebrisCollisionMode,
 }
 
 #[derive(Resource, Clone)]
 struct DemoRuntimeToggles {
-    scenario: DemoScenarioKind,
-    resimulation_enabled: bool,
-    max_resimulation_passes: usize,
     contact_force_injection_enabled: bool,
     gizmos_enabled: bool,
     projectile_ccd_enabled: bool,
     body_ccd_enabled: bool,
-    sleep_thresholds_enabled: bool,
-    small_body_damping_enabled: bool,
-    debris_cleanup_enabled: bool,
     show_meshes: bool,
+    config_summary: String,
 }
 
 impl DemoRuntimeToggles {
@@ -103,6 +100,28 @@ impl DemoRuntimeToggles {
         config.resimulation.enabled = resimulation_enabled;
         config.resimulation.max_passes = max_resimulation_passes;
 
+        if let Some(value) = env_i32("BLAST_STRESS_DEMO_MAX_FRACTURES_PER_FRAME") {
+            config.policy.max_fractures_per_frame = value;
+        }
+        if let Some(value) = env_i32("BLAST_STRESS_DEMO_MAX_NEW_BODIES_PER_FRAME") {
+            config.policy.max_new_bodies_per_frame = value;
+        }
+        if let Some(value) = env_i32("BLAST_STRESS_DEMO_MAX_COLLIDER_MIGRATIONS_PER_FRAME") {
+            config.policy.max_collider_migrations_per_frame = value;
+        }
+        if let Some(value) = env_i32("BLAST_STRESS_DEMO_MAX_DYNAMIC_BODIES") {
+            config.policy.max_dynamic_bodies = value;
+        }
+        if let Some(value) = env_usize("BLAST_STRESS_DEMO_MIN_CHILD_NODE_COUNT") {
+            config.policy.min_child_node_count = value as u32;
+        }
+        if let Some(value) = env_flag("BLAST_STRESS_DEMO_IDLE_SKIP") {
+            config.policy.idle_skip = value;
+        }
+        if let Some(value) = env_flag("BLAST_STRESS_DEMO_APPLY_EXCESS_FORCES") {
+            config.policy.apply_excess_forces = value;
+        }
+
         let sleep_thresholds_enabled = env_flag("BLAST_STRESS_DEMO_SLEEP_OPT")
             .unwrap_or(config.sleep_thresholds.mode != OptimizationMode::Off);
         if sleep_thresholds_enabled {
@@ -112,50 +131,102 @@ impl DemoRuntimeToggles {
         } else {
             config.sleep_thresholds.mode = OptimizationMode::Off;
         }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_SLEEP_LINEAR_THRESHOLD") {
+            config.sleep_thresholds.linear_threshold = value;
+        }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_SLEEP_ANGULAR_THRESHOLD") {
+            config.sleep_thresholds.angular_threshold = value;
+        }
 
         let small_body_damping_enabled = env_flag("BLAST_STRESS_DEMO_SMALL_BODY_DAMPING")
             .unwrap_or(config.small_body_damping.mode != OptimizationMode::Off);
-        if !small_body_damping_enabled {
+        if small_body_damping_enabled {
+            if config.small_body_damping.mode == OptimizationMode::Off {
+                config.small_body_damping.mode = OptimizationMode::Always;
+            }
+        } else {
             config.small_body_damping.mode = OptimizationMode::Off;
+        }
+        if let Some(value) = env_usize("BLAST_STRESS_DEMO_SMALL_BODY_COLLIDER_THRESHOLD") {
+            config.small_body_damping.collider_count_threshold = value;
+        }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_SMALL_BODY_LINEAR_DAMPING") {
+            config.small_body_damping.min_linear_damping = value;
+        }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_SMALL_BODY_ANGULAR_DAMPING") {
+            config.small_body_damping.min_angular_damping = value;
         }
 
         let debris_cleanup_enabled = env_flag("BLAST_STRESS_DEMO_DEBRIS_CLEANUP")
             .unwrap_or(config.debris_cleanup.mode != OptimizationMode::Off);
-        if !debris_cleanup_enabled {
+        if debris_cleanup_enabled {
+            if config.debris_cleanup.mode == OptimizationMode::Off {
+                config.debris_cleanup.mode = OptimizationMode::Always;
+            }
+        } else {
             config.debris_cleanup.mode = OptimizationMode::Off;
         }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_DEBRIS_TTL_SECS") {
+            config.debris_cleanup.debris_ttl_secs = value;
+        }
+        if let Some(value) = env_usize("BLAST_STRESS_DEMO_DEBRIS_MAX_COLLIDERS") {
+            config.debris_cleanup.max_colliders_for_debris = value;
+        }
+        if let Some(value) = env_debris_collision_mode("BLAST_STRESS_DEMO_DEBRIS_COLLISION_MODE") {
+            config.debris_collision_mode = value;
+        }
+
+        let config_summary = format!(
+            "scenario={} meshes={} gizmos={} resim={} max_resim={} contact_injection={} projectile_ccd={} body_ccd={} policy[max_fractures={} max_new_bodies={} max_collider_migrations={} max_dynamic_bodies={} min_child_nodes={} idle_skip={} apply_excess_forces={}] sleep[enabled={} mode={} linear={:.3} angular={:.3}] small_body_damping[enabled={} mode={} colliders={} linear={:.2} angular={:.2}] debris[collision_mode={} cleanup_enabled={} cleanup_mode={} ttl={:.2} max_colliders={}]",
+            scenario.slug(),
+            flag_bit(show_meshes),
+            flag_bit(env_flag("BLAST_STRESS_DEMO_GIZMOS").unwrap_or(true)),
+            flag_bit(resimulation_enabled),
+            max_resimulation_passes,
+            flag_bit(env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION").unwrap_or(true)),
+            flag_bit(env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(true)),
+            flag_bit(env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false)),
+            config.policy.max_fractures_per_frame,
+            config.policy.max_new_bodies_per_frame,
+            config.policy.max_collider_migrations_per_frame,
+            config.policy.max_dynamic_bodies,
+            config.policy.min_child_node_count,
+            flag_bit(config.policy.idle_skip),
+            flag_bit(config.policy.apply_excess_forces),
+            flag_bit(sleep_thresholds_enabled),
+            optimization_mode_label(config.sleep_thresholds.mode),
+            config.sleep_thresholds.linear_threshold,
+            config.sleep_thresholds.angular_threshold,
+            flag_bit(small_body_damping_enabled),
+            optimization_mode_label(config.small_body_damping.mode),
+            config.small_body_damping.collider_count_threshold,
+            config.small_body_damping.min_linear_damping,
+            config.small_body_damping.min_angular_damping,
+            debris_collision_mode_label(config.debris_collision_mode),
+            flag_bit(debris_cleanup_enabled),
+            optimization_mode_label(config.debris_cleanup.mode),
+            config.debris_cleanup.debris_ttl_secs,
+            config.debris_cleanup.max_colliders_for_debris,
+        );
+
+        let contact_force_injection_enabled =
+            env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION").unwrap_or(true);
+        let gizmos_enabled = env_flag("BLAST_STRESS_DEMO_GIZMOS").unwrap_or(true);
+        let projectile_ccd_enabled = env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(true);
+        let body_ccd_enabled = env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false);
 
         Self {
-            scenario,
-            resimulation_enabled,
-            max_resimulation_passes,
-            contact_force_injection_enabled: env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION")
-                .unwrap_or(true),
-            gizmos_enabled: env_flag("BLAST_STRESS_DEMO_GIZMOS").unwrap_or(true),
-            projectile_ccd_enabled: env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(true),
-            body_ccd_enabled: env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false),
-            sleep_thresholds_enabled,
-            small_body_damping_enabled,
-            debris_cleanup_enabled,
+            contact_force_injection_enabled,
+            gizmos_enabled,
+            projectile_ccd_enabled,
+            body_ccd_enabled,
             show_meshes,
+            config_summary,
         }
     }
 
     fn summary(&self) -> String {
-        format!(
-            "scenario={} meshes={} gizmos={} resim={} max_resim={} contact_injection={} projectile_ccd={} body_ccd={} sleep_opt={} small_body_damping={} debris_cleanup={}",
-            self.scenario.slug(),
-            flag_bit(self.show_meshes),
-            flag_bit(self.gizmos_enabled),
-            flag_bit(self.resimulation_enabled),
-            self.max_resimulation_passes,
-            flag_bit(self.contact_force_injection_enabled),
-            flag_bit(self.projectile_ccd_enabled),
-            flag_bit(self.body_ccd_enabled),
-            flag_bit(self.sleep_thresholds_enabled),
-            flag_bit(self.small_body_damping_enabled),
-            flag_bit(self.debris_cleanup_enabled),
-        )
+        self.config_summary.clone()
     }
 }
 
@@ -919,6 +990,10 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             material_scale: 1.0e10,
             camera_target: Vec3::new(0.0, 1.5, 0.0),
             camera_distance: 14.0,
+            policy: FracturePolicy {
+                apply_excess_forces: false,
+                ..FracturePolicy::default()
+            },
             resimulation: ResimulationOptions {
                 enabled: true,
                 max_passes: 1,
@@ -933,6 +1008,7 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
                 debris_ttl_secs: 8.0,
                 max_colliders_for_debris: 2,
             },
+            debris_collision_mode: DebrisCollisionMode::All,
         },
         DemoScenarioKind::Tower => DemoConfig {
             title: "Tower Collapse",
@@ -944,6 +1020,10 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             material_scale: 1.0e10,
             camera_target: Vec3::new(0.0, 1.5, 0.0),
             camera_distance: 20.0,
+            policy: FracturePolicy {
+                apply_excess_forces: false,
+                ..FracturePolicy::default()
+            },
             resimulation: ResimulationOptions {
                 enabled: true,
                 max_passes: 1,
@@ -960,6 +1040,7 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
                 debris_ttl_secs: 10.0,
                 max_colliders_for_debris: 2,
             },
+            debris_collision_mode: DebrisCollisionMode::All,
         },
         DemoScenarioKind::Bridge => DemoConfig {
             title: "Bridge Stress",
@@ -971,22 +1052,31 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             material_scale: 1.0e10,
             camera_target: Vec3::new(0.0, 2.5, 0.0),
             camera_distance: 24.0,
+            policy: FracturePolicy {
+                apply_excess_forces: false,
+                ..FracturePolicy::default()
+            },
             resimulation: ResimulationOptions {
                 enabled: true,
                 max_passes: 1,
             },
-            sleep_thresholds: SleepThresholdOptions::default(),
+            sleep_thresholds: SleepThresholdOptions {
+                mode: OptimizationMode::AfterGroundCollision,
+                linear_threshold: 0.2,
+                angular_threshold: 0.2,
+            },
             small_body_damping: SmallBodyDampingOptions {
-                mode: OptimizationMode::Always,
-                collider_count_threshold: 3,
-                min_linear_damping: 2.0,
-                min_angular_damping: 2.0,
+                mode: OptimizationMode::AfterGroundCollision,
+                collider_count_threshold: 4,
+                min_linear_damping: 3.0,
+                min_angular_damping: 3.0,
             },
             debris_cleanup: DebrisCleanupOptions {
-                mode: OptimizationMode::Always,
-                debris_ttl_secs: 10.0,
-                max_colliders_for_debris: 2,
+                mode: OptimizationMode::AfterGroundCollision,
+                debris_ttl_secs: 6.0,
+                max_colliders_for_debris: 3,
             },
+            debris_collision_mode: DebrisCollisionMode::NoDebrisPairs,
         },
     }
 }
@@ -994,17 +1084,14 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
 fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoPhysicsState {
     let settings = scaled_solver_settings(config.material_scale);
     let gravity = SolverVec3::new(0.0, GRAVITY, 0.0);
-    let policy = FracturePolicy {
-        apply_excess_forces: false,
-        ..FracturePolicy::default()
-    };
     let mut destructible =
-        DestructibleSet::from_scenario(&config.scenario, settings, gravity, policy)
+        DestructibleSet::from_scenario(&config.scenario, settings, gravity, config.policy)
             .expect("failed to create destructible set");
     destructible.set_resimulation_options(config.resimulation);
     destructible.set_sleep_thresholds(config.sleep_thresholds);
     destructible.set_small_body_damping(config.small_body_damping);
     destructible.set_debris_cleanup(config.debris_cleanup);
+    destructible.set_debris_collision_mode(config.debris_collision_mode);
     destructible.set_dynamic_body_ccd_enabled(toggles.body_ccd_enabled);
 
     let mut bodies = RigidBodySet::new();
@@ -1018,6 +1105,8 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
         .friction(0.9)
         .restitution(0.0);
     colliders.insert_with_parent(ground, ground_body, &mut bodies);
+    destructible.set_ground_body_handle(Some(ground_body));
+    destructible.refresh_collision_groups(&bodies, &mut colliders);
 
     let (collision_send, collision_recv) = channel();
     let (contact_send, contact_recv) = channel();
@@ -1093,12 +1182,47 @@ fn env_usize(name: &str) -> Option<usize> {
         .and_then(|value| value.trim().parse::<usize>().ok())
 }
 
+fn env_i32(name: &str) -> Option<i32> {
+    env::var(name)
+        .ok()
+        .and_then(|value| value.trim().parse::<i32>().ok())
+}
+
+fn env_f32(name: &str) -> Option<f32> {
+    env::var(name)
+        .ok()
+        .and_then(|value| value.trim().parse::<f32>().ok())
+}
+
+fn env_debris_collision_mode(name: &str) -> Option<DebrisCollisionMode> {
+    let value = env::var(name).ok()?;
+    match value.trim() {
+        "all" => Some(DebrisCollisionMode::All),
+        "noDebrisPairs" => Some(DebrisCollisionMode::NoDebrisPairs),
+        "debrisGroundOnly" => Some(DebrisCollisionMode::DebrisGroundOnly),
+        "debrisNone" => Some(DebrisCollisionMode::DebrisNone),
+        _ => None,
+    }
+}
+
 fn flag_bit(value: bool) -> u8 {
     if value {
         1
     } else {
         0
     }
+}
+
+fn optimization_mode_label(mode: OptimizationMode) -> &'static str {
+    match mode {
+        OptimizationMode::Off => "off",
+        OptimizationMode::Always => "always",
+        OptimizationMode::AfterGroundCollision => "after_ground_collision",
+    }
+}
+
+fn debris_collision_mode_label(mode: DebrisCollisionMode) -> &'static str {
+    mode.as_str()
 }
 
 fn mesh_visuals_enabled() -> bool {
@@ -1733,9 +1857,12 @@ fn register_support_contact(
     };
 
     if support_contact {
-        state
-            .destructible
-            .mark_body_support_contact(body_handle, now_secs, &mut state.bodies);
+        state.destructible.mark_body_support_contact(
+            body_handle,
+            now_secs,
+            &mut state.bodies,
+            &mut state.colliders,
+        );
     }
 }
 

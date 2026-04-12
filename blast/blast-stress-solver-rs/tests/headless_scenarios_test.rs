@@ -82,10 +82,7 @@ mod headless {
         Vec3::new(0.0, -9.81, 0.0)
     }
 
-    fn make_solver(
-        scenario: &ScenarioDesc,
-        settings: &SolverSettings,
-    ) -> ExtStressSolver {
+    fn make_solver(scenario: &ScenarioDesc, settings: &SolverSettings) -> ExtStressSolver {
         let (nodes, bonds) = scenario.to_solver_descs();
         ExtStressSolver::new(&nodes, &bonds, settings).unwrap()
     }
@@ -238,11 +235,19 @@ mod headless {
         solver.add_gravity(Vec3::new(0.0, -9.81, 0.0));
         let center = nodes.len() / 2;
         let pos = nodes[center].centroid;
-        solver.add_force(center as u32, pos, Vec3::new(50000.0, 0.0, 0.0), ForceMode::Force);
+        solver.add_force(
+            center as u32,
+            pos,
+            Vec3::new(50000.0, 0.0, 0.0),
+            ForceMode::Force,
+        );
         solver.update();
 
         let overstressed = solver.overstressed_bond_count();
-        assert!(overstressed > 0, "gravity + force should overstress bonds, got {overstressed}");
+        assert!(
+            overstressed > 0,
+            "gravity + force should overstress bonds, got {overstressed}"
+        );
     }
 
     #[test]
@@ -262,7 +267,10 @@ mod headless {
 
         solver.add_gravity(Vec3::new(0.0, -9.81, 0.0));
         solver.update();
-        assert!(solver.overstressed_bond_count() > 0, "gravity on weak wall should overstress");
+        assert!(
+            solver.overstressed_bond_count() > 0,
+            "gravity on weak wall should overstress"
+        );
     }
 
     // === E. Bond cutting ===
@@ -329,7 +337,10 @@ mod headless {
             prev_actors = current;
         }
 
-        assert!(ever_increased, "actor count should increase over time with moderate settings");
+        assert!(
+            ever_increased,
+            "actor count should increase over time with moderate settings"
+        );
     }
 
     // === G. Structure-specific behavior ===
@@ -356,7 +367,10 @@ mod headless {
 
         // Under gravity, base bonds should be more stressed
         // (more weight above them)
-        assert!(solver.overstressed_bond_count() > 0, "tower should have overstressed bonds");
+        assert!(
+            solver.overstressed_bond_count() > 0,
+            "tower should have overstressed bonds"
+        );
     }
 
     // === H. API surface and lifecycle ===
@@ -426,7 +440,10 @@ mod headless {
         let after = solver.overstressed_bond_count();
 
         assert!(before > 0, "should be overstressed before reset");
-        assert_eq!(after, 0, "should have 0 overstressed after reset + update with no forces");
+        assert_eq!(
+            after, 0,
+            "should have 0 overstressed after reset + update with no forces"
+        );
     }
 
     // === I. Scenario builder validation ===
@@ -570,13 +587,25 @@ mod headless {
             let ax = b.normal.x.abs();
             let ay = b.normal.y.abs();
             let az = b.normal.z.abs();
-            let axis = if ax >= ay && ax >= az { 0 } else if ay >= az { 1 } else { 2 };
+            let axis = if ax >= ay && ax >= az {
+                0
+            } else if ay >= az {
+                1
+            } else {
+                2
+            };
             sum[axis] += b.area;
             count[axis] += 1;
         }
 
         let avg: Vec<f32> = (0..3)
-            .map(|i| if count[i] > 0 { sum[i] / count[i] as f32 } else { 0.0 })
+            .map(|i| {
+                if count[i] > 0 {
+                    sum[i] / count[i] as f32
+                } else {
+                    0.0
+                }
+            })
             .collect();
 
         // All three averages should be close
@@ -585,7 +614,8 @@ mod headless {
                 assert!(
                     (avg[i] - avg[j]).abs() < 1e-3,
                     "axes {i} and {j} should be isotropic: {:.6} vs {:.6}",
-                    avg[i], avg[j]
+                    avg[i],
+                    avg[j]
                 );
             }
         }
@@ -655,14 +685,44 @@ mod headless {
     #[test]
     fn solver_converges_on_simple_topology() {
         let nodes = vec![
-            NodeDesc { centroid: Vec3::new(-1.0, 0.0, 0.0), mass: 0.0, volume: 1.0 },
-            NodeDesc { centroid: Vec3::new(1.0, 0.0, 0.0), mass: 0.0, volume: 1.0 },
-            NodeDesc { centroid: Vec3::new(0.0, 1.5, 0.0), mass: 15.0, volume: 1.0 },
+            NodeDesc {
+                centroid: Vec3::new(-1.0, 0.0, 0.0),
+                mass: 0.0,
+                volume: 1.0,
+            },
+            NodeDesc {
+                centroid: Vec3::new(1.0, 0.0, 0.0),
+                mass: 0.0,
+                volume: 1.0,
+            },
+            NodeDesc {
+                centroid: Vec3::new(0.0, 1.5, 0.0),
+                mass: 15.0,
+                volume: 1.0,
+            },
         ];
         let bonds = vec![
-            BondDesc { centroid: Vec3::new(-0.5, 0.75, 0.0), normal: Vec3::new(0.55, 0.83, 0.0), area: 0.6, node0: 0, node1: 2 },
-            BondDesc { centroid: Vec3::new(0.5, 0.75, 0.0), normal: Vec3::new(-0.55, 0.83, 0.0), area: 0.6, node0: 1, node1: 2 },
-            BondDesc { centroid: Vec3::new(0.0, 0.0, 0.0), normal: Vec3::new(1.0, 0.0, 0.0), area: 0.9, node0: 0, node1: 1 },
+            BondDesc {
+                centroid: Vec3::new(-0.5, 0.75, 0.0),
+                normal: Vec3::new(0.55, 0.83, 0.0),
+                area: 0.6,
+                node0: 0,
+                node1: 2,
+            },
+            BondDesc {
+                centroid: Vec3::new(0.5, 0.75, 0.0),
+                normal: Vec3::new(-0.55, 0.83, 0.0),
+                area: 0.6,
+                node0: 1,
+                node1: 2,
+            },
+            BondDesc {
+                centroid: Vec3::new(0.0, 0.0, 0.0),
+                normal: Vec3::new(1.0, 0.0, 0.0),
+                area: 0.9,
+                node0: 0,
+                node1: 1,
+            },
         ];
         let settings = SolverSettings::default();
         let mut solver = ExtStressSolver::new(&nodes, &bonds, &settings).unwrap();
@@ -710,7 +770,10 @@ mod headless {
 
         // All nodes should appear in exactly one actor
         let actors = solver.actors();
-        let mut all_nodes: Vec<u32> = actors.iter().flat_map(|a| a.nodes.iter().copied()).collect();
+        let mut all_nodes: Vec<u32> = actors
+            .iter()
+            .flat_map(|a| a.nodes.iter().copied())
+            .collect();
         all_nodes.sort();
         all_nodes.dedup();
 

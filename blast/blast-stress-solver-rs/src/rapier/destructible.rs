@@ -6,9 +6,10 @@ use crate::ext_stress_solver::ExtStressSolver;
 use crate::types::*;
 
 use super::body_tracker::BodyTracker;
+use super::collision_groups::DebrisCollisionMode;
 use super::fracture_policy::FracturePolicy;
-use super::optimization::{DebrisCleanupOptions, OptimizationResult, SmallBodyDampingOptions};
 use super::optimization::SleepThresholdOptions;
+use super::optimization::{DebrisCleanupOptions, OptimizationResult, SmallBodyDampingOptions};
 use super::resimulation::{BodySnapshots, ResimulationOptions};
 
 /// Configuration for creating a `DestructibleSet`.
@@ -56,6 +57,8 @@ pub struct DestructibleSet {
     small_body_damping: SmallBodyDampingOptions,
     debris_cleanup: DebrisCleanupOptions,
     dynamic_body_ccd_enabled: bool,
+    debris_collision_mode: DebrisCollisionMode,
+    ground_body_handle: Option<RigidBodyHandle>,
     bond_table: Vec<BondDesc>,
     node_bonds: Vec<Vec<u32>>,
     removed_bonds: Vec<bool>,
@@ -110,6 +113,8 @@ impl DestructibleSet {
             small_body_damping: config.small_body_damping,
             debris_cleanup: config.debris_cleanup,
             dynamic_body_ccd_enabled: config.dynamic_body_ccd_enabled,
+            debris_collision_mode: DebrisCollisionMode::All,
+            ground_body_handle: None,
             bond_table: config.bonds,
             node_bonds,
             removed_bonds: vec![false; node_count],
@@ -179,6 +184,7 @@ impl DestructibleSet {
             0.0,
             self.small_body_damping,
             self.sleep_thresholds,
+            self.debris_cleanup.max_colliders_for_debris,
         );
         self.initialized = true;
         handles
@@ -221,8 +227,7 @@ impl DestructibleSet {
 
         let mut result = StepResult::default();
         let mut remaining_new_bodies = self.policy.clamp_new_bodies(usize::MAX);
-        let mut remaining_collider_migrations =
-            self.policy.clamp_collider_migrations(usize::MAX);
+        let mut remaining_collider_migrations = self.policy.clamp_collider_migrations(usize::MAX);
 
         self.process_pending_split_events(
             now_secs,
@@ -380,7 +385,10 @@ impl DestructibleSet {
 
     /// Number of bonds still considered active by the Rust-side fracture tracking.
     pub fn active_bond_count(&self) -> usize {
-        self.removed_bonds.iter().filter(|removed| !**removed).count()
+        self.removed_bonds
+            .iter()
+            .filter(|removed| !**removed)
+            .count()
     }
 
     /// Number of tracked Rapier bodies.
@@ -472,6 +480,32 @@ impl DestructibleSet {
         self.debris_cleanup = options;
     }
 
+    pub fn debris_collision_mode(&self) -> DebrisCollisionMode {
+        self.debris_collision_mode
+    }
+
+    pub fn set_debris_collision_mode(&mut self, mode: DebrisCollisionMode) {
+        self.debris_collision_mode = mode;
+        self.tracker.set_debris_collision_mode(mode);
+    }
+
+    pub fn ground_body_handle(&self) -> Option<RigidBodyHandle> {
+        self.ground_body_handle
+    }
+
+    pub fn set_ground_body_handle(&mut self, handle: Option<RigidBodyHandle>) {
+        self.ground_body_handle = handle;
+        self.tracker.set_ground_body_handle(handle);
+    }
+
+    pub fn refresh_collision_groups(&self, bodies: &RigidBodySet, colliders: &mut ColliderSet) {
+        self.tracker.refresh_collision_groups(
+            bodies,
+            colliders,
+            self.debris_cleanup.max_colliders_for_debris,
+        );
+    }
+
     pub fn dynamic_body_ccd_enabled(&self) -> bool {
         self.dynamic_body_ccd_enabled
     }
@@ -488,7 +522,11 @@ impl DestructibleSet {
     pub fn pending_new_body_count(&self, bodies: &RigidBodySet) -> usize {
         self.pending_split_events
             .iter()
-            .map(|event| self.tracker.estimate_split_cost(event, bodies).create_bodies)
+            .map(|event| {
+                self.tracker
+                    .estimate_split_cost(event, bodies)
+                    .create_bodies
+            })
             .sum()
     }
 
@@ -523,13 +561,16 @@ impl DestructibleSet {
         body_handle: RigidBodyHandle,
         now_secs: f32,
         bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
     ) -> bool {
         self.tracker.mark_support_contact(
             body_handle,
             now_secs,
             bodies,
+            colliders,
             self.small_body_damping,
             self.sleep_thresholds,
+            self.debris_cleanup.max_colliders_for_debris,
         )
     }
 
@@ -635,6 +676,7 @@ impl DestructibleSet {
                 now_secs,
                 self.small_body_damping,
                 self.sleep_thresholds,
+                self.debris_cleanup.max_colliders_for_debris,
             );
 
             *remaining_new_bodies = (*remaining_new_bodies).saturating_sub(cost.create_bodies);
@@ -667,11 +709,14 @@ impl DestructibleSet {
                 continue;
             }
 
-            let is_child_support = filtered_nodes.iter().any(|node| self.tracker.is_support(*node));
-            let should_destroy = (!is_child_support && self.skip_single_bodies && filtered_nodes.len() <= 1)
-                || (!is_child_support
-                    && self.policy.min_child_node_count > 1
-                    && filtered_nodes.len() < self.policy.min_child_node_count as usize);
+            let is_child_support = filtered_nodes
+                .iter()
+                .any(|node| self.tracker.is_support(*node));
+            let should_destroy =
+                (!is_child_support && self.skip_single_bodies && filtered_nodes.len() <= 1)
+                    || (!is_child_support
+                        && self.policy.min_child_node_count > 1
+                        && filtered_nodes.len() < self.policy.min_child_node_count as usize);
 
             if should_destroy {
                 destroyed_nodes.extend(filtered_nodes);

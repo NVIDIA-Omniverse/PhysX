@@ -84,9 +84,8 @@ pub fn build_tower_scenario(opts: &TowerOptions) -> ScenarioDesc {
     let node_mass = total_mass / (dynamic_node_count.max(1) as f64);
 
     // idx(ix, iy, iz) = iz * side * totalRows + iy * side + ix
-    let idx = |ix: u32, iy: u32, iz: u32| -> usize {
-        (iz * side * total_rows + iy * side + ix) as usize
-    };
+    let idx =
+        |ix: u32, iy: u32, iz: u32| -> usize { (iz * side * total_rows + iy * side + ix) as usize };
 
     // Node creation: iz outer, iy middle, ix inner (matches JS)
     for iz in 0..side {
@@ -152,12 +151,8 @@ pub fn build_tower_scenario(opts: &TowerOptions) -> ScenarioDesc {
 
                 if add_diagonals {
                     let diag_area = 0.5 * (area_xz + area_yz) * diag_scale as f32;
-                    let diag_offsets: [(i32, i32, i32); 4] = [
-                        (1, 1, 0),
-                        (1, -1, 0),
-                        (0, 1, 1),
-                        (0, -1, 1),
-                    ];
+                    let diag_offsets: [(i32, i32, i32); 4] =
+                        [(1, 1, 0), (1, -1, 0), (0, 1, 1), (0, -1, 1)];
                     for &(ddx, ddy, ddz) in &diag_offsets {
                         let nx = ix as i32 + ddx;
                         let ny = iy as i32 + ddy;

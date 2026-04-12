@@ -39,10 +39,10 @@
 
 mod ffi;
 
-pub mod types;
-pub mod stress_processor;
 pub mod bond_stress;
 pub mod ext_stress_solver;
+pub mod stress_processor;
+pub mod types;
 
 #[cfg(feature = "scenarios")]
 pub mod scenarios;
@@ -51,10 +51,10 @@ pub mod scenarios;
 pub mod rapier;
 
 // Re-export primary types at crate root for convenience
-pub use types::*;
-pub use stress_processor::{
-    StressProcessor, StressNodeDesc, StressBondDesc, StressVelocity, StressImpulse,
-    StressDataParams, StressSolverParams, StressErrorSq,
-};
 pub use bond_stress::compute_bond_stress;
 pub use ext_stress_solver::ExtStressSolver;
+pub use stress_processor::{
+    StressBondDesc, StressDataParams, StressErrorSq, StressImpulse, StressNodeDesc,
+    StressProcessor, StressSolverParams, StressVelocity,
+};
+pub use types::*;

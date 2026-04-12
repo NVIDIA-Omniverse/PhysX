@@ -1,4 +1,5 @@
 mod body_tracker;
+mod collision_groups;
 mod destructible;
 mod fracture_policy;
 mod optimization;
@@ -6,6 +7,7 @@ mod resimulation;
 mod split_migrator;
 
 pub use body_tracker::BodyTracker;
+pub use collision_groups::DebrisCollisionMode;
 pub use destructible::{DestructibleConfig, DestructibleSet, StepResult};
 pub use fracture_policy::FracturePolicy;
 pub use optimization::{
