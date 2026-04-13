@@ -307,7 +307,7 @@ build_wasm_backend() {
 
 stage_packaging_overrides() {
   cp "$SUPPORT_DIR/staged-build.rs" "$STAGE_DIR/build.rs"
-  cp "$SUPPORT_DIR/README.publish.md" "$STAGE_DIR/README.md"
+  cp "$CRATE_DIR/README.md" "$STAGE_DIR/README.md"
   cp "$REPO_ROOT/LICENSE.md" "$STAGE_DIR/LICENSE.md"
   cp "$SUPPORT_DIR/WASM_FEASIBILITY.md" "$STAGE_DIR/WASM_FEASIBILITY.md"
 }

@@ -465,7 +465,6 @@ dependencies = [
  "either",
  "ena",
  "foldhash",
- "glam 0.30.10",
  "hashbrown",
  "log",
  "nalgebra",
@@ -546,7 +545,6 @@ dependencies = [
  "simba",
  "static_assertions",
  "thiserror",
- "vec_map",
  "wide",
 ]
 
@@ -728,12 +726,6 @@ name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
-
-[[package]]
-name = "vec_map"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "wide"
