@@ -39,6 +39,9 @@
 
 mod ffi;
 
+#[cfg(target_arch = "wasm32")]
+mod wasm_runtime_shims;
+
 pub mod bond_stress;
 pub mod ext_stress_solver;
 pub mod stress_processor;
