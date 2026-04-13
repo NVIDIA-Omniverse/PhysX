@@ -115,6 +115,8 @@ pub struct BodyTracker {
     support_nodes: HashSet<u32>,
     /// Per-node size used for creating colliders.
     node_sizes: Vec<Vec3>,
+    /// Optional exact per-node collider shapes.
+    node_colliders: Vec<Option<ScenarioCollider>>,
     /// Per-node centroid.
     node_centroids: Vec<Vec3>,
     /// Per-node mass.
@@ -137,7 +139,11 @@ pub struct BodyTracker {
 
 impl BodyTracker {
     /// Create a new tracker from a scenario description.
-    pub fn new(nodes: &[ScenarioNode], node_sizes: Vec<Vec3>) -> Self {
+    pub fn new(
+        nodes: &[ScenarioNode],
+        node_sizes: Vec<Vec3>,
+        node_colliders: Vec<Option<ScenarioCollider>>,
+    ) -> Self {
         let support_nodes: HashSet<u32> = nodes
             .iter()
             .enumerate()
@@ -155,6 +161,7 @@ impl BodyTracker {
             body_to_nodes: HashMap::new(),
             support_nodes,
             node_sizes,
+            node_colliders,
             node_centroids,
             node_masses,
             node_local_offsets: vec![Vec3::ZERO; nodes.len()],
@@ -265,7 +272,6 @@ impl BodyTracker {
             // Create colliders for each node
             for &node_idx in &actor.nodes {
                 let ni = node_idx as usize;
-                let size = self.node_sizes[ni];
                 let centroid = self.node_centroids[ni];
 
                 // Collider position is relative to the body
@@ -273,25 +279,8 @@ impl BodyTracker {
                 let local_y = centroid.y - com.y;
                 let local_z = centroid.z - com.z;
 
-                let half = vector![size.x * 0.5, size.y * 0.5, size.z * 0.5];
-                let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
-                    .translation(vector![local_x, local_y, local_z])
-                    .active_events(
-                        ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS,
-                    )
-                    .active_hooks(
-                        ActiveHooks::FILTER_CONTACT_PAIRS | ActiveHooks::FILTER_INTERSECTION_PAIR,
-                    )
-                    .contact_force_event_threshold(0.0)
-                    .friction(0.25)
-                    .restitution(0.0);
-
-                let collider = if self.support_nodes.contains(&node_idx) {
-                    collider.mass(0.0)
-                } else {
-                    collider.mass(self.node_masses[ni].max(0.0))
-                };
-
+                let collider =
+                    self.build_node_collider(node_idx, Vec3::new(local_x, local_y, local_z));
                 let collider_handle = colliders.insert_with_parent(collider, body, bodies);
                 self.attach_node(
                     node_idx,
@@ -1538,10 +1527,33 @@ impl BodyTracker {
         bodies: &mut RigidBodySet,
         colliders: &mut ColliderSet,
     ) -> ColliderHandle {
+        let collider = self.build_node_collider(node_index, local_offset);
+        colliders.insert_with_parent(collider, body_handle, bodies)
+    }
+
+    fn build_node_collider(&self, node_index: u32, local_offset: Vec3) -> ColliderBuilder {
         let ni = node_index as usize;
-        let size = self.node_sizes[ni];
-        let half = vector![size.x * 0.5, size.y * 0.5, size.z * 0.5];
-        let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
+        let fallback_size = self.node_sizes[ni];
+        let fallback_half = vector![
+            fallback_size.x * 0.5,
+            fallback_size.y * 0.5,
+            fallback_size.z * 0.5
+        ];
+        let base = match self.node_colliders.get(ni).and_then(Option::as_ref) {
+            Some(ScenarioCollider::Cuboid { half_extents }) => {
+                ColliderBuilder::cuboid(half_extents.x, half_extents.y, half_extents.z)
+            }
+            Some(ScenarioCollider::ConvexHull { points }) => {
+                let hull_points: Vec<Point<Real>> =
+                    points.iter().map(|point| point![point.x, point.y, point.z]).collect();
+                ColliderBuilder::convex_hull(&hull_points).unwrap_or_else(|| {
+                    ColliderBuilder::cuboid(fallback_half.x, fallback_half.y, fallback_half.z)
+                })
+            }
+            None => ColliderBuilder::cuboid(fallback_half.x, fallback_half.y, fallback_half.z),
+        };
+
+        let collider = base
             .translation(vector![local_offset.x, local_offset.y, local_offset.z])
             .active_events(ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS)
             .active_hooks(ActiveHooks::FILTER_CONTACT_PAIRS | ActiveHooks::FILTER_INTERSECTION_PAIR)
@@ -1549,13 +1561,11 @@ impl BodyTracker {
             .friction(0.25)
             .restitution(0.0);
 
-        let collider = if self.support_nodes.contains(&node_index) {
+        if self.support_nodes.contains(&node_index) {
             collider.mass(0.0)
         } else {
             collider.mass(self.node_masses[ni].max(0.0))
-        };
-
-        colliders.insert_with_parent(collider, body_handle, bodies)
+        }
     }
 
     fn move_node_collider_to_body(

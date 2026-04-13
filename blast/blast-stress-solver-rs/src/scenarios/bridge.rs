@@ -432,5 +432,6 @@ pub fn build_bridge_scenario(opts: &BridgeOptions) -> ScenarioDesc {
         nodes,
         bonds,
         node_sizes,
+        collider_shapes: Vec::new(),
     }
 }

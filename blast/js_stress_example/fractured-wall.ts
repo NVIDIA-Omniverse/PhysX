@@ -19,40 +19,9 @@ import {
   buildScenarioFromFragments,
   buildFoundationFragments,
 } from 'blast-stress-solver/three';
+import { FRACTURED_WALL_DEMO_CONFIG as CONFIG } from './fractured-demo-config.js';
 
 // ── Config ────────────────────────────────────────────────────
-
-const CONFIG = {
-  wall: {
-    span: 6.0,
-    height: 3.0,
-    thickness: 0.32,
-    fragmentCount: 80,
-    deckMass: 10_000,
-  },
-  projectile: {
-    radius: 0.35,
-    mass: 1_000,
-    speed: 20,
-  },
-  solver: {
-    gravity: -9.81,
-    materialScale: 1e10,
-  },
-  physics: {
-    debrisCollisionMode: 'all' as string,
-    friction: 0.25,
-    restitution: 0.0,
-    contactForceScale: 30,
-    skipSingleBodies: false,
-  },
-  optimization: {
-    smallBodyDampingMode: 'always' as string,
-    debrisCleanupMode: 'always' as string,
-    debrisTtlMs: 10000,
-    maxCollidersForDebris: 2,
-  },
-};
 
 // ── Three.js setup ────────────────────────────────────────────
 

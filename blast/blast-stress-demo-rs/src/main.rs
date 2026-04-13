@@ -1,3 +1,5 @@
+mod scene_pack;
+
 use std::{
     any::Any,
     collections::{HashMap, HashSet},
@@ -29,8 +31,9 @@ use blast_stress_solver::scenarios::{
     build_bridge_scenario, build_tower_scenario, build_wall_scenario, BridgeOptions, TowerOptions,
     WallOptions,
 };
-use blast_stress_solver::{ScenarioDesc, SolverSettings, Vec3 as SolverVec3};
+use blast_stress_solver::{ScenarioCollider, ScenarioDesc, SolverSettings, Vec3 as SolverVec3};
 use rapier3d::prelude::*;
+use scene_pack::{load_embedded_scene_pack, EmbeddedSceneKey, LoadedScenePack, SceneMeshAsset};
 
 const GRAVITY: f32 = -9.81;
 const CONTACT_FORCE_SCALE: f32 = 30.0;
@@ -51,6 +54,9 @@ enum DemoScenarioKind {
     Wall,
     Tower,
     Bridge,
+    FracturedWall,
+    FracturedTower,
+    FracturedBridge,
 }
 
 impl DemoScenarioKind {
@@ -59,19 +65,25 @@ impl DemoScenarioKind {
             Self::Wall => "wall",
             Self::Tower => "tower",
             Self::Bridge => "bridge",
+            Self::FracturedWall => "fractured-wall",
+            Self::FracturedTower => "fractured-tower",
+            Self::FracturedBridge => "fractured-bridge",
         }
     }
 }
 
 #[derive(Clone, Debug)]
 struct DemoConfig {
-    title: &'static str,
+    title: String,
     scenario: ScenarioDesc,
+    node_meshes: Arc<[SceneMeshAsset]>,
     projectile_radius: f32,
     projectile_mass: f32,
     projectile_speed: f32,
     projectile_ttl: f32,
+    gravity: f32,
     material_scale: f32,
+    skip_single_bodies: bool,
     camera_target: Vec3,
     camera_distance: f32,
     policy: FracturePolicy,
@@ -780,8 +792,14 @@ impl PerfLogWriter {
 #[derive(Component)]
 struct ChunkVisual {
     node_index: u32,
-    size: Vec3,
+    gizmo_shape: ChunkGizmoShape,
     is_support: bool,
+}
+
+#[derive(Clone)]
+enum ChunkGizmoShape {
+    Box { size: Vec3 },
+    TriEdges { edges: Arc<[(Vec3, Vec3)]> },
 }
 
 #[derive(Component)]
@@ -2094,126 +2112,190 @@ fn selected_scenario_kind() -> DemoScenarioKind {
     {
         Some("tower") => DemoScenarioKind::Tower,
         Some("bridge") => DemoScenarioKind::Bridge,
+        Some("fractured-wall") | Some("fractured_wall") | Some("fwall") => {
+            DemoScenarioKind::FracturedWall
+        }
+        Some("fractured-tower") | Some("fractured_tower") | Some("ftower") => {
+            DemoScenarioKind::FracturedTower
+        }
+        Some("fractured-bridge") | Some("fractured_bridge") | Some("fbridge") => {
+            DemoScenarioKind::FracturedBridge
+        }
         _ => DemoScenarioKind::Wall,
     }
 }
 
+fn build_wall_demo_config() -> DemoConfig {
+    DemoConfig {
+        title: "Wall Demolition".to_string(),
+        scenario: build_wall_scenario(&WallOptions::default()),
+        node_meshes: Arc::from(Vec::<SceneMeshAsset>::new()),
+        projectile_radius: 0.35,
+        projectile_mass: 1_000.0,
+        projectile_speed: 20.0,
+        projectile_ttl: DEFAULT_PROJECTILE_TTL,
+        gravity: GRAVITY,
+        material_scale: 1.0e10,
+        skip_single_bodies: false,
+        camera_target: Vec3::new(0.0, 1.5, 0.0),
+        camera_distance: 14.0,
+        policy: FracturePolicy {
+            apply_excess_forces: false,
+            ..FracturePolicy::default()
+        },
+        resimulation: ResimulationOptions {
+            enabled: true,
+            max_passes: 1,
+        },
+        sleep_thresholds: SleepThresholdOptions::default(),
+        small_body_damping: SmallBodyDampingOptions {
+            mode: OptimizationMode::Off,
+            ..SmallBodyDampingOptions::default()
+        },
+        debris_cleanup: DebrisCleanupOptions {
+            mode: OptimizationMode::Always,
+            debris_ttl_secs: 8.0,
+            max_colliders_for_debris: 2,
+        },
+        debris_collision_mode: DebrisCollisionMode::All,
+    }
+}
+
+fn build_tower_demo_config() -> DemoConfig {
+    DemoConfig {
+        title: "Tower Collapse".to_string(),
+        scenario: build_tower_scenario(&TowerOptions::default()),
+        node_meshes: Arc::from(Vec::<SceneMeshAsset>::new()),
+        projectile_radius: 0.35,
+        projectile_mass: 1_000.0,
+        projectile_speed: 22.0,
+        projectile_ttl: DEFAULT_PROJECTILE_TTL,
+        gravity: GRAVITY,
+        material_scale: 1.0e10,
+        skip_single_bodies: false,
+        camera_target: Vec3::new(0.0, 1.5, 0.0),
+        camera_distance: 20.0,
+        policy: FracturePolicy {
+            apply_excess_forces: false,
+            ..FracturePolicy::default()
+        },
+        resimulation: ResimulationOptions {
+            enabled: true,
+            max_passes: 1,
+        },
+        sleep_thresholds: SleepThresholdOptions::default(),
+        small_body_damping: SmallBodyDampingOptions {
+            mode: OptimizationMode::Always,
+            collider_count_threshold: 3,
+            min_linear_damping: 2.0,
+            min_angular_damping: 2.0,
+        },
+        debris_cleanup: DebrisCleanupOptions {
+            mode: OptimizationMode::Always,
+            debris_ttl_secs: 10.0,
+            max_colliders_for_debris: 2,
+        },
+        debris_collision_mode: DebrisCollisionMode::All,
+    }
+}
+
+fn build_bridge_demo_config() -> DemoConfig {
+    DemoConfig {
+        title: "Bridge Stress".to_string(),
+        scenario: build_bridge_scenario(&BridgeOptions {
+            // Keep the bridge footprint and silhouette, but use a much coarser
+            // chunk grid so both Rapier and the stress graph stay in a realistic range.
+            span_segments: 18,
+            width_segments: 6,
+            thickness_layers: 1,
+            supports_per_side: 3,
+            support_width_segments: 1,
+            support_depth_segments: 1,
+            ..BridgeOptions::default()
+        }),
+        node_meshes: Arc::from(Vec::<SceneMeshAsset>::new()),
+        projectile_radius: 0.4,
+        projectile_mass: 1_000.0,
+        projectile_speed: 20.0,
+        projectile_ttl: DEFAULT_PROJECTILE_TTL,
+        gravity: GRAVITY,
+        material_scale: 1.0e10,
+        skip_single_bodies: false,
+        camera_target: Vec3::new(0.0, 2.5, 0.0),
+        camera_distance: 24.0,
+        policy: FracturePolicy {
+            apply_excess_forces: false,
+            ..FracturePolicy::default()
+        },
+        resimulation: ResimulationOptions {
+            enabled: true,
+            max_passes: 1,
+        },
+        sleep_thresholds: SleepThresholdOptions {
+            mode: OptimizationMode::AfterGroundCollision,
+            linear_threshold: 0.2,
+            angular_threshold: 0.2,
+        },
+        small_body_damping: SmallBodyDampingOptions {
+            mode: OptimizationMode::AfterGroundCollision,
+            collider_count_threshold: 4,
+            min_linear_damping: 3.0,
+            min_angular_damping: 3.0,
+        },
+        debris_cleanup: DebrisCleanupOptions {
+            mode: OptimizationMode::AfterGroundCollision,
+            debris_ttl_secs: 6.0,
+            max_colliders_for_debris: 3,
+        },
+        debris_collision_mode: DebrisCollisionMode::NoDebrisPairs,
+    }
+}
+
+fn apply_scene_pack(mut base: DemoConfig, pack: LoadedScenePack) -> DemoConfig {
+    base.title = pack.title;
+    base.scenario = pack.scenario;
+    base.node_meshes = Arc::from(pack.node_meshes);
+    base.projectile_radius = pack.projectile_radius;
+    base.projectile_mass = pack.projectile_mass;
+    base.projectile_speed = pack.projectile_speed;
+    base.projectile_ttl = pack.projectile_ttl_secs;
+    base.gravity = pack.gravity;
+    base.material_scale = pack.material_scale;
+    base.skip_single_bodies = pack.skip_single_bodies;
+    base.camera_target = pack.camera_target;
+    base.camera_distance = pack.camera_distance;
+    base.small_body_damping = pack.small_body_damping;
+    base.debris_cleanup = pack.debris_cleanup;
+    base.debris_collision_mode = pack.debris_collision_mode;
+    base
+}
+
 fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
     match kind {
-        DemoScenarioKind::Wall => DemoConfig {
-            title: "Wall Demolition",
-            scenario: build_wall_scenario(&WallOptions::default()),
-            projectile_radius: 0.35,
-            projectile_mass: 1_000.0,
-            projectile_speed: 20.0,
-            projectile_ttl: DEFAULT_PROJECTILE_TTL,
-            material_scale: 1.0e10,
-            camera_target: Vec3::new(0.0, 1.5, 0.0),
-            camera_distance: 14.0,
-            policy: FracturePolicy {
-                apply_excess_forces: false,
-                ..FracturePolicy::default()
-            },
-            resimulation: ResimulationOptions {
-                enabled: true,
-                max_passes: 1,
-            },
-            sleep_thresholds: SleepThresholdOptions::default(),
-            small_body_damping: SmallBodyDampingOptions {
-                mode: OptimizationMode::Off,
-                ..SmallBodyDampingOptions::default()
-            },
-            debris_cleanup: DebrisCleanupOptions {
-                mode: OptimizationMode::Always,
-                debris_ttl_secs: 8.0,
-                max_colliders_for_debris: 2,
-            },
-            debris_collision_mode: DebrisCollisionMode::All,
-        },
-        DemoScenarioKind::Tower => DemoConfig {
-            title: "Tower Collapse",
-            scenario: build_tower_scenario(&TowerOptions::default()),
-            projectile_radius: 0.35,
-            projectile_mass: 1_000.0,
-            projectile_speed: 22.0,
-            projectile_ttl: DEFAULT_PROJECTILE_TTL,
-            material_scale: 1.0e10,
-            camera_target: Vec3::new(0.0, 1.5, 0.0),
-            camera_distance: 20.0,
-            policy: FracturePolicy {
-                apply_excess_forces: false,
-                ..FracturePolicy::default()
-            },
-            resimulation: ResimulationOptions {
-                enabled: true,
-                max_passes: 1,
-            },
-            sleep_thresholds: SleepThresholdOptions::default(),
-            small_body_damping: SmallBodyDampingOptions {
-                mode: OptimizationMode::Always,
-                collider_count_threshold: 3,
-                min_linear_damping: 2.0,
-                min_angular_damping: 2.0,
-            },
-            debris_cleanup: DebrisCleanupOptions {
-                mode: OptimizationMode::Always,
-                debris_ttl_secs: 10.0,
-                max_colliders_for_debris: 2,
-            },
-            debris_collision_mode: DebrisCollisionMode::All,
-        },
-        DemoScenarioKind::Bridge => DemoConfig {
-            title: "Bridge Stress",
-            scenario: build_bridge_scenario(&BridgeOptions {
-                // Keep the bridge footprint and silhouette, but use a much coarser
-                // chunk grid so both Rapier and the stress graph stay in a realistic range.
-                span_segments: 18,
-                width_segments: 6,
-                thickness_layers: 1,
-                supports_per_side: 3,
-                support_width_segments: 1,
-                support_depth_segments: 1,
-                ..BridgeOptions::default()
-            }),
-            projectile_radius: 0.4,
-            projectile_mass: 1_000.0,
-            projectile_speed: 20.0,
-            projectile_ttl: DEFAULT_PROJECTILE_TTL,
-            material_scale: 1.0e10,
-            camera_target: Vec3::new(0.0, 2.5, 0.0),
-            camera_distance: 24.0,
-            policy: FracturePolicy {
-                apply_excess_forces: false,
-                ..FracturePolicy::default()
-            },
-            resimulation: ResimulationOptions {
-                enabled: true,
-                max_passes: 1,
-            },
-            sleep_thresholds: SleepThresholdOptions {
-                mode: OptimizationMode::AfterGroundCollision,
-                linear_threshold: 0.2,
-                angular_threshold: 0.2,
-            },
-            small_body_damping: SmallBodyDampingOptions {
-                mode: OptimizationMode::AfterGroundCollision,
-                collider_count_threshold: 4,
-                min_linear_damping: 3.0,
-                min_angular_damping: 3.0,
-            },
-            debris_cleanup: DebrisCleanupOptions {
-                mode: OptimizationMode::AfterGroundCollision,
-                debris_ttl_secs: 6.0,
-                max_colliders_for_debris: 3,
-            },
-            debris_collision_mode: DebrisCollisionMode::NoDebrisPairs,
-        },
+        DemoScenarioKind::Wall => build_wall_demo_config(),
+        DemoScenarioKind::Tower => build_tower_demo_config(),
+        DemoScenarioKind::Bridge => build_bridge_demo_config(),
+        DemoScenarioKind::FracturedWall => apply_scene_pack(
+            build_wall_demo_config(),
+            load_embedded_scene_pack(EmbeddedSceneKey::FracturedWall)
+                .expect("failed to load fractured wall scene pack"),
+        ),
+        DemoScenarioKind::FracturedTower => apply_scene_pack(
+            build_tower_demo_config(),
+            load_embedded_scene_pack(EmbeddedSceneKey::FracturedTower)
+                .expect("failed to load fractured tower scene pack"),
+        ),
+        DemoScenarioKind::FracturedBridge => apply_scene_pack(
+            build_bridge_demo_config(),
+            load_embedded_scene_pack(EmbeddedSceneKey::FracturedBridge)
+                .expect("failed to load fractured bridge scene pack"),
+        ),
     }
 }
 
 fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoPhysicsState {
     let settings = scaled_solver_settings(config.material_scale);
-    let gravity = SolverVec3::new(0.0, GRAVITY, 0.0);
+    let gravity = SolverVec3::new(0.0, config.gravity, 0.0);
     let mut destructible =
         DestructibleSet::from_scenario(&config.scenario, settings, gravity, config.policy)
             .expect("failed to create destructible set");
@@ -2222,6 +2304,7 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
     destructible.set_small_body_damping(config.small_body_damping);
     destructible.set_debris_cleanup(config.debris_cleanup);
     destructible.set_debris_collision_mode(config.debris_collision_mode);
+    destructible.set_skip_single_bodies(config.skip_single_bodies);
     destructible.set_dynamic_body_ccd_enabled(toggles.body_ccd_enabled);
     destructible.set_split_child_recentering_enabled(toggles.split_child_recentering_enabled);
     destructible.set_split_child_velocity_fit_enabled(toggles.split_child_velocity_fit_enabled);
@@ -2328,14 +2411,26 @@ fn build_headless_shot_plan(
         "tower_benchmark" => build_tower_benchmark_shots(config, bounds),
         "bridge_benchmark" => build_bridge_benchmark_shots(config, bounds),
         "auto_smoke" => match kind {
-            DemoScenarioKind::Wall => build_wall_smoke_shots(config, bounds),
-            DemoScenarioKind::Tower => build_tower_smoke_shots(config, bounds),
-            DemoScenarioKind::Bridge => build_bridge_smoke_shots(config, bounds),
+            DemoScenarioKind::Wall | DemoScenarioKind::FracturedWall => {
+                build_wall_smoke_shots(config, bounds)
+            }
+            DemoScenarioKind::Tower | DemoScenarioKind::FracturedTower => {
+                build_tower_smoke_shots(config, bounds)
+            }
+            DemoScenarioKind::Bridge | DemoScenarioKind::FracturedBridge => {
+                build_bridge_smoke_shots(config, bounds)
+            }
         },
         "auto_benchmark" => match kind {
-            DemoScenarioKind::Wall => build_wall_benchmark_shots(config, bounds),
-            DemoScenarioKind::Tower => build_tower_benchmark_shots(config, bounds),
-            DemoScenarioKind::Bridge => build_bridge_benchmark_shots(config, bounds),
+            DemoScenarioKind::Wall | DemoScenarioKind::FracturedWall => {
+                build_wall_benchmark_shots(config, bounds)
+            }
+            DemoScenarioKind::Tower | DemoScenarioKind::FracturedTower => {
+                build_tower_benchmark_shots(config, bounds)
+            }
+            DemoScenarioKind::Bridge | DemoScenarioKind::FracturedBridge => {
+                build_bridge_benchmark_shots(config, bounds)
+            }
         },
         _ => return None,
     };
@@ -2764,12 +2859,7 @@ fn initialize_rapier_only_bodies(
             )
         };
 
-        let collider = ColliderBuilder::cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5)
-            .active_events(ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS)
-            .contact_force_event_threshold(0.0)
-            .friction(0.25)
-            .restitution(0.0)
-            .mass(node.mass.max(0.0));
+        let collider = build_rapier_only_node_collider(scenario, node_index, size, node.mass);
         colliders.insert_with_parent(collider, body, bodies);
 
         node_to_body[node_index] = Some(body);
@@ -2781,6 +2871,42 @@ fn initialize_rapier_only_bodies(
         node_local_offsets,
         support_body_count,
     }
+}
+
+fn build_rapier_only_node_collider(
+    scenario: &ScenarioDesc,
+    node_index: usize,
+    fallback_size: SolverVec3,
+    mass: f32,
+) -> ColliderBuilder {
+    let fallback = ColliderBuilder::cuboid(
+        fallback_size.x * 0.5,
+        fallback_size.y * 0.5,
+        fallback_size.z * 0.5,
+    );
+    let base = match scenario
+        .collider_shapes
+        .get(node_index)
+        .and_then(Option::as_ref)
+    {
+        Some(ScenarioCollider::Cuboid { half_extents }) => {
+            ColliderBuilder::cuboid(half_extents.x, half_extents.y, half_extents.z)
+        }
+        Some(ScenarioCollider::ConvexHull { points }) => {
+            let hull_points: Vec<Point<f32>> = points
+                .iter()
+                .map(|point| point![point.x, point.y, point.z])
+                .collect();
+            ColliderBuilder::convex_hull(&hull_points).unwrap_or(fallback)
+        }
+        None => fallback,
+    };
+
+    base.active_events(ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS)
+        .contact_force_event_threshold(0.0)
+        .friction(0.25)
+        .restitution(0.0)
+        .mass(mass.max(0.0))
 }
 
 fn demo_node_body(state: &DemoPhysicsState, node_index: u32) -> Option<RigidBodyHandle> {
@@ -3150,7 +3276,16 @@ fn spawn_chunk_visuals(
             },
             ChunkVisual {
                 node_index: node_index as u32,
-                size: Vec3::new(size.x, size.y, size.z),
+                gizmo_shape: state
+                    .config
+                    .node_meshes
+                    .get(node_index)
+                    .map(|mesh| ChunkGizmoShape::TriEdges {
+                        edges: Arc::from(build_mesh_gizmo_edges(mesh)),
+                    })
+                    .unwrap_or_else(|| ChunkGizmoShape::Box {
+                        size: Vec3::new(size.x, size.y, size.z),
+                    }),
                 is_support,
             },
             ChunkTint { color },
@@ -3164,12 +3299,14 @@ fn spawn_chunk_visuals(
                     metallic: 0.04,
                     ..default()
                 });
+                let mesh_handle = if let Some(mesh_asset) = state.config.node_meshes.get(node_index)
+                {
+                    meshes.add(mesh_asset.to_bevy_mesh())
+                } else {
+                    meshes.add(BevyCuboid::new(size.x * 0.98, size.y * 0.98, size.z * 0.98))
+                };
                 entity.insert((
-                    Mesh3d(meshes.add(BevyCuboid::new(
-                        size.x * 0.98,
-                        size.y * 0.98,
-                        size.z * 0.98,
-                    ))),
+                    Mesh3d(mesh_handle),
                     MeshMaterial3d(material_handle.clone()),
                     ChunkMaterial {
                         handle: material_handle,
@@ -4063,11 +4200,7 @@ fn update_projectile_progress(state: &mut DemoPhysicsState) {
     }
 }
 
-fn log_projectile_trace(
-    profiler: &mut DebugProfiler,
-    state: &DemoPhysicsState,
-    frame_number: u64,
-) {
+fn log_projectile_trace(profiler: &mut DebugProfiler, state: &DemoPhysicsState, frame_number: u64) {
     for (index, projectile) in state.projectiles.iter().enumerate() {
         let Some(body) = state.bodies.get(projectile.body_handle) else {
             continue;
@@ -4076,7 +4209,10 @@ fn log_projectile_trace(
         let linvel = body.linvel();
         let mut contact_pairs = 0usize;
         let mut active_contact_pairs = 0usize;
-        for pair in state.narrow_phase.contact_pairs_with(projectile.collider_handle) {
+        for pair in state
+            .narrow_phase
+            .contact_pairs_with(projectile.collider_handle)
+        {
             contact_pairs += 1;
             if pair.has_any_active_contact {
                 active_contact_pairs += 1;
@@ -4245,13 +4381,22 @@ fn gizmo_render_system(
     draw_floor_gizmo(&mut gizmos);
 
     for (chunk, tint, transform) in &chunk_q {
-        draw_box_gizmo(
-            &mut gizmos,
-            transform.translation,
-            transform.rotation,
-            chunk.size,
-            tint.color,
-        );
+        match &chunk.gizmo_shape {
+            ChunkGizmoShape::Box { size } => draw_box_gizmo(
+                &mut gizmos,
+                transform.translation,
+                transform.rotation,
+                *size,
+                tint.color,
+            ),
+            ChunkGizmoShape::TriEdges { edges } => draw_mesh_gizmo(
+                &mut gizmos,
+                transform.translation,
+                transform.rotation,
+                edges,
+                tint.color,
+            ),
+        }
     }
 
     for (projectile, transform) in &projectile_q {
@@ -4346,6 +4491,44 @@ fn draw_box_gizmo(gizmos: &mut Gizmos, center: Vec3, rotation: Quat, size: Vec3,
     for (start, end) in EDGES {
         gizmos.line(corners[start], corners[end], color);
     }
+}
+
+fn draw_mesh_gizmo(
+    gizmos: &mut Gizmos,
+    center: Vec3,
+    rotation: Quat,
+    edges: &[(Vec3, Vec3)],
+    color: Color,
+) {
+    for &(start, end) in edges {
+        gizmos.line(center + rotation * start, center + rotation * end, color);
+    }
+}
+
+fn build_mesh_gizmo_edges(mesh: &SceneMeshAsset) -> Vec<(Vec3, Vec3)> {
+    let mut unique_edges = HashSet::new();
+    for triangle in mesh.indices.chunks_exact(3) {
+        let triangle_edges = [
+            (triangle[0], triangle[1]),
+            (triangle[1], triangle[2]),
+            (triangle[2], triangle[0]),
+        ];
+        for (a, b) in triangle_edges {
+            unique_edges.insert(if a <= b { (a, b) } else { (b, a) });
+        }
+    }
+
+    unique_edges
+        .into_iter()
+        .filter_map(|(a, b)| {
+            let start = mesh.positions.get(a as usize)?;
+            let end = mesh.positions.get(b as usize)?;
+            Some((
+                Vec3::new(start[0], start[1], start[2]),
+                Vec3::new(end[0], end[1], end[2]),
+            ))
+        })
+        .collect()
 }
 
 fn headless_exit_system(

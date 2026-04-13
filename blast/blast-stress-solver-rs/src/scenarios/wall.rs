@@ -241,5 +241,6 @@ pub fn build_wall_scenario(opts: &WallOptions) -> ScenarioDesc {
         nodes,
         bonds,
         node_sizes,
+        collider_shapes: Vec::new(),
     }
 }

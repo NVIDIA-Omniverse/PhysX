@@ -1342,6 +1342,8 @@ dependencies = [
  "bevy",
  "blast-stress-solver",
  "rapier3d",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

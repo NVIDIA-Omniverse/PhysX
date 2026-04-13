@@ -23,6 +23,7 @@ pub struct DestructibleConfig {
     pub nodes: Vec<NodeDesc>,
     pub bonds: Vec<BondDesc>,
     pub node_sizes: Vec<Vec3>,
+    pub node_colliders: Vec<Option<ScenarioCollider>>,
     pub solver_settings: SolverSettings,
     pub gravity: Vec3,
     pub fracture_policy: FracturePolicy,
@@ -111,7 +112,7 @@ impl DestructibleSet {
             })
             .collect();
 
-        let tracker = BodyTracker::new(&scenario_nodes, config.node_sizes);
+        let tracker = BodyTracker::new(&scenario_nodes, config.node_sizes, config.node_colliders);
         let mut tracker = tracker;
         tracker.set_dynamic_body_ccd_enabled(config.dynamic_body_ccd_enabled);
 
@@ -165,11 +166,24 @@ impl DestructibleSet {
                     }),
             )
             .collect();
+        let node_colliders: Vec<Option<ScenarioCollider>> = scenario
+            .collider_shapes
+            .iter()
+            .cloned()
+            .chain(
+                scenario
+                    .nodes
+                    .iter()
+                    .skip(scenario.collider_shapes.len())
+                    .map(|_| None),
+            )
+            .collect();
 
         Self::new(DestructibleConfig {
             nodes,
             bonds,
             node_sizes,
+            node_colliders,
             solver_settings: settings,
             gravity,
             fracture_policy: policy,

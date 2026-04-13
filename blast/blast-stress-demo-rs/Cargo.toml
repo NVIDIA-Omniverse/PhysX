@@ -16,3 +16,5 @@ bevy = { version = "0.18", default-features = false, features = [
 ] }
 blast-stress-solver = { path = "../blast-stress-solver-rs", features = ["scenarios", "rapier"] }
 rapier3d = { version = "0.30", features = ["simd-stable"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

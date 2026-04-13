@@ -373,6 +373,13 @@ pub struct ScenarioBond {
     pub area: f32,
 }
 
+/// Optional exact collider shape for a scenario node.
+#[derive(Clone, Debug)]
+pub enum ScenarioCollider {
+    Cuboid { half_extents: Vec3 },
+    ConvexHull { points: Vec<Vec3> },
+}
+
 /// Full scenario description (nodes + bonds).
 #[derive(Clone, Debug, Default)]
 pub struct ScenarioDesc {
@@ -381,6 +388,9 @@ pub struct ScenarioDesc {
     /// Optional exact per-node collider sizes for Rapier integration.
     /// When omitted, Rapier helpers fall back to cube-root volume estimates.
     pub node_sizes: Vec<Vec3>,
+    /// Optional exact per-node collider shapes for Rapier integration.
+    /// When omitted, Rapier helpers fall back to cuboids sized from `node_sizes`.
+    pub collider_shapes: Vec<Option<ScenarioCollider>>,
 }
 
 impl ScenarioDesc {

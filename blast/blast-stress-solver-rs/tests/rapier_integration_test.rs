@@ -70,6 +70,7 @@ fn wall_scenario() -> ScenarioDesc {
         nodes,
         bonds,
         node_sizes: vec![Vec3::new(bw, bh, bd); (columns * rows) as usize],
+        collider_shapes: Vec::new(),
     }
 }
 
@@ -112,6 +113,7 @@ fn dynamic_pair_scenario() -> ScenarioDesc {
             area: 0.25,
         }],
         node_sizes: vec![size, size],
+        collider_shapes: Vec::new(),
     }
 }
 
@@ -159,6 +161,7 @@ fn dynamic_triangle_scenario() -> ScenarioDesc {
             },
         ],
         node_sizes: vec![size; 3],
+        collider_shapes: Vec::new(),
     }
 }
 

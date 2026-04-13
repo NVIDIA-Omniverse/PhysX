@@ -223,5 +223,6 @@ pub fn build_tower_scenario(opts: &TowerOptions) -> ScenarioDesc {
         nodes,
         bonds,
         node_sizes,
+        collider_shapes: Vec::new(),
     }
 }
