@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 
+use rapier3d::na::UnitQuaternion;
 use rapier3d::prelude::*;
 
 use super::collision_groups::{apply_collision_groups_for_body, DebrisCollisionMode};
@@ -15,8 +16,7 @@ struct BodyState {
     position: Isometry<Real>,
     linvel: Vector<Real>,
     angvel: Vector<Real>,
-    linear_damping: Real,
-    angular_damping: Real,
+    was_sleeping: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -33,6 +33,7 @@ struct NodeSourceState {
     body_handle: RigidBodyHandle,
     collider_handle: Option<ColliderHandle>,
     world_centroid: Vec3,
+    world_velocity: Vec3,
 }
 
 struct SplitPlanningData {
@@ -57,6 +58,14 @@ impl PlannedBodyTarget {
     }
 }
 
+#[derive(Clone, Copy)]
+struct ChildTargetState {
+    pose: Isometry<Real>,
+    linvel: Vector<Real>,
+    angvel: Vector<Real>,
+    should_sleep: bool,
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SplitCost {
     pub create_bodies: usize,
@@ -67,6 +76,9 @@ pub struct SplitCost {
 pub struct SplitEditStats {
     pub plan_ms: f32,
     pub apply_ms: f32,
+    pub child_pose_ms: f32,
+    pub velocity_fit_ms: f32,
+    pub sleep_init_ms: f32,
     pub body_create_ms: f32,
     pub collider_move_ms: f32,
     pub collider_insert_ms: f32,
@@ -84,6 +96,8 @@ pub struct SplitEditStats {
 #[derive(Debug, Default)]
 pub struct SplitApplyResult {
     pub new_handles: Vec<RigidBodyHandle>,
+    pub cohort_handles: Vec<RigidBodyHandle>,
+    pub source_handles: Vec<RigidBodyHandle>,
     pub stats: SplitEditStats,
 }
 
@@ -115,6 +129,10 @@ pub struct BodyTracker {
     debris_collision_mode: DebrisCollisionMode,
     /// Optional ground body used by debris-ground-only filtering.
     ground_body_handle: Option<RigidBodyHandle>,
+    /// Whether split children should be recentered to their own pose on handoff.
+    split_child_recentering_enabled: bool,
+    /// Whether split children should get fitted kinematics on handoff.
+    split_child_velocity_fit_enabled: bool,
 }
 
 impl BodyTracker {
@@ -144,6 +162,8 @@ impl BodyTracker {
             dynamic_body_ccd_enabled: false,
             debris_collision_mode: DebrisCollisionMode::All,
             ground_body_handle: None,
+            split_child_recentering_enabled: true,
+            split_child_velocity_fit_enabled: true,
         }
     }
 
@@ -165,6 +185,14 @@ impl BodyTracker {
 
     pub fn set_ground_body_handle(&mut self, handle: Option<RigidBodyHandle>) {
         self.ground_body_handle = handle;
+    }
+
+    pub fn set_split_child_recentering_enabled(&mut self, enabled: bool) {
+        self.split_child_recentering_enabled = enabled;
+    }
+
+    pub fn set_split_child_velocity_fit_enabled(&mut self, enabled: bool) {
+        self.split_child_velocity_fit_enabled = enabled;
     }
 
     pub fn refresh_collision_groups(
@@ -251,6 +279,9 @@ impl BodyTracker {
                     .active_events(
                         ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS,
                     )
+                    .active_hooks(
+                        ActiveHooks::FILTER_CONTACT_PAIRS | ActiveHooks::FILTER_INTERSECTION_PAIR,
+                    )
                     .contact_force_event_threshold(0.0)
                     .friction(0.25)
                     .restitution(0.0);
@@ -299,6 +330,7 @@ impl BodyTracker {
     ) -> SplitApplyResult {
         let mut result = SplitApplyResult::default();
         let planning = self.collect_split_planning_data(event, bodies);
+        result.source_handles = planning.parent_bodies.clone();
         let plan_started_at = Instant::now();
         let child_support: Vec<super::split_migrator::PlannerChildSupport> = event
             .children
@@ -337,30 +369,36 @@ impl BodyTracker {
         }
 
         let mut child_targets: HashMap<usize, PlannedBodyTarget> = HashMap::new();
-        let mut target_poses: HashMap<RigidBodyHandle, Isometry<Real>> = HashMap::new();
+        let mut child_target_states: HashMap<usize, ChildTargetState> = HashMap::new();
         let apply_started_at = Instant::now();
 
         for entry in &plan.reuse {
             let child = &event.children[entry.child_index];
             let child_has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
+            let (target_state, child_pose_ms, velocity_fit_ms) =
+                self.compute_child_target_state(child, &planning, child_has_support);
+            result.stats.child_pose_ms += child_pose_ms;
+            result.stats.velocity_fit_ms += velocity_fit_ms;
             let flipped =
                 self.reconcile_reused_body_type(entry.body_handle, child_has_support, bodies);
             result.stats.body_type_flips += usize::from(flipped);
-            let target_pose = bodies
-                .get(entry.body_handle)
-                .map(|body| *body.position())
-                .unwrap_or_else(Isometry::identity);
-            target_poses.insert(entry.body_handle, target_pose);
+            if let Some(body) = bodies.get_mut(entry.body_handle) {
+                body.set_position(target_state.pose, false);
+            }
             child_targets.insert(
                 entry.child_index,
                 PlannedBodyTarget::Existing(entry.body_handle),
             );
+            child_target_states.insert(entry.child_index, target_state);
         }
 
         for entry in &plan.create {
             let child = &event.children[entry.child_index];
             let child_has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
-            let source_state = self.source_state_for_child(child, &planning);
+            let (target_state, child_pose_ms, velocity_fit_ms) =
+                self.compute_child_target_state(child, &planning, child_has_support);
+            result.stats.child_pose_ms += child_pose_ms;
+            result.stats.velocity_fit_ms += velocity_fit_ms;
 
             let recycled_handle = if child_has_support {
                 recycled_fixed.pop().or_else(|| recycled_dynamic.pop())
@@ -372,40 +410,33 @@ impl BodyTracker {
                 let flipped = self.reinitialize_recycled_body(
                     body_handle,
                     child_has_support,
-                    source_state,
+                    target_state,
                     bodies,
                 );
                 result.stats.body_type_flips += usize::from(flipped);
                 result.stats.recycled_bodies += 1;
-                let target_pose = bodies
-                    .get(body_handle)
-                    .map(|body| *body.position())
-                    .unwrap_or_else(Isometry::identity);
-                target_poses.insert(body_handle, target_pose);
                 child_targets.insert(entry.child_index, PlannedBodyTarget::Recycled(body_handle));
+                child_target_states.insert(entry.child_index, target_state);
                 continue;
             }
 
             let body_create_started_at = Instant::now();
-            let body_handle = self.create_body_for_child(child, source_state, bodies);
+            let body_handle = self.create_body_for_child(child, target_state, bodies);
             result.stats.body_create_ms +=
                 body_create_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
             result.stats.created_bodies += 1;
             result.new_handles.push(body_handle);
-            let target_pose = bodies
-                .get(body_handle)
-                .map(|body| *body.position())
-                .unwrap_or_else(Isometry::identity);
-            target_poses.insert(body_handle, target_pose);
             child_targets.insert(entry.child_index, PlannedBodyTarget::Created(body_handle));
+            child_target_states.insert(entry.child_index, target_state);
         }
 
         for (child_index, target) in child_targets.iter().map(|(k, v)| (*k, *v)) {
             let child = &event.children[child_index];
             let target_body = target.handle();
-            let target_pose = *target_poses
-                .get(&target_body)
-                .unwrap_or_else(|| panic!("missing target pose for body {:?}", target_body));
+            let target_state = *child_target_states
+                .get(&child_index)
+                .unwrap_or_else(|| panic!("missing target state for child {}", child_index));
+            let target_pose = target_state.pose;
 
             for &n in &child.nodes {
                 let Some(source) = planning.node_sources.get(&n) else {
@@ -454,7 +485,22 @@ impl BodyTracker {
             self.promote_small_body_damping(target_body, bodies, &small_body_damping);
             self.configure_sleep_thresholds(target_body, bodies, &sleep_thresholds);
             self.apply_collision_groups(target_body, bodies, colliders, max_colliders_for_debris);
+            let sleep_started_at = Instant::now();
+            self.apply_child_kinematics(
+                target_body,
+                child.nodes.iter().any(|n| self.support_nodes.contains(n)),
+                target_state,
+                bodies,
+            );
+            result.stats.sleep_init_ms += sleep_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
         }
+
+        result.cohort_handles = child_targets
+            .values()
+            .map(|target| target.handle())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
 
         let reused_handles: HashSet<RigidBodyHandle> = reused_by_body.keys().copied().collect();
         let recycled_handles: HashSet<RigidBodyHandle> = child_targets
@@ -814,16 +860,254 @@ impl BodyTracker {
         sum / nodes.len() as f32
     }
 
-    fn source_state_for_child(
+    fn compute_child_target_state(
         &self,
         child: &SplitChild,
         planning: &SplitPlanningData,
-    ) -> Option<BodyState> {
-        child
-            .nodes
-            .first()
-            .and_then(|node| planning.node_sources.get(node))
-            .and_then(|source| planning.parent_states.get(&source.body_handle).copied())
+        has_support: bool,
+    ) -> (ChildTargetState, f32, f32) {
+        let pose_started_at = Instant::now();
+        let pose = if self.split_child_recentering_enabled {
+            self.compute_child_target_pose(child, planning, has_support)
+        } else {
+            self.inherited_child_target_pose(child, planning)
+        };
+        let child_pose_ms = pose_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+        let velocity_fit_started_at = Instant::now();
+        let (linvel, angvel, should_sleep) = if self.split_child_velocity_fit_enabled {
+            self.fit_child_motion(child, planning, has_support, &pose)
+        } else {
+            self.inherited_child_motion(child, planning, has_support)
+        };
+        let velocity_fit_ms = velocity_fit_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+        (
+            ChildTargetState {
+                pose,
+                linvel,
+                angvel,
+                should_sleep,
+            },
+            child_pose_ms,
+            velocity_fit_ms,
+        )
+    }
+
+    fn inherited_child_target_pose(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+    ) -> Isometry<Real> {
+        let Some(body_handle) = self.dominant_child_body_handle(child, planning) else {
+            return Isometry::identity();
+        };
+        planning
+            .parent_states
+            .get(&body_handle)
+            .map(|state| state.position)
+            .unwrap_or_else(Isometry::identity)
+    }
+
+    fn compute_child_target_pose(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+        has_support: bool,
+    ) -> Isometry<Real> {
+        let translation = if has_support {
+            self.child_world_centroid(child, planning)
+        } else {
+            self.child_world_center_of_mass(child, planning)
+        };
+        let rotation = self.dominant_child_rotation(child, planning);
+        Isometry::from_parts(
+            Translation::new(translation.x, translation.y, translation.z),
+            rotation,
+        )
+    }
+
+    fn child_world_centroid(&self, child: &SplitChild, planning: &SplitPlanningData) -> Vec3 {
+        let mut sum = Vec3::ZERO;
+        let mut count = 0usize;
+        for &node in &child.nodes {
+            if let Some(source) = planning.node_sources.get(&node) {
+                sum += source.world_centroid;
+                count += 1;
+            }
+        }
+        if count == 0 {
+            self.compute_actor_com(&child.nodes)
+        } else {
+            sum / count as f32
+        }
+    }
+
+    fn child_world_center_of_mass(&self, child: &SplitChild, planning: &SplitPlanningData) -> Vec3 {
+        let mut weighted_sum = Vec3::ZERO;
+        let mut total_mass = 0.0f32;
+        for &node in &child.nodes {
+            if let Some(source) = planning.node_sources.get(&node) {
+                let mass = self.node_masses[node as usize].max(0.0);
+                if mass > 0.0 {
+                    weighted_sum += source.world_centroid * mass;
+                    total_mass += mass;
+                }
+            }
+        }
+        if total_mass <= f32::EPSILON {
+            self.child_world_centroid(child, planning)
+        } else {
+            weighted_sum / total_mass
+        }
+    }
+
+    fn dominant_child_rotation(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+    ) -> UnitQuaternion<Real> {
+        let Some(body_handle) = self.dominant_child_body_handle(child, planning) else {
+            return UnitQuaternion::identity();
+        };
+        planning
+            .parent_states
+            .get(&body_handle)
+            .map(|state| state.position.rotation)
+            .unwrap_or_else(UnitQuaternion::identity)
+    }
+
+    fn dominant_child_body_handle(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+    ) -> Option<RigidBodyHandle> {
+        let mut body_weights: HashMap<RigidBodyHandle, f32> = HashMap::new();
+        for &node in &child.nodes {
+            let Some(source) = planning.node_sources.get(&node) else {
+                continue;
+            };
+            *body_weights.entry(source.body_handle).or_insert(0.0) +=
+                self.node_masses[node as usize].max(1.0);
+        }
+        let Some((&body_handle, _)) = body_weights
+            .iter()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+        else {
+            return None;
+        };
+        Some(body_handle)
+    }
+
+    fn fit_child_motion(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+        has_support: bool,
+        target_pose: &Isometry<Real>,
+    ) -> (Vector<Real>, Vector<Real>, bool) {
+        if has_support {
+            return (Vector::zeros(), Vector::zeros(), false);
+        }
+
+        let child_com = Point::from(target_pose.translation.vector);
+        let mut linvel_sum = Vector::zeros();
+        let mut total_mass = 0.0f32;
+        let mut all_sleeping = true;
+        let mut samples = Vec::new();
+        let mut source_weights: HashMap<RigidBodyHandle, f32> = HashMap::new();
+
+        for &node in &child.nodes {
+            let Some(source) = planning.node_sources.get(&node) else {
+                continue;
+            };
+            let Some(parent_state) = planning.parent_states.get(&source.body_handle) else {
+                continue;
+            };
+            let mass = self.node_masses[node as usize].max(1.0e-4);
+            let velocity = vector![
+                source.world_velocity.x,
+                source.world_velocity.y,
+                source.world_velocity.z
+            ];
+            linvel_sum += velocity * mass;
+            total_mass += mass;
+            all_sleeping &= parent_state.was_sleeping;
+            *source_weights.entry(source.body_handle).or_insert(0.0) += mass;
+            let point = point![
+                source.world_centroid.x,
+                source.world_centroid.y,
+                source.world_centroid.z
+            ];
+            samples.push((point, velocity, mass));
+        }
+
+        if samples.is_empty() || total_mass <= f32::EPSILON {
+            return (Vector::zeros(), Vector::zeros(), false);
+        }
+
+        let linvel = linvel_sum / total_mass;
+        let mut normal = [[0.0f32; 3]; 3];
+        let mut rhs = [0.0f32; 3];
+        for (point, velocity, mass) in &samples {
+            let r = point - child_com;
+            let r_vec = Vec3::new(r.x, r.y, r.z);
+            let v_rel = Vec3::new(
+                velocity.x - linvel.x,
+                velocity.y - linvel.y,
+                velocity.z - linvel.z,
+            );
+            let r2 = r_vec.magnitude_squared();
+            let rr = [
+                [r_vec.x * r_vec.x, r_vec.x * r_vec.y, r_vec.x * r_vec.z],
+                [r_vec.y * r_vec.x, r_vec.y * r_vec.y, r_vec.y * r_vec.z],
+                [r_vec.z * r_vec.x, r_vec.z * r_vec.y, r_vec.z * r_vec.z],
+            ];
+            for row in 0..3 {
+                for col in 0..3 {
+                    normal[row][col] += mass * ((if row == col { r2 } else { 0.0 }) - rr[row][col]);
+                }
+            }
+            let cross = r_vec.cross(v_rel);
+            rhs[0] += mass * cross.x;
+            rhs[1] += mass * cross.y;
+            rhs[2] += mass * cross.z;
+        }
+
+        let dominant_source = source_weights
+            .iter()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .and_then(|(handle, _)| planning.parent_states.get(handle));
+
+        let angvel = self
+            .solve_symmetric_3x3(normal, rhs)
+            .map(|omega| vector![omega.x, omega.y, omega.z])
+            .or_else(|| dominant_source.map(|state| state.angvel))
+            .unwrap_or_else(Vector::zeros);
+
+        let should_sleep =
+            all_sleeping && linvel.norm_squared() <= 1.0e-4 && angvel.norm_squared() <= 1.0e-4;
+
+        (linvel, angvel, should_sleep)
+    }
+
+    fn inherited_child_motion(
+        &self,
+        child: &SplitChild,
+        planning: &SplitPlanningData,
+        has_support: bool,
+    ) -> (Vector<Real>, Vector<Real>, bool) {
+        if has_support {
+            return (Vector::zeros(), Vector::zeros(), false);
+        }
+        let Some(body_handle) = self.dominant_child_body_handle(child, planning) else {
+            return (Vector::zeros(), Vector::zeros(), false);
+        };
+        let Some(state) = planning.parent_states.get(&body_handle) else {
+            return (Vector::zeros(), Vector::zeros(), false);
+        };
+        let should_sleep = state.was_sleeping
+            && state.linvel.norm_squared() <= 1.0e-4
+            && state.angvel.norm_squared() <= 1.0e-4;
+        (state.linvel, state.angvel, should_sleep)
     }
 
     fn desired_body_type(has_support: bool) -> RigidBodyType {
@@ -858,7 +1142,7 @@ impl BodyTracker {
         &self,
         body_handle: RigidBodyHandle,
         has_support: bool,
-        source: Option<BodyState>,
+        target: ChildTargetState,
         bodies: &mut RigidBodySet,
     ) -> bool {
         let desired = Self::desired_body_type(has_support);
@@ -869,13 +1153,13 @@ impl BodyTracker {
         if flipped {
             body.set_body_type(desired, true);
         }
-        if let Some(source) = source {
-            body.set_position(source.position, false);
-            body.set_linear_damping(source.linear_damping);
-            body.set_angular_damping(source.angular_damping);
-            if desired == RigidBodyType::Dynamic {
-                body.set_linvel(source.linvel, false);
-                body.set_angvel(source.angvel, false);
+        body.set_position(target.pose, false);
+        if desired == RigidBodyType::Dynamic {
+            body.set_linvel(target.linvel, false);
+            body.set_angvel(target.angvel, false);
+            if target.should_sleep {
+                body.sleep();
+            } else {
                 body.wake_up(true);
             }
         }
@@ -885,38 +1169,86 @@ impl BodyTracker {
     fn create_body_for_child(
         &self,
         child: &SplitChild,
-        source: Option<BodyState>,
+        target: ChildTargetState,
         bodies: &mut RigidBodySet,
     ) -> RigidBodyHandle {
         let has_support = child.nodes.iter().any(|n| self.support_nodes.contains(n));
-        if let Some(source) = source {
-            let builder = if has_support {
-                RigidBodyBuilder::fixed()
-                    .pose(source.position)
-                    .linear_damping(source.linear_damping)
-                    .angular_damping(source.angular_damping)
-            } else {
-                RigidBodyBuilder::dynamic()
-                    .pose(source.position)
-                    .linvel(source.linvel)
-                    .angvel(source.angvel)
-                    .linear_damping(source.linear_damping)
-                    .angular_damping(source.angular_damping)
-                    .ccd_enabled(self.dynamic_body_ccd_enabled)
-            };
-            return bodies.insert(builder);
-        }
-
-        let com = self.compute_actor_com(&child.nodes);
         if has_support {
-            bodies.insert(RigidBodyBuilder::fixed().translation(vector![com.x, com.y, com.z]))
+            bodies.insert(RigidBodyBuilder::fixed().pose(target.pose))
         } else {
-            bodies.insert(
+            let handle = bodies.insert(
                 RigidBodyBuilder::dynamic()
-                    .translation(vector![com.x, com.y, com.z])
+                    .pose(target.pose)
+                    .linvel(target.linvel)
+                    .angvel(target.angvel)
                     .ccd_enabled(self.dynamic_body_ccd_enabled),
-            )
+            );
+            if target.should_sleep {
+                if let Some(body) = bodies.get_mut(handle) {
+                    body.sleep();
+                }
+            }
+            handle
         }
+    }
+
+    fn apply_child_kinematics(
+        &self,
+        body_handle: RigidBodyHandle,
+        has_support: bool,
+        target: ChildTargetState,
+        bodies: &mut RigidBodySet,
+    ) {
+        let Some(body) = bodies.get_mut(body_handle) else {
+            return;
+        };
+        body.set_position(target.pose, false);
+        if has_support || !body.is_dynamic() {
+            return;
+        }
+        let current_linvel = *body.linvel();
+        let current_angvel = *body.angvel();
+        let velocity_changed = (current_linvel - target.linvel).norm_squared() > 1.0e-6
+            || (current_angvel - target.angvel).norm_squared() > 1.0e-6;
+        body.set_linvel(target.linvel, false);
+        body.set_angvel(target.angvel, false);
+        if target.should_sleep {
+            body.sleep();
+        } else if velocity_changed || body.is_sleeping() {
+            body.wake_up(true);
+        }
+    }
+
+    fn solve_symmetric_3x3(&self, m: [[f32; 3]; 3], rhs: [f32; 3]) -> Option<Vec3> {
+        let det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+            - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+            + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+        if det.abs() <= 1.0e-6 {
+            return None;
+        }
+        let inv_det = 1.0 / det;
+        let inv = [
+            [
+                (m[1][1] * m[2][2] - m[1][2] * m[2][1]) * inv_det,
+                (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * inv_det,
+                (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * inv_det,
+            ],
+            [
+                (m[1][2] * m[2][0] - m[1][0] * m[2][2]) * inv_det,
+                (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * inv_det,
+                (m[0][2] * m[1][0] - m[0][0] * m[1][2]) * inv_det,
+            ],
+            [
+                (m[1][0] * m[2][1] - m[1][1] * m[2][0]) * inv_det,
+                (m[0][1] * m[2][0] - m[0][0] * m[2][1]) * inv_det,
+                (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * inv_det,
+            ],
+        ];
+        Some(Vec3::new(
+            inv[0][0] * rhs[0] + inv[0][1] * rhs[1] + inv[0][2] * rhs[2],
+            inv[1][0] * rhs[0] + inv[1][1] * rhs[1] + inv[1][2] * rhs[2],
+            inv[2][0] * rhs[0] + inv[2][1] * rhs[1] + inv[2][2] * rhs[2],
+        ))
     }
 
     fn attach_node(
@@ -1149,11 +1481,13 @@ impl BodyTracker {
                     local_offset.y,
                     local_offset.z
                 ]);
+                let world_velocity = body.velocity_at_point(&world);
                 parent_bodies.insert(body_handle);
                 node_sources.entry(node).or_insert(NodeSourceState {
                     body_handle,
                     collider_handle: self.node_to_collider[idx],
                     world_centroid: Vec3::new(world.x, world.y, world.z),
+                    world_velocity: Vec3::new(world_velocity.x, world_velocity.y, world_velocity.z),
                 });
             }
         }
@@ -1169,8 +1503,7 @@ impl BodyTracker {
                         position: *body.position(),
                         linvel: *body.linvel(),
                         angvel: *body.angvel(),
-                        linear_damping: body.linear_damping(),
-                        angular_damping: body.angular_damping(),
+                        was_sleeping: body.is_sleeping(),
                     },
                 ))
             })
@@ -1211,6 +1544,7 @@ impl BodyTracker {
         let collider = ColliderBuilder::cuboid(half.x, half.y, half.z)
             .translation(vector![local_offset.x, local_offset.y, local_offset.z])
             .active_events(ActiveEvents::CONTACT_FORCE_EVENTS | ActiveEvents::COLLISION_EVENTS)
+            .active_hooks(ActiveHooks::FILTER_CONTACT_PAIRS | ActiveHooks::FILTER_INTERSECTION_PAIR)
             .contact_force_event_threshold(0.0)
             .friction(0.25)
             .restitution(0.0);

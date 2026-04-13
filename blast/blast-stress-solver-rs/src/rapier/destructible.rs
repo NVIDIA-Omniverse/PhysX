@@ -12,6 +12,12 @@ use super::optimization::SleepThresholdOptions;
 use super::optimization::{DebrisCleanupOptions, OptimizationResult, SmallBodyDampingOptions};
 use super::resimulation::{BodySnapshots, ResimulationOptions};
 
+#[derive(Clone, Debug, Default)]
+pub struct SplitCohort {
+    pub source_bodies: Vec<RigidBodyHandle>,
+    pub target_bodies: Vec<RigidBodyHandle>,
+}
+
 /// Configuration for creating a `DestructibleSet`.
 pub struct DestructibleConfig {
     pub nodes: Vec<NodeDesc>,
@@ -45,6 +51,8 @@ pub struct StepResult {
     pub split_sanitize_ms: f32,
     /// Time spent estimating split admission cost.
     pub split_estimate_ms: f32,
+    /// Cohorts of body handles that were produced by the same split this step.
+    pub split_cohorts: Vec<SplitCohort>,
 }
 
 /// Main orchestrator for destructible structures with Rapier integration.
@@ -521,6 +529,14 @@ impl DestructibleSet {
         self.tracker.set_dynamic_body_ccd_enabled(enabled);
     }
 
+    pub fn set_split_child_recentering_enabled(&mut self, enabled: bool) {
+        self.tracker.set_split_child_recentering_enabled(enabled);
+    }
+
+    pub fn set_split_child_velocity_fit_enabled(&mut self, enabled: bool) {
+        self.tracker.set_split_child_velocity_fit_enabled(enabled);
+    }
+
     pub fn pending_split_event_count(&self) -> usize {
         self.pending_split_events.len()
     }
@@ -702,6 +718,9 @@ impl DestructibleSet {
             result.new_bodies += split_result.new_handles.len();
             result.split_edits.plan_ms += split_result.stats.plan_ms;
             result.split_edits.apply_ms += split_result.stats.apply_ms;
+            result.split_edits.child_pose_ms += split_result.stats.child_pose_ms;
+            result.split_edits.velocity_fit_ms += split_result.stats.velocity_fit_ms;
+            result.split_edits.sleep_init_ms += split_result.stats.sleep_init_ms;
             result.split_edits.body_create_ms += split_result.stats.body_create_ms;
             result.split_edits.collider_move_ms += split_result.stats.collider_move_ms;
             result.split_edits.collider_insert_ms += split_result.stats.collider_insert_ms;
@@ -714,6 +733,12 @@ impl DestructibleSet {
             result.split_edits.moved_colliders += split_result.stats.moved_colliders;
             result.split_edits.inserted_colliders += split_result.stats.inserted_colliders;
             result.split_edits.removed_colliders += split_result.stats.removed_colliders;
+            if split_result.cohort_handles.len() > 1 {
+                result.split_cohorts.push(SplitCohort {
+                    source_bodies: split_result.source_handles,
+                    target_bodies: split_result.cohort_handles,
+                });
+            }
         }
     }
 

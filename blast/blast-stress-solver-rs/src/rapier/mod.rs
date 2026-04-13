@@ -8,7 +8,7 @@ mod split_migrator;
 
 pub use body_tracker::BodyTracker;
 pub use collision_groups::DebrisCollisionMode;
-pub use destructible::{DestructibleConfig, DestructibleSet, StepResult};
+pub use destructible::{DestructibleConfig, DestructibleSet, SplitCohort, StepResult};
 pub use fracture_policy::FracturePolicy;
 pub use optimization::{
     DebrisCleanupOptions, OptimizationMode, OptimizationResult, SleepThresholdOptions,

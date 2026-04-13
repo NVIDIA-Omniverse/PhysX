@@ -45,6 +45,12 @@ Headless bridge:
 BLAST_STRESS_DEMO_SCENARIO=bridge BLAST_STRESS_DEMO_HEADLESS=1 BLAST_STRESS_DEMO_HEADLESS_FRAMES=300 cargo run
 ```
 
+Headless bridge with automated scripted shots:
+
+```bash
+BLAST_STRESS_DEMO_SCENARIO=bridge BLAST_STRESS_DEMO_HEADLESS=1 BLAST_STRESS_DEMO_HEADLESS_FRAMES=220 BLAST_STRESS_DEMO_HEADLESS_SHOT_SCRIPT=bridge_benchmark cargo run
+```
+
 Rapier-only standalone benchmark:
 
 ```bash
@@ -64,7 +70,12 @@ BLAST_STRESS_DEMO_SCENARIO=bridge BLAST_STRESS_DEMO_RAPIER_ONLY=1 BLAST_STRESS_D
 Perf logs are written to the system temp directory and contain two different line types:
 
 - `[perf]` for rolling 1-second median windows
+- `[summary]` for one end-of-run machine-readable totals/peaks line
+- `[shot-fired]` for exact scripted projectile launches in headless mode
 - `[fracture-frame]` for exact per-frame fracture/split/edit events
+- `[heavy-frame]` for any frame that crosses the configured frame/physics/Rapier threshold
+- `[topology-frame]` for frames where body topology changed materially
+- `[post-split-frame]` for the first Rapier step(s) where sibling-grace filtering is active
 
 Use `[perf]` to understand steady-state behavior. Use `[fracture-frame]` to diagnose hitching, jitter, or freezing during actual break events.
 
@@ -94,6 +105,9 @@ Then inspect the fields:
 - `split_collider_move_ms`
 - `split_collider_insert_ms`
 - `split_body_retire_ms`
+- `split_child_pose_ms`
+- `split_velocity_fit_ms`
+- `split_sleep_init_ms`
 
 Important counters:
 
@@ -108,10 +122,55 @@ Important counters:
 - `awake_dynamic_bodies`
 - `active_contact_pairs`
 - `contact_manifolds`
+- `split_cohorts`
+- `split_cohort_bodies`
+- `sibling_grace_pairs`
+- `sibling_grace_filtered_pairs`
+
+### Automated Headless Shot Scripts
+
+The demo can auto-fire reproducible headless shot scripts against the real runtime:
+
+- `wall_smoke`
+- `tower_smoke`
+- `bridge_smoke`
+- `wall_benchmark`
+- `tower_benchmark`
+- `bridge_benchmark`
+- `auto_smoke`
+- `auto_benchmark`
+
+`auto_*` selects the scenario-matching script from `BLAST_STRESS_DEMO_SCENARIO`.
+
+Each scripted shot logs a `[shot-fired]` line with:
+
+- `frame`
+- `script`
+- `label`
+- `mass`
+- `speed`
+- `origin`
+- `target`
+- `direction`
+
+Headless runs now end with a `[summary]` line containing:
+
+- total frames
+- script name
+- shots planned / fired
+- max frame / physics / Rapier / solver timings and frame indices
+- max split-plan / split-apply / split-move timings and frame indices
+- peak body/contact counts and frame indices
+- total fractures / splits / new bodies / moved colliders
+- first fracture frame and worst fracture-frame timings
+
+This is the machine-readable line the automated integration tests consume.
 
 ## Current Runtime Design Notes
 
 - Surviving colliders are preserved across normal splits and moved with Rapier parent reassignment instead of being recreated.
+- Child bodies are recentered to child COM / centroid and inherit fitted linear/angular velocity from the pre-split source velocity field.
+- Same-split sibling bodies can use a one-step sibling grace filter so the first post-split Rapier step can be measured with reduced sibling-only contact shock.
 - Split-edit timings are logged separately from the post-edit Rapier step so scene-edit cost and simulation cost can be distinguished.
 - Bridge defaults currently favor realistic free fracture rather than artificial fracture caps.
 - `DebrisCollisionMode` remains configurable for experiments, but default behavior should be judged primarily on fracture quality plus exact fracture-frame timings.
@@ -122,9 +181,16 @@ Important counters:
 - `BLAST_STRESS_DEMO_SHOW_MESHES`
 - `BLAST_STRESS_DEMO_HEADLESS`
 - `BLAST_STRESS_DEMO_HEADLESS_FRAMES`
+- `BLAST_STRESS_DEMO_HEADLESS_SHOT_SCRIPT`
 - `BLAST_STRESS_DEMO_RAPIER_ONLY`
 - `BLAST_STRESS_DEMO_BODY_CCD`
 - `BLAST_STRESS_DEMO_DEBRIS_COLLISION_MODE`
+- `BLAST_STRESS_DEMO_SIBLING_GRACE_STEPS` (default `0`; opt in to enable the temporary same-split sibling collision grace)
+- `BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS` (temporary projectile-vs-fresh-fracture filter during resim replay)
+- `BLAST_STRESS_DEMO_PROJECTILE_TRACE` (emits `[projectile-frame]` lines for exact projectile position/velocity/progress debugging)
+- `BLAST_STRESS_DEMO_PROJECTILE_MAX_MASS`
+- `BLAST_STRESS_DEMO_HEAVY_FRAME_MS`
+- `BLAST_STRESS_DEMO_TOPOLOGY_BODY_DELTA`
 
 Fracture policy / tuning envs are also supported and logged in the perf header:
 
@@ -144,3 +210,18 @@ If the demo feels bad:
 2. Separate `split_*_ms` from `rapier_ms`.
 3. Check whether the spike is scene-edit work or the post-fracture contact graph.
 4. Compare normal mode against `BLAST_STRESS_DEMO_RAPIER_ONLY=1` for the same scenario shape.
+
+## Automated Tests
+
+Run the automated headless reproduction suite:
+
+```bash
+cargo test --test headless_shot_scripts -- --nocapture
+```
+
+That test launches the real binary headless, uses scripted shots for wall/tower/bridge, and parses the emitted `[summary]` and `[shot-fired]` lines from the generated perf log.
+
+The suite now includes a direct wall-face regression:
+
+- without resim, a heavy face shot must shatter the wall
+- with resim enabled, the same heavy shot must shatter the wall and pass through it
