@@ -1,0 +1,154 @@
+name: Release blast-stress-solver
+
+on:
+  push:
+    tags:
+      - "blast-stress-solver-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-blast-stress-solver-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CRATE_DIR: blast/blast-stress-solver-rs
+  STAGE_DIR: ${{ runner.temp }}/blast-stress-solver-stage
+
+jobs:
+  package:
+    name: Package
+    runs-on: macos-14
+    permissions:
+      contents: read
+    outputs:
+      crate_version: ${{ steps.meta.outputs.crate_version }}
+      crate_path: ${{ steps.package.outputs.crate_path }}
+      checksum_path: ${{ steps.package.outputs.checksum_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable + wasm target
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+
+      - name: Install Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.51
+
+      - name: Validate tag matches crate version
+        id: meta
+        run: |
+          crate_version="$(python3 - <<'PY'
+          import pathlib, re
+          text = pathlib.Path("blast/blast-stress-solver-rs/Cargo.toml").read_text()
+          match = re.search(r'^version = "([^"]+)"$', text, re.MULTILINE)
+          if not match:
+              raise SystemExit("failed to read crate version")
+          print(match.group(1))
+          PY
+          )"
+          echo "crate_version=$crate_version" >> "$GITHUB_OUTPUT"
+
+          if [[ "${GITHUB_REF_NAME}" != "blast-stress-solver-v${crate_version}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match crate version ${crate_version}" >&2
+            exit 1
+          fi
+
+      - name: Assemble staged crate and verify native+wasm
+        run: |
+          scripts/assemble-blast-stress-solver-package.sh \
+            --stage-dir "$STAGE_DIR" \
+            --keep-stage
+
+      - name: Record package paths and checksum
+        id: package
+        run: |
+          crate_path="$(find "$STAGE_DIR/target/package" -maxdepth 1 -name 'blast-stress-solver-*.crate' | head -n 1)"
+          if [[ -z "$crate_path" ]]; then
+            echo "missing packaged crate" >&2
+            exit 1
+          fi
+          checksum_path="${crate_path}.sha256"
+          shasum -a 256 "$crate_path" > "$checksum_path"
+          echo "crate_path=$crate_path" >> "$GITHUB_OUTPUT"
+          echo "checksum_path=$checksum_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload staged release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: blast-stress-solver-release-assets
+          path: |
+            ${{ steps.package.outputs.crate_path }}
+            ${{ steps.package.outputs.checksum_path }}
+            ${{ env.CRATE_DIR }}/target/packaging-proof/package-contents.txt
+            ${{ env.CRATE_DIR }}/target/packaging-proof/wasm-imports.json
+          if-no-files-found: error
+
+  publish:
+    name: Publish to crates.io
+    needs: package
+    runs-on: macos-14
+    permissions:
+      contents: read
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure publish token is configured
+        run: |
+          if [[ -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
+            echo "CARGO_REGISTRY_TOKEN secret is required" >&2
+            exit 1
+          fi
+
+      - name: Install Rust stable + wasm target
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+
+      - name: Install Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.51
+
+      - name: Rebuild staged crate
+        run: |
+          scripts/assemble-blast-stress-solver-package.sh \
+            --stage-dir "$STAGE_DIR" \
+            --keep-stage
+
+      - name: Dry-run publish
+        run: cargo publish --dry-run --manifest-path "$STAGE_DIR/Cargo.toml"
+
+      - name: Publish crate
+        run: cargo publish --manifest-path "$STAGE_DIR/Cargo.toml"
+
+  github-release:
+    name: Create GitHub Release
+    needs: [package, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: blast-stress-solver-release-assets
+          path: release-assets
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            release-assets/*.crate \
+            release-assets/*.sha256 \
+            release-assets/package-contents.txt \
+            release-assets/wasm-imports.json \
+            --title "blast-stress-solver v${{ needs.package.outputs.crate_version }}" \
+            --generate-notes
