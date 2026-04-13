@@ -233,7 +233,7 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 			baseMeshSpecified ? indices32.size() : mesh.m_indices.size(),
 			dx, dy, dz,
 			meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize,
-			sdfCoarse, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, 16, sdfDesc.sdfBuilder);
+			sdfCoarse, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, sdfDesc.numThreadsForSdfConstruction, sdfDesc.sdfBuilder);
 
 		PxArray<PxReal> uncompressedSdfDataSubgrids;
 		Gu::convertSparseSDFTo3DTextureLayout(dx, dy, dz, sdfDesc.subgridSize, sdfSubgridsStartSlots.begin(), sparseSdf.begin(), sparseSdf.size(), uncompressedSdfDataSubgrids,
