@@ -22,5 +22,5 @@ physx.step(1.0 / 60.0, 0.0)
 physx.release()
 ```
 
-For full documentation and tutorials, see `ovphysx/docs/markdown/` inside the
+For full documentation and tutorials, see `ovphysx/docs/` inside the
 installed package, or the [ovphysx repository](https://github.com/NVIDIA-Omniverse/PhysX).

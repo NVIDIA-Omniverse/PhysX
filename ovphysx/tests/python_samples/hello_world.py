@@ -24,7 +24,6 @@ dt = 1.0 / 60.0
 elapsed_time = 0.0
 physx.step(dt, elapsed_time)
 
-# Clean up
 physx.release()
 
-print("Done.")
+print("[SUCCESS]", flush=True)

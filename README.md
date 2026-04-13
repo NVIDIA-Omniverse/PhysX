@@ -1,5 +1,8 @@
 # NVIDIA PhysX
 
+<details>
+<summary>Copyright & License</summary>
+
 Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -26,27 +29,24 @@ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## Introduction
+</details>
 
-Welcome to the NVIDIA PhysX source code repository.
+Please also see license files in the root folder and in the respective subfolders.
 
-This repository contains source releases of the PhysX, Flow and Blast SDKs and Omniverse PhysX extensions used in NVIDIA Omniverse.
+This repo contains:
 
-## Documentation
+| Directory | Description |
+|---|---|
+| [`ovphysx/`](ovphysx/) | ovphysx — C API with Python bindings for USD physics simulation with DLPack tensor interop (`pip install ovphysx`) |
+| [`physx/`](physx/) | PhysX SDK — real-time physics simulation engine |
+| [`omni/`](omni/) | Omniverse PhysX extensions for Kit-based applications |
 
-The user guide and API documentation are available on [GitHub Pages](https://nvidia-omniverse.github.io/PhysX). Please create an [Issue](https://github.com/NVIDIA-Omniverse/PhysX/issues/) if you find a documentation issue.
+Additional simulation libraries:
 
-## Licenses
-
-Please see license files in the root folder and in the respective subfolders.
-
-## Instructions
-
-Please see instructions specific to each of the libraries in the respective subfolder.
-
-## Community-Maintained Build Configuration Fork
-
-Please see [the O3DE Fork](https://github.com/o3de/PhysX) for community-maintained additional build configurations.
+| Directory | Description |
+|---|---|
+| [`blast/`](blast/) | Blast SDK — destruction and fracture simulation |
+| [`flow/`](flow/) | Flow SDK — fluid and fire simulation |
 
 ## Support
 

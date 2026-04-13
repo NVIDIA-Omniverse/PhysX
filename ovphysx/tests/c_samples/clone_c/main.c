@@ -24,23 +24,12 @@
 
 static int wait_op_success(ovphysx_handle_t handle, ovphysx_enqueue_result_t res, uint64_t timeout_ns) {
   if (res.status != OVPHYSX_API_SUCCESS) {
-    if (res.error.length > 0) {
-      ovphysx_destroy_error(res.error);
-    }
     return 0;
-  }
-  if (res.error.length > 0) {
-    ovphysx_destroy_error(res.error);
   }
   ovphysx_op_wait_result_t wait_result = {0};
   ovphysx_result_t wait_res = ovphysx_wait_op(handle, res.op_index, timeout_ns, &wait_result);
-  if (wait_result.errors && wait_result.num_errors > 0) {
-    ovphysx_destroy_errors(wait_result.errors, wait_result.num_errors);
-  }
-  int success = wait_res.status == OVPHYSX_API_SUCCESS;
-  if (wait_res.error.length > 0) {
-    ovphysx_destroy_error(wait_res.error);
-  }
+  int success = (wait_res.status == OVPHYSX_API_SUCCESS && wait_result.num_errors == 0);
+  ovphysx_destroy_wait_result(&wait_result);
   return success;
 }
 
@@ -56,13 +45,7 @@ int main() {
   ovphysx_result_t create_res = ovphysx_create_instance(&create_args, &handle);
   if (create_res.status != OVPHYSX_API_SUCCESS) {
     fprintf(stderr, "Failed to create PhysX instance\n");
-    if (create_res.error.length > 0) {
-      ovphysx_destroy_error(create_res.error);
-    }
     return 1;
-  }
-  if (create_res.error.length > 0) {
-    ovphysx_destroy_error(create_res.error);
   }
   printf("  [OK] PhysX instance created\n\n");
 
@@ -95,7 +78,8 @@ int main() {
       handle,
       ovphysx_cstr("/World/envs/env0"),
       target_strings,
-      NUM_TARGETS);
+      NUM_TARGETS,
+      NULL);
   if (!wait_op_success(handle, clone_res, 10ULL * 1000 * 1000 * 1000)) {
     fprintf(stderr, "Clone operation failed or timed out\n");
     ovphysx_destroy_instance(handle);
@@ -115,14 +99,12 @@ int main() {
   }
   printf("  [OK] All 10 simulation steps completed successfully\n\n");
 
-  // Clean up
+  printf("=== Clone Example Completed Successfully ===\n");
+
   printf("Cleaning up...\n");
   ovphysx_result_t destroy_res = ovphysx_destroy_instance(handle);
-  if (destroy_res.error.length > 0) {
-    ovphysx_destroy_error(destroy_res.error);
-  }
   printf("  [OK] PhysX instance destroyed\n\n");
 
-  printf("=== Clone Example Completed Successfully ===\n");
+  printf("[SUCCESS]\n");
   return 0;
 }

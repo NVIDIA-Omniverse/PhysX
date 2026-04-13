@@ -23,11 +23,8 @@ from pathlib import Path
 
 import numpy as np
 
-from ovphysx import (
-    OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_TARGET_F32,
-    OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32,
-    PhysX,
-)
+from ovphysx import PhysX
+from ovphysx.types import TensorType
 
 
 def main():
@@ -50,7 +47,7 @@ def main():
     print("Creating tensor binding for DOF velocity targets...")
     velocity_target_binding = physx.create_tensor_binding(
         pattern="/World/articulation/articulationLink*",
-        tensor_type=OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_TARGET_F32,
+        tensor_type=TensorType.ARTICULATION_DOF_VELOCITY_TARGET,
     )
     print(f"  DOF count: {velocity_target_binding.shape[1]}")
 
@@ -58,7 +55,7 @@ def main():
     print("Creating tensor binding for link poses...")
     link_pose_binding = physx.create_tensor_binding(
         pattern="/World/articulation/articulationLink*",
-        tensor_type=OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32,
+        tensor_type=TensorType.ARTICULATION_LINK_POSE,
     )
     print(f"  Link count: {link_pose_binding.shape[1]}, Pose dims: {link_pose_binding.shape[2]}")
 
@@ -110,11 +107,10 @@ def main():
     velocity_target_binding.destroy()
     link_pose_binding.destroy()
 
-    # Clean up PhysX
     physx.remove_usd(usd_handle)
     physx.release()
 
-    print("\nDone.")
+    print("\n[SUCCESS]", flush=True)
 
 
 if __name__ == "__main__":

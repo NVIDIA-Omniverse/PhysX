@@ -1,0 +1,277 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary renderSettings = {
+        }
+    }
+    defaultPrim = "SpatialTendonTest"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+
+def PhysicsScene "physicsScene"
+{
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 1000
+}
+
+def Xform "SpatialTendonTest" (
+    prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+)
+{
+
+    bool physxArticulation:enabledSelfCollisions = 0
+
+    def Cube "body0" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        color3f[] primvars:displayColor = [(0.7, 0.1, 0.1)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body1" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxTendonAttachmentLeafAPI:leaf"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+		float physxTendon:leaf:gearing = 13
+        point3f physxTendon:leaf:localPos = (14, 15, 16)
+        float physxTendon:leaf:lowerLimit = 17
+        uniform token physxTendon:leaf:parentAttachment = "a1"
+        rel physxTendon:leaf:parentLink = </SpatialTendonTest/body2>
+        float physxTendon:leaf:restLength = 19
+        float physxTendon:leaf:upperLimit = 18
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (10, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body2" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxTendonAttachmentAPI:a1"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        float physxTendon:a1:gearing = 9
+        point3f physxTendon:a1:localPos = (10, 11, 12)
+        uniform token physxTendon:a1:parentAttachment = "body1"
+        rel physxTendon:a1:parentLink = </SpatialTendonTest/body4>
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (20, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body3" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (30, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body4" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxTendonAttachmentRootAPI:body1"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        float physxTendon:body1:damping = 2
+        float physxTendon:body1:gearing = 42
+        float physxTendon:body1:limitStiffness = 3
+        point3f physxTendon:body1:localPos = (4, 5, 6)
+        float physxTendon:body1:offset = 7
+        float physxTendon:body1:stiffness = 8
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (40, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+    def Cube "body10" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxTendonAttachmentLeafAPI:leaf2"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+		float physxTendon:leaf2:gearing = 13
+        point3f physxTendon:leaf2:localPos = (14, 15, 16)
+        float physxTendon:leaf2:lowerLimit = 17
+        uniform token physxTendon:leaf2:parentAttachment = "a10"
+        rel physxTendon:leaf2:parentLink = </SpatialTendonTest/body20>
+        float physxTendon:leaf2:restLength = 19
+        float physxTendon:leaf2:upperLimit = 18
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (10, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body20" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxTendonAttachmentAPI:a10"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        float physxTendon:a10:gearing = 9
+        point3f physxTendon:a10:localPos = (10, 11, 12)
+        uniform token physxTendon:a10:parentAttachment = "body10"
+        rel physxTendon:a10:parentLink = </SpatialTendonTest/body40>
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (20, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body30" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (30, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "body40" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxTendonAttachmentRootAPI:body10"]
+    )
+    {
+        float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+        float physics:mass = 0.008
+        float physxTendon:body10:damping = 2
+        float physxTendon:body10:gearing = 42
+        float physxTendon:body10:limitStiffness = 3
+        point3f physxTendon:body10:localPos = (4, 5, 6)
+        float physxTendon:body10:offset = 7
+        float physxTendon:body10:stiffness = 8
+        color3f[] primvars:displayColor = [(0.1, 0.1, 0.7)]
+        double size = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1.0, 0.4, 0.2)
+        float3 xformOp:translate = (40, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    // fixed base
+    def PhysicsFixedJoint "rootJoint"
+    {
+        rel physics:body1 = </SpatialTendonTest/body0>
+    }
+
+    def PhysicsRevoluteJoint "revJoint01"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body0>
+        rel physics:body1 = </SpatialTendonTest/body1>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsRevoluteJoint "revJoint12"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body1>
+        rel physics:body1 = </SpatialTendonTest/body2>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsRevoluteJoint "revJoint23"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body2>
+        rel physics:body1 = </SpatialTendonTest/body3>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsRevoluteJoint "revJoint34"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body3>
+        rel physics:body1 = </SpatialTendonTest/body4>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+    def PhysicsRevoluteJoint "revJoint010"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body0>
+        rel physics:body1 = </SpatialTendonTest/body10>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsRevoluteJoint "revJoint1020"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body10>
+        rel physics:body1 = </SpatialTendonTest/body20>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsRevoluteJoint "revJoint2030"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body20>
+        rel physics:body1 = </SpatialTendonTest/body30>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsRevoluteJoint "revJoint3040"
+    {
+        uniform token physics:axis = "Y"
+        rel physics:body0 = </SpatialTendonTest/body30>
+        rel physics:body1 = </SpatialTendonTest/body40>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        point3f physics:localPos1 = (-0.5, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+}

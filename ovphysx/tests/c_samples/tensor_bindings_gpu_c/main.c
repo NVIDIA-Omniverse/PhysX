@@ -19,10 +19,10 @@ static int check_result(ovphysx_result_t result, const char* context)
     if (result.status != OVPHYSX_API_SUCCESS)
     {
         fprintf(stderr, "ERROR in %s: ", context);
-        if (result.error.ptr && result.error.length > 0)
+        ovphysx_string_t err = ovphysx_get_last_error();
+        if (err.ptr && err.length > 0)
         {
-            fprintf(stderr, "%.*s\n", (int)result.error.length, result.error.ptr);
-            ovphysx_destroy_error(result.error);
+            fprintf(stderr, "%.*s\n", (int)err.length, err.ptr);
         }
         else
         {
@@ -39,17 +39,16 @@ static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const c
     ovphysx_op_wait_result_t wait_result = { 0 };
     ovphysx_result_t result = ovphysx_wait_op(handle, op_index, 10ull * 1000ull * 1000ull * 1000ull, &wait_result);
     
-    if (wait_result.num_errors > 0)
+    int has_errors = (wait_result.num_errors > 0);
+    ovphysx_destroy_wait_result(&wait_result);
+    if (has_errors)
     {
         fprintf(stderr, "ERROR in %s: async operation failed\n", context);
-        ovphysx_destroy_errors(wait_result.errors, wait_result.num_errors);
         return 0;
     }
     if (result.status != OVPHYSX_API_SUCCESS)
     {
         fprintf(stderr, "ERROR in %s: wait failed (status=%d)\n", context, (int)result.status);
-        if (result.error.ptr)
-            ovphysx_destroy_error(result.error);
         return 0;
     }
     return 1;
@@ -76,8 +75,7 @@ int main(void)
     //   args.device = OVPHYSX_DEVICE_GPU;
     //   args.gpu_index = 1; // run PhysX on CUDA device 1
     //
-    // Note: if you want to override via settings instead (higher precedence), you can pass:
-    //   args.settings_keys / args.settings_values with key "/physics/cudaDevice".
+    // Note: gpu_index on create_args is the recommended way to select the CUDA device.
 
     ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
     if (!check_result(result, "create_instance"))
@@ -96,16 +94,14 @@ int main(void)
     if (add_result.status != OVPHYSX_API_SUCCESS)
     {
         fprintf(stderr, "Failed to load USD scene\n");
-        if (add_result.error.ptr && add_result.error.length > 0)
         {
-            fprintf(stderr, "ERROR in add_usd enqueue: %.*s\n", (int)add_result.error.length, add_result.error.ptr);
-            ovphysx_destroy_error(add_result.error);
+            ovphysx_string_t err = ovphysx_get_last_error();
+            if (err.ptr && err.length > 0)
+                fprintf(stderr, "ERROR in add_usd enqueue: %.*s\n", (int)err.length, err.ptr);
         }
         ovphysx_destroy_instance(handle);
         return 1;
     }
-    if (add_result.error.ptr)
-        ovphysx_destroy_error(add_result.error);
 
     if (!wait_op(handle, add_result.op_index, "add_usd"))
     {
@@ -350,16 +346,14 @@ int main(void)
         if (step_result.status != OVPHYSX_API_SUCCESS)
         {
             fprintf(stderr, "ERROR in step enqueue (status=%d)\n", (int)step_result.status);
-            if (step_result.error.ptr && step_result.error.length > 0)
             {
-                fprintf(stderr, "  %.*s\n", (int)step_result.error.length, step_result.error.ptr);
-                ovphysx_destroy_error(step_result.error);
+                ovphysx_string_t err = ovphysx_get_last_error();
+                if (err.ptr && err.length > 0)
+                    fprintf(stderr, "  %.*s\n", (int)err.length, err.ptr);
             }
             ovphysx_destroy_instance(handle);
             return 1;
         }
-        if (step_result.error.ptr)
-            ovphysx_destroy_error(step_result.error);
         if (!wait_op(handle, step_result.op_index, "step"))
         {
             ovphysx_destroy_instance(handle);
@@ -441,9 +435,11 @@ int main(void)
     ovphysx_destroy_tensor_binding(handle, dof_target_binding);
     ovphysx_destroy_tensor_binding(handle, dof_vel_binding);
 
+    printf("\nTensor Binding sample completed successfully!\n");
+
     ovphysx_destroy_instance(handle);
 
-    printf("\nTensor Binding sample completed successfully!\n");
+    printf("[SUCCESS]\n");
     return 0;
 #endif
 }

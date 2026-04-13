@@ -1,0 +1,9 @@
+[project]
+name = "ovphysx-visual-rerunio-sample"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+  "ovphysx",
+  "numpy",
+  "rerun-sdk>=0.29",
+]

@@ -41,55 +41,11 @@ from .dlpack import (
     DLTensor,
 )
 
-# ovphysx API status enum
-OVPHYSX_API_SUCCESS = 0
-OVPHYSX_API_ERROR = 1
-OVPHYSX_API_TIMEOUT = 2
-OVPHYSX_API_NOT_IMPLEMENTED = 3
-OVPHYSX_API_INVALID_ARGUMENT = 4
-OVPHYSX_API_NOT_FOUND = 5
-
 # Invalid handle sentinel (matches OVPHYSX_INVALID_HANDLE in ovphysx_types.h)
 OVPHYSX_INVALID_HANDLE = 0
 
-# Binding prim mode enum
-OVPHYSX_BINDING_PRIM_MODE_EXISTING_ONLY = 0
-OVPHYSX_BINDING_PRIM_MODE_MUST_EXIST = 1
-OVPHYSX_BINDING_PRIM_MODE_CREATE_NEW = 2
-
-# DLPack device types (convenience constants)
-kDLCPU = DLDeviceType.kDLCPU
-kDLCUDA = DLDeviceType.kDLCUDA
-
-# DLPack data type codes (convenience constants)
-kDLInt = DLDataTypeCode.kDLInt
-kDLUInt = DLDataTypeCode.kDLUInt
-kDLFloat = DLDataTypeCode.kDLFloat
-
-# Operation index sentinel for wait_op (wait for all operations)
-OVPHYSX_OP_INDEX_ALL = 0xFFFFFFFFFFFFFFFF
-
-# Tensor type enum (ovphysx_tensor_type_t from ovphysx_types.h)
-OVPHYSX_TENSOR_INVALID = 0
-# Rigid body tensors
-OVPHYSX_TENSOR_RIGID_BODY_POSE_F32 = 1  # [N, 7] poses in world frame
-OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32 = 2  # [N, 6] velocities in world frame
-# Articulation root tensors
-OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32 = 10  # [N, 7] root poses
-OVPHYSX_TENSOR_ARTICULATION_ROOT_VELOCITY_F32 = 11  # [N, 6] root velocities
-# Articulation link tensors (3D)
-OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32 = 20  # [N, L, 7] link poses
-OVPHYSX_TENSOR_ARTICULATION_LINK_VELOCITY_F32 = 21  # [N, L, 6] link velocities
-# Articulation DOF tensors
-OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32 = 30  # [N, D] joint positions
-OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32 = 31  # [N, D] joint velocities
-OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32 = 32  # [N, D] position targets
-OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_TARGET_F32 = 33  # [N, D] velocity targets
-OVPHYSX_TENSOR_ARTICULATION_DOF_ACTUATION_FORCE_F32 = 34  # [N, D] actuation forces
-# External forces/wrenches - WRITE-ONLY (control inputs applied each step)
-OVPHYSX_TENSOR_RIGID_BODY_FORCE_F32 = 50  # [N, 3] forces at center of mass
-OVPHYSX_TENSOR_RIGID_BODY_WRENCH_F32 = 51  # [N, 9] row-major: [fx,fy,fz,tx,ty,tz,px,py,pz]
-OVPHYSX_TENSOR_ARTICULATION_LINK_WRENCH_F32 = 52  # [N, L, 9] row-major: same layout per link
+# Operation index sentinel for wait_op (wait for all pending operations)
+OP_INDEX_ALL = 0xFFFFFFFFFFFFFFFF
 
 
 def _platform_lib_names() -> list[str]:
@@ -149,28 +105,30 @@ def _load_library() -> ctypes.CDLL:
     - Default linker paths: platform name
     - OVPHYSX_BIN_DIR/libovphysx.so if provided
     """
-    # On Windows, ensure the package directory and dependency directories are on the DLL search path
-    # On Linux, the rpath is set to $ORIGIN so dependent libraries are discoverable
+    # On Windows, add dependency directories to the DLL search path so that
+    # ovphysx.dll's transitive dependencies (carb.dll in plugins/, etc.) are
+    # discoverable.  This makes _bindings.py self-sufficient — it doesn't
+    # rely on __init__.py's bootstrap having run first.
+    # On Linux, rpath=$ORIGIN handles this at the ELF level.
     if sys.platform == "win32":
         pkg_dir = os.path.dirname(__file__)
         try:
-            os.add_dll_directory(pkg_dir)  # Python 3.8+
-            _logger.info("Added DLL directory: %s", pkg_dir)
+            for subdir in ("lib", "plugins"):
+                d = os.path.join(pkg_dir, subdir)
+                if os.path.isdir(d):
+                    os.add_dll_directory(d)
+                    _logger.debug("Added DLL directory: %s", d)
 
-            # Also add kit_sdk_release for carb.dll and other Carbonite dependencies
-            # Check OVPHYSX_ROOT environment variable first (set by test scripts)
             if "OVPHYSX_ROOT" in os.environ:
                 sdk_root = os.environ["OVPHYSX_ROOT"]
-                kit_sdk_dir = os.path.join(sdk_root, "target-deps", "kit_sdk_release")
-                if os.path.exists(kit_sdk_dir):
-                    os.add_dll_directory(kit_sdk_dir)
-                    _logger.info("Added DLL directory: %s", kit_sdk_dir)
-                else:
-                    _logger.warning("Kit SDK directory not found: %s", kit_sdk_dir)
-            else:
-                _logger.warning("OVPHYSX_ROOT not set in environment")
+                # Try config-specific kit SDK dirs (debug, release, checked)
+                for _cfg in ("debug", "release", "checked"):
+                    kit_sdk_dir = os.path.join(sdk_root, "target-deps", f"kit_sdk_{_cfg}")
+                    if os.path.exists(kit_sdk_dir):
+                        os.add_dll_directory(kit_sdk_dir)
+                        _logger.debug("Added DLL directory: %s", kit_sdk_dir)
         except Exception as e:
-            _logger.warning("Failed to add DLL directories to search path: %s", e)
+            _logger.debug("Failed to add DLL directories to search path: %s", e)
 
     # Check OVPHYSX_LIB first (development mode takes precedence over bundled deps)
     env_override = os.environ.get("OVPHYSX_LIB")
@@ -223,15 +181,7 @@ def _load_library() -> ctypes.CDLL:
 
 
 _lib = _load_library()
-_logger.info("Loaded library: %s", _lib)
-
-
-# Log level constants - mirrors ovphysx_log_level_t in ovphysx_types.h
-OVPHYSX_LOG_NONE = 0       # No logging
-OVPHYSX_LOG_ERROR = 1      # Error messages only
-OVPHYSX_LOG_WARNING = 2    # Warnings and errors (default)
-OVPHYSX_LOG_INFO = 3       # Info, warnings, and errors
-OVPHYSX_LOG_VERBOSE = 4    # All messages including verbose/debug
+_logger.debug("Loaded library: %s", _lib)
 
 
 # ovphysx_string_t - matches C API definition
@@ -264,15 +214,53 @@ class ovphysx_string_t(ctypes.Structure):
         return int(self.length)
 
 
+# Config key type discriminator (matches ovphysx_config_key_type_t)
+OVPHYSX_CONFIG_KEY_TYPE_BOOL = 0
+OVPHYSX_CONFIG_KEY_TYPE_INT32 = 1
+OVPHYSX_CONFIG_KEY_TYPE_FLOAT = 2
+OVPHYSX_CONFIG_KEY_TYPE_STRING = 3
+OVPHYSX_CONFIG_KEY_TYPE_CARBONITE = 4
+
+
+# Key union for ovphysx_config_entry_t
+class _config_key_union(ctypes.Union):
+    _fields_ = [
+        ("bool_key", c_int),         # ovphysx_config_bool_t enum
+        ("int32_key", c_int),        # ovphysx_config_int32_t enum
+        ("float_key", c_int),        # ovphysx_config_float_t enum
+        ("string_key", c_int),       # ovphysx_config_string_t enum
+        ("carbonite_key", ovphysx_string_t),  # for KEY_TYPE_CARBONITE
+    ]
+
+
+# Value union for ovphysx_config_entry_t
+class _config_value_union(ctypes.Union):
+    _fields_ = [
+        ("bool_value", ctypes.c_bool),
+        ("int32_value", c_int32),
+        ("float_value", c_float),
+        ("string_value", ovphysx_string_t),  # for KEY_TYPE_STRING and KEY_TYPE_CARBONITE
+    ]
+
+
+class ovphysx_config_entry_t(ctypes.Structure):
+    """Typed config entry (matches ovphysx_config_entry_t in C API)."""
+
+    _fields_ = [
+        ("key_type", c_int),         # ovphysx_config_key_type_t enum
+        ("key", _config_key_union),
+        ("value", _config_value_union),
+    ]
+
+
 # ovphysx_create_args - matches ovphysx_create_args in C API
 class ovphysx_create_args(ctypes.Structure):
     """Configuration for creating an ovphysx instance."""
 
     _fields_ = [
         ("bundled_deps_path", ovphysx_string_t),
-        ("settings_keys", POINTER(ovphysx_string_t)),
-        ("settings_values", POINTER(ovphysx_string_t)),
-        ("settings_count", c_uint32),
+        ("config_entries", POINTER(ovphysx_config_entry_t)),
+        ("config_entry_count", c_uint32),
         # ovphysx_device_t (enum, 4 bytes)
         ("device", c_int),
         # int32_t
@@ -286,7 +274,6 @@ class ovphysx_result_t(ctypes.Structure):
 
     _fields_ = [
         ("status", c_int),
-        ("error", ovphysx_string_t),
     ]
 
 
@@ -295,25 +282,15 @@ class ovphysx_enqueue_result_t(ctypes.Structure):
 
     _fields_ = [
         ("status", c_int),
-        ("error", ovphysx_string_t),
         ("op_index", c_uint64),
-    ]
-
-
-class ovphysx_op_error_t(ctypes.Structure):
-    """Error associated with a specific operation."""
-
-    _fields_ = [
-        ("op_index", c_uint64),
-        ("error", ovphysx_string_t),
     ]
 
 
 class ovphysx_op_wait_result_t(ctypes.Structure):
-    """Result from ovphysx_wait_op() containing errors and pending operation status."""
+    """Result from ovphysx_wait_op() containing failed op indices and pending operation status."""
 
     _fields_ = [
-        ("errors", POINTER(ovphysx_op_error_t)),
+        ("error_op_indices", POINTER(c_uint64)),
         ("num_errors", c_size_t),
         ("lowest_pending_op_index", c_uint64),
     ]
@@ -374,6 +351,19 @@ class ovphysx_tensor_spec_t(ctypes.Structure):
     ]
 
 
+class ovphysx_articulation_metadata_t(ctypes.Structure):
+    """Articulation topology metadata (matches ovphysx_articulation_metadata_t in C API)."""
+
+    _fields_ = [
+        ("dof_count", c_int32),
+        ("body_count", c_int32),
+        ("joint_count", c_int32),
+        ("fixed_tendon_count", c_int32),
+        ("spatial_tendon_count", c_int32),
+        ("is_fixed_base", ctypes.c_bool),
+    ]
+
+
 # Core API function prototypes
 _lib.ovphysx_create_instance.restype = ovphysx_result_t
 _lib.ovphysx_create_instance.argtypes = [POINTER(ovphysx_create_args), POINTER(c_uint64)]
@@ -393,27 +383,46 @@ _lib.ovphysx_reset.argtypes = [c_uint64]
 _lib.ovphysx_step.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_step.argtypes = [c_uint64, c_float, c_float]
 
+_lib.ovphysx_step_sync.restype = ovphysx_result_t
+_lib.ovphysx_step_sync.argtypes = [c_uint64, c_float, c_float]
+
+_lib.ovphysx_step_n_sync.restype = ovphysx_result_t
+_lib.ovphysx_step_n_sync.argtypes = [c_uint64, c_int32, c_float, c_float]
+
 _lib.ovphysx_get_stage_id.restype = ovphysx_result_t
 _lib.ovphysx_get_stage_id.argtypes = [c_uint64, POINTER(c_int64)]
 
-_lib.ovphysx_set_setting.restype = ovphysx_result_t
-_lib.ovphysx_set_setting.argtypes = [c_uint64, ovphysx_string_t, ovphysx_string_t]
+# Typed config API
+_lib.ovphysx_set_global_config.restype = ovphysx_result_t
+_lib.ovphysx_set_global_config.argtypes = [ovphysx_config_entry_t]
 
-_lib.ovphysx_get_setting.restype = ovphysx_result_t
-_lib.ovphysx_get_setting.argtypes = [c_uint64, ovphysx_string_t, POINTER(ovphysx_string_t), POINTER(c_size_t)]
+_lib.ovphysx_get_global_config_bool.restype = ovphysx_result_t
+_lib.ovphysx_get_global_config_bool.argtypes = [c_int, POINTER(ctypes.c_bool)]
+
+_lib.ovphysx_get_global_config_int32.restype = ovphysx_result_t
+_lib.ovphysx_get_global_config_int32.argtypes = [c_int, POINTER(c_int32)]
+
+_lib.ovphysx_get_global_config_float.restype = ovphysx_result_t
+_lib.ovphysx_get_global_config_float.argtypes = [c_int, POINTER(c_float)]
+
+_lib.ovphysx_get_global_config_string.restype = ovphysx_result_t
+_lib.ovphysx_get_global_config_string.argtypes = [c_int, POINTER(ovphysx_string_t), POINTER(c_size_t)]
 
 # Async operations
 _lib.ovphysx_wait_op.restype = ovphysx_result_t
 _lib.ovphysx_wait_op.argtypes = [c_uint64, c_uint64, c_uint64, POINTER(ovphysx_op_wait_result_t)]
 
 _lib.ovphysx_clone.restype = ovphysx_enqueue_result_t
-_lib.ovphysx_clone.argtypes = [c_uint64, ovphysx_string_t, POINTER(ovphysx_string_t), c_uint32]
+_lib.ovphysx_clone.argtypes = [c_uint64, ovphysx_string_t, POINTER(ovphysx_string_t), c_uint32, POINTER(c_float)]
 
-_lib.ovphysx_destroy_error.restype = None
-_lib.ovphysx_destroy_error.argtypes = [ovphysx_string_t]
+_lib.ovphysx_get_last_error.restype = ovphysx_string_t
+_lib.ovphysx_get_last_error.argtypes = []
 
-_lib.ovphysx_destroy_errors.restype = None
-_lib.ovphysx_destroy_errors.argtypes = [POINTER(ovphysx_op_error_t), c_size_t]
+_lib.ovphysx_get_last_op_error.restype = ovphysx_string_t
+_lib.ovphysx_get_last_op_error.argtypes = [c_uint64]
+
+_lib.ovphysx_destroy_wait_result.restype = None
+_lib.ovphysx_destroy_wait_result.argtypes = [POINTER(ovphysx_op_wait_result_t)]
 
 # Version query
 _lib.ovphysx_get_version_string.restype = c_char_p
@@ -441,6 +450,13 @@ _lib.ovphysx_unregister_log_callback.argtypes = [ovphysx_log_fn, c_void_p]
 # Log diagnostics (for testing)
 _lib.ovphysx_log_emit_test_messages.restype = None
 _lib.ovphysx_log_emit_test_messages.argtypes = []
+
+# Remote storage credential configuration
+_lib.ovphysx_configure_s3.restype = ovphysx_result_t
+_lib.ovphysx_configure_s3.argtypes = [c_char_p, c_char_p, c_char_p, c_char_p, c_char_p, c_char_p]
+
+_lib.ovphysx_configure_azure_sas.restype = ovphysx_result_t
+_lib.ovphysx_configure_azure_sas.argtypes = [c_char_p, c_char_p, c_char_p]
 
 # Tensor Binding API - bulk data access for physics simulation
 _lib.ovphysx_create_tensor_binding.restype = ovphysx_result_t
@@ -485,6 +501,193 @@ _lib.ovphysx_write_tensor_binding_masked.argtypes = [
 
 _lib.ovphysx_warmup_gpu.restype = ovphysx_result_t
 _lib.ovphysx_warmup_gpu.argtypes = [c_uint64]  # handle
+
+# Articulation metadata (single consolidated call)
+_lib.ovphysx_get_articulation_metadata.restype = ovphysx_result_t
+_lib.ovphysx_get_articulation_metadata.argtypes = [c_uint64, c_uint64, POINTER(ovphysx_articulation_metadata_t)]
+
+_lib.ovphysx_articulation_get_dof_names.restype = ovphysx_result_t
+_lib.ovphysx_articulation_get_dof_names.argtypes = [
+    c_uint64,
+    c_uint64,
+    POINTER(ovphysx_string_t),
+    c_uint32,
+    POINTER(c_uint32),
+]
+
+_lib.ovphysx_articulation_get_body_names.restype = ovphysx_result_t
+_lib.ovphysx_articulation_get_body_names.argtypes = [
+    c_uint64,
+    c_uint64,
+    POINTER(ovphysx_string_t),
+    c_uint32,
+    POINTER(c_uint32),
+]
+
+_lib.ovphysx_articulation_get_joint_names.restype = ovphysx_result_t
+_lib.ovphysx_articulation_get_joint_names.argtypes = [
+    c_uint64,
+    c_uint64,
+    POINTER(ovphysx_string_t),
+    c_uint32,
+    POINTER(c_uint32),
+]
+
+# Contact binding API
+_lib.ovphysx_create_contact_binding.restype = ovphysx_result_t
+_lib.ovphysx_create_contact_binding.argtypes = [
+    c_uint64,
+    POINTER(ovphysx_string_t),
+    c_uint32,
+    POINTER(ovphysx_string_t),
+    c_uint32,
+    c_uint32,
+    POINTER(c_uint64),
+]
+
+_lib.ovphysx_destroy_contact_binding.restype = ovphysx_result_t
+_lib.ovphysx_destroy_contact_binding.argtypes = [c_uint64, c_uint64]
+
+_lib.ovphysx_get_contact_binding_spec.restype = ovphysx_result_t
+_lib.ovphysx_get_contact_binding_spec.argtypes = [c_uint64, c_uint64, POINTER(c_int32), POINTER(c_int32)]
+
+_lib.ovphysx_read_contact_net_forces.restype = ovphysx_result_t
+_lib.ovphysx_read_contact_net_forces.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
+_lib.ovphysx_read_contact_force_matrix.restype = ovphysx_result_t
+_lib.ovphysx_read_contact_force_matrix.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
+
+# PhysX object interop (unified)
+_lib.ovphysx_get_physx_ptr.restype = ovphysx_result_t
+_lib.ovphysx_get_physx_ptr.argtypes = [c_uint64, c_char_p, c_int, POINTER(c_void_p)]
+
+# Contact report -- ctypes struct mirrors of the C ABI structs.
+
+
+class ContactEventHeader(ctypes.Structure):
+    _fields_ = [
+        ("type", c_int32),
+        ("stageId", c_int64),
+        ("actor0", c_uint64),
+        ("actor1", c_uint64),
+        ("collider0", c_uint64),
+        ("collider1", c_uint64),
+        ("contactDataOffset", c_uint32),
+        ("numContactData", c_uint32),
+        ("frictionAnchorsDataOffset", c_uint32),
+        ("numfrictionAnchorsData", c_uint32),
+        ("protoIndex0", c_uint32),
+        ("protoIndex1", c_uint32),
+    ]
+
+
+class ContactPoint(ctypes.Structure):
+    _fields_ = [
+        ("position", c_float * 3),
+        ("normal", c_float * 3),
+        ("impulse", c_float * 3),
+        ("separation", c_float),
+        ("faceIndex0", c_uint32),
+        ("faceIndex1", c_uint32),
+        ("material0", c_uint64),
+        ("material1", c_uint64),
+    ]
+
+
+class FrictionAnchor(ctypes.Structure):
+    _fields_ = [
+        ("position", c_float * 3),
+        ("impulse", c_float * 3),
+    ]
+
+
+_lib.ovphysx_get_contact_report.restype = ovphysx_result_t
+_lib.ovphysx_get_contact_report.argtypes = [
+    c_uint64,
+    POINTER(POINTER(ContactEventHeader)),
+    POINTER(c_uint32),
+    POINTER(POINTER(ContactPoint)),
+    POINTER(c_uint32),
+    POINTER(POINTER(FrictionAnchor)),  # out_friction_anchors (optional, can be None)
+    POINTER(c_uint32),                 # out_num_friction_anchors (optional, can be None)
+]
+
+
+# Scene query types (match ovphysx_types.h)
+
+class _SphereGeom(ctypes.Structure):
+    _fields_ = [("radius", ctypes.c_float), ("position", ctypes.c_float * 3)]
+
+
+class _BoxGeom(ctypes.Structure):
+    _fields_ = [
+        ("half_extent", ctypes.c_float * 3),
+        ("position", ctypes.c_float * 3),
+        ("rotation", ctypes.c_float * 4),
+    ]
+
+
+class _ShapeGeom(ctypes.Structure):
+    _fields_ = [("prim_path", c_char_p)]
+
+
+class _GeomUnion(ctypes.Union):
+    _fields_ = [("sphere", _SphereGeom), ("box", _BoxGeom), ("shape", _ShapeGeom)]
+
+
+class ovphysx_scene_query_geometry_desc_t(ctypes.Structure):
+    """Geometry descriptor for sweep/overlap queries (matches C API)."""
+    _fields_ = [("type", c_int), ("_geom", _GeomUnion)]
+
+
+class ovphysx_scene_query_hit_t(ctypes.Structure):
+    """Scene query hit result (matches C API)."""
+    _fields_ = [
+        ("collision", c_uint64),
+        ("rigid_body", c_uint64),
+        ("proto_index", c_uint32),
+        ("normal", ctypes.c_float * 3),
+        ("position", ctypes.c_float * 3),
+        ("distance", ctypes.c_float),
+        ("face_index", c_uint32),
+        ("material", c_uint64),
+    ]
+
+
+# Scene query function prototypes
+_lib.ovphysx_raycast.restype = ovphysx_result_t
+_lib.ovphysx_raycast.argtypes = [
+    c_uint64,                                              # handle
+    ctypes.c_float * 3,                                    # origin
+    ctypes.c_float * 3,                                    # direction
+    ctypes.c_float,                                        # distance
+    ctypes.c_bool,                                         # both_sides
+    c_int,                                                 # mode
+    POINTER(POINTER(ovphysx_scene_query_hit_t)),           # out_hits
+    POINTER(c_uint32),                                     # out_count
+]
+
+_lib.ovphysx_sweep.restype = ovphysx_result_t
+_lib.ovphysx_sweep.argtypes = [
+    c_uint64,                                              # handle
+    POINTER(ovphysx_scene_query_geometry_desc_t),          # geometry
+    ctypes.c_float * 3,                                    # direction
+    ctypes.c_float,                                        # distance
+    ctypes.c_bool,                                         # both_sides
+    c_int,                                                 # mode
+    POINTER(POINTER(ovphysx_scene_query_hit_t)),           # out_hits
+    POINTER(c_uint32),                                     # out_count
+]
+
+_lib.ovphysx_overlap.restype = ovphysx_result_t
+_lib.ovphysx_overlap.argtypes = [
+    c_uint64,                                              # handle
+    POINTER(ovphysx_scene_query_geometry_desc_t),          # geometry
+    c_int,                                                 # mode
+    POINTER(POINTER(ovphysx_scene_query_hit_t)),           # out_hits
+    POINTER(c_uint32),                                     # out_count
+]
 
 
 def get_native_version_string() -> str:

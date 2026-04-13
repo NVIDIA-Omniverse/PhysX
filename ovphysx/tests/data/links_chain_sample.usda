@@ -183,7 +183,7 @@ def Xform "World"
             )
             {
                 def Cube "windowSpacerActor1_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -199,7 +199,7 @@ def Xform "World"
                 }
 
                 def Cube "windowSpacerActor1_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -215,7 +215,7 @@ def Xform "World"
                 }
 
                 def Cube "windowSpacerActor1_0_2" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -231,7 +231,7 @@ def Xform "World"
                 }
 
                 def Cube "windowSpacerActor1_0_3" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -247,7 +247,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorBottom1_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -263,7 +263,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorTop1_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -279,7 +279,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorR1_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -295,7 +295,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorL1_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -311,7 +311,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv0_1_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -327,7 +327,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv1_1_0_0_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -343,7 +343,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv1_1_0_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -359,7 +359,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorBottom1_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -375,7 +375,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorTop1_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -391,7 +391,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorR1_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -407,7 +407,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorL1_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -423,7 +423,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv0_1_0_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -439,7 +439,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv1_1_0_1_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -455,7 +455,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv1_1_0_1_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -471,7 +471,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorBottom1_0_2" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -487,7 +487,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorTop1_0_2" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -503,7 +503,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorR1_0_2" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -519,7 +519,7 @@ def Xform "World"
                 }
 
                 def Cube "windowActorL1_0_2" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -535,7 +535,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv0_1_0_2" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -551,7 +551,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv1_1_0_2_0" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -567,7 +567,7 @@ def Xform "World"
                 }
 
                 def Cube "windowDiv1_1_0_2_1" (
-                    delete apiSchemas = ["MaterialBindingAPI"]
+                    prepend apiSchemas = ["MaterialBindingAPI"]
                 )
                 {
                     float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
@@ -1286,7 +1286,7 @@ def Xform "World"
         def Scope "renderables"
         {
             def Mesh "groundPlane0" (
-                delete apiSchemas = ["MaterialBindingAPI"]
+                prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
                 uniform bool doubleSided = 0
@@ -1307,7 +1307,7 @@ def Xform "World"
             }
 
             def Mesh "groundPlane1" (
-                delete apiSchemas = ["MaterialBindingAPI"]
+                prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
                 uniform bool doubleSided = 0

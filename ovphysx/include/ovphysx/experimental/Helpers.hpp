@@ -22,19 +22,21 @@ namespace physx {
 /**
  * @brief RAII wrapper for ovphysx_op_wait_result_t
  * 
- * Automatically calls ovphysx_destroy_errors when destroyed.
+ * Automatically calls ovphysx_destroy_wait_result when destroyed.
  * Use get() to pass to ovphysx_wait_op.
- * 
+ *
  * Example:
- *   WaitResult wait(handle);
+ *   WaitResult wait;
  *   ovphysx_result_t r = ovphysx_wait_op(handle, op_index, timeout, wait.get());
- *   
+ *
  *   if (wait.hasErrors()) {
- *       for (const auto& err : wait.errors()) {
- *           std::cerr << "Error: " << err << std::endl;
+ *       for (size_t i = 0; i < wait.errorCount(); ++i) {
+ *           ovphysx_string_t err = ovphysx_get_last_op_error(wait.errorOpIndexAt(i));
+ *           std::cerr << "Op " << wait.errorOpIndexAt(i) << " failed: "
+ *                     << std::string(err.ptr, err.length) << std::endl;
  *       }
  *   }
- *   // errors freed automatically when wait goes out of scope
+ *   // wait result freed automatically when wait goes out of scope
  */
 class WaitResult {
 public:
@@ -74,47 +76,17 @@ public:
     /// Get lowest pending operation index (0 if all complete)
     ovphysx_op_index_t lowestPendingOpIndex() const { return m_result.lowest_pending_op_index; }
     
-    /// Copy all error messages to a vector of strings
-    std::vector<std::string> errors() const {
-        std::vector<std::string> result;
-        if (m_result.errors && m_result.num_errors > 0) {
-            result.reserve(m_result.num_errors);
-            for (size_t i = 0; i < m_result.num_errors; ++i) {
-                const ovphysx_string_t& err = m_result.errors[i].error;
-                if (err.ptr && err.length > 0) {
-                    result.emplace_back(err.ptr, err.length);
-                } else {
-                    result.emplace_back();
-                }
-            }
-        }
-        return result;
-    }
-    
-    /// Get error at specific index
-    std::string errorAt(size_t i) const {
-        if (m_result.errors && i < m_result.num_errors) {
-            const ovphysx_string_t& err = m_result.errors[i].error;
-            if (err.ptr && err.length > 0) {
-                return std::string(err.ptr, err.length);
-            }
-        }
-        return {};
-    }
-    
-    /// Get operation index for error at specific index
-    ovphysx_op_index_t opIndexAt(size_t i) const {
-        if (m_result.errors && i < m_result.num_errors) {
-            return m_result.errors[i].op_index;
+    /// Get the failed operation index at position i
+    ovphysx_op_index_t errorOpIndexAt(size_t i) const {
+        if (m_result.error_op_indices && i < m_result.num_errors) {
+            return m_result.error_op_indices[i];
         }
         return 0;
     }
 
 private:
     void release() {
-        if (m_result.errors && m_result.num_errors > 0) {
-            ovphysx_destroy_errors(m_result.errors, m_result.num_errors);
-        }
+        ovphysx_destroy_wait_result(&m_result);
         m_result = ovphysx_op_wait_result_t{};
     }
     

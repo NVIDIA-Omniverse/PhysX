@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ovphysx"
 dynamic = ["version"]
-description = "Python bindings for ovphysx C API"
+description = "Self-contained Python library for USD-based physics simulation with DLPack tensor interoperability"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,14 +14,23 @@ dependencies = [
 license = "LicenseRef-NVIDIA-Omniverse"
 license-files = ["LICENSE.txt", "ovphysx-LICENSES.zip"]
 authors = [{ name = "Omniverse Physics Team" }]
+keywords = ["physics", "simulation", "usd", "openusd", "nvidia", "physx", "reinforcement-learning", "robotics", "dlpack", "tensor"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: POSIX :: Linux",
   "Operating System :: Microsoft :: Windows",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Intended Audience :: Science/Research",
+  "Development Status :: 3 - Alpha",
 ]
 
 [project.urls]
-Homepage = "https://github.com/NVIDIA-Omniverse/PhysX"
+Homepage = "https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx"
+Documentation = "https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html"
+Repository = "https://github.com/NVIDIA-Omniverse/PhysX"
+Issues = "https://github.com/NVIDIA-Omniverse/PhysX/issues"
+Changelog = "https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/changelog.html"
 
 [dependency-groups]
 dev = [
@@ -29,7 +38,7 @@ dev = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "ovphysx._version.__version__"}
+version = {attr = "ovphysx.__version__"}
 
 [tool.setuptools]
 # Mark as platform-specific wheel (contains native binaries)

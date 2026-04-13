@@ -39,11 +39,14 @@ def _get_impl():
     if _impl_module is not None:
         return _impl_module
 
-    # Legacy TensorAPI is only shipped for a limited set of CPython minors.
-    # The wheel includes pybind11 binaries for each supported minor (e.g. 3.11 and 3.12),
-    # and at runtime the interpreter can only load the one matching its CPython minor.
-    # We gate early (before loading plugins) so unsupported versions fail with a clear
-    # error instead of a low-level binary import failure.
+    # FIXME(legacy-tensorAPI): Delete this ovphysx.tensors compatibility path
+    # once TensorBindingsAPI is the only supported Python tensor API.
+    #
+    # Legacy TensorAPI is a pybind11 module -- ABI-locked to a CPython minor.
+    # We bundle bindings for 3.11 and 3.12 because IsaacLab still uses legacy
+    # TensorAPI on Python 3.11. Once IsaacLab has fully migrated to
+    # TensorBindingsAPI, drop 3.11 from this set and remove the py311 build
+    # pass in ovruntime/build.sh.
     if sys.version_info.major != 3 or sys.version_info.minor not in (11, 12):
         raise ImportError(
             "ovphysx.tensors (legacy TensorAPI, pybind11) is only supported on CPython 3.11 and 3.12.\n"
@@ -59,10 +62,29 @@ def _get_impl():
 
     _ensure_tensor_plugins_loaded()
 
-    # Now set up the namespace and import the real tensor module
-    _deps_dir = Path(__file__).parent.parent / "deps"
+    # Resolve dependency directories.
+    #
+    # Two modes:
+    #
+    # 1. Editable / runtime-test mode (env vars set by conftest.py):
+    #    OVPHYSX_DEPS_DIR  -> points at _build/... (freshest legacy tensor extensions)
+    #    OVPHYSX_KIT_PY_DIR -> points at _build/... (minimal Kit Python support)
+    #    The source tree has no deps/ directory, so the env vars are mandatory.
+    #    This ensures fast iteration: edit a .py file, run `uv run pytest`, and
+    #    the test picks up the change immediately without any staging step.
+    #
+    # 2. Wheel mode (no env vars, fully self-contained):
+    #    Falls back to package-relative paths inside the installed wheel:
+    #      site-packages/ovphysx/deps/         (legacy tensor extension payload)
+    #      site-packages/ovphysx/deps/_kit_py/ (carb/omni.ext stubs)
+    #    These are staged by build_wheel.cmake during wheel packaging.
+    #    The wheel carries everything it needs -- no env vars, no build tree.
+    import os as _os
+    _deps_env = _os.environ.get("OVPHYSX_DEPS_DIR")
+    _deps_dir = Path(_deps_env) if _deps_env else Path(__file__).parent.parent / "deps"
     _tensor_exts = _deps_dir / "v2"
-    _kit_py = _deps_dir / "_kit_py"
+    _kit_py_env = _os.environ.get("OVPHYSX_KIT_PY_DIR")
+    _kit_py = Path(_kit_py_env) if _kit_py_env else _deps_dir / "_kit_py"
 
     # Add _kit_py to path for carb/omni.ext if available
     # `omni.physics.tensors` (legacy TensorAPI) imports `omni.ext` (Kit Python) via its

@@ -406,17 +406,32 @@ def check_usd_compatibility():
     # Load library configuration
     module_dir = Path(__file__).parent
 
-    # Try lib/ subdirectory first (wheel structure matches _install/)
+    # Locate config.toml. Tried in order:
+    #
+    # Wheel mode: config.toml is bundled at ovphysx/lib/config.toml inside
+    # the installed wheel (same layout as _install/). Self-contained.
     config_path = module_dir / "lib" / "config.toml"
 
     if not config_path.exists():
-        # Try module root (legacy)
-        config_path = module_dir / "config.toml"
+        # Editable / runtime-test mode (`uv run pytest` from source tree):
+        # conftest.py sets OVPHYSX_LIB to the .so path inside _install/lib/.
+        # config.toml sits next to the .so, so we look in the same directory.
+        lib_env = os.environ.get("OVPHYSX_LIB")
+        if lib_env:
+            candidate = Path(lib_env).resolve().parent / "config.toml"
+            if candidate.exists():
+                config_path = candidate
 
     if not config_path.exists():
-        # Try repo root: python/ovphysx/ -> python/ -> omni/ovphysx/
-        sdk_root = module_dir.parent.parent
-        config_path = sdk_root / "config.toml"
+        # Fallback: look in the CMake build tree. CMake generates config.toml
+        # into CMAKE_CURRENT_BINARY_DIR which may be a platform/config
+        # subdirectory (e.g. _build/linux-x86_64/release/).
+        # module_dir is python/ovphysx/, so two levels up is the project root.
+        build_root = module_dir.parent.parent / "_build"
+        if build_root.is_dir():
+            candidates = sorted(build_root.rglob("config.toml"))
+            if candidates:
+                config_path = candidates[0]
 
     if not config_path.exists():
         _logger.warning("config.toml not found, skipping version check")

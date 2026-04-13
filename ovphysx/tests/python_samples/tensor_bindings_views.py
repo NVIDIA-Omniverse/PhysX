@@ -23,11 +23,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from ovphysx import (
-    OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32,
-    OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32,
-    PhysX,
-)
+from ovphysx import PhysX
+from ovphysx.types import TensorType
 
 
 def _find_usd_path() -> str:
@@ -78,11 +75,11 @@ class SimulationView:
     def create_articulation_view(self, pattern: str) -> ArticulationView:
         dof_pos = self.physx.create_tensor_binding(
             pattern=pattern,
-            tensor_type=OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32,
+            tensor_type=TensorType.ARTICULATION_DOF_POSITION,
         )
         dof_targets = self.physx.create_tensor_binding(
             pattern=pattern,
-            tensor_type=OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32,
+            tensor_type=TensorType.ARTICULATION_DOF_POSITION_TARGET,
         )
         return ArticulationView(dof_positions=dof_pos, dof_position_targets=dof_targets)
 
@@ -124,4 +121,5 @@ if __name__ == "__main__":
     print(f"Max DOF position change after 5 steps: {delta:.6f}")
 
     physx.release()
-    print("[OK] DONE")
+
+    print("[SUCCESS]", flush=True)

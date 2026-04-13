@@ -18,7 +18,8 @@ from pathlib import Path
 
 import numpy as np
 
-from ovphysx import OVPHYSX_TENSOR_RIGID_BODY_POSE_F32, PhysX
+from ovphysx import PhysX
+from ovphysx.types import TensorType
 
 
 def main():
@@ -44,7 +45,7 @@ def main():
     # The pattern matches the "table" rigid body in every cloned environment
     pose_binding = physx.create_tensor_binding(
         pattern="/World/envs/env*/table",
-        tensor_type=OVPHYSX_TENSOR_RIGID_BODY_POSE_F32,
+        tensor_type=TensorType.RIGID_BODY_POSE,
     )
     print(f"  Rigid body binding: count={pose_binding.count}, shape={pose_binding.shape}")
 
@@ -63,12 +64,11 @@ def main():
         px, py, pz = poses[env_idx, 0:3]
         print(f"  env{env_idx}: pos=({px:.4f}, {py:.4f}, {pz:.4f})")
 
-    # Clean up
     pose_binding.destroy()
     physx.remove_usd(usd_handle)
     physx.release()
 
-    print("Done.")
+    print("[SUCCESS]", flush=True)
 
 
 if __name__ == "__main__":

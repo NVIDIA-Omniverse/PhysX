@@ -40,6 +40,12 @@
 
 def Xform "World"
 {
+    def PhysicsScene "physicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
     def Xform "GroundPlane"
     {
         quatf xformOp:orient = (1, 0, 0, 0)
@@ -70,9 +76,11 @@ def Xform "World"
     }
 
     def Mesh "Cube1" (
-        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxContactReportAPI"]
     )
     {
+        float physxContactReport:threshold = 0
+        float physxRigidBody:sleepThreshold = 0
         float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
         int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
         int[] faceVertexIndices = [0, 1, 3, 2, 4, 6, 7, 5, 6, 2, 3, 7, 4, 5, 1, 0, 4, 0, 2, 6, 5, 7, 3, 1]
@@ -95,9 +103,11 @@ def Xform "World"
     }
 
     def Mesh "Cube2" (
-        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxContactReportAPI"]
     )
     {
+        float physxContactReport:threshold = 0
+        float physxRigidBody:sleepThreshold = 0
         float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
         int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
         int[] faceVertexIndices = [0, 1, 3, 2, 4, 6, 7, 5, 6, 2, 3, 7, 4, 5, 1, 0, 4, 0, 2, 6, 5, 7, 3, 1]
@@ -120,9 +130,11 @@ def Xform "World"
     }
 
     def Mesh "Cube3" (
-        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxContactReportAPI"]
     )
     {
+        float physxContactReport:threshold = 0
+        float physxRigidBody:sleepThreshold = 0
         float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
         int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
         int[] faceVertexIndices = [0, 1, 3, 2, 4, 6, 7, 5, 6, 2, 3, 7, 4, 5, 1, 0, 4, 0, 2, 6, 5, 7, 3, 1]
