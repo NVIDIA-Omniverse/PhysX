@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+/* styling definition lists as tables for API docs */
+.dl-as-table {
+    display: table;
+}
+
+.dl-as-table > dl {
+    display: table-row-group;
+}
+
+.dl-as-table > dl > dt,
+.dl-as-table > dl > dd {
+    display: table-row;
+}
+
+.dl-as-table > dl > dd > p {
+    display: table-cell;
+}
+
+.dl-as-table > dl > dd::before {
+    content: "";  /* add a fake cell */
+}
+
+.tag-as-table-cell {
+    display: table-cell;
+    width: auto;
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 0.5em;
+}

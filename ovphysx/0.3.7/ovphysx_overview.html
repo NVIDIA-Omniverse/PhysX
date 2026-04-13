@@ -1,0 +1,869 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ovphysx Overview &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+
+    <script rel="preload" src="_static/modal-table.js"></script>
+    <script src="_static/documentation_options.js?v=ec38d21e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=65e89d2a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'ovphysx_overview';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.3.7';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script src="_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Developer Guide" href="developer_guide.html" />
+    <link rel="prev" title="ovphysx" href="index.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Apr 13, 2026"/>
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">ovphysx Overview</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="ovphysx-overview">
+<h1>ovphysx Overview<a class="headerlink" href="#ovphysx-overview" title="Link to this heading">#</a></h1>
+<p>ovphysx is a self-contained PhysX runtime with Omni PhysX capabilities, exposed as a C API with Python bindings.
+It loads USD scenes, runs simulation, and reads or writes data via DLPack for zero-copy tensor exchange.
+It currently supports Windows (x86_64) and Linux (x86_64, aarch64) platforms.
+This library is AI-agent friendly: <code class="docutils literal notranslate"><span class="pre">SKILLS.md</span></code> and the <code class="docutils literal notranslate"><span class="pre">skills/</span></code> directory ship with both the Python wheel and the C SDK package. <code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code> is also available in the source repository for quick codebase onboarding.
+This page explains how ovphysx fits into the stack, what workflows it supports, and where to find build, tutorial, and API details.</p>
+<section id="who-this-is-for">
+<h2>Who This Is For<a class="headerlink" href="#who-this-is-for" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Python-first users who consume the wheel and integrate ovphysx into apps or pipelines.</p></li>
+<li><p>C/C++ users who integrate the SDK in native applications.</p></li>
+</ul>
+</section>
+<section id="what-you-can-do">
+<h2>What You Can Do<a class="headerlink" href="#what-you-can-do" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Load USD scenes into a runtime stage.</p></li>
+<li><p>Clone subtrees of the USD scene for large-scale replicated environments.</p></li>
+<li><p>Write simulation inputs (positions, velocities, controls) via tensor bindings.</p></li>
+<li><p>Step the simulation.</p></li>
+<li><p>Read results (updated simulation state) back into your tensors.</p></li>
+</ul>
+<p>To get started, see the <a class="reference internal" href="tutorials/quickstart.html"><span class="std std-doc">Quickstart</span></a>.</p>
+</section>
+<section id="relationship-to-physx-sdk-and-omni-physx">
+<h2>Relationship to PhysX SDK and Omni PhysX<a class="headerlink" href="#relationship-to-physx-sdk-and-omni-physx" title="Link to this heading">#</a></h2>
+<p>ovphysx packages the Omni PhysX runtime (USD integration, streaming execution model, extensions) on top of the PhysX SDK.
+In other words, it is the standalone SDK layer that exposes omni.physx capabilities through a stable C API and Python bindings.
+The dependency stack is: PhysX SDK → omni.physx → ovphysx.</p>
+</section>
+<section id="core-concepts">
+<h2>Core Concepts<a class="headerlink" href="#core-concepts" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Stream-ordered execution: calls run in submission order and see prior writes without extra sync.</p></li>
+<li><p>Tensor bindings: synchronous read/write operations for physics data (rigid body poses, velocities, etc.). Includes pattern matching (glob patterns) to bind to multiple prims at once (<code class="docutils literal notranslate"><span class="pre">/World/robot*</span></code>, <code class="docutils literal notranslate"><span class="pre">/World/env[N]/robot</span></code>).</p></li>
+<li><p>Thread safety: multiple instances are safe across threads, a single instance is not.</p></li>
+<li><p>DLPack interoperability: share memory with NumPy, PyTorch, and other DLPack consumers.</p></li>
+</ul>
+</section>
+<section id="end-to-end-usage-in-python">
+<h2>End-to-End Usage in Python<a class="headerlink" href="#end-to-end-usage-in-python" title="Link to this heading">#</a></h2>
+<p>Typical usage of ovphysx:</p>
+<ul class="simple">
+<li><p>Create and release instances with <code class="docutils literal notranslate"><span class="pre">PhysX()</span></code> and <code class="docutils literal notranslate"><span class="pre">physx.release()</span></code>.</p></li>
+<li><p>Load or remove USD with <code class="docutils literal notranslate"><span class="pre">physx.add_usd()</span></code> and <code class="docutils literal notranslate"><span class="pre">physx.remove_usd()</span></code>.</p></li>
+<li><p>Clone environments with <code class="docutils literal notranslate"><span class="pre">physx.clone()</span></code> specifying a source path and target paths.</p></li>
+<li><p>Create tensor bindings with <code class="docutils literal notranslate"><span class="pre">physx.create_tensor_binding()</span></code> specifying tensor type and a prim path pattern.</p></li>
+<li><p>Write and read tensor data with <code class="docutils literal notranslate"><span class="pre">binding.write()</span></code> and <code class="docutils literal notranslate"><span class="pre">binding.read()</span></code> using NumPy arrays or dlpack-compatible buffers.</p></li>
+<li><p>Step the simulation with <code class="docutils literal notranslate"><span class="pre">physx.step()</span></code>.</p></li>
+</ul>
+<p>See the <a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/ovphysx/python_api.html">Python API Reference</a> for the full Python API surface.</p>
+</section>
+<section id="c-c-sdk">
+<h2>C/C++ SDK<a class="headerlink" href="#c-c-sdk" title="Link to this heading">#</a></h2>
+<p>The C API mirrors the Python flow:</p>
+<ul class="simple">
+<li><p>Create and destroy instances with <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_instance()</span></code>.</p></li>
+<li><p>Load or reset USD with <code class="docutils literal notranslate"><span class="pre">ovphysx_add_usd()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_remove_usd()</span></code>, and <code class="docutils literal notranslate"><span class="pre">ovphysx_reset()</span></code>.</p></li>
+<li><p>Create tensor bindings with <code class="docutils literal notranslate"><span class="pre">ovphysx_create_tensor_binding()</span></code> specifying tensor type and prim paths.</p></li>
+<li><p>Write and read tensor data with <code class="docutils literal notranslate"><span class="pre">ovphysx_write_tensor_binding()</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_read_tensor_binding()</span></code>.</p></li>
+<li><p>Step the simulation with <code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code>.</p></li>
+</ul>
+<p>See the <a class="reference internal" href="api.html"><span class="std std-doc">C API Reference</span></a> for the full C API surface.</p>
+</section>
+<section id="release-and-distribution">
+<h2>Release and distribution<a class="headerlink" href="#release-and-distribution" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Python users consume the wheel as the primary distribution (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">ovphysx</span></code>).</p></li>
+<li><p>C/C++ users consume the SDK package with headers and shared libraries, see <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/releases">Github release page</a>.</p></li>
+</ul>
+<section id="wheel-contents-and-environment-notes">
+<h3>Wheel Contents and Environment Notes<a class="headerlink" href="#wheel-contents-and-environment-notes" title="Link to this heading">#</a></h3>
+<p>The Python wheel (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">ovphysx</span></code>) is intentionally large because it ships a complete, self-contained runtime.
+No external NVIDIA or USD packages are required.</p>
+<section id="what-the-wheel-bundles">
+<h4>What the Wheel Bundles<a class="headerlink" href="#what-the-wheel-bundles" title="Link to this heading">#</a></h4>
+<ul class="simple">
+<li><p><strong>ovphysx shared libraries</strong> (<code class="docutils literal notranslate"><span class="pre">libovphysx.so</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx.dll</span></code>)</p></li>
+<li><p><strong>Carbonite runtime</strong> (<code class="docutils literal notranslate"><span class="pre">libcarb.so</span></code> and plugins)</p></li>
+<li><p><strong>PhysX plugins</strong> (simulation, tensors)</p></li>
+<li><p><strong>USD libraries</strong> (scene loading and schema support)</p></li>
+</ul>
+<p>The only Python dependencies are <code class="docutils literal notranslate"><span class="pre">numpy</span></code> and <code class="docutils literal notranslate"><span class="pre">packaging</span></code>.</p>
+</section>
+</section>
+<section id="usd-coexistence-and-version-checking">
+<h3>USD Coexistence and Version Checking<a class="headerlink" href="#usd-coexistence-and-version-checking" title="Link to this heading">#</a></h3>
+<p>ovphysx includes runtime safeguards for environments where USD may already be loaded by another package (for example, <code class="docutils literal notranslate"><span class="pre">usd-core</span></code>, <code class="docutils literal notranslate"><span class="pre">nvidia-omniverse-*</span></code>, or an application embedding USD).</p>
+<p>When ovphysx starts, it checks whether USD is already loaded in the process:</p>
+<ul class="simple">
+<li><p><strong>No USD loaded</strong>: ovphysx preloads its own bundled USD libraries automatically.</p></li>
+<li><p><strong>Compatible USD loaded</strong>: ovphysx uses the existing USD (skips preload).</p></li>
+<li><p><strong>Incompatible USD loaded</strong>: ovphysx fails with a detailed error message showing the required vs. found version and remediation steps.</p></li>
+</ul>
+<p>Detection uses <code class="docutils literal notranslate"><span class="pre">dlopen(RTLD_NOLOAD)</span></code> on Linux and <code class="docutils literal notranslate"><span class="pre">GetModuleHandle</span></code> on Windows to inspect process memory without side effects.
+The required USD version is specified in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> using PEP 440 version specifiers (e.g. <code class="docutils literal notranslate"><span class="pre">==25.11</span></code>).</p>
+<p>You can control this behavior with <code class="docutils literal notranslate"><span class="pre">/ovphysx/skipUsdLibPreload</span></code> to bypass automatic USD preload.</p>
+</section>
+</section>
+<section id="versioning-and-compatibility">
+<h2>Versioning and compatibility<a class="headerlink" href="#versioning-and-compatibility" title="Link to this heading">#</a></h2>
+<p>ovphysx follows semantic versioning for the SDK surface (C API and Python bindings).</p>
+<p>Backward compatibility guarantees that come with semantic versioning apply only to releases at or after v1.0; pre-1.0 releases may include breaking changes between minor and patch versions.</p>
+<p>Functions exposed in experimental or internal folders (or prefixes) have no guarantees and may change or be removed without notice.</p>
+<section id="version-management">
+<h3>Version Management<a class="headerlink" href="#version-management" title="Link to this heading">#</a></h3>
+<p>The project version is defined in <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">0.1.0</span></code> or <code class="docutils literal notranslate"><span class="pre">0.1.4-specialFeature</span></code>).</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> reads <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> and generates <code class="docutils literal notranslate"><span class="pre">include/ovphysx/version.h</span></code>.</p></li>
+<li><p>Python wheels convert to PEP 440 (<code class="docutils literal notranslate"><span class="pre">X.Y.Z-suffix</span></code> → <code class="docutils literal notranslate"><span class="pre">X.Y.Z.suffix</span></code>)</p></li>
+<li><p>C++ archives keep the original semver format</p></li>
+</ul>
+</section>
+<section id="api-abi-policy">
+<h3>API/ABI Policy<a class="headerlink" href="#api-abi-policy" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Major</strong>: breaking C API or ABI changes, removed symbols, or incompatible data layout changes.</p></li>
+<li><p><strong>Minor</strong>: backwards-compatible API additions, new symbols, or optional features.</p></li>
+<li><p><strong>Patch</strong>: backwards-compatible bug fixes and internal changes only.</p></li>
+</ul>
+<p>For v1.0 and later releases, backward compatibility is expected across patch and minor releases for the published C API and Python API. ABI compatibility is maintained within a major line; SONAME uses the major version on Linux to make ABI expectations explicit.</p>
+<p>When a breaking change is required at the C API level, consider adding a versioned entrypoint (e.g., <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance_v2</span></code>) to preserve compatibility, similar to CUDA-style <code class="docutils literal notranslate"><span class="pre">*_v2</span></code> APIs. Deprecated APIs should remain for at least one minor release with clear deprecation notes.</p>
+<p>Python bindings validate that the package version and native library version match at runtime (base semver), and will raise a clear error if they diverge. This check can be bypassed for advanced cases via <code class="docutils literal notranslate"><span class="pre">ignore_version_mismatch=True</span></code> on <code class="docutils literal notranslate"><span class="pre">PhysX</span></code>.</p>
+</section>
+</section>
+<section id="runtime-warnings">
+<h2>Runtime Warnings<a class="headerlink" href="#runtime-warnings" title="Link to this heading">#</a></h2>
+<p>ovphysx bundles PhysX, Carbonite, and USD runtime components. On startup and during
+simulation, you may see warnings from these downstream dependencies such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">[Warning]</span> <span class="pre">PhysXFoundation:</span> <span class="pre">Unable</span> <span class="pre">to</span> <span class="pre">create</span> <span class="pre">GPU</span> <span class="pre">Foundation</span></code> — appears on machines
+without an NVIDIA GPU; the SDK falls back to CPU simulation transparently.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[Error]</span> <span class="pre">[omni.physx.cooking.plugin]</span> <span class="pre">registry</span> <span class="pre">is</span> <span class="pre">false</span></code> — a non-fatal initialization
+message from the cooking subsystem.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Warning:</span> <span class="pre">Error</span> <span class="pre">loading</span> <span class="pre">lib</span> <span class="pre">...</span> <span class="pre">module</span> <span class="pre">'pxr.*':</span> <span class="pre">ModuleNotFoundError</span></code> — the bundled
+USD libraries attempt to load optional Python USD bindings (<code class="docutils literal notranslate"><span class="pre">pxr</span></code>). These warnings
+are harmless when using ovphysx standalone without a separate USD Python installation.</p></li>
+</ul>
+<p>These messages do not indicate a problem with your application. They originate from
+the bundled runtime dependencies and will be addressed in future releases.</p>
+<p>To suppress most startup noise, set the log level before creating an instance:</p>
+<ul class="simple">
+<li><p><strong>C:</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_set_log_level(OVPHYSX_LOG_ERROR);</span></code></p></li>
+<li><p><strong>Python:</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx.set_log_level(ovphysx.LogLevel.ERROR)</span></code></p></li>
+</ul>
+</section>
+<section id="physx-sdk-and-omni-physx-documentation">
+<h2>PhysX SDK and Omni PhysX Documentation<a class="headerlink" href="#physx-sdk-and-omni-physx-documentation" title="Link to this heading">#</a></h2>
+<p>ovphysx uses the PhysX SDK and Omni PhysX plugins under the hood.
+For broader PhysX and Omni PhysX guidance see the respective developer resources:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html">Omni PhysX User Guide</a></p></li>
+<li><p><a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/">PhysX Documentation</a></p></li>
+</ul>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">#</a></h2>
+<p>You now have a high-level view of ovphysx capabilities, compatibility policy, and distribution options. For build and runtime details, see the <a class="reference internal" href="developer_guide.html"><span class="std std-doc">Developer Guide</span></a>. For hands-on usage, continue with <a class="reference internal" href="tutorials/hello_world.html"><span class="std std-doc">Hello World</span></a>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">ovphysx</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="developer_guide.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Developer Guide</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#who-this-is-for">Who This Is For</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-you-can-do">What You Can Do</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relationship-to-physx-sdk-and-omni-physx">Relationship to PhysX SDK and Omni PhysX</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-concepts">Core Concepts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-usage-in-python">End-to-End Usage in Python</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#c-c-sdk">C/C++ SDK</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#release-and-distribution">Release and distribution</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#wheel-contents-and-environment-notes">Wheel Contents and Environment Notes</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-wheel-bundles">What the Wheel Bundles</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usd-coexistence-and-version-checking">USD Coexistence and Version Checking</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#versioning-and-compatibility">Versioning and compatibility</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#version-management">Version Management</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#api-abi-policy">API/ABI Policy</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-warnings">Runtime Warnings</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#physx-sdk-and-omni-physx-documentation">PhysX SDK and Omni PhysX Documentation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Apr 13, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

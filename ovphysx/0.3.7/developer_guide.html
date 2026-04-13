@@ -1,0 +1,1427 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Developer Guide &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+
+    <script rel="preload" src="_static/modal-table.js"></script>
+    <script src="_static/documentation_options.js?v=ec38d21e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=65e89d2a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'developer_guide';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.3.7';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script src="_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="ovphysx Overview" href="ovphysx_overview.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Apr 13, 2026"/>
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Developer Guide</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="developer-guide">
+<h1>Developer Guide<a class="headerlink" href="#developer-guide" title="Link to this heading">#</a></h1>
+<p>Use this guide when you integrate, build, and operate ovphysx in your own application. You learn how to build the SDK, run samples, and apply core runtime rules for synchronization, threading, and resource ownership.</p>
+<section id="relationship-and-consumption-model">
+<h2>Relationship and Consumption Model<a class="headerlink" href="#relationship-and-consumption-model" title="Link to this heading">#</a></h2>
+<p>ovphysx provides a stable C API and Python bindings on top of the Omni PhysX runtime, which itself uses the PhysX SDK.
+Use ovphysx when you need USD-based physics simulation outside Kit with a small, self-contained SDK.</p>
+<ul class="simple">
+<li><p>Python: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">ovphysx</span></code> and <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">ovphysx</span> <span class="pre">import</span> <span class="pre">PhysX</span></code></p></li>
+<li><p>C/C++: download the SDK from the <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/releases">GitHub Releases</a> page, include headers from <code class="docutils literal notranslate"><span class="pre">include/ovphysx/</span></code>, and link against <code class="docutils literal notranslate"><span class="pre">ovphysx::ovphysx</span></code> via CMake</p></li>
+</ul>
+</section>
+<section id="samples-and-tutorials">
+<h2>Samples and Tutorials<a class="headerlink" href="#samples-and-tutorials" title="Link to this heading">#</a></h2>
+<p>The ovphysx samples are runnable references for SDK and wheel usage, designed to run in a clean environment matching how end users consume the wheel or SDK.</p>
+<blockquote>
+<div><p><strong>Note:</strong> In the source repository, samples live under <code class="docutils literal notranslate"><span class="pre">tests/c_samples/</span></code> and <code class="docutils literal notranslate"><span class="pre">tests/python_samples/</span></code>. In the SDK package, these are installed to <code class="docutils literal notranslate"><span class="pre">samples/c_samples/</span></code> and <code class="docutils literal notranslate"><span class="pre">samples/python_samples/</span></code> respectively.</p>
+</div></blockquote>
+<p><strong>Python samples</strong> (<code class="docutils literal notranslate"><span class="pre">tests/python_samples/</span></code>):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sample</p></th>
+<th class="head"><p>Tutorial</p></th>
+<th class="head"><p>Feature</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hello_world.py</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/hello_world.html"><span class="std std-doc">Hello World</span></a></p></td>
+<td><p>Load USD + step (minimal workflow)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tensor_bindings.py</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a></p></td>
+<td><p>Read/write simulation data via tensor bindings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clone.py</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/cloning.html"><span class="std std-doc">Cloning</span></a></p></td>
+<td><p>Replicate environments with the clone API</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contact_binding.py</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/contact_binding.html"><span class="std std-doc">Contact Binding</span></a></p></td>
+<td><p>Read contact forces via sensor/filter bindings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tensor_bindings_views.py</span></code></p></td>
+<td><p></p></td>
+<td><p>Build “TensorAPI-like” view wrappers (advanced)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extra Python samples</strong> (<code class="docutils literal notranslate"><span class="pre">tests/python_samples_extra/</span></code>):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sample</p></th>
+<th class="head"><p>Tutorial</p></th>
+<th class="head"><p>Feature</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">visual_rerunio_sample/visualize_rigid_bodies.py</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/render_handoff.html"><span class="std std-doc">Rendering Handoff</span></a></p></td>
+<td><p>Visualize rigid body simulation with Rerun</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>C/C++ samples</strong> (<code class="docutils literal notranslate"><span class="pre">tests/c_samples/</span></code>):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sample</p></th>
+<th class="head"><p>Tutorial</p></th>
+<th class="head"><p>Feature</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hello_world_c/</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/hello_world.html"><span class="std std-doc">Hello World</span></a></p></td>
+<td><p>Minimal C hello world</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tensor_bindings_c/</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a></p></td>
+<td><p>CPU tensor read/write</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tensor_bindings_gpu_c/</span></code></p></td>
+<td><p></p></td>
+<td><p>GPU tensor read/write with CUDA</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clone_c/</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/cloning.html"><span class="std std-doc">Cloning</span></a></p></td>
+<td><p>Scene cloning</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contact_binding_c/</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/contact_binding.html"><span class="std std-doc">Contact Binding</span></a></p></td>
+<td><p>Contact force reading</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">physx_interop_cpp/</span></code></p></td>
+<td><p><a class="reference internal" href="tutorials/physx_interop.html"><span class="std std-doc">PhysX Interop</span></a></p></td>
+<td><p>Direct PhysX SDK pointer access</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For SDK setup, see <a class="reference internal" href="tutorials/quickstart.html"><span class="std std-doc">SDK Quickstart</span></a>.</p>
+<p>For tensor binding shape/read/write semantics, see <a class="reference internal" href="tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>.
+Canonical enum-level definitions are in <code class="docutils literal notranslate"><span class="pre">include/ovphysx/ovphysx_types.h</span></code> (<code class="docutils literal notranslate"><span class="pre">ovphysx_tensor_type_t</span></code>).</p>
+</section>
+<section id="execution-model">
+<h2>Execution Model<a class="headerlink" href="#execution-model" title="Link to this heading">#</a></h2>
+<p>ovphysx uses a stream-ordered execution model:</p>
+<ul class="simple">
+<li><p>Calls are enqueued in submission order and observe prior writes without extra sync.</p></li>
+<li><p>Asynchronous calls return an <code class="docutils literal notranslate"><span class="pre">op_index</span></code>; wait on it before consuming results outside the stream.</p></li>
+<li><p>Synchronous calls complete before returning and do not yield an <code class="docutils literal notranslate"><span class="pre">op_index</span></code>.</p></li>
+</ul>
+<p>Use <code class="docutils literal notranslate"><span class="pre">ovphysx_wait_op()</span></code> (or <code class="docutils literal notranslate"><span class="pre">PhysX.wait_op()</span></code> in Python) to:</p>
+<ul class="simple">
+<li><p>synchronize before reading or modifying tensors on CPU/GPU if they’re currently accessed by asynchronous operations inside ovphysx</p></li>
+<li><p>ensure correctness before external side-effects (logging, rendering, network I/O)</p></li>
+</ul>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<p>The SDK uses a typed config system for known settings, plus a Carbonite escape hatch for arbitrary paths. Config entries are built
+with convenience functions from <code class="docutils literal notranslate"><span class="pre">ovphysx_config.h</span></code> and passed at initialization or set at runtime.</p>
+<section id="c">
+<h3>C<a class="headerlink" href="#c" title="Link to this heading">#</a></h3>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovphysx/ovphysx_config.h&quot;</span>
+
+<span class="c1">// At initialization</span>
+<span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
+<span class="n">ovphysx_config_entry_t</span><span class="w"> </span><span class="n">entries</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_config_entry_disable_contact_processing</span><span class="p">(</span><span class="nb">true</span><span class="p">),</span>
+<span class="w">    </span><span class="n">ovphysx_config_entry_num_threads</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+<span class="w">    </span><span class="n">ovphysx_config_entry_carbonite</span><span class="p">(</span>
+<span class="w">        </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;/physics/fabricUpdateVelocities&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;true&quot;</span><span class="p">)),</span>
+<span class="p">};</span>
+<span class="n">args</span><span class="p">.</span><span class="n">config_entries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">entries</span><span class="p">;</span>
+<span class="n">args</span><span class="p">.</span><span class="n">config_entry_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
+
+<span class="c1">// At runtime</span>
+<span class="n">ovphysx_set_global_config</span><span class="p">(</span><span class="n">ovphysx_config_entry_num_threads</span><span class="p">(</span><span class="mi">8</span><span class="p">));</span>
+
+<span class="c1">// Typed getter</span>
+<span class="kt">int32_t</span><span class="w"> </span><span class="n">threads</span><span class="p">;</span>
+<span class="n">ovphysx_get_global_config_int32</span><span class="p">(</span><span class="n">OVPHYSX_CONFIG_NUM_THREADS</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">threads</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span><span class="p">,</span> <span class="n">ConfigBool</span><span class="p">,</span> <span class="n">ConfigInt32</span>
+
+<span class="c1"># At initialization</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span>
+    <span class="n">disable_contact_processing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_threads</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">carbonite_overrides</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;/physics/fabricUpdateVelocities&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<span class="p">))</span>
+
+<span class="c1"># Typed getter</span>
+<span class="n">threads</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">get_config_int32</span><span class="p">(</span><span class="n">ConfigInt32</span><span class="o">.</span><span class="n">NUM_THREADS</span><span class="p">)</span>
+<span class="n">enabled</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">get_config_bool</span><span class="p">(</span><span class="n">ConfigBool</span><span class="o">.</span><span class="n">DISABLE_CONTACT_PROCESSING</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">carbonite_overrides</span></code> dict accepts arbitrary Carbonite setting paths for
+settings not yet covered by the typed fields. Value types are auto-detected from the
+string representation. Using a <code class="docutils literal notranslate"><span class="pre">carbonite_overrides</span></code> key that targets a path already
+covered by a typed field raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+<p>Note: <code class="docutils literal notranslate"><span class="pre">carbonite_overrides</span></code> is write-only. There is no getter for arbitrary Carbonite paths;
+use the typed getters (<code class="docutils literal notranslate"><span class="pre">get_config_bool</span></code>, <code class="docutils literal notranslate"><span class="pre">get_config_int32</span></code>, etc.) for known settings.</p>
+<p>Config is process-global (Carbonite-backed). All instances in the same process share the
+same config state.</p>
+</section>
+</section>
+<section id="multi-instance-support">
+<h2>Multi-Instance Support<a class="headerlink" href="#multi-instance-support" title="Link to this heading">#</a></h2>
+<p>The SDK supports multiple independent PhysX instances running concurrently within the same process.
+Config is internally handled by Carbonite and therefore per-process, so different instances cannot use different config values in the same process.</p>
+<p><strong>Important:</strong> The Carbonite framework and its embedded plugin stack (including the Python interpreter) cannot be cleanly finalized and re-initialized within the same process. This means destroying all instances and then creating new ones is <strong>not supported</strong> as a general pattern. If you need isolated create/destroy cycles (e.g., for testing), run each cycle in a separate subprocess.</p>
+</section>
+<section id="operation-indices-and-polling">
+<h2>Operation Indices and Polling<a class="headerlink" href="#operation-indices-and-polling" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">op_index</span></code> values are single-use. After a successful wait, the index is consumed and must not be used again.
+Polling is supported by passing <code class="docutils literal notranslate"><span class="pre">timeout_ns</span> <span class="pre">=</span> <span class="pre">0</span></code> to <code class="docutils literal notranslate"><span class="pre">wait_op</span></code>.</p>
+</section>
+<section id="threading">
+<h2>Threading<a class="headerlink" href="#threading" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Multiple ovphysx instances are safe to use concurrently across threads.</p></li>
+<li><p>A single instance is <strong>not</strong> thread-safe. Serialize access externally.</p></li>
+<li><p>Do not wait on the same <code class="docutils literal notranslate"><span class="pre">op_index</span></code> from multiple threads.</p></li>
+</ul>
+</section>
+<section id="ownership-and-lifetimes">
+<h2>Ownership and Lifetimes<a class="headerlink" href="#ownership-and-lifetimes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Tensor bindings, contact bindings, and attribute bindings own internal resources. They are automatically destroyed when the parent instance is destroyed via <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_instance()</span></code>. Explicit per-binding destruction (<code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_tensor_binding</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_contact_binding</span></code>) is available for releasing resources earlier but is not required before instance teardown.</p></li>
+<li><p>On failure, call <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code> on the same thread to retrieve the error string (valid until the next ovphysx call on that thread).</p></li>
+<li><p>PhysX pointers from <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code> are owned by ovphysx — do not call <code class="docutils literal notranslate"><span class="pre">release()</span></code> on them. See <a class="reference internal" href="#physx-pointer-interop">PhysX Pointer Interop</a> for lifetime details.</p></li>
+<li><p>Contact report buffers from <code class="docutils literal notranslate"><span class="pre">ovphysx_get_contact_report()</span></code> are valid until the next simulation step.</p></li>
+</ul>
+</section>
+<section id="dependency-management">
+<h2>Dependency Management<a class="headerlink" href="#dependency-management" title="Link to this heading">#</a></h2>
+<p>For SDK and wheel users, dependencies are bundled with the package:</p>
+<ul class="simple">
+<li><p>Runtime dependencies are loaded from <code class="docutils literal notranslate"><span class="pre">libDir/deps/</span></code> in the installed layout.</p></li>
+<li><p>The wheel includes the native runtime stack and required plugins.</p></li>
+<li><p>No additional dependency fetch step is required for normal package usage.</p></li>
+<li><p>Auto-detects library location via <code class="docutils literal notranslate"><span class="pre">getLibraryDirectory()</span></code></p></li>
+<li><p>Sets <code class="docutils literal notranslate"><span class="pre">PYTHONHOME</span></code> for scripting plugin support</p></li>
+<li><p>Pre-loads shared libraries with <code class="docutils literal notranslate"><span class="pre">RTLD_GLOBAL</span></code> for plugin symbol resolution</p></li>
+<li><p>Offline-capable</p></li>
+</ul>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading">#</a></h2>
+<p>For C:</p>
+<ul class="simple">
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">result.status</span></code> on every call.</p></li>
+<li><p>On failure, call <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code> on the same thread to retrieve the error string (valid until the next ovphysx call on that thread).</p></li>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">ovphysx_wait_op()</span></code>, iterate over <code class="docutils literal notranslate"><span class="pre">error_op_indices</span></code> and call <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_op_error()</span></code> per failed op index, then free the result with <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_wait_result()</span></code>.</p></li>
+</ul>
+<p>For Python:</p>
+<ul class="simple">
+<li><p>Runtime errors are raised on failed calls.</p></li>
+<li><p>Use try/finally or context managers to ensure bindings are destroyed.</p></li>
+</ul>
+</section>
+<section id="gpu-warmup-and-determinism">
+<h2>GPU Warmup and Determinism<a class="headerlink" href="#gpu-warmup-and-determinism" title="Link to this heading">#</a></h2>
+<p>GPU tensor reads require a warmup step that initializes DirectGPU buffers.
+This is done automatically on the first tensor operation.
+If deterministic initial state matters, call <code class="docutils literal notranslate"><span class="pre">ovphysx_warmup_gpu()</span></code> explicitly after USD load and before the first tensor read.</p>
+</section>
+<section id="scene-cloning">
+<h2>Scene Cloning<a class="headerlink" href="#scene-cloning" title="Link to this heading">#</a></h2>
+<p>The SDK provides a clone API for replicating sub-sections of a scene:</p>
+<ul class="simple">
+<li><p>Clones are created in the internal representation (no USD prims)</p></li>
+<li><p>Optimized for large-scale replication and simulation throughput</p></li>
+<li><p>Preserves physics properties, materials, and constraints</p></li>
+<li><p>Non-blocking async execution with explicit completion tracking</p></li>
+</ul>
+<p>For examples see the <a class="reference internal" href="tutorials/cloning.html"><span class="std std-doc">Cloning</span></a> tutorials.</p>
+<p>Requirements:</p>
+<ul class="simple">
+<li><p>Source hierarchy must exist in the loaded USD stage</p></li>
+<li><p>Source prims must have physics components</p></li>
+<li><p>Target paths must not already exist</p></li>
+</ul>
+</section>
+<section id="remote-usd-loading">
+<h2>Remote USD Loading<a class="headerlink" href="#remote-usd-loading" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">add_usd()</span></code> accepts any URI that the Omniverse Client Library supports:</p>
+<ul class="simple">
+<li><p><strong>Local paths:</strong> <code class="docutils literal notranslate"><span class="pre">/path/to/scene.usd</span></code> (as before)</p></li>
+<li><p><strong>Omniverse Nucleus:</strong> <code class="docutils literal notranslate"><span class="pre">omniverse://server/path/scene.usd</span></code></p></li>
+<li><p><strong>S3 (HTTPS):</strong> <code class="docutils literal notranslate"><span class="pre">https://my-bucket.s3.us-east-1.amazonaws.com/path/scene.usd</span></code></p></li>
+<li><p><strong>Azure Blob:</strong> <code class="docutils literal notranslate"><span class="pre">https://account.blob.core.windows.net/container/scene.usd</span></code></p></li>
+</ul>
+<p>The client library is loaded automatically when an ovphysx instance is created. No additional setup is needed for Nucleus URIs when the server allows anonymous access.</p>
+<blockquote>
+<div><p><strong>Note:</strong> Use HTTPS S3 URLs (virtual-hosted style), not <code class="docutils literal notranslate"><span class="pre">s3://</span></code> URIs. The OmniClient library resolves S3 assets via HTTPS and adds AWS authentication automatically when credentials are configured.</p>
+</div></blockquote>
+<section id="configuring-s3-credentials">
+<h3>Configuring S3 Credentials<a class="headerlink" href="#configuring-s3-credentials" title="Link to this heading">#</a></h3>
+<p>For private S3 buckets, configure credentials before calling <code class="docutils literal notranslate"><span class="pre">add_usd()</span></code>:</p>
+<section id="id1">
+<h4>Python<a class="headerlink" href="#id1" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+
+<span class="n">physx</span> <span class="o">=</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">PhysX</span><span class="p">()</span>
+
+<span class="n">ovphysx</span><span class="o">.</span><span class="n">configure_s3</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">&quot;my-bucket.s3.us-east-1.amazonaws.com&quot;</span><span class="p">,</span>
+    <span class="n">bucket</span><span class="o">=</span><span class="s2">&quot;my-bucket&quot;</span><span class="p">,</span>
+    <span class="n">region</span><span class="o">=</span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+    <span class="n">access_key_id</span><span class="o">=</span><span class="s2">&quot;AKIA...&quot;</span><span class="p">,</span>
+    <span class="n">secret_access_key</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+    <span class="n">session_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>       <span class="c1"># optional, for temporary credentials</span>
+<span class="p">)</span>
+
+<span class="n">physx</span><span class="o">.</span><span class="n">add_usd</span><span class="p">(</span><span class="s2">&quot;https://my-bucket.s3.us-east-1.amazonaws.com/scenes/robot.usd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h4>C<a class="headerlink" href="#id2" title="Link to this heading">#</a></h4>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_configure_s3</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;my-bucket.s3.us-east-1.amazonaws.com&quot;</span><span class="p">,</span><span class="w">  </span><span class="cm">/* host */</span>
+<span class="w">    </span><span class="s">&quot;my-bucket&quot;</span><span class="p">,</span><span class="w">      </span><span class="cm">/* bucket */</span>
+<span class="w">    </span><span class="s">&quot;us-east-1&quot;</span><span class="p">,</span><span class="w">      </span><span class="cm">/* region */</span>
+<span class="w">    </span><span class="s">&quot;AKIA...&quot;</span><span class="p">,</span><span class="w">         </span><span class="cm">/* access_key_id */</span>
+<span class="w">    </span><span class="s">&quot;...&quot;</span><span class="p">,</span><span class="w">             </span><span class="cm">/* secret_access_key */</span>
+<span class="w">    </span><span class="nb">NULL</span><span class="w">               </span><span class="cm">/* session_token (optional) */</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h4>C++<a class="headerlink" href="#id3" title="Link to this heading">#</a></h4>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx</span><span class="o">::</span><span class="n">PhysX</span><span class="o">::</span><span class="n">configureS3</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;my-bucket.s3.us-east-1.amazonaws.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;my-bucket&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;us-east-1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;AKIA...&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;...&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuring-azure-sas-tokens">
+<h3>Configuring Azure SAS Tokens<a class="headerlink" href="#configuring-azure-sas-tokens" title="Link to this heading">#</a></h3>
+<section id="id4">
+<h4>Python<a class="headerlink" href="#id4" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx</span><span class="o">.</span><span class="n">configure_azure_sas</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">&quot;myaccount.blob.core.windows.net&quot;</span><span class="p">,</span>
+    <span class="n">container</span><span class="o">=</span><span class="s2">&quot;usd-assets&quot;</span><span class="p">,</span>
+    <span class="n">sas_token</span><span class="o">=</span><span class="s2">&quot;sv=2021-06-08&amp;ss=b&amp;...&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h4>C<a class="headerlink" href="#id5" title="Link to this heading">#</a></h4>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_configure_azure_sas</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;myaccount.blob.core.windows.net&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;usd-assets&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;sv=2021-06-08&amp;ss=b&amp;...&quot;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="notes">
+<h3>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Credentials are <strong>process-global</strong> — they apply to all ovphysx instances.</p></li>
+<li><p>Configure credentials <strong>before</strong> <code class="docutils literal notranslate"><span class="pre">add_usd()</span></code>.</p></li>
+<li><p>An ovphysx instance must exist before calling credential functions (the runtime must be loaded).</p></li>
+<li><p>The client library dependency is shared with ovrtx (Kit rendering) via the Carbonite plugin system — no static linking or version conflicts.</p></li>
+</ul>
+</section>
+</section>
+<section id="scene-queries">
+<h2>Scene Queries<a class="headerlink" href="#scene-queries" title="Link to this heading">#</a></h2>
+<p>ovphysx provides three scene query functions covering raycast, sweep, and overlap:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Geometry input</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_raycast</span></code></p></td>
+<td><p>Cast a ray</p></td>
+<td><p>Origin + direction</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_sweep</span></code></p></td>
+<td><p>Move a shape along a direction</p></td>
+<td><p>Geometry desc + direction</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_overlap</span></code></p></td>
+<td><p>Test shape overlap at a position</p></td>
+<td><p>Geometry desc</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Each function accepts a <strong>mode</strong> parameter:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CLOSEST</span></code> – return the single closest hit (0 or 1 result)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ANY</span></code> – return whether any hit exists (0 or 1, hit fields zeroed)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code> – return all hits</p></li>
+</ul>
+<p><strong>Geometry types</strong> for sweep/overlap:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SPHERE</span></code> – radius + center position</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BOX</span></code> – half-extents + position + orientation quaternion</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SHAPE</span></code> – any UsdGeomGPrim by prim path (meshes use convex approximation internally)</p></li>
+</ul>
+<p>Hit results are stored in an <strong>internal buffer</strong> owned by the ovphysx instance, valid
+until the next scene query call on the same instance.</p>
+<section id="python-example">
+<h3>Python example<a class="headerlink" href="#python-example" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">SceneQueryMode</span><span class="p">,</span> <span class="n">SceneQueryGeometryType</span>
+
+<span class="c1"># Raycast downward</span>
+<span class="n">hits</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">raycast</span><span class="p">(</span>
+    <span class="n">origin</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">direction</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">distance</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="n">SceneQueryMode</span><span class="o">.</span><span class="n">CLOSEST</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">if</span> <span class="n">hits</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hit at distance </span><span class="si">{</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Sweep a sphere</span>
+<span class="n">hits</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span>
+    <span class="n">geometry_type</span><span class="o">=</span><span class="n">SceneQueryGeometryType</span><span class="o">.</span><span class="n">SPHERE</span><span class="p">,</span>
+    <span class="n">direction</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">distance</span><span class="o">=</span><span class="mf">50.0</span><span class="p">,</span>
+    <span class="n">radius</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">position</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># Overlap test</span>
+<span class="n">hits</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">overlap</span><span class="p">(</span>
+    <span class="n">geometry_type</span><span class="o">=</span><span class="n">SceneQueryGeometryType</span><span class="o">.</span><span class="n">BOX</span><span class="p">,</span>
+    <span class="n">half_extent</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">position</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">rotation</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="path-encoding">
+<h3>Path encoding<a class="headerlink" href="#path-encoding" title="Link to this heading">#</a></h3>
+<p>Hit results contain <code class="docutils literal notranslate"><span class="pre">collision</span></code>, <code class="docutils literal notranslate"><span class="pre">rigid_body</span></code>, and <code class="docutils literal notranslate"><span class="pre">material</span></code> fields as uint64-encoded
+SdfPaths matching the internal Omni PhysX representation. Consumers that need to compare
+hit paths against known prims should use the same encoding.</p>
+</section>
+</section>
+<section id="physx-pointer-interop">
+<h2>PhysX Pointer Interop<a class="headerlink" href="#physx-pointer-interop" title="Link to this heading">#</a></h2>
+<p>For advanced use cases that go beyond the TensorBindingsAPI – such as custom joint
+manipulation or direct body property access – ovphysx can return raw PhysX SDK object
+pointers by USD prim path.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_physx_ptr</span><span class="p">(</span>
+<span class="w">    </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/physicsScene&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_PHYSX_TYPE_SCENE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ptr</span><span class="p">);</span>
+<span class="c1">// Cast: physx::PxScene* scene = static_cast&lt;physx::PxScene*&gt;(ptr);</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ovphysx_physx_type_t</span></code> enum specifies which PhysX type to look up
+(scene, actor, articulation link, joint, shape, material, etc.).
+The C API returns <code class="docutils literal notranslate"><span class="pre">void*</span></code>; the caller casts to the appropriate PhysX SDK type.</p>
+<p>Casting requires the PhysX SDK C++ headers (e.g. <code class="docutils literal notranslate"><span class="pre">PxScene.h</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic.h</span></code>). The ovphysx SDK ships these headers under
+<code class="docutils literal notranslate"><span class="pre">include/physx/</span></code>; <code class="docutils literal notranslate"><span class="pre">find_package(ovphysx)</span></code> sets <code class="docutils literal notranslate"><span class="pre">ovphysx_PHYSX_INCLUDE_DIR</span></code>
+to point there. No PhysX library linking is needed.</p>
+<p>See the <a class="reference internal" href="tutorials/physx_interop.html"><span class="std std-doc">PhysX Interop tutorial</span></a> for a
+complete sample that uses <code class="docutils literal notranslate"><span class="pre">setKinematicTarget()</span></code> on a <code class="docutils literal notranslate"><span class="pre">PxRigidDynamic*</span></code>.</p>
+<p>The C++ experimental API provides a type-safe overload that deduces the
+enum from the pointer type, preventing mismatches at compile time:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">physx</span><span class="o">::</span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<span class="n">physx</span><span class="p">.</span><span class="n">getPhysXPtr</span><span class="p">(</span><span class="s">&quot;/World/physicsScene&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">scene</span><span class="p">);</span><span class="w">  </span><span class="c1">// enum auto-deduced</span>
+</pre></div>
+</div>
+<p>Python returns integer pointer addresses for passing to C/C++ code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ptr</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">get_physx_ptr</span><span class="p">(</span><span class="s2">&quot;/World/physicsScene&quot;</span><span class="p">,</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">PhysXType</span><span class="o">.</span><span class="n">SCENE</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="pointer-lifetime">
+<h3>Pointer Lifetime<a class="headerlink" href="#pointer-lifetime" title="Link to this heading">#</a></h3>
+<p>Returned pointers are valid from acquisition until <code class="docutils literal notranslate"><span class="pre">ovphysx_remove_usd()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ovphysx_reset()</span></code>, or instance destruction. Calls to <code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ovphysx_clone()</span></code> do <strong>not</strong> invalidate existing pointers. Do not call
+<code class="docutils literal notranslate"><span class="pre">release()</span></code> on returned pointers — ovphysx owns them.</p>
+</section>
+<section id="thread-safety">
+<h3>Thread Safety<a class="headerlink" href="#thread-safety" title="Link to this heading">#</a></h3>
+<p>PhysX APIs on returned pointers must only be called between simulation
+steps — specifically after <code class="docutils literal notranslate"><span class="pre">wait_op()</span></code> completes for the preceding step
+and before the next <code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code> call. Calling PhysX APIs while a
+step is in-flight is a data race.</p>
+</section>
+</section>
+<section id="contact-data">
+<h2>Contact Data<a class="headerlink" href="#contact-data" title="Link to this heading">#</a></h2>
+<p>ovphysx provides two complementary APIs for reading contact information.
+Choose the one that fits your use case:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>Contact Binding</p></th>
+<th class="head"><p>Contact Report</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Use when</strong></p></td>
+<td><p>You need aggregate force tensors for RL rewards, safety limits, or force monitoring</p></td>
+<td><p>You need per-contact-point geometry (position, normal, impulse) for custom contact sensors or collision analysis</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Data shape</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">3]</span></code> net forces or <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">3]</span></code> force matrix (DLPack tensors, GPU-compatible)</p></td>
+<td><p>Variable-length arrays of event headers + contact points (raw buffers)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>API style</strong></p></td>
+<td><p>Create a binding, then read tensors each step</p></td>
+<td><p>Call once per step, receive pointers to internal buffers</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>USD requirement</strong></p></td>
+<td><p>No extra schema — just rigid body prims</p></td>
+<td><p>Prims must have <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> applied</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Key functions</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">create_contact_binding()</span></code>, <code class="docutils literal notranslate"><span class="pre">read_contact_net_forces()</span></code>, <code class="docutils literal notranslate"><span class="pre">read_contact_force_matrix()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_contact_report()</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="contact-binding-aggregate-force-tensors">
+<h3>Contact Binding (aggregate force tensors)<a class="headerlink" href="#contact-binding-aggregate-force-tensors" title="Link to this heading">#</a></h3>
+<p>Contact bindings give you aggregate net force vectors between sets of sensor
+and filter bodies, delivered as DLPack tensors that work on both CPU and GPU.
+No extra USD schema is required.</p>
+<p>See the <a class="reference internal" href="tutorials/contact_binding.html"><span class="std std-doc">Contact Binding tutorial</span></a> for a full
+walkthrough. Key points:</p>
+<ul class="simple">
+<li><p>Create the binding <strong>before</strong> the first step whose contacts you want to observe.</p></li>
+<li><p>Net forces shape: <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">3]</span></code> — one force vector per matched sensor.</p></li>
+<li><p>Force matrix shape: <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">3]</span></code> — per (sensor, filter) pair.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dt</span></code> for impulse-to-force conversion is taken automatically from the last step.</p></li>
+</ul>
+</section>
+<section id="contact-report-per-point-event-data">
+<h3>Contact Report (per-point event data)<a class="headerlink" href="#contact-report-per-point-event-data" title="Link to this heading">#</a></h3>
+<p>The contact report exposes the raw per-step contact events collected by the
+Omni PhysX runtime. This gives you every individual contact point with
+position, normal, impulse, and separation — useful for custom contact sensors,
+collision debugging, or building higher-level contact processing.</p>
+<p>Prims must have <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> applied in the USD stage for contacts
+to be reported.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_contact_event_header_t</span><span class="o">*</span><span class="w"> </span><span class="n">headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="n">ovphysx_contact_point_t</span><span class="o">*</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="kt">uint32_t</span><span class="w"> </span><span class="n">num_headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">num_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="c1">// Basic contact report (headers + contact points)</span>
+<span class="n">ovphysx_get_contact_report</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">num_headers</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">num_data</span><span class="p">,</span>
+<span class="w">                           </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="c1">// Access fields directly: headers[0].actor0, data[0].position[1], etc.</span>
+
+<span class="c1">// With friction anchors</span>
+<span class="k">const</span><span class="w"> </span><span class="n">ovphysx_friction_anchor_t</span><span class="o">*</span><span class="w"> </span><span class="n">anchors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="kt">uint32_t</span><span class="w"> </span><span class="n">num_anchors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="n">ovphysx_get_contact_report</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">num_headers</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">num_data</span><span class="p">,</span>
+<span class="w">                           </span><span class="o">&amp;</span><span class="n">anchors</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">num_anchors</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The friction anchor parameters are optional – pass NULL to skip them.</p>
+<p>The C API returns typed struct pointers defined in <code class="docutils literal notranslate"><span class="pre">ovphysx_types.h</span></code>.
+The C++ experimental API provides aliases (<code class="docutils literal notranslate"><span class="pre">PhysX::ContactEventHeader</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PhysX::ContactPoint</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysX::FrictionAnchor</span></code>) and a typed
+<code class="docutils literal notranslate"><span class="pre">getContactReport()</span></code> method.</p>
+<p>Data is valid until the next simulation step. A typical usage pattern:</p>
+<ol class="arabic simple">
+<li><p>Apply <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> to prims of interest.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step()</span></code> + <code class="docutils literal notranslate"><span class="pre">wait_all()</span></code>.</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">get_contact_report()</span></code> to read that step’s contacts.</p></li>
+<li><p>Parse event headers for contact pairs; index into contact data for per-point details.</p></li>
+</ol>
+<p>In Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">report</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">get_contact_report</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_headers&quot;</span><span class="p">]):</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;headers&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pair </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: actor0=</span><span class="si">{</span><span class="n">h</span><span class="o">.</span><span class="n">actor0</span><span class="si">:</span><span class="s2">#x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">h</span><span class="o">.</span><span class="n">numContactData</span><span class="si">}</span><span class="s2"> points&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_points&quot;</span><span class="p">]):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;points&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  pos=(</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="running-inside-a-carbonite-host-kit-isaac-sim">
+<h2>Running Inside a Carbonite Host (Kit, Isaac Sim)<a class="headerlink" href="#running-inside-a-carbonite-host-kit-isaac-sim" title="Link to this heading">#</a></h2>
+<p>ovphysx can run inside a Carbonite-based host application such as Kit or Isaac Sim. When the host has already bootstrapped the Carbonite framework and loaded the PhysX extension stack, ovphysx detects this automatically and adapts:</p>
+<ul class="simple">
+<li><p><strong>Plugin loading is skipped.</strong> The host owns the plugin lifecycle. ovphysx acquires the existing <code class="docutils literal notranslate"><span class="pre">IPhysxSimulation</span></code> and related interfaces directly.</p></li>
+<li><p><strong>Settings use <code class="docutils literal notranslate"><span class="pre">setDefault*()</span></code></strong> so host-configured values are not overwritten. Device-related settings (<code class="docutils literal notranslate"><span class="pre">/physics/cudaDevice</span></code>, <code class="docutils literal notranslate"><span class="pre">/physics/suppressReadback</span></code>) produce a log warning if the ovphysx request doesn’t match the host value, but the host value takes precedence.</p></li>
+<li><p><strong>App directory is preserved.</strong> If the host already set an app directory path, ovphysx does not overwrite it.</p></li>
+<li><p><strong>USD version checks and preloading are skipped.</strong> The host manages its own USD runtime.</p></li>
+<li><p><strong>Device mode is inferred from the host.</strong> The <code class="docutils literal notranslate"><span class="pre">device</span></code> parameter to <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code> is validated against the host’s running mode. A mismatch produces a warning but does not fail — the host’s device mode is used.</p></li>
+</ul>
+<p>No special flags or “host mode” configuration is required. The same ovphysx build works in both standalone and host-embedded environments.</p>
+<section id="requirements-for-host-integration">
+<h3>Requirements for host integration<a class="headerlink" href="#requirements-for-host-integration" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The host must have the PhysX extensions fully loaded (<code class="docutils literal notranslate"><span class="pre">omni.physx</span></code>, <code class="docutils literal notranslate"><span class="pre">omni.physx.tensors</span></code>, etc.) before <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code> is called.</p></li>
+<li><p>Device mode (CPU vs GPU) is process-global. ovphysx adopts whatever mode the host initialized.</p></li>
+<li><p>Carbonite settings are shared. Changes made through ovphysx’s settings API are visible to the host and vice versa.</p></li>
+</ul>
+</section>
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Link to this heading">#</a></h2>
+<p>ovphysx uses <a class="reference external" href="https://docs.omniverse.nvidia.com/kit/docs/carbonite/">Carbonite</a> as its internal logging backend.
+By default, the global log level is <code class="docutils literal notranslate"><span class="pre">LogLevel.WARNING</span></code> — only warnings and errors are emitted.</p>
+<section id="controlling-the-log-level">
+<h3>Controlling the Log Level<a class="headerlink" href="#controlling-the-log-level" title="Link to this heading">#</a></h3>
+<section id="id6">
+<h4>Python<a class="headerlink" href="#id6" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+
+<span class="n">ovphysx</span><span class="o">.</span><span class="n">set_log_level</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">LogLevel</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">get_log_level</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h4>C<a class="headerlink" href="#id7" title="Link to this heading">#</a></h4>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+
+<span class="c1">// Set before or after instance creation — applies globally to all outputs.</span>
+<span class="n">ovphysx_set_log_level</span><span class="p">(</span><span class="n">OVPHYSX_LOG_VERBOSE</span><span class="p">);</span>
+
+<span class="kt">uint32_t</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_log_level</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="custom-log-callbacks-c">
+<h3>Custom Log Callbacks (C)<a class="headerlink" href="#custom-log-callbacks-c" title="Link to this heading">#</a></h3>
+<p>Register one or more callbacks to receive log messages programmatically.
+The caller must ensure the callback and any resources it references remain
+valid until it is unregistered. If the callback and its resources naturally
+outlive the process (e.g. a static function with no <code class="docutils literal notranslate"><span class="pre">user_data</span></code>), calling
+<code class="docutils literal notranslate"><span class="pre">ovphysx_unregister_log_callback()</span></code> is not required. When called, it
+guarantees the callback is not running on any thread and will never be
+invoked again.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">my_logger</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">level</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">user_data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[%u] %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">level</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">ovphysx_register_log_callback</span><span class="p">(</span><span class="n">my_logger</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="c1">// ... run simulation ...</span>
+<span class="n">ovphysx_unregister_log_callback</span><span class="p">(</span><span class="n">my_logger</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="c1">// Safe to destroy any resources referenced by the callback here.</span>
+</pre></div>
+</div>
+</section>
+<section id="controlling-default-console-output">
+<h3>Controlling Default Console Output<a class="headerlink" href="#controlling-default-console-output" title="Link to this heading">#</a></h3>
+<p>By default, Carbonite logs to the console. When a custom callback is registered
+that also writes to the console, output may be doubled. Use
+<code class="docutils literal notranslate"><span class="pre">ovphysx_enable_default_log_output()</span></code> to suppress the built-in console logger:</p>
+<section id="id8">
+<h4>Python<a class="headerlink" href="#id8" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx</span><span class="o">.</span><span class="n">enable_python_logging</span><span class="p">()</span>
+<span class="n">ovphysx</span><span class="o">.</span><span class="n">enable_default_log_output</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id9">
+<h4>C<a class="headerlink" href="#id9" title="Link to this heading">#</a></h4>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_register_log_callback</span><span class="p">(</span><span class="n">my_logger</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="n">ovphysx_enable_default_log_output</span><span class="p">(</span><span class="nb">false</span><span class="p">);</span><span class="w">  </span><span class="c1">// only my_logger receives messages now</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="python-logging-bridge">
+<h3>Python Logging Bridge<a class="headerlink" href="#python-logging-bridge" title="Link to this heading">#</a></h3>
+<p>Route native log messages into Python’s standard <code class="docutils literal notranslate"><span class="pre">logging</span></code> module:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+
+<span class="c1"># Route native messages to the &quot;ovphysx&quot; Python logger</span>
+<span class="n">ovphysx</span><span class="o">.</span><span class="n">enable_python_logging</span><span class="p">()</span>
+
+<span class="c1"># Add a handler to see the output</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;ovphysx&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">())</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;ovphysx&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+<span class="c1"># ... run simulation — native messages appear in Python logging ...</span>
+
+<span class="n">ovphysx</span><span class="o">.</span><span class="n">disable_python_logging</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You now have the core integration rules for building, running, and operating ovphysx. For the full C API reference, see the <a class="reference internal" href="api.html"><span class="std std-doc">C API Reference</span></a>. For Python, see <a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/ovphysx/python_api.html">Python API Reference</a>.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="ovphysx_overview.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">ovphysx Overview</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="changelog.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Changelog</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relationship-and-consumption-model">Relationship and Consumption Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#samples-and-tutorials">Samples and Tutorials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#execution-model">Execution Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c">C</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#multi-instance-support">Multi-Instance Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#operation-indices-and-polling">Operation Indices and Polling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#threading">Threading</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ownership-and-lifetimes">Ownership and Lifetimes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dependency-management">Dependency Management</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#error-handling">Error Handling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-warmup-and-determinism">GPU Warmup and Determinism</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scene-cloning">Scene Cloning</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-usd-loading">Remote USD Loading</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuring-s3-credentials">Configuring S3 Credentials</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Python</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">C</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">C++</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuring-azure-sas-tokens">Configuring Azure SAS Tokens</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Python</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">C</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scene-queries">Scene Queries</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-example">Python example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#path-encoding">Path encoding</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#physx-pointer-interop">PhysX Pointer Interop</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pointer-lifetime">Pointer Lifetime</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#thread-safety">Thread Safety</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contact-data">Contact Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#contact-binding-aggregate-force-tensors">Contact Binding (aggregate force tensors)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#contact-report-per-point-event-data">Contact Report (per-point event data)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-inside-a-carbonite-host-kit-isaac-sim">Running Inside a Carbonite Host (Kit, Isaac Sim)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements-for-host-integration">Requirements for host integration</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#logging">Logging</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-the-log-level">Controlling the Log Level</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Python</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">C</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-log-callbacks-c">Custom Log Callbacks (C)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-default-console-output">Controlling Default Console Output</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Python</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">C</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-logging-bridge">Python Logging Bridge</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Apr 13, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

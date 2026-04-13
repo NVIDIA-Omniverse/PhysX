@@ -1,0 +1,1572 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tensor Bindings: Read and Write Simulation Data &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=ec38d21e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/tensor_bindings';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.3.7';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contact Binding: Reading Contact Forces" href="contact_binding.html" />
+    <link rel="prev" title="Hello World: Load USD and Step" href="hello_world.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Apr 13, 2026"/>
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello World: Load USD and Step</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Tensor Bindings: Read and Write Simulation Data</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="tensor-bindings-read-and-write-simulation-data">
+<h1>Tensor Bindings: Read and Write Simulation Data<a class="headerlink" href="#tensor-bindings-read-and-write-simulation-data" title="Link to this heading">#</a></h1>
+<p>This tutorial shows how to read and write simulation data through tensor bindings after you load a USD stage. You learn how to use path patterns to bind multiple prims in one call.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Complete the <a class="reference internal" href="hello_world.html"><span class="std std-doc">Hello World</span></a> tutorial.</p></li>
+<li><p>Use a USD scene that contains physics-enabled prims matching your binding pattern.</p></li>
+</ul>
+</section>
+<section id="code-language">
+<h2>Code Language<a class="headerlink" href="#code-language" title="Link to this heading">#</a></h2>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating tensor binding for DOF velocity targets...&quot;</span><span class="p">)</span>
+    <span class="n">velocity_target_binding</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span>
+        <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;/World/articulation/articulationLink*&quot;</span><span class="p">,</span>
+        <span class="n">tensor_type</span><span class="o">=</span><span class="n">TensorType</span><span class="o">.</span><span class="n">ARTICULATION_DOF_VELOCITY_TARGET</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  DOF count: </span><span class="si">{</span><span class="n">velocity_target_binding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create tensor binding for link poses (state observation)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating tensor binding for link poses...&quot;</span><span class="p">)</span>
+    <span class="n">link_pose_binding</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span>
+        <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;/World/articulation/articulationLink*&quot;</span><span class="p">,</span>
+        <span class="n">tensor_type</span><span class="o">=</span><span class="n">TensorType</span><span class="o">.</span><span class="n">ARTICULATION_LINK_POSE</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Link count: </span><span class="si">{</span><span class="n">link_pose_binding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, Pose dims: </span><span class="si">{</span><span class="n">link_pose_binding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set joint drive velocities (alternating +25 and -25 rad/s)</span>
+    <span class="n">num_dofs</span> <span class="o">=</span> <span class="n">velocity_target_binding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">velocity_targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">velocity_target_binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_dofs</span><span class="p">):</span>
+        <span class="n">velocity_targets</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">25.0</span> <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mf">25.0</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting DOF velocity targets (alternating ±25 rad/s)...&quot;</span><span class="p">)</span>
+    <span class="n">velocity_target_binding</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">velocity_targets</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Velocity targets: </span><span class="si">{</span><span class="n">velocity_targets</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2">... (first 5 DOFs)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Run extended simulation with periodic readback</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Running 1000 simulation steps...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Allocate buffer for reading link poses</span>
+    <span class="n">link_poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">link_pose_binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">dt</span> <span class="o">=</span> <span class="mf">0.01</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="c1"># Step simulation forward</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">current_time</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+
+        <span class="c1"># Read link poses periodically (tensor API is synchronous, no wait needed)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">999</span><span class="p">:</span>
+            <span class="n">link_pose_binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">link_poses</span><span class="p">)</span>
+
+            <span class="c1"># Extract first link&#39;s pose (position + quaternion)</span>
+            <span class="c1"># Pose format: [px, py, pz, qx, qy, qz, qw]</span>
+            <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">link_poses</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">qx</span><span class="p">,</span> <span class="n">qy</span><span class="p">,</span> <span class="n">qz</span><span class="p">,</span> <span class="n">qw</span> <span class="o">=</span> <span class="n">link_poses</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span>
+
+            <span class="c1"># Compute X-axis rotation angle (roll) from quaternion</span>
+            <span class="n">roll_x_rad</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qw</span> <span class="o">*</span> <span class="n">qx</span> <span class="o">+</span> <span class="n">qy</span> <span class="o">*</span> <span class="n">qz</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qx</span> <span class="o">*</span> <span class="n">qx</span> <span class="o">+</span> <span class="n">qy</span> <span class="o">*</span> <span class="n">qy</span><span class="p">))</span>
+            <span class="n">deg_x</span> <span class="o">=</span> <span class="n">roll_x_rad</span> <span class="o">*</span> <span class="mf">180.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;  Step </span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">4d</span><span class="si">}</span><span class="s2">: pos=(</span><span class="si">{</span><span class="n">px</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">py</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">pz</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;quat(xyzw)=(</span><span class="si">{</span><span class="n">qx</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">qy</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">qz</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">qw</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;rotation_x=</span><span class="si">{</span><span class="n">deg_x</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">°&quot;</span>
+            <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="c">
+<h3>C<a class="headerlink" href="#c" title="Link to this heading">#</a></h3>
+<p>Create tensor bindings, write control targets, step, and read back state:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// 3. Create tensor bindings</span>
+<span class="w">    </span><span class="c1">// 3a. DOF velocity target binding (write control targets)</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">dof_target_binding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_desc_t</span><span class="w"> </span><span class="n">dof_target_desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">.</span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;/World/articulation&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="p">.</span><span class="n">tensor_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_TARGET_F32</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dof_target_desc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dof_target_binding</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;create DOF target binding&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 3b. Articulation link pose binding</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">link_pose_binding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_desc_t</span><span class="w"> </span><span class="n">link_pose_desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">.</span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;/World/articulation&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="p">.</span><span class="n">tensor_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">link_pose_desc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">link_pose_binding</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;create articulation link pose binding&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Tensor bindings created.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 4. Query binding specs and allocate tensors</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_spec_t</span><span class="w"> </span><span class="n">dof_spec</span><span class="p">,</span><span class="w"> </span><span class="n">link_pose_spec</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_tensor_binding_spec</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dof_target_binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dof_spec</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;get_tensor_binding_spec (dof target)&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_tensor_binding_spec</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">link_pose_binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">link_pose_spec</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;get_tensor_binding_spec (link pose)&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Binding specs:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  Articulation DOFs: shape=[%lld, %lld], ndim=%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">dof_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">dof_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">dof_spec</span><span class="p">.</span><span class="n">ndim</span><span class="p">);</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  Articulation link poses: shape=[%lld, %lld, %lld], ndim=%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+<span class="w">           </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<span class="w">           </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+<span class="w">           </span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">ndim</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Allocate CPU tensors</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">dof_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">dof_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">dof_components</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">dof_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">link_pose_batch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">link_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">link_pose_components</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">link_pose_spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+<span class="w">    </span><span class="n">TensorBuffer</span><span class="w"> </span><span class="n">dof_target_tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_tensor_f32_2d</span><span class="p">(</span><span class="n">dof_count</span><span class="p">,</span><span class="w"> </span><span class="n">dof_components</span><span class="p">);</span>
+<span class="w">    </span><span class="n">TensorBuffer</span><span class="w"> </span><span class="n">link_pose_tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_tensor_f32_3d</span><span class="p">(</span><span class="n">link_pose_batch</span><span class="p">,</span><span class="w"> </span><span class="n">link_count</span><span class="p">,</span><span class="w"> </span><span class="n">link_pose_components</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 5. Set initial DOF velocity targets and simulate</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">=== Setting initial DOF velocity targets ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Initialize all targets to 0.0</span>
+<span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">dof_target_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span><span class="n">dof_target_tensor</span><span class="p">.</span><span class="n">data</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">dof_count</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dof_components</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">dof_target_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">=== Writing initial DOF velocity targets ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_write_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dof_target_binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">.</span><span class="n">tensor</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;write initial DOF targets&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">);</span>
+<span class="w">        </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 6. Simulation loop</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">sim_time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">link_index_to_print</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">link_count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="p">(</span><span class="n">link_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Running 120 simulation steps...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">step</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Update DOF targets every 50 steps</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// Alternate between positive and negative target velocities</span>
+<span class="w">            </span><span class="kt">float</span><span class="w"> </span><span class="n">target_vel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="n">step</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mf">50.0f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">-50.0f</span><span class="p">;</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">dof_count</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dof_components</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="c1">// Alternate direction for each DOF</span>
+<span class="w">                </span><span class="n">dof_target_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">target_vel</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="n">target_vel</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_write_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dof_target_binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">.</span><span class="n">tensor</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;write DOF targets&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">);</span>
+<span class="w">                </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">);</span>
+<span class="w">                </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// Step simulation</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">step_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">sim_time</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step_result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR in step enqueue (status=%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">step_result</span><span class="p">.</span><span class="n">status</span><span class="p">);</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">                    </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;  %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">);</span>
+<span class="w">            </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_op</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">);</span>
+<span class="w">            </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">sim_time</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">dt</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// Read and print state every 30 steps</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">30</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// Read articulation link poses</span>
+<span class="w">            </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_read_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">link_pose_binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">.</span><span class="n">tensor</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;read articulation link poses&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">);</span>
+<span class="w">                </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">);</span>
+<span class="w">                </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">link_pose_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="p">)</span><span class="n">link_pose_tensor</span><span class="p">.</span><span class="n">data</span><span class="p">;</span>
+
+<span class="w">            </span><span class="kt">size_t</span><span class="w"> </span><span class="n">articulation_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">            </span><span class="kt">size_t</span><span class="w"> </span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">articulation_index</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">link_count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">link_index_to_print</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">link_pose_components</span><span class="p">;</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Step %3d | Link %zu pos=(%.3f, %.3f, %.3f) quat=(%.3f, %.3f, %.3f, %.3f)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">step</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">link_index_to_print</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">5</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">link_pose_data</span><span class="p">[</span><span class="n">link_pose_offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">6</span><span class="p">]);</span>
+
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Cleanup</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">=== Cleanup ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dof_target_tensor</span><span class="p">);</span>
+<span class="w">    </span><span class="n">destroy_tensor</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_pose_tensor</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dof_target_binding</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">link_pose_binding</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Articulation control sample completed successfully ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+</pre></div>
+</div>
+<p>For GPU tensor bindings with CUDA, see <code class="docutils literal notranslate"><span class="pre">tensor_bindings_gpu_c/</span></code> in the samples directory.</p>
+</section>
+</section>
+<section id="tensor-type-reference">
+<h2>Tensor Type Reference<a class="headerlink" href="#tensor-type-reference" title="Link to this heading">#</a></h2>
+<p>Use this table to pre-allocate tensors without probing <code class="docutils literal notranslate"><span class="pre">binding.shape</span></code> at runtime.</p>
+<p>Symbols:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">N</span></code>: rigid body count in the binding</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">A</span></code>: articulation count in the binding</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">L</span></code>: max link count across matched articulations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">D</span></code>: max DOF count across matched articulations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">T</span></code>: max tendon count across matched articulations (fixed or spatial, depending on type)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">M</span></code>: generalized coordinate count — <code class="docutils literal notranslate"><span class="pre">numDofs</span></code> for fixed-base, <code class="docutils literal notranslate"><span class="pre">numDofs</span> <span class="pre">+</span> <span class="pre">6</span></code> for floating-base articulations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">S</span></code>: max collision shape count per body/link in the binding</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">R</span></code>, <code class="docutils literal notranslate"><span class="pre">C</span></code>: Jacobian shape from <code class="docutils literal notranslate"><span class="pre">getJacobianShape()</span></code> — fixed-base: <code class="docutils literal notranslate"><span class="pre">R=L*6,</span> <span class="pre">C=D</span></code>; floating-base: <code class="docutils literal notranslate"><span class="pre">R=(L-1)*6+6,</span> <span class="pre">C=D+6</span></code></p></li>
+</ul>
+<p><strong>Rigid body state</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">7)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pos.xyz</span> <span class="pre">+</span> <span class="pre">quat.xyzw</span></code></p></td>
+<td><p>World-frame rigid body transforms</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">6)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lin.xyz</span> <span class="pre">+</span> <span class="pre">ang.xyz</span></code></p></td>
+<td><p>World-frame linear and angular velocity</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">3)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>no</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">force.xyz</span></code></p></td>
+<td><p>Write-only force at center of mass (control input)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_WRENCH_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">9)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>no</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">force.xyz</span> <span class="pre">+</span> <span class="pre">torque.xyz</span> <span class="pre">+</span> <span class="pre">pos.xyz</span></code></p></td>
+<td><p>Write-only wrench-at-position in world frame</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Rigid body properties (standalone, non-articulated bodies)</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_MASS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,)</span></code></p></td>
+<td><p>1D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>mass scalar</p></td>
+<td><p>Scalar mass per rigid body</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_INERTIA_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">9)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>row-major 3x3</p></td>
+<td><p>Inertia tensor in body frame</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_COM_POSE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">7)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pos.xyz</span> <span class="pre">+</span> <span class="pre">quat.xyzw</span></code></p></td>
+<td><p>COM local pose in body frame</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Rigid body shape properties</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">S,</span> <span class="pre">3)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(static_friction,</span> <span class="pre">dynamic_friction,</span> <span class="pre">restitution)</span></code></p></td>
+<td><p>Per-shape material properties</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_CONTACT_OFFSET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">S)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>offset scalar per shape</p></td>
+<td><p>Distance at which contacts are generated</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_RIGID_BODY_REST_OFFSET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">S)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>offset scalar per shape</p></td>
+<td><p>Rest separation between shapes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation root state</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">7)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pos.xyz</span> <span class="pre">+</span> <span class="pre">quat.xyzw</span></code></p></td>
+<td><p>Root body transform per articulation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_ROOT_VELOCITY_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">6)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lin.xyz</span> <span class="pre">+</span> <span class="pre">ang.xyz</span></code></p></td>
+<td><p>Root body velocity per articulation</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation link state</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">7)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pos.xyz</span> <span class="pre">+</span> <span class="pre">quat.xyzw</span></code></p></td>
+<td><p>Per-link pose; padded links are zero</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_LINK_VELOCITY_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">6)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lin.xyz</span> <span class="pre">+</span> <span class="pre">ang.xyz</span></code></p></td>
+<td><p>Per-link velocity; read-only</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_LINK_ACCELERATION_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">6)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lin_acc.xyz</span> <span class="pre">+</span> <span class="pre">ang_acc.xyz</span></code></p></td>
+<td><p>Per-link linear and angular acceleration; read-only</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_LINK_WRENCH_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">9)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>no</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">force.xyz</span> <span class="pre">+</span> <span class="pre">torque.xyz</span> <span class="pre">+</span> <span class="pre">pos.xyz</span></code></p></td>
+<td><p>Write-only per-link external wrench</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation DOF state and control</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>joint position scalar per DOF</p></td>
+<td><p>Joint-space position in articulation DOF order</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>joint velocity scalar per DOF</p></td>
+<td><p>Joint-space velocity in articulation DOF order</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>target position scalar per DOF</p></td>
+<td><p>Position-control targets</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_TARGET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>target velocity scalar per DOF</p></td>
+<td><p>Velocity-control targets</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_ACTUATION_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>actuation scalar per DOF</p></td>
+<td><p>Readback is from staging buffer; may differ from solver-applied force</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation DOF properties</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_STIFFNESS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>stiffness scalar per DOF</p></td>
+<td><p>PD position-control stiffness</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_DAMPING_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>damping scalar per DOF</p></td>
+<td><p>PD velocity-control damping</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_LIMIT_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D,</span> <span class="pre">2)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> per DOF</p></td>
+<td><p>Joint position limits</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_MAX_VELOCITY_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>max velocity scalar per DOF</p></td>
+<td><p>Per-DOF velocity clamp</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_MAX_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>max force scalar per DOF</p></td>
+<td><p>Per-DOF force/torque clamp</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_ARMATURE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>armature scalar per DOF</p></td>
+<td><p>Added inertia at each DOF</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_FRICTION_PROPERTIES_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D,</span> <span class="pre">3)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(static,</span> <span class="pre">dynamic,</span> <span class="pre">viscous)</span></code> per DOF</p></td>
+<td><p>Friction coefficients at each DOF</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation body properties</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_BODY_MASS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>mass scalar per link</p></td>
+<td><p>Scalar mass per articulation link</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_BODY_COM_POSE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">7)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pos.xyz</span> <span class="pre">+</span> <span class="pre">quat.xyzw</span></code></p></td>
+<td><p>COM local pose in body frame per link</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_BODY_INERTIA_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">9)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>row-major 3x3</p></td>
+<td><p>Inertia tensor in COM frame per link</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_BODY_INV_MASS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>inverse mass scalar per link</p></td>
+<td><p>Computed from mass; read-only</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_BODY_INV_INERTIA_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">9)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>row-major 3x3</p></td>
+<td><p>Computed from inertia; read-only</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation shape properties</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">S,</span> <span class="pre">3)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(static_friction,</span> <span class="pre">dynamic_friction,</span> <span class="pre">restitution)</span></code></p></td>
+<td><p>Per-shape material properties per link</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">S)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>offset scalar per shape</p></td>
+<td><p>Distance at which contacts are generated</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_REST_OFFSET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">S)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>offset scalar per shape</p></td>
+<td><p>Rest separation between shapes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Articulation dynamics queries (read-only)</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">R,</span> <span class="pre">C)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>row-major</p></td>
+<td><p>Shape from <code class="docutils literal notranslate"><span class="pre">getJacobianShape()</span></code>; see <code class="docutils literal notranslate"><span class="pre">R</span></code>, <code class="docutils literal notranslate"><span class="pre">C</span></code> in symbol legend above</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">M,</span> <span class="pre">M)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>row-major square</p></td>
+<td><p>Generalized mass matrix; shape from <code class="docutils literal notranslate"><span class="pre">getGeneralizedMassMatrixShape()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">M)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>force scalar per generalized coordinate</p></td>
+<td><p>Combined Coriolis and centrifugal forces</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_GRAVITY_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">M)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>force scalar per generalized coordinate</p></td>
+<td><p>Gravity compensation forces</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_LINK_INCOMING_JOINT_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">L,</span> <span class="pre">6)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">force.xyz</span> <span class="pre">+</span> <span class="pre">torque.xyz</span></code></p></td>
+<td><p>Incoming joint force and torque per link</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_DOF_PROJECTED_JOINT_FORCE_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">D)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>no</p></td>
+<td><p>scalar per DOF</p></td>
+<td><p>Projected joint forces</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Fixed tendon properties</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_STIFFNESS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>stiffness scalar per tendon</p></td>
+<td><p>Requires articulation with fixed tendons</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_DAMPING_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>damping scalar per tendon</p></td>
+<td><p>Requires articulation with fixed tendons</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_LIMIT_STIFFNESS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>limit stiffness scalar per tendon</p></td>
+<td><p>Requires articulation with fixed tendons</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_LIMIT_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T,</span> <span class="pre">2)</span></code></p></td>
+<td><p>3D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> per tendon</p></td>
+<td><p>Fixed tendon position limits</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_REST_LENGTH_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>rest length scalar per tendon</p></td>
+<td><p>Requires articulation with fixed tendons</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_OFFSET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>offset scalar per tendon</p></td>
+<td><p>Requires articulation with fixed tendons</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Spatial tendon properties</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Dimensionality</p></th>
+<th class="head"><p>Read</p></th>
+<th class="head"><p>Write</p></th>
+<th class="head"><p>Component layout</p></th>
+<th class="head"><p>Behavioral note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_STIFFNESS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>stiffness scalar per tendon</p></td>
+<td><p>Requires articulation with spatial tendons</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_DAMPING_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>damping scalar per tendon</p></td>
+<td><p>Requires articulation with spatial tendons</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_LIMIT_STIFFNESS_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>limit stiffness scalar per tendon</p></td>
+<td><p>Requires articulation with spatial tendons</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_OFFSET_F32</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">T)</span></code></p></td>
+<td><p>2D</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+<td><p>offset scalar per tendon</p></td>
+<td><p>Requires articulation with spatial tendons</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For canonical enum definitions and low-level semantics, see <code class="docutils literal notranslate"><span class="pre">include/ovphysx/ovphysx_types.h</span></code>.</p>
+</section>
+<section id="result">
+<h2>Result<a class="headerlink" href="#result" title="Link to this heading">#</a></h2>
+<p>After this tutorial, you can create tensor bindings, push batched simulation inputs, and read back batched results.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="hello_world.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Hello World: Load USD and Step</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="contact_binding.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Contact Binding: Reading Contact Forces</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#code-language">Code Language</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c">C</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tensor-type-reference">Tensor Type Reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#result">Result</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Apr 13, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

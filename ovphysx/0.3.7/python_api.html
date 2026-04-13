@@ -1,0 +1,2185 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Python API Reference &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+
+    <script rel="preload" src="_static/modal-table.js"></script>
+    <script src="_static/documentation_options.js?v=ec38d21e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=65e89d2a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'python_api';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.3.7';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script src="_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="C API Reference" href="api.html" />
+    <link rel="prev" title="PhysX Interop: Direct PhysX SDK Access" href="tutorials/physx_interop.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Apr 13, 2026"/>
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Python API Reference</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-ovphysx.api">
+<span id="python-api-reference"></span><h1>Python API Reference<a class="headerlink" href="#module-ovphysx.api" title="Link to this heading">#</a></h1>
+<p>High-level Python API for the ovphysx library.</p>
+<section id="stream-ordered-execution-model">
+<h2>Stream-Ordered Execution Model<a class="headerlink" href="#stream-ordered-execution-model" title="Link to this heading">#</a></h2>
+<p>All operations in this API are stream-ordered, meaning they execute in submission
+order as if on a single queue. This provides sequential consistency:</p>
+<ul class="simple">
+<li><p>Operations appear to complete in submission order</p></li>
+<li><p>Writes from operation N are visible to operation N+1</p></li>
+<li><p>You don’t need explicit synchronization between dependent operations</p></li>
+<li><p>Independent operations may execute concurrently internally for performance</p></li>
+</ul>
+<p>Example (no explicit waits needed between dependent operations):</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-number">Listing 1 </span><span class="caption-text">Stream-ordered operation sequence</span><a class="headerlink" href="#id1" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="n">usd_handle</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">add_usd</span><span class="p">(</span><span class="s2">&quot;scene.usda&quot;</span><span class="p">)</span>  <span class="c1"># Returns immediately</span>
+ <span class="n">physx</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>                         <span class="c1"># Sees the USD load (stream-ordered)</span>
+ <span class="n">binding</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>   <span class="c1"># Sees step results</span>
+ <span class="n">binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>                         <span class="c1"># Reads current state</span>
+</pre></div>
+</div>
+</div>
+<p>Use wait_op() when:</p>
+<ul class="simple">
+<li><p>Before accessing results outside the stream (e.g., reading data on CPU/GPU)</p></li>
+<li><p>To ensure operations complete before program exit</p></li>
+<li><p>For explicit synchronization points in your application</p></li>
+</ul>
+</section>
+<section id="thread-safety">
+<h2>Thread Safety<a class="headerlink" href="#thread-safety" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Multiple PhysX instances: fully thread-safe</p></li>
+<li><p>Single instance: NOT thread-safe. Use external synchronization if calling
+from multiple threads</p></li>
+</ul>
+</section>
+<section id="core-classes">
+<h2>Core Classes<a class="headerlink" href="#core-classes" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">PhysX</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PhysXConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">ignore_version_mismatch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">gpu_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#ovphysx.api.PhysX" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>High-level wrapper around the C API using ctypes.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.add_usd">
+<span class="sig-name descname"><span class="pre">add_usd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">usd_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.add_usd" title="Link to this definition">#</a></dt>
+<dd><p>Add USD file to stage (async, returns immediately).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>usd_path</strong> – Path to USD file</p></li>
+<li><p><strong>path_prefix</strong> – Optional prefix for all paths in USD</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of (usd_handle, op_index). The usd_handle is used for remove_usd().
+op_index can be used with wait_op() if you need explicit synchronization.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p># Simple usage (stream-ordered)
+usd_handle, _ = physx.add_usd(“scene.usda”)
+physx.step(dt, time)  # Automatically waits for USD to load</p>
+<p># Explicit synchronization (if needed before non-stream operations)
+usd_handle, op = physx.add_usd(“scene.usda”)
+physx.wait_op(op)  # Ensure load completes before external access</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>usd_path must exist and be readable.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Enqueues stage load and allocates runtime resources.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>The returned usd_handle is owned by this instance until remove_usd/reset.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently on the same instance without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises RuntimeError on load or enqueue failure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">source_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">target_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">parent_transforms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.clone" title="Link to this definition">#</a></dt>
+<dd><p>Clone a USD prim hierarchy to create multiple Fabric-based copies (asynchronous, returns immediately).</p>
+<p>Creates physics-optimized clones in Fabric for high-performance simulation.
+The source prim must exist in the loaded USD stage and have physics properties.
+Due to stream-ordered execution, subsequent operations automatically see the result of clone.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_path</strong> – USD path of the source prim hierarchy to clone (e.g., “/World/env0”)</p></li>
+<li><p><strong>target_paths</strong> – List of USD paths for the cloned hierarchies (e.g., [“/World/env1”, “/World/env2”])</p></li>
+<li><p><strong>parent_transforms</strong> – Optional list of (px, py, pz, qx, qy, qz, qw) transforms
+for each target’s parent Xform prim.  Position followed by quaternion
+rotation (imaginary-first, matching tensor API convention).
+Identity rotation = (0, 0, 0, 1).  Must have the same length as
+target_paths.  When provided, newly-created parent prims are placed at
+the given transform.  Pass None to use identity for all parents.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>op_index (can be used with wait_op() for explicit synchronization)</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – If source_path is empty, target_paths is empty, or any target path matches source path</p></li>
+<li><p><strong>RuntimeError</strong> – If clone fails to queue or if no USD scene is loaded</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>A USD stage is loaded and source_path exists.</p></li>
+<li><p>target_paths are unique and do not already exist.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Creates cloned runtime prims that immediately participate in simulation.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Clones remain valid until reset/remove_usd.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently on the same instance without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises ValueError for invalid inputs.</p></li>
+<li><p>Raises RuntimeError on enqueue or internal failure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.create_contact_binding">
+<span class="sig-name descname"><span class="pre">create_contact_binding</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">sensor_patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">filter_patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">filters_per_sensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">max_contact_data_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ovphysx.api.ContactBinding" title="ovphysx.api.ContactBinding"><span class="pre">ContactBinding</span></a></span></span><a class="headerlink" href="#ovphysx.api.PhysX.create_contact_binding" title="Link to this definition">#</a></dt>
+<dd><p>Create a contact binding for reading aggregate force tensors.</p>
+<p>Returns DLPack-compatible tensors of net forces <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">3]</span></code> or force
+matrices <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">3]</span></code> — suitable for RL rewards, safety limits, or
+force monitoring. GPU-compatible. For <strong>per-contact-point geometry</strong>
+(position, normal, impulse), use <a class="reference internal" href="#ovphysx.api.PhysX.get_contact_report" title="ovphysx.api.PhysX.get_contact_report"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_contact_report()</span></code></a> instead.</p>
+<p>A <strong>sensor</strong> is a set of rigid body prims matched by a USD prim path
+pattern. A <strong>filter</strong> is a second set of bodies whose contacts with each
+sensor you want to measure. No extra USD schema is needed beyond the
+rigid bodies themselves.</p>
+<p>The binding must be created <em>before</em> the first simulation step whose
+contacts you want to observe. Call <code class="xref py py-meth docutils literal notranslate"><span class="pre">read_net_forces()</span></code> or
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">read_force_matrix()</span></code> after <code class="xref py py-meth docutils literal notranslate"><span class="pre">PhysxSDK.step()</span></code>. Before the first
+step, both return all-zeros tensors.</p>
+<dl class="simple">
+<dt>Result tensor shapes after step:</dt><dd><ul class="simple">
+<li><p>net forces:    <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">3]</span></code>   where S = matched sensor count</p></li>
+<li><p>force matrix:  <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">3]</span></code> where F = matched filter count per sensor</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cb</span> <span class="o">=</span> <span class="n">sdk</span><span class="o">.</span><span class="n">create_contact_binding</span><span class="p">(</span>
+    <span class="n">sensor_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/robot_0/ee&quot;</span><span class="p">],</span>
+    <span class="n">filter_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/obstacles/box&quot;</span><span class="p">],</span>
+    <span class="n">filters_per_sensor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">max_contact_data_count</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># After sdk.step():</span>
+<span class="n">forces</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cb</span><span class="o">.</span><span class="n">sensor_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">read_net_forces</span><span class="p">(</span><span class="n">forces</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sensor_patterns</strong> – USD prim path patterns for sensor bodies.</p></li>
+<li><p><strong>filter_patterns</strong> – Flat list of USD prim path patterns for filters.
+Total length must equal <code class="docutils literal notranslate"><span class="pre">len(sensor_patterns)</span> <span class="pre">*</span> <span class="pre">filters_per_sensor</span></code>.
+Pass <code class="docutils literal notranslate"><span class="pre">None</span></code> with <code class="docutils literal notranslate"><span class="pre">filters_per_sensor=0</span></code> to get contacts with all bodies.</p></li>
+<li><p><strong>filters_per_sensor</strong> – Number of filter patterns per sensor (same for all sensors).</p></li>
+<li><p><strong>max_contact_data_count</strong> – Max raw contact pairs to track (passed to TensorAPI).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.create_tensor_binding">
+<span class="sig-name descname"><span class="pre">create_tensor_binding</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">prim_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">tensor_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">TensorType.RIGID_BODY_POSE</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ovphysx.api.TensorBinding" title="ovphysx.api.TensorBinding"><span class="pre">TensorBinding</span></a></span></span><a class="headerlink" href="#ovphysx.api.PhysX.create_tensor_binding" title="Link to this definition">#</a></dt>
+<dd><p>Create tensor binding for bulk physics data access (synchronous).</p>
+<p>A tensor binding connects USD prims (by pattern or explicit paths) to a
+tensor type, enabling efficient bulk read/write of physics data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pattern</strong> – USD path glob pattern (e.g., “/World/robot*”, “/World/env[N]/robot”).
+Mutually exclusive with <code class="docutils literal notranslate"><span class="pre">prim_paths</span></code>.</p></li>
+<li><p><strong>prim_paths</strong> – Explicit list of prim paths. Mutually exclusive with <code class="docutils literal notranslate"><span class="pre">pattern</span></code>.</p></li>
+<li><p><strong>tensor_type</strong> – Tensor type enum value (<code class="docutils literal notranslate"><span class="pre">TensorType.*</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>TensorBinding object for reading/writing tensor data.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – If neither <code class="docutils literal notranslate"><span class="pre">pattern</span></code> nor <code class="docutils literal notranslate"><span class="pre">prim_paths</span></code> is provided, or both are.</p></li>
+<li><p><strong>RuntimeError</strong> – If binding creation fails.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Read all robot poses by pattern</span>
+<span class="k">with</span> <span class="n">sdk</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span>
+    <span class="s2">&quot;/World/robot*&quot;</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span>
+<span class="p">)</span> <span class="k">as</span> <span class="n">binding</span><span class="p">:</span>
+    <span class="n">poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">poses</span><span class="p">)</span>
+
+<span class="c1"># Set joint position targets for specific articulations</span>
+<span class="n">binding</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span>
+    <span class="n">prim_paths</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/env1/robot&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/env2/robot&quot;</span><span class="p">],</span>
+    <span class="n">tensor_type</span><span class="o">=</span><span class="n">TensorType</span><span class="o">.</span><span class="n">ARTICULATION_DOF_POSITION_TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Exactly one of <code class="docutils literal notranslate"><span class="pre">pattern</span></code> or <code class="docutils literal notranslate"><span class="pre">prim_paths</span></code> must be provided.</p></li>
+<li><p>A USD stage is loaded.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Allocates native binding resources.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Returned TensorBinding owns native resources until <code class="docutils literal notranslate"><span class="pre">destroy()</span></code>.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently on the same instance without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for invalid arguments.</p></li>
+<li><p>Raises <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> on creation failure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_config_bool">
+<span class="sig-name descname"><span class="pre">get_config_bool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_config_bool" title="Link to this definition">#</a></dt>
+<dd><p>Get a boolean config value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Boolean config key (e.g., <code class="docutils literal notranslate"><span class="pre">ovphysx.ConfigBool.DISABLE_CONTACT_PROCESSING</span></code>).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Current boolean value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_config_float">
+<span class="sig-name descname"><span class="pre">get_config_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_config_float" title="Link to this definition">#</a></dt>
+<dd><p>Get a float config value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Float config key.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Current float value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_config_int32">
+<span class="sig-name descname"><span class="pre">get_config_int32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_config_int32" title="Link to this definition">#</a></dt>
+<dd><p>Get an int32 config value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Int32 config key (e.g., <code class="docutils literal notranslate"><span class="pre">ovphysx.ConfigInt32.NUM_THREADS</span></code>).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Current int32 value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_config_string">
+<span class="sig-name descname"><span class="pre">get_config_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_config_string" title="Link to this definition">#</a></dt>
+<dd><p>Get a string config value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – String config key from <code class="docutils literal notranslate"><span class="pre">ovphysx.ConfigString</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Current string value, or None if not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_contact_report">
+<span class="sig-name descname"><span class="pre">get_contact_report</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">include_friction_anchors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_contact_report" title="Link to this definition">#</a></dt>
+<dd><p>Get per-contact-point event data for the current simulation step.</p>
+<p>Use this for custom contact sensors, collision debugging, or per-point
+force analysis. For <strong>aggregate force tensors</strong> (net forces or force
+matrices between sensor/filter body sets), use
+<a class="reference internal" href="#ovphysx.api.PhysX.create_contact_binding" title="ovphysx.api.PhysX.create_contact_binding"><code class="xref py py-meth docutils literal notranslate"><span class="pre">create_contact_binding()</span></code></a> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>include_friction_anchors</strong> – If True, also return friction anchor data
+(position and impulse at each friction anchor point).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns a dict with:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">headers</span></code>: ctypes array of <code class="xref py py-class docutils literal notranslate"><span class="pre">ContactEventHeader</span></code> structs
+describing each contact pair (actors, colliders, event type).
+Length is <code class="docutils literal notranslate"><span class="pre">num_headers</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_headers</span></code> (int): Number of contact event headers.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">points</span></code>: ctypes array of <code class="xref py py-class docutils literal notranslate"><span class="pre">ContactPoint</span></code> structs with
+per-contact-point data (position, normal, impulse, separation).
+Length is <code class="docutils literal notranslate"><span class="pre">num_points</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_points</span></code> (int): Number of contact point entries.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">anchors</span></code> (only if <code class="docutils literal notranslate"><span class="pre">include_friction_anchors=True</span></code>): ctypes
+array of <code class="xref py py-class docutils literal notranslate"><span class="pre">FrictionAnchor</span></code> structs. Length is <code class="docutils literal notranslate"><span class="pre">num_anchors</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_anchors</span></code> (int, only if <code class="docutils literal notranslate"><span class="pre">include_friction_anchors=True</span></code>):
+Number of friction anchors.</p></li>
+</ul>
+</dd>
+</dl>
+<p>The arrays are zero-copy views into internal buffers, valid until the
+next simulation step. Individual fields are accessible by index:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">report</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">get_contact_report</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_headers&quot;</span><span class="p">]):</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;headers&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">actor0</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">numContactData</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_points&quot;</span><span class="p">]):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;points&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="o">.</span><span class="n">normal</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">.</span><span class="n">impulse</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Prims must have <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> applied in the USD stage
+for contacts to be reported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the call fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_physx_ptr">
+<span class="sig-name descname"><span class="pre">get_physx_ptr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prim_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">physx_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_physx_ptr" title="Link to this definition">#</a></dt>
+<dd><p>Return a raw PhysX SDK pointer by USD prim path and type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prim_path</strong> – Absolute USD prim path (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;/World/physicsScene&quot;</span></code>).</p></li>
+<li><p><strong>physx_type</strong> – One of the <code class="docutils literal notranslate"><span class="pre">PhysXType</span></code> enum members (or matching int)
+indicating which PhysX object type to look up.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Integer address of the PhysX pointer, or <code class="docutils literal notranslate"><span class="pre">0</span></code> if no object of
+the requested type exists at the given path.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – On infrastructure failures (no stage loaded,
+    invalid handle, etc.).  A missing object does <strong>not</strong> raise;
+    check for a <code class="docutils literal notranslate"><span class="pre">0</span></code> return value instead.</p>
+</dd>
+</dl>
+<p>The returned address can be passed to C/C++ code that casts it to
+the appropriate PhysX type (see <code class="docutils literal notranslate"><span class="pre">ovphysx_physx_type_t</span></code>).</p>
+<p>Pointer lifetime: valid until <code class="docutils literal notranslate"><span class="pre">remove_usd()</span></code>, <code class="docutils literal notranslate"><span class="pre">reset()</span></code>, or
+instance destruction. <code class="docutils literal notranslate"><span class="pre">step()</span></code> and <code class="docutils literal notranslate"><span class="pre">clone()</span></code> do NOT invalidate
+pointers. Do not call <code class="docutils literal notranslate"><span class="pre">release()</span></code> on returned pointers.</p>
+<p>Thread safety: PhysX APIs on returned pointers must only be called
+between simulation steps.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.get_stage_id">
+<span class="sig-name descname"><span class="pre">get_stage_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.get_stage_id" title="Link to this definition">#</a></dt>
+<dd><p>Return the attached USD stage id.</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Instance must be valid.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Returned ID is owned by the runtime and may change after stage reload.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently with stage mutation without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Returns -1 if the query fails.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.handle">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.PhysX.handle" title="Link to this definition">#</a></dt>
+<dd><p>The raw <code class="docutils literal notranslate"><span class="pre">ovphysx_handle_t</span></code> for this instance (read-only).</p>
+<p>Use this when passing the handle to C/C++ code that calls the
+ovphysx C API directly (e.g. <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the instance has been released.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.overlap">
+<span class="sig-name descname"><span class="pre">overlap</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">geometry_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SceneQueryGeometryType</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SceneQueryMode</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">SceneQueryMode.ALL</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.overlap" title="Link to this definition">#</a></dt>
+<dd><p>Test geometry overlap against objects in the scene.</p>
+<p>For overlap queries, location fields (normal, position, distance,
+face_index, material) are zeroed – only object identity is populated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry_type</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">SceneQueryGeometryType</span></code>.</p></li>
+<li><p><strong>mode</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">SceneQueryMode</span></code> (ANY or ALL; CLOSEST treated as ALL).</p></li>
+<li><p><strong>**kwargs</strong> – Geometry parameters (same as <a class="reference internal" href="#ovphysx.api.PhysX.sweep" title="ovphysx.api.PhysX.sweep"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sweep()</span></code></a>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of hit dicts (same format as <a class="reference internal" href="#ovphysx.api.PhysX.raycast" title="ovphysx.api.PhysX.raycast"><code class="xref py py-meth docutils literal notranslate"><span class="pre">raycast()</span></code></a>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.raycast">
+<span class="sig-name descname"><span class="pre">raycast</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SceneQueryMode</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">SceneQueryMode.CLOSEST</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">both_sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.raycast" title="Link to this definition">#</a></dt>
+<dd><p>Cast a ray and return hits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – Ray origin [x, y, z].</p></li>
+<li><p><strong>direction</strong> – Normalized ray direction [x, y, z].</p></li>
+<li><p><strong>distance</strong> – Maximum ray length (&gt;= 0).</p></li>
+<li><p><strong>mode</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">SceneQueryMode</span></code> (CLOSEST, ANY, or ALL).</p></li>
+<li><p><strong>both_sides</strong> – If True, test both sides of mesh triangles.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of hit dicts. Each dict contains <code class="docutils literal notranslate"><span class="pre">collision</span></code>, <code class="docutils literal notranslate"><span class="pre">rigid_body</span></code>,
+<code class="docutils literal notranslate"><span class="pre">proto_index</span></code>, <code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">distance</span></code>,
+<code class="docutils literal notranslate"><span class="pre">face_index</span></code>, <code class="docutils literal notranslate"><span class="pre">material</span></code>. For ANY mode, hit fields are zeroed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.release">
+<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.release" title="Link to this definition">#</a></dt>
+<dd><p>Release PhysX instance.</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Instance is valid and not in use by other threads.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Releases native resources and unregisters the instance.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>All tensor bindings and contact bindings created by this instance are
+automatically released.</p></li>
+<li><p>The instance becomes unusable after release.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently with other operations on this instance.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Errors during cleanup are suppressed for robustness.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.remove_usd">
+<span class="sig-name descname"><span class="pre">remove_usd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">usd_handle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.remove_usd" title="Link to this definition">#</a></dt>
+<dd><p>Remove USD file from stage (async, returns immediately).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>usd_handle</strong> – Handle from add_usd()</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>op_index (can be used with wait_op() for explicit synchronization)</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p># Simple usage (stream-ordered)
+physx.remove_usd(usd_handle)
+physx.step(dt, time)  # Automatically waits for removal</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>usd_handle must be valid for this instance.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Removes USD data from the runtime stage when complete.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>usd_handle becomes invalid after completion.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently on the same instance without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises RuntimeError on failure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.reset" title="Link to this definition">#</a></dt>
+<dd><p>Reset stage to empty (async, invalidates all usd_handles).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>op_index (can be used with wait_op() for explicit synchronization)</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p># Simple usage (stream-ordered)
+physx.reset()
+usd_handle, _ = physx.add_usd(“new_scene.usda”)  # Automatically waits for reset</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Instance must be valid.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Clears the runtime stage and invalidates all USD handles.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>All previously returned usd_handles become invalid after completion.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently on the same instance without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises RuntimeError on failure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.set_config">
+<span class="sig-name descname"><span class="pre">set_config</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ovphysx._bindings.ovphysx_config_entry_t</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.set_config" title="Link to this definition">#</a></dt>
+<dd><p>Set a typed global config entry at runtime (process-global).</p>
+<p>Prefer the typed setters (<a class="reference internal" href="#ovphysx.api.PhysX.set_config_bool" title="ovphysx.api.PhysX.set_config_bool"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_config_bool()</span></code></a>, <a class="reference internal" href="#ovphysx.api.PhysX.set_config_int32" title="ovphysx.api.PhysX.set_config_int32"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_config_int32()</span></code></a>,
+<a class="reference internal" href="#ovphysx.api.PhysX.set_config_float" title="ovphysx.api.PhysX.set_config_float"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_config_float()</span></code></a>) for a cleaner API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entry</strong> – Typed config entry (<code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_t</span></code>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.set_config_bool">
+<span class="sig-name descname"><span class="pre">set_config_bool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.set_config_bool" title="Link to this definition">#</a></dt>
+<dd><p>Set a boolean config value at runtime (process-global).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – Boolean config key (e.g., <code class="docutils literal notranslate"><span class="pre">ConfigBool.DISABLE_CONTACT_PROCESSING</span></code>).</p></li>
+<li><p><strong>value</strong> – Boolean value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.set_config_float">
+<span class="sig-name descname"><span class="pre">set_config_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.set_config_float" title="Link to this definition">#</a></dt>
+<dd><p>Set a float config value at runtime (process-global).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – Float config key.</p></li>
+<li><p><strong>value</strong> – Float value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.set_config_int32">
+<span class="sig-name descname"><span class="pre">set_config_int32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.set_config_int32" title="Link to this definition">#</a></dt>
+<dd><p>Set an int32 config value at runtime (process-global).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – Int32 config key (e.g., <code class="docutils literal notranslate"><span class="pre">ConfigInt32.NUM_THREADS</span></code>).</p></li>
+<li><p><strong>value</strong> – Int32 value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.step" title="Link to this definition">#</a></dt>
+<dd><p>Initiate physics step (async, returns op_index).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> – Delta time for this step</p></li>
+<li><p><strong>sim_time</strong> – Current simulation time</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>op_index (can be used with wait_op() for explicit synchronization)</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p># Simple usage (stream-ordered)
+physx.step(0.016, 0.0)
+binding.read(output)  # Automatically waits for step</p>
+<p># Explicit wait (if accessing results outside stream)
+op = physx.step(0.016, 0.0)
+physx.wait_op(op)  # Ensure step completes before external GPU work</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>A USD stage is loaded if physics content is expected.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Advances simulation time and mutates physics state.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Returned op_index is single-use and must be waited once if needed.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently on the same instance without external sync.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises RuntimeError on failure to enqueue.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.step_n_sync">
+<span class="sig-name descname"><span class="pre">step_n_sync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.step_n_sync" title="Link to this definition">#</a></dt>
+<dd><p>Run N steps in a single C call, saving (N-1) ctypes round-trips.</p>
+<p>Equivalent to calling <code class="docutils literal notranslate"><span class="pre">step_sync(dt,</span> <span class="pre">current_time</span> <span class="pre">+</span> <span class="pre">i*dt)</span></code> for
+i in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">n)</span></code>, but with only one Python-to-C transition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> – Number of steps to run (must be &gt;= 1).</p></li>
+<li><p><strong>dt</strong> – Duration of each step [s].</p></li>
+<li><p><strong>current_time</strong> – Simulation time at the start of the first step [s].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If any step fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.step_sync">
+<span class="sig-name descname"><span class="pre">step_sync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.step_sync" title="Link to this definition">#</a></dt>
+<dd><p>Step simulation and wait for completion in a single call.</p>
+<p>Faster than <code class="docutils literal notranslate"><span class="pre">step()</span></code> + <code class="docutils literal notranslate"><span class="pre">wait_op()</span></code> for performance-critical
+applications like RL training that always wait immediately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> – Delta time [s] for this step.</p></li>
+<li><p><strong>sim_time</strong> – Current simulation time [s].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If the step or wait fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.sweep">
+<span class="sig-name descname"><span class="pre">sweep</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">geometry_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SceneQueryGeometryType</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SceneQueryMode</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">SceneQueryMode.CLOSEST</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">both_sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.sweep" title="Link to this definition">#</a></dt>
+<dd><p>Sweep a geometry shape along a direction and return hits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry_type</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">SceneQueryGeometryType</span></code>.</p></li>
+<li><p><strong>direction</strong> – Normalized sweep direction [x, y, z].</p></li>
+<li><p><strong>distance</strong> – Maximum sweep distance (&gt;= 0).</p></li>
+<li><p><strong>mode</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">SceneQueryMode</span></code>.</p></li>
+<li><p><strong>both_sides</strong> – If True, test both sides of mesh triangles.</p></li>
+<li><p><strong>**kwargs</strong> – <p>Geometry parameters:</p>
+<ul>
+<li><p>SPHERE: <code class="docutils literal notranslate"><span class="pre">radius</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code></p></li>
+<li><p>BOX: <code class="docutils literal notranslate"><span class="pre">half_extent</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">rotation</span></code> (xyzw quaternion)</p></li>
+<li><p>SHAPE: <code class="docutils literal notranslate"><span class="pre">prim_path</span></code> (USD prim path string)</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of hit dicts (same format as <a class="reference internal" href="#ovphysx.api.PhysX.raycast" title="ovphysx.api.PhysX.raycast"><code class="xref py py-meth docutils literal notranslate"><span class="pre">raycast()</span></code></a>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.wait_all">
+<span class="sig-name descname"><span class="pre">wait_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout_ns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.wait_all" title="Link to this definition">#</a></dt>
+<dd><p>Wait for all pending operations (convenience wrapper for wait_op(ALL)).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout_ns</strong> – Timeout in nanoseconds (None = infinite, 0 = poll)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Instance must be valid.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Blocks until all pending ops complete or timeout.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Safe to call if no other thread is waiting on specific op_indices.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>Raises RuntimeError on failure.</p></li>
+<li><p>Raises TimeoutError if timeout expired (e.g., when polling with timeout_ns=0 and operations are not ready).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.wait_op">
+<span class="sig-name descname"><span class="pre">wait_op</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_ns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.wait_op" title="Link to this definition">#</a></dt>
+<dd><p>Wait for operation(s) to complete.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>op_index</strong> – Operation index to wait for, or OP_INDEX_ALL for all ops</p></li>
+<li><p><strong>timeout_ns</strong> – Timeout in nanoseconds (None = infinite, 0 = poll)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RuntimeError</strong> – If operation failed</p></li>
+<li><p><strong>TimeoutError</strong> – If timeout expired (e.g., when polling with timeout_ns=0 and the operation is not ready)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>op_index must be valid and not previously consumed.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Consumes op_index on successful wait.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Error strings returned by the API are destroyed internally.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not wait on the same op_index from multiple threads.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Blocking wait (default)</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_op</span><span class="p">(</span><span class="n">op_index</span><span class="p">)</span>
+
+<span class="c1"># Non-blocking poll</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">physx</span><span class="o">.</span><span class="n">wait_op</span><span class="p">(</span><span class="n">op_index</span><span class="p">,</span> <span class="n">timeout_ns</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">TimeoutError</span><span class="p">:</span>
+    <span class="k">pass</span>  <span class="c1"># operation not yet complete</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.PhysX.warmup_gpu">
+<span class="sig-name descname"><span class="pre">warmup_gpu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.PhysX.warmup_gpu" title="Link to this definition">#</a></dt>
+<dd><p>Explicitly initialize GPU buffers (synchronous).</p>
+<p>In GPU mode, PhysX DirectGPU buffers need one simulation step to initialize.
+This is normally done automatically on the first tensor read (auto-warmup).</p>
+<p>Call this function explicitly if you want to:
+- Control exactly when the warmup latency occurs
+- Avoid a latency spike on the first tensor read
+- Verify GPU initialization succeeded before starting your main loop</p>
+<p>This function is idempotent - calling it multiple times has no effect after
+the first successful call. In CPU mode, this is a no-op.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If GPU warmup fails.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Instance is configured for GPU mode.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Advances simulation by a minimal timestep on first call.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>No ownership changes; affects current stage state.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Do not call concurrently with other operations on this instance.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">TensorBinding</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">sdk</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">handle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">tensor_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">ndim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#ovphysx.api.TensorBinding" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Tensor binding for bulk physics data access via DLPack.</p>
+<p>A tensor binding connects a USD prim pattern to a tensor type, enabling efficient
+bulk read/write of physics data (poses, velocities, joint positions, etc.).</p>
+<p>This is a synchronous API - operations complete before returning.</p>
+<p>Usage patterns:</p>
+<ul>
+<li><p>Context manager (auto-cleanup):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">sdk</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span><span class="s2">&quot;/World/robot*&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span> <span class="k">as</span> <span class="n">binding</span><span class="p">:</span>
+    <span class="n">poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">poses</span><span class="p">)</span>
+    <span class="c1"># ... modify poses ...</span>
+    <span class="n">binding</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">poses</span><span class="p">)</span>
+<span class="c1"># Auto-destroyed here</span>
+</pre></div>
+</div>
+</li>
+<li><p>Manual (explicit cleanup):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">binding</span> <span class="o">=</span> <span class="n">sdk</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span><span class="s2">&quot;/World/robot*&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
+<span class="n">poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">poses</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.body_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">body_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.body_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of links.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.body_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">body_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.body_names" title="Link to this definition">#</a></dt>
+<dd><p>List of body/link names.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.count" title="Link to this definition">#</a></dt>
+<dd><p>Get number of entities (first dimension of shape).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.destroy">
+<span class="sig-name descname"><span class="pre">destroy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.TensorBinding.destroy" title="Link to this definition">#</a></dt>
+<dd><p>Release binding resources.</p>
+<p>Safe to call multiple times. Called automatically on garbage collection
+or when exiting a context manager.</p>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>Binding must not be in use by other threads.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Releases native resources and invalidates the binding.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>After destruction, the binding cannot be used.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Serialized per binding via an internal lock.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>RuntimeError if destruction fails.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.dof_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dof_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.dof_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of degrees of freedom (DOFs). 0 if not an articulation binding.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.dof_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dof_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.dof_names" title="Link to this definition">#</a></dt>
+<dd><p>List of DOF names (one per DOF).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.fixed_tendon_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fixed_tendon_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.fixed_tendon_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of fixed tendons per articulation (0 if none).</p>
+<p>Use to decide whether to allocate buffers for fixed tendon property
+tensors (types 80-85) and to skip tendon code paths when T=0.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.handle">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.handle" title="Link to this definition">#</a></dt>
+<dd><p>Get the binding handle.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.is_fixed_base">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_fixed_base</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.is_fixed_base" title="Link to this definition">#</a></dt>
+<dd><p>Whether the articulation has a fixed base.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.joint_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">joint_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.joint_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of joints per articulation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.joint_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">joint_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.joint_names" title="Link to this definition">#</a></dt>
+<dd><p>List of joint names.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.ndim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.ndim" title="Link to this definition">#</a></dt>
+<dd><p>Get the number of dimensions (2 or 3).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.TensorBinding.read" title="Link to this definition">#</a></dt>
+<dd><p>Read simulation data into a user-provided tensor (synchronous).</p>
+<p>The tensor must have matching shape and dtype (float32). Can be a NumPy array,
+PyTorch tensor, or any object with __dlpack__ protocol.</p>
+<p>When called repeatedly with the same buffer object, an internal cache
+skips DLPack acquisition and attribute chain lookups, giving
+near-raw-C-call overhead.  The numpy writeable guard is preserved
+on the fast path.  Callers that want this fast path should reuse
+the same tensor object with unchanged backing storage across calls.
+Calling <code class="docutils literal notranslate"><span class="pre">numpy.ndarray.resize()</span></code> or <code class="docutils literal notranslate"><span class="pre">torch.Tensor.resize_()</span></code>
+between calls is safe (a staleness guard detects the pointer change
+and rebuilds the cache) but defeats the purpose of caching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tensor</strong> – DLPack-compatible tensor with pre-allocated storage matching self.shape.
+Must be float32 on matching device (CPU or GPU).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>This binding is not destroyed.</p></li>
+<li><p>tensor has matching shape, dtype (float32), and device.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Blocks until data is available and writes into the provided tensor.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Caller owns tensor storage and must keep it alive for the duration of the call.</p></li>
+<li><p>Do not mutate the tensor’s backing storage (<code class="docutils literal notranslate"><span class="pre">resize()</span></code>, <code class="docutils literal notranslate"><span class="pre">set_()</span></code>,
+etc.) between cached calls.  For numpy and torch tensors, a staleness
+guard detects common mutations and falls back to the slow path; other
+types rely on the caller honouring this contract.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Serialized per binding via an internal lock.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>RuntimeError if read fails (shape mismatch, device mismatch, etc.).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.shape" title="Link to this definition">#</a></dt>
+<dd><p>Get tensor shape as tuple.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(N, C) where N=count, C=components (e.g., 7 for pose, 6 for velocity)
+- 3D tensors: (N, L, C) where L=links for articulation link data</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>2D tensors</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.spatial_tendon_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spatial_tendon_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.spatial_tendon_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of spatial tendons per articulation (0 if none).</p>
+<p>Use to decide whether to allocate buffers for spatial tendon property
+tensors (types 90-93) and to skip tendon code paths when T=0.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.tensor_type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tensor_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.TensorBinding.tensor_type" title="Link to this definition">#</a></dt>
+<dd><p>Get the tensor type enum value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.TensorBinding.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.TensorBinding.write" title="Link to this definition">#</a></dt>
+<dd><p>Write data from a user-provided tensor into the simulation (synchronous).</p>
+<p>The tensor must have matching shape and dtype (float32). Can be a NumPy array,
+PyTorch tensor, or any object with __dlpack__ protocol.</p>
+<p>When called repeatedly with the same buffer object and no indices/mask,
+an internal cache skips DLPack acquisition and attribute chain lookups,
+giving near-raw-C-call overhead.  Callers that want this fast path
+should reuse the same tensor object with unchanged backing storage
+across calls; see <a class="reference internal" href="#ovphysx.api.TensorBinding.read" title="ovphysx.api.TensorBinding.read"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read()</span></code></a> for the full contract.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> – DLPack-compatible tensor with data to write, shape matching self.shape.
+Must be float32 on matching device (CPU or GPU).</p></li>
+<li><p><strong>indices</strong> – Optional int32 tensor of indices for partial update. If provided,
+only the rows at the given indices are written. The tensor argument
+must still be full shape [N, …] matching the binding spec; only the
+selected rows are applied. Shape of indices: [K] where K &lt;= N.</p></li>
+<li><p><strong>mask</strong> – <p>Optional bool/uint8 tensor for masked update. If provided, only
+elements where mask[i] != 0 are written. Shape: [N] matching the
+binding’s first dimension. When mask is provided, tensor must be
+full shape [N, …]. If both mask and indices are provided, mask
+takes precedence and indices are ignored (with a warning).</p>
+<p>Note: there is no corresponding <code class="docutils literal notranslate"><span class="pre">read(...,</span> <span class="pre">mask=...)</span></code>; reads always
+return the full [N,…] tensor and callers can index the result themselves.
+This write-only mask design matches other RL physics APIs such as Newton’s
+selectionAPI, where masks selectively apply actions but observations are
+always returned in full.</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Preconditions:</dt><dd><ul class="simple">
+<li><p>This binding is not destroyed.</p></li>
+<li><p>tensor matches shape, dtype (float32), and device.</p></li>
+<li><p>indices (if provided) is int32 and within bounds.</p></li>
+<li><p>mask (if provided) is bool/uint8 with shape [N] on matching device.</p></li>
+</ul>
+</dd>
+<dt>Side effects:</dt><dd><ul class="simple">
+<li><p>Updates simulation state for the bound entities.</p></li>
+</ul>
+</dd>
+<dt>Ownership/Lifetime:</dt><dd><ul class="simple">
+<li><p>Caller owns tensor/indices/mask storage and must keep it alive for the call.</p></li>
+</ul>
+</dd>
+<dt>Threading:</dt><dd><ul class="simple">
+<li><p>Serialized per binding via an internal lock.</p></li>
+</ul>
+</dd>
+<dt>Errors:</dt><dd><ul class="simple">
+<li><p>RuntimeError if write fails (shape mismatch, device mismatch, etc.).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ovphysx.api.ContactBinding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">ContactBinding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sdk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ovphysx.api.ContactBinding" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Contact force binding backed by IRigidContactView.</p>
+<p>Do not instantiate directly. Use <code class="xref py py-meth docutils literal notranslate"><span class="pre">PhysxSDK.create_contact_binding()</span></code> to
+obtain an instance.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.ContactBinding.destroy">
+<span class="sig-name descname"><span class="pre">destroy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.ContactBinding.destroy" title="Link to this definition">#</a></dt>
+<dd><p>Release contact binding resources.</p>
+<p>Safe to call multiple times. Captures strong references to the SDK and
+library before the C call to guard against GC ordering issues (Python
+may collect self._sdk before self if both go out of scope together).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.ContactBinding.filter_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.ContactBinding.filter_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of filter bodies per sensor (0 when no filters specified).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.ContactBinding.read_force_matrix">
+<span class="sig-name descname"><span class="pre">read_force_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.ContactBinding.read_force_matrix" title="Link to this definition">#</a></dt>
+<dd><p>Read contact force matrix into output. Expected shape: [sensor_count, filter_count, 3].</p>
+<p>The dt for impulse-to-force conversion is taken automatically from the
+last <code class="xref py py-meth docutils literal notranslate"><span class="pre">PhysxSDK.step()</span></code> call.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ovphysx.api.ContactBinding.read_net_forces">
+<span class="sig-name descname"><span class="pre">read_net_forces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.ContactBinding.read_net_forces" title="Link to this definition">#</a></dt>
+<dd><p>Read net contact forces into output. Expected shape: [sensor_count, 3].</p>
+<p>The dt for impulse-to-force conversion is taken automatically from the
+last <code class="xref py py-meth docutils literal notranslate"><span class="pre">PhysxSDK.step()</span></code> call.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ovphysx.api.ContactBinding.sensor_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sensor_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ovphysx.api.ContactBinding.sensor_count" title="Link to this definition">#</a></dt>
+<dd><p>Number of sensor bodies matched.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="cloud-storage-configuration">
+<h2>Cloud Storage Configuration<a class="headerlink" href="#cloud-storage-configuration" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.configure_s3">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">configure_s3</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">bucket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">access_key_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">secret_access_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">session_token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.configure_s3" title="Link to this definition">#</a></dt>
+<dd><p>Configure S3 credentials for remote USD loading via HTTPS S3 URLs.</p>
+<p>Credentials are process-global and take effect immediately for all
+<a class="reference internal" href="#ovphysx.api.PhysX" title="ovphysx.api.PhysX"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhysX</span></code></a> instances. Call before <a class="reference internal" href="#ovphysx.api.PhysX.add_usd" title="ovphysx.api.PhysX.add_usd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PhysX.add_usd()</span></code></a> with an
+S3 HTTPS URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – S3 endpoint (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;my-bucket.s3.us-east-1.amazonaws.com&quot;</span></code>).</p></li>
+<li><p><strong>bucket</strong> – S3 bucket name.</p></li>
+<li><p><strong>region</strong> – AWS region (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;us-east-1&quot;</span></code>).</p></li>
+<li><p><strong>access_key_id</strong> – AWS access key ID.</p></li>
+<li><p><strong>secret_access_key</strong> – AWS secret access key.</p></li>
+<li><p><strong>session_token</strong> – STS session token (<code class="docutils literal notranslate"><span class="pre">None</span></code> if not using temporary
+credentials).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If a required parameter is empty.</p></li>
+<li><p><strong>RuntimeError</strong> – If the OmniClient library is unavailable.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.configure_azure_sas">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">configure_azure_sas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sas_token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.configure_azure_sas" title="Link to this definition">#</a></dt>
+<dd><p>Configure an Azure SAS token for remote USD loading via Azure Blob Storage.</p>
+<p>Credentials are process-global and take effect immediately for all
+<a class="reference internal" href="#ovphysx.api.PhysX" title="ovphysx.api.PhysX"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhysX</span></code></a> instances. Call before <a class="reference internal" href="#ovphysx.api.PhysX.add_usd" title="ovphysx.api.PhysX.add_usd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PhysX.add_usd()</span></code></a> with an
+Azure Blob URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – Azure Blob host (e.g.,
+<code class="docutils literal notranslate"><span class="pre">&quot;myaccount.blob.core.windows.net&quot;</span></code>).</p></li>
+<li><p><strong>container</strong> – Azure container name.</p></li>
+<li><p><strong>sas_token</strong> – SAS token string (without leading <code class="docutils literal notranslate"><span class="pre">'?'</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If a required parameter is empty.</p></li>
+<li><p><strong>RuntimeError</strong> – If the OmniClient library is unavailable.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.set_log_level">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">set_log_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.set_log_level" title="Link to this definition">#</a></dt>
+<dd><p>Set the global log level threshold.</p>
+<p>Messages below this level are suppressed for all outputs (console and
+registered callbacks). Callable at any time, including before instance
+creation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>level</strong> – Log level threshold (LogLevel.VERBOSE through LogLevel.NONE).
+Default: LogLevel.WARNING.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If level is out of range. No state change is applied.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.get_log_level">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">get_log_level</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ovphysx.api.get_log_level" title="Link to this definition">#</a></dt>
+<dd><p>Get the current global log level threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The current log level (int matching ovphysx_log_level_t constants).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.enable_default_log_output">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">enable_default_log_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.enable_default_log_output" title="Link to this definition">#</a></dt>
+<dd><p>Enable or disable Carbonite’s built-in console log output.</p>
+<p>By default, Carbonite logs to the console. When custom callbacks are
+registered (or <a class="reference internal" href="#ovphysx.api.enable_python_logging" title="ovphysx.api.enable_python_logging"><code class="xref py py-func docutils literal notranslate"><span class="pre">enable_python_logging()</span></code></a> is active), both the
+built-in console output and the callbacks receive messages, which may
+cause duplicate output.</p>
+<p>Call with <code class="docutils literal notranslate"><span class="pre">False</span></code> to suppress the built-in console output while
+keeping callbacks active. Call with <code class="docutils literal notranslate"><span class="pre">True</span></code> to re-enable it.</p>
+<p>This is independent of callback registration and the global log level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>enable</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> to enable (default), <code class="docutils literal notranslate"><span class="pre">False</span></code> to disable.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.enable_python_logging">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">enable_python_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ovphysx'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.enable_python_logging" title="Link to this definition">#</a></dt>
+<dd><p>Route native log messages to Python’s logging module.</p>
+<p>Registers a C-level callback that forwards every message (at or above
+the global log level) to <code class="docutils literal notranslate"><span class="pre">logging.getLogger(logger_name)</span></code> at the
+corresponding Python log level.</p>
+<p>Call <a class="reference internal" href="#ovphysx.api.disable_python_logging" title="ovphysx.api.disable_python_logging"><code class="xref py py-func docutils literal notranslate"><span class="pre">disable_python_logging()</span></code></a> to stop forwarding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger_name</strong> – Name of the Python logger to route to (default: “ovphysx”).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ovphysx.api.disable_python_logging">
+<span class="sig-prename descclassname"><span class="pre">ovphysx.api.</span></span><span class="sig-name descname"><span class="pre">disable_python_logging</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ovphysx.api.disable_python_logging" title="Link to this definition">#</a></dt>
+<dd><p>Stop routing native log messages to Python’s logging module.</p>
+<p>If <a class="reference internal" href="#ovphysx.api.enable_python_logging" title="ovphysx.api.enable_python_logging"><code class="xref py py-func docutils literal notranslate"><span class="pre">enable_python_logging()</span></code></a> was not called, this is a no-op.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tutorials/physx_interop.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PhysX Interop: Direct PhysX SDK Access</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">C API Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stream-ordered-execution-model">Stream-Ordered Execution Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thread-safety">Thread Safety</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-classes">Core Classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX"><code class="docutils literal notranslate"><span class="pre">PhysX</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.add_usd"><code class="docutils literal notranslate"><span class="pre">add_usd()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.clone"><code class="docutils literal notranslate"><span class="pre">clone()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.create_contact_binding"><code class="docutils literal notranslate"><span class="pre">create_contact_binding()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.create_tensor_binding"><code class="docutils literal notranslate"><span class="pre">create_tensor_binding()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_config_bool"><code class="docutils literal notranslate"><span class="pre">get_config_bool()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_config_float"><code class="docutils literal notranslate"><span class="pre">get_config_float()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_config_int32"><code class="docutils literal notranslate"><span class="pre">get_config_int32()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_config_string"><code class="docutils literal notranslate"><span class="pre">get_config_string()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_contact_report"><code class="docutils literal notranslate"><span class="pre">get_contact_report()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_physx_ptr"><code class="docutils literal notranslate"><span class="pre">get_physx_ptr()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.get_stage_id"><code class="docutils literal notranslate"><span class="pre">get_stage_id()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.handle"><code class="docutils literal notranslate"><span class="pre">handle</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.overlap"><code class="docutils literal notranslate"><span class="pre">overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.raycast"><code class="docutils literal notranslate"><span class="pre">raycast()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.release"><code class="docutils literal notranslate"><span class="pre">release()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.remove_usd"><code class="docutils literal notranslate"><span class="pre">remove_usd()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.reset"><code class="docutils literal notranslate"><span class="pre">reset()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.set_config"><code class="docutils literal notranslate"><span class="pre">set_config()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.set_config_bool"><code class="docutils literal notranslate"><span class="pre">set_config_bool()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.set_config_float"><code class="docutils literal notranslate"><span class="pre">set_config_float()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.set_config_int32"><code class="docutils literal notranslate"><span class="pre">set_config_int32()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.step"><code class="docutils literal notranslate"><span class="pre">step()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.step_n_sync"><code class="docutils literal notranslate"><span class="pre">step_n_sync()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.step_sync"><code class="docutils literal notranslate"><span class="pre">step_sync()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.sweep"><code class="docutils literal notranslate"><span class="pre">sweep()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.wait_all"><code class="docutils literal notranslate"><span class="pre">wait_all()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.wait_op"><code class="docutils literal notranslate"><span class="pre">wait_op()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.PhysX.warmup_gpu"><code class="docutils literal notranslate"><span class="pre">warmup_gpu()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding"><code class="docutils literal notranslate"><span class="pre">TensorBinding</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.body_count"><code class="docutils literal notranslate"><span class="pre">body_count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.body_names"><code class="docutils literal notranslate"><span class="pre">body_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.count"><code class="docutils literal notranslate"><span class="pre">count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.destroy"><code class="docutils literal notranslate"><span class="pre">destroy()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.dof_count"><code class="docutils literal notranslate"><span class="pre">dof_count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.dof_names"><code class="docutils literal notranslate"><span class="pre">dof_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.fixed_tendon_count"><code class="docutils literal notranslate"><span class="pre">fixed_tendon_count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.handle"><code class="docutils literal notranslate"><span class="pre">handle</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.is_fixed_base"><code class="docutils literal notranslate"><span class="pre">is_fixed_base</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.joint_count"><code class="docutils literal notranslate"><span class="pre">joint_count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.joint_names"><code class="docutils literal notranslate"><span class="pre">joint_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.ndim"><code class="docutils literal notranslate"><span class="pre">ndim</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.shape"><code class="docutils literal notranslate"><span class="pre">shape</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.spatial_tendon_count"><code class="docutils literal notranslate"><span class="pre">spatial_tendon_count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.tensor_type"><code class="docutils literal notranslate"><span class="pre">tensor_type</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.TensorBinding.write"><code class="docutils literal notranslate"><span class="pre">write()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.ContactBinding"><code class="docutils literal notranslate"><span class="pre">ContactBinding</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.ContactBinding.destroy"><code class="docutils literal notranslate"><span class="pre">destroy()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.ContactBinding.filter_count"><code class="docutils literal notranslate"><span class="pre">filter_count</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.ContactBinding.read_force_matrix"><code class="docutils literal notranslate"><span class="pre">read_force_matrix()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.ContactBinding.read_net_forces"><code class="docutils literal notranslate"><span class="pre">read_net_forces()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.ContactBinding.sensor_count"><code class="docutils literal notranslate"><span class="pre">sensor_count</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cloud-storage-configuration">Cloud Storage Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.configure_s3"><code class="docutils literal notranslate"><span class="pre">configure_s3()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.configure_azure_sas"><code class="docutils literal notranslate"><span class="pre">configure_azure_sas()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#logging">Logging</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.set_log_level"><code class="docutils literal notranslate"><span class="pre">set_log_level()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.get_log_level"><code class="docutils literal notranslate"><span class="pre">get_log_level()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.enable_default_log_output"><code class="docutils literal notranslate"><span class="pre">enable_default_log_output()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.enable_python_logging"><code class="docutils literal notranslate"><span class="pre">enable_python_logging()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx.api.disable_python_logging"><code class="docutils literal notranslate"><span class="pre">disable_python_logging()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Apr 13, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
