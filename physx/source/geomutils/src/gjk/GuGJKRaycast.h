@@ -187,7 +187,7 @@ namespace Gu
 		lambda = _lambda;
 		
 		const Vec3V closestP = V3Sel(bNotDegenerated, clos, preClos);
-		Vec3V closA = zeroV, closB = zeroV;
+		Vec3V closA = x, closB = x;
 		getClosestPoint(Q, A, B, closestP, closA, closB, size);
 		closestA = V3Sel(aQuadratic, V3NegScaleSub(nor, a.getMargin(), closA), closA);  
 		
