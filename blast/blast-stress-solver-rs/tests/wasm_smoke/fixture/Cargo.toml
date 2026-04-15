@@ -1,0 +1,43 @@
+# Minimal downstream-shaped consumer used by `tests/wasm_smoke_test.rs`
+# to exercise the `wasm32-unknown-unknown` build end-to-end.
+#
+# This crate is deliberately **not** part of any Cargo workspace — the
+# empty `[workspace]` table below makes it its own workspace root so
+# the parent crate's `cargo build` / `cargo test` never touches it.
+# The `wasm_smoke_test.rs` integration test shells out to `cargo build
+# --manifest-path` to build this fixture on demand.
+#
+# Why a separate crate? A downstream cdylib consumer is the only shape
+# that actually catches unresolved C++ imports: `cargo build` of an
+# rlib (what `cargo build -p blast-stress-solver --target
+# wasm32-unknown-unknown` produces) never links, so it silently hides
+# missing libc symbols. We have to produce a real cdylib and inspect
+# its import section.
+[package]
+name = "blast-wasm-smoke-fixture"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "BSD-3-Clause"
+
+# Empty workspace table = this crate is its own workspace root, so it
+# doesn't inherit from (or get picked up by) any parent.
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+blast-stress-solver = { path = "../../..", default-features = false }
+# `wasm-bindgen` is only used on the wasm target — on native builds
+# the fixture compiles as a plain cdylib with no exported symbols,
+# which is fine (the fixture is never consumed natively).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+
+# Size optimizations — the test only cares about the import section,
+# not runtime performance, and a smaller artifact parses faster.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1

@@ -10,6 +10,14 @@ links = "blast_stress_solver_ffi"
 default = []
 rapier = ["dep:rapier3d"]
 scenarios = []
+# Opt-in regression tests for the `wasm32-unknown-unknown` build. These
+# shell out to `cargo` to build a fixture cdylib under
+# `tests/wasm_smoke/fixture/`, then inspect the resulting .wasm for
+# stray `env.*` / `wasi_snapshot_preview1.*` imports. Enable with
+# `cargo test -p blast-stress-solver --features wasm-smoke`. Requires the
+# `wasm32-unknown-unknown` target and a wasi C++ toolchain
+# (e.g. `libc++-18-dev-wasm32`) to be installed on the host.
+wasm-smoke = []
 
 [dependencies]
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"], optional = true }
@@ -21,3 +29,4 @@ cc = "1.0"
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+wasmparser = "0.224"
