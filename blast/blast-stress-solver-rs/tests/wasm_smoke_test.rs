@@ -92,13 +92,21 @@ fn require_wasm_target() {
     // let `cargo build` produce its own error.
 }
 
-/// Build the fixture cdylib for `wasm32-unknown-unknown` and return
-/// the path to the produced `.wasm`.
+/// Build the fixture cdylib for `wasm32-unknown-unknown` in debug
+/// mode and return the path to the produced `.wasm`.
 ///
-/// We deliberately use an isolated `CARGO_TARGET_DIR` so the fixture
-/// build doesn't contend with the outer test run's target dir and
-/// nested cargo invocations never see each other's lockfiles.
-fn build_fixture(release: bool) -> PathBuf {
+/// **Why debug, not release?** Release-mode LTO + dead-code-elimination
+/// aggressively strips unused libc symbols. An early version of this
+/// test built `--release` and happily reported zero `env.*` imports
+/// while the actual wasm-pack `--dev` output — which is what
+/// downstream consumers ship in development — still imported
+/// `env.fputc` and `env.aligned_alloc`. Debug builds keep those
+/// symbols live, so they're what we want to assert against.
+///
+/// We also use an isolated `CARGO_TARGET_DIR` so the fixture build
+/// doesn't contend with the outer test run's target dir and nested
+/// cargo invocations never see each other's lockfiles.
+fn build_fixture() -> PathBuf {
     require_wasm_target();
 
     let fixture = fixture_dir();
@@ -114,9 +122,6 @@ fn build_fixture(release: bool) -> PathBuf {
     ])
     .arg(&manifest_path)
     .env("CARGO_TARGET_DIR", &target_dir);
-    if release {
-        cmd.arg("--release");
-    }
 
     // Strip any `RUSTFLAGS` the outer test run might have set — they
     // can inject native-target flags that break the wasm build.
@@ -131,10 +136,9 @@ fn build_fixture(release: bool) -> PathBuf {
         "failed to build the wasm smoke fixture cdylib — see cargo output above"
     );
 
-    let profile = if release { "release" } else { "debug" };
     let wasm = target_dir
         .join("wasm32-unknown-unknown")
-        .join(profile)
+        .join("debug")
         .join("blast_wasm_smoke_fixture.wasm");
     assert!(
         wasm.exists(),
@@ -164,7 +168,7 @@ fn collect_imports(wasm_bytes: &[u8]) -> Vec<(String, String)> {
 /// the failure message tells you exactly which shim to add.
 #[test]
 fn wasm_fixture_has_no_libc_imports() {
-    let wasm_path = build_fixture(/*release=*/ true);
+    let wasm_path = build_fixture();
     let bytes = std::fs::read(&wasm_path)
         .unwrap_or_else(|e| panic!("read {}: {e}", wasm_path.display()));
     let imports = collect_imports(&bytes);

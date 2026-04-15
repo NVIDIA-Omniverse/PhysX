@@ -91,6 +91,24 @@ pub unsafe extern "C" fn realloc(ptr: *mut c_void, new_size: usize) -> *mut c_vo
     new_base.add(HEADER_SIZE) as *mut c_void
 }
 
+/// POSIX `aligned_alloc(alignment, size)`.  libc++'s
+/// `__libcpp_aligned_alloc` routes here from `operator new(size,
+/// align_val_t)`.  Our `malloc` already returns 16-byte-aligned
+/// pointers (via the header trick), which covers every alignment
+/// the Blast backend actually requests on wasm — `NvcVec3`,
+/// `NvAlignedAllocator`, and every `std::vector` allocation — as
+/// long as the build passes `STRESS_SOLVER_FORCE_SCALAR` (no SSE
+/// vector types).  A stricter request would land on the `unreachable`
+/// branch and show up as a `wasm_fixture_instantiates_and_runs`
+/// failure, which is the signal to extend this shim.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aligned_alloc(alignment: usize, size: usize) -> *mut c_void {
+    if alignment > ALIGN {
+        core::arch::wasm32::unreachable();
+    }
+    malloc(size)
+}
+
 // -----------------------------------------------------------------------------
 // Fatal exit
 // -----------------------------------------------------------------------------
@@ -197,6 +215,16 @@ pub unsafe extern "C" fn fwrite(
 ) -> usize {
     // Pretend the whole block was written.
     n
+}
+
+/// libc++'s `std::__put_character_sequence` (and by extension
+/// `operator<<(basic_ostream&, const char*)`) reaches for `fputc`
+/// on its slow path when the stream's `sputn` isn't available.
+/// We're not interested in the output — just pretend we wrote
+/// the character.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fputc(c: c_int, _stream: *mut c_void) -> c_int {
+    c
 }
 
 #[unsafe(no_mangle)]
