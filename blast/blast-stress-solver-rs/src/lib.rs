@@ -39,8 +39,21 @@
 
 mod ffi;
 
+// On `wasm32-unknown-unknown` the Blast C++ backend references dozens
+// of libc symbols (malloc, fwrite, abort, …) through libc++'s STL
+// helpers.  We provide pure-Rust stubs for all of them in
+// `wasm_runtime_shims`, so the final wasm module imports neither
+// `env.*` libc functions nor `wasi_snapshot_preview1.*` wasi calls
+// — it is a pure library module.
 #[cfg(target_arch = "wasm32")]
 mod wasm_runtime_shims;
+
+// `-fno-exceptions` is not enough to strip every mention of
+// `__cxa_allocate_exception` / `__cxa_throw` from libc++ — STL
+// containers still emit them behind `throw_bad_alloc`-style helpers.
+// Provide trapping stubs so the wasm module stays self-contained.
+#[cfg(target_arch = "wasm32")]
+mod wasm_cxa_stubs;
 
 pub mod bond_stress;
 pub mod ext_stress_solver;

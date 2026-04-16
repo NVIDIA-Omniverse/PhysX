@@ -1,1 +1,5 @@
 /target/
+# Nested target dir for the wasm-smoke fixture crate (which is an
+# isolated workspace root under tests/wasm_smoke/fixture/).
+/tests/wasm_smoke/fixture/target/
+/tests/wasm_smoke/fixture/Cargo.lock

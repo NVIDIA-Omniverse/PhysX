@@ -1279,6 +1279,8 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
       });
       stepN(core, 180);
 
+      // The dynamic-body cap should still allow the fixed root + ground bodies.
+      expect(core.getRigidBodyCount()).toBeGreaterThan(10);
       // Body count should be capped (10 dynamic + root + ground = 12 max)
       expect(core.getRigidBodyCount()).toBeLessThanOrEqual(12);
 

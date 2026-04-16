@@ -1352,8 +1352,11 @@ export async function buildDestructibleCore({
   function flushPendingBodies() {
     const t0 = startTiming();
 
-    // ── Fracture policy: body creation budget ──
-    // Prioritize largest children (most visually important), defer the rest.
+    // ── Fracture policy: body creation budgets ──
+    // `maxNewBodiesPerFrame` limits fragmentation rate, while
+    // `maxDynamicBodies` caps dynamic simulation complexity. Both must be
+    // enforced here at creation time because one fracture step can enqueue
+    // many children before the next pre-fracture cap check runs.
     const maxNewBodies = fracturePolicySettings.maxNewBodiesPerFrame;
     if (maxNewBodies > 0 && pendingBodiesToCreate.length > maxNewBodies) {
       pendingBodiesToCreate.sort((a, b) => b.nodes.length - a.nodes.length);
