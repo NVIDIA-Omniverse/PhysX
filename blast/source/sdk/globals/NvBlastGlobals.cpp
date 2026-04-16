@@ -59,7 +59,7 @@ NV_FORCE_INLINE void platformAlignedFree(void* ptr)
 {
     _aligned_free(ptr);
 }
-#elif NV_LINUX_FAMILY
+#elif NV_LINUX_FAMILY && !defined(__wasm__)
 NV_FORCE_INLINE void* platformAlignedAlloc(size_t size)
 {
     return ::memalign(16, size);

@@ -1174,17 +1174,41 @@ export async function buildDestructibleCore({
   function flushPendingBodies() {
     const t0 = startTiming();
 
-    // ── Fracture policy: body creation budget ──
-    // Prioritize largest children (most visually important), defer the rest.
-    const maxBodies = fracturePolicySettings.maxNewBodiesPerFrame;
-    if (maxBodies > 0 && pendingBodiesToCreate.length > maxBodies) {
+    // ── Fracture policy: body creation budgets ──
+    // Two caps can limit how many bodies we actually create this
+    // frame: `maxNewBodiesPerFrame` (per-frame budget) and
+    // `maxDynamicBodies` (global cap on total bodies in the world).
+    // When either binds, prioritize the largest children (most
+    // visually important) and defer the rest to a later frame —
+    // they stay in `pendingBodiesToCreate` and are reconsidered next
+    // frame after debris cleanup may have freed room.
+    //
+    // The global cap has to be enforced here at body-creation time,
+    // *not* upstream at fracture-command time: a single fracture
+    // step can generate dozens of pending bodies in one batch (e.g.
+    // a tower-collapse event), and the upstream "if count >= cap,
+    // drop commands" gate only fires *before* those bodies exist,
+    // so it can't catch "one frame of fracturing that blows past
+    // the cap". Here we break the loop mid-drain as soon as the
+    // running count hits the cap.
+    const maxPerFrame = fracturePolicySettings.maxNewBodiesPerFrame;
+    const maxTotal = fracturePolicySettings.maxDynamicBodies;
+    let runningTotal = maxTotal > 0 ? getRigidBodyCount() : 0;
+
+    const perFrameWouldBind =
+      maxPerFrame > 0 && pendingBodiesToCreate.length > maxPerFrame;
+    const totalWouldBind =
+      maxTotal > 0 && runningTotal + pendingBodiesToCreate.length > maxTotal;
+    if (perFrameWouldBind || totalWouldBind) {
       pendingBodiesToCreate.sort((a, b) => b.nodes.length - a.nodes.length);
     }
     let bodiesCreated = 0;
 
     for (const pending of pendingBodiesToCreate) {
-      // Enforce body creation budget — keep remaining entries for next frame
-      if (maxBodies > 0 && bodiesCreated >= maxBodies) break;
+      // Enforce per-frame new-body budget — keep remaining entries for next frame
+      if (maxPerFrame > 0 && bodiesCreated >= maxPerFrame) break;
+      // Enforce global dynamic-body cap — keep remaining entries for next frame
+      if (maxTotal > 0 && runningTotal >= maxTotal) break;
       const { actorIndex, inheritFromBodyHandle, nodes: nodeList, isSupport } = pending;
 
       const parentBody = world.getRigidBody(inheritFromBodyHandle);
@@ -1243,9 +1267,13 @@ export async function buildDestructibleCore({
         pendingColliderMigrations.push({ nodeIndex: ni, targetBodyHandle: bodyHandle });
       }
       bodiesCreated++;
+      runningTotal++;
     }
-    // Remove processed entries, keep deferred ones for next frame
-    if (maxBodies > 0 && bodiesCreated < pendingBodiesToCreate.length) {
+    // Remove processed entries, keep deferred ones for next frame.
+    // Either cap (per-frame or global) can cause an early break, so
+    // the check is "did we fully drain the queue?", not "was a
+    // specific cap set?".
+    if (bodiesCreated < pendingBodiesToCreate.length) {
       pendingBodiesToCreate.splice(0, bodiesCreated);
     } else {
       pendingBodiesToCreate.length = 0;
