@@ -1544,8 +1544,10 @@ impl BodyTracker {
                 ColliderBuilder::cuboid(half_extents.x, half_extents.y, half_extents.z)
             }
             Some(ScenarioCollider::ConvexHull { points }) => {
-                let hull_points: Vec<Point<Real>> =
-                    points.iter().map(|point| point![point.x, point.y, point.z]).collect();
+                let hull_points: Vec<Point<Real>> = points
+                    .iter()
+                    .map(|point| point![point.x, point.y, point.z])
+                    .collect();
                 ColliderBuilder::convex_hull(&hull_points).unwrap_or_else(|| {
                     ColliderBuilder::cuboid(fallback_half.x, fallback_half.y, fallback_half.z)
                 })
