@@ -1,5 +1,25 @@
 use std::collections::{HashMap, HashSet};
+
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
+
+// `std::time::Instant::now()` panics on `wasm32-unknown-unknown` because the
+// target has no monotonic clock. We only use it for split-edit telemetry, so a
+// zero-duration shim keeps those stats at 0.0 ms on wasm without trapping.
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Copy)]
+struct Instant;
+
+#[cfg(target_arch = "wasm32")]
+impl Instant {
+    fn now() -> Self {
+        Self
+    }
+
+    fn elapsed(&self) -> std::time::Duration {
+        std::time::Duration::ZERO
+    }
+}
 
 use rapier3d::na::UnitQuaternion;
 use rapier3d::prelude::*;

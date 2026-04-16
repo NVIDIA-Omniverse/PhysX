@@ -28,7 +28,8 @@ license = "BSD-3-Clause"
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = { path = "../../..", default-features = false }
+blast-stress-solver = { path = "../../..", default-features = false, features = ["rapier", "scenarios"] }
+rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 # `wasm-bindgen` is only used on the wasm target — on native builds
 # the fixture compiles as a plain cdylib with no exported symbols,
 # which is fine (the fixture is never consumed natively).

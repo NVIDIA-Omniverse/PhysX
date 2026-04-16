@@ -1,7 +1,7 @@
 # blast-stress-solver
 
-Rust bindings for the NVIDIA Blast stress solver, packaged for straightforward
-native and WebAssembly consumption from Cargo.
+Rust bindings for the Blast stress solver, packaged for straightforward native
+and WebAssembly consumption from Cargo.
 
 This crate gives you two main layers:
 
@@ -33,15 +33,27 @@ blast-stress-solver = { version = "0.1.0", features = ["rapier", "scenarios"] }
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 ```
 
-## Supported packaged targets
+## Target support
 
 The published crate currently ships packaged backends for:
 
 - `aarch64-apple-darwin`
 - `wasm32-unknown-unknown`
 
-Unsupported targets fail at build time with a clear error instead of trying to
-rebuild the native backend from source on the consumer machine.
+For other Apple/Linux native targets, the published crate falls back to
+compiling the bundled Blast C++ sources on the consumer machine with a normal
+C++17 toolchain. That removes the need to vendor the PhysX monorepo just to
+support x86_64 macOS or Linux consumers.
+
+`wasm32-unknown-unknown` intentionally stays prepackaged: downstream web builds
+do not need Emscripten, wasi-sdk, or a second Blast-side wasm/JS loader.
+
+Advanced overrides:
+
+- `BLAST_STRESS_SOLVER_STATIC_LIB_PATH=/abs/path/to/libblast_stress_solver_ffi.a`
+- `BLAST_STRESS_SOLVER_LIB_DIR=/abs/path/to/lib/dir`
+- `BLAST_STRESS_SOLVER_FORCE_SOURCE_BUILD=1` for the bundled Apple/Linux native
+  fallback
 
 ## Quick Start
 
@@ -318,6 +330,48 @@ The intended model is:
 - your application builds one final wasm output
 - no Blast-specific sidecar wasm or JS loader is required
 
+### Downstream `wasm-bindgen` example
+
+```toml
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+blast-stress-solver = "0.1.0"
+wasm-bindgen = "0.2"
+```
+
+```rust
+use blast_stress_solver::{BondDesc, ExtStressSolver, NodeDesc, SolverSettings, Vec3};
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn blast_tick() -> u32 {
+    let nodes = [
+        NodeDesc { centroid: Vec3::new(0.0, 0.0, 0.0), mass: 0.0, volume: 1.0 },
+        NodeDesc { centroid: Vec3::new(0.0, 1.0, 0.0), mass: 10.0, volume: 1.0 },
+    ];
+    let bonds = [BondDesc {
+        centroid: Vec3::new(0.0, 0.5, 0.0),
+        normal: Vec3::new(0.0, 1.0, 0.0),
+        area: 1.0,
+        node0: 0,
+        node1: 1,
+    }];
+
+    let Some(mut solver) = ExtStressSolver::new(&nodes, &bonds, &SolverSettings::default()) else {
+        return u32::MAX;
+    };
+
+    solver.add_gravity(Vec3::new(0.0, -9.81, 0.0));
+    solver.update();
+    solver.node_count()
+}
+```
+
+That build still emits one final application wasm file. There is no extra Blast
+runtime bundle to host or load manually.
+
 ## Features
 
 - `rapier`: enables Rapier3D integration helpers
@@ -325,7 +379,13 @@ The intended model is:
 
 ## Notes
 
-- The published crate is distributed as packaged Rust source plus prebuilt
-  target-specific backend artifacts.
+- Local publish-style proof:
+  `scripts/assemble-blast-stress-solver-package.sh --verify-demo-consumer`
+  stages the crate, verifies the packaged native and wasm smoke consumers, and
+  runs the real `blast/blast-stress-demo-rs` headless fracture test against the
+  staged package.
+- The published crate is distributed as packaged Rust source plus:
+  - prebuilt backend artifacts for `aarch64-apple-darwin` and `wasm32-unknown-unknown`
+  - bundled native C++ sources for the Apple/Linux source-build fallback
 - The monorepo development setup can still build the backend from source, but
-  that is not part of the consumer installation path for supported targets.
+  consumers no longer need to vendor the monorepo to get that native fallback.

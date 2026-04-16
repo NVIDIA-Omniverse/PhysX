@@ -21,11 +21,7 @@ pub extern "C" fn __cxa_allocate_exception(_size: usize) -> *mut u8 {
 /// here in practice because `__cxa_allocate_exception` traps first,
 /// but linkers still want the symbol resolved.
 #[unsafe(no_mangle)]
-pub extern "C" fn __cxa_throw(
-    _thrown_object: *mut u8,
-    _tinfo: *mut u8,
-    _dest: *mut u8,
-) -> ! {
+pub extern "C" fn __cxa_throw(_thrown_object: *mut u8, _tinfo: *mut u8, _dest: *mut u8) -> ! {
     core::arch::wasm32::unreachable()
 }
 

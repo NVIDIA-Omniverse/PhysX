@@ -27,6 +27,7 @@
 
 use core::ffi::{c_char, c_int, c_void};
 use std::alloc::{alloc, dealloc, realloc as rust_realloc, Layout};
+use std::sync::Once;
 
 // -----------------------------------------------------------------------------
 // Allocator
@@ -136,6 +137,11 @@ pub unsafe extern "C" fn __cxa_atexit(
     0
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn __cxa_uncaught_exceptions() -> c_int {
+    0
+}
+
 // -----------------------------------------------------------------------------
 // String / memory helpers
 // -----------------------------------------------------------------------------
@@ -199,6 +205,70 @@ pub unsafe extern "C" fn wmemchr(s: *const u32, c: u32, n: usize) -> *mut u32 {
     core::ptr::null_mut()
 }
 
+static INIT_CTYPE_TABLES: Once = Once::new();
+static mut CTYPE_TOUPPER_TABLE: [c_int; 384] = [0; 384];
+static mut CTYPE_TOLOWER_TABLE: [c_int; 384] = [0; 384];
+static mut CTYPE_TOUPPER_PTR: *const c_int = core::ptr::null();
+static mut CTYPE_TOLOWER_PTR: *const c_int = core::ptr::null();
+
+#[inline]
+fn ascii_toupper(byte: u8) -> c_int {
+    if byte.is_ascii_lowercase() {
+        (byte - b'a' + b'A') as c_int
+    } else {
+        byte as c_int
+    }
+}
+
+#[inline]
+fn ascii_tolower(byte: u8) -> c_int {
+    if byte.is_ascii_uppercase() {
+        (byte - b'A' + b'a') as c_int
+    } else {
+        byte as c_int
+    }
+}
+
+fn init_ctype_tables() {
+    INIT_CTYPE_TABLES.call_once(|| unsafe {
+        for value in -128i32..=255 {
+            let index = (value + 128) as usize;
+            let mapped = if value == -1 {
+                -1
+            } else {
+                let byte = value as u8;
+                ascii_toupper(byte)
+            };
+            CTYPE_TOUPPER_TABLE[index] = mapped;
+            CTYPE_TOLOWER_TABLE[index] = if value == -1 {
+                -1
+            } else {
+                let byte = value as u8;
+                ascii_tolower(byte)
+            };
+        }
+
+        CTYPE_TOUPPER_PTR = core::ptr::addr_of!(CTYPE_TOUPPER_TABLE)
+            .cast::<c_int>()
+            .add(128);
+        CTYPE_TOLOWER_PTR = core::ptr::addr_of!(CTYPE_TOLOWER_TABLE)
+            .cast::<c_int>()
+            .add(128);
+    });
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn __ctype_toupper_loc() -> *const *const c_int {
+    init_ctype_tables();
+    &raw const CTYPE_TOUPPER_PTR
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn __ctype_tolower_loc() -> *const *const c_int {
+    init_ctype_tables();
+    &raw const CTYPE_TOLOWER_PTR
+}
+
 // -----------------------------------------------------------------------------
 // Stdio (no-op)
 // -----------------------------------------------------------------------------
@@ -234,6 +304,15 @@ pub unsafe extern "C" fn fflush(_stream: *mut c_void) -> c_int {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fprintf(
+    _stream: *mut c_void,
+    _fmt: *const c_char,
+    _arg: *mut c_void,
+) -> c_int {
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fiprintf(
     _stream: *mut c_void,
     _fmt: *const c_char,
     _arg: *mut c_void,
@@ -303,6 +382,13 @@ pub unsafe extern "C" fn vasprintf(
     -1
 }
 
+static mut ERRNO_VALUE: c_int = 0;
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn __errno_location() -> *mut c_int {
+    &raw mut ERRNO_VALUE
+}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn getc(_stream: *mut c_void) -> c_int {
     -1
@@ -321,6 +407,26 @@ pub unsafe extern "C" fn getwc(_stream: *mut c_void) -> c_int {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ungetwc(_c: c_int, _stream: *mut c_void) -> c_int {
     -1
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn pthread_mutex_lock(_mutex: *mut c_void) -> c_int {
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn pthread_mutex_unlock(_mutex: *mut c_void) -> c_int {
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn pthread_cond_broadcast(_cond: *mut c_void) -> c_int {
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn pthread_cond_wait(_cond: *mut c_void, _mutex: *mut c_void) -> c_int {
+    0
 }
 
 #[unsafe(no_mangle)]

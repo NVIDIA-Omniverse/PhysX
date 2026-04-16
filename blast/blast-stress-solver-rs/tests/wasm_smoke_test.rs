@@ -81,7 +81,10 @@ fn require_wasm_target() {
         .output();
     if let Ok(out) = out {
         let installed = String::from_utf8_lossy(&out.stdout);
-        if !installed.lines().any(|t| t.trim() == "wasm32-unknown-unknown") {
+        if !installed
+            .lines()
+            .any(|t| t.trim() == "wasm32-unknown-unknown")
+        {
             panic!(
                 "the `wasm32-unknown-unknown` target is not installed. \
                  Run `rustup target add wasm32-unknown-unknown` and retry."
@@ -169,8 +172,8 @@ fn collect_imports(wasm_bytes: &[u8]) -> Vec<(String, String)> {
 #[test]
 fn wasm_fixture_has_no_libc_imports() {
     let wasm_path = build_fixture();
-    let bytes = std::fs::read(&wasm_path)
-        .unwrap_or_else(|e| panic!("read {}: {e}", wasm_path.display()));
+    let bytes =
+        std::fs::read(&wasm_path).unwrap_or_else(|e| panic!("read {}: {e}", wasm_path.display()));
     let imports = collect_imports(&bytes);
 
     let mut offenders = Vec::new();
@@ -264,13 +267,16 @@ fn wasm_fixture_instantiates_and_runs() {
         entry.display()
     );
 
-    // Drive the `blast_wasm_smoke` export from Node. The fixture
-    // annotates it with `#[wasm_bindgen]` so wasm-pack's generated
-    // `.js` wrapper re-exports it as a top-level function. Calling
-    // *any* wasm-bindgen wrapper is what trips Bug B: wasm-bindgen
-    // wraps each export with a `__wasm_call_dtors` post-call, which
-    // walks an uninitialised atexit table as soon as wasi imports
-    // are present.
+    // Drive the fixture exports from Node. The low-level smoke hits
+    // the raw solver path and the Rapier smoke hits the split path
+    // that previously panicked on wasm due to `Instant::now()`.
+    //
+    // The fixture annotates them with `#[wasm_bindgen]` so
+    // wasm-pack's generated `.js` wrapper re-exports them as
+    // top-level functions. Calling *any* wasm-bindgen wrapper is what
+    // trips Bug B: wasm-bindgen wraps each export with a
+    // `__wasm_call_dtors` post-call, which walks an uninitialised
+    // atexit table as soon as wasi imports are present.
     let entry_literal = entry.to_string_lossy().replace('\\', "\\\\");
     let driver = format!(
         "const pkg = require('{entry_literal}');\n\
@@ -278,13 +284,20 @@ fn wasm_fixture_instantiates_and_runs() {
              console.error('no blast_wasm_smoke export; pkg keys:', Object.keys(pkg));\n\
              process.exit(2);\n\
          }}\n\
+         if (typeof pkg.blast_wasm_rapier_smoke !== 'function') {{\n\
+             console.error('no blast_wasm_rapier_smoke export; pkg keys:', Object.keys(pkg));\n\
+             process.exit(4);\n\
+         }}\n\
          // First call — most likely to hit any startup trap.\n\
          const first = pkg.blast_wasm_smoke();\n\
          if (!(first >= 0)) {{ console.error('first call returned', first); process.exit(3); }}\n\
+         const rapier = pkg.blast_wasm_rapier_smoke();\n\
+         if (rapier < 101) {{ console.error('rapier smoke returned', rapier); process.exit(5); }}\n\
          // Hammer it. Bug B fires on every call once wasi imports\n\
          // are present, so a modest loop is enough.\n\
          for (let i = 0; i < 100; i++) {{ pkg.blast_wasm_smoke(); }}\n\
-         console.log('ok', first);\n"
+         for (let i = 0; i < 3; i++) {{ pkg.blast_wasm_rapier_smoke(); }}\n\
+         console.log('ok', first, rapier);\n"
     );
 
     let out = Command::new("node")
@@ -299,4 +312,3 @@ fn wasm_fixture_instantiates_and_runs() {
         String::from_utf8_lossy(&out.stderr),
     );
 }
-

@@ -8,6 +8,8 @@
 //! - `add_gravity` + `update` → the core conjugate-gradient solver,
 //!   which transitively touches every compiled C++ TU.
 //! - `overstressed_bond_count` / `node_count` → FFI read-backs.
+//! - `DestructibleSet::step` after a real split → the Rapier path that
+//!   previously panicked on wasm when it hit `std::time::Instant::now()`.
 //!
 //! If any of those paths references a libc symbol that isn't covered
 //! by `src/wasm_runtime_shims.rs`, the linker resolves it against
@@ -29,7 +31,12 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+use blast_stress_solver::rapier::{DestructibleSet, FracturePolicy};
+use blast_stress_solver::scenarios::{build_wall_scenario, WallOptions};
 use blast_stress_solver::{BondDesc, ExtStressSolver, NodeDesc, SolverSettings, Vec3};
+use rapier3d::prelude::{
+    ColliderSet, ImpulseJointSet, IslandManager, MultibodyJointSet, RigidBodySet,
+};
 
 /// Build a trivial 2-node / 1-bond scenario, run one solver tick
 /// under gravity, and return the overstressed bond count plus the
@@ -76,4 +83,77 @@ pub fn blast_wasm_smoke() -> u32 {
     solver
         .overstressed_bond_count()
         .wrapping_add(solver.node_count())
+}
+
+/// Build a small destructible wall, force it to split, and return a checksum
+/// based on the resulting actor/body counts.
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
+pub fn blast_wasm_rapier_smoke() -> u32 {
+    let wall_options = WallOptions {
+        span: 4.0,
+        height: 2.0,
+        thickness: 0.30,
+        span_segments: 8,
+        height_segments: 4,
+        layers: 1,
+        deck_mass: 200.0,
+        ..WallOptions::default()
+    };
+    let wall = build_wall_scenario(&wall_options);
+
+    let settings = SolverSettings {
+        max_solver_iterations_per_frame: 64,
+        compression_elastic_limit: 0.005,
+        compression_fatal_limit: 0.01,
+        tension_elastic_limit: 0.005,
+        tension_fatal_limit: 0.01,
+        shear_elastic_limit: 0.005,
+        shear_fatal_limit: 0.01,
+        ..SolverSettings::default()
+    };
+    let fracture_policy = FracturePolicy {
+        idle_skip: false,
+        ..FracturePolicy::default()
+    };
+
+    let Some(mut destructible) = DestructibleSet::from_scenario(
+        &wall,
+        settings,
+        Vec3::new(0.0, -9.81, 0.0),
+        fracture_policy,
+    ) else {
+        return u32::MAX - 1;
+    };
+
+    let mut rigid_bodies = RigidBodySet::new();
+    let mut colliders = ColliderSet::new();
+    let mut island_manager = IslandManager::new();
+    let mut impulse_joints = ImpulseJointSet::new();
+    let mut multibody_joints = MultibodyJointSet::new();
+
+    destructible.initialize(&mut rigid_bodies, &mut colliders);
+
+    let impact_node = (wall_options.height_segments - 1) * wall_options.span_segments
+        + wall_options.span_segments / 2;
+    let impact_position = wall.nodes[impact_node as usize].centroid;
+
+    for frame in 0..30 {
+        if frame == 0 {
+            destructible.add_force(impact_node, impact_position, Vec3::new(50_000.0, 0.0, 0.0));
+        }
+
+        let step = destructible.step(
+            &mut rigid_bodies,
+            &mut colliders,
+            &mut island_manager,
+            &mut impulse_joints,
+            &mut multibody_joints,
+        );
+
+        if step.split_events > 0 {
+            return destructible.actor_count() * 100 + destructible.body_count() as u32;
+        }
+    }
+
+    0
 }

@@ -58,10 +58,11 @@ jobs:
             exit 1
           fi
 
-      - name: Assemble staged crate and verify native+wasm
+      - name: Assemble staged crate and verify downstream consumers
         run: |
           scripts/assemble-blast-stress-solver-package.sh \
             --stage-dir "$STAGE_DIR" \
+            --verify-demo-consumer \
             --keep-stage
 
       - name: Record package paths and checksum
@@ -86,6 +87,7 @@ jobs:
             ${{ steps.package.outputs.checksum_path }}
             ${{ env.CRATE_DIR }}/target/packaging-proof/package-contents.txt
             ${{ env.CRATE_DIR }}/target/packaging-proof/wasm-imports.json
+            ${{ env.CRATE_DIR }}/target/packaging-proof/demo-consumer-headless.log
           if-no-files-found: error
 
   publish:
@@ -150,5 +152,6 @@ jobs:
             release-assets/*.sha256 \
             release-assets/package-contents.txt \
             release-assets/wasm-imports.json \
+            release-assets/demo-consumer-headless.log \
             --title "blast-stress-solver v${{ needs.package.outputs.crate_version }}" \
             --generate-notes

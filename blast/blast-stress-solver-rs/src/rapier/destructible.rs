@@ -2,6 +2,27 @@ use std::collections::{HashMap, VecDeque};
 
 use rapier3d::prelude::*;
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+
+// `std::time::Instant::now()` panics on `wasm32-unknown-unknown` because the
+// target has no monotonic clock. These timings are diagnostic-only, so wasm
+// uses a zero-duration shim instead of crashing.
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Copy)]
+struct Instant;
+
+#[cfg(target_arch = "wasm32")]
+impl Instant {
+    fn now() -> Self {
+        Self
+    }
+
+    fn elapsed(&self) -> std::time::Duration {
+        std::time::Duration::ZERO
+    }
+}
+
 use crate::ext_stress_solver::ExtStressSolver;
 use crate::types::*;
 
@@ -683,7 +704,7 @@ impl DestructibleSet {
             let Some(event) = self.pending_split_events.pop_front() else {
                 break;
             };
-            let sanitize_started_at = std::time::Instant::now();
+            let sanitize_started_at = Instant::now();
             let Some(filtered_event) = self.sanitize_split_event(
                 &event,
                 bodies,
@@ -700,7 +721,7 @@ impl DestructibleSet {
                 sanitize_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
 
             if !self.policy.split_budgets_unlimited() {
-                let estimate_started_at = std::time::Instant::now();
+                let estimate_started_at = Instant::now();
                 let cost = self.tracker.estimate_split_cost(&filtered_event, bodies);
                 result.split_estimate_ms +=
                     estimate_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;

@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 CRATE_DIR="$REPO_ROOT/blast/blast-stress-solver-rs"
+DEMO_DIR="$REPO_ROOT/blast/blast-stress-demo-rs"
 SUPPORT_DIR="$SCRIPT_DIR/blast-stress-solver-package"
 PROOF_DIR="$CRATE_DIR/target/packaging-proof"
 HOST_TARGET="$(rustc -vV | awk '/^host: / { print $2 }')"
@@ -16,6 +17,7 @@ STAGE_DIR=""
 KEEP_STAGE=0
 VERIFY_NATIVE=1
 VERIFY_WASM=1
+VERIFY_DEMO_CONSUMER=0
 
 usage() {
   cat <<'EOF'
@@ -30,6 +32,8 @@ Options:
   --keep-stage           Keep the temporary stage directory on exit.
   --skip-native-verify   Skip the downstream native package proof.
   --skip-wasm-verify     Skip the downstream wasm package proof.
+  --verify-demo-consumer Run the real blast-stress-demo-rs headless proof
+                         against the staged package.
   -h, --help             Show this help text.
 EOF
 }
@@ -50,6 +54,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-wasm-verify)
       VERIFY_WASM=0
+      shift
+      ;;
+    --verify-demo-consumer)
+      VERIFY_DEMO_CONSUMER=1
       shift
       ;;
     -h|--help)
@@ -105,9 +113,7 @@ copy_current_crate_files() {
 }
 
 inject_publish_metadata() {
-  env LC_ALL=C perl -0pi -e 's/edition = "2021"\n/edition = "2021"\nreadme = "README.md"\nrepository = "https:\/\/github.com\/NVIDIA-Omniverse\/PhysX"\nhomepage = "https:\/\/github.com\/NVIDIA-Omniverse\/PhysX"\ndocumentation = "https:\/\/docs.rs\/blast-stress-solver"\ninclude = [\n  "Cargo.toml",\n  "build.rs",\n  "README.md",\n  "LICENSE.md",\n  "WASM_FEASIBILITY.md",\n  "examples\/**",\n  "src\/**",\n  "tests\/**",\n  "artifacts\/**"\n]\n/' \
-    "$STAGE_DIR/Cargo.toml"
-  env LC_ALL=C perl -0pi -e 's/\n\[build-dependencies\]\ncc = "1\.0"\n/\n/' \
+  env LC_ALL=C perl -0pi -e 's/edition = "2021"\n/edition = "2021"\ninclude = [\n  "Cargo.toml",\n  "build.rs",\n  "README.md",\n  "LICENSE.md",\n  "WASM_FEASIBILITY.md",\n  "examples\/**",\n  "native\/**",\n  "src\/**",\n  "tests\/**",\n  "artifacts\/**"\n]\n/' \
     "$STAGE_DIR/Cargo.toml"
 
   cat <<'EOF' >> "$STAGE_DIR/Cargo.toml"
@@ -286,15 +292,29 @@ build_wasm_backend() {
     object_files+=("$obj")
   done
 
-  local emscripten_sysroot
+  local emscripten_sysroot filtered_libcxxabi filtered_libcxxabi_dir
   emscripten_sysroot="$(cd -- "$(dirname -- "$empp")/../emscripten/cache/sysroot/lib/$EMSCRIPTEN_SYSROOT_TARGET" && pwd)"
+  filtered_libcxxabi_dir="$build_dir/libcxxabi-filter"
+  filtered_libcxxabi="$build_dir/libc++abi-no-cxa-allocate.a"
+  mkdir -p "$filtered_libcxxabi_dir"
+  (
+    cd "$filtered_libcxxabi_dir"
+    "$llvm_ar" x "$emscripten_sysroot/libc++abi-noexcept.a"
+    # `cxa_noexception.o` defines `__cxa_allocate_exception`, which the Rust
+    # crate already provides in `src/wasm_cxa_stubs.rs`.
+    rm -f cxa_noexception.o
+    "$llvm_ar" rcs "$filtered_libcxxabi" ./*.o
+  )
+  # Keep only the C++ runtime pieces that the packaged backend must carry.
+  # libc, dlmalloc, and standalone-wasm define symbols like `abort`,
+  # `malloc`, `fwrite`, and `snprintf` that the Rust crate already
+  # provides in `src/wasm_runtime_shims.rs` / `src/wasm_cxa_stubs.rs`.
+  # Folding those libs into the archive makes downstream `wasm32-unknown-unknown`
+  # consumers fail with duplicate-symbol errors.
   runtime_libs=(
     "$emscripten_sysroot/libc++-noexcept.a"
-    "$emscripten_sysroot/libc++abi-noexcept.a"
+    "$filtered_libcxxabi"
     "$emscripten_sysroot/libunwind-noexcept.a"
-    "$emscripten_sysroot/libstandalonewasm-nocatch.a"
-    "$emscripten_sysroot/libdlmalloc.a"
-    "$emscripten_sysroot/libc.a"
     "$emscripten_sysroot/libcompiler_rt.a"
   )
 
@@ -310,6 +330,14 @@ stage_packaging_overrides() {
   cp "$CRATE_DIR/README.md" "$STAGE_DIR/README.md"
   cp "$REPO_ROOT/LICENSE.md" "$STAGE_DIR/LICENSE.md"
   cp "$SUPPORT_DIR/WASM_FEASIBILITY.md" "$STAGE_DIR/WASM_FEASIBILITY.md"
+}
+
+copy_packaged_native_sources() {
+  local native_root="$STAGE_DIR/native/blast"
+  mkdir -p "$native_root" "$native_root/rust_stress_example"
+  cp -R "$REPO_ROOT/blast/include" "$native_root/"
+  cp -R "$REPO_ROOT/blast/source" "$native_root/"
+  cp -R "$REPO_ROOT/blast/rust_stress_example/ffi" "$native_root/rust_stress_example/"
 }
 
 package_stage() {
@@ -400,7 +428,12 @@ fn main() {
 }
 EOF
 
-  cargo run --offline --quiet --manifest-path "$consumer_dir/smoke/Cargo.toml" >/dev/null
+  CARGO_TARGET_DIR="$consumer_dir/target-prebuilt" \
+    cargo run --offline --quiet --manifest-path "$consumer_dir/smoke/Cargo.toml" >/dev/null
+
+  CARGO_TARGET_DIR="$consumer_dir/target-source" \
+    BLAST_STRESS_SOLVER_FORCE_SOURCE_BUILD=1 \
+    cargo run --offline --quiet --manifest-path "$consumer_dir/smoke/Cargo.toml" >/dev/null
 }
 
 verify_wasm_stage() {
@@ -487,12 +520,50 @@ if (result !== 121) {
 ' "$wasm_path" "$imports_path"
 }
 
+verify_demo_consumer_stage() {
+  local consumer_dir demo_copy manifest_path log_path
+
+  if [[ ! -d "$DEMO_DIR" ]]; then
+    echo "Expected demo crate directory at $DEMO_DIR" >&2
+    exit 1
+  fi
+
+  echo "Running blast-stress-demo packaged consumer proof..."
+
+  consumer_dir="$(mktemp -d "$PROOF_DIR/demo-consumer.XXXXXX")"
+  demo_copy="$consumer_dir/demo"
+  manifest_path="$demo_copy/Cargo.toml"
+  log_path="$PROOF_DIR/demo-consumer-headless.log"
+
+  mkdir -p "$demo_copy"
+  rsync -a --exclude 'target/' --exclude '.codex' "$DEMO_DIR/" "$demo_copy/"
+
+  env LC_ALL=C perl -0pi -e 's{blast-stress-solver = \{ path = "\.\./blast-stress-solver-rs", features = \["scenarios", "rapier"\] \}}{blast-stress-solver = { path = "'"$PACKAGE_ROOT"'", features = ["scenarios", "rapier"] }}' \
+    "$manifest_path"
+
+  if ! rg -Fq "$PACKAGE_ROOT" "$manifest_path"; then
+    echo "Failed to rewrite blast-stress-demo-rs to the staged package root" >&2
+    exit 1
+  fi
+
+  CARGO_TARGET_DIR="$consumer_dir/target" \
+    cargo test --offline --manifest-path "$manifest_path" \
+    --test headless_shot_scripts headless_smoke_scripts_emit_summary_and_fracture -- --nocapture \
+    >"$log_path" 2>&1 || {
+      cat "$log_path"
+      exit 1
+    }
+
+  echo "blast-stress-demo proof log: $log_path"
+}
+
 copy_current_crate_files
 inject_publish_metadata
 build_native_backend
 stage_native_backend
 build_wasm_backend
 stage_packaging_overrides
+copy_packaged_native_sources
 package_stage
 verify_docs_stage
 
@@ -504,6 +575,10 @@ fi
 
 if [[ $VERIFY_WASM -eq 1 ]]; then
   verify_wasm_stage
+fi
+
+if [[ $VERIFY_DEMO_CONSUMER -eq 1 ]]; then
+  verify_demo_consumer_stage
 fi
 
 if [[ $KEEP_STAGE -eq 1 ]]; then

@@ -2,8 +2,12 @@
 name = "blast-stress-solver"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+repository = "https://github.com/Glavin001/PhysX"
+homepage = "https://github.com/Glavin001/PhysX"
+documentation = "https://docs.rs/blast-stress-solver"
 license = "BSD-3-Clause"
-description = "NVIDIA Blast stress solver for destructible structures, with optional Rapier3D integration"
+description = "Blast stress solver for destructible structures, with optional Rapier3D integration"
 links = "blast_stress_solver_ffi"
 
 [features]
