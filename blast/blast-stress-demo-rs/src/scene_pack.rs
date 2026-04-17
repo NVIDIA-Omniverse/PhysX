@@ -3,7 +3,7 @@ use bevy::mesh::Indices;
 use bevy::prelude::Mesh;
 use bevy::render::render_resource::PrimitiveTopology;
 use blast_stress_solver::rapier::{
-    DebrisCleanupOptions, DebrisCollisionMode, OptimizationMode, SmallBodyDampingOptions,
+    DebrisCleanupOptions, OptimizationMode, SmallBodyDampingOptions,
 };
 use blast_stress_solver::{
     ScenarioBond, ScenarioCollider, ScenarioDesc, ScenarioNode, Vec3 as SolverVec3,
@@ -51,7 +51,6 @@ pub struct LoadedScenePack {
     pub skip_single_bodies: bool,
     pub small_body_damping: SmallBodyDampingOptions,
     pub debris_cleanup: DebrisCleanupOptions,
-    pub debris_collision_mode: DebrisCollisionMode,
     pub scenario: ScenarioDesc,
     pub node_meshes: Vec<SceneMeshAsset>,
 }
@@ -102,7 +101,6 @@ struct SolverDefaultsJson {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PhysicsDefaultsJson {
-    debris_collision_mode: String,
     #[allow(dead_code)]
     friction: f32,
     #[allow(dead_code)]
@@ -246,9 +244,6 @@ pub fn load_embedded_scene_pack(key: EmbeddedSceneKey) -> Result<LoadedScenePack
             debris_ttl_secs: pack.defaults.optimization.debris_ttl_ms / 1000.0,
             max_colliders_for_debris: pack.defaults.optimization.max_colliders_for_debris,
         },
-        debris_collision_mode: parse_debris_collision_mode(
-            &pack.defaults.physics.debris_collision_mode,
-        )?,
         scenario: ScenarioDesc {
             nodes: pack
                 .scenario
@@ -343,16 +338,6 @@ fn parse_optimization_mode(value: &str) -> Result<OptimizationMode, String> {
         "always" => Ok(OptimizationMode::Always),
         "afterGroundCollision" => Ok(OptimizationMode::AfterGroundCollision),
         _ => Err(format!("unsupported optimization mode: {value}")),
-    }
-}
-
-fn parse_debris_collision_mode(value: &str) -> Result<DebrisCollisionMode, String> {
-    match value {
-        "all" => Ok(DebrisCollisionMode::All),
-        "noDebrisPairs" => Ok(DebrisCollisionMode::NoDebrisPairs),
-        "debrisGroundOnly" => Ok(DebrisCollisionMode::DebrisGroundOnly),
-        "debrisNone" => Ok(DebrisCollisionMode::DebrisNone),
-        _ => Err(format!("unsupported debris collision mode: {value}")),
     }
 }
 

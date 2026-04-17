@@ -2247,7 +2247,7 @@ fn build_bridge_demo_config() -> DemoConfig {
             debris_ttl_secs: 6.0,
             max_colliders_for_debris: 3,
         },
-        debris_collision_mode: DebrisCollisionMode::NoDebrisPairs,
+        debris_collision_mode: DebrisCollisionMode::All,
     }
 }
 
@@ -2266,12 +2266,22 @@ fn apply_scene_pack(mut base: DemoConfig, pack: LoadedScenePack) -> DemoConfig {
     base.camera_distance = pack.camera_distance;
     base.small_body_damping = pack.small_body_damping;
     base.debris_cleanup = pack.debris_cleanup;
-    base.debris_collision_mode = pack.debris_collision_mode;
     base
 }
 
+fn apply_demo_runtime_defaults(mut config: DemoConfig) -> DemoConfig {
+    // Keep every Rust demo preset on a single-pass resim and full debris collisions.
+    // Runtime env overrides still apply later in `DemoRuntimeToggles::from_env`.
+    config.resimulation = ResimulationOptions {
+        enabled: true,
+        max_passes: 1,
+    };
+    config.debris_collision_mode = DebrisCollisionMode::All;
+    config
+}
+
 fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
-    match kind {
+    let config = match kind {
         DemoScenarioKind::Wall => build_wall_demo_config(),
         DemoScenarioKind::Tower => build_tower_demo_config(),
         DemoScenarioKind::Bridge => build_bridge_demo_config(),
@@ -2290,7 +2300,8 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             load_embedded_scene_pack(EmbeddedSceneKey::FracturedBridge)
                 .expect("failed to load fractured bridge scene pack"),
         ),
-    }
+    };
+    apply_demo_runtime_defaults(config)
 }
 
 fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoPhysicsState {
