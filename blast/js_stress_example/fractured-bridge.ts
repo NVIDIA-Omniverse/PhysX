@@ -18,43 +18,9 @@ import {
   RapierDebugRenderer,
 } from 'blast-stress-solver/three';
 import { buildFracturedBridgeScenario } from 'blast-stress-solver/scenarios';
+import { FRACTURED_BRIDGE_DEMO_CONFIG as CONFIG } from './fractured-demo-config.js';
 
 // ── Config ────────────────────────────────────────────────────
-
-const CONFIG = {
-  bridge: {
-    span: 12,
-    deckWidth: 4,
-    deckThickness: 0.5,
-    pierHeight: 2.8,
-    supportsPerSide: 4,
-    postSize: 0.4,
-    fragmentCountPerDeck: 25,
-    fragmentCountPerPost: 4,
-    deckMass: 30_000,
-  },
-  projectile: {
-    radius: 0.4,
-    mass: 15_000,
-    speed: 20,
-  },
-  solver: {
-    gravity: -9.81,
-    materialScale: 1e8,
-  },
-  physics: {
-    debrisCollisionMode: 'all' as string,
-    friction: 0.25,
-    restitution: 0.0,
-    contactForceScale: 30,
-  },
-  optimization: {
-    smallBodyDampingMode: 'always' as string,
-    debrisCleanupMode: 'always' as string,
-    debrisTtlMs: 10000,
-    maxCollidersForDebris: 2,
-  },
-};
 
 // ── Three.js setup ────────────────────────────────────────────
 

@@ -96,6 +96,12 @@ Operating system defines, see http://sourceforge.net/p/predef/wiki/OperatingSyst
 #define NV_PSP2 1
 #elif defined(__ghs__)
 #define NV_WIIU 1
+#elif defined(__wasm__) || defined(__wasi__) || defined(__EMSCRIPTEN__)
+// WebAssembly builds (wasm32-unknown-unknown, wasm32-wasi, emscripten).
+// We piggy-back on the Linux code paths for operating-system macros —
+// the stress solver only needs basic libc and does not touch
+// OS-specific APIs, so Linux semantics are a safe match.
+#define NV_LINUX 1
 #else
 #error "Unknown operating system"
 #endif
@@ -115,6 +121,12 @@ Architecture defines, see http://sourceforge.net/p/predef/wiki/Architectures/
 #define NV_SPU 1
 #elif defined(__ppc__) || defined(_M_PPC) || defined(__CELLOS_LV2__)
 #define NV_PPC 1
+#elif defined(__wasm32__) || defined(__wasm__)
+// WebAssembly 32-bit linear memory. No native SIMD (the build passes
+// STRESS_SOLVER_FORCE_SCALAR so the solver never takes the SSE2/NEON path),
+// so we declare a new NV_WASM architecture and leave the SIMD macros as
+// zero (handled by the `#ifndef` fallbacks further down).
+#define NV_WASM 1
 #else
 #error "Unknown architecture"
 #endif
@@ -207,6 +219,9 @@ define anything not defined on this platform to 0
 #ifndef NV_PPC
 #define NV_PPC 0
 #endif
+#ifndef NV_WASM
+#define NV_WASM 0
+#endif
 #ifndef NV_SSE2
 #define NV_SSE2 0
 #endif
@@ -270,7 +285,7 @@ Assert macro
 DLL export macros
 */
 #ifndef NV_C_EXPORT
-#if NV_WINDOWS_FAMILY || NV_LINUX
+#if defined(__cplusplus)
 #define NV_C_EXPORT extern "C"
 #else
 #define NV_C_EXPORT

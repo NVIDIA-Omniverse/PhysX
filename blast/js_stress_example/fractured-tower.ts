@@ -19,41 +19,9 @@ import {
   RapierDebugRenderer,
 } from 'blast-stress-solver/three';
 import { buildFracturedTowerScenario } from 'blast-stress-solver/scenarios';
+import { FRACTURED_TOWER_DEMO_CONFIG as CONFIG } from './fractured-demo-config.js';
 
 // ── Config ────────────────────────────────────────────────────
-
-const CONFIG = {
-  tower: {
-    width: 8,
-    floorCount: 4,
-    floorHeight: 3,
-    fragmentCountPerWall: 6,
-    fragmentCountPerFloor: 6,
-    fragmentCountPerColumn: 3,
-    deckMass: 20_000,
-  },
-  projectile: {
-    radius: 0.5,
-    mass: 20_000,
-    speed: 25,
-  },
-  solver: {
-    gravity: -9.81,
-    materialScale: 1e8,
-  },
-  physics: {
-    debrisCollisionMode: 'noDebrisPairs' as string,
-    friction: 0.25,
-    restitution: 0.0,
-    contactForceScale: 30,
-  },
-  optimization: {
-    smallBodyDampingMode: 'always' as string,
-    debrisCleanupMode: 'always' as string,
-    debrisTtlMs: 10000,
-    maxCollidersForDebris: 2,
-  },
-};
 
 // ── Three.js setup ────────────────────────────────────────────
 

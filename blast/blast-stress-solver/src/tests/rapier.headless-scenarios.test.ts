@@ -991,6 +991,20 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
       core.dispose();
     });
 
+    it('getRigidBodyCount reports the intact root-body setup', async () => {
+      await loadModules();
+      const scenario = smallWall();
+      const core = await buildCore(scenario);
+
+      const initialBodies = core.getRigidBodyCount();
+      expect(initialBodies).toBeGreaterThanOrEqual(2);
+
+      stepN(core, 30);
+      expect(core.getRigidBodyCount()).toBe(initialBodies);
+
+      core.dispose();
+    });
+
     it('setGravity changes gravity mid-simulation', async () => {
       await loadModules();
       const scenario = smallWall();
@@ -1006,6 +1020,55 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
 
       // Bonds should be the same as before (no new fractures with zero gravity)
       expect(core.getActiveBondsCount()).toBe(bondsAfterGravity);
+
+      core.dispose();
+    });
+
+    it('keeps chunks on the root body until an impact-driven split occurs', async () => {
+      await loadModules();
+      const scenario = buildWallScenario({
+        spanSegments: 12,
+        heightSegments: 6,
+        deckMass: 10_000,
+      });
+      const core = await buildDestructibleCore({
+        scenario,
+        gravity: -9.81,
+        materialScale: 1e10,
+        debrisCollisionMode: 'all',
+        damage: { enabled: false },
+        resimulateOnFracture: true,
+        maxResimulationPasses: 1,
+        snapshotMode: 'perBody',
+        contactForceScale: 30,
+      });
+
+      const initialBodies = core.getRigidBodyCount();
+      const initialBonds = core.getActiveBondsCount();
+
+      stepN(core, 30);
+
+      const intactChunks = core.chunks.filter((c: any) => c.active && !c.isSupport && !c.destroyed);
+      expect(intactChunks.length).toBeGreaterThan(0);
+      expect(intactChunks.every((c: any) => c.bodyHandle === core.rootBodyHandle)).toBe(true);
+      expect(core.getRigidBodyCount()).toBe(initialBodies);
+
+      core.enqueueProjectile({
+        position: { x: 0, y: 1.5, z: 5 },
+        velocity: { x: 0, y: 0, z: -20 },
+        radius: 0.35,
+        mass: 1000,
+        ttl: 3000,
+      });
+      stepN(core, 60);
+
+      expect(core.getActiveBondsCount()).toBeLessThan(initialBonds);
+      expect(core.getRigidBodyCount()).toBeGreaterThan(initialBodies);
+      expect(
+        core.chunks.some(
+          (c: any) => c.active && !c.isSupport && !c.destroyed && c.bodyHandle !== core.rootBodyHandle,
+        ),
+      ).toBe(true);
 
       core.dispose();
     });
@@ -1216,6 +1279,8 @@ describe.skipIf(!runtimeAvailable)('Headless scenario tests (requires WASM build
       });
       stepN(core, 180);
 
+      // The dynamic-body cap should still allow the fixed root + ground bodies.
+      expect(core.getRigidBodyCount()).toBeGreaterThan(10);
       // Body count should be capped (10 dynamic + root + ground = 12 max)
       expect(core.getRigidBodyCount()).toBeLessThanOrEqual(12);
 

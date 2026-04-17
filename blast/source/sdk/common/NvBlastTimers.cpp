@@ -30,17 +30,12 @@
 #include <cstring>
 
 
-extern "C"
-{
-
-void NvBlastTimersReset(NvBlastTimers* timers)
+NV_C_API void NvBlastTimersReset(NvBlastTimers* timers)
 {
     memset(timers, 0, sizeof(NvBlastTimers));
 }
 
-double NvBlastTicksToSeconds(int64_t ticks)
+NV_C_API double NvBlastTicksToSeconds(int64_t ticks)
 {
     return Nv::Blast::Time::seconds(ticks);
 }
-
-} // extern "C"

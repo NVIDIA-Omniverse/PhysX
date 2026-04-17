@@ -21,6 +21,11 @@ import type {
 } from './types';
 import { DestructibleDamageSystem, type DamageOptions, type DamageStateSnapshot } from './damage';
 import { planSplitMigration, type PlannerChild, type ExistingBodyState } from './splitMigrator';
+import {
+  captureDynamicBodySnapshots,
+  restoreDynamicBodySnapshots,
+  type BodySnapshot,
+} from './bodySnapshots';
 import { createScenarioNodeSizeResolver } from './scenario';
 import { applyCollisionGroupsForBody as applyCollisionGroupsForBodyImpl, type CollisionGroupContext } from './collisionGroups';
 import { ContactBuffer } from './contactBuffer';
@@ -50,12 +55,19 @@ export type BuildDestructibleCoreOptions = {
   onNodeDestroyed?: (e: { nodeIndex: number; actorIndex: number; reason: 'impact'|'manual' }) => void;
   resimulateOnFracture?: boolean;
   maxResimulationPasses?: number;
+  /** Rollback strategy for resimulation.
+   * `perBody` is the default and recommended mode.
+   * `world` is retained for compatibility but is not the preferred path. */
   snapshotMode?: 'perBody' | 'world';
   onWorldReplaced?: (newWorld: RAPIER.World) => void;
   resimulateOnDamageDestroy?: boolean;
   /** Scale factor for contact forces fed into the stress solver (default 30).
    * Higher values make projectile impacts break more bonds. */
   contactForceScale?: number;
+  /** Whether newly created split bodies should enable CCD (default true for compatibility). */
+  fractureBodyCcdEnabled?: boolean;
+  /** Whether spawned projectiles should enable CCD (default true). */
+  projectileCcdEnabled?: boolean;
   skipSingleBodies?: boolean;
   sleepLinearThreshold?: number;
   sleepAngularThreshold?: number;
@@ -91,11 +103,35 @@ type BodyWithUserData = RAPIER.RigidBody & { userData?: { projectile?: boolean }
 type MassReadableBody = RAPIER.RigidBody & { mass?: () => number };
 type MaybeCcdBodyDesc = RAPIER.RigidBodyDesc & { setCcdEnabled?: (v: boolean) => unknown };
 type InteractionGroupsValue = Parameters<RAPIER.Collider['setCollisionGroups']>[0];
+type RapierQuaternion = { x: number; y: number; z: number; w: number };
 type SolverActorsApi = {
   actors?: () => Array<{ actorIndex: number; nodes: number[] }>;
 };
 type DebugWindow = Window & {
   debugStressSolver?: { printSolver?: () => unknown };
+};
+
+type FractureBodyProvenance = {
+  inheritFromBodyHandle: number;
+  createdAtSnapshotGeneration: number;
+  createdPassIndex: number;
+};
+
+type SplitContinuityRecord = {
+  phase: 'migration' | 'restore';
+  frameIndex: number;
+  snapshotGeneration: number;
+  sourceBodyHandle: number;
+  targetBodyHandle: number;
+  nodeIndices: number[];
+  sourceBodyIsFixed: boolean;
+  targetBodyIsFixed: boolean;
+  translationError: number;
+  rotationError: number;
+  linearVelocityError: number;
+  angularVelocityError: number;
+  maxChunkWorldPositionError: number;
+  maxChunkPointVelocityError: number;
 };
 
 
@@ -123,6 +159,8 @@ export async function buildDestructibleCore({
   onWorldReplaced,
   resimulateOnDamageDestroy = !!damage?.enabled,
   contactForceScale = 30,
+  fractureBodyCcdEnabled = true,
+  projectileCcdEnabled = true,
   skipSingleBodies = false,
   sleepLinearThreshold = 0.1,
   sleepAngularThreshold = 0.1,
@@ -475,6 +513,32 @@ export async function buildDestructibleCore({
     return { bodyCount, min: counts[0], max: counts[counts.length - 1], avg, median, p95 };
   }
 
+  function countRigidBodies(): number {
+    let count = 0;
+    try {
+      world.forEachRigidBody(() => { count += 1; });
+      if (count > 0) return count;
+    } catch {}
+    const wbc = world as WorldWithBodyCount;
+    return typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+  }
+
+  function countDynamicRigidBodies(): number {
+    let count = 0;
+    try {
+      world.forEachRigidBody((body) => {
+        if (typeof (body as any).isDynamic === 'function') {
+          if ((body as any).isDynamic()) count += 1;
+          return;
+        }
+        if (typeof body.isFixed === 'function') {
+          if (!body.isFixed()) count += 1;
+        }
+      });
+    } catch {}
+    return count;
+  }
+
   function buildColliderDescForNode(args: { nodeIndex: number; halfX: number; halfY: number; halfZ: number; isSupport: boolean }) {
     const { nodeIndex, halfX, halfY, halfZ, isSupport } = args;
     const builder = (scenario.colliderDescForNode && Array.isArray(scenario.colliderDescForNode)) ? (scenario.colliderDescForNode[nodeIndex] ?? null) : null;
@@ -625,6 +689,10 @@ export async function buildDestructibleCore({
   // ── Snapshot pool for reuse across frames ──
   let snapshotPool: BodySnapshot[] = [];
   let snapshotPoolSize = 0;
+  let snapshotGeneration = 0;
+  const snapshotIndex = new Map<number, BodySnapshot>();
+  const bodyRestoreProvenance = new Map<number, FractureBodyProvenance>();
+  const splitContinuityLog: SplitContinuityRecord[] = [];
 
   // ── Sleep threshold tracking ──
   let sleepThresholdsApplied = false; // Track if we've already set thresholds on all bodies
@@ -934,57 +1002,188 @@ export async function buildDestructibleCore({
     stopTiming(t0, 'externalForceMs');
   }
 
-  type BodySnapshot = {
-    handle: number;
-    translation: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number; w: number };
-    linvel: { x: number; y: number; z: number };
-    angvel: { x: number; y: number; z: number };
-  };
   let savedBodySnapshots: BodySnapshot[] | null = null;
   let savedWorldSnapshot: Uint8Array | null = null;
 
+  function vecDistance(a: Vec3, b: Vec3): number {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const dz = a.z - b.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+
+  function quatDistance(a: RapierQuaternion, b: RapierQuaternion): number {
+    const direct = Math.sqrt(
+      (a.x - b.x) ** 2 +
+      (a.y - b.y) ** 2 +
+      (a.z - b.z) ** 2 +
+      (a.w - b.w) ** 2,
+    );
+    const negated = Math.sqrt(
+      (a.x + b.x) ** 2 +
+      (a.y + b.y) ** 2 +
+      (a.z + b.z) ** 2 +
+      (a.w + b.w) ** 2,
+    );
+    return Math.min(direct, negated);
+  }
+
+  function cross(a: Vec3, b: Vec3): Vec3 {
+    return {
+      x: a.y * b.z - a.z * b.y,
+      y: a.z * b.x - a.x * b.z,
+      z: a.x * b.y - a.y * b.x,
+    };
+  }
+
+  function syncBodyVelocityFromSource(bodyHandle: number, sourceBodyHandle: number) {
+    const body = world.getRigidBody(bodyHandle);
+    const sourceBody = world.getRigidBody(sourceBodyHandle);
+    if (!body || !sourceBody || body.isFixed()) return;
+
+    const sourceLinvel = sourceBody.linvel();
+    const sourceAngvel = sourceBody.angvel();
+    const sourceCom = sourceBody.worldCom();
+    const targetCom = body.worldCom();
+    const comDelta = {
+      x: targetCom.x - sourceCom.x,
+      y: targetCom.y - sourceCom.y,
+      z: targetCom.z - sourceCom.z,
+    };
+    const comCorrection = cross(sourceAngvel, comDelta);
+
+    body.setAngvel(sourceAngvel, true);
+    body.setLinvel({
+      x: sourceLinvel.x + comCorrection.x,
+      y: sourceLinvel.y + comCorrection.y,
+      z: sourceLinvel.z + comCorrection.z,
+    }, true);
+  }
+
+  function recordBodyContinuity(
+    phase: SplitContinuityRecord['phase'],
+    targetBodyHandle: number,
+    sourceBodyHandle: number,
+    nodeIndices: Iterable<number> | null | undefined,
+    currentSnapshotGeneration: number,
+  ) {
+    const targetBody = world.getRigidBody(targetBodyHandle);
+    const sourceBody = world.getRigidBody(sourceBodyHandle);
+    if (!targetBody || !sourceBody) return;
+
+    const targetTranslation = targetBody.translation();
+    const sourceTranslation = sourceBody.translation();
+    const targetRotation = targetBody.rotation();
+    const sourceRotation = sourceBody.rotation();
+    const targetLinvel = targetBody.linvel();
+    const sourceLinvel = sourceBody.linvel();
+    const targetAngvel = targetBody.angvel();
+    const sourceAngvel = sourceBody.angvel();
+
+    let maxChunkWorldPositionError = 0;
+    let maxChunkPointVelocityError = 0;
+    const nodes: number[] = [];
+
+    for (const nodeIndex of nodeIndices ?? []) {
+      const chunk = chunks[nodeIndex];
+      if (!chunk || !chunk.active) continue;
+      nodes.push(nodeIndex);
+
+      const sourcePoint = chunkWorldCenterHelper(sourceBody, chunk.baseLocalOffset);
+      const targetPoint = chunkWorldCenterHelper(targetBody, chunk.baseLocalOffset);
+      maxChunkWorldPositionError = Math.max(
+        maxChunkWorldPositionError,
+        vecDistance(sourcePoint, targetPoint),
+      );
+
+      const sourceVelocity = sourceBody.velocityAtPoint(sourcePoint);
+      const targetVelocity = targetBody.velocityAtPoint(targetPoint);
+      maxChunkPointVelocityError = Math.max(
+        maxChunkPointVelocityError,
+        vecDistance(sourceVelocity, targetVelocity),
+      );
+    }
+
+    splitContinuityLog.push({
+      phase,
+      frameIndex: activeProfilerSample?.frameIndex ?? Math.max(0, profiler.frameIndex - 1),
+      snapshotGeneration: currentSnapshotGeneration,
+      sourceBodyHandle,
+      targetBodyHandle,
+      nodeIndices: nodes,
+      sourceBodyIsFixed: sourceBody.isFixed(),
+      targetBodyIsFixed: targetBody.isFixed(),
+      translationError: vecDistance(sourceTranslation, targetTranslation),
+      rotationError: quatDistance(sourceRotation, targetRotation),
+      linearVelocityError: vecDistance(sourceLinvel, targetLinvel),
+      angularVelocityError: vecDistance(sourceAngvel, targetAngvel),
+      maxChunkWorldPositionError,
+      maxChunkPointVelocityError,
+    });
+  }
+
+  function restoreCreatedBodyFromSource(
+    bodyHandle: number,
+    currentSnapshotGeneration: number,
+    visiting = new Set<number>(),
+  ): boolean {
+    if (snapshotIndex.has(bodyHandle)) return true;
+    if (visiting.has(bodyHandle)) return false;
+
+    const provenance = bodyRestoreProvenance.get(bodyHandle);
+    if (!provenance || provenance.createdAtSnapshotGeneration !== currentSnapshotGeneration) {
+      return false;
+    }
+
+    const body = world.getRigidBody(bodyHandle);
+    if (!body) return false;
+
+    visiting.add(bodyHandle);
+    const inheritedSourceHandle = provenance.inheritFromBodyHandle;
+    if (!snapshotIndex.has(inheritedSourceHandle)) {
+      void restoreCreatedBodyFromSource(inheritedSourceHandle, currentSnapshotGeneration, visiting);
+    }
+
+    const sourceBody = world.getRigidBody(inheritedSourceHandle);
+    if (!sourceBody) {
+      visiting.delete(bodyHandle);
+      return false;
+    }
+
+    const sourceTranslation = sourceBody.translation();
+    const sourceRotation = sourceBody.rotation();
+    body.setTranslation(sourceTranslation, true);
+    body.setRotation(sourceRotation, true);
+    syncBodyVelocityFromSource(bodyHandle, inheritedSourceHandle);
+    recordBodyContinuity(
+      'restore',
+      bodyHandle,
+      inheritedSourceHandle,
+      nodesByBodyHandle.get(bodyHandle),
+      currentSnapshotGeneration,
+    );
+    visiting.delete(bodyHandle);
+    return true;
+  }
+
   function captureWorldSnapshot() {
     const t0 = startTiming();
+    snapshotGeneration += 1;
     if (snapshotMode === 'world') {
       savedWorldSnapshot = world.takeSnapshot();
       savedBodySnapshots = null;
+      snapshotIndex.clear();
+      snapshotPoolSize = 0;
       if (activeProfilerSample) {
         activeProfilerSample.snapshotBytes = savedWorldSnapshot?.byteLength ?? 0;
       }
     } else {
       savedWorldSnapshot = null;
-      // Reuse snapshot pool to avoid GC pressure — no allocations in steady state
-      snapshotPoolSize = 0;
-      world.forEachRigidBody((body) => {
-        if (body.isFixed()) return;
-        const t = body.translation();
-        const r = body.rotation();
-        const lv = body.linvel();
-        const av = body.angvel();
-        if (snapshotPoolSize < snapshotPool.length) {
-          // Reuse existing object
-          const snap = snapshotPool[snapshotPoolSize];
-          snap.handle = body.handle;
-          snap.translation.x = t.x; snap.translation.y = t.y; snap.translation.z = t.z;
-          snap.rotation.x = r.x; snap.rotation.y = r.y; snap.rotation.z = r.z; snap.rotation.w = r.w;
-          snap.linvel.x = lv.x; snap.linvel.y = lv.y; snap.linvel.z = lv.z;
-          snap.angvel.x = av.x; snap.angvel.y = av.y; snap.angvel.z = av.z;
-        } else {
-          // Grow pool
-          snapshotPool.push({
-            handle: body.handle,
-            translation: { x: t.x, y: t.y, z: t.z },
-            rotation: { x: r.x, y: r.y, z: r.z, w: r.w },
-            linvel: { x: lv.x, y: lv.y, z: lv.z },
-            angvel: { x: av.x, y: av.y, z: av.z },
-          });
-        }
-        snapshotPoolSize++;
-      });
-      savedBodySnapshots = snapshotPool;
+      const capture = captureDynamicBodySnapshots(world, snapshotPool, snapshotIndex);
+      savedBodySnapshots = capture.snapshots;
+      snapshotPoolSize = capture.size;
       if (activeProfilerSample) {
-        activeProfilerSample.snapshotBytes = snapshotPoolSize * 13 * 8;
+        activeProfilerSample.snapshotBytes = capture.bytes;
       }
     }
     stopTiming(t0, 'snapshotCaptureMs');
@@ -993,7 +1192,6 @@ export async function buildDestructibleCore({
   function restoreWorldSnapshot() {
     const t0 = startTiming();
     if (snapshotMode === 'world' && savedWorldSnapshot) {
-      const oldWorld = world;
       const restored = RAPIER.World.restoreSnapshot(savedWorldSnapshot);
       if (restored) {
         world = restored;
@@ -1002,15 +1200,11 @@ export async function buildDestructibleCore({
         console.warn('[Core] world restore failed; fallback to body restore');
       }
     } else if (savedBodySnapshots) {
-      const count = snapshotPoolSize;
-      for (let si = 0; si < count; si++) {
-        const snap = savedBodySnapshots[si];
-        const body = world.getRigidBody(snap.handle);
-        if (!body) continue;
-        body.setTranslation(snap.translation, true);
-        body.setRotation(snap.rotation, true);
-        body.setLinvel(snap.linvel, true);
-        body.setAngvel(snap.angvel, true);
+      restoreDynamicBodySnapshots(world, savedBodySnapshots, snapshotPoolSize);
+      for (const [bodyHandle, provenance] of bodyRestoreProvenance) {
+        if (provenance.createdAtSnapshotGeneration !== snapshotGeneration) continue;
+        if (snapshotIndex.has(bodyHandle)) continue;
+        void restoreCreatedBodyFromSource(bodyHandle, snapshotGeneration);
       }
     }
     stopTiming(t0, 'snapshotRestoreMs');
@@ -1129,7 +1323,7 @@ export async function buildDestructibleCore({
       // Suppress all fractures when at the body limit. Bonds stay intact
       // until bodies are freed (via debris cleanup), then fractures resume.
       const maxBodies = fracturePolicySettings.maxDynamicBodies;
-      if (maxBodies > 0 && getRigidBodyCount() >= maxBodies) {
+      if (maxBodies > 0 && countDynamicRigidBodies() >= maxBodies) {
         perActor = [];
       }
 
@@ -1158,18 +1352,36 @@ export async function buildDestructibleCore({
   function flushPendingBodies() {
     const t0 = startTiming();
 
-    // ── Fracture policy: body creation budget ──
-    // Prioritize largest children (most visually important), defer the rest.
-    const maxBodies = fracturePolicySettings.maxNewBodiesPerFrame;
-    if (maxBodies > 0 && pendingBodiesToCreate.length > maxBodies) {
+    // ── Fracture policy: body creation budgets ──
+    // `maxNewBodiesPerFrame` limits fragmentation rate, while
+    // `maxDynamicBodies` caps dynamic simulation complexity. Both must be
+    // enforced here at creation time because one fracture step can enqueue
+    // many children before the next pre-fracture cap check runs.
+    const maxNewBodies = fracturePolicySettings.maxNewBodiesPerFrame;
+    if (maxNewBodies > 0 && pendingBodiesToCreate.length > maxNewBodies) {
       pendingBodiesToCreate.sort((a, b) => b.nodes.length - a.nodes.length);
     }
+    const maxDynamicBodies = fracturePolicySettings.maxDynamicBodies;
+    let dynamicBodies = maxDynamicBodies > 0 ? countDynamicRigidBodies() : 0;
     let bodiesCreated = 0;
+    let writeIdx = 0;
 
-    for (const pending of pendingBodiesToCreate) {
+    for (let i = 0; i < pendingBodiesToCreate.length; i++) {
+      const pending = pendingBodiesToCreate[i];
       // Enforce body creation budget — keep remaining entries for next frame
-      if (maxBodies > 0 && bodiesCreated >= maxBodies) break;
+      if (maxNewBodies > 0 && bodiesCreated >= maxNewBodies) {
+        pendingBodiesToCreate[writeIdx++] = pending;
+        continue;
+      }
       const { actorIndex, inheritFromBodyHandle, nodes: nodeList, isSupport } = pending;
+
+      // Enforce the global dynamic-body cap at creation time too. A single
+      // fracture command can queue many bodies before the pre-fracture guard
+      // sees the new count, so excess dynamic children must remain deferred.
+      if (!isSupport && maxDynamicBodies > 0 && dynamicBodies >= maxDynamicBodies) {
+        pendingBodiesToCreate[writeIdx++] = pending;
+        continue;
+      }
 
       const parentBody = world.getRigidBody(inheritFromBodyHandle);
       const parentPos = parentBody?.translation() ?? { x: 0, y: 0, z: 0 };
@@ -1186,12 +1398,18 @@ export async function buildDestructibleCore({
       if (typeof parentLinDamp === 'number') desc.setLinearDamping(parentLinDamp);
       if (typeof parentAngDamp === 'number') desc.setAngularDamping(parentAngDamp);
 
-      if (!isSupport) {
+      if (!isSupport && fractureBodyCcdEnabled) {
         try { (desc as MaybeCcdBodyDesc).setCcdEnabled?.(true); } catch {}
       }
 
       const newBody = world.createRigidBody(desc);
       const bodyHandle = newBody.handle;
+      if (!isSupport && maxDynamicBodies > 0) dynamicBodies++;
+      bodyRestoreProvenance.set(bodyHandle, {
+        inheritFromBodyHandle,
+        createdAtSnapshotGeneration: snapshotGeneration,
+        createdPassIndex: activeProfilerSample?.passes.length ?? 0,
+      });
 
       // Apply small body damping immediately for 'always' mode
       if (!isSupport) {
@@ -1228,12 +1446,8 @@ export async function buildDestructibleCore({
       }
       bodiesCreated++;
     }
-    // Remove processed entries, keep deferred ones for next frame
-    if (maxBodies > 0 && bodiesCreated < pendingBodiesToCreate.length) {
-      pendingBodiesToCreate.splice(0, bodiesCreated);
-    } else {
-      pendingBodiesToCreate.length = 0;
-    }
+    // Remove processed entries, keep budget/cap-deferred ones for next frame.
+    pendingBodiesToCreate.length = writeIdx;
     stopTiming(t0, 'bodyCreateMs');
   }
 
@@ -1246,6 +1460,7 @@ export async function buildDestructibleCore({
     let writeIdx = 0;
     // Track source bodies that lost colliders — check if they became empty
     const sourceBodiesAffected = new Set<number>();
+    const targetBodiesAffected = new Set<number>();
 
     for (let mi = 0; mi < pendingColliderMigrations.length; mi++) {
       // Enforce migration budget — keep remaining for next frame
@@ -1311,12 +1526,26 @@ export async function buildDestructibleCore({
       colliderToNode.set(newCol.handle, chunk.nodeIndex);
       activeContactColliders.add(newCol.handle);
       migrationsProcessed++;
+      targetBodiesAffected.add(migration.targetBodyHandle);
 
       // Reapply collision groups after collider migration
       applyCollisionGroupsForBodyImpl(targetBody, getCollisionGroupContext());
     }
     // Keep deferred migrations, discard processed ones
     pendingColliderMigrations.length = writeIdx;
+
+    for (const bodyHandle of targetBodiesAffected) {
+      const provenance = bodyRestoreProvenance.get(bodyHandle);
+      if (!provenance) continue;
+      syncBodyVelocityFromSource(bodyHandle, provenance.inheritFromBodyHandle);
+      recordBodyContinuity(
+        'migration',
+        bodyHandle,
+        provenance.inheritFromBodyHandle,
+        nodesByBodyHandle.get(bodyHandle),
+        snapshotGeneration,
+      );
+    }
 
     // Clean up source bodies that lost all colliders during migration
     for (const bh of sourceBodiesAffected) {
@@ -1351,6 +1580,7 @@ export async function buildDestructibleCore({
       }
       nodesByBodyHandle.delete(bh);
       debrisCreationTimes.delete(bh);
+      bodyRestoreProvenance.delete(bh);
     }
     bodiesToRemove.clear();
     stopTiming(t0, 'cleanupDisabledMs');
@@ -1437,9 +1667,11 @@ export async function buildDestructibleCore({
         .setTranslation(spawn.position.x, spawn.position.y, spawn.position.z)
         .setLinvel(spawn.velocity.x, spawn.velocity.y, spawn.velocity.z)
         .setUserData({ projectile: true });
-      const ccdDesc = bodyDesc as MaybeCcdBodyDesc;
-      if (typeof ccdDesc.setCcdEnabled === 'function') {
-        ccdDesc.setCcdEnabled(true);
+      if (projectileCcdEnabled) {
+        const ccdDesc = bodyDesc as MaybeCcdBodyDesc;
+        if (typeof ccdDesc.setCcdEnabled === 'function') {
+          ccdDesc.setCcdEnabled(true);
+        }
       }
       const body = world.createRigidBody(bodyDesc);
       const colDesc = RAPIER.ColliderDesc.ball(r)
@@ -1810,8 +2042,7 @@ export async function buildDestructibleCore({
 
     if (activeProfilerSample) {
       activeProfilerSample.projectiles = projectiles.length;
-      const wbc = world as WorldWithBodyCount;
-      activeProfilerSample.rigidBodies = typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+      activeProfilerSample.rigidBodies = countRigidBodies();
       // Capture body/chunk distribution stats
       const bcs = captureBodyColliderStats();
       if (bcs) {
@@ -1848,8 +2079,7 @@ export async function buildDestructibleCore({
   }
 
   function getRigidBodyCount(): number {
-    const wbc = world as WorldWithBodyCount;
-    return typeof wbc.numRigidBodies === 'function' ? wbc.numRigidBodies() : 0;
+    return countRigidBodies();
   }
 
   function getActiveBondsCount(): number {
@@ -2112,6 +2342,17 @@ export async function buildDestructibleCore({
     dispose,
     setProfiler,
     recordProjectileCleanupDuration: recordProjectileCleanupDurationInternal,
+  };
+
+  (core as DestructibleCore & {
+    __debugSplitContinuityLog?: SplitContinuityRecord[];
+    __clearDebugSplitContinuityLog?: () => void;
+  }).__debugSplitContinuityLog = splitContinuityLog;
+  (core as DestructibleCore & {
+    __debugSplitContinuityLog?: SplitContinuityRecord[];
+    __clearDebugSplitContinuityLog?: () => void;
+  }).__clearDebugSplitContinuityLog = () => {
+    splitContinuityLog.length = 0;
   };
 
   return core;

@@ -32,7 +32,10 @@
 #include "NsBasicTemplates.h"
 #include "NvIntrinsics.h"
 
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(__wasm__) || NV_WASM
+// WebAssembly builds — libc++ dropped the `tr1/type_traits` shim a long
+// time ago, so pull in modern `<type_traits>` and alias `is_pod` into the
+// `std::tr1` namespace for the rest of this TU.
 #include <type_traits>
 namespace std
 {

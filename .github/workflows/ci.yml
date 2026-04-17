@@ -110,6 +110,52 @@ jobs:
         working-directory: blast/js_stress_example
         run: npm run test:split || true  # organicSplit.spec.ts has a known stale expectation
 
+  wasm-smoke:
+    # Regression tests that build a cdylib consumer for
+    # wasm32-unknown-unknown and assert that the blast-stress-solver
+    # crate ships no stray libc imports (`env.*`) and no wasi imports
+    # (`wasi_snapshot_preview1.*`). Either class of import breaks
+    # downstream wasm-bindgen consumers — see the doc-comment at the
+    # top of blast/blast-stress-solver-rs/tests/wasm_smoke_test.rs.
+    name: WASM Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain + wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasi C++ toolchain
+        # Provides the sysroot + libc++ the crate's build.rs probes
+        # for when the target is wasm32-unknown-unknown. See
+        # blast/blast-stress-solver-rs/build.rs for the probe paths.
+        run: sudo apt-get update && sudo apt-get install -y libc++-18-dev-wasm32 wasi-libc
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            blast/blast-stress-solver-rs/target
+            blast/blast-stress-solver-rs/tests/wasm_smoke/fixture/target
+          key: wasm-smoke-${{ runner.os }}-${{ hashFiles('blast/blast-stress-solver-rs/Cargo.toml', 'blast/blast-stress-solver-rs/tests/wasm_smoke/fixture/Cargo.toml') }}
+
+      - name: Run wasm-smoke regression tests
+        working-directory: blast/blast-stress-solver-rs
+        run: cargo test --features wasm-smoke --test wasm_smoke_test -- --nocapture
+
   deploy-preview:
     name: Deploy Preview
     needs: build

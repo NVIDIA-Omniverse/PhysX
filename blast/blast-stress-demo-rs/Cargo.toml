@@ -1,0 +1,20 @@
+[package]
+name = "blast-stress-demo"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+description = "3D desktop demo of the Blast stress solver wall destruction with Bevy + Rapier"
+
+[dependencies]
+bevy = { version = "0.18", default-features = false, features = [
+    "bevy_winit", "bevy_render", "bevy_core_pipeline", "bevy_pbr", "bevy_image",
+    "bevy_shader",
+    "bevy_camera", "bevy_light", "bevy_gizmos", "bevy_gizmos_render", "bevy_text", "bevy_ui", "bevy_ui_render", "bevy_state",
+    "bevy_input_focus", "bevy_picking", "bevy_mesh",
+    "x11", "default_font",
+    "multi_threaded", "bevy_asset",
+] }
+blast-stress-solver = { path = "../blast-stress-solver-rs", features = ["scenarios", "rapier"] }
+rapier3d = { version = "0.30", features = ["simd-stable"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
