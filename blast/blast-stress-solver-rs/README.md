@@ -15,21 +15,21 @@ Core solver only:
 
 ```toml
 [dependencies]
-blast-stress-solver = "0.1.0"
+blast-stress-solver = "0.1.1"
 ```
 
 With built-in scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.1.0", features = ["scenarios"] }
+blast-stress-solver = { version = "0.1.1", features = ["scenarios"] }
 ```
 
 With Rapier integration and scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.1.0", features = ["rapier", "scenarios"] }
+blast-stress-solver = { version = "0.1.1", features = ["rapier", "scenarios"] }
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 ```
 
@@ -337,7 +337,7 @@ The intended model is:
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = "0.1.0"
+blast-stress-solver = "0.1.1"
 wasm-bindgen = "0.2"
 ```
 
@@ -376,6 +376,39 @@ runtime bundle to host or load manually.
 
 - `rapier`: enables Rapier3D integration helpers
 - `scenarios`: enables built-in wall, tower, and bridge scenario builders
+
+## Publishing
+
+Do **not** run `cargo publish` directly against
+`blast/blast-stress-solver-rs/Cargo.toml`. The source crate is marked
+`publish = false` on purpose so local publishes cannot accidentally ship the
+monorepo build layout.
+
+Local crates.io preflight:
+
+```bash
+scripts/publish-blast-stress-solver.sh --dry-run
+```
+
+Local publish:
+
+```bash
+scripts/publish-blast-stress-solver.sh
+```
+
+Tag-driven GitHub Actions release:
+
+1. bump `version` in `blast/blast-stress-solver-rs/Cargo.toml`
+2. commit and push the branch
+3. push a matching tag such as:
+
+```bash
+git tag blast-stress-solver-v<version>
+git push origin blast-stress-solver-v<version>
+```
+
+That workflow stages the crate, runs the packaged native/wasm/demo-consumer
+proofs, dry-runs publish, publishes to crates.io, and creates a GitHub release.
 
 ## Notes
 

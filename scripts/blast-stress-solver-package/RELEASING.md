@@ -3,6 +3,11 @@
 The release flow is tag-driven and publishes from a staged crate, not directly
 from `blast/blast-stress-solver-rs`.
 
+Do not run `cargo publish --manifest-path blast/blast-stress-solver-rs/Cargo.toml`
+directly. That source crate is marked `publish = false` on purpose so local
+publishes go through the staged package path instead of accidentally shipping
+the monorepo build layout.
+
 ## Prerequisites
 
 - GitHub Actions secret: `CARGO_REGISTRY_TOKEN`
@@ -14,8 +19,8 @@ from `blast/blast-stress-solver-rs`.
 Push a tag in this form:
 
 ```bash
-git tag blast-stress-solver-v0.1.0
-git push origin blast-stress-solver-v0.1.0
+git tag blast-stress-solver-v<version>
+git push origin blast-stress-solver-v<version>
 ```
 
 The workflow validates that the tag version matches the crate version.
@@ -60,3 +65,17 @@ That one command verifies:
 - packaged wasm consumer smoke
 - `blast/blast-stress-demo-rs` running the real headless Rapier fracture test
   against the staged package instead of the monorepo path dependency
+
+## Local Publish
+
+To publish locally through the same staged package flow, run:
+
+```bash
+scripts/publish-blast-stress-solver.sh
+```
+
+For a local crates.io preflight without publishing:
+
+```bash
+scripts/publish-blast-stress-solver.sh --dry-run
+```
