@@ -137,11 +137,6 @@ pub unsafe extern "C" fn __cxa_atexit(
     0
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn __cxa_uncaught_exceptions() -> c_int {
-    0
-}
-
 // -----------------------------------------------------------------------------
 // String / memory helpers
 // -----------------------------------------------------------------------------
