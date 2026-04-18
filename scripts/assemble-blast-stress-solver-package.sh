@@ -115,6 +115,8 @@ copy_current_crate_files() {
 inject_publish_metadata() {
   env LC_ALL=C perl -0pi -e 's/edition = "2021"\n/edition = "2021"\ninclude = [\n  "Cargo.toml",\n  "build.rs",\n  "README.md",\n  "LICENSE.md",\n  "WASM_FEASIBILITY.md",\n  "examples\/**",\n  "native\/**",\n  "src\/**",\n  "tests\/**",\n  "artifacts\/**"\n]\n/' \
     "$STAGE_DIR/Cargo.toml"
+  env LC_ALL=C perl -0pi -e 's/^publish = false\n//m' \
+    "$STAGE_DIR/Cargo.toml"
 
   cat <<'EOF' >> "$STAGE_DIR/Cargo.toml"
 

@@ -40,6 +40,35 @@ The user guide and API documentation are available on [GitHub Pages](https://nvi
 
 Please see instructions specific to each of the libraries in the respective subfolder.
 
+## Blast Stress Solver Rust Crate
+
+This fork also ships a reusable Rust crate for the Blast stress solver at
+`blast/blast-stress-solver-rs`, plus a packaged-consumer demo at
+`blast/blast-stress-demo-rs`.
+
+Key docs:
+
+- crate usage and target support:
+  [`blast/blast-stress-solver-rs/README.md`](blast/blast-stress-solver-rs/README.md)
+- staged release and publish flow:
+  [`scripts/blast-stress-solver-package/RELEASING.md`](scripts/blast-stress-solver-package/RELEASING.md)
+
+Important: do **not** run `cargo publish` directly against
+`blast/blast-stress-solver-rs/Cargo.toml`. That source crate is intentionally
+marked `publish = false`. Publish locally through:
+
+```bash
+scripts/publish-blast-stress-solver.sh --dry-run
+scripts/publish-blast-stress-solver.sh
+```
+
+For GitHub Actions releases, bump the crate version, then push a matching tag:
+
+```bash
+git tag blast-stress-solver-v<version>
+git push origin blast-stress-solver-v<version>
+```
+
 ## Community-Maintained Build Configuration Fork
 
 Please see [the O3DE Fork](https://github.com/o3de/PhysX) for community-maintained additional build configurations.

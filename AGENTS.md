@@ -4,7 +4,12 @@
 
 ### Project overview
 
-This is the NVIDIA PhysX monorepo containing PhysX, Blast, and Flow SDKs. The active development focus is on the **Blast Stress Solver JavaScript/WASM library** (`blast/blast-stress-solver`) and Three.js + Rapier browser demos (`blast/js_stress_example`).
+This is the NVIDIA PhysX monorepo containing PhysX, Blast, and Flow SDKs. The active development focus is on:
+
+- the **Blast Stress Solver JavaScript/WASM library** (`blast/blast-stress-solver`)
+- the **Blast Stress Solver Rust crate** (`blast/blast-stress-solver-rs`)
+- Three.js + Rapier browser demos (`blast/js_stress_example`)
+- the packaged-consumer Bevy/Rapier demo (`blast/blast-stress-demo-rs`)
 
 ### Prerequisites
 
@@ -67,6 +72,47 @@ npm test
 cd /home/user/PhysX
 npm run serve:demos   # http://localhost:8000
 ```
+
+### Rust Crate Release Flow
+
+The Rust crate release flow is staged-package based. Do **not** run:
+
+```bash
+cargo publish --manifest-path blast/blast-stress-solver-rs/Cargo.toml
+```
+
+The source crate at `blast/blast-stress-solver-rs` is marked `publish = false`
+on purpose. Local and CI publishes must go through the staged package scripts.
+
+Local crates.io preflight:
+
+```bash
+cd /Users/glavin/Development/PhysX
+scripts/publish-blast-stress-solver.sh --dry-run
+```
+
+Local publish:
+
+```bash
+cd /Users/glavin/Development/PhysX
+scripts/publish-blast-stress-solver.sh
+```
+
+Tag-driven GitHub Actions release:
+
+1. Bump `blast/blast-stress-solver-rs/Cargo.toml` to the new version.
+2. Commit and push the branch.
+3. Push a matching tag:
+
+```bash
+git tag blast-stress-solver-v<version>
+git push origin blast-stress-solver-v<version>
+```
+
+The release workflow at `.github/workflows/release-blast-stress-solver.yml`
+stages the crate, runs the packaged native/wasm/demo-consumer proofs, runs
+`cargo publish --dry-run`, publishes to crates.io, and creates a GitHub
+release. It requires the repository secret `CARGO_REGISTRY_TOKEN`.
 
 ### Build chain details
 
