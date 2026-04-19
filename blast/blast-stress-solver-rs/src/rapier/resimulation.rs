@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use rapier3d::prelude::*;
 
 use super::body_tracker::BodyTracker;
@@ -36,6 +34,12 @@ struct BodySnapshot {
 }
 
 #[derive(Clone, Copy, Debug)]
+struct IndexedBodySnapshot {
+    generation: u32,
+    snapshot: BodySnapshot,
+}
+
+#[derive(Clone, Copy, Debug)]
 struct NodeSnapshot {
     world_centroid: Point<Real>,
 }
@@ -43,14 +47,16 @@ struct NodeSnapshot {
 #[derive(Clone, Debug, Default)]
 pub struct BodySnapshots {
     bodies: Vec<BodySnapshot>,
-    nodes: HashMap<u32, NodeSnapshot>,
+    body_lookup: Vec<Option<IndexedBodySnapshot>>,
+    nodes: Vec<Option<NodeSnapshot>>,
 }
 
 impl BodySnapshots {
     pub fn capture(set: &RigidBodySet, tracker: &BodyTracker) -> Self {
-        let bodies = set
-            .iter()
-            .map(|(handle, body)| BodySnapshot {
+        let mut bodies = Vec::with_capacity(set.len());
+        let mut body_lookup = vec![None; set.len()];
+        for (handle, body) in set.iter() {
+            let snapshot = BodySnapshot {
                 handle,
                 position: *body.position(),
                 center_of_mass: *body.center_of_mass(),
@@ -62,9 +68,18 @@ impl BodySnapshots {
                 user_torque: body.user_torque(),
                 sleeping: body.is_sleeping(),
                 enabled: body.is_enabled(),
-            })
-            .collect();
-        let mut nodes = HashMap::new();
+            };
+            let (index, generation) = handle.into_raw_parts();
+            if index as usize >= body_lookup.len() {
+                body_lookup.resize(index as usize + 1, None);
+            }
+            body_lookup[index as usize] = Some(IndexedBodySnapshot {
+                generation,
+                snapshot,
+            });
+            bodies.push(snapshot);
+        }
+        let mut nodes = vec![None; tracker.node_count()];
         for node_index in 0..tracker.node_count() as u32 {
             let Some(body_handle) = tracker.node_body(node_index) else {
                 continue;
@@ -80,9 +95,13 @@ impl BodySnapshots {
                 local_offset.y,
                 local_offset.z
             ]);
-            nodes.insert(node_index, NodeSnapshot { world_centroid });
+            nodes[node_index as usize] = Some(NodeSnapshot { world_centroid });
         }
-        Self { bodies, nodes }
+        Self {
+            bodies,
+            body_lookup,
+            nodes,
+        }
     }
 
     pub fn restore(&self, set: &mut RigidBodySet) {
@@ -130,12 +149,7 @@ impl BodySnapshots {
                 else {
                     continue;
                 };
-                let Some(source_snapshot) = self
-                    .bodies
-                    .iter()
-                    .find(|snapshot| snapshot.handle == source_handle)
-                    .copied()
-                else {
+                let Some(source_snapshot) = self.lookup_body(source_handle) else {
                     continue;
                 };
                 let target_nodes = tracker.body_nodes(target_handle);
@@ -148,7 +162,9 @@ impl BodySnapshots {
                 let mut centroid_count = 0usize;
                 let mut total_mass = 0.0;
                 for &node in &target_nodes {
-                    let Some(node_snapshot) = self.nodes.get(&node) else {
+                    let Some(node_snapshot) =
+                        self.nodes.get(node as usize).and_then(|snapshot| *snapshot)
+                    else {
                         continue;
                     };
                     centroid_sum += node_snapshot.world_centroid.coords;
@@ -178,7 +194,9 @@ impl BodySnapshots {
                 target_body.set_position(target_pose, true);
                 let target_pose = *target_body.position();
                 for &node in &target_nodes {
-                    let Some(node_snapshot) = self.nodes.get(&node) else {
+                    let Some(node_snapshot) =
+                        self.nodes.get(node as usize).and_then(|snapshot| *snapshot)
+                    else {
                         continue;
                     };
                     let local = target_pose
@@ -216,5 +234,13 @@ impl BodySnapshots {
                 }
             }
         }
+    }
+
+    fn lookup_body(&self, handle: RigidBodyHandle) -> Option<BodySnapshot> {
+        let (index, generation) = handle.into_raw_parts();
+        self.body_lookup
+            .get(index as usize)
+            .and_then(|entry| *entry)
+            .and_then(|entry| (entry.generation == generation).then_some(entry.snapshot))
     }
 }

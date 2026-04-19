@@ -407,7 +407,10 @@ impl DestructibleSet {
                 break;
             }
 
-            result.fractures += commands.iter().map(|c| c.bond_fractures.len()).sum::<usize>();
+            result.fractures += commands
+                .iter()
+                .map(|c| c.bond_fractures.len())
+                .sum::<usize>();
             self.mark_bonds_removed(&commands);
 
             let events = self.solver.apply_fracture_commands(&commands);
@@ -474,8 +477,16 @@ impl DestructibleSet {
             let node_to_actor = self.current_node_to_actor();
             let mut commands_by_actor: HashMap<u32, Vec<BondFracture>> = HashMap::new();
             for (bond_index, bond) in self.bond_table.iter().copied().enumerate() {
-                if self.destroyed_nodes.get(bond.node0 as usize).copied().unwrap_or(false)
-                    || self.destroyed_nodes.get(bond.node1 as usize).copied().unwrap_or(false)
+                if self
+                    .destroyed_nodes
+                    .get(bond.node0 as usize)
+                    .copied()
+                    .unwrap_or(false)
+                    || self
+                        .destroyed_nodes
+                        .get(bond.node1 as usize)
+                        .copied()
+                        .unwrap_or(false)
                 {
                     continue;
                 }
@@ -510,7 +521,10 @@ impl DestructibleSet {
                     bond_fractures,
                 })
                 .collect();
-            result.fractures += commands.iter().map(|c| c.bond_fractures.len()).sum::<usize>();
+            result.fractures += commands
+                .iter()
+                .map(|c| c.bond_fractures.len())
+                .sum::<usize>();
 
             let events = self.solver.apply_fracture_commands(&commands);
             result.split_events += events.len();
@@ -573,8 +587,16 @@ impl DestructibleSet {
                 let Some(bond) = self.bond_table.get(bond_index).copied() else {
                     continue;
                 };
-                if self.destroyed_nodes.get(bond.node0 as usize).copied().unwrap_or(false)
-                    || self.destroyed_nodes.get(bond.node1 as usize).copied().unwrap_or(false)
+                if self
+                    .destroyed_nodes
+                    .get(bond.node0 as usize)
+                    .copied()
+                    .unwrap_or(false)
+                    || self
+                        .destroyed_nodes
+                        .get(bond.node1 as usize)
+                        .copied()
+                        .unwrap_or(false)
                 {
                     continue;
                 }
@@ -609,7 +631,10 @@ impl DestructibleSet {
                     bond_fractures,
                 })
                 .collect();
-            result.fractures += commands.iter().map(|c| c.bond_fractures.len()).sum::<usize>();
+            result.fractures += commands
+                .iter()
+                .map(|c| c.bond_fractures.len())
+                .sum::<usize>();
 
             let events = self.solver.apply_fracture_commands(&commands);
             result.split_events += events.len();

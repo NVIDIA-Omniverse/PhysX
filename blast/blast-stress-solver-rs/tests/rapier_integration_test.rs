@@ -357,7 +357,6 @@ impl RuntimeTestWorld {
 
 #[derive(Debug)]
 struct WallShotOutcome {
-    final_x: f32,
     final_linvel_x: f32,
     max_x: f32,
     total_fractures: usize,
@@ -367,8 +366,6 @@ struct WallShotOutcome {
     actor_count_after: u32,
     remaining_bonds: Vec<(u32, u32)>,
     multi_node_bodies: Vec<Vec<u32>>,
-    projectile_contact_bodies: Vec<Vec<u32>>,
-    projectile_active_contact_bodies: Vec<Vec<u32>>,
 }
 
 fn collect_projectile_contact_bodies(
@@ -414,7 +411,10 @@ fn collect_projectile_contact_bodies(
     (all_contacts, active_contacts)
 }
 
-fn run_heavy_wall_shot_with_scenario(scenario: ScenarioDesc, resim_enabled: bool) -> WallShotOutcome {
+fn run_heavy_wall_shot_with_scenario(
+    scenario: ScenarioDesc,
+    resim_enabled: bool,
+) -> WallShotOutcome {
     let policy = FracturePolicy {
         idle_skip: false,
         apply_excess_forces: false,
@@ -492,10 +492,7 @@ fn run_heavy_wall_shot_with_scenario(scenario: ScenarioDesc, resim_enabled: bool
         .bodies
         .get(projectile)
         .expect("projectile body should still exist");
-    let (projectile_contact_bodies, projectile_active_contact_bodies) =
-        collect_projectile_contact_bodies(&world, &runtime, projectile);
     WallShotOutcome {
-        final_x: body.translation().x,
         final_linvel_x: body.linvel().x,
         max_x,
         total_fractures,
@@ -505,8 +502,6 @@ fn run_heavy_wall_shot_with_scenario(scenario: ScenarioDesc, resim_enabled: bool
         actor_count_after: runtime.actor_count(),
         remaining_bonds,
         multi_node_bodies,
-        projectile_contact_bodies,
-        projectile_active_contact_bodies,
     }
 }
 
@@ -579,7 +574,6 @@ fn run_heavy_support_strip_wall_shot() -> WallShotOutcome {
         128_000.0,
     );
 
-    let dt = 1.0 / 60.0;
     let mut max_x = f32::NEG_INFINITY;
     for _ in 0..60 {
         world.physics_pipeline.step(
@@ -625,10 +619,7 @@ fn run_heavy_support_strip_wall_shot() -> WallShotOutcome {
         .bodies
         .get(projectile)
         .expect("projectile body should still exist");
-    let (projectile_contact_bodies, projectile_active_contact_bodies) =
-        collect_projectile_contact_bodies(&world, &runtime, projectile);
     WallShotOutcome {
-        final_x: body.translation().x,
         final_linvel_x: body.linvel().x,
         max_x,
         total_fractures: 0,
@@ -638,8 +629,6 @@ fn run_heavy_support_strip_wall_shot() -> WallShotOutcome {
         actor_count_after: runtime.actor_count(),
         remaining_bonds,
         multi_node_bodies,
-        projectile_contact_bodies,
-        projectile_active_contact_bodies,
     }
 }
 
@@ -653,7 +642,6 @@ fn run_heavy_loose_wall_shot() -> WallShotOutcome {
         128_000.0,
     );
 
-    let dt = 1.0 / 60.0;
     let mut max_x = f32::NEG_INFINITY;
     for _ in 0..60 {
         world.physics_pipeline.step(
@@ -680,7 +668,6 @@ fn run_heavy_loose_wall_shot() -> WallShotOutcome {
         .get(projectile)
         .expect("projectile body should still exist");
     WallShotOutcome {
-        final_x: body.translation().x,
         final_linvel_x: body.linvel().x,
         max_x,
         total_fractures: 0,
@@ -690,8 +677,6 @@ fn run_heavy_loose_wall_shot() -> WallShotOutcome {
         actor_count_after: 0,
         remaining_bonds: Vec::new(),
         multi_node_bodies: Vec::new(),
-        projectile_contact_bodies: Vec::new(),
-        projectile_active_contact_bodies: Vec::new(),
     }
 }
 
@@ -736,7 +721,6 @@ fn run_heavy_prefractured_runtime_wall_shot() -> WallShotOutcome {
         128_000.0,
     );
 
-    let dt = 1.0 / 60.0;
     let mut max_x = f32::NEG_INFINITY;
     for _ in 0..60 {
         world.physics_pipeline.step(
@@ -782,10 +766,7 @@ fn run_heavy_prefractured_runtime_wall_shot() -> WallShotOutcome {
         .bodies
         .get(projectile)
         .expect("projectile body should still exist");
-    let (projectile_contact_bodies, projectile_active_contact_bodies) =
-        collect_projectile_contact_bodies(&world, &runtime, projectile);
     WallShotOutcome {
-        final_x: body.translation().x,
         final_linvel_x: body.linvel().x,
         max_x,
         total_fractures: 0,
@@ -795,8 +776,6 @@ fn run_heavy_prefractured_runtime_wall_shot() -> WallShotOutcome {
         actor_count_after: runtime.actor_count(),
         remaining_bonds,
         multi_node_bodies,
-        projectile_contact_bodies,
-        projectile_active_contact_bodies,
     }
 }
 
@@ -849,7 +828,6 @@ fn run_heavy_restored_prefractured_runtime_wall_shot() -> WallShotOutcome {
         128_000.0,
     );
 
-    let dt = 1.0 / 60.0;
     let mut max_x = f32::NEG_INFINITY;
     for _ in 0..60 {
         world.physics_pipeline.step(
@@ -895,10 +873,7 @@ fn run_heavy_restored_prefractured_runtime_wall_shot() -> WallShotOutcome {
         .bodies
         .get(projectile)
         .expect("projectile body should still exist");
-    let (projectile_contact_bodies, projectile_active_contact_bodies) =
-        collect_projectile_contact_bodies(&world, &runtime, projectile);
     WallShotOutcome {
-        final_x: body.translation().x,
         final_linvel_x: body.linvel().x,
         max_x,
         total_fractures: fracture.fractures,
@@ -908,14 +883,17 @@ fn run_heavy_restored_prefractured_runtime_wall_shot() -> WallShotOutcome {
         actor_count_after: runtime.actor_count(),
         remaining_bonds,
         multi_node_bodies,
-        projectile_contact_bodies,
-        projectile_active_contact_bodies,
     }
 }
 
 fn setup_heavy_wall_runtime(
     resim_enabled: bool,
-) -> (ScenarioDesc, DestructionRuntime, RuntimeTestWorld, RigidBodyHandle) {
+) -> (
+    ScenarioDesc,
+    DestructionRuntime,
+    RuntimeTestWorld,
+    RigidBodyHandle,
+) {
     let scenario = wall_scenario();
     let policy = FracturePolicy {
         idle_skip: false,
@@ -988,7 +966,10 @@ fn inspect_prefractured_runtime_wall_state() -> PrefracturedWallState {
         &mut world.impulse_joints,
         &mut world.multibody_joints,
     );
-    assert!(fracture.fractures > 0, "prefracture control should issue fractures: {fracture:?}");
+    assert!(
+        fracture.fractures > 0,
+        "prefracture control should issue fractures: {fracture:?}"
+    );
 
     let mut max_nodes_per_body = 0usize;
     let mut multi_node_body_count = 0usize;
@@ -2132,7 +2113,10 @@ fn same_frame_restored_replay_matches_equivalent_prefractured_next_step() {
             }
         }
     }
-    assert!(saw_resim, "the heavy wall repro should trigger same-frame replay");
+    assert!(
+        saw_resim,
+        "the heavy wall repro should trigger same-frame replay"
+    );
 
     replay_world.physics_pipeline.step(
         &replay_world.gravity,

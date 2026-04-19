@@ -301,15 +301,20 @@ fn wall_face_heavy_shatters_without_resim() {
     assert_eq!(get_u64(&summary, "shots_fired"), 1);
     assert!(get_u64(&summary, "total_fractures") > 0);
     assert!(get_u64(&summary, "total_splits") > 0);
+    assert_eq!(get_u64(&summary, "peak_rapier_passes"), 1);
+    assert_eq!(
+        get_u64(&summary, "total_rapier_passes"),
+        get_u64(&summary, "total_frames")
+    );
     assert_eq!(get_u64(&summary, "projectile_passed_through_count"), 0);
 }
 
 #[test]
 fn wall_face_heavy_with_resim_blasts_through_without_ccd() {
     let (_log_text, summary) = run_headless_scenario_with_envs(
-        "wall",
+        "wall_contract",
         "wall_face_heavy",
-        160,
+        120,
         &[
             // This is the production contract for resimulation: the projectile should
             // pass through the wall because the replay frame resolves against the
@@ -323,7 +328,10 @@ fn wall_face_heavy_with_resim_blasts_through_without_ccd() {
             ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "0"),
         ],
     );
-    assert_eq!(summary.get("scenario").map(String::as_str), Some("wall"));
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("wall-contract")
+    );
     assert_eq!(
         summary.get("shot_script").map(String::as_str),
         Some("wall_face_heavy")
@@ -332,6 +340,11 @@ fn wall_face_heavy_with_resim_blasts_through_without_ccd() {
     assert_eq!(get_u64(&summary, "shots_fired"), 1);
     assert!(get_u64(&summary, "total_fractures") > 0);
     assert!(get_u64(&summary, "total_splits") > 0);
+    assert!(get_u64(&summary, "peak_rapier_passes") > 1);
+    assert!(get_u64(&summary, "peak_rapier_passes") <= 3);
+    assert!(get_u64(&summary, "total_rapier_passes") <= get_u64(&summary, "total_frames") + 2);
+    assert!(get_f32(&summary, "avg_rapier_passes") < 1.05);
+    assert!(get_u64(&summary, "peak_world_bodies") <= 19);
     assert!(
         get_u64(&summary, "projectile_passed_through_count") > 0,
         "resimulation should replay the heavy impact against the broken wall and let the projectile pass through without CCD: {summary:?}"
@@ -358,8 +371,115 @@ fn wall_face_heavy_passes_through_when_wall_starts_prefractured() {
     assert_eq!(get_u64(&summary, "shots_planned"), 1);
     assert_eq!(get_u64(&summary, "shots_fired"), 1);
     assert_eq!(get_u64(&summary, "active_bonds_after"), 0);
+    assert_eq!(get_u64(&summary, "peak_rapier_passes"), 1);
     assert!(
         get_u64(&summary, "projectile_passed_through_count") > 0,
         "the same heavy projectile should pass through the wall once all bonds are pre-fractured: {summary:?}"
+    );
+}
+
+#[test]
+fn wall_contract_heavy_shatters_without_resim() {
+    let (_log_text, summary) = run_headless_scenario_with_envs(
+        "wall_contract",
+        "wall_face_heavy",
+        120,
+        &[
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
+            ("BLAST_STRESS_DEMO_RESIM", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
+            ("BLAST_STRESS_DEMO_SIBLING_GRACE_STEPS", "0"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "0"),
+        ],
+    );
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("wall-contract")
+    );
+    assert_eq!(
+        summary.get("shot_script").map(String::as_str),
+        Some("wall_face_heavy")
+    );
+    assert!(
+        get_u64(&summary, "first_fracture_frame") >= 12,
+        "the contract wall should remain intact until the heavy shot arrives: {summary:?}"
+    );
+    assert!(get_u64(&summary, "total_fractures") > 0);
+    assert!(get_u64(&summary, "total_splits") > 0);
+    assert_eq!(get_u64(&summary, "peak_rapier_passes"), 1);
+    assert_eq!(
+        get_u64(&summary, "total_rapier_passes"),
+        get_u64(&summary, "total_frames")
+    );
+    assert!(get_u64(&summary, "peak_world_bodies") <= 19);
+    assert_eq!(get_u64(&summary, "projectile_passed_through_count"), 0);
+}
+
+#[test]
+fn wall_contract_heavy_with_resim_blasts_through_without_ccd() {
+    let (_log_text, summary) = run_headless_scenario_with_envs(
+        "wall_contract",
+        "wall_face_heavy",
+        120,
+        &[
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
+            ("BLAST_STRESS_DEMO_RESIM", "1"),
+            ("BLAST_STRESS_DEMO_MAX_RESIM_PASSES", "2"),
+            ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
+            ("BLAST_STRESS_DEMO_SIBLING_GRACE_STEPS", "0"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "0"),
+        ],
+    );
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("wall-contract")
+    );
+    assert_eq!(
+        summary.get("shot_script").map(String::as_str),
+        Some("wall_face_heavy")
+    );
+    assert!(
+        get_u64(&summary, "first_fracture_frame") >= 12,
+        "the contract wall should stay intact until impact even with resim enabled: {summary:?}"
+    );
+    assert!(get_u64(&summary, "total_fractures") > 0);
+    assert!(get_u64(&summary, "total_splits") > 0);
+    assert!(get_u64(&summary, "peak_rapier_passes") > 1);
+    assert!(get_u64(&summary, "peak_rapier_passes") <= 3);
+    assert!(get_u64(&summary, "total_rapier_passes") <= get_u64(&summary, "total_frames") + 2);
+    assert!(get_f32(&summary, "avg_rapier_passes") < 1.05);
+    assert!(get_u64(&summary, "peak_world_bodies") <= 19);
+    assert!(
+        get_u64(&summary, "projectile_passed_through_count") > 0,
+        "the compact contract wall should replay the heavy shot through the broken topology without CCD: {summary:?}"
+    );
+}
+
+#[test]
+fn wall_contract_heavy_passes_through_when_prefractured() {
+    let (_log_text, summary) = run_headless_scenario_with_envs(
+        "wall_contract",
+        "wall_face_heavy",
+        120,
+        &[
+            ("BLAST_STRESS_DEMO_PREFRACTURE_ALL_BONDS", "1"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
+            ("BLAST_STRESS_DEMO_RESIM", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
+        ],
+    );
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("wall-contract")
+    );
+    assert_eq!(get_u64(&summary, "active_bonds_after"), 0);
+    assert_eq!(get_u64(&summary, "peak_rapier_passes"), 1);
+    assert!(get_u64(&summary, "peak_world_bodies") <= 22);
+    assert!(
+        get_u64(&summary, "projectile_passed_through_count") > 0,
+        "the compact contract wall should also pass when started prefractured: {summary:?}"
     );
 }

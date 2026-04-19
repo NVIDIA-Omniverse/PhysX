@@ -706,8 +706,12 @@ impl DestructionRuntime {
         colliders: &mut ColliderSet,
         split_cohorts: &[SplitCohort],
     ) {
-        self.destructible
-            .restore_resimulation_split_children(snapshot, bodies, colliders, split_cohorts)
+        self.destructible.restore_resimulation_split_children(
+            snapshot,
+            bodies,
+            colliders,
+            split_cohorts,
+        )
     }
 
     pub fn set_skip_single_bodies(&mut self, enabled: bool) {
