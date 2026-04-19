@@ -532,6 +532,7 @@ struct ActiveFrameState {
     dt: f32,
     remaining_resim_passes: usize,
     snapshot: Option<BodySnapshots>,
+    cooldown_snapshot: HashMap<ImpactCooldownKey, f32>,
     pre_step_motion: HashMap<RigidBodyHandle, BodyMotionSnapshot>,
     impact_sources: HashSet<RigidBodyHandle>,
     pending_grace_stats: Option<GraceStepStats>,
@@ -642,6 +643,18 @@ impl DestructionRuntime {
         self.destructible.active_bond_count()
     }
 
+    pub fn body_count(&self) -> usize {
+        self.destructible.body_count()
+    }
+
+    pub fn body_nodes_slice(&self, body_handle: RigidBodyHandle) -> &[u32] {
+        self.destructible.body_nodes_slice(body_handle)
+    }
+
+    pub fn body_has_support(&self, body_handle: RigidBodyHandle) -> bool {
+        self.destructible.body_has_support(body_handle)
+    }
+
     pub fn fracture_all_bonds_now(
         &mut self,
         now_secs: f32,
@@ -659,6 +672,42 @@ impl DestructionRuntime {
             impulse_joints,
             multibody_joints,
         )
+    }
+
+    pub fn fracture_bond_indices_now(
+        &mut self,
+        now_secs: f32,
+        bond_indices: &[usize],
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> StepResult {
+        self.destructible.fracture_bond_indices_now(
+            now_secs,
+            bond_indices,
+            bodies,
+            colliders,
+            island_manager,
+            impulse_joints,
+            multibody_joints,
+        )
+    }
+
+    pub fn capture_resimulation_snapshot(&self, bodies: &RigidBodySet) -> BodySnapshots {
+        self.destructible.capture_resimulation_snapshot(bodies)
+    }
+
+    pub fn restore_resimulation_split_children(
+        &mut self,
+        snapshot: &BodySnapshots,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        split_cohorts: &[SplitCohort],
+    ) {
+        self.destructible
+            .restore_resimulation_split_children(snapshot, bodies, colliders, split_cohorts)
     }
 
     pub fn set_skip_single_bodies(&mut self, enabled: bool) {
@@ -690,6 +739,7 @@ impl DestructionRuntime {
                 0
             },
             snapshot,
+            cooldown_snapshot: self.cooldowns.clone(),
             pre_step_motion: capture_body_motion(bodies),
             impact_sources: HashSet::new(),
             pending_grace_stats: None,
@@ -789,10 +839,26 @@ impl DestructionRuntime {
 
         let fractured = solver_result.split_events > 0 || solver_result.new_bodies > 0;
         if fractured && frame.remaining_resim_passes > 0 {
+            self.cooldowns = frame.cooldown_snapshot.clone();
+            *world.narrow_phase = NarrowPhase::new();
             if let Some(snapshot) = frame.snapshot.as_ref() {
                 let restore_started_at = Instant::now();
                 snapshot.restore(world.bodies);
-                snapshot.restore_split_children(world.bodies, &solver_result.split_cohorts);
+                self.destructible.restore_resimulation_split_children(
+                    snapshot,
+                    world.bodies,
+                    world.colliders,
+                    &solver_result.split_cohorts,
+                );
+                // Replay teleports many bodies/colliders back to a pre-impact pose.
+                // Mark the whole world as modified so Rapier recomputes collider
+                // positions and contact state from the restored topology instead
+                // of relying on an incremental diff from the speculative pass.
+                for _ in world.bodies.iter_mut() {}
+                world
+                    .bodies
+                    .propagate_modified_body_positions_to_colliders(world.colliders);
+                for _ in world.colliders.iter_mut() {}
                 frame.result.resim_restore_ms +=
                     restore_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
             }

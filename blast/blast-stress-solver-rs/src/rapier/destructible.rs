@@ -33,6 +33,8 @@ use super::optimization::SleepThresholdOptions;
 use super::optimization::{DebrisCleanupOptions, OptimizationResult, SmallBodyDampingOptions};
 use super::resimulation::{BodySnapshots, ResimulationOptions};
 
+const MANUAL_FRACTURE_HEALTH: f32 = 1.0e9;
+
 #[derive(Clone, Debug, Default)]
 pub struct SplitCohort {
     pub source_bodies: Vec<RigidBodyHandle>,
@@ -68,6 +70,10 @@ pub struct StepResult {
     pub split_events: usize,
     /// Whether the solver converged.
     pub converged: bool,
+    /// Number of fracture commands still available after the live fracture loop
+    /// stops for this step. Non-zero means the same solved stress state could
+    /// have fractured further if we had kept draining.
+    pub remaining_fracture_commands: usize,
     /// Detailed split-edit instrumentation for this step.
     pub split_edits: SplitEditStats,
     /// Time spent sanitizing split events.
@@ -322,36 +328,12 @@ impl DestructibleSet {
         }
 
         // 4. Generate fracture commands
-        let mut commands = self.solver.generate_fracture_commands();
-        if commands.is_empty() {
-            return result;
-        }
-
-        // Rate-limit fractures
-        let max_fractures = self.policy.max_fractures_per_frame;
-        if max_fractures > 0 {
-            let mut total = 0usize;
-            for cmd in &mut commands {
-                let remaining = (max_fractures as usize).saturating_sub(total);
-                if remaining == 0 {
-                    cmd.bond_fractures.clear();
-                } else if cmd.bond_fractures.len() > remaining {
-                    cmd.bond_fractures.truncate(remaining);
-                }
-                total += cmd.bond_fractures.len();
-            }
-            commands.retain(|c| !c.bond_fractures.is_empty());
-        }
-
-        result.fractures = commands.iter().map(|c| c.bond_fractures.len()).sum();
-
-        self.mark_bonds_removed(&commands);
-
-        // 5. Apply fracture commands
-        let events = self.solver.apply_fracture_commands(&commands);
-        result.split_events += events.len();
-        self.pending_split_events.extend(events);
-        self.process_pending_split_events(
+        let mut remaining_fracture_budget = if self.policy.max_fractures_per_frame > 0 {
+            Some(self.policy.max_fractures_per_frame as usize)
+        } else {
+            None
+        };
+        self.drain_live_fracture_commands(
             now_secs,
             bodies,
             colliders,
@@ -360,8 +342,13 @@ impl DestructibleSet {
             multibody_joints,
             &mut remaining_new_bodies,
             &mut remaining_collider_migrations,
+            &mut remaining_fracture_budget,
             &mut result,
         );
+
+        if result.fractures == 0 {
+            return result;
+        }
 
         // Optional: kick separated actors with solver-reported excess forces.
         if self.policy.apply_excess_forces {
@@ -370,6 +357,85 @@ impl DestructibleSet {
 
         self.frames_since_fracture = 0;
         result
+    }
+
+    fn drain_live_fracture_commands(
+        &mut self,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+        remaining_new_bodies: &mut usize,
+        remaining_collider_migrations: &mut usize,
+        remaining_fracture_budget: &mut Option<usize>,
+        result: &mut StepResult,
+    ) {
+        // A single solved impact can expose additional same-frame fracture work
+        // after the first actor split. Draining until stable makes replay reach
+        // the same effective topology as the explicit pre-fracture control.
+        for _round in 0..self.bond_table.len().max(1) {
+            let mut commands = self.solver.generate_fracture_commands();
+            if commands.is_empty() {
+                result.remaining_fracture_commands = 0;
+                break;
+            }
+
+            if let Some(remaining_budget) = remaining_fracture_budget.as_mut() {
+                let mut consumed = 0usize;
+                for cmd in &mut commands {
+                    let remaining = (*remaining_budget).saturating_sub(consumed);
+                    if remaining == 0 {
+                        cmd.bond_fractures.clear();
+                    } else if cmd.bond_fractures.len() > remaining {
+                        cmd.bond_fractures.truncate(remaining);
+                    }
+                    consumed += cmd.bond_fractures.len();
+                }
+                commands.retain(|c| !c.bond_fractures.is_empty());
+                *remaining_budget = remaining_budget.saturating_sub(consumed);
+            }
+
+            if commands.is_empty() {
+                result.remaining_fracture_commands = self
+                    .solver
+                    .generate_fracture_commands()
+                    .iter()
+                    .map(|c| c.bond_fractures.len())
+                    .sum();
+                break;
+            }
+
+            result.fractures += commands.iter().map(|c| c.bond_fractures.len()).sum::<usize>();
+            self.mark_bonds_removed(&commands);
+
+            let events = self.solver.apply_fracture_commands(&commands);
+            result.split_events += events.len();
+            self.pending_split_events.extend(events);
+            self.process_pending_split_events(
+                now_secs,
+                bodies,
+                colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
+                remaining_new_bodies,
+                remaining_collider_migrations,
+                result,
+            );
+            self.sync_removed_bonds_from_actor_graph();
+
+            if remaining_fracture_budget.is_some_and(|remaining| remaining == 0) {
+                result.remaining_fracture_commands = self
+                    .solver
+                    .generate_fracture_commands()
+                    .iter()
+                    .map(|c| c.bond_fractures.len())
+                    .sum();
+                break;
+            }
+        }
     }
 
     /// Force every currently active bond to fracture immediately and apply the
@@ -403,54 +469,91 @@ impl DestructibleSet {
             &mut result,
         );
 
-        let actors = self.solver.actors();
-        let mut node_to_actor = HashMap::new();
-        for actor in &actors {
-            for &node in &actor.nodes {
-                node_to_actor.insert(node, actor.actor_index);
+        let mut last_actor_count = self.solver.actor_count();
+        for _round in 0..self.bond_table.len().max(1) {
+            let node_to_actor = self.current_node_to_actor();
+            let mut commands_by_actor: HashMap<u32, Vec<BondFracture>> = HashMap::new();
+            for (bond_index, bond) in self.bond_table.iter().copied().enumerate() {
+                if self.destroyed_nodes.get(bond.node0 as usize).copied().unwrap_or(false)
+                    || self.destroyed_nodes.get(bond.node1 as usize).copied().unwrap_or(false)
+                {
+                    continue;
+                }
+                let Some(actor0) = node_to_actor.get(&bond.node0).copied() else {
+                    continue;
+                };
+                let Some(actor1) = node_to_actor.get(&bond.node1).copied() else {
+                    continue;
+                };
+                if actor0 != actor1 {
+                    continue;
+                }
+                commands_by_actor
+                    .entry(actor0)
+                    .or_default()
+                    .push(BondFracture {
+                        userdata: bond_index as u32,
+                        node_index0: bond.node0,
+                        node_index1: bond.node1,
+                        health: MANUAL_FRACTURE_HEALTH,
+                    });
             }
-        }
 
-        let mut commands_by_actor: HashMap<u32, Vec<BondFracture>> = HashMap::new();
-        for (bond_index, bond) in self.bond_table.iter().copied().enumerate() {
-            if self.removed_bonds.get(bond_index).copied().unwrap_or(true) {
-                continue;
+            if commands_by_actor.is_empty() {
+                break;
             }
-            let Some(actor_index) = node_to_actor
-                .get(&bond.node0)
-                .copied()
-                .or_else(|| node_to_actor.get(&bond.node1).copied())
-            else {
-                continue;
-            };
-            commands_by_actor
-                .entry(actor_index)
-                .or_default()
-                .push(BondFracture {
-                    userdata: bond_index as u32,
-                    node_index0: bond.node0,
-                    node_index1: bond.node1,
-                    health: 0.0,
-                });
+
+            let commands: Vec<FractureCommand> = commands_by_actor
+                .into_iter()
+                .map(|(actor_index, bond_fractures)| FractureCommand {
+                    actor_index,
+                    bond_fractures,
+                })
+                .collect();
+            result.fractures += commands.iter().map(|c| c.bond_fractures.len()).sum::<usize>();
+
+            let events = self.solver.apply_fracture_commands(&commands);
+            result.split_events += events.len();
+            self.pending_split_events.extend(events);
+            self.process_pending_split_events(
+                now_secs,
+                bodies,
+                colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
+                &mut remaining_new_bodies,
+                &mut remaining_collider_migrations,
+                &mut result,
+            );
+
+            let actor_count = self.solver.actor_count();
+            if actor_count == last_actor_count {
+                break;
+            }
+            last_actor_count = actor_count;
         }
+        self.sync_removed_bonds_from_actor_graph();
+        self.frames_since_fracture = 0;
+        result
+    }
 
-        if commands_by_actor.is_empty() {
-            return result;
-        }
-
-        let commands: Vec<FractureCommand> = commands_by_actor
-            .into_iter()
-            .map(|(actor_index, bond_fractures)| FractureCommand {
-                actor_index,
-                bond_fractures,
-            })
-            .collect();
-        result.fractures = commands.iter().map(|c| c.bond_fractures.len()).sum();
-        self.mark_bonds_removed(&commands);
-
-        let events = self.solver.apply_fracture_commands(&commands);
-        result.split_events += events.len();
-        self.pending_split_events.extend(events);
+    /// Force the specified active bonds to fracture immediately and apply the
+    /// resulting split topology in-place. Tests use this to construct the exact
+    /// split/reparent state they want to compare against same-frame resimulation.
+    pub fn fracture_bond_indices_now(
+        &mut self,
+        now_secs: f32,
+        bond_indices: &[usize],
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> StepResult {
+        let mut result = StepResult::default();
+        let mut remaining_new_bodies = usize::MAX;
+        let mut remaining_collider_migrations = usize::MAX;
         self.process_pending_split_events(
             now_secs,
             bodies,
@@ -462,6 +565,69 @@ impl DestructibleSet {
             &mut remaining_collider_migrations,
             &mut result,
         );
+
+        for _round in 0..bond_indices.len().max(1) {
+            let node_to_actor = self.current_node_to_actor();
+            let mut commands_by_actor: HashMap<u32, Vec<BondFracture>> = HashMap::new();
+            for &bond_index in bond_indices {
+                let Some(bond) = self.bond_table.get(bond_index).copied() else {
+                    continue;
+                };
+                if self.destroyed_nodes.get(bond.node0 as usize).copied().unwrap_or(false)
+                    || self.destroyed_nodes.get(bond.node1 as usize).copied().unwrap_or(false)
+                {
+                    continue;
+                }
+                let Some(actor0) = node_to_actor.get(&bond.node0).copied() else {
+                    continue;
+                };
+                let Some(actor1) = node_to_actor.get(&bond.node1).copied() else {
+                    continue;
+                };
+                if actor0 != actor1 {
+                    continue;
+                }
+                commands_by_actor
+                    .entry(actor0)
+                    .or_default()
+                    .push(BondFracture {
+                        userdata: bond_index as u32,
+                        node_index0: bond.node0,
+                        node_index1: bond.node1,
+                        health: MANUAL_FRACTURE_HEALTH,
+                    });
+            }
+
+            if commands_by_actor.is_empty() {
+                break;
+            }
+
+            let commands: Vec<FractureCommand> = commands_by_actor
+                .into_iter()
+                .map(|(actor_index, bond_fractures)| FractureCommand {
+                    actor_index,
+                    bond_fractures,
+                })
+                .collect();
+            result.fractures += commands.iter().map(|c| c.bond_fractures.len()).sum::<usize>();
+
+            let events = self.solver.apply_fracture_commands(&commands);
+            result.split_events += events.len();
+            self.pending_split_events.extend(events);
+            self.process_pending_split_events(
+                now_secs,
+                bodies,
+                colliders,
+                island_manager,
+                impulse_joints,
+                multibody_joints,
+                &mut remaining_new_bodies,
+                &mut remaining_collider_migrations,
+                &mut result,
+            );
+            self.sync_removed_bonds_from_actor_graph();
+        }
+
         self.frames_since_fracture = 0;
         result
     }
@@ -705,7 +871,17 @@ impl DestructibleSet {
     }
 
     pub fn capture_resimulation_snapshot(&self, bodies: &RigidBodySet) -> BodySnapshots {
-        BodySnapshots::capture(bodies)
+        BodySnapshots::capture(bodies, &self.tracker)
+    }
+
+    pub fn restore_resimulation_split_children(
+        &mut self,
+        snapshot: &BodySnapshots,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        split_cohorts: &[SplitCohort],
+    ) {
+        snapshot.restore_split_children(bodies, colliders, &mut self.tracker, split_cohorts)
     }
 
     pub fn mark_body_support_contact(
@@ -980,7 +1156,7 @@ impl DestructibleSet {
                         userdata: bond_index as u32,
                         node_index0: bond.node0,
                         node_index1: bond.node1,
-                        health: 0.0,
+                        health: MANUAL_FRACTURE_HEALTH,
                     });
             }
         }
@@ -1013,6 +1189,40 @@ impl DestructibleSet {
                         *removed = true;
                     }
                 }
+            }
+        }
+    }
+
+    fn current_node_to_actor(&self) -> HashMap<u32, u32> {
+        let mut node_to_actor = HashMap::new();
+        for actor in self.solver.actors() {
+            for node in actor.nodes {
+                node_to_actor.insert(node, actor.actor_index);
+            }
+        }
+        node_to_actor
+    }
+
+    fn sync_removed_bonds_from_actor_graph(&mut self) {
+        let node_to_actor = self.current_node_to_actor();
+        for (bond_index, bond) in self.bond_table.iter().enumerate() {
+            let node0_destroyed = self
+                .destroyed_nodes
+                .get(bond.node0 as usize)
+                .copied()
+                .unwrap_or(false);
+            let node1_destroyed = self
+                .destroyed_nodes
+                .get(bond.node1 as usize)
+                .copied()
+                .unwrap_or(false);
+            let removed = if node0_destroyed || node1_destroyed {
+                true
+            } else {
+                node_to_actor.get(&bond.node0) != node_to_actor.get(&bond.node1)
+            };
+            if let Some(slot) = self.removed_bonds.get_mut(bond_index) {
+                *slot = removed;
             }
         }
     }

@@ -2350,10 +2350,12 @@ fn build_wall_face_heavy_shots(config: &DemoConfig, bounds: ScenarioBounds) -> V
     let c = bounds.dynamic.center();
     let s = bounds.dynamic.size();
     let z_distance = s.z.max(0.5) + 4.0;
+    let impact_height_fraction =
+        env_f32("BLAST_STRESS_DEMO_HEADLESS_WALL_FACE_HEAVY_HEIGHT_FRACTION").unwrap_or(0.52);
     let mut shot = make_headless_shot_through_bounds(
         12,
         "wall-face-heavy",
-        Vec3::new(c.x, bounds.dynamic.min.y + s.y * 0.52, c.z),
+        Vec3::new(c.x, bounds.dynamic.min.y + s.y * impact_height_fraction, c.z),
         Vec3::new(0.0, 0.0, -1.0),
         z_distance,
         config.projectile_mass * 128.0,

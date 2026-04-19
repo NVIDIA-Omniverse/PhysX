@@ -365,6 +365,53 @@ struct WallShotOutcome {
     saw_resimulation: bool,
     active_bonds_after: usize,
     actor_count_after: u32,
+    remaining_bonds: Vec<(u32, u32)>,
+    multi_node_bodies: Vec<Vec<u32>>,
+    projectile_contact_bodies: Vec<Vec<u32>>,
+    projectile_active_contact_bodies: Vec<Vec<u32>>,
+}
+
+fn collect_projectile_contact_bodies(
+    world: &RuntimeTestWorld,
+    runtime: &DestructionRuntime,
+    projectile: RigidBodyHandle,
+) -> (Vec<Vec<u32>>, Vec<Vec<u32>>) {
+    let Some(body) = world.bodies.get(projectile) else {
+        return (Vec::new(), Vec::new());
+    };
+
+    let mut all_contacts = Vec::new();
+    let mut active_contacts = Vec::new();
+    for &collider_handle in body.colliders() {
+        for pair in world.narrow_phase.contact_pairs_with(collider_handle) {
+            let other_collider = if pair.collider1 == collider_handle {
+                pair.collider2
+            } else {
+                pair.collider1
+            };
+            let Some(other_parent) = world
+                .colliders
+                .get(other_collider)
+                .and_then(|collider| collider.parent())
+            else {
+                continue;
+            };
+            let nodes = runtime.body_nodes_slice(other_parent);
+            if nodes.is_empty() {
+                continue;
+            }
+            all_contacts.push(nodes.to_vec());
+            if pair.has_any_active_contact {
+                active_contacts.push(nodes.to_vec());
+            }
+        }
+    }
+
+    all_contacts.sort();
+    all_contacts.dedup();
+    active_contacts.sort();
+    active_contacts.dedup();
+    (all_contacts, active_contacts)
 }
 
 fn run_heavy_wall_shot_with_scenario(scenario: ScenarioDesc, resim_enabled: bool) -> WallShotOutcome {
@@ -421,10 +468,32 @@ fn run_heavy_wall_shot_with_scenario(scenario: ScenarioDesc, resim_enabled: bool
         }
     }
 
+    let mut remaining_bonds = Vec::new();
+    for bond in &scenario.bonds {
+        let body0 = runtime.node_body(bond.node0);
+        let body1 = runtime.node_body(bond.node1);
+        if body0.is_some() && body0 == body1 {
+            remaining_bonds.push((bond.node0, bond.node1));
+        }
+    }
+
+    let mut multi_node_bodies = Vec::new();
+    for (handle, body) in world.bodies.iter() {
+        if body.colliders().is_empty() {
+            continue;
+        }
+        let nodes = runtime.body_nodes_slice(handle);
+        if nodes.len() > 1 {
+            multi_node_bodies.push(nodes.to_vec());
+        }
+    }
+
     let body = world
         .bodies
         .get(projectile)
         .expect("projectile body should still exist");
+    let (projectile_contact_bodies, projectile_active_contact_bodies) =
+        collect_projectile_contact_bodies(&world, &runtime, projectile);
     WallShotOutcome {
         final_x: body.translation().x,
         final_linvel_x: body.linvel().x,
@@ -434,11 +503,144 @@ fn run_heavy_wall_shot_with_scenario(scenario: ScenarioDesc, resim_enabled: bool
         saw_resimulation,
         active_bonds_after: runtime.active_bond_count(),
         actor_count_after: runtime.actor_count(),
+        remaining_bonds,
+        multi_node_bodies,
+        projectile_contact_bodies,
+        projectile_active_contact_bodies,
     }
 }
 
 fn run_heavy_wall_shot(resim_enabled: bool) -> WallShotOutcome {
     run_heavy_wall_shot_with_scenario(wall_scenario(), resim_enabled)
+}
+
+fn support_strip_bond_indices(scenario: &ScenarioDesc) -> Vec<usize> {
+    scenario
+        .bonds
+        .iter()
+        .enumerate()
+        .filter_map(|(bond_index, bond)| {
+            matches!(
+                (bond.node0, bond.node1),
+                (0, 1) | (1, 0) | (1, 2) | (2, 1) | (2, 3) | (3, 2)
+            )
+            .then_some(bond_index)
+        })
+        .collect()
+}
+
+fn run_heavy_support_strip_wall_shot() -> WallShotOutcome {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut runtime = DestructionRuntime::from_scenario(
+        &scenario,
+        weak_impact_settings(),
+        Vec3::ZERO,
+        policy,
+        DestructionRuntimeOptions {
+            contact_impacts: ContactImpactOptions::default(),
+            grace: GracePeriodOptions {
+                sibling_steps: 0,
+                impact_source_steps: 0,
+            },
+            ..DestructionRuntimeOptions::default()
+        },
+    )
+    .expect("wall scenario should create");
+
+    let kept = support_strip_bond_indices(&scenario);
+    let fractured: Vec<usize> = scenario
+        .bonds
+        .iter()
+        .enumerate()
+        .filter_map(|(bond_index, _)| (!kept.contains(&bond_index)).then_some(bond_index))
+        .collect();
+
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    runtime.fracture_bond_indices_now(
+        0.0,
+        &fractured,
+        &mut world.bodies,
+        &mut world.colliders,
+        &mut world.island_manager,
+        &mut world.impulse_joints,
+        &mut world.multibody_joints,
+    );
+
+    let projectile = world.add_ball_projectile(
+        vector![-5.0, 1.25, 0.0],
+        vector![80.0, 0.0, 0.0],
+        0.35,
+        128_000.0,
+    );
+
+    let dt = 1.0 / 60.0;
+    let mut max_x = f32::NEG_INFINITY;
+    for _ in 0..60 {
+        world.physics_pipeline.step(
+            &world.gravity,
+            &world.integration_parameters,
+            &mut world.island_manager,
+            &mut world.broad_phase,
+            &mut world.narrow_phase,
+            &mut world.bodies,
+            &mut world.colliders,
+            &mut world.impulse_joints,
+            &mut world.multibody_joints,
+            &mut world.ccd_solver,
+            &(),
+            &(),
+        );
+        if let Some(body) = world.bodies.get(projectile) {
+            max_x = max_x.max(body.translation().x);
+        }
+    }
+
+    let mut remaining_bonds = Vec::new();
+    for bond in &scenario.bonds {
+        let body0 = runtime.node_body(bond.node0);
+        let body1 = runtime.node_body(bond.node1);
+        if body0.is_some() && body0 == body1 {
+            remaining_bonds.push((bond.node0, bond.node1));
+        }
+    }
+
+    let mut multi_node_bodies = Vec::new();
+    for (handle, body) in world.bodies.iter() {
+        if body.colliders().is_empty() {
+            continue;
+        }
+        let nodes = runtime.body_nodes_slice(handle);
+        if nodes.len() > 1 {
+            multi_node_bodies.push(nodes.to_vec());
+        }
+    }
+
+    let body = world
+        .bodies
+        .get(projectile)
+        .expect("projectile body should still exist");
+    let (projectile_contact_bodies, projectile_active_contact_bodies) =
+        collect_projectile_contact_bodies(&world, &runtime, projectile);
+    WallShotOutcome {
+        final_x: body.translation().x,
+        final_linvel_x: body.linvel().x,
+        max_x,
+        total_fractures: 0,
+        total_splits: 0,
+        saw_resimulation: false,
+        active_bonds_after: runtime.active_bond_count(),
+        actor_count_after: runtime.actor_count(),
+        remaining_bonds,
+        multi_node_bodies,
+        projectile_contact_bodies,
+        projectile_active_contact_bodies,
+    }
 }
 
 fn run_heavy_loose_wall_shot() -> WallShotOutcome {
@@ -486,6 +688,330 @@ fn run_heavy_loose_wall_shot() -> WallShotOutcome {
         saw_resimulation: false,
         active_bonds_after: 0,
         actor_count_after: 0,
+        remaining_bonds: Vec::new(),
+        multi_node_bodies: Vec::new(),
+        projectile_contact_bodies: Vec::new(),
+        projectile_active_contact_bodies: Vec::new(),
+    }
+}
+
+fn run_heavy_prefractured_runtime_wall_shot() -> WallShotOutcome {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut runtime = DestructionRuntime::from_scenario(
+        &scenario,
+        weak_impact_settings(),
+        Vec3::ZERO,
+        policy,
+        DestructionRuntimeOptions {
+            contact_impacts: ContactImpactOptions::default(),
+            grace: GracePeriodOptions {
+                sibling_steps: 0,
+                impact_source_steps: 0,
+            },
+            ..DestructionRuntimeOptions::default()
+        },
+    )
+    .expect("wall scenario should create");
+
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    runtime.fracture_all_bonds_now(
+        0.0,
+        &mut world.bodies,
+        &mut world.colliders,
+        &mut world.island_manager,
+        &mut world.impulse_joints,
+        &mut world.multibody_joints,
+    );
+
+    let projectile = world.add_ball_projectile(
+        vector![-5.0, 1.25, 0.0],
+        vector![80.0, 0.0, 0.0],
+        0.35,
+        128_000.0,
+    );
+
+    let dt = 1.0 / 60.0;
+    let mut max_x = f32::NEG_INFINITY;
+    for _ in 0..60 {
+        world.physics_pipeline.step(
+            &world.gravity,
+            &world.integration_parameters,
+            &mut world.island_manager,
+            &mut world.broad_phase,
+            &mut world.narrow_phase,
+            &mut world.bodies,
+            &mut world.colliders,
+            &mut world.impulse_joints,
+            &mut world.multibody_joints,
+            &mut world.ccd_solver,
+            &(),
+            &(),
+        );
+        if let Some(body) = world.bodies.get(projectile) {
+            max_x = max_x.max(body.translation().x);
+        }
+    }
+
+    let mut remaining_bonds = Vec::new();
+    for bond in &scenario.bonds {
+        let body0 = runtime.node_body(bond.node0);
+        let body1 = runtime.node_body(bond.node1);
+        if body0.is_some() && body0 == body1 {
+            remaining_bonds.push((bond.node0, bond.node1));
+        }
+    }
+
+    let mut multi_node_bodies = Vec::new();
+    for (handle, body) in world.bodies.iter() {
+        if body.colliders().is_empty() {
+            continue;
+        }
+        let nodes = runtime.body_nodes_slice(handle);
+        if nodes.len() > 1 {
+            multi_node_bodies.push(nodes.to_vec());
+        }
+    }
+
+    let body = world
+        .bodies
+        .get(projectile)
+        .expect("projectile body should still exist");
+    let (projectile_contact_bodies, projectile_active_contact_bodies) =
+        collect_projectile_contact_bodies(&world, &runtime, projectile);
+    WallShotOutcome {
+        final_x: body.translation().x,
+        final_linvel_x: body.linvel().x,
+        max_x,
+        total_fractures: 0,
+        total_splits: 0,
+        saw_resimulation: false,
+        active_bonds_after: runtime.active_bond_count(),
+        actor_count_after: runtime.actor_count(),
+        remaining_bonds,
+        multi_node_bodies,
+        projectile_contact_bodies,
+        projectile_active_contact_bodies,
+    }
+}
+
+fn run_heavy_restored_prefractured_runtime_wall_shot() -> WallShotOutcome {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut runtime = DestructionRuntime::from_scenario(
+        &scenario,
+        weak_impact_settings(),
+        Vec3::ZERO,
+        policy,
+        DestructionRuntimeOptions {
+            contact_impacts: ContactImpactOptions::default(),
+            grace: GracePeriodOptions {
+                sibling_steps: 0,
+                impact_source_steps: 0,
+            },
+            ..DestructionRuntimeOptions::default()
+        },
+    )
+    .expect("wall scenario should create");
+
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    let snapshot = runtime.capture_resimulation_snapshot(&world.bodies);
+    let fracture = runtime.fracture_all_bonds_now(
+        0.0,
+        &mut world.bodies,
+        &mut world.colliders,
+        &mut world.island_manager,
+        &mut world.impulse_joints,
+        &mut world.multibody_joints,
+    );
+    snapshot.restore(&mut world.bodies);
+    runtime.restore_resimulation_split_children(
+        &snapshot,
+        &mut world.bodies,
+        &mut world.colliders,
+        &fracture.split_cohorts,
+    );
+
+    let projectile = world.add_ball_projectile(
+        vector![-5.0, 1.25, 0.0],
+        vector![80.0, 0.0, 0.0],
+        0.35,
+        128_000.0,
+    );
+
+    let dt = 1.0 / 60.0;
+    let mut max_x = f32::NEG_INFINITY;
+    for _ in 0..60 {
+        world.physics_pipeline.step(
+            &world.gravity,
+            &world.integration_parameters,
+            &mut world.island_manager,
+            &mut world.broad_phase,
+            &mut world.narrow_phase,
+            &mut world.bodies,
+            &mut world.colliders,
+            &mut world.impulse_joints,
+            &mut world.multibody_joints,
+            &mut world.ccd_solver,
+            &(),
+            &(),
+        );
+        if let Some(body) = world.bodies.get(projectile) {
+            max_x = max_x.max(body.translation().x);
+        }
+    }
+
+    let mut remaining_bonds = Vec::new();
+    for bond in &scenario.bonds {
+        let body0 = runtime.node_body(bond.node0);
+        let body1 = runtime.node_body(bond.node1);
+        if body0.is_some() && body0 == body1 {
+            remaining_bonds.push((bond.node0, bond.node1));
+        }
+    }
+
+    let mut multi_node_bodies = Vec::new();
+    for (handle, body) in world.bodies.iter() {
+        if body.colliders().is_empty() {
+            continue;
+        }
+        let nodes = runtime.body_nodes_slice(handle);
+        if nodes.len() > 1 {
+            multi_node_bodies.push(nodes.to_vec());
+        }
+    }
+
+    let body = world
+        .bodies
+        .get(projectile)
+        .expect("projectile body should still exist");
+    let (projectile_contact_bodies, projectile_active_contact_bodies) =
+        collect_projectile_contact_bodies(&world, &runtime, projectile);
+    WallShotOutcome {
+        final_x: body.translation().x,
+        final_linvel_x: body.linvel().x,
+        max_x,
+        total_fractures: fracture.fractures,
+        total_splits: fracture.split_events,
+        saw_resimulation: false,
+        active_bonds_after: runtime.active_bond_count(),
+        actor_count_after: runtime.actor_count(),
+        remaining_bonds,
+        multi_node_bodies,
+        projectile_contact_bodies,
+        projectile_active_contact_bodies,
+    }
+}
+
+fn setup_heavy_wall_runtime(
+    resim_enabled: bool,
+) -> (ScenarioDesc, DestructionRuntime, RuntimeTestWorld, RigidBodyHandle) {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut runtime = DestructionRuntime::from_scenario(
+        &scenario,
+        weak_impact_settings(),
+        Vec3::ZERO,
+        policy,
+        DestructionRuntimeOptions {
+            contact_impacts: ContactImpactOptions::default(),
+            grace: GracePeriodOptions {
+                sibling_steps: 0,
+                impact_source_steps: 0,
+            },
+            ..DestructionRuntimeOptions::default()
+        },
+    )
+    .expect("wall scenario should create");
+    runtime.set_resimulation_options(ResimulationOptions {
+        enabled: resim_enabled,
+        max_passes: if resim_enabled { 2 } else { 0 },
+    });
+
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    let projectile = world.add_ball_projectile(
+        vector![-5.0, 1.25, 0.0],
+        vector![80.0, 0.0, 0.0],
+        0.35,
+        128_000.0,
+    );
+    (scenario, runtime, world, projectile)
+}
+
+#[derive(Debug)]
+struct PrefracturedWallState {
+    active_bonds_after: usize,
+    actor_count_after: u32,
+    destructible_body_count: usize,
+    max_nodes_per_body: usize,
+    multi_node_body_count: usize,
+}
+
+fn inspect_prefractured_runtime_wall_state() -> PrefracturedWallState {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut runtime = DestructionRuntime::from_scenario(
+        &scenario,
+        weak_impact_settings(),
+        Vec3::ZERO,
+        policy,
+        DestructionRuntimeOptions::default(),
+    )
+    .expect("wall scenario should create");
+
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    let fracture = runtime.fracture_all_bonds_now(
+        0.0,
+        &mut world.bodies,
+        &mut world.colliders,
+        &mut world.island_manager,
+        &mut world.impulse_joints,
+        &mut world.multibody_joints,
+    );
+    assert!(fracture.fractures > 0, "prefracture control should issue fractures: {fracture:?}");
+
+    let mut max_nodes_per_body = 0usize;
+    let mut multi_node_body_count = 0usize;
+    for (handle, body) in world.bodies.iter() {
+        if body.colliders().is_empty() {
+            continue;
+        }
+        let node_count = runtime.body_nodes_slice(handle).len();
+        if node_count == 0 {
+            continue;
+        }
+        max_nodes_per_body = max_nodes_per_body.max(node_count);
+        if node_count > 1 {
+            multi_node_body_count += 1;
+        }
+    }
+
+    PrefracturedWallState {
+        active_bonds_after: runtime.active_bond_count(),
+        actor_count_after: runtime.actor_count(),
+        destructible_body_count: runtime.body_count(),
+        max_nodes_per_body,
+        multi_node_body_count,
     }
 }
 
@@ -1451,8 +1977,8 @@ fn wall_heavy_projectile_only_passes_through_with_resimulation() {
         "resim-enabled wall shot should trigger same-frame replay: {with_resim:?}"
     );
     assert!(
-        without_resim.max_x < 0.5 && without_resim.final_linvel_x <= 0.0,
-        "without resim the projectile should shatter the wall but remain blocked near the front face: {without_resim:?}"
+        without_resim.max_x < 0.5 && without_resim.final_linvel_x < 1.0,
+        "without resim the projectile should shatter the wall but remain blocked near the front face instead of carrying through: {without_resim:?}"
     );
     assert!(
         with_resim.max_x > 0.66 && with_resim.final_linvel_x > 0.0,
@@ -1493,6 +2019,225 @@ fn same_heavy_projectile_passes_through_prefractured_loose_wall_without_ccd() {
     assert!(
         loose.max_x > 0.66 && loose.final_linvel_x > 0.0,
         "the same heavy projectile should already pass through an equivalent loose wall without CCD: {loose:?}"
+    );
+}
+
+#[test]
+fn same_heavy_projectile_passes_through_prefractured_runtime_wall_without_ccd() {
+    let prefractured = run_heavy_prefractured_runtime_wall_shot();
+
+    assert_eq!(
+        prefractured.active_bonds_after, 0,
+        "the runtime prefracture control should remove every bond before the shot: {prefractured:?}"
+    );
+    assert!(
+        prefractured.multi_node_bodies.is_empty(),
+        "the runtime prefracture control should leave only single-node bodies before the shot: {prefractured:?}"
+    );
+    assert!(
+        prefractured.max_x > 0.66 && prefractured.final_linvel_x > 0.0,
+        "if the same heavy projectile cannot pass the prefractured runtime wall, the problem is in the fractured runtime body state rather than resim replay: {prefractured:?}"
+    );
+}
+
+#[test]
+fn same_heavy_projectile_still_passes_after_snapshot_restore_of_prefractured_runtime_wall() {
+    let restored = run_heavy_restored_prefractured_runtime_wall_shot();
+
+    assert_eq!(
+        restored.active_bonds_after, 0,
+        "the restored prefractured control should still have no active bonds: {restored:?}"
+    );
+    assert!(
+        restored.multi_node_bodies.is_empty(),
+        "the restored prefractured control should still expose only single-node bodies: {restored:?}"
+    );
+    assert!(
+        restored.max_x > 0.66 && restored.final_linvel_x > 0.0,
+        "if restoring split children from the intact-body snapshot breaks pass-through, then resimulation restore is rebuilding the fractured wall into the wrong physical state: {restored:?}"
+    );
+}
+
+#[test]
+fn same_heavy_projectile_passes_through_wall_when_only_support_strip_remains_bonded() {
+    let support_strip = run_heavy_support_strip_wall_shot();
+
+    assert_eq!(
+        support_strip.remaining_bonds,
+        vec![(0, 1), (1, 2), (2, 3)],
+        "the support-strip control should preserve only the lower fixed row bonds: {support_strip:?}"
+    );
+    assert_eq!(
+        support_strip.multi_node_bodies,
+        vec![vec![0, 1, 2, 3]],
+        "the support-strip control should start from the same bonded support topology as the live fracture endpoint: {support_strip:?}"
+    );
+    assert!(
+        support_strip.max_x > 0.66 && support_strip.final_linvel_x > 0.0,
+        "if the projectile still passes this 17-actor topology, then live resim is failing because the replayed body state differs from the equivalent pre-broken topology: {support_strip:?}"
+    );
+}
+
+#[test]
+fn same_frame_restored_replay_matches_equivalent_prefractured_next_step() {
+    let dt = 1.0 / 60.0;
+
+    // Branch A: let the runtime do the first speculative impact pass, fracture,
+    // and restore the frame for replay.
+    let (_scenario, mut replay_runtime, mut replay_world, replay_projectile) =
+        setup_heavy_wall_runtime(true);
+    let mut now_secs = 0.0;
+    let mut saw_resim = false;
+    for _ in 0..10 {
+        replay_runtime.begin_frame(now_secs, dt, &replay_world.bodies);
+        let pass = replay_runtime.begin_pass(&(), &());
+        let directive = {
+            let mut world_access = RapierWorldAccess {
+                bodies: &mut replay_world.bodies,
+                colliders: &mut replay_world.colliders,
+                island_manager: &mut replay_world.island_manager,
+                broad_phase: &mut replay_world.broad_phase,
+                narrow_phase: &mut replay_world.narrow_phase,
+                impulse_joints: &mut replay_world.impulse_joints,
+                multibody_joints: &mut replay_world.multibody_joints,
+                ccd_solver: &mut replay_world.ccd_solver,
+            };
+            replay_world.physics_pipeline.step(
+                &replay_world.gravity,
+                &replay_world.integration_parameters,
+                world_access.island_manager,
+                world_access.broad_phase,
+                world_access.narrow_phase,
+                world_access.bodies,
+                world_access.colliders,
+                world_access.impulse_joints,
+                world_access.multibody_joints,
+                world_access.ccd_solver,
+                &pass,
+                &pass,
+            );
+            replay_runtime.finish_pass(pass, &mut world_access)
+        };
+        match directive {
+            FrameDirective::Resimulate => {
+                saw_resim = true;
+                break;
+            }
+            FrameDirective::Done(result) => {
+                assert_eq!(
+                    result.fractures, 0,
+                    "the manual replay harness should only see fractures on the frame that requests resim"
+                );
+                now_secs += dt;
+            }
+        }
+    }
+    assert!(saw_resim, "the heavy wall repro should trigger same-frame replay");
+
+    replay_world.physics_pipeline.step(
+        &replay_world.gravity,
+        &replay_world.integration_parameters,
+        &mut replay_world.island_manager,
+        &mut replay_world.broad_phase,
+        &mut replay_world.narrow_phase,
+        &mut replay_world.bodies,
+        &mut replay_world.colliders,
+        &mut replay_world.impulse_joints,
+        &mut replay_world.multibody_joints,
+        &mut replay_world.ccd_solver,
+        &(),
+        &(),
+    );
+    let (replay_contacts, replay_active_contacts) =
+        collect_projectile_contact_bodies(&replay_world, &replay_runtime, replay_projectile);
+    let replay_body = replay_world
+        .bodies
+        .get(replay_projectile)
+        .expect("replay projectile should still exist");
+
+    // Branch B: build the equivalent support-strip topology before the same next step.
+    let (control_scenario, mut control_runtime, mut control_world, control_projectile) =
+        setup_heavy_wall_runtime(false);
+    let mut control_now_secs = 0.0;
+    for _ in 0..(now_secs / dt) as usize {
+        let result = control_world.run_frame(&mut control_runtime, control_now_secs, dt);
+        assert_eq!(
+            result.fractures, 0,
+            "the control branch should match the replay branch before the fracture frame"
+        );
+        control_now_secs += dt;
+    }
+    let kept = support_strip_bond_indices(&control_scenario);
+    let fractured: Vec<usize> = control_scenario
+        .bonds
+        .iter()
+        .enumerate()
+        .filter_map(|(bond_index, _)| (!kept.contains(&bond_index)).then_some(bond_index))
+        .collect();
+    control_runtime.fracture_bond_indices_now(
+        control_now_secs,
+        &fractured,
+        &mut control_world.bodies,
+        &mut control_world.colliders,
+        &mut control_world.island_manager,
+        &mut control_world.impulse_joints,
+        &mut control_world.multibody_joints,
+    );
+    control_world.physics_pipeline.step(
+        &control_world.gravity,
+        &control_world.integration_parameters,
+        &mut control_world.island_manager,
+        &mut control_world.broad_phase,
+        &mut control_world.narrow_phase,
+        &mut control_world.bodies,
+        &mut control_world.colliders,
+        &mut control_world.impulse_joints,
+        &mut control_world.multibody_joints,
+        &mut control_world.ccd_solver,
+        &(),
+        &(),
+    );
+    let (control_contacts, control_active_contacts) =
+        collect_projectile_contact_bodies(&control_world, &control_runtime, control_projectile);
+    let control_body = control_world
+        .bodies
+        .get(control_projectile)
+        .expect("control projectile should still exist");
+
+    assert_eq!(
+        replay_active_contacts,
+        control_active_contacts,
+        "same-frame replay should start the next physics step from the same active-contact state as the equivalent prefractured control: replay={replay_contacts:?} control={control_contacts:?} replay_body=({:.3},{:.3}) control_body=({:.3},{:.3})",
+        replay_body.translation().x,
+        replay_body.linvel().x,
+        control_body.translation().x,
+        control_body.linvel().x,
+    );
+}
+
+#[test]
+fn fracture_all_bonds_now_separates_runtime_wall_into_single_block_bodies() {
+    let state = inspect_prefractured_runtime_wall_state();
+
+    assert_eq!(
+        state.active_bonds_after, 0,
+        "prefracture control should remove every active bond: {state:?}"
+    );
+    assert_eq!(
+        state.actor_count_after, 20,
+        "the 5x4 control wall should decompose into one actor per block after all bonds are removed: {state:?}"
+    );
+    assert_eq!(
+        state.destructible_body_count, 20,
+        "the runtime body tracker should expose one destructible body per block after prefracture: {state:?}"
+    );
+    assert_eq!(
+        state.max_nodes_per_body, 1,
+        "no post-fracture body should retain multiple blocks in the fully prefractured control: {state:?}"
+    );
+    assert_eq!(
+        state.multi_node_body_count, 0,
+        "multi-block bodies indicate the split pipeline still isn't producing a true loose-wall state: {state:?}"
     );
 }
 

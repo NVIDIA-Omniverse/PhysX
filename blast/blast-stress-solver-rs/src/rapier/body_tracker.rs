@@ -611,6 +611,37 @@ impl BodyTracker {
             .unwrap_or(false)
     }
 
+    pub fn node_count(&self) -> usize {
+        self.node_to_body.len()
+    }
+
+    pub fn node_mass(&self, node_index: u32) -> f32 {
+        self.node_masses
+            .get(node_index as usize)
+            .copied()
+            .unwrap_or(0.0)
+    }
+
+    pub fn restore_node_local_offset(
+        &mut self,
+        node_index: u32,
+        local_offset: Vec3,
+        colliders: &mut ColliderSet,
+    ) {
+        let idx = node_index as usize;
+        let Some(collider_handle) = self.node_to_collider.get(idx).copied().flatten() else {
+            return;
+        };
+        if let Some(collider) = colliders.get_mut(collider_handle) {
+            collider.set_position_wrt_parent(Isometry::translation(
+                local_offset.x,
+                local_offset.y,
+                local_offset.z,
+            ));
+        }
+        self.node_local_offsets[idx] = local_offset;
+    }
+
     /// Whether a node is a support (fixed) node.
     pub fn is_support(&self, node_index: u32) -> bool {
         self.support_nodes.contains(&node_index)
