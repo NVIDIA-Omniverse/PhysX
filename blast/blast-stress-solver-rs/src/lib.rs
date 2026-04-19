@@ -11,6 +11,10 @@
 //! - **Rapier integration** (feature `rapier`): `DestructionRuntime` for existing Rapier apps and
 //!   `DestructibleSet` as the low-level escape hatch
 //!
+//! `DestructionRuntime` is the recommended integration point when you already
+//! own a Rapier world and want normal Rapier contacts to drive fracture while
+//! still keeping `PhysicsPipeline::step(...)` in your app.
+//!
 //! ## Quick Start (without Rapier)
 //!
 //! ```no_run

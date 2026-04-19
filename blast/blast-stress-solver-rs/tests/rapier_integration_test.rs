@@ -1,6 +1,10 @@
 #![cfg(feature = "rapier")]
 
 use rapier3d::prelude::*;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 
 use blast_stress_solver::rapier::*;
 use blast_stress_solver::*;
@@ -214,41 +218,56 @@ impl RuntimeTestWorld {
         now_secs: f32,
         dt: f32,
     ) -> FrameResult {
-        runtime.begin_frame(now_secs, dt, &self.bodies);
-        loop {
-            let directive = {
-                let unit_hooks = ();
-                let hooks = runtime.begin_pass(&unit_hooks);
+        self.run_frame_with(runtime, now_secs, dt, &(), &(), |_| {})
+    }
+
+    fn run_frame_with<H, E, O>(
+        &mut self,
+        runtime: &mut DestructionRuntime,
+        now_secs: f32,
+        dt: f32,
+        user_hooks: &H,
+        user_events: &E,
+        mut on_step_complete: O,
+    ) -> FrameResult
+    where
+        H: PhysicsHooks + Sync + ?Sized,
+        E: EventHandler + ?Sized,
+        O: FnMut(&PassAdapter<'_, H, E>),
+    {
+        runtime.step_frame(
+            now_secs,
+            dt,
+            &mut RapierWorldAccess {
+                bodies: &mut self.bodies,
+                colliders: &mut self.colliders,
+                island_manager: &mut self.island_manager,
+                broad_phase: &mut self.broad_phase,
+                narrow_phase: &mut self.narrow_phase,
+                impulse_joints: &mut self.impulse_joints,
+                multibody_joints: &mut self.multibody_joints,
+                ccd_solver: &mut self.ccd_solver,
+            },
+            user_hooks,
+            user_events,
+            |pass, world| {
                 self.physics_pipeline.step(
                     &self.gravity,
                     &self.integration_parameters,
-                    &mut self.island_manager,
-                    &mut self.broad_phase,
-                    &mut self.narrow_phase,
-                    &mut self.bodies,
-                    &mut self.colliders,
-                    &mut self.impulse_joints,
-                    &mut self.multibody_joints,
-                    &mut self.ccd_solver,
-                    &hooks,
-                    &(),
+                    world.island_manager,
+                    world.broad_phase,
+                    world.narrow_phase,
+                    world.bodies,
+                    world.colliders,
+                    world.impulse_joints,
+                    world.multibody_joints,
+                    world.ccd_solver,
+                    pass,
+                    pass,
                 );
-                let mut world_access = RapierWorldAccess {
-                    bodies: &mut self.bodies,
-                    colliders: &mut self.colliders,
-                    island_manager: &mut self.island_manager,
-                    narrow_phase: &self.narrow_phase,
-                    impulse_joints: &mut self.impulse_joints,
-                    multibody_joints: &mut self.multibody_joints,
-                };
-                runtime.finish_pass(&mut world_access)
-            };
-
-            match directive {
-                FrameDirective::Resimulate => continue,
-                FrameDirective::Done(result) => return result,
-            }
-        }
+                on_step_complete(pass);
+            },
+        )
     }
 
     fn add_ball_projectile(
@@ -289,6 +308,35 @@ impl RuntimeTestWorld {
             &mut self.bodies,
         );
         handle
+    }
+}
+
+#[derive(Default)]
+struct CountingEventHandler {
+    collision_events: AtomicUsize,
+    contact_force_events: AtomicUsize,
+}
+
+impl EventHandler for CountingEventHandler {
+    fn handle_collision_event(
+        &self,
+        _bodies: &RigidBodySet,
+        _colliders: &ColliderSet,
+        _event: CollisionEvent,
+        _contact_pair: Option<&ContactPair>,
+    ) {
+        self.collision_events.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn handle_contact_force_event(
+        &self,
+        _dt: Real,
+        _bodies: &RigidBodySet,
+        _colliders: &ColliderSet,
+        _contact_pair: &ContactPair,
+        _total_force_magnitude: Real,
+    ) {
+        self.contact_force_events.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -1124,6 +1172,86 @@ fn destruction_runtime_registers_support_contacts_from_generic_collisions() {
     assert!(
         body.linear_damping() >= 2.0 && body.angular_damping() >= 2.0,
         "support-contact promotion should update damping without explicit mark_body_support_contact"
+    );
+}
+
+#[test]
+fn destruction_runtime_buffers_user_events_until_the_committed_pass() {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut runtime = DestructionRuntime::from_scenario(
+        &scenario,
+        weak_impact_settings(),
+        Vec3::ZERO,
+        policy,
+        DestructionRuntimeOptions {
+            contact_impacts: ContactImpactOptions {
+                min_total_impulse: 5.0,
+                min_external_speed: 0.1,
+                min_internal_speed: 0.1,
+                force_scale: 1.0,
+                max_force_magnitude: 12_000.0,
+                splash_radius: 1.5,
+                splash_falloff_exponent: 2.0,
+                internal_contact_scale: 0.5,
+                ..ContactImpactOptions::default()
+            },
+            ..DestructionRuntimeOptions::default()
+        },
+    )
+    .expect("wall scenario should create");
+    runtime.set_resimulation_options(ResimulationOptions {
+        enabled: true,
+        max_passes: 2,
+    });
+
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    world.add_ball_projectile(
+        vector![-5.0, 1.25, 0.0],
+        vector![24.0, 0.0, 0.0],
+        0.35,
+        2500.0,
+    );
+
+    let event_handler = Arc::new(CountingEventHandler::default());
+    let dt = 1.0 / 60.0;
+    let mut now_secs = 0.0;
+    let mut saw_resimulation = false;
+
+    for _ in 0..45 {
+        let result = world.run_frame_with(
+            &mut runtime,
+            now_secs,
+            dt,
+            &(),
+            event_handler.as_ref(),
+            |_| {
+                assert_eq!(
+                    event_handler.collision_events.load(Ordering::Relaxed),
+                    0,
+                    "user collision events should stay buffered until the committed pass"
+                );
+            },
+        );
+        saw_resimulation |= result.rapier_passes > 1;
+        now_secs += dt;
+        if result.fractures > 0 {
+            break;
+        }
+    }
+
+    assert!(
+        saw_resimulation,
+        "impact scenario should trigger resimulation"
+    );
+    assert!(
+        event_handler.collision_events.load(Ordering::Relaxed) > 0,
+        "collision events should be forwarded after the committed pass"
     );
 }
 

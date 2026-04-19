@@ -2,6 +2,12 @@
 
 Rust Bevy + Rapier demo for profiling Blast stress/fracture runtime behavior.
 
+All normal destructible scenarios in this demo now run through
+`blast_stress_solver::rapier::DestructionRuntime`. The demo still owns the
+Rapier world and calls `PhysicsPipeline::step(...)`, but fracture admission,
+split application, and same-frame resimulation are exercised through the
+recommended library API instead of demo-local glue.
+
 ## What This Demo Is For
 
 This repo is the runtime/perf harness for:
@@ -34,6 +40,9 @@ The demo also ships embedded authored scene packs for:
 - `fractured-bridge`
 - `brick-building`
 
+`BLAST_STRESS_DEMO_SCENARIO` accepts both hyphenated and underscored spellings
+for these names, so `fractured-tower` and `fractured_tower` both work.
+
 The brick building preset is a coarse 2-story shell with staggered brick
 coursing, interlocking corners, window and door openings, a flat roof, and a
 2-course parapet. Its bond graph is generated from the authored brick geometry
@@ -57,6 +66,12 @@ Brick building with meshes:
 
 ```bash
 BLAST_STRESS_DEMO_SCENARIO=brick-building BLAST_STRESS_DEMO_SHOW_MESHES=1 cargo run
+```
+
+Fractured tower with meshes:
+
+```bash
+BLAST_STRESS_DEMO_SCENARIO=fractured_tower BLAST_STRESS_DEMO_SHOW_MESHES=1 cargo run
 ```
 
 Headless bridge:

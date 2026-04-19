@@ -6,8 +6,12 @@ and WebAssembly consumption from Cargo.
 This crate gives you two main layers:
 
 - `ExtStressSolver` for Blast-only stress, bond failure, and split handling
-- `blast_stress_solver::rapier::DestructibleSet` for keeping Blast actors and
-  Rapier rigid bodies in sync
+- `blast_stress_solver::rapier::DestructionRuntime` for plugging destructibles
+  into an existing Rapier app while keeping `PhysicsPipeline::step(...)` in the
+  consumer
+
+`DestructibleSet` still exists as the lower-level escape hatch for advanced
+integration and explicit non-contact force injection.
 
 ## Installation
 
@@ -15,21 +19,21 @@ Core solver only:
 
 ```toml
 [dependencies]
-blast-stress-solver = "0.1.1"
+blast-stress-solver = "0.2.0"
 ```
 
 With built-in scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.1.1", features = ["scenarios"] }
+blast-stress-solver = { version = "0.2.0", features = ["scenarios"] }
 ```
 
 With Rapier integration and scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.1.1", features = ["rapier", "scenarios"] }
+blast-stress-solver = { version = "0.2.0", features = ["rapier", "scenarios"] }
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 ```
 
@@ -60,8 +64,8 @@ Advanced overrides:
 The easiest way to understand the API is in two steps:
 
 1. Build a destructible wall and drive the Blast solver directly.
-2. Take the same wall and let `DestructibleSet` keep it synchronized with
-   Rapier rigid bodies.
+2. Take the same wall and let `DestructionRuntime` integrate it into an
+   existing Rapier world.
 
 The examples below are intentionally explicit about which code belongs to your
 application and which code is specific to `blast-stress-solver`.
@@ -170,21 +174,25 @@ What to notice:
 - `ExtStressSolver` owns the Blast family/actor state. After fractures are
   applied, `actor_count()` grows as disconnected pieces split apart.
 
-### 2. Rapier example: the same wall, now backed by rigid bodies
+### 2. Rapier example: the same wall, now integrated into an existing Rapier app
 
-This version shows where Rapier is actually integrated.
+This version shows the recommended runtime for real consumers.
 
-`DestructibleSet` does **not** replace Rapier. Your app still owns the Rapier
+`DestructionRuntime` does **not** replace Rapier. Your app still owns the Rapier
 world, the physics pipeline, and the frame loop. `blast-stress-solver` handles
 the destruction-specific part:
 
 1. keep a Blast stress graph for the structure
-2. detect failed bonds
-3. split Blast actors
+2. derive accepted impacts from Rapier contacts
+3. detect failed bonds and split Blast actors
 4. create/update/destroy the corresponding Rapier bodies and colliders
+5. resimulate the same frame when topology changes
 
 ```rust
-use blast_stress_solver::rapier::{DestructibleSet, FracturePolicy};
+use blast_stress_solver::rapier::{
+    ContactImpactOptions, DestructionRuntime, DestructionRuntimeOptions, FracturePolicy,
+    GracePeriodOptions, RapierWorldAccess,
+};
 use blast_stress_solver::scenarios::{build_wall_scenario, WallOptions};
 use blast_stress_solver::{SolverSettings, Vec3};
 use rapier3d::prelude::*;
@@ -221,13 +229,27 @@ fn main() {
         ..FracturePolicy::default()
     };
 
-    let mut destructible = DestructibleSet::from_scenario(
+    let runtime_options = DestructionRuntimeOptions {
+        contact_impacts: ContactImpactOptions {
+            min_total_impulse: 8.0,
+            min_external_speed: 0.75,
+            ..ContactImpactOptions::default()
+        },
+        grace: GracePeriodOptions {
+            sibling_steps: 1,
+            impact_source_steps: 2,
+        },
+        ..DestructionRuntimeOptions::default()
+    };
+
+    let mut destructible = DestructionRuntime::from_scenario(
         &wall,
         settings,
         Vec3::new(0.0, -9.81, 0.0),
         fracture_policy,
+        runtime_options,
     )
-    .expect("failed to create destructible set");
+    .expect("failed to create destruction runtime");
 
     // Step 3: consumer app setup.
     // You still own the Rapier world and physics pipeline.
@@ -248,50 +270,62 @@ fn main() {
     // the current Blast actor table.
     destructible.initialize(&mut rigid_bodies, &mut colliders);
 
-    let impact_node =
-        (wall_options.height_segments - 1) * wall_options.span_segments + wall_options.span_segments / 2;
-    let impact_position = wall.nodes[impact_node as usize].centroid;
+    // Consumer app: add an ordinary Rapier projectile.
+    let projectile = RigidBodyBuilder::dynamic()
+        .translation(vector![-6.0, 1.4, 0.0])
+        .linvel(vector![18.0, 0.0, 0.0])
+        .ccd_enabled(true)
+        .additional_mass(20.0)
+        .build();
+    let projectile_handle = rigid_bodies.insert(projectile);
+    let projectile_collider = ColliderBuilder::ball(0.35).restitution(0.05).build();
+    colliders.insert_with_parent(projectile_collider, projectile_handle, &mut rigid_bodies);
 
     // Step 4: consumer app frame loop.
     for frame in 0..120 {
-        // Consumer app event: inject a hit into the wall.
-        if frame == 5 {
-            destructible.add_force(impact_node, impact_position, Vec3::new(5_000.0, 0.0, 0.0));
-        }
-
-        // Blast-specific:
-        // - apply gravity to the stress graph
-        // - solve bond stresses
-        // - fracture failed bonds
-        // - split actors
-        // - rebuild Rapier bodies/colliders as needed
-        let fracture_step = destructible.step(
-            &mut rigid_bodies,
-            &mut colliders,
-            &mut island_manager,
-            &mut impulse_joints,
-            &mut multibody_joints,
-        );
+        let mut world = RapierWorldAccess {
+            bodies: &mut rigid_bodies,
+            colliders: &mut colliders,
+            island_manager: &mut island_manager,
+            broad_phase: &mut broad_phase,
+            narrow_phase: &mut narrow_phase,
+            impulse_joints: &mut impulse_joints,
+            multibody_joints: &mut multibody_joints,
+            ccd_solver: &mut ccd_solver,
+        };
 
         // Consumer app:
-        // Advance the rest of Rapier as usual.
-        physics_pipeline.step(
-            &gravity,
-            &integration_parameters,
-            &mut island_manager,
-            &mut broad_phase,
-            &mut narrow_phase,
-            &mut rigid_bodies,
-            &mut colliders,
-            &mut impulse_joints,
-            &mut multibody_joints,
-            &mut ccd_solver,
+        // Advance Rapier as usual, but let the runtime wrap the step so it can
+        // derive impacts from ordinary Rapier contacts, fracture, split, and
+        // resimulate when needed.
+        let fracture_step = destructible.step_frame(
+            frame as f32 * integration_parameters.dt,
+            integration_parameters.dt,
+            &mut world,
             &(),
             &(),
+            |pass, world| {
+                physics_pipeline.step(
+                    &gravity,
+                    &integration_parameters,
+                    world.island_manager,
+                    world.broad_phase,
+                    world.narrow_phase,
+                    world.bodies,
+                    world.colliders,
+                    world.impulse_joints,
+                    world.multibody_joints,
+                    world.ccd_solver,
+                    pass,
+                    pass,
+                );
+            },
         );
 
         println!(
-            "frame={frame:03} fractures={} split_events={} new_bodies={} actors={} bodies={}",
+            "frame={frame:03} passes={} accepted_impacts={} fractures={} split_events={} new_bodies={} actors={} bodies={}",
+            fracture_step.rapier_passes,
+            fracture_step.accepted_impacts,
             fracture_step.fractures,
             fracture_step.split_events,
             fracture_step.new_bodies,
@@ -311,13 +345,14 @@ What to notice:
 
 - Your app still owns `RigidBodySet`, `ColliderSet`, the Rapier pipeline, and
   the main frame loop.
-- `DestructibleSet::initialize(...)` is the point where Blast’s initial actor
-  graph becomes actual Rapier bodies and colliders.
-- `DestructibleSet::step(...)` is the integration point. That is where this
-  crate applies gravity to the stress graph, breaks bonds, and rewrites the
-  Rapier body/collider layout when actors split.
-- `physics_pipeline.step(...)` is still your responsibility. This crate does not
-  hide Rapier from you.
+- `DestructionRuntime::initialize(...)` is the point where Blast’s initial
+  actor graph becomes actual Rapier bodies and colliders.
+- `DestructionRuntime::step_frame(...)` is the recommended integration point.
+  That is where this crate inspects Rapier contacts, injects accepted impacts,
+  applies fractures, rewrites Rapier body/collider topology, and requests
+  same-frame resimulation when needed.
+- `physics_pipeline.step(...)` is still your responsibility. This crate
+  integrates into Rapier instead of hiding it.
 
 ## WebAssembly
 
@@ -337,7 +372,7 @@ The intended model is:
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = "0.1.1"
+blast-stress-solver = "0.2.0"
 wasm-bindgen = "0.2"
 ```
 

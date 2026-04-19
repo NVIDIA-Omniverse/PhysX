@@ -17,8 +17,9 @@ pub use optimization::{
 };
 pub use resimulation::{BodySnapshots, ResimulationOptions};
 pub use runtime::{
-    CombinedHooks, ContactImpactOptions, DestructionRuntime, DestructionRuntimeOptions,
-    FrameDirective, FrameResult, GracePeriodOptions, RapierWorldAccess,
+    ContactImpactOptions, DestructibleRuntimeOptions, DestructionRuntime,
+    DestructionRuntimeOptions, FrameDirective, FrameResult, GracePeriodOptions, PassAdapter,
+    RapierWorldAccess,
 };
 pub use split_migrator::{
     plan_split_migration, plan_split_migration_with_support, CreateEntry, ExistingBodyState,

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 
 use rapier3d::prelude::*;
@@ -26,11 +26,16 @@ impl Instant {
 }
 
 use crate::types::Vec3 as SolverVec3;
+use crate::{ScenarioDesc, SolverSettings, Vec3};
 
 use super::body_tracker::SplitEditStats;
 use super::destructible::{DestructibleSet, SplitCohort, StepResult};
+use super::fracture_policy::FracturePolicy;
 use super::optimization::OptimizationResult;
 use super::resimulation::BodySnapshots;
+use super::{
+    DebrisCleanupOptions, DebrisCollisionMode, SleepThresholdOptions, SmallBodyDampingOptions,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct ContactImpactOptions {
@@ -82,15 +87,35 @@ impl Default for GracePeriodOptions {
 pub struct DestructionRuntimeOptions {
     pub contact_impacts: ContactImpactOptions,
     pub grace: GracePeriodOptions,
+    pub destructible: DestructibleRuntimeOptions,
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+pub struct DestructibleRuntimeOptions {
+    pub sleep_thresholds: Option<SleepThresholdOptions>,
+    pub small_body_damping: Option<SmallBodyDampingOptions>,
+    pub debris_cleanup: Option<DebrisCleanupOptions>,
+    pub debris_collision_mode: Option<DebrisCollisionMode>,
+    pub split_child_recentering_enabled: Option<bool>,
+    pub split_child_velocity_fit_enabled: Option<bool>,
+    pub skip_single_bodies: Option<bool>,
+}
+
+/// Borrowed access to the caller-owned Rapier world state.
+///
+/// `DestructionRuntime` integrates into an existing Rapier application instead
+/// of owning the physics pipeline itself. The consumer still calls
+/// `PhysicsPipeline::step(...)` and passes these borrowed world sets back to the
+/// runtime around that step.
 pub struct RapierWorldAccess<'a> {
     pub bodies: &'a mut RigidBodySet,
     pub colliders: &'a mut ColliderSet,
     pub island_manager: &'a mut IslandManager,
-    pub narrow_phase: &'a NarrowPhase,
+    pub broad_phase: &'a mut BroadPhaseBvh,
+    pub narrow_phase: &'a mut NarrowPhase,
     pub impulse_joints: &'a mut ImpulseJointSet,
     pub multibody_joints: &'a mut MultibodyJointSet,
+    pub ccd_solver: &'a mut CCDSolver,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -213,12 +238,32 @@ impl PhysicsHooks for RuntimeHooks {
     }
 }
 
-pub struct CombinedHooks<'a, H: PhysicsHooks + ?Sized> {
-    runtime: RuntimeHooks,
-    user_hooks: &'a H,
+#[derive(Clone, Copy)]
+struct BufferedContactForceEvent {
+    dt: Real,
+    collider1: ColliderHandle,
+    collider2: ColliderHandle,
+    total_force_magnitude: Real,
 }
 
-impl<H: PhysicsHooks + ?Sized> PhysicsHooks for CombinedHooks<'_, H> {
+#[derive(Default)]
+struct BufferedPassEvents {
+    collisions: Vec<CollisionEvent>,
+    contact_forces: Vec<BufferedContactForceEvent>,
+}
+
+pub struct PassAdapter<'a, H: PhysicsHooks + ?Sized, E: EventHandler + ?Sized> {
+    runtime: RuntimeHooks,
+    user_hooks: &'a H,
+    user_events: &'a E,
+    buffered_events: Arc<Mutex<BufferedPassEvents>>,
+}
+
+impl<H, E> PhysicsHooks for PassAdapter<'_, H, E>
+where
+    H: PhysicsHooks + ?Sized,
+    E: EventHandler + ?Sized,
+{
     fn filter_contact_pair(&self, context: &PairFilterContext) -> Option<SolverFlags> {
         self.runtime
             .filter_contact_pair(context)
@@ -232,6 +277,46 @@ impl<H: PhysicsHooks + ?Sized> PhysicsHooks for CombinedHooks<'_, H> {
 
     fn modify_solver_contacts(&self, context: &mut ContactModificationContext) {
         self.user_hooks.modify_solver_contacts(context);
+    }
+}
+
+impl<H, E> EventHandler for PassAdapter<'_, H, E>
+where
+    H: PhysicsHooks + Sync + ?Sized,
+    E: EventHandler + ?Sized,
+{
+    fn handle_collision_event(
+        &self,
+        _bodies: &RigidBodySet,
+        _colliders: &ColliderSet,
+        event: CollisionEvent,
+        _contact_pair: Option<&ContactPair>,
+    ) {
+        self.buffered_events
+            .lock()
+            .expect("buffered pass events mutex poisoned")
+            .collisions
+            .push(event);
+    }
+
+    fn handle_contact_force_event(
+        &self,
+        dt: Real,
+        _bodies: &RigidBodySet,
+        _colliders: &ColliderSet,
+        contact_pair: &ContactPair,
+        total_force_magnitude: Real,
+    ) {
+        self.buffered_events
+            .lock()
+            .expect("buffered pass events mutex poisoned")
+            .contact_forces
+            .push(BufferedContactForceEvent {
+                dt,
+                collider1: contact_pair.collider1,
+                collider2: contact_pair.collider2,
+                total_force_magnitude,
+            });
     }
 }
 
@@ -421,7 +506,6 @@ struct BodyMotionSnapshot {
 
 #[derive(Default)]
 struct PassAnalysis {
-    active_body_pairs: HashSet<BodyPairKey>,
     support_contacts: HashSet<RigidBodyHandle>,
     impact_candidates: Vec<ImpactCandidate>,
     impact_sources: HashSet<RigidBodyHandle>,
@@ -444,22 +528,36 @@ struct ActiveFrameState {
 pub struct DestructionRuntime {
     destructible: DestructibleSet,
     options: DestructionRuntimeOptions,
-    active_body_pairs: HashSet<BodyPairKey>,
     cooldowns: HashMap<ImpactCooldownKey, f32>,
     grace: GraceState,
     frame: Option<ActiveFrameState>,
 }
 
 impl DestructionRuntime {
+    /// Creates a runtime around an existing low-level [`DestructibleSet`].
     pub fn new(destructible: DestructibleSet, options: DestructionRuntimeOptions) -> Self {
-        Self {
+        let mut runtime = Self {
             destructible,
             options,
-            active_body_pairs: HashSet::new(),
             cooldowns: HashMap::new(),
             grace: GraceState::new(options.grace),
             frame: None,
-        }
+        };
+        runtime.apply_destructible_options(options.destructible);
+        runtime
+    }
+
+    /// Builds a high-level runtime directly from a scenario description.
+    pub fn from_scenario(
+        scenario: &ScenarioDesc,
+        settings: SolverSettings,
+        gravity: Vec3,
+        fracture_policy: FracturePolicy,
+        options: DestructionRuntimeOptions,
+    ) -> Option<Self> {
+        let destructible =
+            DestructibleSet::from_scenario(scenario, settings, gravity, fracture_policy)?;
+        Some(Self::new(destructible, options))
     }
 
     pub fn options(&self) -> DestructionRuntimeOptions {
@@ -469,12 +567,72 @@ impl DestructionRuntime {
     pub fn set_options(&mut self, options: DestructionRuntimeOptions) {
         self.options = options;
         self.grace.set_options(options.grace);
+        self.apply_destructible_options(options.destructible);
     }
 
     pub fn into_inner(self) -> DestructibleSet {
         self.destructible
     }
 
+    pub fn initialize(
+        &mut self,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+    ) -> Vec<RigidBodyHandle> {
+        self.destructible.initialize(bodies, colliders)
+    }
+
+    pub fn set_ground_body_handle(&mut self, handle: Option<RigidBodyHandle>) {
+        self.destructible.set_ground_body_handle(handle);
+    }
+
+    pub fn refresh_collision_groups(&mut self, bodies: &RigidBodySet, colliders: &mut ColliderSet) {
+        self.destructible
+            .refresh_collision_groups(bodies, colliders);
+    }
+
+    pub fn set_sleep_thresholds(&mut self, options: SleepThresholdOptions) {
+        self.destructible.set_sleep_thresholds(options);
+    }
+
+    pub fn set_small_body_damping(&mut self, options: SmallBodyDampingOptions) {
+        self.destructible.set_small_body_damping(options);
+    }
+
+    pub fn set_debris_cleanup(&mut self, options: DebrisCleanupOptions) {
+        self.destructible.set_debris_cleanup(options);
+    }
+
+    pub fn set_debris_collision_mode(&mut self, mode: DebrisCollisionMode) {
+        self.destructible.set_debris_collision_mode(mode);
+    }
+
+    pub fn set_resimulation_options(&mut self, options: super::resimulation::ResimulationOptions) {
+        self.destructible.set_resimulation_options(options);
+    }
+
+    pub fn set_dynamic_body_ccd_enabled(&mut self, enabled: bool) {
+        self.destructible.set_dynamic_body_ccd_enabled(enabled);
+    }
+
+    pub fn set_split_child_recentering_enabled(&mut self, enabled: bool) {
+        self.destructible
+            .set_split_child_recentering_enabled(enabled);
+    }
+
+    pub fn set_split_child_velocity_fit_enabled(&mut self, enabled: bool) {
+        self.destructible
+            .set_split_child_velocity_fit_enabled(enabled);
+    }
+
+    pub fn set_skip_single_bodies(&mut self, enabled: bool) {
+        self.destructible.set_skip_single_bodies(enabled);
+    }
+
+    /// Begins an advanced multi-pass frame.
+    ///
+    /// Most consumers should prefer [`Self::step_frame`], which wraps the full
+    /// destruction-aware Rapier loop for a frame.
     pub fn begin_frame(&mut self, now_secs: f32, dt: f32, bodies: &RigidBodySet) {
         let resimulation = self.destructible.resimulation_options();
         let mut result = FrameResult::default();
@@ -502,21 +660,37 @@ impl DestructionRuntime {
         });
     }
 
-    pub fn begin_pass<'a, H>(&mut self, user_hooks: &'a H) -> CombinedHooks<'a, H>
+    pub fn begin_pass<'a, H, E>(
+        &mut self,
+        user_hooks: &'a H,
+        user_events: &'a E,
+    ) -> PassAdapter<'a, H, E>
     where
         H: PhysicsHooks + ?Sized,
+        E: EventHandler + ?Sized,
     {
         let (runtime_hooks, stats) = self.grace.begin_step();
         if let Some(frame) = self.frame.as_mut() {
             frame.pending_grace_stats = Some(stats);
         }
-        CombinedHooks {
+        PassAdapter {
             runtime: runtime_hooks,
             user_hooks,
+            user_events,
+            buffered_events: Arc::new(Mutex::new(BufferedPassEvents::default())),
         }
     }
 
-    pub fn finish_pass(&mut self, world: &mut RapierWorldAccess<'_>) -> FrameDirective {
+    /// Completes one speculative Rapier pass started by [`Self::begin_frame`].
+    pub fn finish_pass<H, E>(
+        &mut self,
+        pass: PassAdapter<'_, H, E>,
+        world: &mut RapierWorldAccess<'_>,
+    ) -> FrameDirective
+    where
+        H: PhysicsHooks + Sync + ?Sized,
+        E: EventHandler + ?Sized,
+    {
         let mut frame = self
             .frame
             .take()
@@ -524,7 +698,12 @@ impl DestructionRuntime {
         frame.result.rapier_passes += 1;
 
         self.cooldowns.retain(|_, until| *until > frame.now_secs);
-        let analysis = self.collect_pass_analysis(frame.dt, &frame.pre_step_motion, world);
+        let buffered_events = pass
+            .buffered_events
+            .lock()
+            .expect("buffered pass events mutex poisoned");
+        let analysis =
+            self.collect_pass_analysis(frame.dt, &frame.pre_step_motion, &buffered_events, world);
         frame.result.contact_pairs = analysis.contact_pairs;
         frame.result.active_contact_pairs = analysis.active_contact_pairs;
         frame.result.contact_manifolds = analysis.contact_manifolds;
@@ -611,15 +790,48 @@ impl DestructionRuntime {
             world.multibody_joints,
         );
 
-        self.active_body_pairs = analysis.active_body_pairs;
+        flush_buffered_events(pass.user_events, &buffered_events, world);
         self.frame = None;
         FrameDirective::Done(frame.result)
+    }
+
+    /// Recommended high-level integration for existing Rapier apps.
+    ///
+    /// The consumer still owns `PhysicsPipeline::step(...)`. This helper wraps
+    /// the destruction-specific orchestration around that step: it buffers
+    /// speculative events, analyzes Rapier contacts, injects accepted impacts,
+    /// applies fractures and split edits, and resimulates the frame when body
+    /// topology changes.
+    pub fn step_frame<H, E, S>(
+        &mut self,
+        now_secs: f32,
+        dt: f32,
+        world: &mut RapierWorldAccess<'_>,
+        user_hooks: &H,
+        user_events: &E,
+        mut step: S,
+    ) -> FrameResult
+    where
+        H: PhysicsHooks + Sync + ?Sized,
+        E: EventHandler + ?Sized,
+        S: FnMut(&PassAdapter<'_, H, E>, &mut RapierWorldAccess<'_>),
+    {
+        self.begin_frame(now_secs, dt, world.bodies);
+        loop {
+            let pass = self.begin_pass(user_hooks, user_events);
+            step(&pass, world);
+            match self.finish_pass(pass, world) {
+                FrameDirective::Resimulate => continue,
+                FrameDirective::Done(result) => return result,
+            }
+        }
     }
 
     fn collect_pass_analysis(
         &self,
         dt: f32,
         pre_step_motion: &HashMap<RigidBodyHandle, BodyMotionSnapshot>,
+        buffered_events: &BufferedPassEvents,
         world: &RapierWorldAccess<'_>,
     ) -> PassAnalysis {
         let mut analysis = PassAnalysis::default();
@@ -646,40 +858,14 @@ impl DestructionRuntime {
                 continue;
             };
 
-            let Some(body_pair_key) = canonical_body_pair_key(body1, body2) else {
+            let Some(_body_pair_key) = canonical_body_pair_key(body1, body2) else {
                 continue;
             };
-            analysis.active_body_pairs.insert(body_pair_key);
 
             let node1 = self.destructible.collider_node(pair.collider1);
             let node2 = self.destructible.collider_node(pair.collider2);
             if node1.is_none() && node2.is_none() {
                 continue;
-            }
-
-            if !self.active_body_pairs.contains(&body_pair_key) {
-                if let Some(node_index) = node1 {
-                    if self.support_contact_for_pair(
-                        node_index,
-                        body1,
-                        pair.collider2,
-                        body2,
-                        world,
-                    ) {
-                        analysis.support_contacts.insert(body1);
-                    }
-                }
-                if let Some(node_index) = node2 {
-                    if self.support_contact_for_pair(
-                        node_index,
-                        body2,
-                        pair.collider1,
-                        body1,
-                        world,
-                    ) {
-                        analysis.support_contacts.insert(body2);
-                    }
-                }
             }
 
             if !self.options.contact_impacts.enabled
@@ -721,6 +907,36 @@ impl DestructionRuntime {
                 analysis.impact_candidates.push(candidate);
                 analysis.impact_sources.insert(body1);
                 analysis.impacted_bodies.insert(body2);
+            }
+        }
+
+        for &event in &buffered_events.collisions {
+            let CollisionEvent::Started(collider1_handle, collider2_handle, _) = event else {
+                continue;
+            };
+            let Some(collider1) = world.colliders.get(collider1_handle) else {
+                continue;
+            };
+            let Some(collider2) = world.colliders.get(collider2_handle) else {
+                continue;
+            };
+            let Some(body1) = collider1.parent() else {
+                continue;
+            };
+            let Some(body2) = collider2.parent() else {
+                continue;
+            };
+            if let Some(node_index) = self.destructible.collider_node(collider1_handle) {
+                if self.support_contact_for_pair(node_index, body1, collider2_handle, body2, world)
+                {
+                    analysis.support_contacts.insert(body1);
+                }
+            }
+            if let Some(node_index) = self.destructible.collider_node(collider2_handle) {
+                if self.support_contact_for_pair(node_index, body2, collider1_handle, body1, world)
+                {
+                    analysis.support_contacts.insert(body2);
+                }
             }
         }
 
@@ -988,6 +1204,31 @@ impl DestructionRuntime {
             );
         }
     }
+
+    fn apply_destructible_options(&mut self, options: DestructibleRuntimeOptions) {
+        if let Some(value) = options.sleep_thresholds {
+            self.destructible.set_sleep_thresholds(value);
+        }
+        if let Some(value) = options.small_body_damping {
+            self.destructible.set_small_body_damping(value);
+        }
+        if let Some(value) = options.debris_cleanup {
+            self.destructible.set_debris_cleanup(value);
+        }
+        if let Some(value) = options.debris_collision_mode {
+            self.destructible.set_debris_collision_mode(value);
+        }
+        if let Some(value) = options.split_child_recentering_enabled {
+            self.destructible.set_split_child_recentering_enabled(value);
+        }
+        if let Some(value) = options.split_child_velocity_fit_enabled {
+            self.destructible
+                .set_split_child_velocity_fit_enabled(value);
+        }
+        if let Some(value) = options.skip_single_bodies {
+            self.destructible.set_skip_single_bodies(value);
+        }
+    }
 }
 
 impl Deref for DestructionRuntime {
@@ -1063,5 +1304,37 @@ fn relative_speed_along_force(force_world: Vector<Real>, relative_velocity: Vect
         projected
     } else {
         relative_velocity.norm()
+    }
+}
+
+fn flush_buffered_events<E: EventHandler + ?Sized>(
+    user_events: &E,
+    buffered_events: &BufferedPassEvents,
+    world: &RapierWorldAccess<'_>,
+) {
+    for &event in &buffered_events.collisions {
+        let contact_pair = match event {
+            CollisionEvent::Started(collider1, collider2, _)
+            | CollisionEvent::Stopped(collider1, collider2, _) => {
+                world.narrow_phase.contact_pair(collider1, collider2)
+            }
+        };
+        user_events.handle_collision_event(world.bodies, world.colliders, event, contact_pair);
+    }
+
+    for event in &buffered_events.contact_forces {
+        let Some(contact_pair) = world
+            .narrow_phase
+            .contact_pair(event.collider1, event.collider2)
+        else {
+            continue;
+        };
+        user_events.handle_contact_force_event(
+            event.dt,
+            world.bodies,
+            world.colliders,
+            contact_pair,
+            event.total_force_magnitude,
+        );
     }
 }

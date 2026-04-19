@@ -20,8 +20,8 @@ use bevy::prelude::*;
 use bevy::transform::TransformPlugin;
 use bevy::window::PrimaryWindow;
 use blast_stress_solver::rapier::{
-    ContactImpactOptions, DebrisCleanupOptions, DebrisCollisionMode, DestructionRuntime,
-    DestructionRuntimeOptions, FracturePolicy, FrameDirective, GracePeriodOptions,
+    ContactImpactOptions, DebrisCleanupOptions, DebrisCollisionMode, DestructibleRuntimeOptions,
+    DestructionRuntime, DestructionRuntimeOptions, FracturePolicy, GracePeriodOptions,
     OptimizationMode, RapierWorldAccess, ResimulationOptions, SleepThresholdOptions,
     SmallBodyDampingOptions,
 };
@@ -2013,22 +2013,37 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
 fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoPhysicsState {
     let settings = scaled_solver_settings(config.material_scale);
     let gravity = SolverVec3::new(0.0, config.gravity, 0.0);
-    let mut destructible = blast_stress_solver::rapier::DestructibleSet::from_scenario(
+    let runtime_options = DestructionRuntimeOptions {
+        contact_impacts: ContactImpactOptions {
+            enabled: toggles.contact_force_injection_enabled,
+            force_scale: CONTACT_FORCE_SCALE,
+            splash_radius: SPLASH_RADIUS,
+            ..ContactImpactOptions::default()
+        },
+        grace: GracePeriodOptions {
+            sibling_steps: toggles.sibling_grace_steps,
+            impact_source_steps: toggles.projectile_fracture_grace_steps,
+        },
+        destructible: DestructibleRuntimeOptions {
+            sleep_thresholds: Some(config.sleep_thresholds),
+            small_body_damping: Some(config.small_body_damping),
+            debris_cleanup: Some(config.debris_cleanup),
+            debris_collision_mode: Some(config.debris_collision_mode),
+            split_child_recentering_enabled: Some(toggles.split_child_recentering_enabled),
+            split_child_velocity_fit_enabled: Some(toggles.split_child_velocity_fit_enabled),
+            skip_single_bodies: Some(config.skip_single_bodies),
+        },
+    };
+    let mut destructible = DestructionRuntime::from_scenario(
         &config.scenario,
         settings,
         gravity,
         config.policy,
+        runtime_options,
     )
-    .expect("failed to create destructible set");
+    .expect("failed to create destructible runtime");
     destructible.set_resimulation_options(config.resimulation);
-    destructible.set_sleep_thresholds(config.sleep_thresholds);
-    destructible.set_small_body_damping(config.small_body_damping);
-    destructible.set_debris_cleanup(config.debris_cleanup);
-    destructible.set_debris_collision_mode(config.debris_collision_mode);
-    destructible.set_skip_single_bodies(config.skip_single_bodies);
     destructible.set_dynamic_body_ccd_enabled(toggles.body_ccd_enabled);
-    destructible.set_split_child_recentering_enabled(toggles.split_child_recentering_enabled);
-    destructible.set_split_child_velocity_fit_enabled(toggles.split_child_velocity_fit_enabled);
 
     let mut bodies = RigidBodySet::new();
     let mut colliders = ColliderSet::new();
@@ -2055,19 +2070,6 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
         destructible.set_ground_body_handle(Some(ground_body));
         destructible.refresh_collision_groups(&bodies, &mut colliders);
     }
-    let runtime_options = DestructionRuntimeOptions {
-        contact_impacts: ContactImpactOptions {
-            enabled: toggles.contact_force_injection_enabled,
-            force_scale: CONTACT_FORCE_SCALE,
-            splash_radius: SPLASH_RADIUS,
-            ..ContactImpactOptions::default()
-        },
-        grace: GracePeriodOptions {
-            sibling_steps: toggles.sibling_grace_steps,
-            impact_source_steps: toggles.projectile_fracture_grace_steps,
-        },
-    };
-    let destructible = DestructionRuntime::new(destructible, runtime_options);
 
     let mut integration_parameters = IntegrationParameters::default();
     integration_parameters.dt = 1.0 / 60.0;
@@ -3452,53 +3454,58 @@ fn physics_step_system(
             break None;
         }
     } else {
-        {
-            let DemoPhysicsState {
-                destructible,
-                bodies,
-                ..
-            } = &mut *state;
-            destructible.begin_frame(now_secs, dt, bodies);
-        }
-        loop {
-            let unit_hooks = ();
-            let hooks = state.destructible.begin_pass(&unit_hooks);
-            let rapier_started_at = Instant::now();
-            step_rapier_world(&mut state, dt, &hooks);
-            profiler.current.rapier_ms +=
-                rapier_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-            rapier_passes += 1;
-
+        Some({
             let runtime_started_at = Instant::now();
-            let directive = {
+            let result = {
                 let DemoPhysicsState {
                     destructible,
                     bodies,
                     colliders,
                     island_manager,
+                    broad_phase,
                     narrow_phase,
                     impulse_joints,
                     multibody_joints,
+                    ccd_solver,
+                    physics_pipeline,
+                    integration_parameters,
                     ..
                 } = &mut *state;
                 let mut world_access = RapierWorldAccess {
                     bodies,
                     colliders,
                     island_manager,
+                    broad_phase,
                     narrow_phase,
                     impulse_joints,
                     multibody_joints,
+                    ccd_solver,
                 };
-                destructible.finish_pass(&mut world_access)
+                destructible.step_frame(now_secs, dt, &mut world_access, &(), &(), |pass, world| {
+                    let rapier_started_at = Instant::now();
+                    physics_pipeline.step(
+                        &vector![0.0, GRAVITY, 0.0],
+                        integration_parameters,
+                        world.island_manager,
+                        world.broad_phase,
+                        world.narrow_phase,
+                        world.bodies,
+                        world.colliders,
+                        world.impulse_joints,
+                        world.multibody_joints,
+                        world.ccd_solver,
+                        pass,
+                        pass,
+                    );
+                    profiler.current.rapier_ms +=
+                        rapier_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+                    rapier_passes += 1;
+                })
             };
             profiler.current.solver_ms +=
                 runtime_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-
-            match directive {
-                FrameDirective::Resimulate => continue,
-                FrameDirective::Done(result) => break Some(result),
-            }
-        }
+            result
+        })
     };
 
     let removed_nodes = frame_result
