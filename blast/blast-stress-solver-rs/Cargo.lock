@@ -43,7 +43,7 @@ checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
 name = "blast-stress-solver"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cc",
  "rapier3d",

@@ -1,6 +1,6 @@
 [package]
 name = "blast-stress-solver"
-version = "0.2.0"
+version = "0.3.0"
 publish = false
 edition = "2021"
 readme = "README.md"

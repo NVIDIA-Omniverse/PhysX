@@ -19,21 +19,21 @@ Core solver only:
 
 ```toml
 [dependencies]
-blast-stress-solver = "0.2.0"
+blast-stress-solver = "0.3.0"
 ```
 
 With built-in scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.2.0", features = ["scenarios"] }
+blast-stress-solver = { version = "0.3.0", features = ["scenarios"] }
 ```
 
 With Rapier integration and scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.2.0", features = ["rapier", "scenarios"] }
+blast-stress-solver = { version = "0.3.0", features = ["rapier", "scenarios"] }
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 ```
 
@@ -372,7 +372,7 @@ The intended model is:
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = "0.2.0"
+blast-stress-solver = "0.3.0"
 wasm-bindgen = "0.2"
 ```
 

@@ -25,6 +25,15 @@ pub extern "C" fn __cxa_throw(_thrown_object: *mut u8, _tinfo: *mut u8, _dest: *
     core::arch::wasm32::unreachable()
 }
 
+/// libc++ may probe for an active exception while evaluating internal
+/// error-handling paths. Exceptions are not supported in this build, so
+/// reporting zero active exceptions is the least surprising behavior and keeps
+/// the final wasm self-contained.
+#[unsafe(no_mangle)]
+pub extern "C" fn __cxa_uncaught_exceptions() -> usize {
+    0
+}
+
 // `__funcs_on_exit` / `__stdio_exit` do not appear in the final wasm
 // at all: because we never link wasi-libc and our
 // `wasm_runtime_shims` module covers every libc reference, the
