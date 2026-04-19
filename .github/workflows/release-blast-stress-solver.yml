@@ -14,7 +14,6 @@ concurrency:
 
 env:
   CRATE_DIR: blast/blast-stress-solver-rs
-  STAGE_DIR: ${{ runner.temp }}/blast-stress-solver-stage
 
 jobs:
   package:
@@ -60,15 +59,17 @@ jobs:
 
       - name: Assemble staged crate and verify downstream consumers
         run: |
+          stage_dir="$RUNNER_TEMP/blast-stress-solver-stage"
           scripts/assemble-blast-stress-solver-package.sh \
-            --stage-dir "$STAGE_DIR" \
+            --stage-dir "$stage_dir" \
             --verify-demo-consumer \
             --keep-stage
 
       - name: Record package paths and checksum
         id: package
         run: |
-          crate_path="$(find "$STAGE_DIR/target/package" -maxdepth 1 -name 'blast-stress-solver-*.crate' | head -n 1)"
+          stage_dir="$RUNNER_TEMP/blast-stress-solver-stage"
+          crate_path="$(find "$stage_dir/target/package" -maxdepth 1 -name 'blast-stress-solver-*.crate' | head -n 1)"
           if [[ -z "$crate_path" ]]; then
             echo "missing packaged crate" >&2
             exit 1
@@ -120,15 +121,16 @@ jobs:
 
       - name: Rebuild staged crate
         run: |
+          stage_dir="$RUNNER_TEMP/blast-stress-solver-stage"
           scripts/assemble-blast-stress-solver-package.sh \
-            --stage-dir "$STAGE_DIR" \
+            --stage-dir "$stage_dir" \
             --keep-stage
 
       - name: Dry-run publish
-        run: cargo publish --dry-run --manifest-path "$STAGE_DIR/Cargo.toml"
+        run: cargo publish --dry-run --manifest-path "$RUNNER_TEMP/blast-stress-solver-stage/Cargo.toml"
 
       - name: Publish crate
-        run: cargo publish --manifest-path "$STAGE_DIR/Cargo.toml"
+        run: cargo publish --manifest-path "$RUNNER_TEMP/blast-stress-solver-stage/Cargo.toml"
 
   github-release:
     name: Create GitHub Release

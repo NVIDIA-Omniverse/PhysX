@@ -7,7 +7,7 @@ ASSEMBLE_SCRIPT="$SCRIPT_DIR/assemble-blast-stress-solver-package.sh"
 
 STAGE_DIR=""
 KEEP_STAGE=0
-PUBLISH_ARGS=()
+declare -a PUBLISH_ARGS=()
 
 usage() {
   cat <<'EOF'
@@ -70,7 +70,11 @@ trap cleanup EXIT
   --verify-demo-consumer \
   --keep-stage
 
-cargo publish "${PUBLISH_ARGS[@]}" --manifest-path "$STAGE_DIR/Cargo.toml"
+if ((${#PUBLISH_ARGS[@]})); then
+  cargo publish "${PUBLISH_ARGS[@]}" --manifest-path "$STAGE_DIR/Cargo.toml"
+else
+  cargo publish --manifest-path "$STAGE_DIR/Cargo.toml"
+fi
 
 if [[ $KEEP_STAGE -eq 1 ]]; then
   echo "Kept staged crate at: $STAGE_DIR"
