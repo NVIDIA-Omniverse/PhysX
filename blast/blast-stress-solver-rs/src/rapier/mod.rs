@@ -4,6 +4,7 @@ mod destructible;
 mod fracture_policy;
 mod optimization;
 mod resimulation;
+mod runtime;
 mod split_migrator;
 
 pub use body_tracker::BodyTracker;
@@ -15,6 +16,10 @@ pub use optimization::{
     SmallBodyDampingOptions,
 };
 pub use resimulation::{BodySnapshots, ResimulationOptions};
+pub use runtime::{
+    CombinedHooks, ContactImpactOptions, DestructionRuntime, DestructionRuntimeOptions,
+    FrameDirective, FrameResult, GracePeriodOptions, RapierWorldAccess,
+};
 pub use split_migrator::{
     plan_split_migration, plan_split_migration_with_support, CreateEntry, ExistingBodyState,
     PlannerChildSupport, ReuseEntry, SplitMigrationPlan,

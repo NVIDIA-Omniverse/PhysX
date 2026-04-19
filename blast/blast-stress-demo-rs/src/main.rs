@@ -8,11 +8,7 @@ use std::{
     io::{BufWriter, Write},
     panic,
     path::PathBuf,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        mpsc::{channel, Receiver, Sender},
-        Arc,
-    },
+    sync::Arc,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
@@ -24,8 +20,10 @@ use bevy::prelude::*;
 use bevy::transform::TransformPlugin;
 use bevy::window::PrimaryWindow;
 use blast_stress_solver::rapier::{
-    DebrisCleanupOptions, DebrisCollisionMode, DestructibleSet, FracturePolicy, OptimizationMode,
-    ResimulationOptions, SleepThresholdOptions, SmallBodyDampingOptions, SplitCohort,
+    ContactImpactOptions, DebrisCleanupOptions, DebrisCollisionMode, DestructionRuntime,
+    DestructionRuntimeOptions, FracturePolicy, FrameDirective, GracePeriodOptions,
+    OptimizationMode, RapierWorldAccess, ResimulationOptions, SleepThresholdOptions,
+    SmallBodyDampingOptions,
 };
 use blast_stress_solver::scenarios::{
     build_bridge_scenario, build_tower_scenario, build_wall_scenario, BridgeOptions, TowerOptions,
@@ -305,303 +303,6 @@ impl DemoRuntimeToggles {
 
     fn summary(&self) -> String {
         self.config_summary.clone()
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct BodyKey(u32, u32);
-
-impl From<RigidBodyHandle> for BodyKey {
-    fn from(handle: RigidBodyHandle) -> Self {
-        let (index, generation) = handle.into_raw_parts();
-        Self(index, generation)
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-struct BodyPairKey(BodyKey, BodyKey);
-
-fn canonical_body_pair_key(body1: RigidBodyHandle, body2: RigidBodyHandle) -> Option<BodyPairKey> {
-    if body1 == body2 {
-        return None;
-    }
-    let key1 = BodyKey::from(body1);
-    let key2 = BodyKey::from(body2);
-    Some(if key1 <= key2 {
-        BodyPairKey(key1, key2)
-    } else {
-        BodyPairKey(key2, key1)
-    })
-}
-
-#[derive(Clone)]
-struct SiblingGraceCohort {
-    remaining_steps: u32,
-    bodies: Vec<RigidBodyHandle>,
-}
-
-#[derive(Clone)]
-struct GracePairSet {
-    remaining_steps: u32,
-    projectile: Option<RigidBodyHandle>,
-    clear_progress: Option<f32>,
-    pairs: Vec<BodyPairKey>,
-}
-
-#[derive(Clone)]
-struct SiblingGraceHooks {
-    active_pairs: Arc<HashSet<BodyPairKey>>,
-    filtered_pairs: Arc<AtomicUsize>,
-}
-
-impl PhysicsHooks for SiblingGraceHooks {
-    fn filter_contact_pair(&self, context: &PairFilterContext) -> Option<SolverFlags> {
-        let Some(body1) = context.rigid_body1 else {
-            return Some(SolverFlags::default());
-        };
-        let Some(body2) = context.rigid_body2 else {
-            return Some(SolverFlags::default());
-        };
-        let Some(pair) = canonical_body_pair_key(body1, body2) else {
-            return Some(SolverFlags::default());
-        };
-        if self.active_pairs.contains(&pair) {
-            self.filtered_pairs.fetch_add(1, Ordering::Relaxed);
-            None
-        } else {
-            Some(SolverFlags::default())
-        }
-    }
-
-    fn filter_intersection_pair(&self, context: &PairFilterContext) -> bool {
-        let Some(body1) = context.rigid_body1 else {
-            return true;
-        };
-        let Some(body2) = context.rigid_body2 else {
-            return true;
-        };
-        let Some(pair) = canonical_body_pair_key(body1, body2) else {
-            return true;
-        };
-        if self.active_pairs.contains(&pair) {
-            self.filtered_pairs.fetch_add(1, Ordering::Relaxed);
-            false
-        } else {
-            true
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-struct SiblingGraceStepStats {
-    active_cohorts: usize,
-    active_bodies: usize,
-    active_pairs: usize,
-    filtered_pairs: usize,
-}
-
-struct SiblingGraceState {
-    sibling_steps: u32,
-    projectile_steps: u32,
-    cohorts: Vec<SiblingGraceCohort>,
-    pair_sets: Vec<GracePairSet>,
-    active_pairs: Arc<HashSet<BodyPairKey>>,
-    filtered_pairs: Arc<AtomicUsize>,
-}
-
-impl SiblingGraceState {
-    fn new(sibling_steps: u32, projectile_steps: u32) -> Self {
-        Self {
-            sibling_steps,
-            projectile_steps,
-            cohorts: Vec::new(),
-            pair_sets: Vec::new(),
-            active_pairs: Arc::new(HashSet::new()),
-            filtered_pairs: Arc::new(AtomicUsize::new(0)),
-        }
-    }
-
-    fn register_split_cohorts(&mut self, split_cohorts: Vec<Vec<RigidBodyHandle>>) {
-        if self.sibling_steps == 0 {
-            return;
-        }
-        for bodies in split_cohorts {
-            let unique_bodies: Vec<_> = bodies
-                .into_iter()
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
-            if unique_bodies.len() > 1 {
-                self.cohorts.push(SiblingGraceCohort {
-                    remaining_steps: self.sibling_steps,
-                    bodies: unique_bodies,
-                });
-            }
-        }
-        self.rebuild_pairs();
-    }
-
-    fn register_projectile_fracture_pairs(
-        &mut self,
-        projectiles: &[ProjectileState],
-        impacting_projectiles: &HashSet<RigidBodyHandle>,
-        split_cohorts: &[Vec<RigidBodyHandle>],
-    ) {
-        if self.projectile_steps == 0
-            || impacting_projectiles.is_empty()
-            || split_cohorts.is_empty()
-        {
-            return;
-        }
-        let projectile_states: HashMap<_, _> = projectiles
-            .iter()
-            .map(|projectile| (projectile.body_handle, *projectile))
-            .collect();
-        for &projectile in impacting_projectiles {
-            let Some(projectile_state) = projectile_states.get(&projectile).copied() else {
-                continue;
-            };
-            let mut pairs = Vec::new();
-            let mut seen = HashSet::new();
-            for cohort in split_cohorts {
-                for &body in cohort {
-                    let Some(pair) = canonical_body_pair_key(projectile, body) else {
-                        continue;
-                    };
-                    if seen.insert(pair) {
-                        pairs.push(pair);
-                    }
-                }
-            }
-            if !pairs.is_empty() {
-                let clear_progress = projectile_state.exit_distance.or_else(|| {
-                    (projectile_state.target_distance > 0.0)
-                        .then_some(projectile_state.target_distance)
-                });
-                self.pair_sets.push(GracePairSet {
-                    remaining_steps: self.projectile_steps,
-                    projectile: Some(projectile),
-                    clear_progress,
-                    pairs,
-                });
-            }
-        }
-        self.rebuild_pairs();
-    }
-
-    fn register_projectile_fracture_pairs_for_links(
-        &mut self,
-        projectiles: &[ProjectileState],
-        impacting_projectiles: &HashSet<RigidBodyHandle>,
-        impacted_bodies: &HashSet<RigidBodyHandle>,
-        split_cohorts: &[SplitCohort],
-    ) {
-        if self.projectile_steps == 0
-            || impacting_projectiles.is_empty()
-            || impacted_bodies.is_empty()
-            || split_cohorts.is_empty()
-        {
-            return;
-        }
-        let mut matching_targets = Vec::new();
-        for cohort in split_cohorts {
-            if cohort
-                .source_bodies
-                .iter()
-                .any(|body| impacted_bodies.contains(body))
-            {
-                matching_targets.push(cohort.target_bodies.clone());
-            }
-        }
-        if !matching_targets.is_empty() {
-            self.register_projectile_fracture_pairs(
-                projectiles,
-                impacting_projectiles,
-                &matching_targets,
-            );
-        }
-    }
-
-    fn begin_step(&self) -> (SiblingGraceHooks, SiblingGraceStepStats) {
-        self.filtered_pairs.store(0, Ordering::Relaxed);
-        let unique_bodies = self
-            .cohorts
-            .iter()
-            .flat_map(|cohort| cohort.bodies.iter().copied())
-            .collect::<HashSet<_>>()
-            .len();
-        (
-            SiblingGraceHooks {
-                active_pairs: Arc::clone(&self.active_pairs),
-                filtered_pairs: Arc::clone(&self.filtered_pairs),
-            },
-            SiblingGraceStepStats {
-                active_cohorts: self.cohorts.len(),
-                active_bodies: unique_bodies,
-                active_pairs: self.active_pairs.len(),
-                filtered_pairs: 0,
-            },
-        )
-    }
-
-    fn finish_step(&mut self, mut stats: SiblingGraceStepStats) -> SiblingGraceStepStats {
-        stats.filtered_pairs = self.filtered_pairs.swap(0, Ordering::Relaxed);
-        for cohort in &mut self.cohorts {
-            cohort.remaining_steps = cohort.remaining_steps.saturating_sub(1);
-        }
-        for pair_set in &mut self.pair_sets {
-            if pair_set.clear_progress.is_none() {
-                pair_set.remaining_steps = pair_set.remaining_steps.saturating_sub(1);
-            }
-        }
-        self.cohorts.retain(|cohort| cohort.remaining_steps > 0);
-        self.pair_sets
-            .retain(|pair_set| pair_set.remaining_steps > 0);
-        self.rebuild_pairs();
-        stats
-    }
-
-    fn prune_projectile_progress(&mut self, projectiles: &[ProjectileState]) {
-        if self.pair_sets.is_empty() {
-            return;
-        }
-        let projectile_states: HashMap<_, _> = projectiles
-            .iter()
-            .map(|projectile| (projectile.body_handle, *projectile))
-            .collect();
-        self.pair_sets.retain(|pair_set| {
-            let Some(projectile_handle) = pair_set.projectile else {
-                return pair_set.remaining_steps > 0;
-            };
-            let Some(clear_progress) = pair_set.clear_progress else {
-                return pair_set.remaining_steps > 0;
-            };
-            let Some(projectile) = projectile_states.get(&projectile_handle) else {
-                return false;
-            };
-            projectile.max_progress < clear_progress && !projectile.passed_through
-        });
-        self.rebuild_pairs();
-    }
-
-    fn rebuild_pairs(&mut self) {
-        let mut active_pairs = HashSet::new();
-        for cohort in &self.cohorts {
-            for i in 0..cohort.bodies.len() {
-                for j in (i + 1)..cohort.bodies.len() {
-                    if let Some(pair) = canonical_body_pair_key(cohort.bodies[i], cohort.bodies[j])
-                    {
-                        active_pairs.insert(pair);
-                    }
-                }
-            }
-        }
-        for pair_set in &self.pair_sets {
-            for &pair in &pair_set.pairs {
-                active_pairs.insert(pair);
-            }
-        }
-        self.active_pairs = Arc::new(active_pairs);
     }
 }
 
@@ -1946,18 +1647,13 @@ struct DemoPhysicsState {
     impulse_joints: ImpulseJointSet,
     multibody_joints: MultibodyJointSet,
     ccd_solver: CCDSolver,
-    destructible: DestructibleSet,
+    destructible: DestructionRuntime,
     rapier_only: Option<RapierOnlyState>,
-    collision_send: Sender<CollisionEvent>,
-    collision_recv: Receiver<CollisionEvent>,
-    contact_send: Sender<ContactForceEvent>,
-    contact_recv: Receiver<ContactForceEvent>,
     node_to_entity: HashMap<u32, Entity>,
     projectile_entities: HashMap<RigidBodyHandle, Entity>,
     projectile_colliders: HashMap<ColliderHandle, RigidBodyHandle>,
     projectiles: Vec<ProjectileState>,
     projectile_run_stats: ProjectileRunStats,
-    sibling_grace: SiblingGraceState,
 }
 
 fn main() -> AppExit {
@@ -2317,9 +2013,13 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
 fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoPhysicsState {
     let settings = scaled_solver_settings(config.material_scale);
     let gravity = SolverVec3::new(0.0, config.gravity, 0.0);
-    let mut destructible =
-        DestructibleSet::from_scenario(&config.scenario, settings, gravity, config.policy)
-            .expect("failed to create destructible set");
+    let mut destructible = blast_stress_solver::rapier::DestructibleSet::from_scenario(
+        &config.scenario,
+        settings,
+        gravity,
+        config.policy,
+    )
+    .expect("failed to create destructible set");
     destructible.set_resimulation_options(config.resimulation);
     destructible.set_sleep_thresholds(config.sleep_thresholds);
     destructible.set_small_body_damping(config.small_body_damping);
@@ -2355,9 +2055,19 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
         destructible.set_ground_body_handle(Some(ground_body));
         destructible.refresh_collision_groups(&bodies, &mut colliders);
     }
-
-    let (collision_send, collision_recv) = channel();
-    let (contact_send, contact_recv) = channel();
+    let runtime_options = DestructionRuntimeOptions {
+        contact_impacts: ContactImpactOptions {
+            enabled: toggles.contact_force_injection_enabled,
+            force_scale: CONTACT_FORCE_SCALE,
+            splash_radius: SPLASH_RADIUS,
+            ..ContactImpactOptions::default()
+        },
+        grace: GracePeriodOptions {
+            sibling_steps: toggles.sibling_grace_steps,
+            impact_source_steps: toggles.projectile_fracture_grace_steps,
+        },
+    };
+    let destructible = DestructionRuntime::new(destructible, runtime_options);
 
     let mut integration_parameters = IntegrationParameters::default();
     integration_parameters.dt = 1.0 / 60.0;
@@ -2376,19 +2086,11 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
         ccd_solver: CCDSolver::new(),
         destructible,
         rapier_only,
-        collision_send,
-        collision_recv,
-        contact_send,
-        contact_recv,
         node_to_entity: HashMap::new(),
         projectile_entities: HashMap::new(),
         projectile_colliders: HashMap::new(),
         projectiles: Vec::new(),
         projectile_run_stats: ProjectileRunStats::default(),
-        sibling_grace: SiblingGraceState::new(
-            toggles.sibling_grace_steps,
-            toggles.projectile_fracture_grace_steps,
-        ),
     }
 }
 
@@ -3739,195 +3441,70 @@ fn physics_step_system(
     let dt = time.delta_secs().clamp(1.0 / 240.0, 1.0 / 30.0);
     let now_secs = time.elapsed_secs();
     let rapier_only = toggles.rapier_only;
-    let resimulation = state.destructible.resimulation_options();
-    let mut remaining_resim_passes = if rapier_only {
-        0
-    } else if resimulation.enabled {
-        resimulation.max_passes
-    } else {
-        0
-    };
-    let snapshot_for_projectiles = !rapier_only
-        && resimulation.enabled
-        && remaining_resim_passes > 0
-        && !state.projectiles.is_empty();
-    let mut snapshot = if !rapier_only
-        && (state.destructible.needs_resimulation_snapshot() || snapshot_for_projectiles)
-    {
-        let snapshot_started_at = Instant::now();
-        let captured = state
-            .destructible
-            .capture_resimulation_snapshot(&state.bodies);
-        profiler.current.resim_snapshot_ms +=
-            snapshot_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-        Some(captured)
-    } else {
-        None
-    };
     let mut rapier_passes = 0u32;
-    let mut collision_events = 0usize;
-    let mut contact_events = 0usize;
-    let mut total_fractures = 0usize;
-    let mut total_split_events = 0usize;
-    let mut total_reused_bodies = 0usize;
-    let mut total_recycled_bodies = 0usize;
-    let mut total_new_bodies = 0usize;
-    let mut total_retired_bodies = 0usize;
-    let mut total_body_type_flips = 0usize;
-    let mut total_moved_colliders = 0usize;
-    let mut total_inserted_colliders = 0usize;
-    let mut total_removed_colliders = 0usize;
-    let mut total_split_cohorts = 0usize;
-    let mut total_split_cohort_bodies = 0usize;
-    let mut total_sibling_grace_pairs = 0usize;
-    let mut total_sibling_grace_filtered_pairs = 0usize;
-
-    loop {
-        let rapier_started_at = Instant::now();
-        let sibling_grace_stats = step_rapier_world(&mut state, dt, !rapier_only);
-        profiler.current.rapier_ms += rapier_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-        rapier_passes += 1;
-        total_split_cohorts = total_split_cohorts.max(sibling_grace_stats.active_cohorts);
-        total_split_cohort_bodies =
-            total_split_cohort_bodies.max(sibling_grace_stats.active_bodies);
-        total_sibling_grace_pairs = total_sibling_grace_pairs.max(sibling_grace_stats.active_pairs);
-        total_sibling_grace_filtered_pairs += sibling_grace_stats.filtered_pairs;
-
-        if rapier_only {
-            break;
+    let frame_result = if rapier_only {
+        loop {
+            let rapier_started_at = Instant::now();
+            step_rapier_world(&mut state, dt, &());
+            profiler.current.rapier_ms +=
+                rapier_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+            rapier_passes += 1;
+            break None;
         }
-
-        let collision_started_at = Instant::now();
-        collision_events += drain_collision_events(&mut state, now_secs);
-        profiler.current.collision_events_ms +=
-            collision_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-
-        let contact_started_at = Instant::now();
-        let contact_force_result =
-            drain_contact_forces(&mut state, toggles.contact_force_injection_enabled);
-        contact_events += contact_force_result.processed;
-        profiler.current.contact_forces_ms +=
-            contact_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-
-        let solver_started_at = Instant::now();
-        let fracture_result = {
-            let DemoPhysicsState {
-                destructible,
-                bodies,
-                colliders,
-                island_manager,
-                impulse_joints,
-                multibody_joints,
-                ..
-            } = &mut *state;
-            destructible.step_with_time(
-                now_secs,
-                bodies,
-                colliders,
-                island_manager,
-                impulse_joints,
-                multibody_joints,
-            )
-        };
-        profiler.current.solver_ms += solver_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-        profiler.current.split_sanitize_ms += fracture_result.split_sanitize_ms;
-        profiler.current.split_estimate_ms += fracture_result.split_estimate_ms;
-        profiler.current.split_plan_ms += fracture_result.split_edits.plan_ms;
-        profiler.current.split_apply_ms += fracture_result.split_edits.apply_ms;
-        profiler.current.split_child_pose_ms += fracture_result.split_edits.child_pose_ms;
-        profiler.current.split_velocity_fit_ms += fracture_result.split_edits.velocity_fit_ms;
-        profiler.current.split_sleep_init_ms += fracture_result.split_edits.sleep_init_ms;
-        profiler.current.split_body_create_ms += fracture_result.split_edits.body_create_ms;
-        profiler.current.split_collider_move_ms += fracture_result.split_edits.collider_move_ms;
-        profiler.current.split_collider_insert_ms += fracture_result.split_edits.collider_insert_ms;
-        profiler.current.split_body_retire_ms += fracture_result.split_edits.body_retire_ms;
-        total_fractures += fracture_result.fractures;
-        total_split_events += fracture_result.split_events;
-        total_reused_bodies += fracture_result.split_edits.reused_bodies;
-        total_recycled_bodies += fracture_result.split_edits.recycled_bodies;
-        total_new_bodies += fracture_result.new_bodies;
-        total_retired_bodies += fracture_result.split_edits.retired_bodies;
-        total_body_type_flips += fracture_result.split_edits.body_type_flips;
-        total_moved_colliders += fracture_result.split_edits.moved_colliders;
-        total_inserted_colliders += fracture_result.split_edits.inserted_colliders;
-        total_removed_colliders += fracture_result.split_edits.removed_colliders;
-        if !fracture_result.split_cohorts.is_empty() {
-            let projectile_snapshot = state.projectiles.clone();
-            let split_targets: Vec<Vec<RigidBodyHandle>> = fracture_result
-                .split_cohorts
-                .iter()
-                .map(|cohort| cohort.target_bodies.clone())
-                .collect();
-            state.sibling_grace.register_split_cohorts(split_targets);
-            state
-                .sibling_grace
-                .register_projectile_fracture_pairs_for_links(
-                    &projectile_snapshot,
-                    &contact_force_result.impacting_projectiles,
-                    &contact_force_result.impacted_bodies,
-                    &fracture_result.split_cohorts,
-                );
-        }
-
-        let fractured = fracture_result.split_events > 0 || fracture_result.new_bodies > 0;
-        if !fractured || remaining_resim_passes == 0 {
-            break;
-        }
-
-        let Some(current_snapshot) = snapshot.as_ref() else {
-            break;
-        };
-
-        let restore_started_at = Instant::now();
-        current_snapshot.restore(&mut state.bodies);
-        profiler.current.resim_restore_ms +=
-            restore_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-
-        remaining_resim_passes = remaining_resim_passes.saturating_sub(1);
-        if remaining_resim_passes == 0 {
-            snapshot = None;
-            continue;
-        }
-
-        let snapshot_started_at = Instant::now();
-        snapshot = Some(
-            state
-                .destructible
-                .capture_resimulation_snapshot(&state.bodies),
-        );
-        profiler.current.resim_snapshot_ms +=
-            snapshot_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-    }
-
-    let removed_nodes = if rapier_only {
-        Vec::new()
     } else {
-        let optimization_started_at = Instant::now();
-        let removed_nodes = {
+        {
             let DemoPhysicsState {
                 destructible,
                 bodies,
-                colliders,
-                island_manager,
-                impulse_joints,
-                multibody_joints,
                 ..
             } = &mut *state;
-            destructible
-                .process_optimizations(
-                    now_secs,
+            destructible.begin_frame(now_secs, dt, bodies);
+        }
+        loop {
+            let unit_hooks = ();
+            let hooks = state.destructible.begin_pass(&unit_hooks);
+            let rapier_started_at = Instant::now();
+            step_rapier_world(&mut state, dt, &hooks);
+            profiler.current.rapier_ms +=
+                rapier_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+            rapier_passes += 1;
+
+            let runtime_started_at = Instant::now();
+            let directive = {
+                let DemoPhysicsState {
+                    destructible,
                     bodies,
                     colliders,
                     island_manager,
+                    narrow_phase,
                     impulse_joints,
                     multibody_joints,
-                )
-                .removed_nodes
-        };
-        profiler.current.optimization_ms +=
-            optimization_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
-        removed_nodes
+                    ..
+                } = &mut *state;
+                let mut world_access = RapierWorldAccess {
+                    bodies,
+                    colliders,
+                    island_manager,
+                    narrow_phase,
+                    impulse_joints,
+                    multibody_joints,
+                };
+                destructible.finish_pass(&mut world_access)
+            };
+            profiler.current.solver_ms +=
+                runtime_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
+
+            match directive {
+                FrameDirective::Resimulate => continue,
+                FrameDirective::Done(result) => break Some(result),
+            }
+        }
     };
+
+    let removed_nodes = frame_result
+        .as_ref()
+        .map(|result| result.optimization.removed_nodes.clone())
+        .unwrap_or_default();
 
     let removed_node_count = removed_nodes.len();
     for node_index in removed_nodes {
@@ -3941,44 +3518,64 @@ fn physics_step_system(
         let frame_index = profiler.frame_index;
         log_projectile_trace(&mut profiler, &state, frame_index);
     }
-    let projectile_snapshot = state.projectiles.clone();
-    state
-        .sibling_grace
-        .prune_projectile_progress(&projectile_snapshot);
 
     let cleanup_started_at = Instant::now();
     let removed_projectiles = cleanup_projectiles(&mut state, &mut commands, dt);
     profiler.current.projectile_cleanup_ms +=
         cleanup_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
 
+    let collision_events = frame_result
+        .as_ref()
+        .map(|result| result.support_contacts)
+        .unwrap_or(0);
+    let contact_events = frame_result
+        .as_ref()
+        .map(|result| result.accepted_impacts)
+        .unwrap_or(0);
+
     profiler.current.physics_ms += physics_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
     profiler.current.rapier_passes += rapier_passes;
     profiler.current.collision_events += collision_events;
     profiler.current.contact_events += contact_events;
-    profiler.current.fractures += total_fractures;
-    profiler.current.split_events += total_split_events;
-    profiler.current.split_cohorts += total_split_cohorts;
-    profiler.current.split_cohort_bodies += total_split_cohort_bodies;
-    profiler.current.reused_bodies += total_reused_bodies;
-    profiler.current.recycled_bodies += total_recycled_bodies;
-    profiler.current.new_bodies += total_new_bodies;
-    profiler.current.retired_bodies += total_retired_bodies;
-    profiler.current.body_type_flips += total_body_type_flips;
-    profiler.current.moved_colliders += total_moved_colliders;
-    profiler.current.inserted_colliders += total_inserted_colliders;
-    profiler.current.removed_colliders += total_removed_colliders;
+    if let Some(result) = frame_result {
+        profiler.current.split_sanitize_ms += result.split_sanitize_ms;
+        profiler.current.split_estimate_ms += result.split_estimate_ms;
+        profiler.current.split_plan_ms += result.split_edits.plan_ms;
+        profiler.current.split_apply_ms += result.split_edits.apply_ms;
+        profiler.current.split_child_pose_ms += result.split_edits.child_pose_ms;
+        profiler.current.split_velocity_fit_ms += result.split_edits.velocity_fit_ms;
+        profiler.current.split_sleep_init_ms += result.split_edits.sleep_init_ms;
+        profiler.current.split_body_create_ms += result.split_edits.body_create_ms;
+        profiler.current.split_collider_move_ms += result.split_edits.collider_move_ms;
+        profiler.current.split_collider_insert_ms += result.split_edits.collider_insert_ms;
+        profiler.current.split_body_retire_ms += result.split_edits.body_retire_ms;
+        profiler.current.resim_restore_ms += result.resim_restore_ms;
+        profiler.current.resim_snapshot_ms += result.resim_snapshot_ms;
+        profiler.current.fractures += result.fractures;
+        profiler.current.split_events += result.split_events;
+        profiler.current.split_cohorts += result.split_cohorts.len();
+        profiler.current.split_cohort_bodies += result
+            .split_cohorts
+            .iter()
+            .map(|cohort| cohort.target_bodies.len())
+            .sum::<usize>();
+        profiler.current.reused_bodies += result.split_edits.reused_bodies;
+        profiler.current.recycled_bodies += result.split_edits.recycled_bodies;
+        profiler.current.new_bodies += result.new_bodies;
+        profiler.current.retired_bodies += result.split_edits.retired_bodies;
+        profiler.current.body_type_flips += result.split_edits.body_type_flips;
+        profiler.current.moved_colliders += result.split_edits.moved_colliders;
+        profiler.current.inserted_colliders += result.split_edits.inserted_colliders;
+        profiler.current.removed_colliders += result.split_edits.removed_colliders;
+        profiler.current.sibling_grace_pairs += result.sibling_grace_pairs;
+        profiler.current.sibling_grace_filtered_pairs += result.sibling_grace_filtered_pairs;
+    }
     profiler.current.removed_nodes += removed_node_count;
     profiler.current.removed_projectiles += removed_projectiles;
-    profiler.current.sibling_grace_pairs += total_sibling_grace_pairs;
-    profiler.current.sibling_grace_filtered_pairs += total_sibling_grace_filtered_pairs;
     update_scene_counters(&state, &mut profiler.current);
 }
 
-fn step_rapier_world(
-    state: &mut DemoPhysicsState,
-    dt: f32,
-    collect_events: bool,
-) -> SiblingGraceStepStats {
+fn step_rapier_world<H: PhysicsHooks>(state: &mut DemoPhysicsState, dt: f32, hooks: &H) {
     let DemoPhysicsState {
         physics_pipeline,
         integration_parameters,
@@ -3990,249 +3587,25 @@ fn step_rapier_world(
         impulse_joints,
         multibody_joints,
         ccd_solver,
-        collision_send,
-        contact_send,
-        sibling_grace,
         ..
     } = state;
 
     integration_parameters.dt = dt;
-    let (hooks, sibling_grace_stats) = sibling_grace.begin_step();
-
     let gravity = vector![0.0, GRAVITY, 0.0];
-    if collect_events {
-        let event_handler =
-            ChannelEventCollector::new(collision_send.clone(), contact_send.clone());
-        physics_pipeline.step(
-            &gravity,
-            integration_parameters,
-            island_manager,
-            broad_phase,
-            narrow_phase,
-            bodies,
-            colliders,
-            impulse_joints,
-            multibody_joints,
-            ccd_solver,
-            &hooks,
-            &event_handler,
-        );
-    } else {
-        physics_pipeline.step(
-            &gravity,
-            integration_parameters,
-            island_manager,
-            broad_phase,
-            narrow_phase,
-            bodies,
-            colliders,
-            impulse_joints,
-            multibody_joints,
-            ccd_solver,
-            &hooks,
-            &(),
-        );
-    }
-    sibling_grace.finish_step(sibling_grace_stats)
-}
-
-fn drain_collision_events(state: &mut DemoPhysicsState, now_secs: f32) -> usize {
-    if state.rapier_only.is_some() {
-        return 0;
-    }
-    let mut processed = 0usize;
-    while let Ok(event) = state.collision_recv.try_recv() {
-        let CollisionEvent::Started(collider1, collider2, flags) = event else {
-            continue;
-        };
-        if flags.contains(CollisionEventFlags::SENSOR) {
-            continue;
-        }
-        register_support_contact(state, collider1, collider2, now_secs);
-        register_support_contact(state, collider2, collider1, now_secs);
-        processed += 1;
-    }
-    processed
-}
-
-fn register_support_contact(
-    state: &mut DemoPhysicsState,
-    tracked_collider: ColliderHandle,
-    other_collider: ColliderHandle,
-    now_secs: f32,
-) {
-    if state.rapier_only.is_some() {
-        return;
-    }
-    let Some(node_index) = state.destructible.collider_node(tracked_collider) else {
-        return;
-    };
-    if state.destructible.is_support(node_index) {
-        return;
-    }
-
-    let Some(body_handle) = state.destructible.node_body(node_index) else {
-        return;
-    };
-
-    let support_contact = {
-        let Some(other) = state.colliders.get(other_collider) else {
-            return;
-        };
-        let Some(other_parent) = other.parent() else {
-            return;
-        };
-        if other_parent == body_handle {
-            return;
-        }
-
-        state
-            .bodies
-            .get(other_parent)
-            .map(|body| body.is_fixed())
-            .unwrap_or(false)
-            || state
-                .destructible
-                .collider_node(other_collider)
-                .map(|other_node| state.destructible.is_support(other_node))
-                .unwrap_or(false)
-            || state.destructible.body_has_support(other_parent)
-    };
-
-    if support_contact {
-        state.destructible.mark_body_support_contact(
-            body_handle,
-            now_secs,
-            &mut state.bodies,
-            &mut state.colliders,
-        );
-    }
-}
-
-struct ContactForceDrainResult {
-    processed: usize,
-    impacting_projectiles: HashSet<RigidBodyHandle>,
-    impacted_bodies: HashSet<RigidBodyHandle>,
-}
-
-fn drain_contact_forces(
-    state: &mut DemoPhysicsState,
-    inject_forces: bool,
-) -> ContactForceDrainResult {
-    if state.rapier_only.is_some() {
-        return ContactForceDrainResult {
-            processed: 0,
-            impacting_projectiles: HashSet::new(),
-            impacted_bodies: HashSet::new(),
-        };
-    }
-    let mut processed = 0usize;
-    let mut impacting_projectiles = HashSet::new();
-    let mut impacted_bodies = HashSet::new();
-    while let Ok(event) = state.contact_recv.try_recv() {
-        let (projectile_body, node_index) =
-            if let Some(&body) = state.projectile_colliders.get(&event.collider1) {
-                if let Some(node) = state.destructible.collider_node(event.collider2) {
-                    (body, node)
-                } else {
-                    continue;
-                }
-            } else if let Some(&body) = state.projectile_colliders.get(&event.collider2) {
-                if let Some(node) = state.destructible.collider_node(event.collider1) {
-                    (body, node)
-                } else {
-                    continue;
-                }
-            } else {
-                continue;
-            };
-        impacting_projectiles.insert(projectile_body);
-
-        let Some(projectile) = state.bodies.get(projectile_body) else {
-            continue;
-        };
-        let projectile_velocity = projectile.linvel();
-        let velocity_vec = Vec3::new(
-            projectile_velocity.x,
-            projectile_velocity.y,
-            projectile_velocity.z,
-        );
-        let direction = if velocity_vec.length_squared() > 1.0e-6 {
-            velocity_vec.normalize()
-        } else {
-            Vec3::new(
-                event.total_force.x,
-                event.total_force.y,
-                event.total_force.z,
-            )
-            .normalize_or_zero()
-        };
-        if direction == Vec3::ZERO {
-            continue;
-        }
-
-        let force_world = direction * event.total_force_magnitude;
-        let Some(body_handle) = state.destructible.node_body(node_index) else {
-            continue;
-        };
-        impacted_bodies.insert(body_handle);
-        let Some(body) = state.bodies.get(body_handle) else {
-            continue;
-        };
-        if !inject_forces {
-            processed += 1;
-            continue;
-        }
-        let rotation = body.position().rotation;
-        let local_force = rotation.inverse() * vector![force_world.x, force_world.y, force_world.z];
-        let Some(hit_local) = state.destructible.node_local_offset(node_index) else {
-            continue;
-        };
-        let mut impacted_nodes =
-            Vec::with_capacity(state.destructible.body_node_count(body_handle));
-        for &other_node in state.destructible.body_nodes_slice(body_handle) {
-            let Some(other_local) = state.destructible.node_local_offset(other_node) else {
-                continue;
-            };
-            let dx = other_local.x - hit_local.x;
-            let dy = other_local.y - hit_local.y;
-            let dz = other_local.z - hit_local.z;
-            let dist = (dx * dx + dy * dy + dz * dz).sqrt();
-            if dist > SPLASH_RADIUS {
-                continue;
-            }
-
-            let falloff = if other_node == node_index {
-                1.0
-            } else {
-                let t = (1.0 - dist / SPLASH_RADIUS).max(0.0);
-                t * t
-            };
-            if falloff <= 0.0 {
-                continue;
-            }
-
-            impacted_nodes.push((other_node, other_local, falloff));
-        }
-
-        for (other_node, other_local, falloff) in impacted_nodes {
-            state.destructible.add_force(
-                other_node,
-                other_local,
-                SolverVec3::new(
-                    local_force.x * CONTACT_FORCE_SCALE * falloff,
-                    local_force.y * CONTACT_FORCE_SCALE * falloff,
-                    local_force.z * CONTACT_FORCE_SCALE * falloff,
-                ),
-            );
-        }
-        processed += 1;
-    }
-    ContactForceDrainResult {
-        processed,
-        impacting_projectiles,
-        impacted_bodies,
-    }
+    physics_pipeline.step(
+        &gravity,
+        integration_parameters,
+        island_manager,
+        broad_phase,
+        narrow_phase,
+        bodies,
+        colliders,
+        impulse_joints,
+        multibody_joints,
+        ccd_solver,
+        hooks,
+        &(),
+    );
 }
 
 fn cleanup_projectiles(state: &mut DemoPhysicsState, commands: &mut Commands, dt: f32) -> usize {

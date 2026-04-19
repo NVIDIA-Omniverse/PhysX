@@ -177,6 +177,121 @@ fn weak_impact_settings() -> SolverSettings {
     }
 }
 
+struct RuntimeTestWorld {
+    gravity: Vector<Real>,
+    integration_parameters: IntegrationParameters,
+    physics_pipeline: PhysicsPipeline,
+    broad_phase: BroadPhaseBvh,
+    narrow_phase: NarrowPhase,
+    ccd_solver: CCDSolver,
+    bodies: RigidBodySet,
+    colliders: ColliderSet,
+    island_manager: IslandManager,
+    impulse_joints: ImpulseJointSet,
+    multibody_joints: MultibodyJointSet,
+}
+
+impl RuntimeTestWorld {
+    fn new(gravity: Vector<Real>) -> Self {
+        Self {
+            gravity,
+            integration_parameters: IntegrationParameters::default(),
+            physics_pipeline: PhysicsPipeline::new(),
+            broad_phase: BroadPhaseBvh::new(),
+            narrow_phase: NarrowPhase::new(),
+            ccd_solver: CCDSolver::new(),
+            bodies: RigidBodySet::new(),
+            colliders: ColliderSet::new(),
+            island_manager: IslandManager::new(),
+            impulse_joints: ImpulseJointSet::new(),
+            multibody_joints: MultibodyJointSet::new(),
+        }
+    }
+
+    fn run_frame(
+        &mut self,
+        runtime: &mut DestructionRuntime,
+        now_secs: f32,
+        dt: f32,
+    ) -> FrameResult {
+        runtime.begin_frame(now_secs, dt, &self.bodies);
+        loop {
+            let directive = {
+                let unit_hooks = ();
+                let hooks = runtime.begin_pass(&unit_hooks);
+                self.physics_pipeline.step(
+                    &self.gravity,
+                    &self.integration_parameters,
+                    &mut self.island_manager,
+                    &mut self.broad_phase,
+                    &mut self.narrow_phase,
+                    &mut self.bodies,
+                    &mut self.colliders,
+                    &mut self.impulse_joints,
+                    &mut self.multibody_joints,
+                    &mut self.ccd_solver,
+                    &hooks,
+                    &(),
+                );
+                let mut world_access = RapierWorldAccess {
+                    bodies: &mut self.bodies,
+                    colliders: &mut self.colliders,
+                    island_manager: &mut self.island_manager,
+                    narrow_phase: &self.narrow_phase,
+                    impulse_joints: &mut self.impulse_joints,
+                    multibody_joints: &mut self.multibody_joints,
+                };
+                runtime.finish_pass(&mut world_access)
+            };
+
+            match directive {
+                FrameDirective::Resimulate => continue,
+                FrameDirective::Done(result) => return result,
+            }
+        }
+    }
+
+    fn add_ball_projectile(
+        &mut self,
+        translation: Vector<Real>,
+        linvel: Vector<Real>,
+        radius: f32,
+        density: f32,
+    ) -> RigidBodyHandle {
+        let handle = self.bodies.insert(
+            RigidBodyBuilder::dynamic()
+                .translation(translation)
+                .linvel(linvel)
+                .ccd_enabled(true)
+                .build(),
+        );
+        self.colliders.insert_with_parent(
+            ColliderBuilder::ball(radius)
+                .density(density)
+                .friction(0.0)
+                .restitution(0.0)
+                .build(),
+            handle,
+            &mut self.bodies,
+        );
+        handle
+    }
+
+    fn add_ground(&mut self, y: f32) -> RigidBodyHandle {
+        let handle = self.bodies.insert(
+            RigidBodyBuilder::fixed()
+                .translation(vector![0.0, y, 0.0])
+                .build(),
+        );
+        self.colliders.insert_with_parent(
+            ColliderBuilder::cuboid(10.0, 0.5, 10.0).build(),
+            handle,
+            &mut self.bodies,
+        );
+        handle
+    }
+}
+
 #[test]
 fn destructible_set_initializes() {
     let scenario = wall_scenario();
@@ -827,6 +942,11 @@ fn resimulation_snapshot_restores_pose_velocity_and_sleep_state() {
     let body_handle = set
         .node_body(0)
         .expect("dynamic pair should create one body");
+    {
+        let body = bodies.get_mut(body_handle).unwrap();
+        body.add_force(vector![2.0, 3.0, 4.0], true);
+        body.add_torque(vector![5.0, 6.0, 7.0], true);
+    }
     let snapshot = set.capture_resimulation_snapshot(&bodies);
 
     {
@@ -836,6 +956,10 @@ fn resimulation_snapshot_restores_pose_velocity_and_sleep_state() {
         body.set_angvel(vector![1.0, 2.0, 3.0], true);
         body.set_linear_damping(4.0);
         body.set_angular_damping(5.0);
+        body.reset_forces(true);
+        body.reset_torques(true);
+        body.add_force(vector![-1.0, -2.0, -3.0], true);
+        body.add_torque(vector![-4.0, -5.0, -6.0], true);
         body.set_enabled(false);
         body.sleep();
     }
@@ -853,6 +977,154 @@ fn resimulation_snapshot_restores_pose_velocity_and_sleep_state() {
     assert!(!body.is_sleeping());
     assert!(body.linear_damping() < 4.0);
     assert!(body.angular_damping() < 5.0);
+    assert_eq!(body.user_force(), vector![2.0, 3.0, 4.0]);
+    assert_eq!(body.user_torque(), vector![5.0, 6.0, 7.0]);
+}
+
+#[test]
+fn destruction_runtime_contact_driven_impacts_fracture_and_resimulate() {
+    let scenario = wall_scenario();
+    let policy = FracturePolicy {
+        idle_skip: false,
+        apply_excess_forces: false,
+        ..FracturePolicy::default()
+    };
+    let mut destructible =
+        DestructibleSet::from_scenario(&scenario, weak_impact_settings(), Vec3::ZERO, policy)
+            .expect("wall scenario should create");
+    destructible.set_resimulation_options(ResimulationOptions {
+        enabled: true,
+        max_passes: 2,
+    });
+
+    let runtime_options = DestructionRuntimeOptions {
+        contact_impacts: ContactImpactOptions {
+            min_total_impulse: 5.0,
+            min_external_speed: 0.1,
+            min_internal_speed: 0.1,
+            force_scale: 1.0,
+            max_force_magnitude: 12_000.0,
+            splash_radius: 1.5,
+            splash_falloff_exponent: 2.0,
+            internal_contact_scale: 0.5,
+            ..ContactImpactOptions::default()
+        },
+        ..DestructionRuntimeOptions::default()
+    };
+    let mut runtime = DestructionRuntime::new(destructible, runtime_options);
+    let mut world = RuntimeTestWorld::new(vector![0.0, 0.0, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    world.add_ball_projectile(
+        vector![-5.0, 1.25, 0.0],
+        vector![24.0, 0.0, 0.0],
+        0.35,
+        2500.0,
+    );
+
+    let dt = 1.0 / 60.0;
+    let mut now_secs = 0.0;
+    let mut total_impacts = 0usize;
+    let mut total_fractures = 0usize;
+    let mut saw_resimulation = false;
+    let mut trace = Vec::new();
+
+    for frame_index in 0..45 {
+        let result = world.run_frame(&mut runtime, now_secs, dt);
+        trace.push((
+            frame_index,
+            result.contact_pairs,
+            result.active_contact_pairs,
+            result.accepted_impacts,
+            result.rejected_below_impulse,
+            result.rejected_below_speed,
+            result.rejected_cooldown,
+            result.fractures,
+            result.rapier_passes,
+        ));
+        total_impacts += result.accepted_impacts;
+        total_fractures += result.fractures;
+        saw_resimulation |= result.rapier_passes > 1;
+        now_secs += dt;
+        if total_fractures > 0 {
+            break;
+        }
+    }
+
+    assert!(
+        total_impacts > 0,
+        "generic Rapier contact should be admitted as an impact without explicit add_force: {trace:?}"
+    );
+    assert!(
+        total_fractures > 0,
+        "accepted contact impact should fracture the destructible wall: {trace:?}"
+    );
+    assert!(
+        saw_resimulation,
+        "topology-changing contact fracture should trigger same-frame resimulation"
+    );
+    assert!(
+        runtime.actor_count() > 1,
+        "contact-driven fracture should split the wall into multiple actors"
+    );
+}
+
+#[test]
+fn destruction_runtime_registers_support_contacts_from_generic_collisions() {
+    let scenario = dynamic_pair_scenario();
+    let mut destructible = DestructibleSet::from_scenario(
+        &scenario,
+        SolverSettings::default(),
+        Vec3::new(0.0, -9.81, 0.0),
+        FracturePolicy::default(),
+    )
+    .expect("dynamic pair scenario should create");
+    destructible.set_small_body_damping(SmallBodyDampingOptions {
+        mode: OptimizationMode::AfterGroundCollision,
+        collider_count_threshold: 2,
+        min_linear_damping: 2.0,
+        min_angular_damping: 2.0,
+    });
+
+    let runtime_options = DestructionRuntimeOptions {
+        contact_impacts: ContactImpactOptions {
+            enabled: false,
+            ..ContactImpactOptions::default()
+        },
+        ..DestructionRuntimeOptions::default()
+    };
+    let mut runtime = DestructionRuntime::new(destructible, runtime_options);
+    let mut world = RuntimeTestWorld::new(vector![0.0, -9.81, 0.0]);
+    runtime.initialize(&mut world.bodies, &mut world.colliders);
+    world.add_ground(-0.5);
+
+    let body_handle = runtime
+        .node_body(0)
+        .expect("dynamic pair should initialize into one body");
+    let dt = 1.0 / 60.0;
+    let mut now_secs = 0.0;
+    let mut support_contacts = 0usize;
+
+    for _ in 0..120 {
+        let result = world.run_frame(&mut runtime, now_secs, dt);
+        support_contacts += result.support_contacts;
+        now_secs += dt;
+        if support_contacts > 0 {
+            break;
+        }
+    }
+
+    assert!(
+        support_contacts > 0,
+        "fixed-body collision should be registered as a support contact by the runtime"
+    );
+    let body = world
+        .bodies
+        .get(body_handle)
+        .expect("destructible body should still exist");
+    assert!(
+        body.linear_damping() >= 2.0 && body.angular_damping() >= 2.0,
+        "support-contact promotion should update damping without explicit mark_body_support_contact"
+    );
 }
 
 #[test]

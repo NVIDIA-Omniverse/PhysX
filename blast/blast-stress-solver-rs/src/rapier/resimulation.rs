@@ -23,6 +23,8 @@ struct BodySnapshot {
     angvel: AngVector<Real>,
     linear_damping: Real,
     angular_damping: Real,
+    user_force: Vector<Real>,
+    user_torque: AngVector<Real>,
     sleeping: bool,
     enabled: bool,
 }
@@ -47,6 +49,8 @@ impl BodySnapshots {
                         angvel: *body.angvel(),
                         linear_damping: body.linear_damping(),
                         angular_damping: body.angular_damping(),
+                        user_force: body.user_force(),
+                        user_torque: body.user_torque(),
                         sleeping: body.is_sleeping(),
                         enabled: body.is_enabled(),
                     })
@@ -69,6 +73,12 @@ impl BodySnapshots {
             body.set_angular_damping(snapshot.angular_damping);
             body.reset_forces(true);
             body.reset_torques(true);
+            if snapshot.user_force.norm_squared() > 0.0 {
+                body.add_force(snapshot.user_force, true);
+            }
+            if snapshot.user_torque.norm_squared() > 0.0 {
+                body.add_torque(snapshot.user_torque, true);
+            }
             if snapshot.sleeping {
                 body.sleep();
             } else {

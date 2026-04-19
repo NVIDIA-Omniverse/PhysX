@@ -8,7 +8,8 @@
 //! - **Low-level solver**: `StressProcessor` — direct conjugate-gradient solver access
 //! - **Bond stress analysis**: `compute_bond_stress` — decompose impulses into compression/tension/shear
 //! - **Scenarios** (feature `scenarios`): Pre-built wall, tower, and bridge scenario builders
-//! - **Rapier integration** (feature `rapier`): `DestructibleSet` — full pipeline with Rapier3D physics
+//! - **Rapier integration** (feature `rapier`): `DestructionRuntime` for existing Rapier apps and
+//!   `DestructibleSet` as the low-level escape hatch
 //!
 //! ## Quick Start (without Rapier)
 //!
