@@ -534,7 +534,7 @@ verify_demo_consumer_stage() {
   mkdir -p "$demo_copy"
   rsync -a --exclude 'target/' --exclude '.codex' "$DEMO_DIR/" "$demo_copy/"
 
-  env LC_ALL=C perl -0pi -e 's{blast-stress-solver = \{ path = "\.\./blast-stress-solver-rs", features = \["scenarios", "rapier"\] \}}{blast-stress-solver = { path = "'"$PACKAGE_ROOT"'", features = ["scenarios", "rapier"] }}' \
+  env LC_ALL=C perl -0pi -e 's{blast-stress-solver = \{ path = "\.\./blast-stress-solver-rs", features = \[[^\]]+\] \}}{blast-stress-solver = { path = "'"$PACKAGE_ROOT"'", features = ["authoring", "scenarios", "rapier"] }}' \
     "$manifest_path"
 
   if ! rg -Fq "$PACKAGE_ROOT" "$manifest_path"; then

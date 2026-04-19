@@ -6,7 +6,9 @@
 
 #![allow(non_camel_case_types, dead_code)]
 
-use std::ffi::{c_int, c_void};
+use std::ffi::c_int;
+#[cfg(feature = "authoring")]
+use std::ffi::c_void;
 
 use crate::types::Vec3;
 
