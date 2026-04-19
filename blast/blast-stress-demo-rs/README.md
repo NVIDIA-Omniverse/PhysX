@@ -25,6 +25,20 @@ Default bridge authoring is intentionally reduced:
 
 This keeps the bridge shape while making runtime fracture and Rapier stepping tractable.
 
+## Additional Scene Packs
+
+The demo also ships embedded authored scene packs for:
+
+- `fractured-wall`
+- `fractured-tower`
+- `fractured-bridge`
+- `brick-building`
+
+The brick building preset is a coarse 2-story shell with staggered brick
+coursing, interlocking corners, window and door openings, a flat roof, and a
+2-course parapet. Its bond graph is generated from the authored brick geometry
+rather than hand-authored connectivity.
+
 ## Run Modes
 
 Normal bridge:
@@ -37,6 +51,12 @@ Normal bridge with meshes:
 
 ```bash
 BLAST_STRESS_DEMO_SCENARIO=bridge BLAST_STRESS_DEMO_SHOW_MESHES=1 cargo run
+```
+
+Brick building with meshes:
+
+```bash
+BLAST_STRESS_DEMO_SCENARIO=brick-building BLAST_STRESS_DEMO_SHOW_MESHES=1 cargo run
 ```
 
 Headless bridge:
@@ -134,9 +154,11 @@ The demo can auto-fire reproducible headless shot scripts against the real runti
 - `wall_smoke`
 - `tower_smoke`
 - `bridge_smoke`
+- `building_smoke`
 - `wall_benchmark`
 - `tower_benchmark`
 - `bridge_benchmark`
+- `building_benchmark`
 - `auto_smoke`
 - `auto_benchmark`
 

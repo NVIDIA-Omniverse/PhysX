@@ -150,6 +150,13 @@ fn fractured_scene_packs_load_and_fracture_in_headless_mode() {
             220u32,
             3u64,
         ),
+        (
+            "brick_building",
+            "brick-building",
+            "auto_smoke",
+            220u32,
+            3u64,
+        ),
     ];
 
     for (scenario_env, scenario_slug, shot_script, frames, expected_shots) in cases {
@@ -205,6 +212,33 @@ fn tower_benchmark_script_emits_rich_stats() {
     assert!(
         log_text.lines().any(|line| line.starts_with("[summary] ")),
         "expected summary line in tower benchmark log"
+    );
+}
+
+#[test]
+fn building_benchmark_script_emits_rich_stats() {
+    let (log_text, summary) = run_headless_scenario("brick_building", "building_benchmark", 260);
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("brick-building")
+    );
+    assert_eq!(
+        summary.get("shot_script").map(String::as_str),
+        Some("building_benchmark")
+    );
+    assert_eq!(get_u64(&summary, "shots_planned"), 5);
+    assert_eq!(get_u64(&summary, "shots_fired"), 5);
+    assert!(get_u64(&summary, "total_fractures") > 0);
+    assert!(get_u64(&summary, "total_splits") > 0);
+    assert!(get_f32(&summary, "max_solver_ms") > 0.0);
+    assert!(get_f32(&summary, "max_split_plan_ms") >= 0.0);
+    assert!(get_f32(&summary, "max_split_apply_ms") >= 0.0);
+    assert!(get_u64(&summary, "peak_world_bodies") > 0);
+    assert!(
+        log_text
+            .lines()
+            .any(|line| line.starts_with("[fracture-frame] ")),
+        "expected fracture-frame lines in building benchmark log"
     );
 }
 

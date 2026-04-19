@@ -15,6 +15,7 @@ pub enum EmbeddedSceneKey {
     FracturedWall,
     FracturedTower,
     FracturedBridge,
+    BrickBuilding,
 }
 
 #[derive(Clone, Debug)]
@@ -181,6 +182,9 @@ pub fn load_embedded_scene_pack(key: EmbeddedSceneKey) -> Result<LoadedScenePack
         }
         EmbeddedSceneKey::FracturedBridge => {
             include_str!("../assets/scenes/fractured-bridge.json")
+        }
+        EmbeddedSceneKey::BrickBuilding => {
+            include_str!("../assets/scenes/brick-building.json")
         }
     };
 
@@ -369,5 +373,18 @@ mod tests {
             .expect("fractured bridge pack should load");
         let mesh = pack.node_meshes[0].to_bevy_mesh();
         assert!(mesh.count_vertices() > 0);
+    }
+
+    #[test]
+    fn brick_building_pack_loads() {
+        let pack = load_embedded_scene_pack(EmbeddedSceneKey::BrickBuilding)
+            .expect("brick building pack should load");
+        assert_eq!(pack.scenario.nodes.len(), pack.node_meshes.len());
+        assert_eq!(pack.scenario.nodes.len(), pack.scenario.node_sizes.len());
+        assert_eq!(
+            pack.scenario.nodes.len(),
+            pack.scenario.collider_shapes.len()
+        );
+        assert!(!pack.scenario.bonds.is_empty());
     }
 }

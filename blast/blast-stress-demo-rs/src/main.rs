@@ -57,6 +57,7 @@ enum DemoScenarioKind {
     FracturedWall,
     FracturedTower,
     FracturedBridge,
+    BrickBuilding,
 }
 
 impl DemoScenarioKind {
@@ -68,6 +69,7 @@ impl DemoScenarioKind {
             Self::FracturedWall => "fractured-wall",
             Self::FracturedTower => "fractured-tower",
             Self::FracturedBridge => "fractured-bridge",
+            Self::BrickBuilding => "brick-building",
         }
     }
 }
@@ -2121,6 +2123,9 @@ fn selected_scenario_kind() -> DemoScenarioKind {
         Some("fractured-bridge") | Some("fractured_bridge") | Some("fbridge") => {
             DemoScenarioKind::FracturedBridge
         }
+        Some("brick-building") | Some("brick_building") | Some("building") => {
+            DemoScenarioKind::BrickBuilding
+        }
         _ => DemoScenarioKind::Wall,
     }
 }
@@ -2300,6 +2305,11 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
             load_embedded_scene_pack(EmbeddedSceneKey::FracturedBridge)
                 .expect("failed to load fractured bridge scene pack"),
         ),
+        DemoScenarioKind::BrickBuilding => apply_scene_pack(
+            build_tower_demo_config(),
+            load_embedded_scene_pack(EmbeddedSceneKey::BrickBuilding)
+                .expect("failed to load brick building scene pack"),
+        ),
     };
     apply_demo_runtime_defaults(config)
 }
@@ -2418,9 +2428,11 @@ fn build_headless_shot_plan(
         "wall_face_heavy" => build_wall_face_heavy_shots(config, bounds),
         "tower_smoke" => build_tower_smoke_shots(config, bounds),
         "bridge_smoke" => build_bridge_smoke_shots(config, bounds),
+        "building_smoke" => build_building_smoke_shots(config, bounds),
         "wall_benchmark" => build_wall_benchmark_shots(config, bounds),
         "tower_benchmark" => build_tower_benchmark_shots(config, bounds),
         "bridge_benchmark" => build_bridge_benchmark_shots(config, bounds),
+        "building_benchmark" => build_building_benchmark_shots(config, bounds),
         "auto_smoke" => match kind {
             DemoScenarioKind::Wall | DemoScenarioKind::FracturedWall => {
                 build_wall_smoke_shots(config, bounds)
@@ -2431,6 +2443,7 @@ fn build_headless_shot_plan(
             DemoScenarioKind::Bridge | DemoScenarioKind::FracturedBridge => {
                 build_bridge_smoke_shots(config, bounds)
             }
+            DemoScenarioKind::BrickBuilding => build_building_smoke_shots(config, bounds),
         },
         "auto_benchmark" => match kind {
             DemoScenarioKind::Wall | DemoScenarioKind::FracturedWall => {
@@ -2442,6 +2455,7 @@ fn build_headless_shot_plan(
             DemoScenarioKind::Bridge | DemoScenarioKind::FracturedBridge => {
                 build_bridge_benchmark_shots(config, bounds)
             }
+            DemoScenarioKind::BrickBuilding => build_building_benchmark_shots(config, bounds),
         },
         _ => return None,
     };
@@ -2720,6 +2734,56 @@ fn build_bridge_smoke_shots(config: &DemoConfig, bounds: ScenarioBounds) -> Vec<
     ]
 }
 
+fn build_building_smoke_shots(config: &DemoConfig, bounds: ScenarioBounds) -> Vec<HeadlessShot> {
+    let size = bounds.dynamic.size();
+    let front_z = bounds.dynamic.min.z + 0.25;
+    let diagonal_distance = size.x.max(size.z) + 5.0;
+    let forward_distance = size.z.max(0.5) + 5.0;
+    let door_target = nearest_dynamic_node_center(config, Vec3::new(0.0, 0.9, front_z));
+    let upper_window_target = nearest_dynamic_node_center(config, Vec3::new(1.5, 2.8, front_z));
+    let parapet_target = nearest_dynamic_node_center(
+        config,
+        Vec3::new(
+            bounds.dynamic.max.x - 0.35,
+            bounds.dynamic.max.y - 0.35,
+            bounds.dynamic.max.z - 0.35,
+        ),
+    );
+
+    vec![
+        make_headless_shot(
+            14,
+            "building-door-breach",
+            door_target,
+            Vec3::new(0.04, -0.01, 1.0),
+            forward_distance,
+            config.projectile_mass * 1.0,
+            config.projectile_speed,
+            config.projectile_ttl,
+        ),
+        make_headless_shot(
+            38,
+            "building-upper-window",
+            upper_window_target,
+            Vec3::new(-0.03, -0.05, 1.0),
+            forward_distance + 0.75,
+            config.projectile_mass * 1.15,
+            config.projectile_speed * 1.05,
+            config.projectile_ttl,
+        ),
+        make_headless_shot(
+            64,
+            "building-parapet-corner",
+            parapet_target,
+            Vec3::new(0.9, -0.08, 0.95),
+            diagonal_distance,
+            config.projectile_mass * 1.35,
+            config.projectile_speed * 1.1,
+            config.projectile_ttl,
+        ),
+    ]
+}
+
 fn build_wall_benchmark_shots(config: &DemoConfig, bounds: ScenarioBounds) -> Vec<HeadlessShot> {
     let mut shots = build_wall_smoke_shots(config, bounds);
     let c = bounds.dynamic.center();
@@ -2837,6 +2901,75 @@ fn build_bridge_benchmark_shots(config: &DemoConfig, bounds: ScenarioBounds) -> 
         ),
     ]);
     shots
+}
+
+fn build_building_benchmark_shots(
+    config: &DemoConfig,
+    bounds: ScenarioBounds,
+) -> Vec<HeadlessShot> {
+    let size = bounds.dynamic.size();
+    let front_z = bounds.dynamic.min.z + 0.25;
+    let right_x = bounds.dynamic.max.x - 0.25;
+    let forward_distance = size.z.max(0.5) + 5.25;
+    let lateral_distance = size.x.max(0.5) + 5.0;
+    let diagonal_distance = size.x.max(size.z) + 5.5;
+    let parapet_y = bounds.dynamic.max.y - 0.2;
+
+    vec![
+        make_headless_shot(
+            12,
+            "building-benchmark-door-jamb",
+            nearest_dynamic_node_center(config, Vec3::new(-0.75, 1.0, front_z)),
+            Vec3::new(0.08, -0.01, 1.0),
+            forward_distance,
+            config.projectile_mass * 1.05,
+            config.projectile_speed,
+            config.projectile_ttl,
+        ),
+        make_headless_shot(
+            30,
+            "building-benchmark-front-window",
+            nearest_dynamic_node_center(config, Vec3::new(1.5, 2.85, front_z)),
+            Vec3::new(-0.04, -0.04, 1.0),
+            forward_distance + 0.5,
+            config.projectile_mass * 1.2,
+            config.projectile_speed * 1.02,
+            config.projectile_ttl,
+        ),
+        make_headless_shot(
+            48,
+            "building-benchmark-side-wall",
+            nearest_dynamic_node_center(config, Vec3::new(right_x, 1.8, 0.0)),
+            Vec3::new(1.0, -0.03, 0.12),
+            lateral_distance,
+            config.projectile_mass * 1.2,
+            config.projectile_speed * 1.05,
+            config.projectile_ttl,
+        ),
+        make_headless_shot(
+            66,
+            "building-benchmark-upper-corner",
+            nearest_dynamic_node_center(
+                config,
+                Vec3::new(bounds.dynamic.max.x - 0.3, 3.2, bounds.dynamic.max.z - 0.3),
+            ),
+            Vec3::new(0.85, -0.06, 0.9),
+            diagonal_distance,
+            config.projectile_mass * 1.35,
+            config.projectile_speed * 1.08,
+            config.projectile_ttl,
+        ),
+        make_headless_shot(
+            84,
+            "building-benchmark-parapet",
+            nearest_dynamic_node_center(config, Vec3::new(0.0, parapet_y, front_z + 0.5)),
+            Vec3::new(0.1, -0.15, 1.0),
+            forward_distance + 1.0,
+            config.projectile_mass * 1.5,
+            config.projectile_speed * 1.12,
+            config.projectile_ttl,
+        ),
+    ]
 }
 
 fn initialize_rapier_only_bodies(

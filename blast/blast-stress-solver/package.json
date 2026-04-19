@@ -53,6 +53,7 @@
     "prepare": "npm run build",
     "test": "npm run build && vitest run",
     "build:ts": "tsup --config tsup.config.ts",
+    "generate:brick-building-pack": "node ./scripts/generate-brick-building-scene-pack.mjs",
     "bench": "node scripts/bench.mjs",
     "bench:small": "node scripts/bench.mjs --small",
     "bench:large": "node scripts/bench.mjs --large"
