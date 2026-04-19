@@ -37,6 +37,7 @@ use super::resimulation::{BodySnapshots, ResimulationOptions};
 pub struct SplitCohort {
     pub source_bodies: Vec<RigidBodyHandle>,
     pub target_bodies: Vec<RigidBodyHandle>,
+    pub target_sources: Vec<(RigidBodyHandle, RigidBodyHandle)>,
 }
 
 /// Configuration for creating a `DestructibleSet`.
@@ -371,6 +372,100 @@ impl DestructibleSet {
         result
     }
 
+    /// Force every currently active bond to fracture immediately and apply the
+    /// resulting split topology in-place. This is useful for controlled tests
+    /// that want the exact same split/reparent pipeline without depending on a
+    /// particular impact frame to break every remaining bond.
+    pub fn fracture_all_bonds_now(
+        &mut self,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> StepResult {
+        assert!(self.initialized, "call initialize() before fracturing");
+
+        let mut result = StepResult::default();
+        let mut remaining_new_bodies = self.policy.clamp_new_bodies(usize::MAX);
+        let mut remaining_collider_migrations = self.policy.clamp_collider_migrations(usize::MAX);
+
+        self.process_pending_split_events(
+            now_secs,
+            bodies,
+            colliders,
+            island_manager,
+            impulse_joints,
+            multibody_joints,
+            &mut remaining_new_bodies,
+            &mut remaining_collider_migrations,
+            &mut result,
+        );
+
+        let actors = self.solver.actors();
+        let mut node_to_actor = HashMap::new();
+        for actor in &actors {
+            for &node in &actor.nodes {
+                node_to_actor.insert(node, actor.actor_index);
+            }
+        }
+
+        let mut commands_by_actor: HashMap<u32, Vec<BondFracture>> = HashMap::new();
+        for (bond_index, bond) in self.bond_table.iter().copied().enumerate() {
+            if self.removed_bonds.get(bond_index).copied().unwrap_or(true) {
+                continue;
+            }
+            let Some(actor_index) = node_to_actor
+                .get(&bond.node0)
+                .copied()
+                .or_else(|| node_to_actor.get(&bond.node1).copied())
+            else {
+                continue;
+            };
+            commands_by_actor
+                .entry(actor_index)
+                .or_default()
+                .push(BondFracture {
+                    userdata: bond_index as u32,
+                    node_index0: bond.node0,
+                    node_index1: bond.node1,
+                    health: 0.0,
+                });
+        }
+
+        if commands_by_actor.is_empty() {
+            return result;
+        }
+
+        let commands: Vec<FractureCommand> = commands_by_actor
+            .into_iter()
+            .map(|(actor_index, bond_fractures)| FractureCommand {
+                actor_index,
+                bond_fractures,
+            })
+            .collect();
+        result.fractures = commands.iter().map(|c| c.bond_fractures.len()).sum();
+        self.mark_bonds_removed(&commands);
+
+        let events = self.solver.apply_fracture_commands(&commands);
+        result.split_events += events.len();
+        self.pending_split_events.extend(events);
+        self.process_pending_split_events(
+            now_secs,
+            bodies,
+            colliders,
+            island_manager,
+            impulse_joints,
+            multibody_joints,
+            &mut remaining_new_bodies,
+            &mut remaining_collider_migrations,
+            &mut result,
+        );
+        self.frames_since_fracture = 0;
+        result
+    }
+
     /// Apply an external force to a node (e.g., from a projectile impact).
     pub fn add_force(&mut self, node_index: u32, position: Vec3, force: Vec3) {
         self.solver
@@ -698,9 +793,7 @@ impl DestructibleSet {
         remaining_collider_migrations: &mut usize,
         result: &mut StepResult,
     ) {
-        let pending_len = self.pending_split_events.len();
-
-        for _ in 0..pending_len {
+        while !self.pending_split_events.is_empty() {
             let Some(event) = self.pending_split_events.pop_front() else {
                 break;
             };
@@ -772,6 +865,7 @@ impl DestructibleSet {
                 result.split_cohorts.push(SplitCohort {
                     source_bodies: split_result.source_handles,
                     target_bodies: split_result.cohort_handles,
+                    target_sources: split_result.restore_sources,
                 });
             }
         }

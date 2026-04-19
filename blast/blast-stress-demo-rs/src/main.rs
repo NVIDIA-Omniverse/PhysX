@@ -213,7 +213,7 @@ impl DemoRuntimeToggles {
         let projectile_fracture_grace_steps =
             env_usize("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS")
                 .map(|value| value as u32)
-                .unwrap_or(if rapier_only { 0 } else { 1 });
+                .unwrap_or(0);
         let split_child_recentering_enabled =
             env_flag("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN").unwrap_or(true);
         let split_child_velocity_fit_enabled =
@@ -241,7 +241,7 @@ impl DemoRuntimeToggles {
             } else {
                 env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION").unwrap_or(true)
             }),
-            flag_bit(env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(true)),
+            flag_bit(env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(false)),
             flag_bit(env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false)),
             config.policy.max_fractures_per_frame,
             config.policy.max_new_bodies_per_frame,
@@ -280,7 +280,7 @@ impl DemoRuntimeToggles {
             env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION").unwrap_or(true)
         };
         let gizmos_enabled = env_flag("BLAST_STRESS_DEMO_GIZMOS").unwrap_or(true);
-        let projectile_ccd_enabled = env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(true);
+        let projectile_ccd_enabled = env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(false);
         let body_ccd_enabled = env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false);
 
         Self {
@@ -1375,6 +1375,7 @@ impl DebugProfiler {
         scenario: DemoScenarioKind,
         shot_plan: Option<&HeadlessShotPlan>,
         projectile_stats: ProjectileRunStats,
+        active_bonds_after: usize,
     ) -> String {
         let (shot_script, shots_planned, shots_fired) = if let Some(plan) = shot_plan {
             (plan.script_name.as_str(), plan.total_shots(), plan.fired)
@@ -1383,7 +1384,7 @@ impl DebugProfiler {
         };
 
         format!(
-            "[summary] scenario={} total_frames={} shot_script={} shots_planned={} shots_fired={} projectile_crossed_target_plane_count={} projectile_passed_through_count={} projectile_max_progress_ratio={:.3} max_frame_ms={:.3} max_frame_frame={} max_physics_ms={:.3} max_physics_frame={} max_rapier_ms={:.3} max_rapier_frame={} max_solver_ms={:.3} max_solver_frame={} max_split_plan_ms={:.3} max_split_plan_frame={} max_split_apply_ms={:.3} max_split_apply_frame={} max_split_move_ms={:.3} max_split_move_frame={} peak_world_bodies={} peak_world_bodies_frame={} peak_dynamic_bodies={} peak_dynamic_bodies_frame={} peak_awake_dynamic_bodies={} peak_awake_dynamic_bodies_frame={} peak_active_contact_pairs={} peak_active_contact_pairs_frame={} peak_contact_manifolds={} peak_contact_manifolds_frame={} peak_sibling_grace_filtered_pairs={} peak_sibling_grace_filtered_pairs_frame={} total_fractures={} total_splits={} total_new_bodies={} total_moved_colliders={} total_collision_events={} total_contact_events={} first_fracture_frame={} peak_fracture_frame_ms={:.3} peak_fracture_frame={} peak_fracture_physics_ms={:.3} peak_fracture_physics_frame={} peak_fracture_rapier_ms={:.3} peak_fracture_rapier_frame={} peak_fracture_solver_ms={:.3} peak_fracture_solver_frame={} peak_fracture_split_plan_ms={:.3} peak_fracture_split_plan_frame={} peak_fracture_split_apply_ms={:.3} peak_fracture_split_apply_frame={} {}",
+            "[summary] scenario={} total_frames={} shot_script={} shots_planned={} shots_fired={} projectile_crossed_target_plane_count={} projectile_passed_through_count={} projectile_max_progress_ratio={:.3} active_bonds_after={} max_frame_ms={:.3} max_frame_frame={} max_physics_ms={:.3} max_physics_frame={} max_rapier_ms={:.3} max_rapier_frame={} max_solver_ms={:.3} max_solver_frame={} max_split_plan_ms={:.3} max_split_plan_frame={} max_split_apply_ms={:.3} max_split_apply_frame={} max_split_move_ms={:.3} max_split_move_frame={} peak_world_bodies={} peak_world_bodies_frame={} peak_dynamic_bodies={} peak_dynamic_bodies_frame={} peak_awake_dynamic_bodies={} peak_awake_dynamic_bodies_frame={} peak_active_contact_pairs={} peak_active_contact_pairs_frame={} peak_contact_manifolds={} peak_contact_manifolds_frame={} peak_sibling_grace_filtered_pairs={} peak_sibling_grace_filtered_pairs_frame={} total_fractures={} total_splits={} total_new_bodies={} total_moved_colliders={} total_collision_events={} total_contact_events={} first_fracture_frame={} peak_fracture_frame_ms={:.3} peak_fracture_frame={} peak_fracture_physics_ms={:.3} peak_fracture_physics_frame={} peak_fracture_rapier_ms={:.3} peak_fracture_rapier_frame={} peak_fracture_solver_ms={:.3} peak_fracture_solver_frame={} peak_fracture_split_plan_ms={:.3} peak_fracture_split_plan_frame={} peak_fracture_split_apply_ms={:.3} peak_fracture_split_apply_frame={} {}",
             scenario.slug(),
             self.frame_index,
             shot_script,
@@ -1392,6 +1393,7 @@ impl DebugProfiler {
             projectile_stats.crossed_target_plane_count,
             projectile_stats.passed_through_count,
             projectile_stats.max_progress_ratio,
+            active_bonds_after,
             self.peak_frame_ms,
             self.peak_frame_index,
             self.peak_physics_ms,
@@ -2047,6 +2049,9 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
 
     let mut bodies = RigidBodySet::new();
     let mut colliders = ColliderSet::new();
+    let mut island_manager = IslandManager::new();
+    let mut impulse_joints = ImpulseJointSet::new();
+    let mut multibody_joints = MultibodyJointSet::new();
     let rapier_only = if toggles.rapier_only {
         Some(initialize_rapier_only_bodies(
             &config.scenario,
@@ -2069,6 +2074,17 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
     if !toggles.rapier_only {
         destructible.set_ground_body_handle(Some(ground_body));
         destructible.refresh_collision_groups(&bodies, &mut colliders);
+        if env_flag("BLAST_STRESS_DEMO_PREFRACTURE_ALL_BONDS").unwrap_or(false) {
+            destructible.fracture_all_bonds_now(
+                0.0,
+                &mut bodies,
+                &mut colliders,
+                &mut island_manager,
+                &mut impulse_joints,
+                &mut multibody_joints,
+            );
+            destructible.refresh_collision_groups(&bodies, &mut colliders);
+        }
     }
 
     let mut integration_parameters = IntegrationParameters::default();
@@ -2078,13 +2094,13 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
         config,
         physics_pipeline: PhysicsPipeline::new(),
         integration_parameters,
-        island_manager: IslandManager::new(),
+        island_manager,
         broad_phase: BroadPhaseBvh::new(),
         narrow_phase: NarrowPhase::new(),
         bodies,
         colliders,
-        impulse_joints: ImpulseJointSet::new(),
-        multibody_joints: MultibodyJointSet::new(),
+        impulse_joints,
+        multibody_joints,
         ccd_solver: CCDSolver::new(),
         destructible,
         rapier_only,
@@ -2127,7 +2143,7 @@ fn build_headless_shot_plan(
         .map(|value| value.trim().to_ascii_lowercase())
         .filter(|value| !value.is_empty())?;
     let bounds = compute_scenario_bounds(&config.scenario);
-    let shots = match script_name.as_str() {
+    let mut shots = match script_name.as_str() {
         "wall_smoke" => build_wall_smoke_shots(config, bounds),
         "wall_face_heavy" => build_wall_face_heavy_shots(config, bounds),
         "tower_smoke" => build_tower_smoke_shots(config, bounds),
@@ -2163,6 +2179,16 @@ fn build_headless_shot_plan(
         },
         _ => return None,
     };
+    if let Some(scale) = env_f32("BLAST_STRESS_DEMO_HEADLESS_SHOT_MASS_SCALE") {
+        for shot in &mut shots {
+            shot.mass *= scale.max(0.0);
+        }
+    }
+    if let Some(scale) = env_f32("BLAST_STRESS_DEMO_HEADLESS_SHOT_SPEED_SCALE") {
+        for shot in &mut shots {
+            shot.speed *= scale.max(0.0);
+        }
+    }
     Some(HeadlessShotPlan {
         script_name,
         shots,
@@ -3733,6 +3759,7 @@ fn log_projectile_trace(profiler: &mut DebugProfiler, state: &DemoPhysicsState, 
         let linvel = body.linvel();
         let mut contact_pairs = 0usize;
         let mut active_contact_pairs = 0usize;
+        let mut contact_bodies = Vec::new();
         for pair in state
             .narrow_phase
             .contact_pairs_with(projectile.collider_handle)
@@ -3741,6 +3768,31 @@ fn log_projectile_trace(profiler: &mut DebugProfiler, state: &DemoPhysicsState, 
             if pair.has_any_active_contact {
                 active_contact_pairs += 1;
             }
+            let other_collider = if pair.collider1 == projectile.collider_handle {
+                pair.collider2
+            } else {
+                pair.collider1
+            };
+            let other_body = state
+                .colliders
+                .get(other_collider)
+                .and_then(|collider| collider.parent());
+            let node = state.destructible.collider_node(other_collider);
+            let body_label = other_body
+                .map(|handle| {
+                    let (index, generation) = handle.into_raw_parts();
+                    format!("{index}:{generation}")
+                })
+                .unwrap_or_else(|| "none".to_string());
+            let node_label = node
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".to_string());
+            contact_bodies.push(format!(
+                "{}:{}:{}",
+                body_label,
+                node_label,
+                flag_bit(pair.has_any_active_contact)
+            ));
         }
         let progress_ratio = projectile
             .exit_distance
@@ -3748,7 +3800,7 @@ fn log_projectile_trace(profiler: &mut DebugProfiler, state: &DemoPhysicsState, 
             .map(|distance| projectile.max_progress / distance)
             .unwrap_or(0.0);
         profiler.pending_event_lines.push(format!(
-            "[projectile-frame] frame={} projectile_index={} pos=({:.3},{:.3},{:.3}) linvel=({:.3},{:.3},{:.3}) sleeping={} progress={:.3} target_distance={:.3} exit_distance={:.3} progress_ratio={:.3} crossed_target_plane={} passed_through={} contact_pairs={} active_contact_pairs={}",
+            "[projectile-frame] frame={} projectile_index={} pos=({:.3},{:.3},{:.3}) linvel=({:.3},{:.3},{:.3}) mass={:.3} sleeping={} progress={:.3} target_distance={:.3} exit_distance={:.3} progress_ratio={:.3} crossed_target_plane={} passed_through={} contact_pairs={} active_contact_pairs={} contacts=[{}]",
             frame_number,
             index,
             position.x,
@@ -3757,6 +3809,7 @@ fn log_projectile_trace(profiler: &mut DebugProfiler, state: &DemoPhysicsState, 
             linvel.x,
             linvel.y,
             linvel.z,
+            body.mass(),
             flag_bit(body.is_sleeping()),
             projectile.max_progress,
             projectile.target_distance,
@@ -3766,6 +3819,7 @@ fn log_projectile_trace(profiler: &mut DebugProfiler, state: &DemoPhysicsState, 
             flag_bit(projectile.passed_through),
             contact_pairs,
             active_contact_pairs,
+            contact_bodies.join(","),
         ));
     }
 }
@@ -4075,10 +4129,14 @@ fn headless_exit_system(
             .map_or(ProjectileRunStats::default(), |state| {
                 state.projectile_run_stats
             });
+        let active_bonds_after = state
+            .as_ref()
+            .map_or(0, |state| state.destructible.active_bond_count());
         perf_log.write_line(&profiler.headless_summary_line(
             scenario.kind,
             shot_plan.as_deref(),
             projectile_stats,
+            active_bonds_after,
         ));
         perf_log.flush();
         eprintln!("Headless simulation complete. Actor count: {actors}.");

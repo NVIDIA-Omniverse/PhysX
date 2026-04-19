@@ -284,6 +284,7 @@ fn wall_face_heavy_shatters_without_resim() {
         "wall_face_heavy",
         160,
         &[
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
             ("BLAST_STRESS_DEMO_RESIM", "0"),
             ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
             ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
@@ -300,21 +301,26 @@ fn wall_face_heavy_shatters_without_resim() {
     assert_eq!(get_u64(&summary, "shots_fired"), 1);
     assert!(get_u64(&summary, "total_fractures") > 0);
     assert!(get_u64(&summary, "total_splits") > 0);
+    assert_eq!(get_u64(&summary, "projectile_passed_through_count"), 0);
 }
 
 #[test]
-fn wall_face_heavy_with_resim_blasts_through() {
+fn wall_face_heavy_with_resim_blasts_through_without_ccd() {
     let (_log_text, summary) = run_headless_scenario_with_envs(
         "wall",
         "wall_face_heavy",
         160,
         &[
+            // This is the production contract for resimulation: the projectile should
+            // pass through the wall because the replay frame resolves against the
+            // freshly fractured topology, not because CCD tunnels it.
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
             ("BLAST_STRESS_DEMO_RESIM", "1"),
             ("BLAST_STRESS_DEMO_MAX_RESIM_PASSES", "2"),
             ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
             ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
             ("BLAST_STRESS_DEMO_SIBLING_GRACE_STEPS", "0"),
-            ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "2"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "0"),
         ],
     );
     assert_eq!(summary.get("scenario").map(String::as_str), Some("wall"));
@@ -327,11 +333,33 @@ fn wall_face_heavy_with_resim_blasts_through() {
     assert!(get_u64(&summary, "total_fractures") > 0);
     assert!(get_u64(&summary, "total_splits") > 0);
     assert!(
-        get_u64(&summary, "projectile_passed_through_count") >= 1,
-        "expected resim-enabled heavy projectile to pass through the shattered wall"
+        get_u64(&summary, "projectile_passed_through_count") > 0,
+        "resimulation should replay the heavy impact against the broken wall and let the projectile pass through without CCD: {summary:?}"
     );
+}
+
+#[test]
+fn wall_face_heavy_passes_through_when_wall_starts_prefractured() {
+    let (_log_text, summary) = run_headless_scenario_with_envs(
+        "wall",
+        "wall_face_heavy",
+        160,
+        &[
+            ("BLAST_STRESS_DEMO_PREFRACTURE_ALL_BONDS", "1"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
+            ("BLAST_STRESS_DEMO_RESIM", "0"),
+        ],
+    );
+    assert_eq!(summary.get("scenario").map(String::as_str), Some("wall"));
+    assert_eq!(
+        summary.get("shot_script").map(String::as_str),
+        Some("wall_face_heavy")
+    );
+    assert_eq!(get_u64(&summary, "shots_planned"), 1);
+    assert_eq!(get_u64(&summary, "shots_fired"), 1);
+    assert_eq!(get_u64(&summary, "active_bonds_after"), 0);
     assert!(
-        get_f32(&summary, "projectile_max_progress_ratio") >= 1.0,
-        "expected projectile progress ratio to clear the wall bounds"
+        get_u64(&summary, "projectile_passed_through_count") > 0,
+        "the same heavy projectile should pass through the wall once all bonds are pre-fractured: {summary:?}"
     );
 }

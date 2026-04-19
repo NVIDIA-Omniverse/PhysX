@@ -78,7 +78,12 @@ impl Default for GracePeriodOptions {
     fn default() -> Self {
         Self {
             sibling_steps: 1,
-            impact_source_steps: 2,
+            // The production resimulation contract replays projectile contacts
+            // against the freshly fractured topology. We keep sibling grace to
+            // suppress immediate self-collision churn, but projectile-vs-wall
+            // replay contacts must stay enabled by default so the projectile can
+            // continue fracturing and pushing through the broken wall without CCD.
+            impact_source_steps: 0,
         }
     }
 }
@@ -401,7 +406,14 @@ impl GraceState {
                     .iter()
                     .any(|body| impacted_bodies.contains(body))
             })
-            .map(|cohort| cohort.target_bodies.clone())
+            .map(|cohort| {
+                cohort
+                    .target_bodies
+                    .iter()
+                    .chain(cohort.source_bodies.iter())
+                    .copied()
+                    .collect()
+            })
             .collect();
 
         for &source_body in impact_sources {
@@ -521,6 +533,7 @@ struct ActiveFrameState {
     remaining_resim_passes: usize,
     snapshot: Option<BodySnapshots>,
     pre_step_motion: HashMap<RigidBodyHandle, BodyMotionSnapshot>,
+    impact_sources: HashSet<RigidBodyHandle>,
     pending_grace_stats: Option<GraceStepStats>,
     result: FrameResult,
 }
@@ -625,6 +638,29 @@ impl DestructionRuntime {
             .set_split_child_velocity_fit_enabled(enabled);
     }
 
+    pub fn active_bond_count(&self) -> usize {
+        self.destructible.active_bond_count()
+    }
+
+    pub fn fracture_all_bonds_now(
+        &mut self,
+        now_secs: f32,
+        bodies: &mut RigidBodySet,
+        colliders: &mut ColliderSet,
+        island_manager: &mut IslandManager,
+        impulse_joints: &mut ImpulseJointSet,
+        multibody_joints: &mut MultibodyJointSet,
+    ) -> StepResult {
+        self.destructible.fracture_all_bonds_now(
+            now_secs,
+            bodies,
+            colliders,
+            island_manager,
+            impulse_joints,
+            multibody_joints,
+        )
+    }
+
     pub fn set_skip_single_bodies(&mut self, enabled: bool) {
         self.destructible.set_skip_single_bodies(enabled);
     }
@@ -655,6 +691,7 @@ impl DestructionRuntime {
             },
             snapshot,
             pre_step_motion: capture_body_motion(bodies),
+            impact_sources: HashSet::new(),
             pending_grace_stats: None,
             result,
         });
@@ -704,6 +741,9 @@ impl DestructionRuntime {
             .expect("buffered pass events mutex poisoned");
         let analysis =
             self.collect_pass_analysis(frame.dt, &frame.pre_step_motion, &buffered_events, world);
+        frame
+            .impact_sources
+            .extend(analysis.impact_sources.iter().copied());
         frame.result.contact_pairs = analysis.contact_pairs;
         frame.result.active_contact_pairs = analysis.active_contact_pairs;
         frame.result.contact_manifolds = analysis.contact_manifolds;
@@ -719,16 +759,6 @@ impl DestructionRuntime {
             world.multibody_joints,
         );
         accumulate_step_result(&mut frame.result, solver_result.clone());
-
-        if !solver_result.split_cohorts.is_empty() {
-            self.grace
-                .register_split_cohorts(&solver_result.split_cohorts);
-            self.grace.register_impact_fracture_pairs(
-                &analysis.impact_sources,
-                &analysis.impacted_bodies,
-                &solver_result.split_cohorts,
-            );
-        }
 
         if let Some(pending_stats) = frame.pending_grace_stats.take() {
             let grace_stats = self.grace.finish_step(pending_stats);
@@ -747,11 +777,22 @@ impl DestructionRuntime {
             frame.result.sibling_grace_filtered_pairs += grace_stats.filtered_pairs;
         }
 
+        if !solver_result.split_cohorts.is_empty() {
+            self.grace
+                .register_split_cohorts(&solver_result.split_cohorts);
+            self.grace.register_impact_fracture_pairs(
+                &analysis.impact_sources,
+                &analysis.impacted_bodies,
+                &solver_result.split_cohorts,
+            );
+        }
+
         let fractured = solver_result.split_events > 0 || solver_result.new_bodies > 0;
         if fractured && frame.remaining_resim_passes > 0 {
             if let Some(snapshot) = frame.snapshot.as_ref() {
                 let restore_started_at = Instant::now();
                 snapshot.restore(world.bodies);
+                snapshot.restore_split_children(world.bodies, &solver_result.split_cohorts);
                 frame.result.resim_restore_ms +=
                     restore_started_at.elapsed().as_secs_f64() as f32 * 1_000.0;
             }
@@ -779,6 +820,14 @@ impl DestructionRuntime {
             ) {
                 frame.result.support_contacts += 1;
             }
+        }
+
+        if frame.result.rapier_passes > 1 {
+            self.restore_unblocked_impact_source_motion(
+                &frame.impact_sources,
+                &frame.pre_step_motion,
+                world,
+            );
         }
 
         frame.result.optimization = self.destructible.process_optimizations(
@@ -1229,6 +1278,31 @@ impl DestructionRuntime {
             self.destructible.set_skip_single_bodies(value);
         }
     }
+
+    fn restore_unblocked_impact_source_motion(
+        &self,
+        impact_sources: &HashSet<RigidBodyHandle>,
+        pre_step_motion: &HashMap<RigidBodyHandle, BodyMotionSnapshot>,
+        world: &mut RapierWorldAccess<'_>,
+    ) {
+        for &body_handle in impact_sources {
+            if !self.destructible.body_nodes_slice(body_handle).is_empty() {
+                continue;
+            }
+            if source_has_active_destructible_contact(body_handle, world, &self.destructible) {
+                continue;
+            }
+            let Some(motion) = pre_step_motion.get(&body_handle) else {
+                continue;
+            };
+            let Some(body) = world.bodies.get_mut(body_handle) else {
+                continue;
+            };
+            body.set_linvel(motion.linvel, true);
+            body.set_angvel(motion.angvel, true);
+            body.wake_up(true);
+        }
+    }
 }
 
 impl Deref for DestructionRuntime {
@@ -1284,6 +1358,33 @@ fn capture_body_motion(set: &RigidBodySet) -> HashMap<RigidBodyHandle, BodyMotio
             )
         })
         .collect()
+}
+
+fn source_has_active_destructible_contact(
+    body_handle: RigidBodyHandle,
+    world: &RapierWorldAccess<'_>,
+    destructible: &DestructibleSet,
+) -> bool {
+    let Some(body) = world.bodies.get(body_handle) else {
+        return false;
+    };
+
+    for &collider_handle in body.colliders() {
+        for pair in world.narrow_phase.contact_pairs_with(collider_handle) {
+            if !pair.has_any_active_contact {
+                continue;
+            }
+            let other_collider = if pair.collider1 == collider_handle {
+                pair.collider2
+            } else {
+                pair.collider1
+            };
+            if destructible.collider_node(other_collider).is_some() {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 fn motion_velocity_at_point(

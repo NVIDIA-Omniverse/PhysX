@@ -1348,7 +1348,7 @@ dependencies = [
 
 [[package]]
 name = "blast-stress-solver"
-version = "0.3.1"
+version = "0.4.1"
 dependencies = [
  "cc",
  "rapier3d",

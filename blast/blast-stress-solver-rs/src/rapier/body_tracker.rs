@@ -34,6 +34,7 @@ use crate::types::*;
 #[derive(Clone, Copy)]
 struct BodyState {
     position: Isometry<Real>,
+    world_com: Point<Real>,
     linvel: Vector<Real>,
     angvel: Vector<Real>,
     was_sleeping: bool,
@@ -118,6 +119,7 @@ pub struct SplitApplyResult {
     pub new_handles: Vec<RigidBodyHandle>,
     pub cohort_handles: Vec<RigidBodyHandle>,
     pub source_handles: Vec<RigidBodyHandle>,
+    pub restore_sources: Vec<(RigidBodyHandle, RigidBodyHandle)>,
     pub stats: SplitEditStats,
 }
 
@@ -442,6 +444,9 @@ impl BodyTracker {
         for (child_index, target) in child_targets.iter().map(|(k, v)| (*k, *v)) {
             let child = &event.children[child_index];
             let target_body = target.handle();
+            if let Some(source_body) = self.dominant_child_body_handle(child, &planning) {
+                result.restore_sources.push((target_body, source_body));
+            }
             let target_state = *child_target_states
                 .get(&child_index)
                 .unwrap_or_else(|| panic!("missing target state for child {}", child_index));
@@ -473,6 +478,7 @@ impl BodyTracker {
                         target_body,
                         source.collider_handle,
                         local_offset,
+                        island_manager,
                         bodies,
                         colliders,
                     )
@@ -1113,10 +1119,17 @@ impl BodyTracker {
         let Some(state) = planning.parent_states.get(&body_handle) else {
             return (Vector::zeros(), Vector::zeros(), false);
         };
+        let target_com = self.child_world_center_of_mass(child, planning);
+        let com_delta = vector![
+            target_com.x - state.world_com.x,
+            target_com.y - state.world_com.y,
+            target_com.z - state.world_com.z
+        ];
+        let linvel = state.linvel + state.angvel.cross(&com_delta);
         let should_sleep = state.was_sleeping
-            && state.linvel.norm_squared() <= 1.0e-4
+            && linvel.norm_squared() <= 1.0e-4
             && state.angvel.norm_squared() <= 1.0e-4;
-        (state.linvel, state.angvel, should_sleep)
+        (linvel, state.angvel, should_sleep)
     }
 
     fn desired_body_type(has_support: bool) -> RigidBodyType {
@@ -1510,6 +1523,7 @@ impl BodyTracker {
                     handle,
                     BodyState {
                         position: *body.position(),
+                        world_com: *body.center_of_mass(),
                         linvel: *body.linvel(),
                         angvel: *body.angvel(),
                         was_sleeping: body.is_sleeping(),
@@ -1596,19 +1610,15 @@ impl BodyTracker {
         body_handle: RigidBodyHandle,
         collider_handle: Option<ColliderHandle>,
         local_offset: Vec3,
+        island_manager: &mut IslandManager,
         bodies: &mut RigidBodySet,
         colliders: &mut ColliderSet,
     ) -> ColliderHandle {
         if let Some(collider_handle) = collider_handle {
-            colliders.set_parent(collider_handle, Some(body_handle), bodies);
-            if let Some(collider) = colliders.get_mut(collider_handle) {
-                collider.set_position_wrt_parent(Isometry::translation(
-                    local_offset.x,
-                    local_offset.y,
-                    local_offset.z,
-                ));
-            }
-            collider_handle
+            // Match the JS runtime: recreate migrated colliders instead of
+            // reparents in-place so contact state is rebuilt against the new body.
+            colliders.remove(collider_handle, island_manager, bodies, true);
+            self.insert_node_collider(node_index, body_handle, local_offset, bodies, colliders)
         } else {
             self.insert_node_collider(node_index, body_handle, local_offset, bodies, colliders)
         }
