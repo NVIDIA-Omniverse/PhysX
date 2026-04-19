@@ -330,10 +330,11 @@ stage_packaging_overrides() {
 
 copy_packaged_native_sources() {
   local native_root="$STAGE_DIR/native/blast"
-  mkdir -p "$native_root" "$native_root/rust_stress_example"
+  mkdir -p "$native_root" "$native_root/rust_stress_example" "$native_root/js_stress_example"
   cp -R "$REPO_ROOT/blast/include" "$native_root/"
   cp -R "$REPO_ROOT/blast/source" "$native_root/"
   cp -R "$REPO_ROOT/blast/rust_stress_example/ffi" "$native_root/rust_stress_example/"
+  cp -R "$REPO_ROOT/blast/js_stress_example/ffi" "$native_root/js_stress_example/"
 }
 
 package_stage() {
