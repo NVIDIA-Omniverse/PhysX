@@ -13,28 +13,38 @@ This crate gives you two main layers:
 `DestructibleSet` still exists as the lower-level escape hatch for advanced
 integration and explicit non-contact force injection.
 
+If you want to auto-generate bonds from arbitrary pre-fractured piece meshes,
+enable the `authoring` feature and use `blast_stress_solver::authoring`.
+
 ## Installation
 
 Core solver only:
 
 ```toml
 [dependencies]
-blast-stress-solver = "0.3.1"
+blast-stress-solver = "0.4.0"
 ```
 
 With built-in scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.3.1", features = ["scenarios"] }
+blast-stress-solver = { version = "0.4.0", features = ["scenarios"] }
 ```
 
 With Rapier integration and scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.3.1", features = ["rapier", "scenarios"] }
+blast-stress-solver = { version = "0.4.0", features = ["rapier", "scenarios"] }
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
+```
+
+With auto-bond authoring helpers:
+
+```toml
+[dependencies]
+blast-stress-solver = { version = "0.4.0", features = ["authoring"] }
 ```
 
 ## Target support
@@ -51,6 +61,13 @@ support x86_64 macOS or Linux consumers.
 
 `wasm32-unknown-unknown` intentionally stays prepackaged: downstream web builds
 do not need Emscripten, wasi-sdk, or a second Blast-side wasm/JS loader.
+
+Current `authoring` feature note:
+
+- the published packaged backends do not yet include the authoring bridge
+- `authoring` therefore currently requires a native Apple/Linux source build,
+  or a custom backend supplied through `BLAST_STRESS_SOLVER_STATIC_LIB_PATH` or
+  `BLAST_STRESS_SOLVER_LIB_DIR`
 
 Advanced overrides:
 
@@ -174,6 +191,37 @@ What to notice:
 - `ExtStressSolver` owns the Blast family/actor state. After fractures are
   applied, `actor_count()` grows as disconnected pieces split apart.
 
+## Authoring quick start
+
+`authoring` is the Rust-side equivalent of the JS package's triangle-based
+auto-bonding path. The intended flow is:
+
+1. collect one triangle soup per piece
+2. mark whether each piece is bondable
+3. call `create_bonds_from_triangles(...)` or
+   `build_scenario_from_pieces(...)`
+
+Runnable example:
+
+```bash
+cargo run --example auto_bond_wall --features authoring
+```
+
+The full copy-pasteable source lives in
+`examples/auto_bond_wall.rs`. It builds two touching cuboids, runs the public
+auto-bonding API, and prints the resulting bond.
+
+Notes:
+
+- triangle vertices must already be expressed in the target scenario space
+- `bondable` means "participates in bond generation", not "fixed to the world"
+- a fixed support is still represented by `ScenarioNode { mass: 0.0, .. }`
+- `build_scenario_from_pieces(...)` is the highest-level convenience API
+- `create_bonds_from_triangles(...)` is the lower-level API when you already
+  manage `ScenarioDesc` assembly yourself
+- the packaged Bevy demo in `blast-stress-demo-rs` now rebuilds its embedded
+  fractured scene packs through this same public authoring API at load time
+
 ### 2. Rapier example: the same wall, now integrated into an existing Rapier app
 
 This version shows the recommended runtime for real consumers.
@@ -274,7 +322,6 @@ fn main() {
     let projectile = RigidBodyBuilder::dynamic()
         .translation(vector![-6.0, 1.4, 0.0])
         .linvel(vector![18.0, 0.0, 0.0])
-        .ccd_enabled(true)
         .additional_mass(20.0)
         .build();
     let projectile_handle = rigid_bodies.insert(projectile);
@@ -372,7 +419,7 @@ The intended model is:
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = "0.3.1"
+blast-stress-solver = "0.4.0"
 wasm-bindgen = "0.2"
 ```
 

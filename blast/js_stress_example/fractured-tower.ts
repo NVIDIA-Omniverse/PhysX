@@ -3,7 +3,7 @@
  *
  * Multi-floor tower with Voronoi-fractured walls, interior columns,
  * floor plates, and a grid foundation. Uses three-pinata for irregular
- * fragment generation and the blast-stress-solver runtime for
+ * fragment generation plus the public triangle auto-bonding API for
  * stress-driven destruction.
  *
  * Click the viewport to launch projectiles at the tower.
@@ -137,11 +137,13 @@ async function initScene() {
     fragmentCountPerFloor,
     fragmentCountPerColumn,
     deckMass,
+    bondMode: 'auto',
+    autoBondingOptions: { mode: 'exact' },
     pinata: pinata as any,
   });
 
   console.log(
-    `Fractured tower: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`,
+    `Fractured tower: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds (auto-bonded)`,
   );
 
   const core = await buildDestructibleCore({

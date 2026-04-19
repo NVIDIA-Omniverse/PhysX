@@ -2,8 +2,8 @@
  * Fractured Bridge Demo
  *
  * Beam bridge with Voronoi-fractured deck slab and support posts.
- * Uses three-pinata for irregular fragment generation and the
- * blast-stress-solver runtime for stress-driven destruction.
+ * Uses three-pinata for irregular fragment generation plus the public
+ * triangle auto-bonding API for stress-driven destruction.
  *
  * Click the viewport to launch projectiles at the bridge.
  */
@@ -130,11 +130,13 @@ async function initScene() {
     fragmentCountPerDeck: CONFIG.bridge.fragmentCountPerDeck,
     fragmentCountPerPost: CONFIG.bridge.fragmentCountPerPost,
     deckMass: CONFIG.bridge.deckMass,
+    bondMode: 'auto',
+    autoBondingOptions: { mode: 'exact' },
     pinata: pinata as any,
   });
 
   console.log(
-    `Fractured bridge: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds`,
+    `Fractured bridge: ${scenario.nodes.length} nodes, ${scenario.bonds.length} bonds (auto-bonded)`,
   );
 
   const core = await buildDestructibleCore({

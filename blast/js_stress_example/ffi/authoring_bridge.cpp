@@ -11,9 +11,11 @@
 #include "extensions/authoring/NvBlastExtAuthoringBondGenerator.h"
 #include "extensions/authoringCommon/NvBlastExtAuthoringConvexMeshBuilder.h"
 #include "extensions/authoringCommon/NvBlastExtAuthoringTypes.h"
+#include "NvBounds3.h"
 #include "NvBlastGlobals.h"
 #include "NvBlastTypes.h"
 
+#include "../../source/sdk/extensions/authoring/NvBlastExtAuthoringBondGeneratorImpl.h"
 #include "../../rust_stress_example/ffi/ext_stress_bridge.h"
 
 namespace
@@ -345,7 +347,7 @@ extern "C" uint32_t authoring_bonds_from_prefractured_triangles(
     }
 
     NvBlastBondDesc* bondDescs = nullptr;
-    BlastBondGenerator* generator = NvBlastExtAuthoringCreateBondGenerator(convexBuilder.get());
+    BlastBondGenerator* generator = new (std::nothrow) BlastBondGeneratorImpl(convexBuilder.get());
     if (generator == nullptr)
     {
         return 0;
@@ -403,5 +405,3 @@ extern "C" void authoring_free(void* ptr)
         NVBLAST_FREE(ptr);
     }
 }
-
-

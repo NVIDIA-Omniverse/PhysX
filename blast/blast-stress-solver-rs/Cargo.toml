@@ -1,6 +1,6 @@
 [package]
 name = "blast-stress-solver"
-version = "0.3.1"
+version = "0.4.0"
 publish = false
 edition = "2021"
 readme = "README.md"
@@ -15,6 +15,7 @@ links = "blast_stress_solver_ffi"
 default = []
 rapier = ["dep:rapier3d"]
 scenarios = []
+authoring = []
 # Opt-in regression tests for the `wasm32-unknown-unknown` build. These
 # shell out to `cargo` to build a fixture cdylib under
 # `tests/wasm_smoke/fixture/`, then inspect the resulting .wasm for

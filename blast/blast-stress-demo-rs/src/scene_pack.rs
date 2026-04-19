@@ -2,6 +2,9 @@ use bevy::asset::RenderAssetUsages;
 use bevy::mesh::Indices;
 use bevy::prelude::Mesh;
 use bevy::render::render_resource::PrimitiveTopology;
+use blast_stress_solver::authoring::{
+    build_scenario_from_pieces, BondingMode, BondingOptions, ScenarioPiece,
+};
 use blast_stress_solver::rapier::{
     DebrisCleanupOptions, OptimizationMode, SmallBodyDampingOptions,
 };
@@ -222,6 +225,13 @@ pub fn load_embedded_scene_pack(key: EmbeddedSceneKey) -> Result<LoadedScenePack
         .map(parse_mesh_asset)
         .collect::<Result<Vec<_>, _>>()?;
 
+    let scenario = rebuild_scenario_from_public_authoring(&pack, &node_meshes)?;
+    if matches!(key, EmbeddedSceneKey::BrickBuilding) {
+        // This pack was generated through the triangle-based auto-bonding path,
+        // so it should continue to match the public Rust authoring API exactly.
+        validate_rebuilt_bonds(&pack.scenario.bonds, &scenario.bonds)?;
+    }
+
     Ok(LoadedScenePack {
         title: pack.title,
         camera_target: bevy::prelude::Vec3::new(
@@ -248,43 +258,7 @@ pub fn load_embedded_scene_pack(key: EmbeddedSceneKey) -> Result<LoadedScenePack
             debris_ttl_secs: pack.defaults.optimization.debris_ttl_ms / 1000.0,
             max_colliders_for_debris: pack.defaults.optimization.max_colliders_for_debris,
         },
-        scenario: ScenarioDesc {
-            nodes: pack
-                .scenario
-                .nodes
-                .iter()
-                .map(|node| ScenarioNode {
-                    centroid: node.centroid.into(),
-                    mass: node.mass,
-                    volume: node.volume,
-                })
-                .collect(),
-            bonds: pack
-                .scenario
-                .bonds
-                .iter()
-                .map(|bond| ScenarioBond {
-                    node0: bond.node0,
-                    node1: bond.node1,
-                    centroid: bond.centroid.into(),
-                    normal: bond.normal.into(),
-                    area: bond.area,
-                })
-                .collect(),
-            node_sizes: pack
-                .scenario
-                .node_sizes
-                .iter()
-                .copied()
-                .map(Into::into)
-                .collect(),
-            collider_shapes: pack
-                .scenario
-                .node_colliders
-                .iter()
-                .map(parse_node_collider)
-                .collect::<Result<Vec<_>, _>>()?,
-        },
+        scenario,
         node_meshes,
     })
 }
@@ -343,6 +317,190 @@ fn parse_optimization_mode(value: &str) -> Result<OptimizationMode, String> {
         "afterGroundCollision" => Ok(OptimizationMode::AfterGroundCollision),
         _ => Err(format!("unsupported optimization mode: {value}")),
     }
+}
+
+fn rebuild_scenario_from_public_authoring(
+    pack: &ScenePackJson,
+    node_meshes: &[SceneMeshAsset],
+) -> Result<ScenarioDesc, String> {
+    let node_sizes: Vec<SolverVec3> = pack
+        .scenario
+        .node_sizes
+        .iter()
+        .copied()
+        .map(Into::into)
+        .collect();
+    let collider_shapes = pack
+        .scenario
+        .node_colliders
+        .iter()
+        .map(parse_node_collider)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let pieces = pack
+        .scenario
+        .nodes
+        .iter()
+        .zip(node_meshes.iter())
+        .zip(node_sizes.iter())
+        .zip(collider_shapes.iter())
+        .map(|(((node, mesh), node_size), collider_shape)| {
+            let node_centroid: SolverVec3 = node.centroid.into();
+            Ok(ScenarioPiece {
+                node: ScenarioNode {
+                    centroid: node_centroid,
+                    mass: node.mass,
+                    volume: node.volume,
+                },
+                triangles: triangles_from_mesh_asset(mesh, node_centroid)?,
+                // Match the current JS auto-bonding path: all pieces participate.
+                bondable: true,
+                node_size: Some(*node_size),
+                collider_shape: collider_shape.clone(),
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+
+    build_scenario_from_pieces(
+        &pieces,
+        &BondingOptions {
+            mode: BondingMode::Exact,
+        },
+    )
+    .map_err(|error| format!("failed to rebuild bonds via public authoring API: {error}"))
+}
+
+fn triangles_from_mesh_asset(
+    mesh: &SceneMeshAsset,
+    translation: SolverVec3,
+) -> Result<Vec<SolverVec3>, String> {
+    if mesh.indices.len() % 3 != 0 {
+        return Err(format!(
+            "mesh index count must be divisible by 3, got {}",
+            mesh.indices.len()
+        ));
+    }
+
+    let mut triangles = Vec::with_capacity(mesh.indices.len());
+    for &index in &mesh.indices {
+        let position = mesh.positions.get(index as usize).ok_or_else(|| {
+            format!(
+                "mesh index {} out of range for {} positions",
+                index,
+                mesh.positions.len()
+            )
+        })?;
+        triangles.push(SolverVec3::new(
+            position[0] + translation.x,
+            position[1] + translation.y,
+            position[2] + translation.z,
+        ));
+    }
+    Ok(triangles)
+}
+
+fn validate_rebuilt_bonds(
+    expected: &[ScenarioBondJson],
+    rebuilt: &[ScenarioBond],
+) -> Result<(), String> {
+    let mut expected_signatures = expected
+        .iter()
+        .map(BondSignature::from_json)
+        .collect::<Vec<_>>();
+    let mut rebuilt_signatures = rebuilt
+        .iter()
+        .map(BondSignature::from_runtime)
+        .collect::<Vec<_>>();
+    expected_signatures.sort_unstable();
+    rebuilt_signatures.sort_unstable();
+
+    if expected_signatures == rebuilt_signatures {
+        return Ok(());
+    }
+
+    let expected_only = expected_signatures
+        .iter()
+        .find(|signature| !rebuilt_signatures.contains(signature))
+        .copied();
+    let rebuilt_only = rebuilt_signatures
+        .iter()
+        .find(|signature| !expected_signatures.contains(signature))
+        .copied();
+
+    Err(format!(
+        "public authoring rebuilt a different bond graph than the embedded pack: expected {} bonds, rebuilt {}; expected_only={expected_only:?}; rebuilt_only={rebuilt_only:?}",
+        expected.len(),
+        rebuilt.len()
+    ))
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct BondSignature {
+    node0: u32,
+    node1: u32,
+    centroid: [i64; 3],
+    normal: [i64; 3],
+    area: i64,
+}
+
+impl BondSignature {
+    fn from_json(bond: &ScenarioBondJson) -> Self {
+        Self::from_parts(
+            bond.node0,
+            bond.node1,
+            SolverVec3::from(bond.centroid),
+            SolverVec3::from(bond.normal),
+            bond.area,
+        )
+    }
+
+    fn from_runtime(bond: &ScenarioBond) -> Self {
+        Self::from_parts(
+            bond.node0,
+            bond.node1,
+            bond.centroid,
+            bond.normal,
+            bond.area,
+        )
+    }
+
+    fn from_parts(
+        node0: u32,
+        node1: u32,
+        centroid: SolverVec3,
+        normal: SolverVec3,
+        area: f32,
+    ) -> Self {
+        if node0 <= node1 {
+            Self {
+                node0,
+                node1,
+                centroid: quantize_vec3(centroid),
+                normal: quantize_vec3(normal),
+                area: quantize_scalar(area),
+            }
+        } else {
+            Self {
+                node0: node1,
+                node1: node0,
+                centroid: quantize_vec3(centroid),
+                normal: quantize_vec3(SolverVec3::new(-normal.x, -normal.y, -normal.z)),
+                area: quantize_scalar(area),
+            }
+        }
+    }
+}
+
+fn quantize_vec3(value: SolverVec3) -> [i64; 3] {
+    [
+        quantize_scalar(value.x),
+        quantize_scalar(value.y),
+        quantize_scalar(value.z),
+    ]
+}
+
+fn quantize_scalar(value: f32) -> i64 {
+    (value * 100_000.0).round() as i64
 }
 
 impl From<Vec3Json> for SolverVec3 {

@@ -10,6 +10,8 @@
 //! - **Scenarios** (feature `scenarios`): Pre-built wall, tower, and bridge scenario builders
 //! - **Rapier integration** (feature `rapier`): `DestructionRuntime` for existing Rapier apps and
 //!   `DestructibleSet` as the low-level escape hatch
+//! - **Authoring** (feature `authoring`): Auto-generate bonds from pre-fractured triangle chunks and
+//!   assemble `ScenarioDesc` values from piece meshes
 //!
 //! `DestructionRuntime` is the recommended integration point when you already
 //! own a Rapier world and want normal Rapier contacts to drive fracture while
@@ -65,6 +67,9 @@ pub mod ext_stress_solver;
 pub mod stress_processor;
 pub mod types;
 
+#[cfg(feature = "authoring")]
+pub mod authoring;
+
 #[cfg(feature = "scenarios")]
 pub mod scenarios;
 
@@ -72,6 +77,11 @@ pub mod scenarios;
 pub mod rapier;
 
 // Re-export primary types at crate root for convenience
+#[cfg(feature = "authoring")]
+pub use authoring::{
+    build_scenario_from_pieces, create_bonds_from_triangles, AuthoringError, BondingMode,
+    BondingOptions, ScenarioPiece, TriangleChunk,
+};
 pub use bond_stress::compute_bond_stress;
 pub use ext_stress_solver::ExtStressSolver;
 pub use stress_processor::{

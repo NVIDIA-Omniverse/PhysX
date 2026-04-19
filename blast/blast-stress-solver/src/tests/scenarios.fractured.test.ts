@@ -27,6 +27,36 @@ describe('Fractured scenarios (requires three-pinata)', () => {
     }
   });
 
+  // ── Fractured Wall ──────────────────────────────────────────
+
+  describe('buildFracturedWallScenarioAsync', () => {
+    it.skipIf(!pinataAvailable)('produces valid auto-bonded scenario with small config', async () => {
+      const { buildFracturedWallScenarioAsync } = await import('../scenarios/fracturedWallScenario');
+
+      const scenario = await buildFracturedWallScenarioAsync({
+        span: 4,
+        height: 2,
+        thickness: 0.25,
+        fragmentCount: 24,
+        deckMass: 3000,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
+      });
+
+      expect(scenario.nodes.length).toBeGreaterThan(0);
+      expect(scenario.bonds.length).toBeGreaterThan(0);
+
+      const supports = scenario.nodes.filter((n) => n.mass === 0);
+      const dynamic = scenario.nodes.filter((n) => n.mass > 0);
+      expect(supports.length).toBeGreaterThan(0);
+      expect(dynamic.length).toBeGreaterThan(0);
+
+      const geoms = scenario.parameters?.fragmentGeometries as unknown[];
+      expect(geoms).toBeDefined();
+      expect(geoms.length).toBe(scenario.nodes.length);
+    });
+  });
+
   // ── Fractured Tower ─────────────────────────────────────────
 
   describe('buildFracturedTowerScenario', () => {
@@ -47,6 +77,8 @@ describe('Fractured scenarios (requires three-pinata)', () => {
         fragmentCountPerFloor: 4,
         fragmentCountPerColumn: 2,
         deckMass: 5000,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
       });
 
       expect(scenario.nodes.length).toBeGreaterThan(0);
@@ -77,6 +109,8 @@ describe('Fractured scenarios (requires three-pinata)', () => {
         fragmentCountPerFloor: 3,
         fragmentCountPerColumn: 2,
         columnsX: 1, columnsZ: 1,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
       });
 
       const geoms = scenario.parameters?.fragmentGeometries as unknown[];
@@ -95,6 +129,8 @@ describe('Fractured scenarios (requires three-pinata)', () => {
         fragmentCountPerFloor: 3,
         fragmentCountPerColumn: 2,
         deckMass: 2000,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
       });
 
       // With columns, floors, and walls, we should see bonds with different areas.
@@ -124,6 +160,8 @@ describe('Fractured scenarios (requires three-pinata)', () => {
         fragmentCountPerDeck: 8,
         fragmentCountPerPost: 3,
         deckMass: 5000,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
       });
 
       expect(scenario.nodes.length).toBeGreaterThan(0);
@@ -156,6 +194,8 @@ describe('Fractured scenarios (requires three-pinata)', () => {
         fragmentCountPerDeck: 4,
         fragmentCountPerPost: 2,
         footingThickness,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
       });
 
       const deckBottomY = 0.001 + footingThickness + pierHeight;
@@ -176,6 +216,8 @@ describe('Fractured scenarios (requires three-pinata)', () => {
         supportsPerSide: 2,
         fragmentCountPerDeck: 4,
         fragmentCountPerPost: 2,
+        bondMode: 'auto',
+        autoBondingOptions: { mode: 'exact' },
       });
 
       const geoms = scenario.parameters?.fragmentGeometries as unknown[];

@@ -19,6 +19,7 @@ import type { ScenarioDesc } from '../rapier/types';
 import type { FragmentInfo, FragmentType } from '../three/fracture';
 import type { PinataModule } from '../three/pinataFracture';
 import type { AreaNormalizationMode } from '../three/scenarioFromFragments';
+import type { AutoBondingRequest } from '../three/autoBonding';
 import {
   buildWallFragments,
   buildFloorFragments,
@@ -66,6 +67,8 @@ export type FracturedTowerOptions = {
   deckMass?: number;
   /** Bond detection mode: 'proximity' (default) or 'auto' (WASM triangle-based) */
   bondMode?: 'proximity' | 'auto';
+  /** Options forwarded to WASM auto-bonding (used only when `bondMode: 'auto'`) */
+  autoBondingOptions?: Omit<AutoBondingRequest, 'enabled'>;
   /** Bond area normalization mode (default: 'perAxis') */
   areaNormalization?: AreaNormalizationMode;
   /**
@@ -110,6 +113,7 @@ export async function buildFracturedTowerScenario(
     fragmentCountPerColumn = 4,
     deckMass,
     bondMode = 'proximity',
+    autoBondingOptions,
     areaNormalization = 'perAxis',
     pinata,
     rapier,
@@ -246,6 +250,7 @@ export async function buildFracturedTowerScenario(
   const scenarioOptions = {
     totalMass: calculatedMass,
     bondMode: bondMode as 'proximity' | 'auto',
+    autoBondingOptions,
     areaNormalization,
     dimensions: dims,
     rapier,

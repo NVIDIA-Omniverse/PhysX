@@ -10,6 +10,8 @@ const BRIDGE_SOURCES: &[&str] = &[
     "rust_stress_example/ffi/ext_stress_bridge.cpp",
 ];
 
+const AUTHORING_BRIDGE_SOURCES: &[&str] = &["js_stress_example/ffi/authoring_bridge.cpp"];
+
 const BLAST_SOURCES: &[&str] = &[
     "source/shared/stress_solver/stress.cpp",
     "source/sdk/common/NvBlastAssert.cpp",
@@ -27,6 +29,14 @@ const BLAST_SOURCES: &[&str] = &[
     "source/sdk/extensions/stress/NvBlastExtStressSolver.cpp",
 ];
 
+const AUTHORING_SOURCES: &[&str] = &[
+    "source/sdk/extensions/authoring/NvBlastExtApexSharedParts.cpp",
+    "source/sdk/extensions/authoring/NvBlastExtAuthoringBondGeneratorImpl.cpp",
+    "source/sdk/extensions/authoring/NvBlastExtTriangleProcessor.cpp",
+    "source/sdk/extensions/authoringCommon/NvBlastExtAuthoringAcceleratorImpl.cpp",
+    "source/sdk/extensions/authoringCommon/NvBlastExtAuthoringMeshImpl.cpp",
+];
+
 const INCLUDE_DIRS: &[&str] = &[
     "include",
     "include/globals",
@@ -39,6 +49,15 @@ const INCLUDE_DIRS: &[&str] = &[
     "source/sdk/lowlevel",
     "source/shared/NsFoundation/include",
     "rust_stress_example/ffi",
+];
+
+const AUTHORING_INCLUDE_DIRS: &[&str] = &[
+    "include/extensions/assetutils",
+    "include/extensions/authoring",
+    "include/extensions/authoringCommon",
+    "source/sdk/extensions/authoring",
+    "source/sdk/extensions/authoringCommon",
+    "js_stress_example/ffi",
 ];
 
 fn main() {
@@ -55,6 +74,7 @@ fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let target = env::var("TARGET").expect("TARGET");
     let force_source_build = env_truthy("BLAST_STRESS_SOLVER_FORCE_SOURCE_BUILD");
+    let authoring_enabled = env::var_os("CARGO_FEATURE_AUTHORING").is_some();
 
     if let Some(lib_path) = env::var_os("BLAST_STRESS_SOLVER_STATIC_LIB_PATH") {
         let lib_path = PathBuf::from(lib_path);
@@ -75,7 +95,7 @@ fn main() {
     let packaged_dir = manifest_dir.join("artifacts").join(&target);
     emit_rerun_if_changed(&packaged_dir);
 
-    if !force_source_build {
+    if !force_source_build && !authoring_enabled {
         if let Some(path) = find_packaged_library(&packaged_dir) {
             emit_link_for_path(&path);
             emit_cpp_runtime(&target);
@@ -87,13 +107,13 @@ fn main() {
         let bundled_native_root = manifest_dir.join(BUNDLED_NATIVE_ROOT);
         emit_rerun_if_changed(&bundled_native_root);
         if bundled_native_root.exists() {
-            build_backend_sources(&bundled_native_root);
+            build_backend_sources(&bundled_native_root, authoring_enabled);
             return;
         }
 
         if let Some(monorepo_blast_root) = find_monorepo_blast_root(&manifest_dir) {
             emit_rerun_if_changed(&monorepo_blast_root);
-            build_backend_sources(&monorepo_blast_root);
+            build_backend_sources(&monorepo_blast_root, authoring_enabled);
             return;
         }
     }
@@ -110,6 +130,13 @@ fn main() {
     if force_source_build {
         panic!(
             "blast-stress-solver source build was forced, but target {} has no supported source-build fallback.{}",
+            target, native_help
+        );
+    }
+
+    if authoring_enabled {
+        panic!(
+            "blast-stress-solver feature `authoring` currently requires a native Apple/Linux source build or a custom BLAST_STRESS_SOLVER_STATIC_LIB_PATH/BLAST_STRESS_SOLVER_LIB_DIR backend with authoring symbols. Target {} has no supported fallback.{}",
             target, native_help
         );
     }
@@ -131,7 +158,7 @@ fn native_source_build_supported(target: &str) -> bool {
     !target.contains("wasm32") && (target.contains("apple") || target.contains("linux"))
 }
 
-fn build_backend_sources(blast_root: &Path) {
+fn build_backend_sources(blast_root: &Path, authoring_enabled: bool) {
     let mut build = cc::Build::new();
     build.cpp(true);
     build.std("c++17");
@@ -140,8 +167,23 @@ fn build_backend_sources(blast_root: &Path) {
         build.file(blast_root.join(rel));
     }
 
+    if authoring_enabled {
+        for rel in AUTHORING_BRIDGE_SOURCES
+            .iter()
+            .chain(AUTHORING_SOURCES.iter())
+        {
+            build.file(blast_root.join(rel));
+        }
+    }
+
     for rel in INCLUDE_DIRS {
         build.include(blast_root.join(rel));
+    }
+
+    if authoring_enabled {
+        for rel in AUTHORING_INCLUDE_DIRS {
+            build.include(blast_root.join(rel));
+        }
     }
 
     build.define("STRESS_SOLVER_FORCE_SCALAR", None);

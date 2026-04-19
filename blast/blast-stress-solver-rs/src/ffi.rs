@@ -1,11 +1,12 @@
 //! Raw FFI declarations for the C stress solver bridges.
 //!
-//! These map directly to `stress_bridge.h` and `ext_stress_bridge.h`.
+//! These map directly to `stress_bridge.h`, `ext_stress_bridge.h`, and optional
+//! authoring bridge headers.
 //! All types are `repr(C)` to match the C layout.
 
 #![allow(non_camel_case_types, dead_code)]
 
-use std::ffi::c_int;
+use std::ffi::{c_int, c_void};
 
 use crate::types::Vec3;
 
@@ -292,4 +293,22 @@ extern "C" {
     pub(crate) fn ext_stress_solver_get_angular_error(handle: *const ExtStressSolverHandle) -> f32;
 
     pub(crate) fn ext_stress_solver_converged(handle: *const ExtStressSolverHandle) -> u8;
+}
+
+// ---- Authoring FFI ----
+
+#[cfg(feature = "authoring")]
+extern "C" {
+    pub(crate) fn authoring_bonds_from_prefractured_triangles(
+        mesh_count: u32,
+        geometry_offset: *const u32,
+        triangle_points: *const f32,
+        triangle_float_count: u32,
+        chunk_is_support: *const u8,
+        bond_mode: u32,
+        max_separation: f32,
+        out_bonds: *mut *mut FfiExtStressBondDesc,
+    ) -> u32;
+
+    pub(crate) fn authoring_free(ptr: *mut c_void);
 }

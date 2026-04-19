@@ -40,6 +40,11 @@ The demo also ships embedded authored scene packs for:
 - `fractured-bridge`
 - `brick-building`
 
+Those embedded packs keep their authored meshes, but the Rust loader now
+rebuilds the runtime bond graph through
+`blast_stress_solver::authoring::build_scenario_from_pieces(...)` so the demo
+dogfoods the same public auto-bonding API available to crate users.
+
 `BLAST_STRESS_DEMO_SCENARIO` accepts both hyphenated and underscored spellings
 for these names, so `fractured-tower` and `fractured_tower` both work.
 

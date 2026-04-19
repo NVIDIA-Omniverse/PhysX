@@ -2,7 +2,7 @@
  * Fractured Wall Demo
  *
  * Showcases Voronoi mesh fracturing via three-pinata, producing irregular
- * fragments with proximity-based bond detection and stress-driven destruction.
+ * fragments with triangle auto-bonding and stress-driven destruction.
  *
  * Click the viewport to launch projectiles at a Voronoi-fractured wall.
  */
@@ -15,10 +15,8 @@ import { buildDestructibleCore } from 'blast-stress-solver/rapier';
 import {
   createDestructibleThreeBundle,
   RapierDebugRenderer,
-  fractureGeometryAsync,
-  buildScenarioFromFragments,
-  buildFoundationFragments,
 } from 'blast-stress-solver/three';
+import { buildFracturedWallScenarioAsync } from 'blast-stress-solver/scenarios';
 import { FRACTURED_WALL_DEMO_CONFIG as CONFIG } from './fractured-demo-config.js';
 
 // ── Config ────────────────────────────────────────────────────
@@ -121,40 +119,19 @@ let showDebug = false;
 
 async function initScene() {
   const { span, height, thickness, fragmentCount, deckMass } = CONFIG.wall;
-
-  // 1. Fracture a box geometry using Voronoi tessellation (async — loads three-pinata dynamically)
-  const geometry = new THREE.BoxGeometry(span, height, thickness, 2, 3, 1);
-  const wallFragments = await fractureGeometryAsync(geometry, {
-    pinata,
+  const scenario = await buildFracturedWallScenarioAsync({
+    span,
+    height,
+    thickness,
     fragmentCount,
-    voronoiMode: '3D',
-    worldOffset: { x: 0, y: height * 0.5, z: 0 },
-  });
-  geometry.dispose();
-
-  // 2. Add foundation support slab
-  const { fragments: foundationFragments, foundationTopY } = buildFoundationFragments({
-    span: { x: span, y: height, z: thickness },
-  });
-
-  // Lift wall fragments so they sit on top of the foundation
-  const minY = Math.min(...wallFragments.map(f => f.worldPosition.y - f.halfExtents.y));
-  const liftY = foundationTopY - minY + 0.0005;
-  const liftedFragments = wallFragments.map(f => ({
-    ...f,
-    worldPosition: { ...f.worldPosition, y: f.worldPosition.y + liftY },
-  }));
-  const allFragments = [...liftedFragments, ...foundationFragments];
-
-  // 3. Build scenario from fragments
-  const scenario = buildScenarioFromFragments(allFragments, {
-    totalMass: deckMass,
-    areaNormalization: 'perAxis',
-    dimensions: { x: span, y: height, z: thickness },
+    deckMass,
+    bondMode: 'auto',
+    autoBondingOptions: { mode: 'exact' },
+    pinata: pinata as any,
   });
 
   console.log(
-    `Fractured wall: ${scenario.nodes.length} nodes (${fragmentCount} fragments), ${scenario.bonds.length} bonds`,
+    `Fractured wall: ${scenario.nodes.length} nodes (${fragmentCount} fragments), ${scenario.bonds.length} bonds (auto-bonded)`,
   );
 
   const core = await buildDestructibleCore({
