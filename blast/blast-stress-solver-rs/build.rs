@@ -95,7 +95,7 @@ fn main() {
     let packaged_dir = manifest_dir.join("artifacts").join(&target);
     emit_rerun_if_changed(&packaged_dir);
 
-    if !force_source_build && !authoring_enabled {
+    if !force_source_build {
         if let Some(path) = find_packaged_library(&packaged_dir) {
             emit_link_for_path(&path);
             emit_cpp_runtime(&target);
@@ -130,13 +130,6 @@ fn main() {
     if force_source_build {
         panic!(
             "blast-stress-solver source build was forced, but target {} has no supported source-build fallback.{}",
-            target, native_help
-        );
-    }
-
-    if authoring_enabled {
-        panic!(
-            "blast-stress-solver feature `authoring` currently requires a native Apple/Linux source build or a custom BLAST_STRESS_SOLVER_STATIC_LIB_PATH/BLAST_STRESS_SOLVER_LIB_DIR backend with authoring symbols. Target {} has no supported fallback.{}",
             target, native_help
         );
     }

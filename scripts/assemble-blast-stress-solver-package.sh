@@ -145,7 +145,7 @@ build_native_backend() {
   fi
 
   echo "Building native backend artifact for $NATIVE_TARGET..."
-  cargo build --manifest-path "$CRATE_DIR/Cargo.toml" --release >/dev/null
+  cargo build --manifest-path "$CRATE_DIR/Cargo.toml" --release --features authoring >/dev/null
 }
 
 stage_native_backend() {
@@ -243,11 +243,18 @@ build_wasm_backend() {
     "$REPO_ROOT/blast/source/sdk/lowlevel"
     "$REPO_ROOT/blast/source/shared/NsFoundation/include"
     "$REPO_ROOT/blast/rust_stress_example/ffi"
+    "$REPO_ROOT/blast/include/extensions/assetutils"
+    "$REPO_ROOT/blast/include/extensions/authoring"
+    "$REPO_ROOT/blast/include/extensions/authoringCommon"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoring"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoringCommon"
+    "$REPO_ROOT/blast/js_stress_example/ffi"
   )
 
   sources=(
     "$REPO_ROOT/blast/rust_stress_example/ffi/stress_bridge.cpp"
     "$REPO_ROOT/blast/rust_stress_example/ffi/ext_stress_bridge.cpp"
+    "$REPO_ROOT/blast/js_stress_example/ffi/authoring_bridge.cpp"
     "$REPO_ROOT/blast/source/shared/stress_solver/stress.cpp"
     "$REPO_ROOT/blast/source/sdk/common/NvBlastAssert.cpp"
     "$REPO_ROOT/blast/source/sdk/common/NvBlastAtomic.cpp"
@@ -262,6 +269,11 @@ build_wasm_backend() {
     "$REPO_ROOT/blast/source/sdk/lowlevel/NvBlastActor.cpp"
     "$REPO_ROOT/blast/source/sdk/lowlevel/NvBlastActorSerializationBlock.cpp"
     "$REPO_ROOT/blast/source/sdk/extensions/stress/NvBlastExtStressSolver.cpp"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoring/NvBlastExtApexSharedParts.cpp"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoring/NvBlastExtAuthoringBondGeneratorImpl.cpp"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoring/NvBlastExtTriangleProcessor.cpp"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoringCommon/NvBlastExtAuthoringAcceleratorImpl.cpp"
+    "$REPO_ROOT/blast/source/sdk/extensions/authoringCommon/NvBlastExtAuthoringMeshImpl.cpp"
   )
 
   cxxflags=(
@@ -389,13 +401,44 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-blast-stress-solver = { path = "$PACKAGE_ROOT" }
+blast-stress-solver = { path = "$PACKAGE_ROOT", features = ["authoring"] }
 EOF
 
   cat <<'EOF' > "$consumer_dir/smoke/src/main.rs"
+use blast_stress_solver::authoring::{
+    create_bonds_from_triangles, BondingOptions, TriangleChunk,
+};
 use blast_stress_solver::{BondDesc, ExtStressSolver, NodeDesc, SolverSettings, Vec3};
 
 fn main() {
+    let chunks = [
+        TriangleChunk {
+            triangles: vec![
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.0, 0.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+            ],
+            bondable: true,
+        },
+        TriangleChunk {
+            triangles: vec![
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+                Vec3::new(1.0, 0.0, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+            ],
+            bondable: true,
+        },
+    ];
+    let generated = create_bonds_from_triangles(&chunks, &BondingOptions::default())
+        .expect("authoring backend");
+    assert_eq!(generated.len(), 1);
+
     let nodes = vec![
         NodeDesc {
             centroid: Vec3::new(0.0, 0.0, 0.0),
@@ -450,14 +493,49 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = { path = "$PACKAGE_ROOT" }
+blast-stress-solver = { path = "$PACKAGE_ROOT", features = ["authoring"] }
 EOF
 
   cat <<'EOF' > "$consumer_dir/smoke/src/lib.rs"
+use blast_stress_solver::authoring::{
+    create_bonds_from_triangles, BondingOptions, TriangleChunk,
+};
 use blast_stress_solver::{BondDesc, ExtStressSolver, NodeDesc, SolverSettings, Vec3};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn downstream_blast_smoke() -> u32 {
+    let chunks = [
+        TriangleChunk {
+            triangles: vec![
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.0, 0.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+            ],
+            bondable: true,
+        },
+        TriangleChunk {
+            triangles: vec![
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+                Vec3::new(1.0, 0.0, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+                Vec3::new(1.0, 1.0, 0.0),
+            ],
+            bondable: true,
+        },
+    ];
+    let generated = match create_bonds_from_triangles(&chunks, &BondingOptions::default()) {
+        Ok(value) => value,
+        Err(_) => return 0,
+    };
+    if generated.len() != 1 {
+        return 0;
+    }
+
     let nodes = [
         NodeDesc {
             centroid: Vec3::new(0.0, 0.0, 0.0),
@@ -486,7 +564,7 @@ pub extern "C" fn downstream_blast_smoke() -> u32 {
     solver.add_gravity(Vec3::new(0.0, -9.81, 0.0));
     solver.update();
 
-    solver.actor_count() * 100 + solver.node_count() * 10 + solver.overstressed_bond_count()
+    1000 + solver.actor_count() * 100 + solver.node_count() * 10 + solver.overstressed_bond_count()
 }
 EOF
 
@@ -510,7 +588,7 @@ fs.writeFileSync(out, JSON.stringify({
 }, null, 2));
 const inst = new WebAssembly.Instance(mod, {});
 const result = inst.exports.downstream_blast_smoke();
-if (result !== 121) {
+if (result !== 1121) {
   console.error(`unexpected smoke result: ${result}`);
   process.exit(1);
 }

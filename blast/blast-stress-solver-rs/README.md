@@ -22,21 +22,21 @@ Core solver only:
 
 ```toml
 [dependencies]
-blast-stress-solver = "0.4.0"
+blast-stress-solver = "0.4.1"
 ```
 
 With built-in scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.4.0", features = ["scenarios"] }
+blast-stress-solver = { version = "0.4.1", features = ["scenarios"] }
 ```
 
 With Rapier integration and scenario builders:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.4.0", features = ["rapier", "scenarios"] }
+blast-stress-solver = { version = "0.4.1", features = ["rapier", "scenarios"] }
 rapier3d = { version = "0.30", default-features = false, features = ["dim3", "f32"] }
 ```
 
@@ -44,7 +44,7 @@ With auto-bond authoring helpers:
 
 ```toml
 [dependencies]
-blast-stress-solver = { version = "0.4.0", features = ["authoring"] }
+blast-stress-solver = { version = "0.4.1", features = ["authoring"] }
 ```
 
 ## Target support
@@ -59,15 +59,14 @@ compiling the bundled Blast C++ sources on the consumer machine with a normal
 C++17 toolchain. That removes the need to vendor the PhysX monorepo just to
 support x86_64 macOS or Linux consumers.
 
-`wasm32-unknown-unknown` intentionally stays prepackaged: downstream web builds
-do not need Emscripten, wasi-sdk, or a second Blast-side wasm/JS loader.
+The packaged native and `wasm32-unknown-unknown` backends both include the
+public `authoring` API.
 
-Current `authoring` feature note:
+`wasm32-unknown-unknown` intentionally stays prepackaged: downstream Rust wasm
+builds do not need Emscripten, wasi-sdk, or a second Blast-side loader.
 
-- the published packaged backends do not yet include the authoring bridge
-- `authoring` therefore currently requires a native Apple/Linux source build,
-  or a custom backend supplied through `BLAST_STRESS_SOLVER_STATIC_LIB_PATH` or
-  `BLAST_STRESS_SOLVER_LIB_DIR`
+For other Apple/Linux native targets, `authoring` still works through the same
+bundled C++17 source-build fallback used by the core solver.
 
 Advanced overrides:
 
@@ -419,7 +418,7 @@ The intended model is:
 crate-type = ["cdylib"]
 
 [dependencies]
-blast-stress-solver = "0.4.0"
+blast-stress-solver = "0.4.1"
 wasm-bindgen = "0.2"
 ```
 
