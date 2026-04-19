@@ -77,11 +77,6 @@ if [[ ! -d "$CRATE_DIR" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SUPPORT_DIR/staged-build.rs" ]]; then
-  echo "Missing staged build template under $SUPPORT_DIR" >&2
-  exit 1
-fi
-
 cleanup() {
   if [[ $KEEP_STAGE -eq 0 && -n "${STAGE_DIR:-}" && -d "$STAGE_DIR" ]]; then
     rm -rf "$STAGE_DIR"
@@ -328,7 +323,6 @@ build_wasm_backend() {
 }
 
 stage_packaging_overrides() {
-  cp "$SUPPORT_DIR/staged-build.rs" "$STAGE_DIR/build.rs"
   cp "$CRATE_DIR/README.md" "$STAGE_DIR/README.md"
   cp "$REPO_ROOT/LICENSE.md" "$STAGE_DIR/LICENSE.md"
   cp "$SUPPORT_DIR/WASM_FEASIBILITY.md" "$STAGE_DIR/WASM_FEASIBILITY.md"
