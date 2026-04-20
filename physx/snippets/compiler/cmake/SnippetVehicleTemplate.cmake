@@ -31,10 +31,17 @@
 # Include here after the directories are defined so that the platform specific file can use the variables.
 INCLUDE(${PHYSX_ROOT_DIR}/snippets/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/SnippetVehicleTemplate.cmake)
 
-IF(NOT PM_RAPIDJSON_PATH_INTERNAL)
-	SET(PM_RAPIDJSON_PATH_INTERNAL $ENV{PM_rapidjson_PATH} CACHE INTERNAL "rapidjson package path")
+# Use system RapidJSON instead of packman version
+IF(UNIX AND NOT APPLE)
+	# Linux: Use system-installed rapidjson-dev package
+	SET(PM_RAPIDJSON_INCLUDE_PATH "/usr/include")
+ELSE()
+	# Windows/Mac: Fall back to packman if PM_rapidjson_PATH is set
+	IF(NOT PM_RAPIDJSON_PATH_INTERNAL)
+		SET(PM_RAPIDJSON_PATH_INTERNAL $ENV{PM_rapidjson_PATH} CACHE INTERNAL "rapidjson package path")
+	ENDIF()
+	SET(PM_RAPIDJSON_INCLUDE_PATH ${PM_RAPIDJSON_PATH_INTERNAL}/include)
 ENDIF()
-SET(PM_RAPIDJSON_INCLUDE_PATH ${PM_RAPIDJSON_PATH_INTERNAL}/include)
 
 STRING(TOLOWER ${SNIPPET_NAME} SNIPPET_NAME_LOWER)
 

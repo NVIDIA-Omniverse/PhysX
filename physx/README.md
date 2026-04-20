@@ -41,23 +41,73 @@ The user guide and API documentation are available on [GitHub Pages](https://nvi
 
 ## Quick Start Instructions
 
+### Linux (Ubuntu 20.04+)
+
+**Prerequisites:**
+```bash
+sudo apt-get update
+sudo apt-get install -y cmake clang build-essential curl \
+  libglut-dev libglu1-mesa-dev libopengl-dev rapidjson-dev \
+  libx11-dev libxext-dev
+```
+
+**Note:** This build configuration uses system packages for OpenGL, GLUT, and RapidJSON instead of packman-managed versions.
+
+**Build (Packman-Free - Recommended):**
+```bash
+cd physx
+./generate_projects_no_packman.sh linux-clang-cpu-only
+cd compiler/linux-clang-cpu-only-release
+make -j$(nproc)
+```
+
+**Build (Traditional - Uses Packman):**
+```bash
+cd physx
+./generate_projects.sh linux-clang-cpu-only  # Downloads dependencies via packman
+cd compiler/linux-clang-cpu-only-release
+make -j$(nproc)
+```
+
+Built libraries and executables will be in `bin/linux.x86_64/release/`
+
+**Available presets:** Run `./generate_projects_no_packman.sh` (or `./generate_projects.sh`) to see all options:
+- `linux-clang-cpu-only` - CPU-only build with Clang (recommended)
+- `linux-clang` - Full build with GPU support
+- `linux-gcc` - Build with GCC compiler
+
+**Note:** The `generate_projects_no_packman.sh` script is **completely packman-free** and uses only system packages and tools. This is the recommended method for Linux builds.
+
+### Windows / macOS
+
 Platform specific environment and build information can be found in [documentation/platformreadme](./documentation/platformreadme).
 
-To begin, clone this repository onto your local drive.  Then change directory to physx/, run ./generate_projects.[bat|sh] and follow on-screen prompts.  This will let you select a platform specific solution to build.  You can then build from the generated solution/make file in the platform- and configuration-specific folders in the ``compiler`` folder.
+Run `generate_projects.bat` (Windows) or `generate_projects.sh` (macOS) and follow on-screen prompts to select a platform-specific solution to build. You can then build from the generated solution/make file in the platform- and configuration-specific folders in the `compiler` folder.
 
-Note that the PhysX distribution downloads binary content, such as the PhysX GPU binaries, from Amazon CloudFront on demand, using the packman package manager.
+### Note
+
+**Packman Status (Linux):** PhysX can now be built on Linux **without any packman dependencies** using the `generate_projects_no_packman.sh` script. All previously packman-managed dependencies (OpenGL, GLUT, RapidJSON, build tools, metadata generation) have been replaced with system packages or eliminated:
+
+- **OpenGL/GLUT**: System packages (`libglut-dev`, `libopengl-dev`)
+- **RapidJSON**: System package (`rapidjson-dev`)
+- **Build tools**: System CMake, Clang, and Make
+- **Metadata generation**: Auto-generated files are checked into the repository
+
+The traditional `generate_projects.sh` script still uses packman for backwards compatibility, but it is no longer required for Linux builds.
+
+**Windows/macOS:** These platforms still use packman for dependency management.
 
 ## Acknowledgements
 
 This depot references packages of third party open source software copyright their respective owners.
 For copyright details, please refer to the license files included in the packages.
 
-| Software                  | Copyright Holder                                                                    | Package                          |
-|---------------------------|-------------------------------------------------------------------------------------|----------------------------------|
-| CMake                     | Kitware, Inc. and Contributors                                                      | cmake                            |
-| LLVM                      | University of Illinois at Urbana-Champaign                                          | clang-physxmetadata              |
-| Visual Studio Locator     | Microsoft Corporation                                                               | VsWhere                          |
-| Freeglut                  | Pawel W. Olszta                                                                     | freeglut-windows<br>opengl-linux |
-| Mesa 3-D graphics library | Brian Paul                                                                          | opengl-linux                     |
-| RapidJSON                 | THL A29 Limited, a Tencent company, and Milo Yip<br>Alexander Chemeris (msinttypes) | rapidjson                        |
-| OpenGL Ext Wrangler Lib   | Nigel Stewart, Milan Ikits, Marcelo E. Magallon, Lev Povalahev                      | [SDK_ROOT]/snippets/graphics     |
+| Software                  | Copyright Holder                                                                    | Package / Source                          |
+|---------------------------|-------------------------------------------------------------------------------------|-------------------------------------------|
+| CMake                     | Kitware, Inc. and Contributors                                                      | system package (Linux)<br>packman (Windows/macOS) |
+| LLVM/Clang                | University of Illinois at Urbana-Champaign                                          | system package (Linux)<br>clang-physxmetadata (optional, metadata regen only) |
+| Visual Studio Locator     | Microsoft Corporation                                                               | VsWhere (packman, Windows only)           |
+| Freeglut                  | Pawel W. Olszta                                                                     | system package (Linux)<br>freeglut-windows (packman, Windows) |
+| Mesa 3-D graphics library | Brian Paul                                                                          | system package (Linux)                    |
+| RapidJSON                 | THL A29 Limited, a Tencent company, and Milo Yip<br>Alexander Chemeris (msinttypes) | system package (Linux)<br>rapidjson (packman, Windows/macOS) |
+| OpenGL Ext Wrangler Lib   | Nigel Stewart, Milan Ikits, Marcelo E. Magallon, Lev Povalahev                      | [SDK_ROOT]/snippets/graphics              |
