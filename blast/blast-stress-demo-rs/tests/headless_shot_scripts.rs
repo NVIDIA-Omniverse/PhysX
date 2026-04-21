@@ -483,3 +483,83 @@ fn wall_contract_heavy_passes_through_when_prefractured() {
         "the compact contract wall should also pass when started prefractured: {summary:?}"
     );
 }
+
+#[test]
+fn wall_arch_center_blocks_without_resim_but_keeps_wall_mostly_intact() {
+    let (_log_text, summary) = run_headless_scenario_with_envs(
+        "wall_arch_contract",
+        "wall_arch_center",
+        100,
+        &[
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
+            ("BLAST_STRESS_DEMO_RESIM", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
+            ("BLAST_STRESS_DEMO_SIBLING_GRACE_STEPS", "0"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "0"),
+        ],
+    );
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("wall-arch-contract")
+    );
+    assert_eq!(
+        summary.get("shot_script").map(String::as_str),
+        Some("wall_arch_center")
+    );
+    assert!(get_u64(&summary, "first_fracture_frame") >= 14);
+    assert!(get_u64(&summary, "total_fractures") > 0);
+    assert!(get_u64(&summary, "total_splits") > 0);
+    assert_eq!(get_u64(&summary, "peak_rapier_passes"), 1);
+    assert_eq!(
+        get_u64(&summary, "total_rapier_passes"),
+        get_u64(&summary, "total_frames")
+    );
+    assert!(get_u64(&summary, "peak_world_bodies") <= 30);
+    assert!(get_u64(&summary, "active_bonds_after") >= 50);
+    assert!(get_u64(&summary, "active_bonds_after") <= 65);
+    assert_eq!(get_u64(&summary, "projectile_passed_through_count"), 0);
+}
+
+#[test]
+fn wall_arch_center_with_resim_cuts_through_local_hole_without_ccd() {
+    let (_log_text, summary) = run_headless_scenario_with_envs(
+        "wall_arch_contract",
+        "wall_arch_center",
+        100,
+        &[
+            // This is the stronger visual resim fixture: the intact wall should
+            // still block without replay, while the replayed broken wall opens a
+            // local hole large enough for the projectile to continue through.
+            ("BLAST_STRESS_DEMO_PROJECTILE_CCD", "0"),
+            ("BLAST_STRESS_DEMO_RESIM", "1"),
+            ("BLAST_STRESS_DEMO_MAX_RESIM_PASSES", "2"),
+            ("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN", "0"),
+            ("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT", "0"),
+            ("BLAST_STRESS_DEMO_SIBLING_GRACE_STEPS", "0"),
+            ("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS", "0"),
+        ],
+    );
+    assert_eq!(
+        summary.get("scenario").map(String::as_str),
+        Some("wall-arch-contract")
+    );
+    assert_eq!(
+        summary.get("shot_script").map(String::as_str),
+        Some("wall_arch_center")
+    );
+    assert!(get_u64(&summary, "first_fracture_frame") >= 14);
+    assert!(get_u64(&summary, "total_fractures") > 0);
+    assert!(get_u64(&summary, "total_splits") > 0);
+    assert!(get_u64(&summary, "peak_rapier_passes") > 1);
+    assert!(get_u64(&summary, "peak_rapier_passes") <= 3);
+    assert!(get_u64(&summary, "total_rapier_passes") <= get_u64(&summary, "total_frames") + 2);
+    assert!(get_f32(&summary, "avg_rapier_passes") < 1.05);
+    assert!(get_u64(&summary, "peak_world_bodies") <= 20);
+    assert!(get_u64(&summary, "active_bonds_after") >= 45);
+    assert!(get_u64(&summary, "active_bonds_after") <= 60);
+    assert!(
+        get_u64(&summary, "projectile_passed_through_count") > 0,
+        "the arch contract wall should keep most of the wall standing while replay lets the projectile cut through the local hole: {summary:?}"
+    );
+}

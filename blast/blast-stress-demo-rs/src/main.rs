@@ -51,6 +51,7 @@ const BASE_SHEAR_FATAL: f32 = 0.0036;
 enum DemoScenarioKind {
     Wall,
     WallContract,
+    WallArchContract,
     Tower,
     Bridge,
     FracturedWall,
@@ -64,6 +65,7 @@ impl DemoScenarioKind {
         match self {
             Self::Wall => "wall",
             Self::WallContract => "wall-contract",
+            Self::WallArchContract => "wall-arch-contract",
             Self::Tower => "tower",
             Self::Bridge => "bridge",
             Self::FracturedWall => "fractured-wall",
@@ -85,6 +87,8 @@ struct DemoConfig {
     projectile_ttl: f32,
     gravity: f32,
     material_scale: f32,
+    contact_force_scale: f32,
+    contact_splash_radius: f32,
     skip_single_bodies: bool,
     camera_target: Vec3,
     camera_distance: f32,
@@ -134,6 +138,12 @@ impl DemoRuntimeToggles {
         config.resimulation.max_passes = max_resimulation_passes;
         if let Some(value) = env_f32("BLAST_STRESS_DEMO_MATERIAL_SCALE") {
             config.material_scale = value.max(0.0);
+        }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_CONTACT_FORCE_SCALE") {
+            config.contact_force_scale = value.max(0.0);
+        }
+        if let Some(value) = env_f32("BLAST_STRESS_DEMO_CONTACT_SPLASH_RADIUS") {
+            config.contact_splash_radius = value.max(0.0);
         }
 
         if let Some(value) = env_i32("BLAST_STRESS_DEMO_MAX_FRACTURES_PER_FRAME") {
@@ -234,7 +244,7 @@ impl DemoRuntimeToggles {
             .unwrap_or_else(|| "none".to_string());
 
         let config_summary = format!(
-            "scenario={} meshes={} gizmos={} rapier_only={} resim={} max_resim={} contact_injection={} projectile_ccd={} body_ccd={} policy[max_fractures={} max_new_bodies={} max_collider_migrations={} max_dynamic_bodies={} min_child_nodes={} idle_skip={} apply_excess_forces={}] sleep[enabled={} mode={} linear={:.3} angular={:.3}] small_body_damping[enabled={} mode={} colliders={} linear={:.2} angular={:.2}] debris[collision_mode={} cleanup_enabled={} cleanup_mode={} ttl={:.2} max_colliders={}] handoff[recenter_children={} velocity_fit={}] debug[sibling_grace_steps={} projectile_fracture_grace_steps={} projectile_trace={} heavy_frame_ms={:.2} topology_body_delta={} headless_shot_script={}]",
+            "scenario={} meshes={} gizmos={} rapier_only={} resim={} max_resim={} contact_injection={} contact_force_scale={:.2} contact_splash_radius={:.2} projectile_ccd={} body_ccd={} policy[max_fractures={} max_new_bodies={} max_collider_migrations={} max_dynamic_bodies={} min_child_nodes={} idle_skip={} apply_excess_forces={}] sleep[enabled={} mode={} linear={:.3} angular={:.3}] small_body_damping[enabled={} mode={} colliders={} linear={:.2} angular={:.2}] debris[collision_mode={} cleanup_enabled={} cleanup_mode={} ttl={:.2} max_colliders={}] handoff[recenter_children={} velocity_fit={}] debug[sibling_grace_steps={} projectile_fracture_grace_steps={} projectile_trace={} heavy_frame_ms={:.2} topology_body_delta={} headless_shot_script={}]",
             scenario.slug(),
             flag_bit(show_meshes),
             flag_bit(env_flag("BLAST_STRESS_DEMO_GIZMOS").unwrap_or(true)),
@@ -246,6 +256,8 @@ impl DemoRuntimeToggles {
             } else {
                 env_flag("BLAST_STRESS_DEMO_CONTACT_FORCE_INJECTION").unwrap_or(true)
             }),
+            config.contact_force_scale,
+            config.contact_splash_radius,
             flag_bit(env_flag("BLAST_STRESS_DEMO_PROJECTILE_CCD").unwrap_or(false)),
             flag_bit(env_flag("BLAST_STRESS_DEMO_BODY_CCD").unwrap_or(false)),
             config.policy.max_fractures_per_frame,
@@ -1841,6 +1853,12 @@ fn selected_scenario_kind() -> DemoScenarioKind {
         | Some("contract_wall")
         | Some("resim-wall")
         | Some("resim_wall") => DemoScenarioKind::WallContract,
+        Some("wall-arch-contract")
+        | Some("wall_arch_contract")
+        | Some("arch-wall")
+        | Some("arch_wall")
+        | Some("resim-arch-wall")
+        | Some("resim_arch_wall") => DemoScenarioKind::WallArchContract,
         Some("tower") => DemoScenarioKind::Tower,
         Some("bridge") => DemoScenarioKind::Bridge,
         Some("fractured-wall") | Some("fractured_wall") | Some("fwall") => {
@@ -1870,6 +1888,8 @@ fn build_wall_demo_config() -> DemoConfig {
         projectile_ttl: DEFAULT_PROJECTILE_TTL,
         gravity: GRAVITY,
         material_scale: 1.0e10,
+        contact_force_scale: CONTACT_FORCE_SCALE,
+        contact_splash_radius: SPLASH_RADIUS,
         skip_single_bodies: false,
         camera_target: Vec3::new(0.0, 1.5, 0.0),
         camera_distance: 14.0,
@@ -1895,10 +1915,12 @@ fn build_wall_demo_config() -> DemoConfig {
     }
 }
 
-fn build_wall_contract_scenario() -> ScenarioDesc {
-    let columns = 5u32;
-    let rows = 4u32;
-    let brick_size = SolverVec3::new(1.0, 0.5, 0.5);
+fn build_rect_contract_wall_scenario(
+    columns: u32,
+    rows: u32,
+    brick_size: SolverVec3,
+    bond_area_scale: f32,
+) -> ScenarioDesc {
     let volume = brick_size.x * brick_size.y * brick_size.z;
     let mut nodes = Vec::with_capacity((columns * rows) as usize);
     let mut bonds = Vec::new();
@@ -1930,7 +1952,7 @@ fn build_wall_contract_scenario() -> ScenarioDesc {
                 node1,
                 centroid,
                 normal: SolverVec3::new(1.0, 0.0, 0.0),
-                area: brick_size.y * brick_size.z,
+                area: brick_size.y * brick_size.z * bond_area_scale,
             });
         }
     }
@@ -1945,7 +1967,7 @@ fn build_wall_contract_scenario() -> ScenarioDesc {
                 node1,
                 centroid,
                 normal: SolverVec3::new(0.0, 1.0, 0.0),
-                area: brick_size.x * brick_size.z,
+                area: brick_size.x * brick_size.z * bond_area_scale,
             });
         }
     }
@@ -1956,6 +1978,14 @@ fn build_wall_contract_scenario() -> ScenarioDesc {
         node_sizes,
         collider_shapes: Vec::new(),
     }
+}
+
+fn build_wall_contract_scenario() -> ScenarioDesc {
+    build_rect_contract_wall_scenario(5, 4, SolverVec3::new(1.0, 0.5, 0.5), 1.0)
+}
+
+fn build_wall_arch_contract_scenario() -> ScenarioDesc {
+    build_rect_contract_wall_scenario(10, 8, SolverVec3::new(0.75, 0.5, 0.5), 0.22)
 }
 
 fn build_wall_contract_demo_config() -> DemoConfig {
@@ -1969,9 +1999,53 @@ fn build_wall_contract_demo_config() -> DemoConfig {
         projectile_ttl: DEFAULT_PROJECTILE_TTL,
         gravity: GRAVITY,
         material_scale: 1_000_000.0,
+        contact_force_scale: CONTACT_FORCE_SCALE,
+        contact_splash_radius: SPLASH_RADIUS,
         skip_single_bodies: false,
         camera_target: Vec3::new(0.0, 1.0, 0.0),
         camera_distance: 9.0,
+        policy: FracturePolicy {
+            apply_excess_forces: false,
+            idle_skip: false,
+            ..FracturePolicy::default()
+        },
+        resimulation: ResimulationOptions {
+            enabled: true,
+            max_passes: 2,
+        },
+        sleep_thresholds: SleepThresholdOptions::default(),
+        small_body_damping: SmallBodyDampingOptions {
+            mode: OptimizationMode::Off,
+            ..SmallBodyDampingOptions::default()
+        },
+        debris_cleanup: DebrisCleanupOptions {
+            mode: OptimizationMode::Always,
+            debris_ttl_secs: 8.0,
+            max_colliders_for_debris: 2,
+        },
+        debris_collision_mode: DebrisCollisionMode::All,
+    }
+}
+
+fn build_wall_arch_contract_demo_config() -> DemoConfig {
+    DemoConfig {
+        title: "Wall Resim Arch".to_string(),
+        scenario: build_wall_arch_contract_scenario(),
+        node_meshes: Arc::from(Vec::<SceneMeshAsset>::new()),
+        // Keep the projectile wide enough to avoid seam tunneling, then tune the
+        // impact so the intact wall blocks without resim but the replayed broken
+        // wall yields a local hole-through result.
+        projectile_radius: 0.45,
+        projectile_mass: 2_048.0,
+        projectile_speed: 32.2,
+        projectile_ttl: DEFAULT_PROJECTILE_TTL,
+        gravity: GRAVITY,
+        material_scale: 7_000_000.0,
+        contact_force_scale: 30.0,
+        contact_splash_radius: 0.9,
+        skip_single_bodies: false,
+        camera_target: Vec3::new(0.0, 1.75, 0.0),
+        camera_distance: 12.0,
         policy: FracturePolicy {
             apply_excess_forces: false,
             idle_skip: false,
@@ -2006,6 +2080,8 @@ fn build_tower_demo_config() -> DemoConfig {
         projectile_ttl: DEFAULT_PROJECTILE_TTL,
         gravity: GRAVITY,
         material_scale: 1.0e10,
+        contact_force_scale: CONTACT_FORCE_SCALE,
+        contact_splash_radius: SPLASH_RADIUS,
         skip_single_bodies: false,
         camera_target: Vec3::new(0.0, 1.5, 0.0),
         camera_distance: 20.0,
@@ -2054,6 +2130,8 @@ fn build_bridge_demo_config() -> DemoConfig {
         projectile_ttl: DEFAULT_PROJECTILE_TTL,
         gravity: GRAVITY,
         material_scale: 1.0e10,
+        contact_force_scale: CONTACT_FORCE_SCALE,
+        contact_splash_radius: SPLASH_RADIUS,
         skip_single_bodies: false,
         camera_target: Vec3::new(0.0, 2.5, 0.0),
         camera_distance: 24.0,
@@ -2118,6 +2196,7 @@ fn build_demo_config(kind: DemoScenarioKind) -> DemoConfig {
     let config = match kind {
         DemoScenarioKind::Wall => build_wall_demo_config(),
         DemoScenarioKind::WallContract => build_wall_contract_demo_config(),
+        DemoScenarioKind::WallArchContract => build_wall_arch_contract_demo_config(),
         DemoScenarioKind::Tower => build_tower_demo_config(),
         DemoScenarioKind::Bridge => build_bridge_demo_config(),
         DemoScenarioKind::FracturedWall => apply_scene_pack(
@@ -2150,8 +2229,8 @@ fn build_demo_physics(config: DemoConfig, toggles: &DemoRuntimeToggles) -> DemoP
     let runtime_options = DestructionRuntimeOptions {
         contact_impacts: ContactImpactOptions {
             enabled: toggles.contact_force_injection_enabled,
-            force_scale: CONTACT_FORCE_SCALE,
-            splash_radius: SPLASH_RADIUS,
+            force_scale: config.contact_force_scale,
+            splash_radius: config.contact_splash_radius,
             ..ContactImpactOptions::default()
         },
         grace: GracePeriodOptions {
@@ -2278,6 +2357,7 @@ fn build_headless_shot_plan(
     let mut shots = match script_name.as_str() {
         "wall_smoke" => build_wall_smoke_shots(config, bounds),
         "wall_face_heavy" => build_wall_face_heavy_shots(config, bounds),
+        "wall_arch_center" => build_wall_arch_center_shots(config, bounds),
         "tower_smoke" => build_tower_smoke_shots(config, bounds),
         "bridge_smoke" => build_bridge_smoke_shots(config, bounds),
         "building_smoke" => build_building_smoke_shots(config, bounds),
@@ -2288,6 +2368,7 @@ fn build_headless_shot_plan(
         "auto_smoke" => match kind {
             DemoScenarioKind::Wall
             | DemoScenarioKind::WallContract
+            | DemoScenarioKind::WallArchContract
             | DemoScenarioKind::FracturedWall => build_wall_smoke_shots(config, bounds),
             DemoScenarioKind::Tower | DemoScenarioKind::FracturedTower => {
                 build_tower_smoke_shots(config, bounds)
@@ -2300,6 +2381,7 @@ fn build_headless_shot_plan(
         "auto_benchmark" => match kind {
             DemoScenarioKind::Wall
             | DemoScenarioKind::WallContract
+            | DemoScenarioKind::WallArchContract
             | DemoScenarioKind::FracturedWall => build_wall_benchmark_shots(config, bounds),
             DemoScenarioKind::Tower | DemoScenarioKind::FracturedTower => {
                 build_tower_benchmark_shots(config, bounds)
@@ -2503,6 +2585,27 @@ fn build_wall_face_heavy_shots(config: &DemoConfig, bounds: ScenarioBounds) -> V
     vec![shot]
 }
 
+fn build_wall_arch_center_shots(config: &DemoConfig, bounds: ScenarioBounds) -> Vec<HeadlessShot> {
+    let c = bounds.dynamic.center();
+    let s = bounds.dynamic.size();
+    let z_distance = s.z.max(0.5) + 4.0;
+    let impact_height_fraction =
+        env_f32("BLAST_STRESS_DEMO_HEADLESS_WALL_ARCH_CENTER_HEIGHT_FRACTION").unwrap_or(0.5);
+    let mut shot = make_headless_shot_through_bounds(
+        14,
+        "wall-arch-center",
+        Vec3::new(c.x, bounds.dynamic.min.y + s.y * impact_height_fraction, c.z),
+        Vec3::new(0.0, 0.0, -1.0),
+        z_distance,
+        config.projectile_mass,
+        config.projectile_speed,
+        config.projectile_ttl,
+        bounds.dynamic,
+    );
+    shot.ballistic_arc = false;
+    vec![shot]
+}
+
 fn build_visual_contract_shot(kind: DemoScenarioKind, config: &DemoConfig) -> Option<HeadlessShot> {
     match kind {
         DemoScenarioKind::Wall
@@ -2510,6 +2613,12 @@ fn build_visual_contract_shot(kind: DemoScenarioKind, config: &DemoConfig) -> Op
         | DemoScenarioKind::FracturedWall => {
             let bounds = compute_scenario_bounds(&config.scenario);
             build_wall_face_heavy_shots(config, bounds)
+                .into_iter()
+                .next()
+        }
+        DemoScenarioKind::WallArchContract => {
+            let bounds = compute_scenario_bounds(&config.scenario);
+            build_wall_arch_center_shots(config, bounds)
                 .into_iter()
                 .next()
         }
