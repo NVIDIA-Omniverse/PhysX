@@ -229,10 +229,14 @@ impl DemoRuntimeToggles {
             env_usize("BLAST_STRESS_DEMO_PROJECTILE_FRACTURE_GRACE_STEPS")
                 .map(|value| value as u32)
                 .unwrap_or(0);
+        // Default to the stricter handoff path that matches the stable contract
+        // fixtures. Recenter/velocity-fit can make new split children look nicer
+        // in some cases, but they are also the most likely source of visible
+        // post-split overlap when the derived child frame is slightly wrong.
         let split_child_recentering_enabled =
-            env_flag("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN").unwrap_or(true);
+            env_flag("BLAST_STRESS_DEMO_SPLIT_RECENTER_CHILDREN").unwrap_or(false);
         let split_child_velocity_fit_enabled =
-            env_flag("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT").unwrap_or(true);
+            env_flag("BLAST_STRESS_DEMO_SPLIT_VELOCITY_FIT").unwrap_or(false);
         let projectile_trace_enabled =
             env_flag("BLAST_STRESS_DEMO_PROJECTILE_TRACE").unwrap_or(false);
         let heavy_frame_threshold_ms = env_f32("BLAST_STRESS_DEMO_HEAVY_FRAME_MS").unwrap_or(16.0);

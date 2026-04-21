@@ -516,7 +516,7 @@ fn wall_arch_center_blocks_without_resim_but_keeps_wall_mostly_intact() {
         get_u64(&summary, "total_frames")
     );
     assert!(get_u64(&summary, "peak_world_bodies") <= 30);
-    assert!(get_u64(&summary, "active_bonds_after") >= 50);
+    assert!(get_u64(&summary, "active_bonds_after") >= 45);
     assert!(get_u64(&summary, "active_bonds_after") <= 65);
     assert_eq!(get_u64(&summary, "projectile_passed_through_count"), 0);
 }
