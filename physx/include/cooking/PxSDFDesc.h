@@ -155,6 +155,15 @@ namespace physx
 		PxSDFBuilder* sdfBuilder;
 
 		/**
+		\brief When true, skip upfront SDF baking. Instead, the SDF grid is allocated filled with NaN
+		sentinels and individual grid values are lazily computed on first access during collision
+		detection. This amortizes the SDF construction cost over time, avoiding the upfront baking
+		latency (~100ms) at the expense of slightly higher per-query cost for the first few frames.
+		Only supported for dense SDFs (subgridSize must be 0).
+		*/
+		bool lazyEvaluation;
+
+		/**
 		\brief Constructor
 		*/
 		PX_INLINE PxSDFDesc();
@@ -182,6 +191,7 @@ namespace physx
 		narrowBandThicknessRelativeToSdfBoundsDiagonal = 0.01f;
 		numThreadsForSdfConstruction = 1;
 		sdfBuilder = NULL;
+		lazyEvaluation = false;
 	}
 
 	PX_INLINE bool PxSDFDesc::isValid() const

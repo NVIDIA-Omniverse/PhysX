@@ -88,6 +88,10 @@ TriangleMesh::TriangleMesh(MeshFactory* factory, TriangleMeshData& d) :
 	d.mSdfData.mSubgridStartSlots = NULL;
 	d.mSdfData.mSubgridSdf = NULL;
 
+	// Transfer lazy evaluator ownership (not handled by copy constructor)
+	mSdfData.mLazyEvaluator = d.mSdfData.mLazyEvaluator;
+	d.mSdfData.mLazyEvaluator = NULL;
+
 	d.mAccumulatedTrianglesRef = NULL;
 	d.mTrianglesReferences = NULL;
 	

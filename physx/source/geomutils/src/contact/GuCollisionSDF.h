@@ -236,6 +236,19 @@ struct CollisionSDF
 					y = PxMin(static_cast<PxU32>(cPos.y), mCSamples.y - 2),
 					z = PxMin(static_cast<PxU32>(cPos.z), mCSamples.z - 2);
 
+		// Lazy SDF: ensure all 8 corners of this cell are computed before interpolation
+		if (mSdf.mLazyEvaluator)
+		{
+			mSdf.ensureGridPointComputed(x,   y,   z);
+			mSdf.ensureGridPointComputed(x+1, y,   z);
+			mSdf.ensureGridPointComputed(x,   y+1, z);
+			mSdf.ensureGridPointComputed(x+1, y+1, z);
+			mSdf.ensureGridPointComputed(x,   y,   z+1);
+			mSdf.ensureGridPointComputed(x+1, y,   z+1);
+			mSdf.ensureGridPointComputed(x,   y+1, z+1);
+			mSdf.ensureGridPointComputed(x+1, y+1, z+1);
+		}
+
 		const PxU32 w = mCSamples.x, h = mCSamples.y;
 		const PxU32 cStrideY = w, cStrideZ = w*h;  // Note that this is sample, not cell, stride
 		const PxU32 base = cStrideZ * z + cStrideY * y + x;
