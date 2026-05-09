@@ -237,7 +237,7 @@ struct CollisionSDF
 					z = PxMin(static_cast<PxU32>(cPos.z), mCSamples.z - 2);
 
 		// Lazy SDF: ensure all 8 corners of this cell are computed before interpolation
-		if (mSdf.mLazyEvaluator)
+		if (mSdf.isLazy())
 		{
 			mSdf.ensureGridPointComputed(x,   y,   z);
 			mSdf.ensureGridPointComputed(x+1, y,   z);

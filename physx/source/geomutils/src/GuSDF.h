@@ -34,8 +34,6 @@
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxMathUtils.h"
-#include "foundation/PxHashMap.h"
-#include <cmath>
 
 namespace physx
 {
@@ -46,10 +44,6 @@ namespace physx
 
 	namespace Gu
 	{
-		struct BVHNode;
-		template <typename T, typename TVec3> struct ClusterApproximationT;
-		typedef ClusterApproximationT<PxReal, PxVec3> ClusterApproximation;
-
 		/**
 		\brief Holds mesh data and acceleration structures for on-demand SDF evaluation.
 
@@ -57,6 +51,9 @@ namespace physx
 		grid point values to be computed lazily when first sampled during collision detection.
 		The BVH and winding number clusters are built once at construction time (cheap), while
 		the per-voxel signed distance computation is deferred to query time.
+
+		Implementation is hidden via PIMPL so that this header does not need to expose the
+		BVH and winding-number cluster types.
 		*/
 		class PX_PHYSX_COMMON_API LazySDFEvaluator : public PxUserAllocated
 		{
@@ -73,10 +70,8 @@ namespace physx
 			PxReal computeSDFValue(const PxVec3& worldPoint) const;
 
 		private:
-			PxArray<PxVec3>		mVertices;
-			PxArray<PxU32>		mIndices;
-			PxArray<BVHNode>	mTree;
-			PxHashMap<PxU32, ClusterApproximation> mClusters;
+			struct Impl;
+			Impl* mImpl;
 
 			PX_NOCOPY(LazySDFEvaluator)
 		};

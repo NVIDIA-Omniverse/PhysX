@@ -944,6 +944,20 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 				sdfDesc.dims.x, sdfDesc.dims.y, sdfDesc.dims.z,
 				mMeshData.mVertices, mMeshData.mNbVertices,
 				indices32, mMeshData.mNbTriangles * 3);
+
+			// Inertia: buildInertiaTensorFromSDF()'s non-watertight branch
+			// extracts an isosurface from the SDF grid, but in lazy mode the
+			// grid is still NaN at this point. For watertight meshes its
+			// watertight branch never reads the grid, so we can run that
+			// path safely. Non-watertight meshes get no SDF-derived inertia
+			// in lazy mode; the application is expected to provide mass /
+			// inertia externally.
+			if (MeshAnalyzer::checkMeshWatertightness(reinterpret_cast<const Gu::Triangle*>(mMeshData.mTriangles), mMeshData.mNbTriangles))
+			{
+				buildInertiaTensor();
+				if (mMeshData.mMass < 0.0f)
+					buildInertiaTensor(true);
+			}
 		}
 		else
 		{
@@ -972,10 +986,10 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 			if(!checkInputFloats(sdfDesc.sdf.count, sdf, PX_FL, "input sdf contains corrupted data"))
 				return false;
 #endif
-		}
 
-		//Make sure there is always a valid inertia tensor for meshes with an SDF
-		buildInertiaTensorFromSDF();
+			//Make sure there is always a valid inertia tensor for meshes with an SDF
+			buildInertiaTensorFromSDF();
+		}
 	}
 
 	return true;

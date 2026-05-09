@@ -317,7 +317,7 @@ static void computeSDFGridDimensions(const PxVec3& meshLowerIn, const PxVec3& me
 	meshLowerOut = meshLowerIn - meshOffset;
 }
 
-static bool createSDFLazy(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxReal>& sdf)
+static bool createSDFLazy(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc)
 {
 	PX_ASSERT(sdfDesc.lazyEvaluation);
 	PX_ASSERT(sdfDesc.subgridSize == 0); // lazy mode only supports dense SDFs
@@ -341,23 +341,12 @@ static bool createSDFLazy(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<
 	sdfDesc.dims.y = dy;
 	sdfDesc.dims.z = dz;
 
-	// For lazy evaluation, we allocate a NaN-filled SDF grid.
-	// The actual SDF values will be filled in sdf.count but left as sentinels.
-	// The SDF::initLazy() call happens later in the triangle mesh builder when
-	// it copies the SDF data into the final SDF object.
-	const PxU32 numVoxels = dx * dy * dz;
-	sdf.resize(numVoxels);
-
-	// Fill with NaN sentinel
-	const PxU32 nanBits = 0x7FC00000u;  // IEEE 754 quiet NaN
-	PxReal nanVal;
-	PxMemCopy(&nanVal, &nanBits, sizeof(PxReal));
-	for (PxU32 i = 0; i < numVoxels; ++i)
-		sdf[i] = nanVal;
-
-	sdfDesc.sdf.count = numVoxels;
-	sdfDesc.sdf.stride = sizeof(PxReal);
-	sdfDesc.sdf.data = &sdf[0];
+	// Lazy mode does not pre-bake voxel data. SDF::initLazy() (called from the
+	// TriangleMesh builder) is the sole owner of the dense grid allocation, so
+	// we leave sdfDesc.sdf empty here to avoid a redundant alloc + NaN-fill.
+	sdfDesc.sdf.count = 0;
+	sdfDesc.sdf.stride = 0;
+	sdfDesc.sdf.data = NULL;
 
 	return true;
 }
@@ -366,7 +355,8 @@ static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxRe
 {
 	if (sdfDesc.lazyEvaluation)
 	{
-		return createSDFLazy(desc, sdfDesc, sdf);
+		PX_UNUSED(sdf);
+		return createSDFLazy(desc, sdfDesc);
 	}
 
 	if (sdfDesc.subgridSize > 0)

@@ -207,6 +207,15 @@ namespace physx
 				return false;
 		}
 
+		// Lazy evaluation excludes pre-supplied data and sparse subgrid SDFs.
+		if (lazyEvaluation)
+		{
+			if (sdf.data)
+				return false;
+			if (subgridSize != 0)
+				return false;
+		}
+
 		return true;
 	}
 

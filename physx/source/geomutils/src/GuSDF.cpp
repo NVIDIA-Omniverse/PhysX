@@ -130,6 +130,19 @@ namespace Gu
 
 	void SDF::exportExtraData(PxSerializationContext& context)
 	{
+		// A lazy SDF carries a NaN-filled grid plus a runtime-only
+		// LazySDFEvaluator. Serializing the NaN grid as-is would yield a
+		// permanently-broken SDF on deserialization (no evaluator, no data).
+		// Force a full bake so the saved SDF behaves identically to one that
+		// was eagerly cooked.
+		if (mLazyEvaluator)
+		{
+			for (PxU32 z = 0; z < mDims.z; ++z)
+				for (PxU32 y = 0; y < mDims.y; ++y)
+					for (PxU32 x = 0; x < mDims.x; ++x)
+						ensureGridPointComputed(x, y, z);
+		}
+
 		if (mSdf)
 		{
 			context.alignData(PX_SERIAL_ALIGN);
@@ -2115,37 +2128,51 @@ namespace Gu
 	// Lazy SDF Evaluation
 	// ---------------------------------------------------------------------------
 
+	// PIMPL for LazySDFEvaluator: keeps PxArray<BVHNode> and the cluster hash
+	// map out of GuSDF.h, so consumers of that header don't need to pull in
+	// the BVH / winding-number cluster headers.
+	struct LazySDFEvaluator::Impl
+	{
+		PxArray<PxVec3>		mVertices;
+		PxArray<PxU32>		mIndices;
+		PxArray<BVHNode>	mTree;
+		PxHashMap<PxU32, ClusterApproximation> mClusters;
+	};
+
 	LazySDFEvaluator::LazySDFEvaluator(const PxVec3* vertices, PxU32 numVertices,
 										const PxU32* indices, PxU32 numTriangleIndices)
 	{
-		// Copy mesh data so it outlives the original
-		mVertices.resize(numVertices);
-		PxMemCopy(mVertices.begin(), vertices, numVertices * sizeof(PxVec3));
+		mImpl = PX_NEW(Impl);
 
-		mIndices.resize(numTriangleIndices);
-		PxMemCopy(mIndices.begin(), indices, numTriangleIndices * sizeof(PxU32));
+		// Copy mesh data so it outlives the original
+		mImpl->mVertices.resize(numVertices);
+		PxMemCopy(mImpl->mVertices.begin(), vertices, numVertices * sizeof(PxVec3));
+
+		mImpl->mIndices.resize(numTriangleIndices);
+		PxMemCopy(mImpl->mIndices.begin(), indices, numTriangleIndices * sizeof(PxU32));
 
 		// Build BVH acceleration structure over triangles
 		const PxU32 numTriangles = numTriangleIndices / 3;
-		buildTree(mIndices.begin(), numTriangles, mVertices.begin(), mTree);
+		buildTree(mImpl->mIndices.begin(), numTriangles, mImpl->mVertices.begin(), mImpl->mTree);
 
 		// Precompute winding number cluster data for inside/outside classification
-		Gu::precomputeClusterInformation(mTree.begin(), mIndices.begin(), numTriangles,
-										  mVertices.begin(), mClusters);
+		Gu::precomputeClusterInformation(mImpl->mTree.begin(), mImpl->mIndices.begin(), numTriangles,
+										  mImpl->mVertices.begin(), mImpl->mClusters);
 	}
 
 	LazySDFEvaluator::~LazySDFEvaluator()
 	{
+		PX_DELETE(mImpl);
 	}
 
 	PxReal LazySDFEvaluator::computeSDFValue(const PxVec3& worldPoint) const
 	{
 		// The BVH APIs take non-const pointers for traversal despite not modifying the tree.
 		// const_cast is safe here: the tree is only read during traversal.
-		BVHNode* treePtr = const_cast<BVHNode*>(mTree.begin());
+		BVHNode* treePtr = const_cast<BVHNode*>(mImpl->mTree.begin());
 
 		// 1. Compute closest distance to mesh surface via BVH traversal
-		ClosestDistanceToTrimeshTraversalController cd(mIndices.begin(), mVertices.begin(), treePtr);
+		ClosestDistanceToTrimeshTraversalController cd(mImpl->mIndices.begin(), mImpl->mVertices.begin(), treePtr);
 		cd.setQueryPoint(worldPoint);
 		Gu::traverseBVH(treePtr, cd);
 
@@ -2154,11 +2181,20 @@ namespace Gu
 
 		// 2. Determine inside/outside via winding number
 		const PxReal windingNumber = Gu::computeWindingNumber(
-			treePtr, worldPoint, mClusters,
-			mIndices.begin(), mVertices.begin());
+			treePtr, worldPoint, mImpl->mClusters,
+			mImpl->mIndices.begin(), mImpl->mVertices.begin());
 
 		const PxReal sign = (windingNumber > 0.5f) ? -1.0f : 1.0f;
 		return closestDistance * sign;
+	}
+
+	// IEEE 754 quiet NaN, used as the "not yet evaluated" sentinel.
+	static PX_FORCE_INLINE PxReal getLazyNanSentinel()
+	{
+		const PxU32 nanBits = 0x7FC00000u;
+		PxReal nanVal;
+		PxMemCopy(&nanVal, &nanBits, sizeof(PxReal));
+		return nanVal;
 	}
 
 	void SDF::initLazy(const PxVec3& meshLower, PxReal spacing,
@@ -2180,6 +2216,7 @@ namespace Gu
 		mSubgridStartSlots = NULL;
 		mNumSubgridSdfs = 0;
 		mSubgridSdf = NULL;
+		mSdfSubgrids3DTexBlockDim = Dim3(0, 0, 0);
 		mBytesPerSparsePixel = 0;
 		mSubgridsMinSdfValue = 0.0f;
 		mSubgridsMaxSdfValue = 0.0f;
@@ -2188,10 +2225,7 @@ namespace Gu
 		mNumSdfs = dimX * dimY * dimZ;
 		mSdf = PX_ALLOCATE(PxReal, mNumSdfs, "PxReal");
 
-		// NaN indicates "not yet computed"
-		const PxU32 nanBits = 0x7FC00000u;  // IEEE 754 quiet NaN
-		PxReal nanVal;
-		PxMemCopy(&nanVal, &nanBits, sizeof(PxReal));
+		const PxReal nanVal = getLazyNanSentinel();
 		for (PxU32 i = 0; i < mNumSdfs; ++i)
 			mSdf[i] = nanVal;
 
@@ -2206,11 +2240,13 @@ namespace Gu
 		PX_ASSERT(x < mDims.x && y < mDims.y && z < mDims.z);
 
 		const PxU32 index = idx3D(x, y, z, mDims.x, mDims.y);
-		PxReal value = mSdf[index];
 
-		// Fast path: value already computed (not NaN)
-		// IEEE 754: NaN != NaN, so this check is correct
-		if (value == value) // NOLINT - intentional NaN check
+		// Fast path: value already computed.
+		// Read through a volatile to avoid the compiler folding two reads into one
+		// when other code paths may write the slot concurrently.
+		// IEEE 754: NaN != NaN, so this check distinguishes sentinel from real data.
+		const PxReal observed = *static_cast<volatile PxReal*>(static_cast<void*>(&mSdf[index]));
+		if (observed == observed) // NOLINT - intentional NaN check
 			return;
 
 		// Compute world position for this grid point (cell-centered sampling)
@@ -2221,10 +2257,20 @@ namespace Gu
 
 		const PxReal computedValue = mLazyEvaluator->computeSDFValue(worldPoint);
 
-		// Write back to cache. This is a benign race: multiple threads computing
-		// the same grid point will produce identical results, and aligned 32-bit
-		// float writes are atomic on all PhysX target platforms (x86, ARM).
-		mSdf[index] = computedValue;
+		// Publish the computed value to the cache via an atomic CAS so the write
+		// is well-defined under the C++ memory model (multiple threads may race
+		// to evaluate the same cell). The CAS only succeeds while the slot still
+		// holds the NaN sentinel; if another thread already wrote a real value,
+		// we drop ours and use the existing one (it is identical).
+		PxI32 nanInt;
+		const PxReal nanVal = getLazyNanSentinel();
+		PxMemCopy(&nanInt, &nanVal, sizeof(PxI32));
+
+		PxI32 newInt;
+		PxMemCopy(&newInt, &computedValue, sizeof(PxI32));
+
+		volatile PxI32* slot = reinterpret_cast<volatile PxI32*>(&mSdf[index]);
+		PxAtomicCompareExchange(slot, newInt, nanInt);
 	}
 
 }
