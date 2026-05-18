@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -134,9 +134,9 @@ namespace physx
 			const PxVec3& minExtents, const PxVec3& maxExtents, PxReal narrowBandThickness, PxU32 subgridSize, PxSdfBitsPerSubgridPixel::Enum bytesPerSubgridPixel,
 			PxArray<PxReal>& sdfCoarse, PxArray<PxU32>& sdfSubgridsStartSlots, PxArray<PxU8>& sdfDataSubgrids,
 			PxReal& subgridsMinSdfValue, PxReal& subgridsMaxSdfValue, 
-			PxU32& sdfSubgrids3DTexBlockDimX, PxU32& sdfSubgrids3DTexBlockDimY, PxU32& sdfSubgrids3DTexBlockDimZ, CUstream stream) PX_OVERRIDE;
-	
-		void release();
+					PxU32& sdfSubgrids3DTexBlockDimX, PxU32& sdfSubgrids3DTexBlockDimY, PxU32& sdfSubgrids3DTexBlockDimZ, CUstream stream) PX_OVERRIDE;
+
+	void release() PX_OVERRIDE;
 	};
 
 #if !PX_DOXYGEN

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -18,21 +18,21 @@ using namespace carb;
 using namespace ::physx;
 
 
-static ::physx::vehicle2::PxVehicleAxes::Enum getAxisEnum(const PxVec3& axis)
+static ::physx::PxVehicleAxes::Enum getAxisEnum(const PxVec3& axis)
 {
-    ::physx::vehicle2::PxVehicleAxes::Enum axisEnum;
+    ::physx::PxVehicleAxes::Enum axisEnum;
     const float absX = PxAbs(axis.x);
     const float absY = PxAbs(axis.y);
     const float absZ = PxAbs(axis.z);
     float currentMax;
     if (absY > absZ)
     {
-        axisEnum = (axis.y >= 0.0f) ? ::physx::vehicle2::PxVehicleAxes::ePosY : ::physx::vehicle2::PxVehicleAxes::eNegY;
+        axisEnum = (axis.y >= 0.0f) ? ::physx::PxVehicleAxes::ePosY : ::physx::PxVehicleAxes::eNegY;
         currentMax = absY;
     }
     else
     {
-        axisEnum = (axis.z >= 0.0f) ? ::physx::vehicle2::PxVehicleAxes::ePosZ : ::physx::vehicle2::PxVehicleAxes::eNegZ;
+        axisEnum = (axis.z >= 0.0f) ? ::physx::PxVehicleAxes::ePosZ : ::physx::PxVehicleAxes::eNegZ;
         currentMax = absZ;
     }
 
@@ -40,7 +40,7 @@ static ::physx::vehicle2::PxVehicleAxes::Enum getAxisEnum(const PxVec3& axis)
         return axisEnum;
     else
     {
-        axisEnum = (axis.x >= 0.0f) ? ::physx::vehicle2::PxVehicleAxes::ePosX : ::physx::vehicle2::PxVehicleAxes::eNegX;
+        axisEnum = (axis.x >= 0.0f) ? ::physx::PxVehicleAxes::ePosX : ::physx::PxVehicleAxes::eNegX;
         return axisEnum;
     }
 }
@@ -51,9 +51,9 @@ void InternalVehicleContext::init(const VehicleContextDesc& contextDesc, ::physx
     //       but the frame can be queried already, for example.
 
     if (contextDesc.vehicleUpdateMode == VehicleUpdateMode::eVelocityChange)
-        mPhysXContext.physxActorUpdateMode = ::physx::vehicle2::PxVehiclePhysXActorUpdateMode::eAPPLY_VELOCITY;
+        mPhysXContext.physxActorUpdateMode = ::physx::PxVehiclePhysXActorUpdateMode::eAPPLY_VELOCITY;
     else
-        mPhysXContext.physxActorUpdateMode = ::physx::vehicle2::PxVehiclePhysXActorUpdateMode::eAPPLY_ACCELERATION;
+        mPhysXContext.physxActorUpdateMode = ::physx::PxVehiclePhysXActorUpdateMode::eAPPLY_ACCELERATION;
 
     // to ensure the code further below stays valid
     static_assert(VehicleContextDesc::ePosX == 0, "");
@@ -62,12 +62,12 @@ void InternalVehicleContext::init(const VehicleContextDesc& contextDesc, ::physx
     static_assert(VehicleContextDesc::eNegY == 3, "");
     static_assert(VehicleContextDesc::ePosZ == 4, "");
     static_assert(VehicleContextDesc::eNegZ == 5, "");
-    static_assert(VehicleContextDesc::ePosX == ::physx::vehicle2::PxVehicleAxes::ePosX, "");
-    static_assert(VehicleContextDesc::eNegX == ::physx::vehicle2::PxVehicleAxes::eNegX, "");
-    static_assert(VehicleContextDesc::ePosY == ::physx::vehicle2::PxVehicleAxes::ePosY, "");
-    static_assert(VehicleContextDesc::eNegY == ::physx::vehicle2::PxVehicleAxes::eNegY, "");
-    static_assert(VehicleContextDesc::ePosZ == ::physx::vehicle2::PxVehicleAxes::ePosZ, "");
-    static_assert(VehicleContextDesc::eNegZ == ::physx::vehicle2::PxVehicleAxes::eNegZ, "");
+    static_assert(VehicleContextDesc::ePosX == ::physx::PxVehicleAxes::ePosX, "");
+    static_assert(VehicleContextDesc::eNegX == ::physx::PxVehicleAxes::eNegX, "");
+    static_assert(VehicleContextDesc::ePosY == ::physx::PxVehicleAxes::ePosY, "");
+    static_assert(VehicleContextDesc::eNegY == ::physx::PxVehicleAxes::eNegY, "");
+    static_assert(VehicleContextDesc::ePosZ == ::physx::PxVehicleAxes::ePosZ, "");
+    static_assert(VehicleContextDesc::eNegZ == ::physx::PxVehicleAxes::eNegZ, "");
 
     static const ::physx::PxVec3 axisToVec3Map[] = {
         ::physx::PxVec3(1.0, 0.0, 0.0),
@@ -81,7 +81,7 @@ void InternalVehicleContext::init(const VehicleContextDesc& contextDesc, ::physx
     ::physx::PxVec3 upAxis;
     if (contextDesc.verticalAxis != VehicleContextDesc::eUndefined)
     {
-        mPhysXContext.frame.vrtAxis = static_cast<::physx::vehicle2::PxVehicleAxes::Enum>(contextDesc.verticalAxis);
+        mPhysXContext.frame.vrtAxis = static_cast<::physx::PxVehicleAxes::Enum>(contextDesc.verticalAxis);
         upAxis = axisToVec3Map[contextDesc.verticalAxis];
     }
     else
@@ -93,7 +93,7 @@ void InternalVehicleContext::init(const VehicleContextDesc& contextDesc, ::physx
     ::physx::PxVec3 forwardAxis;
     if (contextDesc.longitudinalAxis != VehicleContextDesc::eUndefined)
     {
-        mPhysXContext.frame.lngAxis = static_cast<::physx::vehicle2::PxVehicleAxes::Enum>(contextDesc.longitudinalAxis);
+        mPhysXContext.frame.lngAxis = static_cast<::physx::PxVehicleAxes::Enum>(contextDesc.longitudinalAxis);
         forwardAxis = axisToVec3Map[contextDesc.longitudinalAxis];
     }
     else
@@ -170,11 +170,32 @@ InternalVehicle::~InternalVehicle()
 
 void InternalVehicle::WheelTransformManagementEntry::init(pxr::UsdPrim& wheelRootPrim_,
                                                           pxr::UsdPrim& shapePrim_,
-                                                          const PxShape* shape_)
+                                                          const PxShape* shape_,
+                                                          usdparser::ObjectId shapeId)
 {
     wheelRootPrim = wheelRootPrim_;
     shapePrim = shapePrim_;
     shape = shape_;
+    cylinderAxis = usdparser::eX; // Initialize to default (X axis)
+
+    // Check if this is a cylinder shape and track its axis
+    if (shape_ && shapeId != usdparser::kInvalidObjectId)
+    {
+        const PxGeometry& geom = shape_->getGeometry();
+        
+        // Check for convex core cylinder
+        if (geom.getType() == PxGeometryType::eCONVEXCORE)
+        {
+            // Get the cylinder axis from the InternalShape
+            omni::physx::internal::InternalPhysXDatabase& db = omni::physx::OmniPhysX::getInstance().getInternalPhysXDatabase();
+            const omni::physx::internal::InternalDatabase::Record& shapeRecord = db.getRecords()[shapeId];
+            if (shapeRecord.mType == omni::physx::PhysXType::ePTShape)
+            {
+                const omni::physx::internal::InternalShape* intShape = (omni::physx::internal::InternalShape*)shapeRecord.mInternalPtr;
+                cylinderAxis = usdparser::Axis(intShape->mAxis);
+            }
+        }
+    }
 
     // sanitize xform ops to scale orient translate
     setupTransformOpsAsScaleOrientTranslate(wheelRootPrim_);
@@ -542,7 +563,7 @@ void InternalVehicle::setTargetGearDriveStandard(const int targetGear, const boo
 
     uint32_t pxTargetGear = static_cast<uint32_t>(toPhysXGear(targetGear));
 
-    if ((pxTargetGear == ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR) &&
+    if ((pxTargetGear == ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR) &&
         (!(mFlags & InternalVehicleFlag::eHAS_AUTO_GEAR_BOX)))
     {
         CARB_LOG_WARN("PhysX Vehicle: transmission set to automatic but no auto gear box was defined.\n");
@@ -726,7 +747,7 @@ void InternalVehicle::getWheelState(const uint32_t wheelIndex, omni::physx::Vehi
 
     state.steerAngle = mPhysXVehicle->getWheelSteerAngle(wheelIndex);
 
-    const ::physx::vehicle2::PxVehicleRoadGeometryState& roadGeomState = mPhysXVehicle->getRoadGeometryState(wheelIndex);
+    const ::physx::PxVehicleRoadGeometryState& roadGeomState = mPhysXVehicle->getRoadGeometryState(wheelIndex);
     const ::physx::PxPlane& groundPlane = roadGeomState.plane;
     state.groundPlane.x = groundPlane.n.x;
     state.groundPlane.y = groundPlane.n.y;
@@ -756,7 +777,7 @@ void InternalVehicle::getWheelState(const uint32_t wheelIndex, omni::physx::Vehi
     {
         CARB_ASSERT(roadGeomState.hitState);
 
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState& queryState =
+        const ::physx::PxVehiclePhysXRoadGeometryQueryState& queryState =
             mPhysXVehicle->getPhysXRoadGeometryQueryState(wheelIndex);
 
         if (queryState.actor)
@@ -797,7 +818,7 @@ void InternalVehicle::getWheelState(const uint32_t wheelIndex, omni::physx::Vehi
 }
 
 
-::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams InternalTireFrictionTable::sDefaultMaterialFrictionTable;
+::physx::PxVehiclePhysXMaterialFrictionParams InternalTireFrictionTable::sDefaultMaterialFrictionTable;
 InternalTireFrictionTable::DefaultInitializer InternalTireFrictionTable::sDefaultInitializer;
 
 InternalTireFrictionTable* InternalTireFrictionTable::create(const TireFrictionTableDesc& tireFrictionTableDesc,
@@ -812,8 +833,8 @@ InternalTireFrictionTable* InternalTireFrictionTable::create(const TireFrictionT
     {
         if (entryCount > 0)
         {
-            ::physx::vehicle2::PxVehiclePhysXMaterialFriction* materialFrictionPairs = reinterpret_cast<::physx::vehicle2::PxVehiclePhysXMaterialFriction*>(
-                ICE_ALLOC(sizeof(::physx::vehicle2::PxVehiclePhysXMaterialFriction) * entryCount));
+            ::physx::PxVehiclePhysXMaterialFriction* materialFrictionPairs = reinterpret_cast<::physx::PxVehiclePhysXMaterialFriction*>(
+                ICE_ALLOC(sizeof(::physx::PxVehiclePhysXMaterialFriction) * entryCount));
 
             if (materialFrictionPairs)
             {
@@ -892,7 +913,7 @@ void InternalTireFrictionTable::initDefault()
 
 void InternalTireFrictionTable::update(const pxr::VtArray<float>& frictionValues)
 {
-    ::physx::vehicle2::PxVehiclePhysXMaterialFriction* materialFrictionPairs = mMaterialFrictionTable.materialFrictions;
+    ::physx::PxVehiclePhysXMaterialFriction* materialFrictionPairs = mMaterialFrictionTable.materialFrictions;
 
     uint32_t minFrictionValueCount = CARB_MIN(mMaterialFrictionTable.nbMaterialFrictions,
         static_cast<uint32_t>(frictionValues.size()));

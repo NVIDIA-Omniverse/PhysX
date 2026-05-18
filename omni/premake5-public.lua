@@ -1,6 +1,8 @@
 PHYSX_LIBS_DEFAULT = "checked"
-BOOST_LIB = "boost_python311"
-PYTHON_LIB = "python3.11"
+PYTHON_VERSION = "3.12"
+PYTHON_LIB = "python"..PYTHON_VERSION
+MSVC_VERSION = "14.29.30133"
+WINSDK_VERSION = "10.0.19041.0"
 
 function extension_physxsdk_deps(targetDepsDirIn, physxVersionIn, physxLibsIn)    
     local physxLibs = get_param_or_global_or_default(physxLibsIn, physxLibs, PHYSX_LIBS_DEFAULT)
@@ -12,9 +14,9 @@ function extension_physxsdk_deps(targetDepsDirIn, physxVersionIn, physxLibsIn)
         libdirs { targetDepsDirIn.."/"..physxVersionIn.."/bin/win.x86_64.vc142.md/"..physxLibs}
         defines {  "PX_PHYSX_STATIC_LIB", "NDEBUG" }
     filter { "system:windows" }
-        links { "PhysXVehicle2_static_64", "PhysXExtensions_static_64", "PhysXCharacterKinematic_static_64", "PhysX_static_64", "PhysXPvdSDK_static_64","PhysXCooking_static_64","PhysXCommon_static_64", "PhysXFoundation_static_64" }
+        links { "PhysXVehicle_static_64", "PhysXExtensions_static_64", "PhysXCharacterKinematic_static_64", "PhysX_static_64", "PhysXPvdSDK_static_64","PhysXCooking_static_64","PhysXCommon_static_64", "PhysXFoundation_static_64" }
     filter { "system:linux" }            
-        linkoptions { "-lpthread -Wl,--start-group -lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysXVehicle2_static_64 -lPhysXCharacterKinematic_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64 -Wl,--end-group -ldl" }        
+        linkoptions { "-lpthread -Wl,--start-group -lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysXVehicle_static_64 -lPhysXCharacterKinematic_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64 -Wl,--end-group -ldl" }        
     filter { "system:linux", "platforms:x86_64", "configurations:debug" }
         buildoptions { "-Wno-invalid-offsetof" }        
         defines {  "PX_PHYSX_STATIC_LIB", "_DEBUG" }
@@ -35,23 +37,8 @@ function extension_physxsdk_deps(targetDepsDirIn, physxVersionIn, physxLibsIn)
 end
 
 function link_boost_for_windows_wdefault(libs)
-    local libs = libs or {BOOST_LIB}
-    BOOST_COMPILER_TYPE = "vc142-mt"
-    BOOST_VERSION = "x64-1_82"
-
+    --- just for macros now
     defines { "BOOST_ALL_NO_LIB", "BOOST_ALL_DYN_LINK" }
-
-    filter { "system:windows", "configurations:debug" }
-        for _, l in ipairs(libs) do
-            links { l.."-"..BOOST_COMPILER_TYPE.."-gd-"..BOOST_VERSION}
-        end
-
-    filter { "system:windows", "configurations:release" }
-        for _, l in ipairs(libs) do
-            links { l.."-"..BOOST_COMPILER_TYPE.."-"..BOOST_VERSION}
-        end
-
-    filter {}
 end
 
 function usd_links(...)
@@ -171,7 +158,9 @@ function add_folder_overrides(args)
 end
 
 function define_etm_test_experience(ext_name)
-    -- not relevant for OSS release
+    for _, config in ipairs(ALL_CONFIGS) do
+        create_repo_runner("tests-etm-"..ext_name, "etm", config, "-e "..ext_name)
+    end
 end
 
 function get_prebuild_files()
@@ -186,6 +175,29 @@ function get_version()
         file:close()        
     end
     return version
+end
+
+function read_kit_sdk_version()
+    local file = io.open(root.."/deps/kit-sdk-target-deps.packman.xml", "r")
+    if file then
+        local content = file:read "*all"
+        file:close()
+        -- Extract version attribute value (e.g., "109.0.1+feature.252300...")
+        local full_version = content:match('version="([^"]+)"')
+        if full_version then
+            -- Extract first three numbers separated by dots (e.g., "109.0.1")
+            local major, minor, patch = full_version:match("^(%d+)%.(%d+)%.(%d+)")
+            if major and minor and patch then
+                kit_sdk_version = major .. "." .. minor .. "." .. patch
+                -- Compute numeric version as MAJOR * 10000 + MINOR * 100 + PATCH for preprocessor comparisons
+                kit_sdk_version_num = tonumber(major) * 10000 + tonumber(minor) * 100 + tonumber(patch)
+                return kit_sdk_version_num
+            end
+        end
+    end
+    kit_sdk_version = "0.0.0"
+    kit_sdk_version_num = 0
+    return kit_sdk_version_num
 end
 
 function get_param_or_global_or_default(param, glb, default)
@@ -258,10 +270,24 @@ function add_nvcc_commands()
         make_nvcc_command(nvccPath, nvccHostCompilerVS, "/MDd", sass..ptx.."-g -G")
     filter { "files:**.cu", "system:windows", "configurations:release" }
         make_nvcc_command(nvccPath, nvccHostCompilerVS, "/MD /DNDEBUG", sass..ptx)
+    -- Workarounds for glibc's bits/math-vector.h on systems where nvcc 12.4's
+    -- host front-end can't parse the gcc/SVE built-in vector typedefs:
+    --   * Older libc6-dev (Ubuntu 22.04 patches): the file has an
+    --     `_BITS_MATH_VECTOR_H` include guard. Predefining it skips the file.
+    --   * glibc >= 2.39 (Ubuntu 24.04): no top-level guard. The typedefs at
+    --     lines ~96-108 use gcc built-in types like __Float32x4_t / __SVFloat32_t
+    --     that nvcc doesn't know. Macro-substitute them to `int` — the typedefs
+    --     become `typedef int __f32x4_t;` etc.; nvcc parses fine and nothing
+    --     in CUDA code path references the aliased libm SIMD symbols.
+    -- Defines must be top-level nvcc `-D` (not `-Xcompiler -D`) because nvcc's
+    -- own preprocessing pass parses these headers before invoking host gcc.
+    local mathVectorStubs = "-D_BITS_MATH_VECTOR_H "..
+                            "-D__Float32x4_t=int -D__Float64x2_t=int "..
+                            "-D__SVFloat32_t=int -D__SVFloat64_t=int -D__SVBool_t=int "
     filter { "files:**.cu", "system:linux", "configurations:debug" }
-        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -g -D_DEBUG", sass..ptx.."-g")
+        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -g -D_DEBUG", mathVectorStubs..sass..ptx.."-g")
     filter { "files:**.cu", "system:linux", "configurations:release" }
-        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -O3 -DNDEBUG", sass..ptx)
+        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -O3 -DNDEBUG", mathVectorStubs..sass..ptx)
     filter {}
 end
 
@@ -346,6 +372,8 @@ function extension_usd_deps(targetDepsDirIn, hostDepsDirIn)
         targetDepsDirIn.."/usd/%{cfg.buildcfg}/include",
         hostDepsDirIn.."/mirror/include",
         targetDepsDirIn.."/rtx_plugins/include",
+        kit_sdk_dir.."/dev/include",
+        kit_sdk_dir.."/dev/fabric/include",
         targetDeps_dir.."/gsl/include",   -- Support for std::span
     }
     libdirs {
@@ -358,7 +386,7 @@ function extension_usd_deps(targetDepsDirIn, hostDepsDirIn)
     }
     usd_links {
         "ar", "arch", "gf", "js", "kind", "pcp", "plug", "sdf", "tf", "trace", "usd", "usdGeom", "usdSkel", "usdShade", "vt", "work", "pxOsd",
-        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics"
+        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics", "boost", "python"
     }
     filter { "system:windows" }
         if not _OPTIONS["nopch"] then
@@ -378,7 +406,7 @@ function extension_usd_deps(targetDepsDirIn, hostDepsDirIn)
                     targetDepsDirIn.."/python/include/"..PYTHON_LIB }
         buildoptions { "-pthread" }
         libdirs { targetDepsDirIn.."/python/lib" }
-        links { BOOST_LIB, PYTHON_LIB, "tbb", "dl", "pthread" }
+        links { PYTHON_LIB, "tbb", "dl", "pthread" }
         defines { "TBB_SUPPRESS_DEPRECATED_MESSAGES",}
     filter {}
 end
@@ -406,7 +434,7 @@ function extension_usd_deps_tests(targetDepsDirIn, hostDepsDirIn)
               targetDepsDirIn.."/usd_schema_semantics/%{cfg.buildcfg}/lib",
               targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib"}
     usd_links {
-        "arch", "sdf", "tf", "gf", "vt", "usd", "usdGeom", "usdUtils", "usdShade", "usdLux", "usdPhysics"
+        "arch", "sdf", "tf", "gf", "vt", "usd", "usdGeom", "usdUtils", "usdShade", "usdLux", "usdPhysics", "boost", "python"
     }
     filter { "system:windows" }
         if not _OPTIONS["nopch"] then
@@ -425,7 +453,7 @@ function extension_usd_deps_tests(targetDepsDirIn, hostDepsDirIn)
         includedirs { targetDepsDirIn.."/usd/%{cfg.buildcfg}/include/boost",
                     targetDepsDirIn.."/python/include/"..PYTHON_LIB }
         buildoptions { "-pthread" }
-        links { BOOST_LIB, "tbb", "dl", "pthread" }
+        links { "tbb", "dl", "pthread" }
     filter {}
 end
 
@@ -471,7 +499,7 @@ function schema_usd_deps(targetDepsDirIn)
               targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib"}
     usd_links {
         "ar", "arch", "gf", "js", "kind", "pcp", "plug", "sdf", "tf", "trace", "usd", "usdGeom", "usdSkel", "usdShade", "vt", "work", "pxOsd",
-        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics"
+        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics", "boost", "python"
     }
     filter { "system:windows" }
         libdirs {   targetDepsDirIn.."/python/libs",
@@ -482,7 +510,7 @@ function schema_usd_deps(targetDepsDirIn)
         includedirs { targetDepsDirIn.."/usd/%{cfg.buildcfg}/include/boost",
         targetDepsDirIn.."/python/include/"..PYTHON_LIB }
         buildoptions { "-pthread" }
-        links { BOOST_LIB, "tbb", "dl", "pthread" }
+        links { "tbb", "dl", "pthread" }
     filter {}
  end
 
@@ -513,13 +541,12 @@ function project_usd_schema(schemaname, source, targetdir)
         "MFB_ALT_PACKAGE_NAME="..schemaname,
         "MFB_PACKAGE_MODULE="..schemaname_first_upper,
         "NOMINMAX",
-        "BOOST_ALL_DYN_LINK",
         "PXR_PYTHON_MODULES_ENABLED=1",
         schemaname_upper.."_EXPORTS"
     }
 
     usd_links(
-        {"usd", "sdf", "tf", "arch", "vt", "usdGeom"}
+        {"usd", "sdf", "tf", "arch", "vt", "usdGeom", "boost", "python"}
     )
 
     filter {"system:windows", "configurations:release" }
@@ -554,8 +581,6 @@ function project_usd_schema_python(schemaname, source)
         "MFB_ALT_PACKAGE_NAME="..schemaname,
         "MFB_PACKAGE_MODULE="..schemaname_first_upper,
         "NOMINMAX",
-        "BOOST_ALL_DYN_LINK",
-        "BOOST_PYTHON_NO_PY_SIGNATURES",
         "_"..schemaname_upper.."_EXPORTS"
     }
 
@@ -573,7 +598,7 @@ function project_usd_schema_python(schemaname, source)
         defines { "LINUX", "TBB_USE_DEBUG", "TBB_USE_ASSERT", "TBB_USE_THREADING_TOOLS" }
     filter {}
 
-    usd_links({"usd", "sdf", "tf", "arch", "vt", "usdGeom" })
+    usd_links({"usd", "sdf", "tf", "arch", "vt", "usdGeom", "boost", "python" })
 
     -- python library also needs to link the C++ library
     links( schemaname..getLibSuffix())
@@ -599,7 +624,7 @@ function create_test_runner(name, config, env_path)
         f:write(string.format([[
 @echo off
 setlocal
-set PATH="%%PATH%%";%s
+set PATH=%s;"%%PATH%%"
 call "%%~dp0\plugins\%s.exe" %%*
         ]], env_path, name))
         f:close()
@@ -636,7 +661,6 @@ function carbonitePlugin(args)
     includedirs { 
         runtime_include_dir,
         extensions_root_dir.."/common/include",
-        repo_root_dir.."/include/extras",
     }
     if type(args.ifaces) == "string" and type(args.impl) == "string" then
         filesTable = {}
@@ -699,22 +723,21 @@ function carboniteBindingsPython(args)
     }
 
     local python_folder = root.."/_build/target-deps/python"
-    repo_build.define_bindings_python(name, python_folder, "3.11")
+    repo_build.define_bindings_python(name, python_folder, PYTHON_VERSION)
 end
 
 function workspace_defaults(currentAbsPath, hostDepsDir, targetDepsDir)
-    configurations { "release" }
+    configurations { "debug", "release" }
     startproject "omni.bloky.kit"
 
-    winsdk_version = "10.0.17763.0"
     targetDeps_dir = root.."/_build/target-deps"
     hostDeps_dir = root.."/_build/host-deps"
 
     repo_build.ccache_compiler_options()
 
     repo_build.setup_workspace {
-        msvc_version = "14.29.30133",
-        winsdk_version = winsdk_version,
+        msvc_version = MSVC_VERSION,
+        winsdk_version = WINSDK_VERSION,
         extra_warnings = false,
         security_hardening = true,
         host_deps_dir = hostDeps_dir,
@@ -744,8 +767,7 @@ function workspace_defaults(currentAbsPath, hostDepsDir, targetDepsDir)
     else
         symbols "Full"
     end
-    staticruntime "On"
-    buildoptions { "-DPX_ENABLE_FEATURES_UNDER_CONSTRUCTION=1" }
+    staticruntime "Off"
 
     includedirs { "_build/generated/include", "_build/target-deps", "_build/mirrored", "_build/host-deps", "include", "shaders", "pch" }
     syslibdirs { carbSDKLibs, targetPluginsDir }

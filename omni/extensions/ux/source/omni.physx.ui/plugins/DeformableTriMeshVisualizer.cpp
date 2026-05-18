@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -101,6 +101,27 @@ void DeformableTriMeshVisualizer::updatePoints()
         updateTriPointsInternal();
 }
 
+std::unordered_set<uint32_t> DeformableTriMeshVisualizer::getFilteredTriIds(const VtArray<GfVec3i>& filteredFaceVertexIndices)
+{
+    std::unordered_set<uint32_t> triIds;
+
+    for (const GfVec3i& tri : filteredFaceVertexIndices)
+    {
+        const SortedTriangle surfaceTriangle(tri[0], tri[1], tri[2]);
+        auto it = mTrianglesSet.find(surfaceTriangle);
+        if (it != mTrianglesSet.end())
+        {
+            SortedTriangle& surfaceTriangleRef = const_cast<SortedTriangle&>(*it);
+            uint32_t triId = surfaceTriangleRef.TriIndex;
+
+            if (triId != -1)
+                triIds.insert(triId);
+        }
+    }
+
+    return triIds;
+}
+
 void DeformableTriMeshVisualizer::computeRenderMeshPointsWithoutGap(const VtVec3fArray& originalPoints, VtVec3fArray& newPoints)
 {
     const size_t numTriangles = mOriginalIndices.size() / 3;
@@ -190,11 +211,15 @@ void DeformableTriMeshVisualizer::computeRenderMeshTopologyGap(VtIntArray& faceV
 
     faceVertexIndices.reserve(numIndices);
 
+    mTrianglesSet.clear();
     for (size_t triIndex = 0; triIndex < numTriangles; ++triIndex)
     {
         faceVertexIndices.push_back((int)(triIndex * 3 + 0));
         faceVertexIndices.push_back((int)(triIndex * 3 + 1));
         faceVertexIndices.push_back((int)(triIndex * 3 + 2));
+
+        SortedTriangle triangle(mOriginalIndices[triIndex * 3 + 0], mOriginalIndices[triIndex * 3 + 1], mOriginalIndices[triIndex * 3 + 2], -1, (int32_t)triIndex);
+        mTrianglesSet.insert(triangle);
     }
 }
 

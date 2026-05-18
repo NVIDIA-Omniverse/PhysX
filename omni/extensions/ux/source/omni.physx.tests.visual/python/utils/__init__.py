@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from pathlib import Path
 import carb
 import carb.tokens
-import carb.windowing
 import sys
 import traceback
 import omni.appwindow
@@ -21,14 +21,16 @@ from omni.physx import get_physx_interface
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, PhysicsBaseAsyncTestCase
 from omni.physx.bindings._physx import SETTING_MIN_FRAME_RATE_DEFAULT, SETTING_DISPLAY_JOINTS, SETTING_MASS_DISTRIBUTION_MANIPULATOR, SETTING_DISPLAY_MASS_PROPERTIES
 from omni.physxui.scripts.physicsViewportMassEdit import SETTING_DISPLAY_MASS_PROPERTIES_NONE, SETTING_DISPLAY_MASS_PROPERTIES_SELECTED, SETTING_DISPLAY_MASS_PROPERTIES_ALL
+from omni.physxui.scripts import utils as physxui_utils
 from omni.physx.bindings._physx import SETTING_VISUALIZATION_COLLISION_MESH
 import omni.kit.viewport.utility as viewport_utils
+from carb.eventdispatcher import get_eventdispatcher
 
 
-APP_ROOT = Path(carb.tokens.get_tokens_interface().resolve("${app}"))
-OUTPUTS_DIR = APP_ROOT.parent.parent.parent.joinpath("outputs")
+OUTPUTS_DIR = Path(omni.kit.test.get_test_output_path())
 FILE_ROOT = Path(__file__).parent.parent.parent.parent
 GOLDEN_DIR = FILE_ROOT.joinpath("data/")
+THRESHOLD_WARNING_PCT = 0.8
 
 settings = carb.settings.get_settings()
 
@@ -112,9 +114,16 @@ class TestCase(PhysicsKitStageAsyncTestCase):
             "/rtx/pathtracing/lightcache/cached/enabled" : (False, True),
             "/rtx/raytracing/lightcache/spatialCache/enabled" : (False, True),
             "/ngx/enabled": (False, True),
+
+            "/rtx/rtpt/maxBounces": (2, 2),
+            "/rtx/rtpt/maxSpecularAndTransmissionBounces": (2, 2),
+            "/rtx/rtpt/cached/enabled": (False, False),
+            "/rtx/rtpt/lightcache/cached/enabled": (False, False),
+            "/rtx/rtpt/cfgpuCameraJitter": (False, False)
         }
 
         self._distant_light_setting = "/rtx/useViewLightingMode"
+        self._spp_setting = "/rtx/rtpt/spp"
 
         self._settings_cache = {}
 
@@ -133,11 +142,14 @@ class TestCase(PhysicsKitStageAsyncTestCase):
         self._setup_settings(self._viewport_settings)
         await omni.kit.app.get_app().next_update_async()
 
-    async def _setup_render_settings(self, use_distant_light):
-        self._render_settings.update({self._distant_light_setting : (use_distant_light, False)})
+    async def _setup_render_settings(self, use_distant_light, spp=1):
+        self._render_settings.update({
+            self._distant_light_setting : (use_distant_light, False),
+            self._spp_setting : (spp, 1),
+        })
 
         self._setup_settings(self._render_settings)
-        for _ in range(5):
+        for _ in range(60):
             await omni.kit.app.get_app().next_update_async()
 
     async def _restore_settings(self):
@@ -188,12 +200,13 @@ class TestCase(PhysicsKitStageAsyncTestCase):
                 self._saved_fullscreen = True
                 app_window.set_fullscreen(False)
             app_window.resize(width_with_dpi, height_with_dpi)
-            await app_window.get_window_resize_event_stream().next_event()
+            await get_eventdispatcher().next_event(filter=app_window.get_event_key(), event_name=omni.appwindow.GLOBAL_EVENT_WINDOW_RESIZE)
 
         # Move the cursor away to avoid hovering on element and trigger tooltips that break the tests
-        windowing = carb.windowing.acquire_windowing_interface()
-        os_window = app_window.get_window()
-        windowing.set_cursor_position(os_window, (0, 0))
+        windowing = physxui_utils.get_windowing()
+        if windowing:
+            os_window = app_window.get_window()
+            windowing.set_cursor_position(os_window, (0, 0))
 
     def show_all_vp_menus(self, show):
         def _show(names, show):
@@ -246,7 +259,8 @@ class TestCase(PhysicsKitStageAsyncTestCase):
                 app_window.set_fullscreen(True)
             else:
                 app_window.resize(self._saved_width, self._saved_height)
-            await app_window.get_window_resize_event_stream().next_event()
+            #await app_window.get_window_resize_event_stream().next_event()
+            await get_eventdispatcher().next_event(filter=app_window.get_event_key(), event_name=omni.appwindow.GLOBAL_EVENT_WINDOW_RESIZE)
             self._saved_width = None
             self._saved_height = None
 
@@ -324,8 +338,10 @@ class TestCase(PhysicsKitStageAsyncTestCase):
         img_suffix="",
         skip_assert=False,
         use_distant_light=True,
+        spp=1,
         use_renderer_capture=False,
-        setup_and_restore=True
+        setup_and_restore=True,
+        img_golden_path=None
     ):
         def compare_ge(a, b):
             return a >= b
@@ -336,13 +352,18 @@ class TestCase(PhysicsKitStageAsyncTestCase):
         compare_op = compare_le if inverse else compare_ge
 
         if setup_and_restore:
-            await self._setup_render_settings(use_distant_light)
+            await self._setup_render_settings(use_distant_light, spp)
 
         img_name = self.get_img_name(img_name, img_suffix)
-        diff = await self.capture_and_compare(img_name, threshold, compare_op, self._viewport_data, use_renderer_capture)
+        diff = await self.capture_and_compare(img_name, threshold, compare_op, self._viewport_data, use_renderer_capture, img_golden_path)
         op_str = ">" if inverse else "<"
         message = f"{img_name}: difference ratio {diff:.6f} {op_str} {threshold} threshold"
         carb.log_warn(message) if compare_op(diff, threshold) else carb.log_info(message)
+
+        # show warning if difference is more than 80% of the threshold, don't show one for > 1, since that's a failure anyway
+        threshold_pct = diff / threshold if diff is not None else 0.0
+        if threshold_pct > THRESHOLD_WARNING_PCT and threshold_pct <= 1.0:
+            carb.log_warn(f"Difference ratio is more than {threshold_pct*100:.2f}% of the threshold. Review golden images and/or threshold levels for this test!")
 
         if setup_and_restore:
             await self.restore()
@@ -352,7 +373,7 @@ class TestCase(PhysicsKitStageAsyncTestCase):
             self.assertTrue(res, f"The image doesn't match the golden one: {img_name}")
         return res
 
-    async def do_capture(self, img_name=None, img_suffix="", img_artifact_path=""):
+    async def do_capture(self, img_name=None, img_suffix="", img_artifact_path="", img_golden_path=None):
         image_path = self.get_img_name(img_name, img_suffix)
         await self.capture(image_path)
         await self.restore()
@@ -441,20 +462,22 @@ class TestCase(PhysicsKitStageAsyncTestCase):
             except asyncio.exceptions.TimeoutError:
                 carb.log_warn(f"{image_res_path} not captured in {capture_timeout}s!")
         else:
-            import omni.renderer_capture
-            omni.renderer_capture.acquire_renderer_capture_interface().capture_next_frame_swapchain(str(image_res_path))
+            import omni.kit.renderer_capture
+            omni.kit.renderer_capture.acquire_renderer_capture_interface().capture_next_frame_swapchain(str(image_res_path))
             await omni.kit.app.get_app().next_update_async()
-            omni.renderer_capture.acquire_renderer_capture_interface().wait_async_capture()
+            omni.kit.renderer_capture.acquire_renderer_capture_interface().wait_async_capture()
             await omni.kit.app.get_app().next_update_async()
             await check_if_file_exists()
 
-    async def capture_and_compare(self, image_name, threshold, compare_op, viewport_data, use_renderer_capture = False):
+    async def capture_and_compare(self, image_name, threshold, compare_op, viewport_data, use_renderer_capture = False, img_golden_path=None):
         image_artifact_path = ""
         image_res_name = image_name
         image_res_path = OUTPUTS_DIR.joinpath(image_res_name)
 
         image_gld_name = image_name
-        image_gld_path = GOLDEN_DIR.joinpath(image_gld_name)
+        # Use provided golden path if specified, otherwise fallback to the old GOLDEN_DIR
+        golden_dir = Path(img_golden_path) if img_golden_path is not None else GOLDEN_DIR
+        image_gld_path = golden_dir.joinpath(image_gld_name)
 
         image_diffmap_name = f"{Path(image_res_name).stem}.diffmap.png"
         image_diffmap_path = OUTPUTS_DIR.joinpath(image_diffmap_name)
@@ -475,5 +498,5 @@ class TestCase(PhysicsKitStageAsyncTestCase):
             except SyntaxError as e:
                 carb.log_warn(f"SyntaxError: {str(e)}")
 
-        carb.log_error(f"Failed to compare images for {image_name}. Quitting after {attempts} attempts.")
+        carb.log_warn(f"Failed to compare images for {image_name}. Quitting after {attempts} attempts.")
         return 0

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -93,7 +93,7 @@ public:
 														PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 														const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase,
 														void* patchStreamBase, void* forceAndIndiceStreamBase,
-														PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim,
+														PxBoundsArrayPinnedSafe& bounds, IG::IslandSim* islandSim,
 														physx::Dy::Context* dynamicsContext, const PxU32 gpuComputeVersion,
 														PxsHeapMemoryAllocatorManager* heapMemoryManager, bool useGPUBP)	PX_OVERRIDE;
 	virtual PxsSimulationController*				createGpuSimulationController(PxsKernelWranglerManager* gpuWranglerManagers, 
@@ -105,12 +105,10 @@ public:
 														PxU32 maxFemClothContacts, PxU32 maxParticleContacts,
 														PxU32 collisionStackSizeBytes, bool enableBodyAccelerations)	PX_OVERRIDE;
 	virtual Dy::Context*							createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
-														PxCudaContextManager* cudaContextManager,
-														const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, const PxU32 maxNumPartitions, const PxU32 maxNumStaticPartitions,
-														const bool enableStabilization, const bool useEnhancedDeterminism, bool solveArticulationContactLast, const PxReal maxBiasCoefficient,
-														const PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-														const bool frictionEveryIteration, const bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
-														const PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled) PX_OVERRIDE;
+													PxCudaContextManager* cudaContextManager,
+													const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, PxReal maxBiasCoefficient,
+													PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager, PxSolverType::Enum solverType,
+													PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags) PX_OVERRIDE;
 	
 	//internals
 		

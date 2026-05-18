@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 
 #from pxr import Gf, UsdGeom, UsdPhysics, PhysxSchema
 #import omni.physx
@@ -386,6 +387,122 @@ class OmniPVDBaseTests(PhysicsKitStageAsyncTestCase):
         if os.path.exists(os.path.join(recording_dir, "tmp.ovd")):
             os.remove(os.path.join(recording_dir, "tmp.ovd"))
 
+
+    async def test_ovd_recording_with_directory_creation(self):
+
+        # This test is to verify that the OVD recording directory is created and that the OVD file is written to it
+        self._physxPvdInterface = _physxPvd.acquire_physx_pvd_interface()
+
+        # Get the omni_data path
+        omni_data_path = carb.tokens.get_tokens_interface().resolve("${omni_data}")
+        outputDir = str(Path(omni_data_path).joinpath("omnipvd_output"))
+        outputDir = outputDir.replace("\\", "/")  # Normalize path separators
+        if not outputDir.endswith("/"):
+            outputDir += "/"  # Ensure path ends with forward slash
+        os.makedirs(outputDir, exist_ok=True)  # Ensure directory exists
+
+        # Intentionally don't create the sub directories here,
+        # instead test that the OVD file is written to the sub directories
+        outputDir = str(Path(outputDir).joinpath("sub_dir_1/sub_dir_2"))
+
+        # Set the recording directory and enable recording
+        settings = carb.settings.get_settings()
+        settings.set("/persistent/physics/omniPvdOvdRecordingDirectory", outputDir)
+        settings.set("/physics/omniPvdOutputEnabled", True)
+
+        # Create a simulation stage and save it to disk
+        stagePath = str(Path(outputDir).joinpath("stage_simulation.usda"))
+        stagePath = stagePath.replace("\\", "/")
+        stage = get_or_create_stage(stagePath)
+
+        scene = UsdPhysics.Scene.Define(stage, "/physicsScene")
+        scene.CreateGravityDirectionAttr().Set(Gf.Vec3f(0.0, -1.0, 0.0))
+        scene.CreateGravityMagnitudeAttr().Set(981.0)
+
+        physxSceneAPI = PhysxSchema.PhysxSceneAPI.Apply(scene.GetPrim())
+
+        # The following numbers are enough for a 4k env scene
+        physxSceneAPI.CreateGpuTotalAggregatePairsCapacityAttr().Set(500000)
+        physxSceneAPI.CreateGpuFoundLostPairsCapacityAttr().Set(500000)
+        physxSceneAPI.CreateGpuCollisionStackSizeAttr().Set(8 * 64 * 1024 * 1024)
+        physxSceneAPI.CreateGpuFoundLostAggregatePairsCapacityAttr().Set(500000)
+        physxSceneAPI.CreateGpuMaxRigidPatchCountAttr().Set(500000)
+        physxSceneAPI.CreateGpuMaxRigidContactCountAttr().Set(500000)
+        
+        # Create a ground plane
+        ground = physicsUtils.add_ground_plane(
+            stage, 
+            "/World/ground",
+            axis=UsdGeom.Tokens.y,
+            size=1000,
+            position=Gf.Vec3d(0, 0, 0),
+            color=[0.5, 0.5, 0.5]
+        )
+
+        # Create envs
+        side_length = 4
+        for x in range(side_length):
+            for z in range(side_length):
+                envID = x*side_length + z + 1
+                setup_env(stage, envID, Gf.Vec3d(x*30.0, 0, z*30.0))
+                create_rope_articulation(stage, envID, Gf.Vec3f(x*30, 5.0, z*30))
+
+
+        # Attach the stage to the context
+        cache = UsdUtils.StageCache.Get()
+        stage_id = cache.Insert(stage).ToLongInt()
+        omni.usd.get_context().attach_stage_with_callback(stage_id=stage_id, on_finish_fn=lambda success, message: None)
+        
+        
+        # Attach to physics simulation
+        from omni.physx import get_physx_simulation_interface
+        physx = get_physx_simulation_interface()
+
+        physx.attach_stage(stage_id)
+                
+        for i in range(10):
+            physx.simulate(1.0/60.0, i * 1.0/60.0)
+            # the line below creates error spews related to a missing camera Prim
+            #physx.fetch_results()
+        
+        physx.detach_stage()
+        cache.Erase(stage)
+        stage.Save()
+
+        # detaching the stage will also close it and force the serialization of the OVD file
+
+        recording_dir = settings.get("/persistent/physics/omniPvdOvdRecordingDirectory")
+        if not recording_dir:
+            self.fail("Failed to get recording directory from settings")
+            
+        # Debug prints for directory contents
+        print(f"Directory exists: {os.path.exists(recording_dir)}")
+        if os.path.exists(recording_dir):
+            # fail if the directory doesn't contain a sub directory called sub_dir_1
+            if not os.path.exists(recording_dir):
+                self.fail("Recording directory does not exist")
+            
+        # Find the most recent .ovd file in the recording directory
+        import glob
+        ovd_files = [f for f in glob.glob(os.path.join(recording_dir, "*.ovd")) if not f.endswith("tmp.ovd")]
+        #print(f"Found OVD files: {ovd_files}")
+        if not ovd_files:
+            self.fail("No OVD files found in recording directory")
+
+        # Clean up USD resources
+        stage = None
+        simulationLayer = None
+        
+        # Clean up PhysX resources
+        physx = None
+        self._physxPvdInterface = None
+        
+        # Disable recording
+        settings.set("/physics/omniPvdOutputEnabled", False)            
+        
+        self._physxPvdInterface = None
+
+
     async def test_window(self):
         PhysxPvdExtension.instance._menu.show_window()
 
@@ -407,4 +524,3 @@ class OmniPVDBaseTests(PhysicsKitStageAsyncTestCase):
         outputStage = None
 
         toPhysxUSDConverter = None
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -564,7 +564,7 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage, UsdGeomXformCache& xf
                 GfVec3f transformedVelocity = i < velocities.size() ? velocities[i] : GfVec3f(0.0f);
                 if (dynamicBody->localSpaceVelocities)
                 {
-                    transformedVelocity = instancerMatrix.Transform(transformedVelocity);
+                    transformedVelocity = pxr::GfVec3f(instancerMatrix.Transform(transformedVelocity));
                 }
                 GfVec3ToFloat3(transformedVelocity, dynamicBody->linearVelocity);
             }

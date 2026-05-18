@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -32,14 +32,20 @@ public:
 
     static bool compute(OgnPhysXSceneQueryOverlapPrimAllDatabase& db)
     {
-        omni::fabric::PathC path;
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+        omni::fabric::StageReaderWriterUsd stageReaderWriterUsd(fabricId);
+
+        omni::fabric::Path path;
         if (db.inputs.prim().size() == 0)
         {
             const auto& primPath = db.tokenToString(db.inputs.primPath());
             if (pxr::SdfPath::IsValidPathString(primPath))
             {
                 db.logWarning("Prim Path input is deprecated. Please use Prim input instead.");
-                path = omni::fabric::asInt(pxr::SdfPath(primPath));
+                path = stageReaderWriterUsd.registerPath(primPath);
             }
             else
             {
@@ -55,7 +61,7 @@ public:
         std::vector<OverlapHit> gatherList;
         auto gather = [&gatherList](const OverlapHit& hit) -> bool { gatherList.push_back(hit); return true;} ;
 
-        getPhysXSceneQuery()->overlapShape(path.path, gather, false);
+        getPhysXSceneQuery()->overlapShape(omni::fabric::fabricPathToHandle(path), gather, false);
 
         auto& state = db.template sharedState<OgnPhysXSceneQueryOverlapPrimAll>();
 
@@ -69,10 +75,14 @@ public:
         db.outputs.bodyPrimPaths().resize(bOutputBodiesAsTokens ? gatherList.size() : 0);
         for (const OverlapHit& hit : gatherList)
         {
-            db.outputs.colliderPrims()[n] = static_cast<omni::fabric::PathC>(hit.collision);
-            db.outputs.bodyPrims()[n] = static_cast<omni::fabric::PathC>(hit.rigidBody);
-            if(bOutputCollidersAsTokens) db.outputs.colliderPrimPaths()[n] = asNameToken(hit.collision);
-            if(bOutputBodiesAsTokens) db.outputs.bodyPrimPaths()[n] = asNameToken(hit.rigidBody);
+            db.outputs.colliderPrims()[n] = stageReaderWriterUsd.registerPath(omni::fabric::handleToSdfPath(hit.collision));
+            db.outputs.bodyPrims()[n] = stageReaderWriterUsd.registerPath(omni::fabric::handleToSdfPath(hit.rigidBody));
+            if (bOutputCollidersAsTokens)
+                db.outputs.colliderPrimPaths()[n] = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.collision).GetText());
+            if (bOutputBodiesAsTokens)
+                db.outputs.bodyPrimPaths()[n] = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.rigidBody).GetText());
             n++;
         }
         db.outputs.execOut() = kExecutionAttributeStateEnabled;
@@ -81,4 +91,3 @@ public:
 };
 
 REGISTER_OGN_NODE()
-

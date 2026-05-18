@@ -22,28 +22,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
+#include "vehicle/PxVehicleParams.h"
 
-#include "vehicle2/drivetrain/PxVehicleDrivetrainStates.h"
+#include "vehicle/drivetrain/PxVehicleDrivetrainStates.h"
 
-#include "vehicle2/rigidBody/PxVehicleRigidBodyStates.h"
+#include "vehicle/rigidBody/PxVehicleRigidBodyStates.h"
 
-#include "vehicle2/roadGeometry/PxVehicleRoadGeometryState.h"
+#include "vehicle/roadGeometry/PxVehicleRoadGeometryState.h"
 
-#include "vehicle2/suspension/PxVehicleSuspensionHelpers.h"
+#include "vehicle/suspension/PxVehicleSuspensionHelpers.h"
 
-#include "vehicle2/tire/PxVehicleTireFunctions.h"
-#include "vehicle2/tire/PxVehicleTireParams.h"
+#include "vehicle/tire/PxVehicleTireFunctions.h"
+#include "vehicle/tire/PxVehicleTireParams.h"
 
-#include "vehicle2/wheel/PxVehicleWheelHelpers.h"
+#include "vehicle/wheel/PxVehicleWheelHelpers.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 
 PX_FORCE_INLINE PxF32 computeFilteredNormalisedTireLoad
@@ -715,6 +713,5 @@ void PxVehicleTireForcesUpdate
 	trForce.wheelTorque = wheelTorque;
 }
 
-} //namespace vehicle2
 } //namespace physx
 

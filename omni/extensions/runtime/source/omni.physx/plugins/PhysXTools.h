@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -200,7 +200,7 @@ bool getValue(const usdparser::AttachedStage& attachedStage,
               const pxr::SdfPath& path,
               const pxr::TfToken& attributeName,
               const pxr::UsdTimeCode& timeCode,
-              T& retVal)
+              T& retVal, bool useBatching = true)
 {
     auto changeSource = attachedStage.getChangeSource();
 
@@ -208,7 +208,7 @@ bool getValue(const usdparser::AttachedStage& attachedStage,
     if (changeSource != usdparser::ChangeSource::eUsd)
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        if (omniPhysX.getFabricBatchData())
+        if (useBatching && omniPhysX.getFabricBatchData())
         {
             return omniPhysX.getFabricBatchData()->getCurrentData<T>(retVal);
         }
@@ -227,8 +227,10 @@ bool getValue(const usdparser::AttachedStage& attachedStage,
             {
                 // Grab a pointer to in-memory representation for the attribute value, in this
                 // case a pointer to a T. Will be NULL if attribute doesn't exist in fabric
+                const omni::fabric::FabricId fabricId = iStageReaderWriter->getFabricId(stageInProgress);
                 auto valueSpan = iStageReaderWriter->getAttributeRd(
-                    stageInProgress, omni::fabric::asInt(path), omni::fabric::asInt(attributeName));
+                    stageInProgress, omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, path),
+                    omni::fabric::convertToTokenType<omni::fabric::Token>(fabricId, attributeName));
 
                 T* valuePtr = (T*)valueSpan.ptr;
 
@@ -308,8 +310,10 @@ inline bool getRelationshipValue(const usdparser::AttachedStage& attachedStage,
 
             if (stageInProgress.id)
             {
+                const omni::fabric::FabricId fabricId = iStageReaderWriter->getFabricId(stageInProgress);
                 auto relArray = iStageReaderWriter->getArrayAttributeRd(
-                    stageInProgress, omni::fabric::asInt(path), omni::fabric::asInt(relName));
+                    stageInProgress, omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, path),
+                    omni::fabric::convertToTokenType<omni::fabric::Token>(fabricId, relName));
 
                 omni::fabric::Path* valuePtr = (omni::fabric::Path*)relArray.ptr;
 

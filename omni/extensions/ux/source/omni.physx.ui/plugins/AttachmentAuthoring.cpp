@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -535,4 +535,3 @@ void AttachmentAuthoring::clearBuffers(void)
     mBufferAttachmentPathsToUpdateTargets.clear();
     mBufferAttachmentPathsToUpdateShapes.clear();
 }
-

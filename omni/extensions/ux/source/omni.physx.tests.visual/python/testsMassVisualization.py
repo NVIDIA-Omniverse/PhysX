@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from omni.physxtestsvisual.utils import TestCase
 from omni.physxtests.utils.physicsBase import TestCategory
@@ -88,7 +89,7 @@ class PhysxMassVisualizationTest(TestCase):
             await self.wait(10)
 
             nonlocal all_tests_passed
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_cube",
                 use_distant_light=True,
@@ -102,7 +103,7 @@ class PhysxMassVisualizationTest(TestCase):
             physicsUtils._add_rigid(sphere, 1.0, Gf.Vec3f(0.0), Gf.Vec3f(0.0))
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_sphere",
                 use_distant_light=True,
@@ -123,7 +124,7 @@ class PhysxMassVisualizationTest(TestCase):
             mass_api.CreatePrincipalAxesAttr().Set(Gf.Quatf(-0.5678994, 0.3701006, -0.3168037, 0.663439))
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_xform",
                 use_distant_light=True,
@@ -139,7 +140,7 @@ class PhysxMassVisualizationTest(TestCase):
             mass_api.GetPrincipalAxesAttr().Set(Gf.Quatf(1.0, 0.0, 0.0, 0.0))
             await self.wait(10) 
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_xform_update",
                 use_distant_light=True,
@@ -152,7 +153,7 @@ class PhysxMassVisualizationTest(TestCase):
             selection.set_selected_prim_paths(["/World/Xform", "/World/Cube", "/World/Sphere"], True)
             await self.wait(10) 
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_mult",
                 use_distant_light=True,
@@ -165,7 +166,7 @@ class PhysxMassVisualizationTest(TestCase):
             selection.set_selected_prim_paths([], True)
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_none",
                 use_distant_light=True,
@@ -179,7 +180,7 @@ class PhysxMassVisualizationTest(TestCase):
             settings.set(SETTING_DISPLAY_MASS_PROPERTIES, SETTING_DISPLAY_MASS_PROPERTIES_ALL)
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_view_all",
                 use_distant_light=True,
@@ -195,7 +196,7 @@ class PhysxMassVisualizationTest(TestCase):
             settings.set(SETTING_DISPLAY_MASS_PROPERTIES, SETTING_DISPLAY_MASS_PROPERTIES_SELECTED)
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_view_selection",
                 use_distant_light=True,
@@ -208,7 +209,7 @@ class PhysxMassVisualizationTest(TestCase):
             selection.set_selected_prim_paths(["/World/Xform", "/World/Sphere"], True)
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_view_selection_changed",
                 use_distant_light=True,
@@ -222,7 +223,7 @@ class PhysxMassVisualizationTest(TestCase):
             settings.set(SETTING_DISPLAY_MASS_PROPERTIES, SETTING_DISPLAY_MASS_PROPERTIES_NONE)
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mass_visualization_view_disable",
                 use_distant_light=True,

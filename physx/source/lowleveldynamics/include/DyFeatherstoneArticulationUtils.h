@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -255,7 +255,6 @@ namespace Dy
 			bottomLeft = PxMat33(0.f);
 		}
 
-
 		//This assume angular is the top vector and linear is the bottom vector
 		PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVector operator *(const Cm::SpatialVector& s) const
 		{
@@ -280,7 +279,6 @@ namespace Dy
 
 			return Cm::UnAlignedSpatialVector(top, bottom);
 		}
-
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialMatrix operator *(const PxReal& s) const
 		{
@@ -337,13 +335,12 @@ namespace Dy
 			return SpatialMatrix(newTopLeft, newTopRight, newBottomLeft);
 		}
 
-		static SpatialMatrix constructSpatialMatrix(const Cm::SpatialVector& Is, const Cm::SpatialVector& stI)
+		/*static SpatialMatrix constructSpatialMatrix(const Cm::SpatialVector& Is, const Cm::SpatialVector& stI)
 		{
 			//construct top left
 			const PxVec3 tLeftC0 = Is.angular * stI.angular.x;
 			const PxVec3 tLeftC1 = Is.angular * stI.angular.y;
 			const PxVec3 tLeftC2 = Is.angular * stI.angular.z;
-
 			const PxMat33 topLeft(tLeftC0, tLeftC1, tLeftC2);
 
 			//construct top right
@@ -359,7 +356,7 @@ namespace Dy
 			const PxMat33 bottomLeft(bLeftC0, bLeftC1, bLeftC2);
 
 			return SpatialMatrix(topLeft, topRight, bottomLeft);
-		}
+		}*/
 
 		static PX_CUDA_CALLABLE SpatialMatrix constructSpatialMatrix(const Cm::SpatialVectorF& Is, const Cm::SpatialVectorF& stI)
 		{
@@ -367,7 +364,6 @@ namespace Dy
 			const PxVec3 tLeftC0 = Is.top * stI.top.x;
 			const PxVec3 tLeftC1 = Is.top * stI.top.y;
 			const PxVec3 tLeftC2 = Is.top * stI.top.z;
-
 			const PxMat33 topLeft(tLeftC0, tLeftC1, tLeftC2);
 
 			//construct top right

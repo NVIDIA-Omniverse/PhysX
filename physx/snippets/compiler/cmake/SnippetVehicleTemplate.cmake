@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build Snippetvehicle common template
@@ -86,7 +86,7 @@ SET_TARGET_PROPERTIES(Snippet${SNIPPET_NAME} PROPERTIES
 )
 
 TARGET_LINK_LIBRARIES(Snippet${SNIPPET_NAME} 
-	PUBLIC PhysXExtensions PhysXPvdSDK PhysX PhysXVehicle2 PhysXCharacterKinematic PhysXCooking PhysXCommon PhysXFoundation SnippetUtils 
+	PUBLIC PhysXExtensions PhysXPvdSDK PhysX PhysXVehicle PhysXCharacterKinematic PhysXCooking PhysXCommon PhysXFoundation SnippetUtils 
 	PUBLIC ${SNIPPET_PLATFORM_LINKED_LIBS})
 
 IF(CUSTOM_SNIPPET_TARGET_PROPERTIES)

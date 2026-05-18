@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -315,6 +315,12 @@ bool fillPhysxShapeDesc(AttachedStage& attachedStage, const ShapeDesc& inDesc, P
         filteredPairs.push_back(std::make_pair(primPath, inDesc.filteredCollisions[i]));
     }
 
+    // store originalGPrim path
+    if (inDesc.sourceGprim)
+    {
+        outDesc.sourceGprim = inDesc.sourceGprim.GetPrimPath();
+    }
+
     // physx params
     const PhysxSchemaPhysxCollisionAPI physxCollisionAPI =
         PhysxSchemaPhysxCollisionAPI::Get(attachedStage.getStage(), primPath);
@@ -582,7 +588,7 @@ void processMeshesToMerge(UsdGeomXformCache& xfCache, const UsdPrim& prim, const
             
             for (size_t i = 0; i < meshData.pointsValue.size(); i++)
             {
-                const GfVec3f newPoint = relMatrix.Transform(meshData.pointsValue[i]);
+                const GfVec3f newPoint = pxr::GfVec3f(relMatrix.Transform(meshData.pointsValue[i]));
                 meshDesc.points[meshData.pointsOffset + i] = newPoint;
             }
             memcpy(meshDesc.faces.data() + meshData.facesOffset, meshData.facesValue.data(), sizeof(int) * meshData.facesValue.size());
@@ -900,7 +906,7 @@ MergeMeshPhysxShapeDesc* processMeshCollision(AttachedStage& attachedStage,
         }
         else
         {
-            CARB_LOG_ERROR("PhysicsUSD: Prim at path %s is using unknown value for physics:approximation attribute.", shapeDesc.usdPrim.GetPrimPath().GetText());
+            CARB_LOG_ERROR("PhysicsUSD: Prim at path %s is using unknown value '%s' for physics:approximation attribute.", shapeDesc.usdPrim.GetPrimPath().GetText(), approximationType.GetText());
             ICE_FREE(meshDesc);
             return nullptr;
         }
@@ -1491,6 +1497,11 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, const SdfPath& pat
         bodyDesc->rotation = shapeDesc->localRot;
         bodyDesc->scale = shapeDesc->localScale;
         bodyDesc->sceneIds = shapeDesc->sceneIds;
+
+        if (shapeDesc->sourceGprim != path)
+        {
+            ((StaticPhysxRigidBodyDesc*)bodyDesc)->sourceGPrimPath = shapeDesc->sourceGprim;
+        }
 
         shapeDesc->localPos = { 0.0f, 0.0f , 0.0f };
         shapeDesc->localRot = { 0.0f, 0.0f , 0.0f, 1.0f };

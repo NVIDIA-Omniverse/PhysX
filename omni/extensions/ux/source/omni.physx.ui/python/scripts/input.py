@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physxui import get_physxui_private_interface
 from omni.timeline import get_timeline_interface, TimelineEventType
 

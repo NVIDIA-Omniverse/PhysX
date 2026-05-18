@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.physx.scripts.utils as physxUtils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, PhysicsKitStageAsyncTestCase, TestCategory
@@ -88,6 +89,71 @@ class PhysicsJointTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Articulat
                 with utils.ExpectMessage(self, message, expected_result=error_expected):
                     self.step(reset_simulation_after=True)
 
+    def _createArticulationJoint(self, stage: Usd.Stage)  -> Usd.Prim:
+
+        rigidBodyPaths = ["/World/rigidBody0", "/World/rigidBody1"]
+        d6JointPath = "/World/d6Joint"
+        fixedJointPath = "/World/fixedJoint"
+
+        # body0 is chosen to be the root link.
+
+        for i in range(2):
+
+            # Create the rigid body
+            rigidBodyXform = UsdGeom.Xform.Define(stage, rigidBodyPaths[i])
+            rigidBodyPrim = rigidBodyXform.GetPrim()
+            rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(rigidBodyPrim)
+            rigidBodyAPI.CreateRigidBodyEnabledAttr(True)
+            massAPI = UsdPhysics.MassAPI.Apply(rigidBodyPrim)
+            massAPI.CreateMassAttr(1.0)
+            massAPI.CreateDiagonalInertiaAttr(Gf.Vec3f(1.0, 1.0, 1.0))
+
+        # Create a D6 joint between the two prims
+        d6Joint = UsdPhysics.Joint.Define(stage, d6JointPath)
+        d6Joint.CreateBody0Rel().SetTargets([Sdf.Path(rigidBodyPaths[0])])
+        d6Joint.CreateBody1Rel().SetTargets([Sdf.Path(rigidBodyPaths[1])])
+        d6JointPrim = d6Joint.GetPrim()
+
+        # Create a fixed joint between the root link and the world.
+        # Mark the fixed joint as the root. This will create a fixed
+        # base articulation with body0 as the root link.
+        fixedJoint = UsdPhysics.FixedJoint.Define(stage, fixedJointPath)
+        fixedJoint.CreateBody0Rel().AddTarget(rigidBodyPaths[0])
+        UsdPhysics.ArticulationRootAPI.Apply(fixedJoint.GetPrim())
+
+        # Create a spherical joint by locking the translational axes
+        lockedAxes = [UsdPhysics.Tokens.transX, UsdPhysics.Tokens.transY, UsdPhysics.Tokens.transZ]
+        for i in range(3):
+            limitAPI = UsdPhysics.LimitAPI.Apply(d6JointPrim, lockedAxes[i])
+            limitAPI.CreateLowAttr(1.0)
+            limitAPI.CreateHighAttr(-1.0)
+
+        return d6JointPrim
+
+    # attempt to switch from free motion to limited motion after attaching stage.
+    async def test_articulation_joint_free_motion_to_limited_motion(self):
+
+        stage = await self.new_stage()
+
+        #note: rotX is free at this point
+        d6JointPrim = self._createArticulationJoint(stage)
+        limitAPI = UsdPhysics.LimitAPI.Apply(d6JointPrim, UsdPhysics.Tokens.rotX)
+
+        # step once to attach the stage
+        self.step()
+        # it is no longer permitted to switch from free motion to limited motion
+
+        # attempt to change state of rotX to limited
+        message = f"Cannot update articulation joint low limit because the joint was not initially configured with limits: ({d6JointPrim.GetPath().pathString})"
+        with utils.ExpectMessage(self, message):
+            limitAPI.CreateLowAttr(-1.0)
+
+        # attempt to change state of rotX to limited
+        message = f"Cannot update articulation joint high limit because the joint was not initially configured with limits: ({d6JointPrim.GetPath().pathString})"
+        with utils.ExpectMessage(self, message):
+            limitAPI.CreateHighAttr(1.0)
+
+        
     async def test_articulation_distance_joint_error(self):
         UsdPhysics.ArticulationRootAPI.Apply(self._box1_rigid.GetPrim())
         jointPrim = physxUtils.createJoint(self._stage, "Distance", self._box1_rigid.GetPrim(), self._box2_rigid.GetPrim())
@@ -540,7 +606,7 @@ class PhysicsJointTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Articulat
                 .ComputeLocalToWorldTransform(Usd.TimeCode.Default())
                 .ExtractRotation()
             )
-            rotatedCheckVec = rot.TransformDir(checkDirs[ax][0])
+            rotatedCheckVec = Gf.Vec3f(rot.TransformDir(checkDirs[ax][0]))
             dotp = Gf.Dot(rotatedCheckVec, checkDirs[ax][1])
             self.assertGreater(expectedDir * dotp, 0.0)
 

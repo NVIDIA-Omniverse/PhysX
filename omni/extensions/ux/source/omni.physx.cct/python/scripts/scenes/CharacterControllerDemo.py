@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physx.scripts import physicsUtils
 from pxr import Usd, UsdGeom, Gf, UsdPhysics, PhysxSchema, Vt, Sdf, UsdUtils, PhysicsSchemaTools
 import omni.physxdemos as demo

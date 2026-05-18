@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -58,13 +58,10 @@ public:
     bool getDofProjectedJointForces(const TensorDesc* dstTensor) const override;
 
     bool getJacobians(const TensorDesc* dstTensor) const override;
-    bool getMassMatrices(const TensorDesc* dstTensor) const override; // deprecated
     bool getGeneralizedMassMatrices(const TensorDesc* dstTensor) const override;
 
     bool getCoriolisAndCentrifugalCompensationForces(const TensorDesc* dstTensor) const override;
-    bool getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const override; // deprecated
     bool getGravityCompensationForces(const TensorDesc* dstTensor) const override;
-    bool getGeneralizedGravityForces(const TensorDesc* dstTensor) const override; // deprecated
 
     bool getArticulationMassCenter(const TensorDesc* dstTensor, bool localFrame) const override;
     bool getArticulationCentroidalMomentum(const TensorDesc* dstTensor) const override;

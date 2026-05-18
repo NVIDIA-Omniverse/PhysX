@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxgSimulationController.h"
 #include "PxDirectGPUAPI.h"
@@ -78,7 +78,7 @@
 #include "PxgAABBManager.h"
 #include "PxgSimulationCoreKernelIndices.h"
 
-// PT: TODO: don't indent the whole damn file
+// TODO: Consider refactoring indentation for improved code readability
 
 using namespace physx;
 
@@ -711,8 +711,9 @@ namespace physx
 
 			else if(numChanges)
 			{
+				CUdeviceptr updatedActorDescd = mSimulationCore->getUpdatedActorDescDesc();
 				mergeBoundsAndTransformsChanges(directGPUBoundsArray, transformCache, gpuTransformCache, boundsArraySize,
-												totalTransformCacheSize, numChanges, npStream);
+												totalTransformCacheSize, numChanges, updatedActorDescd, npStream);
 			}
 		}
 		else
@@ -725,7 +726,7 @@ namespace physx
 	void PxgSimulationController::mergeBoundsAndTransformsChanges(PxgBoundsArray& directGPUBoundsArray,
 																  PxsTransformCache& transformCache,
 																  PxgCudaBuffer& gpuTransformCache, PxU32 boundsArraySize,
-																  PxU32 totalTransformCacheSize, PxU32 numChanges, CUstream npStream)
+																  PxU32 totalTransformCacheSize, PxU32 numChanges, CUdeviceptr updatedActorDescd, CUstream npStream)
 	{
 
 		PxBoundTransformUpdate* changes = reinterpret_cast<PxBoundTransformUpdate*>(
@@ -749,7 +750,7 @@ namespace physx
 		CUfunction kernelFunction = mSimulationCore->mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(
 			PxgKernelIds::MERGE_TRANSFORMCACHE_AND_BOUNDARRAY_CHANGES);
 
-		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(boundsPtr),	 PX_CUDA_KERNEL_PARAM(transformCachePtr),
+		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(boundsPtr), PX_CUDA_KERNEL_PARAM(transformCachePtr), PX_CUDA_KERNEL_PARAM(updatedActorDescd),
 											 PX_CUDA_KERNEL_PARAM(cpuBounds), PX_CUDA_KERNEL_PARAM(cpuTransforms),
 											 PX_CUDA_KERNEL_PARAM(changes),	 PX_CUDA_KERNEL_PARAM(numChanges) };
 

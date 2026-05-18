@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "common/PxProfileZone.h"
 
@@ -2263,7 +2263,7 @@ void PxgIncrementalPartition::updateIncrementalIslands_Part2_0(IG::IslandSim& is
 
 						for (PxU32 b = 0; b < output.nbPatches; ++b)
 						{
-							Part2WorkItem& item = mPart2WorkItems.insert();
+							Part2WorkItem& item = *mPart2WorkItems.insert();
 							item.mEdgeID		= edgeId;
 							item.mPatchIndex	= PxU16(b);
 							item.mPartitionEdge	= mEdgeManager.getEdge(edgeId);		// PT: TODO: batch

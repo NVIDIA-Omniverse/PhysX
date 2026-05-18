@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -498,8 +498,7 @@ void applyRigidDynamicPhysxDesc(PhysXScene* ps, const DynamicPhysxRigidBodyDesc&
         ps->getInternalScene()->clampPosIterationCount(desc.solverPositionIterationCount),
         ps->getInternalScene()->clampVelIterationCount(desc.solverVelocityIterationCount));
 
-    const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-    rigidDynamic.setSleepThreshold(disableSleeping ? 0.0f : desc.sleepThreshold);
+    rigidDynamic.setSleepThreshold(desc.sleepThreshold);
     rigidDynamic.setStabilizationThreshold(desc.stabilizationThreshold);
 
     if (!desc.kinematicBody)
@@ -2058,6 +2057,8 @@ ObjectId PhysXUsdPhysicsInterface::createObject(usdparser::AttachedStage& attach
         PxScene* scene = physxScene->getScene();
         scene->addActor(*rigidStatic);
 
+        intActor->mSourceGPrimPath = desc.sourceGPrimPath;
+
         // handle mirrors
         if (desc.sceneIds.size() > 1)
         {
@@ -2239,8 +2240,7 @@ ObjectId PhysXUsdPhysicsInterface::createObject(usdparser::AttachedStage& attach
 
         physxScene->getInternalScene()->mArticulations.push_back(articulation);
 
-        const bool disableSleeping = omniPhysX.getCachedSettings().disableSleeping;
-        articulation->setSleepThreshold(disableSleeping ? 0.0f : desc.sleepThreshold);
+        articulation->setSleepThreshold(desc.sleepThreshold);
         articulation->setStabilizationThreshold(desc.stabilizationThreshold);
 
         articulation->setSolverIterationCounts(
@@ -5186,9 +5186,36 @@ bool PhysXUsdPhysicsInterface::isReady(void)
     return ret;
 }
 
+GfTransform getSourceGPrimTransform(const AttachedStage& attachedStage, const pxr::SdfPath& path, bool fabricChange)
+{
+    omni::fabric::IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+
+    if (fabricChange && iStageReaderWriter)
+    {
+        omni::fabric::UsdStageId fabricStageId = { uint64_t(
+            UsdUtilsStageCache::Get().GetId(OmniPhysX::getInstance().getStage()).ToLongInt()) };
+        omni::fabric::StageReaderWriter fabricStageRW = iStageReaderWriter->get(fabricStageId);
+        if (fabricStageRW.getId() != omni::fabric::kInvalidStageReaderWriterId)
+        {
+            omni::fabric::Path pathHandle =
+                omni::fabric::convertToPathType<omni::fabric::Path>(fabricStageRW.getFabricId(), path);
+            const FabricTokens& fcTokens = UsdLoad::getUsdLoad()->getFabricTokens();
+
+            if (fabricStageRW.attributeExists(pathHandle, *fcTokens.worldMatrix))
+            {
+                return pxr::GfTransform(*fabricStageRW.getAttributeRd<pxr::GfMatrix4d>(pathHandle, *fcTokens.worldMatrix));
+            }
+        }
+    }
+    
+    return pxr::GfTransform(UsdGeomImageable(attachedStage.getStage()->GetPrimAtPath(path))
+                                .ComputeLocalToWorldTransform(pxr::UsdTimeCode::Default()));
+}
+
 bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStage, const pxr::SdfPath& path,
                                                ObjectId objectId,
                                                const Transform& transform,
+                                               bool fabricChange,
                                                bool resetVelocity, bool scaleProvided)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
@@ -5214,13 +5241,25 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
         const float scaleEpsilon = 1e-3f;
 
         PxRigidDynamic* dynamicActor = actor->is<PxRigidDynamic>();
-        const PxTransform pose(translation, orientation);
+        PxTransform pose(translation, orientation);
         if (dynamicActor && (dynamicActor->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
         {
             dynamicActor->setKinematicTarget(pose);
         }
         else
         {
+            if (!dynamicActor && (intActor->mSourceGPrimPath != SdfPath()))
+            {
+                // We need to get the transform from the actual gprim
+                const GfTransform gf = getSourceGPrimTransform(attachedStage, intActor->mSourceGPrimPath, fabricChange);
+
+                translation = toPhysX(gf.GetTranslation());
+                (GfQuatf&)orientation = GfQuatf(gf.GetRotation().GetQuat());
+                scale = toPhysX(gf.GetScale());
+
+                pose.p = translation;
+                pose.q = orientation;
+            }
             actor->setGlobalPose(pose);
             intActor->mFlags |= InternalActorFlag::ePARENT_XFORM_DIRTY;
             if (resetVelocity && dynamicActor)
@@ -5339,7 +5378,7 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
         for (uint32_t index = 0; index < internalParticleSet->mNumParticles; ++index)
         {
             const PxVec4& oldPos = internalParticleSet->mPositions[index];
-            pxr::GfVec3f newPos = deltaTransform.Transform(pxr::GfVec3f(oldPos.x, oldPos.y, oldPos.z));
+            pxr::GfVec3f newPos = pxr::GfVec3f(deltaTransform.Transform(pxr::GfVec3d(oldPos.x, oldPos.y, oldPos.z)));
             internalParticleSet->mPositions[index] = PxVec4(newPos[0], newPos[1], newPos[2], oldPos.w);
         }
 
@@ -5362,7 +5401,7 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
         for (uint32_t index = 0; index < internalCloth->mNumParticles; index++)
         {
             const PxVec4& pos = internalCloth->mPositions[index];
-            pxr::GfVec3f p = transform.Transform(pxr::GfVec3f(pos.x, pos.y, pos.z));
+            pxr::GfVec3f p = pxr::GfVec3f(transform.Transform(pxr::GfVec3d(pos.x, pos.y, pos.z)));
             internalCloth->mPositions[index] = PxVec4(p[0], p[1], p[2], pos.w);
         }
 
@@ -5391,7 +5430,7 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
             for (int i = 0; i < simVerticesCount; i++)
             {
                 PxVec3 pos = simPositionsInvMass[i].getXYZ();
-                pxr::GfVec3f p = transform.Transform(pxr::GfVec3f(pos.x, pos.y, pos.z));
+                pxr::GfVec3f p = pxr::GfVec3f(transform.Transform(pxr::GfVec3d(pos.x, pos.y, pos.z)));
                 simPositionsInvMass[i] = PxVec4(p[0], p[1], p[2], simPositionsInvMass[i].w);
             }
 
@@ -5407,7 +5446,7 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
             for (int i = 0; i < numVertices; i++)
             {
                 PxVec3 pos = positionsInvMass[i].getXYZ();
-                pxr::GfVec3f p = transform.Transform(pxr::GfVec3f(pos.x, pos.y, pos.z));
+                pxr::GfVec3f p = pxr::GfVec3f(transform.Transform(pxr::GfVec3d(pos.x, pos.y, pos.z)));
                 positionsInvMass[i] = PxVec4(p[0], p[1], p[2], positionsInvMass[i].w);
             }
 
@@ -5416,7 +5455,7 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
             for (int i = 0; i < simVerticesCount; i++)
             {
                 PxVec3 pos = simPositionsInvMass[i].getXYZ();
-                pxr::GfVec3f p = transform.Transform(pxr::GfVec3f(pos.x, pos.y, pos.z));
+                pxr::GfVec3f p = pxr::GfVec3f(transform.Transform(pxr::GfVec3d(pos.x, pos.y, pos.z)));
                 simPositionsInvMass[i] = PxVec4(p[0], p[1], p[2], simPositionsInvMass[i].w);
             }
 
@@ -5458,7 +5497,7 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
         for (int i = 0; i < numVertices; i++)
         {
             PxVec3 pos = positionsInvMass[i].getXYZ();
-            pxr::GfVec3f p = transform.Transform(pxr::GfVec3f(pos.x, pos.y, pos.z));
+            pxr::GfVec3f p = pxr::GfVec3f(transform.Transform(pxr::GfVec3d(pos.x, pos.y, pos.z)));
 
             positionsInvMass[i] = PxVec4(p[0], p[1], p[2], positionsInvMass[i].w);
         }
@@ -6418,11 +6457,18 @@ static void prepareWheelTransforms(InternalVehicle::WheelTransformManagementEntr
     pxr::UsdGeomXformable wheelXform(wheelTMEntry.wheelRootPrim);
     wheelXform.GetLocalTransformation(&wheelTMEntry.initialTransform, &resetsXformStack);
 
-    if (wheelTMEntry.shape && (wheelTMEntry.wheelRootPrim != wheelTMEntry.shapePrim))
+    if (wheelTMEntry.shape)
     {
-        pxr::UsdGeomXformable shapeXform(wheelTMEntry.shapePrim);
-        shapeXform.GetLocalTransformation(&wheelTMEntry.initialShapeTransform, &resetsXformStack);
-        wheelShapeLocalPose = computeWheelShapeLocalPose(wheelXform, shapeXform);
+        if (wheelTMEntry.wheelRootPrim != wheelTMEntry.shapePrim)
+        {
+            pxr::UsdGeomXformable shapeXform(wheelTMEntry.shapePrim);
+            shapeXform.GetLocalTransformation(&wheelTMEntry.initialShapeTransform, &resetsXformStack);
+            wheelShapeLocalPose = computeWheelShapeLocalPose(wheelXform, shapeXform);
+        }
+
+        // Apply cylinder axis fixup
+        const ::physx::PxQuat fixupQ = fixupConeAndCylinderQuat(wheelTMEntry.cylinderAxis);
+        wheelShapeLocalPose.q = wheelShapeLocalPose.q * fixupQ;
     }
 }
 
@@ -6545,7 +6591,7 @@ ObjectId PhysXUsdPhysicsInterface::createVehicle(const SdfPath& vehiclePath,
         const uint32_t wheelCount = static_cast<uint32_t>(vehicleDesc.wheelAttachments.size());
         std::vector<::physx::PxShape*> wheelShapeMapping;
         wheelShapeMapping.reserve(wheelCount);
-        std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*> tireMaterialFrictionTables;
+        std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*> tireMaterialFrictionTables;
         tireMaterialFrictionTables.reserve(wheelCount);
         internalVehicle->mWheelAttachments.resize(wheelCount, nullptr);
         std::vector<::physx::PxTransform> wheelShapeLocalPoses;
@@ -6574,7 +6620,7 @@ ObjectId PhysXUsdPhysicsInterface::createVehicle(const SdfPath& vehiclePath,
 
             if (wheelAttachmentDesc.tire->frictionTableId != kInvalidObjectId)
             {
-                ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams* tireMaterialFrictionTable = getPtr<::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>(
+                ::physx::PxVehiclePhysXMaterialFrictionParams* tireMaterialFrictionTable = getPtr<::physx::PxVehiclePhysXMaterialFrictionParams>(
                     PhysXType::ePTVehicleTireFrictionTable, wheelAttachmentDesc.tire->frictionTableId);
                 CARB_ASSERT(tireMaterialFrictionTable);
                 tireMaterialFrictionTables.push_back(tireMaterialFrictionTable);
@@ -6621,7 +6667,7 @@ ObjectId PhysXUsdPhysicsInterface::createVehicle(const SdfPath& vehiclePath,
                     internalVehicle->mWheelTransformManagementEntries.resize(wheelCount);
                 }
                 InternalVehicle::WheelTransformManagementEntry& wheelTMEntry = internalVehicle->mWheelTransformManagementEntries[wheelIndex];
-                wheelTMEntry.init(wheelRootPrim, shapePrim, shape);
+                wheelTMEntry.init(wheelRootPrim, shapePrim, shape, wheelAttachmentDesc.shapeId);
                 prepareWheelTransforms(wheelTMEntry, wheelShapeLocalPoses[i]);
 
                 // note: for now testing against identity is OK since this scale is the local one
@@ -6658,7 +6704,7 @@ ObjectId PhysXUsdPhysicsInterface::createVehicle(const SdfPath& vehiclePath,
         PxPhysics& pxPhysics = pxScene->getPhysics();
 
         ::physx::PxAllocatorCallback* allocatorForPvd;
-        const ::physx::vehicle2::PxVehiclePvdAttributeHandles* vehiclePvdAttributeHandles = physxSetup.getVehiclePvdRegistrationHandles();
+        const ::physx::PxVehiclePvdAttributeHandles* vehiclePvdAttributeHandles = physxSetup.getVehiclePvdRegistrationHandles();
         if (vehiclePvdAttributeHandles)
         {
             CARB_ASSERT(physxSetup.getOmniPvd());  // else vehiclePvdAttributeHandles should be nullptr

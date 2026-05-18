@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.kit.commands
 from omni.physx.scripts.physicsUtils import set_or_add_translate_op
-from pxr import UsdGeom, Sdf, Gf, Vt, PhysicsSchemaTools
+from pxr import UsdGeom, Sdf, Gf, Vt, PhysicsSchemaTools, Sdf
 import omni.physxdemos as demo
 from omni.physx import get_physx_scene_query_interface
 from .SceneQueryBaseDemo import createSceneQueryBase
@@ -92,6 +93,9 @@ class OverlapShapeDemo(demo.Base):
         usdGeom.GetDisplayColorAttr().Set(origColor)
         usdGeom = UsdGeom.Cube.Get(stage, self.defaultPrimPath + "/boxActor2")
         usdGeom.GetDisplayColorAttr().Set(origColor)
+
+        if omni.timeline.get_timeline_interface().is_stopped():
+            return
 
         origin = carb.Float3(cameraPos[0], cameraPos[1], cameraPos[2])
         forwardDir = carb.Float3(cameraForward[0], cameraForward[1], cameraForward[2])

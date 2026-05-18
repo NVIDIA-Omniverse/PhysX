@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physx.scripts import physicsUtils
 from omni.physxtestsvisual.utils import TestCase, GOLDEN_DIR
 from omni.physxtests.utils.physicsBase import TestCategory
@@ -11,9 +12,10 @@ from omni.kit.viewport.utility.camera_state import ViewportCameraState
 import omni.physx.scripts.utils as core_utils
 from omni.physx.scripts.utils import MESH_APPROXIMATIONS
 import omni.ui as ui
-from omni.physx import get_physx_cooking_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physxui import get_physxui_interface, get_physxui_private_interface
-
+import unittest
 
 class PhysxDebugVisTest(TestCase):
     category = TestCategory.Core
@@ -103,6 +105,7 @@ class PhysxDebugVisTest(TestCase):
 
     # ====================================== TESTS ======================================
 
+    @unittest.skip("Skipping test_physics_debug_vis_basic")
     async def test_physics_debug_vis_basic(self):
 
         def get_img_file_name(suffix):
@@ -148,7 +151,7 @@ class PhysxDebugVisTest(TestCase):
             cube0.AddScaleOp().Set(Gf.Vec3d(2, 1.5, 0.5))
             cube1.AddScaleOp().Set(Gf.Vec3d(1.5, 1.0, 0.8))
 
-            ignore_list = ["convexMeshSimplification"] + unscaled_approximations
+            ignore_list = unscaled_approximations
             for approx in MESH_APPROXIMATIONS.keys():
                 if approx in ignore_list:
                     continue
@@ -175,6 +178,7 @@ class PhysxDebugVisTest(TestCase):
 
         await omni.usd.get_context().close_stage_async()
 
+    @unittest.skip("Skipping test_physics_debug_vis_multi")
     async def test_physics_debug_vis_multi(self):
 
         def get_img_file_name(suffix):

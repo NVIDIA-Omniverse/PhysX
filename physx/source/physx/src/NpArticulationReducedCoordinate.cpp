@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -36,7 +36,6 @@
 #include "foundation/PxAlignedMalloc.h"
 #include "foundation/PxPool.h"
 
-#include "PxPvdDataStream.h"
 #include "NpAggregate.h"
 
 #include "omnipvd/NpOmniPvdSetData.h"
@@ -229,18 +228,6 @@ void NpArticulationReducedCoordinate::commonInit() const
 	mCore.commonInit();
 }
 
-// This function has been deprecated, replaced with NpArticulationReducedCoordinate::computeGravityCompensation
-void NpArticulationReducedCoordinate::computeGeneralizedGravityForce(PxArticulationCache& cache) const
-{
-	NP_READ_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationReducedCoordinate::computeGeneralizedGravityForce: Articulation must be in a scene.");
-	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeGeneralizedGravityForce: cache is invalid, articulation configuration has changed! ");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeGeneralizedGravityForce() not allowed while simulation is running. Call will be ignored.");
-
-	mCore.computeGeneralizedGravityForce(cache, false);
-}
-
 void NpArticulationReducedCoordinate::computeGravityCompensation(PxArticulationCache& cache) const
 {
 	NP_READ_CHECK(getNpScene());
@@ -249,19 +236,7 @@ void NpArticulationReducedCoordinate::computeGravityCompensation(PxArticulationC
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeGravityCompensation() not allowed while simulation is running. Call will be ignored.");
 
-	mCore.computeGeneralizedGravityForce(cache, true);
-}
-
-// This function has been deprecated, replaced with NpArticulationReducedCoordinate::computeCoriolisCompensation
-void NpArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce(PxArticulationCache& cache) const
-{
-	NP_READ_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce: Articulation must be in a scene.");
-	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce: cache is invalid, articulation configuration has changed! ");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce() not allowed while simulation is running. Call will be ignored.");
-
-	mCore.computeCoriolisAndCentrifugalForce(cache, false);
+	mCore.computeGeneralizedGravityForce(cache);
 }
 
 void NpArticulationReducedCoordinate::computeCoriolisCompensation(PxArticulationCache& cache) const
@@ -272,7 +247,7 @@ void NpArticulationReducedCoordinate::computeCoriolisCompensation(PxArticulation
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeCoriolisCompensation() not allowed while simulation is running. Call will be ignored.");
 
-	mCore.computeCoriolisAndCentrifugalForce(cache, true);
+	mCore.computeCoriolisAndCentrifugalForce(cache);
 }
 
 void NpArticulationReducedCoordinate::computeGeneralizedExternalForce(PxArticulationCache& cache) const
@@ -348,18 +323,6 @@ bool NpArticulationReducedCoordinate::computeLambda(PxArticulationCache& cache, 
 	return mCore.computeLambda(cache, initialState, jointTorque, getScene()->getGravity(), maxIter);
 }
 
-// This function has been deprecated, replaced with NpArticulationReducedCoordinate::computeMassMatrix
-void NpArticulationReducedCoordinate::computeGeneralizedMassMatrix(PxArticulationCache& cache) const
-{
-	NP_READ_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationReducedCoordinate::computeGeneralizedMassMatrix: Articulation must be in a scene.");
-	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeGeneralizedMassMatrix: cache is invalid, articulation configuration has changed!");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeGeneralizedMassMatrix() not allowed while simulation is running. Call will be ignored.");
-
-	mCore.computeGeneralizedMassMatrix(cache, false);
-}
-
 void NpArticulationReducedCoordinate::computeMassMatrix(PxArticulationCache& cache) const
 {
 	NP_READ_CHECK(getNpScene());
@@ -368,7 +331,7 @@ void NpArticulationReducedCoordinate::computeMassMatrix(PxArticulationCache& cac
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeMassMatrix() not allowed while simulation is running. Call will be ignored.");
 
-	mCore.computeGeneralizedMassMatrix(cache, true);
+	mCore.computeGeneralizedMassMatrix(cache);
 }
 
 PxVec3 NpArticulationReducedCoordinate::computeArticulationCOM(const bool rootFrame) const
@@ -1048,10 +1011,14 @@ void NpArticulationReducedCoordinate::setGlobalPose()
 
 bool NpArticulationReducedCoordinate::isSleeping() const
 {
-	NP_READ_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::isSleeping: Articulation must be in a scene.", true);
+	NpScene* npScene = getNpScene();
+	NP_READ_CHECK(npScene);
+	PX_CHECK_AND_RETURN_VAL(npScene, "PxArticulationReducedCoordinate::isSleeping: Articulation must be in a scene.", true);
 
-	PX_CHECK_SCENE_API_READ_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::isSleeping() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().", true);
+	if (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+		return false;
+
+	PX_CHECK_SCENE_API_READ_FORBIDDEN_AND_RETURN_VAL(npScene, "PxArticulationReducedCoordinate::isSleeping() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().", true);
 
 	return mCore.isSleeping();
 }
@@ -1096,10 +1063,9 @@ void NpArticulationReducedCoordinate::setWakeCounter(PxReal wakeCounterValue)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationReducedCoordinate::setWakeCounter() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance(). Call will be ignored.");
 
-	for (PxU32 i = 0; i < mArticulationLinks.size(); i++)
-	{
+	const PxU32 nbLinks = mArticulationLinks.size();
+	for (PxU32 i = 0; i < nbLinks; i++)
 		mArticulationLinks[i]->scSetWakeCounter(wakeCounterValue);
-	}
 
 	scSetWakeCounter(wakeCounterValue);
 
@@ -1118,14 +1084,15 @@ PxReal NpArticulationReducedCoordinate::getWakeCounter() const
 // follows D6 wakeup logic and is used for joint and tendon autowake
 void NpArticulationReducedCoordinate::autoWakeInternal()
 {
+	const PxReal wakeCounterResetValue = getNpScene()->getWakeCounterResetValueInternal();
 	PxReal wakeCounter = mCore.getWakeCounter();
-	if (wakeCounter < getNpScene()->getWakeCounterResetValueInternal())
+	if (wakeCounter < wakeCounterResetValue)
 	{
-		wakeCounter = getNpScene()->getWakeCounterResetValueInternal();
-		for (PxU32 i = 0; i < mArticulationLinks.size(); i++)
-		{
+		wakeCounter = wakeCounterResetValue;
+
+		const PxU32 nbLinks = mArticulationLinks.size();
+		for (PxU32 i = 0; i < nbLinks; i++)
 			mArticulationLinks[i]->scWakeUpInternal(wakeCounter);
-		}
 
 		scWakeUpInternal(wakeCounter);
 	}
@@ -1137,7 +1104,7 @@ void NpArticulationReducedCoordinate::autoWakeInternal()
 void NpArticulationReducedCoordinate::wakeUpInternal(bool forceWakeUp, bool autowake)
 {
 	PX_ASSERT(getNpScene());
-	PxReal wakeCounterResetValue = getNpScene()->getWakeCounterResetValueInternal();
+	const PxReal wakeCounterResetValue = getNpScene()->getWakeCounterResetValueInternal();
 
 	PxReal wakeCounter = mCore.getWakeCounter();
 	bool needsWakingUp = isSleeping() && (autowake || forceWakeUp);
@@ -1149,10 +1116,9 @@ void NpArticulationReducedCoordinate::wakeUpInternal(bool forceWakeUp, bool auto
 
 	if (needsWakingUp)
 	{
-		for (PxU32 i = 0; i < mArticulationLinks.size(); i++)
-		{
+		const PxU32 nbLinks = mArticulationLinks.size();
+		for (PxU32 i = 0; i < nbLinks; i++)
 			mArticulationLinks[i]->scWakeUpInternal(wakeCounter);
-		}
 
 		scWakeUpInternal(wakeCounter);
 	}
@@ -1161,30 +1127,38 @@ void NpArticulationReducedCoordinate::wakeUpInternal(bool forceWakeUp, bool auto
 void NpArticulationReducedCoordinate::wakeUp()
 {
 	NP_WRITE_CHECK(getNpScene());
+	
 	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationReducedCoordinate::wakeUp: Articulation must be in a scene.");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationReducedCoordinate::wakeUp() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance(). Call will be ignored.");
 
-	for (PxU32 i = 0; i < mArticulationLinks.size(); i++)
-	{
-		mArticulationLinks[i]->scWakeUpInternal(getNpScene()->getWakeCounterResetValueInternal());
-	}
+	const PxReal wakeCounterResetValue = getNpScene()->getWakeCounterResetValueInternal();
+
+	const PxU32 nbLinks = mArticulationLinks.size();
+	for (PxU32 i = 0; i < nbLinks; i++)
+		mArticulationLinks[i]->scWakeUpInternal(wakeCounterResetValue);
 
 	PX_ASSERT(getNpScene());  // only allowed for an object in a scene
-	scWakeUpInternal(getNpScene()->getWakeCounterResetValueInternal());
+	scWakeUpInternal(wakeCounterResetValue);
 }
 
 void NpArticulationReducedCoordinate::putToSleep()
 {
 	NP_WRITE_CHECK(getNpScene());
+	
+	if (getNpScene() && (getNpScene()->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::putToSleep(): sleeping is not supported when PxSceneFlag::eDISABLE_SLEEPING is enabled. Call ignored.");
+		return;
+	}
+
 	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationReducedCoordinate::putToSleep: Articulation must be in a scene.");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::putToSleep() not allowed while simulation is running. Call will be ignored.");
 
-	for (PxU32 i = 0; i < mArticulationLinks.size(); i++)
-	{
+	const PxU32 nbLinks = mArticulationLinks.size();
+	for (PxU32 i = 0; i < nbLinks; i++)
 		mArticulationLinks[i]->scPutToSleepInternal();
-	}
 
 	PX_ASSERT(!isAPIWriteForbidden());
 	mCore.putToSleep();
@@ -1216,10 +1190,10 @@ PxBounds3 NpArticulationReducedCoordinate::getWorldBounds(float inflation) const
 
 	PxBounds3 bounds = PxBounds3::empty();
 
-	for (PxU32 i = 0; i < mArticulationLinks.size(); i++)
-	{
+	const PxU32 nbLinks = mArticulationLinks.size();
+	for (PxU32 i = 0; i < nbLinks; i++)
 		bounds.include(mArticulationLinks[i]->getWorldBounds());
-	}
+
 	PX_ASSERT(bounds.isValid());
 
 	// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.

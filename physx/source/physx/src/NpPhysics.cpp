@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,7 +39,6 @@
 #include "CmUtils.h"
 #include "NpRigidStatic.h"
 #include "NpRigidDynamic.h"
-#include "omnipvd/OmniPvdPxSampler.h"
 #if PX_SUPPORT_GPU_PHYSX
 #include "NpDeformableVolume.h"
 #include "NpPBDParticleSystem.h"
@@ -56,12 +55,15 @@
 #include "GuOverlapTests.h" // dynamic registration of HFs in Gu
 #include "PxDeletionListener.h"
 #include "PxPhysicsSerialization.h"
+#if PX_SUPPORT_PVD
 #include "PvdPhysicsClient.h"
+#endif
 #include "omnipvd/NpOmniPvdSetData.h"
 #include "cudamanager/PxCudaContext.h"
 #include "common/PxProfileZone.h"
 
 #if PX_SUPPORT_OMNI_PVD
+#include "omnipvd/OmniPvdPxSampler.h"
 #include "omnipvd/NpOmniPvd.h"
 #include "OmniPvdWriter.h"
 #endif
@@ -362,7 +364,15 @@ void NpPhysics::release()
 
 PxScene* NpPhysics::createScene(const PxSceneDesc& desc)
 {
-	PX_CHECK_AND_RETURN_NULL(desc.isValid(), "Physics::createScene: desc.isValid() is false!");
+	PxSceneDesc mutableDesc = desc;
+
+	if((mutableDesc.flags & PxSceneFlag::eENABLE_DIRECT_GPU_API) && !(mutableDesc.flags & PxSceneFlag::eDISABLE_SLEEPING))
+	{
+		mFoundation.error(PxErrorCode::eDEBUG_WARNING, PX_FL, "eENABLE_DIRECT_GPU_API is set, automatically enabling eDISABLE_SLEEPING");
+		mutableDesc.flags |= PxSceneFlag::eDISABLE_SLEEPING;
+	}
+
+	PX_CHECK_AND_RETURN_NULL(mutableDesc.isValid(), "Physics::createScene: desc.isValid() is false!");
 	const PxTolerancesScale& scale = mPhysics.getTolerancesScale();
 	const PxTolerancesScale& descScale = desc.getTolerancesScale();
 	PX_UNUSED(scale);
@@ -371,7 +381,7 @@ PxScene* NpPhysics::createScene(const PxSceneDesc& desc)
 
 	PxMutex::ScopedLock lock(mSceneAndMaterialMutex);  // done here because scene constructor accesses profiling manager of the SDK
 
-	NpScene* npScene = PX_NEW (NpScene)(desc, *this);
+	NpScene* npScene = PX_NEW (NpScene)(mutableDesc, *this);
 	if(!npScene)
 	{
 		mFoundation.error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Unable to create scene.");
@@ -383,7 +393,7 @@ PxScene* NpPhysics::createScene(const PxSceneDesc& desc)
 		return NULL;
 	}
 
-	npScene->loadFromDesc(desc);
+	npScene->loadFromDesc(mutableDesc);
 
 	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxPhysics, scenes, static_cast<PxPhysics&>(*this), static_cast<PxScene&>(*npScene))
 

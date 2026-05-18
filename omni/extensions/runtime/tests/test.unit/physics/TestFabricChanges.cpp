@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -88,8 +88,8 @@ TEST_CASE("Fabric Changes Tests",
     omni::fabric::Type matrix4dType(omni::fabric::BaseDataType::eDouble, 16, 0, omni::fabric::AttributeRole::eMatrix);
 
     // setup velocity attr
-    const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenRigidBody) };
-    omni::fabric::Token velToken(asInt(UsdPhysicsTokens->physicsVelocity));
+    const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenRigidBody) };
+    omni::fabric::Token velToken(UsdPhysicsTokens->physicsVelocity);
     omni::fabric::Token localMatrixToken(omni::physx::gLocalMatrixTokenString);
 
 
@@ -98,12 +98,12 @@ TEST_CASE("Fabric Changes Tests",
         for (size_t i = 0; i < bodiesPaths.size(); i++)
         {
             const SdfPath& path = bodiesPaths[i];
-            fabricTemplate.iStageReaderWriter->createAttribute(stageRW.getId(), omni::fabric::asInt(path), localMatrixToken, omni::fabric::TypeC(matrix4dType));
-            fabricTemplate.iStageReaderWriter->createAttribute(stageRW.getId(), omni::fabric::asInt(path), velToken, omni::fabric::TypeC(float3Type));
+            fabricTemplate.iStageReaderWriter->createAttribute(stageRW.getId(), omni::fabric::convertToPathType<omni::fabric::Path>(stageRW.getFabricId(), path), localMatrixToken, omni::fabric::TypeC(matrix4dType));
+            fabricTemplate.iStageReaderWriter->createAttribute(stageRW.getId(), omni::fabric::convertToPathType<omni::fabric::Path>(stageRW.getFabricId(), path), velToken, omni::fabric::TypeC(float3Type));
         }
 
-        const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(matrix4dType, localMatrixToken),
-                                                        AttrNameAndType_v2(float3Type, velToken) };
+        const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(matrix4dType, localMatrixToken),
+                                                        AttrNameAndType(float3Type, velToken) };
         PrimBucketList primBuckets = stageRW.findPrims(requiredAll, requiredAny);
         size_t bucketCount = primBuckets.bucketCount();
         for (size_t i = 0; i != bucketCount; i++)
@@ -425,7 +425,7 @@ TEST_CASE("Fabric Changes Tests",
         {
             if (j % 10 == 0)
             {
-                pxr::GfMatrix4d& matrices = *(pxr::GfMatrix4d*)(stageRW.getAttributeWr<pxr::GfMatrix4d>(omni::fabric::asInt(bodiesPaths[j]), localMatrixToken));
+                pxr::GfMatrix4d& matrices = *(pxr::GfMatrix4d*)(stageRW.getAttributeWr<pxr::GfMatrix4d>(omni::fabric::convertToPathType<omni::fabric::Path>(stageRW.getFabricId(), bodiesPaths[j]), localMatrixToken));
 
                 matrices.SetTranslate({0., double(j) * 300.0, 0.});
                 matrices.SetRotateOnly({sqrt_two, 0., 0., sqrt_two});
@@ -480,4 +480,3 @@ TEST_CASE("Fabric Changes Tests",
     pxr::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;
 }
-

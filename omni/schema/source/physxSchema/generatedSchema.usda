@@ -183,6 +183,11 @@ class "PhysxSceneAPI" (
         displayName = "Collision System"
         doc = "Collision detection system."
     )
+    uniform bool physxScene:disableSleeping = 0 (
+        displayGroup = "Advanced"
+        displayName = "Disable Sleeping"
+        doc = "Disables sleeping for all actors (rigids, articulations and deformables) in the scene."
+    )
     bool physxScene:enableCCD = 0 (
         displayName = "Enable CCD"
         doc = "Enables a second broad phase check after integration that makes it possible to prevent objects from tunneling through each other."
@@ -204,7 +209,7 @@ class "PhysxSceneAPI" (
     bool physxScene:enableResidualReporting = 0 (
         displayGroup = "Advanced"
         displayName = "Enable Residual Reporting"
-        doc = "Calculates solver residuals and reports them through optional Residual Report APIs at a slight expense of performance."
+        doc = "Deprecated. Calculates solver residuals and reports them through optional Residual Report APIs at a slight expense of performance."
     )
     bool physxScene:enableSceneQuerySupport = 1 (
         displayGroup = "Advanced"
@@ -347,6 +352,11 @@ class "PhysxSceneAPI" (
         displayName = "Report Kinematic vs Static Pairs"
         doc = """Boolean attribute indicating whether kinematic vs static pairs
         generate contact reports."""
+    )
+    bool physxScene:solveArticulationContactLast = 0 (
+        displayGroup = "Advanced"
+        displayName = "Solve Articulation Contact Last"
+        doc = "Order articulation contact constraints and articulation joint maximum velocity constraints so that they are solved after all other constraints in the solver."
     )
     uniform token physxScene:solverType = "TGS" (
         allowedTokens = ["PGS", "TGS"]
@@ -1365,7 +1375,7 @@ class "PhysxLimitAPI" (
 }
 
 class "PhysxResidualReportingAPI" (
-    doc = """Gives access to residual values that inform about the remaining physics solver error present 
+    doc = """Deprecated. Gives access to residual values that inform about the remaining physics solver error present 
 \t\tduring the last position and during the last velocity iteration. The residual reporting must be enabled 
 \t\ton the Physics Scene, otherwise the reported values will be zero. The API can be applied to either:
 \t\t- Joints. The joint residual will be reported.
@@ -1937,9 +1947,17 @@ class "PhysxMimicJointAPI" (
           be part of the same articulation. 2) once the simulation has started, a significant performance penalty will
           be incurred if a mimic joint is added or removed, if the referenceJoint relationship is changed or if the
           referenceJointAxis attributes is modified. 3) the mimic joint relationship is interpreted as a two-way
-          interaction and an impulse will get applied to the reference joint as well.'''
+          interaction and an impulse will get applied to the reference joint as well. Mimic joints may be confiugred as 
+          hard constraints that will apply the forces necessary to maintain the mimic joint equation.  
+          Alternatively, mimic joints may be configured with compliance using natural frequency and damping attributes. '''
 )
 {
+    float physxMimicJoint:__INSTANCE_NAME__:dampingRatio = 0 (
+        displayName = "Damping Ratio"
+        doc = """The damping ratio of mimic joint compliance. A mimic joint with dampingRatio <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint.
+              Range: (-inf, inf)
+              Units: dimensionless"""
+    )
     float physxMimicJoint:__INSTANCE_NAME__:gearing = 1 (
         displayName = "Gearing"
         doc = """The gearing coefficient (see relationship formulation in the documentation part of PhysxMimicJointAPI).
@@ -1948,6 +1966,13 @@ class "PhysxMimicJointAPI" (
                     if linear to angular: degrees / distance
                     if angular to linear: distance / degrees
                     Otherwise the value is unitless"""
+    )
+    float physxMimicJoint:__INSTANCE_NAME__:naturalFrequency = 0 (
+        displayName = "Natural Frequency"
+        doc = """The natural frequency of mimic joint compliance. A mimic joint with naturalFrequency <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint.
+              Range: 
+              (-inf, inf)
+              Units: s^-1"""
     )
     float physxMimicJoint:__INSTANCE_NAME__:offset = 0 (
         displayName = "Offset"

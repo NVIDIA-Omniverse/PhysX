@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -47,7 +47,6 @@ public:
     const ArticulationMetatype* getMetatype(uint32_t artiIdx) const override;
 
     bool getJacobianShape(uint32_t* numRows, uint32_t* numCols) const override;
-    bool getMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const override; // deprecated
     bool getGeneralizedMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const override;
 
     // DOF properties
@@ -90,10 +89,14 @@ public:
 
     // materials/shapes
     bool getMaterialProperties(const TensorDesc* dstTensor) const override;
+    bool getCompliantMaterialProperties(const TensorDesc* dstTensor, const TensorDesc* dstCombineModeTensor) const override;
     bool getRestOffsets(const TensorDesc* dstTensor) const override;
     bool getContactOffsets(const TensorDesc* dstTensor) const override;
 
     bool setMaterialProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const override;
+    bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                        const TensorDesc* srcCombineTensor,
+                                        const TensorDesc* indexTensor) const override;
     bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const override;
     bool setContactOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const override;
 

@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import unittest
 from omni.physxtests.testBases.filterTestBase import FilterTestBase
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, PhysicsMemoryStageBaseAsyncTestCase, TestCategory
@@ -11,14 +12,33 @@ from pxr import Gf, Usd, UsdPhysics, UsdGeom, Sdf, PhysxSchema
 from itertools import product
 
 
-class PhysicsFilteredPairsAPITestKitStage(PhysicsKitStageAsyncTestCase, FilterTestBase):
+#class PhysicsFilteredPairsAPITestKitStage(PhysicsKitStageAsyncTestCase, FilterTestBase):
+class PhysicsFilteredPairsAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, FilterTestBase):
     category = TestCategory.Core
+
+    async def new_stage(self):
+        class_name = self.__class__.__name__
+        if class_name == 'PhysicsFilteredPairsAPITestKitStage':
+            return await utils.new_stage_setup(def_up_and_mpu=True, up=UsdGeom.Tokens.z, mpu=1.0)
+        else:
+            return await super().new_stage(def_up_and_mpu=True, up=UsdGeom.Tokens.z, mpu=1.0, attach_stage=False)
+
+    async def step(self, num_steps):
+        class_name = self.__class__.__name__
+        if class_name == 'PhysicsFilteredPairsAPITestKitStage':
+            await utils.play_and_step_and_pause(self, num_steps)
+        else:
+            super().step(num_steps=num_steps)
 
     async def setUp(self):
         await super().setUp()
-        self._stage = await utils.new_stage_setup()
+        self._stage = await self.new_stage()
 
         self.setup_units_and_scene()
+
+        class_name = self.__class__.__name__
+        if class_name != 'PhysicsFilteredPairsAPITestKitStage':
+            self.attach_stage()
 
         #register contact event callback
         self._contact_report_sub = get_physx_simulation_interface().subscribe_contact_report_events(self.on_contact_report_event)
@@ -56,7 +76,7 @@ class PhysicsFilteredPairsAPITestKitStage(PhysicsKitStageAsyncTestCase, FilterTe
             for (dyn_prim, stc_prim) in product(dyn_filter_prims, stc_filter_prims):
                 self.add_pair_filter(dyn_prim, stc_prim)
 
-        await utils.play_and_step_and_pause(self, 20)
+        await self.step(20)
 
         stc_min, stc_max = self.get_min_max(stc_prim)
         dyn_min, dyn_max = self.get_min_max(dyn_prim)
@@ -132,11 +152,71 @@ class PhysicsFilteredPairsAPITestKitStage(PhysicsKitStageAsyncTestCase, FilterTe
         await self.run_filtered_pairs_tests(dyn_type = 'Particles', stc_type = 'DeformableBody')
         await self.run_filtered_pairs_tests(dyn_type = 'Particles', stc_type = 'DeformableSurface')
 
+    async def test_filtered_pairs_volume_deformable_hierarchy_xform_with_others(self):
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'Collider')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'RigidBody')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'RigidBodyCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'ArticulationLink')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'ArticulationLinkCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'VolumeDeformableHierarchyCollMesh')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'VolumeDeformableNonHierarchy')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyXform', stc_type = 'VolumeDeformableHierarchyXform')
+
+    async def test_filtered_pairs_volume_deformable_hierarchy_collmesh_with_others(self):
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'Collider')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'RigidBody')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'RigidBodyCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'ArticulationLink')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'ArticulationLinkCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'VolumeDeformableHierarchyXform')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'VolumeDeformableNonHierarchy')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableHierarchyCollMesh', stc_type = 'VolumeDeformableHierarchyCollMesh')
+
+    async def test_filtered_pairs_volume_deformable_non_hierarchy_with_others(self):
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'Collider')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'RigidBody')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'RigidBodyCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'ArticulationLink')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'ArticulationLinkCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'VolumeDeformableHierarchyXform')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'VolumeDeformableHierarchyCollMesh')
+        await self.run_filtered_pairs_tests(dyn_type = 'VolumeDeformableNonHierarchy', stc_type = 'VolumeDeformableNonHierarchy')
+
+    async def test_filtered_pairs_surface_deformable_hierarchy_xform_with_others(self):
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'Collider')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'RigidBody')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'RigidBodyCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'ArticulationLink')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'ArticulationLinkCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'SurfaceDeformableHierarchyCollMesh')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'SurfaceDeformableNonHierarchy')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyXform', stc_type = 'SurfaceDeformableHierarchyXform')
+
+    async def test_filtered_pairs_surface_deformable_hierarchy_collmesh_with_others(self):
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'Collider')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'RigidBody')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'RigidBodyCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'ArticulationLink')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'ArticulationLinkCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'SurfaceDeformableHierarchyXform')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'SurfaceDeformableNonHierarchy')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableHierarchyCollMesh', stc_type = 'SurfaceDeformableHierarchyCollMesh')
+
+    async def test_filtered_pairs_surface_deformable_non_hierarchy_with_others(self):
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'Collider')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'RigidBody')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'RigidBodyCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'ArticulationLink')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'ArticulationLinkCompound')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'SurfaceDeformableHierarchyXform')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'SurfaceDeformableHierarchyCollMesh')
+        await self.run_filtered_pairs_tests(dyn_type = 'SurfaceDeformableNonHierarchy', stc_type = 'SurfaceDeformableNonHierarchy')
+
         
         #no point in testing filtering between particles and particles. If they are from different particle systems at 
         #which level the filtering takes place, they can't collide anyways.
 
-class PhysicsFilteredPairsAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, FilterTestBase):
+class PhysicsFilteredPairsAPITestMemoryStage2(PhysicsMemoryStageBaseAsyncTestCase, FilterTestBase):
     category = TestCategory.Core
 
     async def setUp(self):

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -507,17 +507,6 @@ ParticleSetDesc* ParseParticleSet(AttachedStage& attachedStage, const UsdPrim& u
         CARB_LOG_WARN("PhysxSchemaPhysxParticleSetAPI:maxParticles is lower than %s size.", pointsAttributeName);
         isValid = false;
     }
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    // check whether to use fabric
-    particleSet->useFabric = false;
-    static const TfToken fabricToken{ "physxParticle:fabric" };
-    const UsdAttribute fabricAttr = usdPrim.GetAttribute(fabricToken);
-    if (fabricAttr.HasAuthoredValue())
-    {
-        fabricAttr.Get(&particleSet->useFabric);
-    }
-#endif
 
     /* add default values here */
     particleSet->enableDiffuseParticles = false;

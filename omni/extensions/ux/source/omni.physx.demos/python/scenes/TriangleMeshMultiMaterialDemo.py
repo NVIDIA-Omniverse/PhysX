@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.commands
 from omni.physx.scripts.physicsUtils import add_rigid_sphere, add_physics_material_to_prim
 from pxr import UsdGeom, UsdShade, Sdf, Gf, Vt, UsdPhysics, PhysicsSchemaTools, PhysxSchema

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -88,9 +88,10 @@ TEST_CASE_TEMPLATE("Transformation Changes Tests", T, USDChange, FabricChange)
         // set new pos
         GfVec3f newPos(10.0f);
         changeTemplate.setTransformation(boxPath, newPos, GfQuatf(1.0f));
-        changeTemplate.broadcastChanges();
+        physxSim->flushChanges();        
+
         PxBase* newBasePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(boxPath, ePTActor));
-        CHECK(basePtr == newBasePtr);
+        REQUIRE(basePtr == newBasePtr);
         tr = actor->getGlobalPose();
         compare(tr.p, toPhysX(newPos), epsilon);
     }
@@ -102,4 +103,3 @@ TEST_CASE_TEMPLATE("Transformation Changes Tests", T, USDChange, FabricChange)
     pxr::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;
 }
-

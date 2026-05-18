@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -208,7 +208,7 @@ PxvNphaseImplementationContext* PxgPhysXGpu::createGpuNphaseImplementationContex
 	PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 	const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig,
 	void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase,
-	PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim, Dy::Context* dynamicsContext, 
+	PxBoundsArrayPinnedSafe& bounds, IG::IslandSim* islandSim, Dy::Context* dynamicsContext, 
 	const PxU32 /*gpuComputeVersion*/, PxsHeapMemoryAllocatorManager* heapMemoryManager, bool useGPUBP)
 {
 	return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgNphaseImplementationContext), "PxgNphaseImplementationContext"), PxgNphaseImplementationContext)(context, gpuKernelWrangler, fallbackForUnsupportedCMs, gpuDynamicsConfig, contactStreamBase, patchStreamBase, forceAndIndiceStreamBase,
@@ -232,18 +232,18 @@ PxsSimulationController* PxgPhysXGpu::createGpuSimulationController(PxsKernelWra
 //----------------------------------------------------------------------------//
 
 Dy::Context* PxgPhysXGpu::createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, 
-	const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, 
-	bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal maxBiasCoefficient, PxU32 /*gpuComputeVersion*/, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-	bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled)
+	const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
+	PxReal maxBiasCoefficient, PxU32 /*gpuComputeVersion*/, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
+	PxSolverType::Enum solverType, PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags)
 {
 	if(solverType == PxSolverType::eTGS)
 		return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgTGSDynamicsContext), "PxgDynamicsContext"), PxgTGSDynamicsContext)(taskPool, gpuKernelWrangler, cudaContextManager, config, islandManager,
-			maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, simStats, 
-			static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), externalForcesEveryTgsIterationEnabled, lengthScale, enableDirectGPUAPI, contextID, isResidualReportingEnabled);
+			maxNumPartitions, maxNumStaticPartitions, maxBiasCoefficient, simStats, 
+			static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), lengthScale, contextID, sceneFlags);
 	else
 		return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgDynamicsContext), "PxgDynamicsContext"), PxgDynamicsContext)(taskPool, gpuKernelWrangler, cudaContextManager, config, islandManager,
-			maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, simStats, 
-			static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), frictionEveryIteration, lengthScale, enableDirectGPUAPI, contextID, isResidualReportingEnabled);
+			maxNumPartitions, maxNumStaticPartitions, maxBiasCoefficient, simStats, 
+			static_cast<PxgHeapMemoryAllocatorManager*>(heapMemoryManager), lengthScale, contextID, sceneFlags);
 }
 
 //----------------------------------------------------------------------------//

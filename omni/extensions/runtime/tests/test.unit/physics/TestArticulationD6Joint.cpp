@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -207,7 +207,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 TfToken driveAttributeToken = TfToken("drive:" + axisTokens[i].GetString() + ":physics:damping");
                 changeTemplate.setAttributeValue(d6JointPath, driveAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
@@ -253,7 +252,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 TfToken driveAttributeToken = TfToken("drive:" + axisTokens[i].GetString() + ":physics:stiffness");
                 changeTemplate.setAttributeValue(d6JointPath, driveAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
@@ -300,7 +298,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 TfToken driveAttributeToken = TfToken("drive:" + axisTokens[i].GetString() + ":physics:maxForce");
                 changeTemplate.setAttributeValue(d6JointPath, driveAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
@@ -361,7 +358,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 TfToken driveAttributeToken = TfToken("drive:" + axisTokens[i].GetString() + ":physics:maxForce");
                 changeTemplate.setAttributeValue(d6JointPath, driveAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
@@ -413,7 +409,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gDrivePerformanceEnvelopeMaxActuatorVelocityAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -466,7 +461,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gDrivePerformanceEnvelopeVelocityDependentResistanceAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -519,7 +513,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gDrivePerformanceEnvelopeSpeedEffortGradientAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -602,7 +595,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gPhysxJointAxisMaxJointVelocityAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -650,7 +642,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gPhysxJointAxisArmatureAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -698,7 +689,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gPhysxJointAxisStaticFrictionEffortAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -747,7 +737,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gPhysxJointAxisDynamicFrictionEffortAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -795,7 +784,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 const TfToken changeToken = gPhysxJointAxisViscousFrictionCoefficientAttributeNameToken[i];
                 changeTemplate.setAttributeValue(d6JointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -854,7 +842,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 TfToken positionAttributeToken = TfToken("state:" + axisTokens[i].GetString() + ":physics:position");
                 changeTemplate.setAttributeValue(d6JointPath, positionAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.02f, 0.0f);
             physxSim->fetchResults();
@@ -900,7 +887,6 @@ TEST_CASE_TEMPLATE("Articulation D6 Joint Tests", T, USDChange, FabricChange)
             {
                 TfToken velocityAttributeToken = TfToken("state:" + axisTokens[i].GetString() + ":physics:velocity");
                 changeTemplate.setAttributeValue(d6JointPath, velocityAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();

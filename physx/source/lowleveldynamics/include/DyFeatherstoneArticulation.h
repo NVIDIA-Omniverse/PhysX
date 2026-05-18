@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -106,8 +106,20 @@ namespace Dy
 		PxReal	restDistance;
 		PxReal	lowLimit;
 		PxReal	highLimit;
-		PxReal	velImpulseMultiplier;
-		PxReal	limitVelImpulseMultiplier;
+
+		void setTendonImplicitSpringParams(const TendonImplicitSpringParams& springParams)
+		{		
+			biasCoefficient = springParams.biasCoefficient;
+			velMultiplier = springParams.velMultiplier;
+			impulseMultiplier= springParams.impulseMultiplier;
+			limitBiasCoefficient = springParams.limitBiasCoefficient;
+			limitImpulseMultiplier = springParams.limitImpulseMultiplier;
+		}
+		TendonImplicitSpringParams getTendonImplicitSpringParams() const
+		{
+			const TendonImplicitSpringParams params(biasCoefficient, velMultiplier, impulseMultiplier, limitBiasCoefficient, limitImpulseMultiplier);
+			return params;
+		}			
 	};
 
 	struct ArticulationInternalConstraintBase
@@ -144,7 +156,7 @@ namespace Dy
 		PxReal dynamicFrictionEffort;
 		PxReal staticFrictionEffort;
 		PxReal viscousFrictionCoefficient;
-		PxReal frictionMaxForce;
+		PxReal deprecatedFrictionMaxForce;
 		PxReal accumulatedFrictionImpulse;
 		PxReal maxJointVelocity;
 
@@ -507,17 +519,6 @@ namespace Dy
 		PxReal*				jointFrictionForces;
 	};
 
-	struct FixedTendonSolveData
-	{
-		ArticulationLink* links;
-		ArticulationTendonJoint* tendonJoints;
-		PxReal rootVel;
-		PxReal rootImp;
-		PxReal erp;
-		PxReal error;
-		PxReal limitError;
-	};
-
 #if PX_VC 
 #pragma warning(push)   
 #pragma warning( disable : 4324 ) // Padding was added at the end of a structure because of a __declspec(align) value.
@@ -588,13 +589,13 @@ namespace Dy
 
 
 	PX_ALIGN_PREFIX(64)
-	class FeatherstoneArticulation
+	class FeatherstoneArticulation : public PxUserAllocated
 	{
 		PX_NOCOPY(FeatherstoneArticulation)
 	public:
 		// public interface
 
-		explicit FeatherstoneArticulation(void*);
+		FeatherstoneArticulation();
 		~FeatherstoneArticulation();
 
 		// get data sizes for allocation at higher levels
@@ -627,10 +628,10 @@ namespace Dy
 		void		initializeCommonData();
 
 		//gravity as input, joint force as output
-		void		getGeneralizedGravityForce(const PxVec3& gravity, PxArticulationCache& cache, const bool rootMotion);
+		void		getGeneralizedGravityForce(const PxVec3& gravity, PxArticulationCache& cache);
 
 		//joint velocity as input, generalised force(coriolis and centrigugal force) as output
-		void		getCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion);
+		void		getCoriolisAndCentrifugalForce(PxArticulationCache& cache);
 
 		//external force as input, joint force as output
 		void		getGeneralizedExternalForce(PxArticulationCache& /*cache*/);
@@ -653,7 +654,7 @@ namespace Dy
 
 		void		getGeneralizedMassMatrix(PxArticulationCache& cache);
 
-		void		getGeneralizedMassMatrixCRB(PxArticulationCache& cache, const bool rootMotion);
+		void		getGeneralizedMassMatrixCRB(PxArticulationCache& cache);
 
 		PxVec3		getArticulationCOM(const bool rootFrame);
 
@@ -863,7 +864,7 @@ namespace Dy
 		void copyJointData(const ArticulationData& data, PxReal* toJointData, const PxReal* fromJointData);
 
 		PxU32 countDofs();
-		void  configureDofs();
+		void configureDofs();
 
 		//this function calculates motion subspace matrix(s) for all tree joint
 		template<bool immediateMode = false>
@@ -1329,7 +1330,7 @@ namespace Dy
 			ScratchData& scratchData, bool computeCoriolis);
 
 		void inverseDynamicFloatingBase(ArticulationData& data, const PxVec3& gravity,
-			ScratchData& scratchData, bool computeCoriolis, const bool rootMotion = false);
+			ScratchData& scratchData, bool computeCoriolis);
 
 		//compute link body force with motion velocity and acceleration
 		void computeZAForceInv(ArticulationData& data, ScratchData& scratchData);
@@ -1347,10 +1348,7 @@ namespace Dy
 
 		void calculateHFixBase(PxArticulationCache& cache);
 
-		void calculateHFloatingBase(PxArticulationCache& cache, const bool rootMotion);
-
-		//joint limits
-		static void enforcePrismaticLimits(PxReal& jPosition, ArticulationJointCore* joint);
+		void calculateHFloatingBase(PxArticulationCache& cache);
 
 
 		public:
@@ -1368,9 +1366,6 @@ namespace Dy
 
 			PX_FORCE_INLINE	bool					updateSolverData()									{ return mUpdateSolverData;		}
 
-			PX_FORCE_INLINE PxU32					getMaxDepth()								const	{ return mMaxDepth;				}
-			PX_FORCE_INLINE void					setMaxDepth(const PxU32	depth)						{ mMaxDepth = depth;			}
-
 			// solver methods
 			PX_FORCE_INLINE PxU32					getBodyCount()								const	{ return mSolverDesc.linkCount;	}
 			PX_FORCE_INLINE void					getSolverDesc(ArticulationSolverDesc& d)	const	{ d = mSolverDesc;				}
@@ -1378,8 +1373,6 @@ namespace Dy
 
 			PX_FORCE_INLINE ArticulationCore*		getCore()											{ return mSolverDesc.core;		}
 			PX_FORCE_INLINE PxU16					getIterationCounts()						const	{ return mSolverDesc.core->solverIterationCounts;	}
-
-			PX_FORCE_INLINE void*					getUserData()								const	{ return mUserData;				}
 
 			PX_FORCE_INLINE void					setDyContext(Dy::Context* context)					{ mContext = context;			}
 
@@ -1470,16 +1463,22 @@ namespace Dy
 			const PxVec3& startRaXn);
 
 
-		void updateSpatialTendonConstraintsRecursive(ArticulationAttachment* attachments, ArticulationData& data, const PxU32 attachmentID, const PxReal accumErr,
-			const PxVec3& parentAttachmentPoint);
+
+		void updateSpatialTendonConstraintsRecursive(
+			const ArticulationAttachment* attachments, const PxU32 attachmentID, 
+			const PxReal accumLength, const PxVec3& pAttachPoint, 
+			ArticulationData& data);
 
 		//void updateFixedTendonConstraintsRecursive(ArticulationLink* links, ArticulationTendonJoint* tendonJoint, ArticulationData& data, const PxU32 tendonJointID, const PxReal accumErr);
 
-		PxVec3 calculateFixedTendonVelocityAndPositionRecursive(FixedTendonSolveData& solveData,
-			const Cm::SpatialVectorF& parentV, const Cm::SpatialVectorF& parentDeltaV, const PxU32 tendonJointID);
+		PxVec3 calculateFixedTendonVelocityAndPositionRecursive(
+			const ArticulationTendonJoint* tendonJoints, const PxU32 tendonJointID,
+			const Cm::SpatialVectorF& parentV, const Cm::SpatialVectorF& parentDeltaV);
 
-		Cm::SpatialVectorF solveFixedTendonConstraintsRecursive(FixedTendonSolveData& solveData,
-			const PxU32 tendonJointID);
+		Cm::SpatialVectorF solveFixedTendonConstraintsRecursive(
+			const ArticulationTendonJoint* tendonJoints,const PxU32 tendonJointID,
+			const PxReal lengthError, const PxReal limitError, const PxReal rootVel,
+			 PxReal& rootImp);
 
 		void prepareStaticConstraints(const PxReal dt, const PxReal invDt, PxsContactManagerOutputIterator& outputs,
 			Dy::ThreadContext& threadContext, PxReal correlationDist, PxReal bounceThreshold, PxReal frictionOffsetThreshold,
@@ -1528,14 +1527,12 @@ namespace Dy
 		PxU16							mArticulationIndex;
 		PxU8							numTotalConstraints;
 		
-		void*							mUserData;
 		Dy::Context*					mContext;
 		ArticulationSolverDesc			mSolverDesc;
 
 		PxArray<Cm::SpatialVector>		mAcceleration;		// supplied by Sc-layer to feed into articulations
 
 		bool							mUpdateSolverData;
-		PxU32							mMaxDepth;
 
 		ArticulationData				mArticulationData;
 

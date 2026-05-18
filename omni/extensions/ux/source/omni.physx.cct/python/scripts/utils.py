@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb.input
-import carb.windowing
 from carb.eventdispatcher import get_eventdispatcher
 import omni.appwindow
 import omni.kit.app
@@ -11,7 +11,8 @@ import omni.usd
 import omni.stageupdate
 import omni.kit.commands
 from pxr import Usd, UsdGeom, PhysxSchema, Gf
-from omni.physxcct import get_physx_cct_interface, CctEvent
+from .ifaces import get_physx_cct_interface
+from ..bindings._physxCct import CctEvent
 from omni.physx.scripts import utils
 from functools import partial
 from enum import IntFlag, IntEnum, auto
@@ -19,6 +20,13 @@ from carb.input import KeyboardInput, GamepadInput
 import omni.kit.viewport.utility as vp_utils
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from omni.physxui import get_input_manager
+from omni.physxui.scripts import utils as physxui_utils
+
+__all__ = [
+    "spawn_capsule",
+    "ControlFlag",
+    "CharacterController",
+]
 
 
 def register_stage_update_node(display_name, priority=8, **kwargs):
@@ -240,7 +248,7 @@ class CharacterController:
 
         state = ControlState(speed, self.first_person_camera is not None)
         app_window = omni.appwindow.get_default_app_window()
-        windowing = carb.windowing.acquire_windowing_interface()
+        windowing = physxui_utils.get_windowing()
         os_window = app_window.get_window()
 
         up, forward, right = utils.get_basis(up_axis)
@@ -332,7 +340,8 @@ class CharacterController:
         def recenter_cursor():
             cx = int(app_window.get_width() / 2)
             cy = int(app_window.get_height() / 2)
-            windowing.set_cursor_position(os_window, (cx, cy))
+            if windowing:
+                windowing.set_cursor_position(os_window, (cx, cy))
             return cx, cy
 
         def update_camera(dt, state, cct_prim):
@@ -348,7 +357,7 @@ class CharacterController:
 
             # can't do freelook without an active window
             if os_window and (flags & ControlFlag.KBD_MOUSE):
-                cursor_pos = windowing.get_cursor_position(os_window)
+                cursor_pos = windowing.get_cursor_position(os_window) if windowing else carb.Int2(0, 0)
                 cx, cy = recenter_cursor()
                 delta_x = (cursor_pos.x - cx) * state.mouse_sensitivity
                 delta_y = (cursor_pos.y - cy) * state.mouse_sensitivity

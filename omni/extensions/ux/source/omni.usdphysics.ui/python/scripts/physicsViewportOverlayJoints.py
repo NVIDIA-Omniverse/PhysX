@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from collections.abc import Iterable
 import omni.usd
 import omni.ui
@@ -542,13 +543,11 @@ class JointEditManipulator(PhysicsUIViewportPrim):
             attachment_1._ui_transform_bbox_aligned.visible = True
             has_updates = True
 
-        # The reason for converting to usdrt here is because ui scene flips the sign of negative zero.
-        if not components_equal(attachment_1.bounds_matrix, to_usdrt_d(attachment_1._ui_transform_bbox.transform)):
-            bbox_transform = to_ui_scene(attachment_1.bounds_matrix)
-        
-            attachment_1._ui_transform_bbox.transform = bbox_transform
-            attachment_1._ui_transform_bbox_aligned.transform = bbox_transform
-            attachment_1._ui_transform_bbox_edit.transform = bbox_transform
+        bounds_matrix = to_ui_scene(attachment_1.bounds_matrix)
+        if bounds_matrix != attachment_1._ui_transform_bbox.transform:
+            attachment_1._ui_transform_bbox.transform = bounds_matrix
+            attachment_1._ui_transform_bbox_aligned.transform = bounds_matrix
+            attachment_1._ui_transform_bbox_edit.transform = bounds_matrix
             has_updates = True
 
         if attachment_0.prim_bounds is None:
@@ -559,9 +558,9 @@ class JointEditManipulator(PhysicsUIViewportPrim):
             attachment_0._ui_transform_bbox.visible = True
             has_updates = True
 
-        if not components_equal(attachment_0.bounds_matrix, to_usdrt_d(attachment_0._ui_transform_bbox.transform)):
-            bbox_transform = to_ui_scene(attachment_0.bounds_matrix)
-            attachment_0._ui_transform_bbox.transform = bbox_transform
+        bounds_matrix = to_ui_scene(attachment_0.bounds_matrix)
+        if bounds_matrix != attachment_0._ui_transform_bbox.transform:
+            attachment_0._ui_transform_bbox.transform = bounds_matrix
             has_updates = True
 
         return has_updates

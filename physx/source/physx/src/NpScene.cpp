@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -170,7 +170,9 @@ NpScene::NpScene(const PxSceneDesc& desc, NpPhysics& physics) :
 	mBuildFrozenActors			(false),
 	mCorruptedState				(false),
 	mScene						(desc, getContextId()),
+#if PX_SUPPORT_GPU_PHYSX
 	mDirectGPUAPI				(NULL),
+#endif
 #if PX_SUPPORT_PVD
 	mScenePvdClient				(*this),
 #endif
@@ -268,8 +270,9 @@ NpScene::~NpScene()
 #endif
 	mScene.release();
 
+#if PX_SUPPORT_GPU_PHYSX
 	PX_DELETE(mDirectGPUAPI);
-
+#endif
 	// unlock the lock taken in release(), must unlock before 
 	// mRWLock is destroyed otherwise behavior is undefined
 	if (unlock)
@@ -649,6 +652,16 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 				updateScStateAndSetupSq(this, getSQAPI(), a, a, a.getShapeManager(), true, shapeBounds.begin(), ps);
 				a.addConstraintsToScene();
 				OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*this), static_cast<PxActor &>(a))
+				
+				// If sleeping is disabled in the scene, wake up the actor when added
+				if(getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+				{
+					if(!(a.getCore().getFlags() & PxRigidBodyFlag::eKINEMATIC))
+					{
+						PxReal wakeCounterResetValue = getWakeCounterResetValueInternal();
+						a.scWakeUpInternal(wakeCounterResetValue);
+					}
+				}
 			}
 			else
 				addRigidDynamic(a, NULL, ps);
@@ -887,6 +900,21 @@ static PX_FORCE_INLINE bool addRigidActorT(T& rigidActor, PxArray<T*>& rigidActo
 
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, static_cast<PxActor &>(rigidActor), rigidActor.getWorldBounds())
 	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
+
+	// If sleeping is disabled in the scene, wake up the actor when added
+	if(!isNoSimActor && (scene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+	{
+		PxRigidActor* actor = static_cast<PxRigidActor*>(&rigidActor);
+		if(actor->getConcreteType() == PxConcreteType::eRIGID_DYNAMIC)
+		{
+			NpRigidDynamic* rigidDynamic = static_cast<NpRigidDynamic*>(actor);
+			if(!(rigidDynamic->getCore().getFlags() & PxRigidBodyFlag::eKINEMATIC))
+			{
+				PxReal wakeCounterResetValue = scene->getWakeCounterResetValueInternal();
+				rigidDynamic->scWakeUpInternal(wakeCounterResetValue);
+			}
+		}
+	}
 
 	return true;
 }
@@ -1280,6 +1308,13 @@ bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 		npaRC.wakeUpInternal(true, false);
 	}
 
+	// If sleeping is disabled in the scene, wake up the articulation when added
+	if(getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+	{
+		if(npaRC.isSleeping())
+			npaRC.wakeUp();
+	}
+
 	mArticulations.insert(&npa);
 
 	//add loop joints
@@ -1477,9 +1512,14 @@ bool NpScene::addDeformableSurface(PxDeformableSurface& deformableSurface)
 
 	// Add deformable surface
 	NpDeformableSurface& npSurface = static_cast<NpDeformableSurface&>(deformableSurface);
-	scAddDeformableSurface(this, npSurface);
 
 	NpShape* npShape = static_cast<NpShape*>(npSurface.getShape());
+	if (!npShape)
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__,
+			"PxScene::addActor(): Deformable surface does not have a shape attached, will not be added to scene!");
+
+	scAddDeformableSurface(this, npSurface);
+
 	Sc::ShapeCore* shapeCore = &npShape->getCore();
 	npSurface.getCore().attachShapeCore(shapeCore);
 
@@ -1531,9 +1571,14 @@ bool NpScene::addDeformableVolume(PxDeformableVolume& deformableVolume)
 			"PxScene::addActor(): Deformable volume exceeds maximum number of deformable volumes per scene (PX_MAX_NB_DEFORMABLE_VOLUME)!");
 
 	NpDeformableVolume& npVolume = static_cast<NpDeformableVolume&>(deformableVolume);
-	scAddDeformableVolume(npVolume);
 
 	NpShape* npShape = static_cast<NpShape*>(npVolume.getShape());
+	if (!npShape)
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__,
+			"PxScene::addActor(): Deformable volume does not have a shape attached, will not be added to scene!");
+
+	scAddDeformableVolume(npVolume);
+
 	Sc::ShapeCore* shapeCore = &npShape->getCore();
 	npVolume.getCore().attachShapeCore(shapeCore);
 	npVolume.getCore().attachSimulationMesh(deformableVolume.getSimulationMesh(), deformableVolume.getDeformableVolumeAuxData());

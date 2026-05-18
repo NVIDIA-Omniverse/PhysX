@@ -9,7 +9,6 @@ project ("foundation")
     dependson { "prebuild", "physxSchema", "physxSchemaTools", "_physxSchema", "_physxSchemaTools" }
     includedirs {
         "../pch",
-        repo_root_dir.."/include/extras",
         targetDeps_dir.."/carbonite/include",
         "include/common/foundation",
         "include/common/utilities",

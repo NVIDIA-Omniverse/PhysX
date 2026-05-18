@@ -21,3 +21,4 @@ group "ux"
     dofile ("source/omni.physx.stageupdate/premake5.lua")
     dofile ("source/omni.physx.asset_validator/premake5.lua")
     dofile ("source/omni.usd.metrics.assembler.physics/premake5.lua")
+    dofile ("source/omni.physics.ui/premake5.lua")

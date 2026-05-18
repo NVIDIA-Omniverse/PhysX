@@ -1,18 +1,20 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.test
 import omni.kit.commands
 from pxr import Gf, Sdf, Vt, UsdGeom, Usd, UsdLux, PhysxSchema
 import omni.physx
 from omni.physxtests import utils
-from omni.physx import get_physx_cooking_interface, get_physx_cooking_private_interface, get_physx_simulation_interface
+from omni.physx import get_physx_simulation_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physx.scripts import physicsUtils, particleUtils
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, TestCategory
 import omni.usd
-import unittest
 import carb
 import os
+
 
 class PhysxParticleSamplingAPITestKitStage(PhysicsKitStageAsyncTestCase):
     category = TestCategory.Core
@@ -228,7 +230,7 @@ class PhysxParticleSamplingAPITestKitStage(PhysicsKitStageAsyncTestCase):
         extent = UsdGeom.PointBased.ComputeExtent(mesh_pts)
         transform = self._mesh.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
         for i in range(len(extent)):
-            extent[i] = transform.Transform(extent[i])
+            extent[i] = Gf.Vec3f(transform.Transform(extent[i]))
 
         # get fluid/solidRestOffset to get a good slack value for the extent test.
         particleSetApi = self.get_particleSet_Api(self._mesh_path)
@@ -563,7 +565,7 @@ class PhysxParticleSamplingAPITestKitStage(PhysicsKitStageAsyncTestCase):
         firstExtent = UsdGeom.PointBased.ComputeExtent(particle_pts)
         transform = points.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
         for i in range(len(firstExtent)):
-            firstExtent[i] = transform.Transform(firstExtent[i])
+            firstExtent[i] = Gf.Vec3f(transform.Transform(firstExtent[i]))
 
         # translate it
         scale_mtx = Gf.Matrix4d().SetScale(self._scale_vec)
@@ -582,7 +584,7 @@ class PhysxParticleSamplingAPITestKitStage(PhysicsKitStageAsyncTestCase):
         secondExtent = UsdGeom.PointBased.ComputeExtent(particle_pts1)
         transform = points.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
         for i in range(len(secondExtent)):
-            secondExtent[i] = transform.Transform(secondExtent[i])
+            secondExtent[i] = Gf.Vec3f(transform.Transform(secondExtent[i]))
 
         # particles are always in world space, so check if each of the particles made the translation
         # need to use eps due to float/double conversion

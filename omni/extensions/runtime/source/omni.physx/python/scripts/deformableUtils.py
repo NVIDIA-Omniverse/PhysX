@@ -1,13 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import typing
 from typing import List
 import carb
 from . import physicsUtils, utils
 from pxr import UsdGeom, Usd, Sdf, Tf, PhysxSchema, UsdPhysics, Gf, UsdShade, Vt
 from omni.physx import get_physx_cooking_interface
-from omni.physx import get_physx_attachment_private_interface
+from omni.physx.scripts.ifaces import get_physx_attachment_private_interface
 import omni.physx.bindings._physx as pxb
 
 # DEPRECATED
@@ -823,10 +824,11 @@ def create_auto_volume_deformable_hierarchy(
 
     # apply guide purpose for visibility, if requested
     if set_visibility_with_guide_purpose:
-        if sim_tet_mesh != coll_tet_mesh:
+        if len(visual_geometry_prims) > 0:
             UsdGeom.Imageable(sim_tet_mesh).GetPurposeAttr().Set(UsdGeom.Tokens.guide)
-        elif len(visual_geometry_prims) > 0:
             UsdGeom.Imageable(coll_tet_mesh).GetPurposeAttr().Set(UsdGeom.Tokens.guide)
+        elif sim_tet_mesh != coll_tet_mesh:
+            UsdGeom.Imageable(sim_tet_mesh).GetPurposeAttr().Set(UsdGeom.Tokens.guide)
 
     # apply deformable body api
     # HACK to trigger async cooking later - WHY is the stage update triggered asynchronously with this code?

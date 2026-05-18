@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -50,8 +50,7 @@ public:
 	{}
 
 	//! Construct from two PxcVectors
-	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVector(const PxVec3& lin, const PxVec3& ang)
-		: linear(lin), pad0(0.0f), angular(ang), pad1(0.0f)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVector(const PxVec3& lin, const PxVec3& ang) : linear(lin), angular(ang)
 	{
 	}
 
@@ -63,9 +62,7 @@ public:
 	PX_CUDA_CALLABLE PX_FORCE_INLINE	void	operator = (const SpatialVector& v)
 	{
 		linear = v.linear;
-		pad0 = 0.0f;
 		angular = v.angular;
-		pad1 = 0.0f;
 	}
 
 	static PX_CUDA_CALLABLE  PX_FORCE_INLINE SpatialVector zero() {	return SpatialVector(PxVec3(0),PxVec3(0)); }
@@ -122,10 +119,8 @@ public:
 		return Cm::SpatialVector(linear*l, angular*a);
 	}
 
-	PxVec3 linear;
-	PxReal pad0;
-	PxVec3 angular;
-	PxReal pad1;
+	PxVec3Padded linear;
+	PxVec3Padded angular;
 }
 PX_ALIGN_SUFFIX(16);
 
@@ -138,14 +133,12 @@ public:
 	{}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVectorF(const PxReal* v)
-		: pad0(0.0f), pad1(0.0f)
 	{
 		top.x = v[0]; top.y = v[1]; top.z = v[2];
 		bottom.x = v[3]; bottom.y = v[4]; bottom.z = v[5];
 	}
 	//! Construct from two PxcVectors
-	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVectorF(const PxVec3& top_, const PxVec3& bottom_)
-		: top(top_), pad0(0.0f), bottom(bottom_), pad1(0.0f)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVectorF(const PxVec3& top_, const PxVec3& bottom_) : top(top_), bottom(bottom_)
 	{
 	}
 
@@ -157,9 +150,7 @@ public:
 	PX_CUDA_CALLABLE PX_FORCE_INLINE	void	operator = (const SpatialVectorF& v)
 	{
 		top = v.top;
-		pad0 = 0.0f;
 		bottom = v.bottom;
-		pad1 = 0.0f;
 	}
 
 	static PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVectorF Zero() { return SpatialVectorF(PxVec3(0), PxVec3(0)); }
@@ -239,10 +230,8 @@ public:
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVectorF cross(const SpatialVectorF& v) const
 	{
-		SpatialVectorF a;
-		a.top = top.cross(v.top);
-		a.bottom = top.cross(v.bottom) + bottom.cross(v.top);
-		return a;
+		return SpatialVectorF(	top.cross(v.top),
+								top.cross(v.bottom) + bottom.cross(v.top));
 	}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVectorF abs() const
@@ -300,10 +289,8 @@ public:
 		return bottom[index-3];
 	}
 
-	PxVec3 top;
-	PxReal pad0;
-	PxVec3 bottom;
-	PxReal pad1;
+	PxVec3Padded top;
+	PxVec3Padded bottom;
 } PX_ALIGN_SUFFIX(16);
 
 struct UnAlignedSpatialVector
@@ -417,10 +404,8 @@ public:
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE UnAlignedSpatialVector cross(const UnAlignedSpatialVector& v) const
 	{
-		UnAlignedSpatialVector a;
-		a.top = top.cross(v.top);
-		a.bottom = top.cross(v.bottom) + bottom.cross(v.top);
-		return a;
+		return UnAlignedSpatialVector(	top.cross(v.top),
+										top.cross(v.bottom) + bottom.cross(v.top));
 	}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE UnAlignedSpatialVector abs() const

@@ -2,8 +2,10 @@
 category = "Internal"
 title = "PhysX Vehicle Tests"
 description="PhysX vehicle tests."
-repository=""
+repository = ""
 support_level = "Internal"
+
+version = "109.0.10"
 
 [package.writeTarget]
 kit = true
@@ -11,9 +13,9 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx.vehicle" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.graph" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.vehicle" = {}
+"omni.physx.tests" = {}
+"omni.physx.graph" = {}
 
 [[python.module]]
 name = "omni.physxvehicletests"

@@ -27,7 +27,7 @@ project ("omni.physx.tensors.plugin")
         targetDeps_dir.."/rtx_plugins/include",
         targetDeps_dir.."/gsl/include",
     }
-    links { "physxSchema", "physicsSchemaTools", "omni.usd", "foundation", "carb" }
+    links { "physxSchema", "physicsSchemaTools", "foundation", "carb" }
     filter { "configurations:debug" }
         runtime "Debug"
     filter  { "configurations:release" }

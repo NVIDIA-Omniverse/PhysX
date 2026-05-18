@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.usdphysicsui.bindings._usdphysicsUI import acquire_usdphysics_ui_interface, IUsdPhysicsUI
 from omni.usdphysicsui.bindings._usdphysicsUI import acquire_usdphysics_ui_private_interface, IUsdPhysicsUIPrivate
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -182,8 +182,8 @@ void AttachedStage::fabricAttach()
     omni::fabric::StageReaderWriterId stageInProgressId = OmniPhysX::getInstance().getIStageReaderWriter()->get(stageId);
     if (stageInProgressId.id)
     {
-        if (!omni::fabric::Token::iToken)
-            omni::fabric::Token::iToken = carb::getCachedInterface<omni::fabric::IToken>();
+        const omni::fabric::FabricId fabricId =
+            OmniPhysX::getInstance().getIStageReaderWriter()->getFabricId(stageInProgressId);
 
         if (mListenerId.id == kInvalidFabricListenerId)
         {
@@ -199,7 +199,7 @@ void AttachedStage::fabricAttach()
             PropertyChangeMap::const_iterator itEnd = mPrimChangeMap.getPropertyChangeMap().end();
             while (it != itEnd)
             {
-                omni::fabric::Token fcToken(omni::fabric::asInt(it->first));
+                omni::fabric::Token fcToken = omni::fabric::convertToTokenType<omni::fabric::Token>(fabricId, it->first);
                 stageRW.attributeEnableChangeTracking(fcToken, mListenerId);
                 it++;
             }
@@ -210,7 +210,7 @@ void AttachedStage::fabricAttach()
             PropertyChangeMap::const_iterator itEnd = mPrimChangeMap.getStageSpecificChangeMap().end();
             while (it != itEnd)
             {
-                omni::fabric::Token fcToken(omni::fabric::asInt(it->first));
+                omni::fabric::Token fcToken = omni::fabric::convertToTokenType<omni::fabric::Token>(fabricId, it->first);
                 stageRW.attributeEnableChangeTracking(fcToken, mListenerId);
                 it++;
             }

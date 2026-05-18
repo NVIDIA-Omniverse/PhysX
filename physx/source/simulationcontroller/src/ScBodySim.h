@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -85,8 +85,8 @@ namespace Sc
 						void					addSpatialVelocity(const PxVec3* linVelDelta, const PxVec3* angVelDelta);
 						void					clearSpatialVelocity(bool force, bool torque);
 
-						void					updateCached(PxBitMapPinned* shapeChangedMap);
-						void					updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray);
+						void					updateCached_NotThreadSafe(PxBitMapPinned* shapeChangedMap);
+						void					updateCached_ThreadSafe(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray);
 						void					updateContactDistance(PxReal* contactDistance, PxReal dt, const Bp::BoundsArray& boundsArray);
 
 		// hooks for actions in body core when it's attached to a sim object. Generally
@@ -131,7 +131,7 @@ namespace Sc
 
 						void					notifyReadyForSleeping();			// inform the sleep island generation system that the body is ready for sleeping
 						void					notifyNotReadyForSleeping();		// inform the sleep island generation system that the body is not ready for sleeping
-		PX_FORCE_INLINE bool					checkSleepReadinessBesidesWakeCounter();  // for API triggered changes to test sleep readiness
+						bool					checkSleepReadinessBesidesWakeCounter();  // for API triggered changes to test sleep readiness
 
 		// PT: TODO: this is only used for the rigid bodies' sleep check, the implementations in derived classes look useless
 		virtual			void					registerCountedInteraction()		PX_OVERRIDE	{ mLLBody.getCore().numCountedInteractions++; PX_ASSERT(mLLBody.getCore().numCountedInteractions);	}
@@ -251,26 +251,6 @@ PX_FORCE_INLINE void Sc::BodySim::setForcesToDefaults(bool enableGravity)
 	}
 }
 
-PX_FORCE_INLINE bool Sc::BodySim::checkSleepReadinessBesidesWakeCounter()
-{
-	const BodyCore& bodyCore = getBodyCore();
-	const SimStateData* simStateData = getSimStateData(false);
-	const VelocityMod* velmod = simStateData ? simStateData->getVelocityModData() : NULL;
-
-	bool readyForSleep = bodyCore.getLinearVelocity().isZero() && bodyCore.getAngularVelocity().isZero();
-	if (readVelocityModFlag(VMF_ACC_DIRTY))
-	{
-		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerSec().isZero());
-		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerSec().isZero());
-	}
-	if (readVelocityModFlag(VMF_VEL_DIRTY))
-	{
-		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerStep().isZero());
-		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerStep().isZero());
-	}
-
-	return readyForSleep;
-}
 
 
 }

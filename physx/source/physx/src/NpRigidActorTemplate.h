@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -56,9 +56,9 @@ public:
 											}
 	virtual			void					requiresObjects(PxProcessPxBaseCallback& c);
 					void					preExportDataReset();
-	virtual			void					exportExtraData(PxSerializationContext& context);
-					void					importExtraData(PxDeserializationContext& context);
-					void					resolveReferences(PxDeserializationContext& context);
+	virtual			void					exportExtraData(PxSerializationContext& context) PX_OVERRIDE;
+					void					importExtraData(PxDeserializationContext& context) PX_OVERRIDE;
+					void					resolveReferences(PxDeserializationContext& context) PX_OVERRIDE;
 //~PX_SERIALIZATION
 	virtual									~NpRigidActorTemplate();
 
@@ -66,7 +66,7 @@ public:
 
 	// PxActor
 					void					removeShapes(PxSceneQuerySystem* sqManager);
-	virtual			PxActorType::Enum		getType() const = 0;
+	virtual			PxActorType::Enum		getType() const PX_OVERRIDE = 0;
 	virtual			PxBounds3				getWorldBounds(float inflation=1.01f) const	PX_OVERRIDE PX_FINAL;
 	virtual			void					setActorFlag(PxActorFlag::Enum flag, bool value)	PX_OVERRIDE PX_FINAL;
 	virtual			void					setActorFlags(PxActorFlags inFlags)	PX_OVERRIDE PX_FINAL;
@@ -234,7 +234,8 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 		mShapeManager.getPruningStructure()->invalidate(this);
 	}
 
-	mShapeManager.attachShape(npShape, *this);
+	if(!mShapeManager.attachShape(npShape, *this))
+		return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidActor::attachShape: actor already contains this shape. It is illegal to add the same shape to an actor multiple times.");
 
 	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)
 

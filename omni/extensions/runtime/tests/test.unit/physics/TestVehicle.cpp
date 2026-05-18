@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -41,7 +41,7 @@ static pxr::GfVec3f localDirToWorld(const pxr::GfVec3f& dir, const pxr::UsdGeomX
 {
     pxr::GfMatrix4d transform = xformable.ComputeLocalToWorldTransform(0);
     pxr::GfRotation orient = transform.ExtractRotation();
-    return orient.TransformDir(dir);
+    return pxr::GfVec3f(orient.TransformDir(dir));
 }
 
 static float getDeltaAngleRadians(const pxr::GfVec3f& dirA, const pxr::GfVec3f& dirB)
@@ -115,8 +115,7 @@ TEST_CASE_TEMPLATE("Vehicle Property Write Tests", T, omni::physx::USDChange, om
 
         changeTemplate.setAttributeValue(vehicleWheelPaths[0][VehicleFactory::WheelAttId::eFL], driveTorqueToken, driveTorque);
         changeTemplate.setAttributeValue(vehicleWheelPaths[0][VehicleFactory::WheelAttId::eFR], driveTorqueToken, driveTorque);
-        changeTemplate.broadcastChanges();
-
+        
         for (uint32_t i = 0; i < 60; i++)
         {
             physxSim->simulate(timeStep, currentTime);
@@ -158,7 +157,6 @@ TEST_CASE_TEMPLATE("Vehicle Property Write Tests", T, omni::physx::USDChange, om
         changeTemplate.setAttributeValue(vehicleWheelPaths[0][VehicleFactory::WheelAttId::eFR], brakeTorqueToken, brakeTorque);
         changeTemplate.setAttributeValue(vehicleWheelPaths[0][VehicleFactory::WheelAttId::eRL], brakeTorqueToken, brakeTorque);
         changeTemplate.setAttributeValue(vehicleWheelPaths[0][VehicleFactory::WheelAttId::eRR], brakeTorqueToken, brakeTorque);
-        changeTemplate.broadcastChanges();
 
         const uint32_t iterCount = 60;
         const float elapsedTime = iterCount * timeStep;
@@ -194,7 +192,6 @@ TEST_CASE_TEMPLATE("Vehicle Property Write Tests", T, omni::physx::USDChange, om
         const pxr::TfToken& steerAngleToken = pxr::PhysxSchemaTokens->physxVehicleWheelControllerSteerAngle;
 
         changeTemplate.setAttributeValue(vehicleWheelPaths[0][VehicleFactory::WheelAttId::eFL], steerAngleToken, steerAngle);
-        changeTemplate.broadcastChanges();
 
         for (uint32_t i = 0; i < 1; i++)
         {
@@ -303,7 +300,7 @@ TEST_CASE("Vehicle Tests",
         {
             wheelAttPrims[i] = stage->GetPrimAtPath(wheelAttPaths[i]);
             wheelAttPrims[i].GetAttribute(translateToken).Get(&wheelLocalPos[i]);
-            wheelWorldPos[i] = pos + pxr::GfRotation(orient).TransformDir(wheelLocalPos[i]);
+            wheelWorldPos[i] = pos + pxr::GfVec3f(pxr::GfRotation(orient).TransformDir(wheelLocalPos[i]));
             wheelIndices[i] = physx->getWheelIndex(wheelAttPaths[i]);
         }
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -86,7 +86,7 @@ void testArticulationResidualReporting(ScopedFabricActivation& fabricEnable)
         {
             omni::fabric::StageReaderWriter stage = iSip->get(stageId);
             const omni::fabric::Token token(tokens[j].GetText());
-            omni::fabric::Path fabricPath = omni::fabric::Path(omni::fabric::asInt(paths[i]));
+            omni::fabric::Path fabricPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), paths[i]);
             REQUIRE(stage.attributeExists(fabricPath, token));
             const float value = *stage.getAttributeRd<float>(fabricPath, token);
 
@@ -179,7 +179,6 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
 
     value = testParams.startJointStateValue;
     changeTemplate.setAttributeValue(jointPath, jointStatePositionToken, value);
-    changeTemplate.broadcastChanges();
     physxSim->simulate(1.0f / 60, 0.0f);
     physxSim->fetchResults();
     fabricEnable.mIPhysxFabric->update(1.0f / 60, 0.0f);
@@ -189,7 +188,7 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
     {
         omni::fabric::StageReaderWriter stage = iSip->get(stageId);
         const omni::fabric::Token positionToken(jointStatePositionToken.GetText());
-        omni::fabric::Path fabricPath = omni::fabric::Path(omni::fabric::asInt(jointPath));
+        omni::fabric::Path fabricPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), jointPath);
         REQUIRE(stage.attributeExists(fabricPath, positionToken));
         const float jointState = *stage.getAttributeRd<float>(fabricPath, positionToken);
         CHECK(fabsf(jointState - value) < epsilon);
@@ -204,7 +203,6 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
         const TfToken jointDriveToken(testParams.jointDriveAttributeText);
         value = testParams.driveTargetValue;
         changeTemplate.setAttributeValue(jointPath, jointDriveToken, value);
-        changeTemplate.broadcastChanges();
 
         for (int i = 0; i < 5; ++i)
         {
@@ -214,7 +212,7 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
         }
         omni::fabric::StageReaderWriter stage = iSip->get(stageId);
         const omni::fabric::Token velocityToken(testParams.jointVelocityAttributeText);
-        omni::fabric::Path fabricPath = omni::fabric::Path(omni::fabric::asInt(jointPath));
+        omni::fabric::Path fabricPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), jointPath);
         REQUIRE(stage.attributeExists(fabricPath, velocityToken));
         const float jointState = *stage.getAttributeRd<float>(fabricPath, velocityToken);
         CHECK(fabsf(jointState - testParams.jointStateVelocityValue) < 0.01f);

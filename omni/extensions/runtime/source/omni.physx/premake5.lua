@@ -25,7 +25,7 @@ project ("omni.physx.plugin")
     if os.target() == "windows" and _OPTIONS["devphysx"] then
         fastuptodate "Off"
         dependson { "prebuild", "carb.physics-usd.plugin", "foundation", "PhysX", 
-        "PhysXExtensions", "PhysXGpu", "PhysXVehicle2", "PhysXCharacterKinematic", "PVDRuntime", }
+        "PhysXExtensions", "PhysXGpu", "PhysXVehicle", "PhysXCharacterKinematic", "PVDRuntime", }
     else
         dependson { "prebuild", "carb.physics-usd.plugin", "foundation" }
     end
@@ -80,6 +80,11 @@ project ("omni.physx.plugin")
     filter {}
     files { "python/**.py" }
     vpaths { ['python/*'] = "python/**.py" }
+
+    -- SdfApplyListOrdering inconsistent dll linkage warning
+    filter { "files:plugins/usdLoad/PointInstancer.cpp", "system:windows"}
+        buildoptions { "/wd4273" }
+    filter {}
 
 project ("omni.physx.python")
     carboniteBindingsPython {

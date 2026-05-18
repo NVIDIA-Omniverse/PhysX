@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -920,57 +920,6 @@ bool CpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
     return true;
 }
 
-// DEPRECATED
-bool CpuArticulationView::getMassMatrices(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getGeneralizedMassMatrices instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    uint32_t massMatrixRows = 0;
-    uint32_t massMatrixCols = 0;
-
-    // this will fail if view is not homogeneous
-    if (!getMassMatrixShape(&massMatrixRows, &massMatrixCols))
-    {
-        return false;
-    }
-
-    uint32_t massMatrixSize = massMatrixRows * massMatrixCols;
-
-    if (!checkTensorDevice(*dstTensor, -1, "Mass Matrix", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "Mass Matrix", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * massMatrixSize, "Mass Matrix", __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = (float*)dstTensor->data;
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        PxArticulationReducedCoordinate* arti = mEntries[i].arti;
-        PxArticulationCache* cache = mArticulationCaches[i];
-
-        arti->commonInit();
-         arti->computeGeneralizedMassMatrix(*cache);
-
-        for (PxU32 j = 0; j < massMatrixSize; j++)
-        {
-            dst[j] = cache->massMatrix[j];
-        }
-
-        dst += massMatrixSize;
-    }
-
-    return true;
-}
-
 bool CpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
@@ -988,16 +937,11 @@ bool CpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
     uint32_t massMatrixCols = 0;
 
     // this will fail if view is not homogeneous
-    if (!getMassMatrixShape(&massMatrixRows, &massMatrixCols))
+    if (!getGeneralizedMassMatrixShape(&massMatrixRows, &massMatrixCols))
     {
         return false;
     }
 
-    if (!isFixedBase)
-    {
-        massMatrixRows += 6;
-        massMatrixCols += 6;
-    }
     uint32_t massMatrixSize = massMatrixRows * massMatrixCols;
 
     if (!checkTensorDevice(*dstTensor, -1, "Mass Matrix", __FUNCTION__) ||
@@ -1022,46 +966,6 @@ bool CpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
         }
 
         dst += massMatrixSize;
-    }
-
-    return true;
-}
-
-// DEPRECATED
-bool CpuArticulationView::getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getCoriolisAndCentrifugalCompensationForces instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, -1, "coriolis and centrifugal forces", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "coriolis and centrifugal forces", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "coriolis and centrifugal forces", __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = (float*)dstTensor->data;
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        PxArticulationReducedCoordinate* arti = mEntries[i].arti;
-        PxArticulationCache* cache = mArticulationCaches[i];
-
-        arti->commonInit();
-        arti->computeCoriolisAndCentrifugalForce(*cache);
-
-        for (PxU32 j = 0; j < mMaxDofs; j++)
-        {
-            dst[j] = mEntries[i].metatype->isDofBody0Parent(j) ? cache->jointForce[j] : -cache->jointForce[j];
-        }
-
-        dst += mMaxDofs;
     }
 
     return true;
@@ -1116,46 +1020,6 @@ bool CpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
         }
 
         dst += maxDofs;
-    }
-
-    return true;
-}
-
-// DEPRECATED
-bool CpuArticulationView::getGeneralizedGravityForces(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getGravityCompensationForces instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, -1, "generalized gravity forces", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "generalized gravity forces", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "generalized gravity forces", __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = (float*)dstTensor->data;
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        PxArticulationReducedCoordinate* arti = mEntries[i].arti;
-        PxArticulationCache* cache = mArticulationCaches[i];
-
-        arti->commonInit();
-        arti->computeGeneralizedGravityForce(*cache);
-
-        for (PxU32 j = 0; j < mMaxDofs; j++)
-        {
-            dst[j] = mEntries[i].metatype->isDofBody0Parent(j) ? cache->jointForce[j] : -cache->jointForce[j];
-        }
-
-        dst += mMaxDofs;
     }
 
     return true;

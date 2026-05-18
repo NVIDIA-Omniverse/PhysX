@@ -22,14 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "foundation/PxFoundation.h"
 #include "foundation/PxFPU.h"
 #include "foundation/PxPlane.h"
-#include "geometry/PxGeometryInternal.h"
 #include "GuBVH.h"
 #include "GuAABBTreeQuery.h"
 #include "GuAABBTreeNode.h"
@@ -126,41 +125,6 @@ bool BVHData::save(PxOutputStream& stream, bool endian) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-// PT: temporary for Kit
-
-BVH::BVH(const PxBVHInternalData& data) :
-	PxBVH			(PxType(PxConcreteType::eBVH), PxBaseFlags(0)),
-	mMeshFactory	(NULL)
-{
-	mData.mNbIndices	= data.mNbIndices;
-	mData.mNbNodes		= data.mNbNodes;
-	mData.mIndices		= data.mIndices;
-	mData.mNodes		= reinterpret_cast<BVHNode*>(data.mNodes);
-	mData.mBounds.setBounds(reinterpret_cast<PxBounds3*>(data.mBounds));
-}
-
-bool BVH::getInternalData(PxBVHInternalData& data, bool takeOwnership) const
-{
-	data.mNbIndices	= mData.mNbIndices;
-	data.mNbNodes	= mData.mNbNodes;
-	data.mNodeSize	= sizeof(BVHNode);
-	data.mNodes		= mData.mNodes;
-	data.mIndices	= mData.mIndices;
-	data.mBounds	= const_cast<PxBounds3*>(mData.mBounds.getBounds());
-
-	if(takeOwnership)
-		const_cast<BVH*>(this)->mData.mBounds.takeOwnership();
-
-	return true;
-}
-
-bool physx::PxGetBVHInternalData(PxBVHInternalData& data, const PxBVH& bvh, bool takeOwnership)
-{
-	return static_cast<const BVH&>(bvh).getInternalData(data, takeOwnership);
-}
-
-//~ PT: temporary for Kit
 
 BVH::BVH(MeshFactory* factory) :
 	PxBVH			(PxType(PxConcreteType::eBVH), PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE),

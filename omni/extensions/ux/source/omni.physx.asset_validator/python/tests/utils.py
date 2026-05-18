@@ -1,9 +1,8 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
-import omni.asset_validator.core
-from omni.asset_validator.core import FixStatus
-from omni.asset_validator.core.engine import ValidationEngine
+
+from omni.asset_validator.core import FixStatus, ValidationEngine, IssueFixer
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, TestCategory
 import os
 from pxr import Usd
@@ -60,7 +59,7 @@ class BaseValidatorTest(PhysicsMemoryStageBaseAsyncTestCase):
         return results
 
     def run_validation_fix(self, results):
-        fixer = omni.asset_validator.core.IssueFixer(self._stage)
+        fixer = IssueFixer(self._stage)
         results = fixer.fix_at(results.issues(), self._stage.GetRootLayer())
         for result in results:
             self.assertEqual(result.status, FixStatus.SUCCESS, msg=result.exception)

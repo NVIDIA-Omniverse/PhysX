@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -23,7 +23,6 @@
 #include "ContactReport.h"
 #include "PhysXDefines.h"
 #include "PhysXSimulationCallbacks.h"
-#include "particles/FabricParticles.h"
 #include "ScopedNoticeLock.h"
 
 #include <private/omni/physx/PhysxUsd.h>
@@ -495,13 +494,6 @@ static void physxFetchResultsInternal(const pxr::SdfPath& scenePath)
         OmniPhysX::getInstance().getInternalPhysXDatabase().updateSimulationOutputs(updateResidualsToUsd);
     }
 
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* fabricParticles = OmniPhysX::getInstance().getFabricParticles();
-    if(fabricParticles) // can be nullptr in memory stages
-        fabricParticles->update();
-#endif
-
     OmniPhysX::getInstance().fireProfileStatsSubscription();
 }
 
@@ -669,10 +661,6 @@ void physXUpdate(float currentTime, float elapsedSecs, bool enableUpdate)
             physXUpdateNonRenderDispatch(sc, elapsedSecs, currentTime);
         }
     }
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    omniPhysX.getFabricParticles()->update();
-#endif
 
     OmniPhysX::getInstance().fireProfileStatsSubscription();
 }

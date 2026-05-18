@@ -1,101 +1,71 @@
 # Changelog
 omni.physx.pvd Changelog
 
-## [107.3.24] - 2025-09-05
-Bug Fix: References that did not resolve to an object were previously not selectable but failed silently; this behavior is now corrected.
-Reference Handling:
-  Handles with value 0 are shown as "NULL".
-  Handles that don’t resolve are displayed as "INVALID".
-  Handles that do resolve to an object display the USD Prim name; if the object is inactive, it is shown grayed out but still displays its name.
-  The handle value is now displayed alongside the USD Prim name for references.
-
-Property Array Improvements:
-  Property arrays with more than 10 values are now paginated, facilitating inspection of large arrays.
-
-Navigation Enhancements:
-  "Previous" and "Next Reference" buttons have been added below the search bar in the OVD Tree.
-  Contextual navigation ensures that using "jump to reference" buttons in the property view returns to the exact scroll position and pagination state.
-
-## [107.3.23] - 2025-09-02
+## [109.0.10] - 2025-12-15
 Version bump.
 
-## [107.3.22] - 2025-08-27
+## [109.0.9] - 2025-12-11
 Version bump.
 
-## [107.3.21] - 2025-08-18
+## [109.0.8] - 2025-12-10
 Version bump.
 
-## [107.3.20] - 2025-08-04
+## [109.0.7] - 2025-11-28
+- Significantly improved frame stepping performance for large OVD scenes (from ~29 seconds to ~9 seconds per frame in tested scenarios)
+- Moved recursive visibility update from Python to C++ (`update_ovd_visibility`) for much faster execution
+- Added C++ handle-to-prim cache (`build_handle_cache`, `invalidate_handle_cache`) to avoid expensive stage traversal
+- Added batch handle resolution (`get_handle_prim_names_batch`) to resolve multiple handles in a single C++ call
+- Added prim cache for gizmo drawing to avoid full stage traversal on every frame
+- Added early exit in gizmo drawing when no gizmos are enabled
+- Added thread-safe mutex protection for prim cache access to prevent race conditions between event handlers and render thread
+
+- Added automatic setting of the USD stage metersPerUnit metadata based on the PhysX tolerancesScale::length value from OVD files.
+
+- Fixed OVD Timeline simulation step input to only load frames when editing is complete, avoiding loading intermediate frames when typing (e.g., typing "500" no longer loads frames 5, 50, and then 500).
+
+- Added support for unique list attributes (OmniPvdWriter::registerUniqueListAttribute) to display in the property window with paginated array display
+- Fixed pagination alignment so page index 0 correctly shows elements starting at index 0
+- Fixed next page button navigation for arrays with more than 10 elements
+- Fixed reference navigation history (< > buttons) to properly update the property window when navigating back/forward
+- Fixed reference navigation to preserve scroll position when navigating between attributes on the same prim
+- Refactored processCustomAttribute into a single template function to reduce code duplication
+
+## [109.0.6] - 2025-11-25
 Version bump.
 
-## [107.3.19] - 2025-07-31
+## [109.0.5] - 2025-11-19
 Version bump.
+
+## [109.0.4] - 2025-10-24
+Version bump.
+
+## [109.0.3] - 2025-10-14
+Version bump.
+
+## [109.0.2] - 2025-10-06
+Version bump.
+
+## [109.0.1] - 2025-10-05
+Version bump.
+
+## [109.0.0] - 2025-08-22
+Version bump.
+
+## [108.0.2] - 2025-07-04
+Version bump.
+
+## [108.0.1] - 2025-06-30
+Version bump.
+
+## [108.0.0] - 2025-05-01
+Added automatic directory creation of the output directory hieararchy, defined by the Kit setting /persistent/physics/omniPvdOvdRecordingDirectory.
+Added an automatic addition of a slash to the end of the directory string, to make sure the directory path stored in /persistent/physics/omniPvdOvdRecordingDirectory is well formed.
 
 ## [107.3.18] - 2025-07-23
 Fixed a bug in the OmniPvd function ovdToUsdOverWithLayerCreation exposed in Python as ovd_to_usd_over_with_layer_creation, related to a stream of warning messages in USD.
 
-## [107.3.17] - 2025-07-22
-Version bump.
-
-## [107.3.16] - 2025-07-18
-Version bump.
-
-## [107.3.15] - 2025-07-08
-Version bump.
-
-## [107.3.14] - 2025-07-03
-Version bump.
-
-## [107.3.13] - 2025-06-25
-Version bump.
-
-## [107.3.12] - 2025-06-18
-Version bump.
-
-## [107.3.11] - 2025-06-12
-Version bump.
-
-## [107.3.10] - 2025-06-06
-Version bump.
-
-## [107.3.9] - 2025-05-30
-Fixed a bug in the OmniPvd property view connected to the Select button for references, now returns the currently active selected object.
-
-## [107.3.8] - 2025-05-28
-Version bump.
-
-## [107.3.7] - 2025-05-22
-Version bump.
-
-## [107.3.6] - 2025-05-15
-Version bump.
-
-## [107.3.5] - 2025-05-14
-Version bump.
-
-## [107.3.4] - 2025-05-11
-Version bump.
-
-## [107.3.3] - 2025-05-06
-Version bump.
-
-## [107.3.2] - 2025-05-02
-Version bump.
-
-## [107.3.1] - 2025-04-28
-Version bump.
-
-## [107.3.0] - 2025-04-10
-Version bump.
-
-## [107.2.2] - 2025-04-04
-Version bump.
-
-## [107.2.1] - 2025-04-03
+## [107.2.0] - 2025-04-03
 Adding in a stop gap baking feature function ovd_to_usd_over_with_layer_creation exposed through the omni.physx.pvd interface
-
-## [107.2.0] - 2025-03-21
-Version bump.
 
 ## [107.0.18] - 2025-02-07
 Deprecation of the PhysX baking UI feature

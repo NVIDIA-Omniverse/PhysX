@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -38,6 +38,7 @@
 #include "OmniPvdUsdOverWriter.h"
 
 extern OmniPvdMessages gOmniPvdMessages;
+OmniPVDDebugVizData* gOmniPVDDebugVizData = nullptr;
 
 using namespace carb;
 using namespace omni;
@@ -198,9 +199,10 @@ CARB_PLUGIN_IMPL_DEPS(carb::settings::ISettings,
     omni::kit::IApp)
 
 
-CARB_EXPORT void carbOnPluginStartup(
-    )
+CARB_EXPORT void carbOnPluginStartup()
 {
+    gOmniPVDDebugVizData = new OmniPVDDebugVizData();
+
     gSettings = carb::getCachedInterface<carb::settings::ISettings>();
 
     gSettings->setDefaultString(omni::physx::kOmniPvdImportedOvd, "");
@@ -243,8 +245,6 @@ CARB_EXPORT void carbOnPluginStartup(
 
     subscribeToSettingsCallbacks();
 
-    initGizmoMutex();
-
     //initialize from settings
     selectGizmo(OmniPVDDebugGizmoType::eContact, gSettings->getAsInt(omni::physx::kOmniPvdGizmoContactVizMode));
     selectGizmo(OmniPVDDebugGizmoType::eCenterOfMass, gSettings->getAsInt(omni::physx::kOmniPvdGizmoCenterOfMassVizMode));
@@ -272,12 +272,14 @@ void clearMessages()
     gOmniPvdMessages.clear();
 }
 
-CARB_EXPORT void carbOnPluginShutdown(
-    )
+CARB_EXPORT void carbOnPluginShutdown()
 {
     unsubscribeFromSettingsCallbacks();
     cleanupDebugViz();
     clearMessages();
+
+    delete gOmniPVDDebugVizData;
+    gOmniPVDDebugVizData = nullptr;
 }
 
 bool ovdToUsd(char *omniPvdFile, char *usdStageDir, int upAxis, int isUSDA)
@@ -353,6 +355,268 @@ const OmniPvdMessages& getMessages()
     return gOmniPvdMessages;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// C++ implementation of recursive visibility update for OVD prims.
+// This is much faster than the Python equivalent due to native recursion.
+////////////////////////////////////////////////////////////////////////////////
+namespace
+{
+    static pxr::TfToken vizToken("omni:pvdi:viz");
+    static pxr::TfToken handleToken("omni:pvdi:handle");
+    
+    void setVisibleChildrenRecursive(pxr::UsdPrim prim, double timeCode)
+    {
+        if (!prim)
+            return;
+        
+        pxr::UsdAttribute vizAttr = prim.GetAttribute(vizToken);
+        if (vizAttr)
+        {
+            bool isVisible = false;
+            vizAttr.Get(&isVisible, timeCode);
+            
+            pxr::UsdGeomImageable imageable(prim);
+            if (imageable)
+            {
+                if (isVisible)
+                {
+                    imageable.MakeVisible();
+                    // Only recurse into children if this prim is visible
+                    for (const pxr::UsdPrim& child : prim.GetChildren())
+                    {
+                        setVisibleChildrenRecursive(child, timeCode);
+                    }
+                }
+                else
+                {
+                    imageable.MakeInvisible();
+                    // Don't recurse - children inherit invisibility
+                }
+            }
+        }
+        else
+        {
+            // No viz attribute - just recurse into children
+            for (const pxr::UsdPrim& child : prim.GetChildren())
+            {
+                setVisibleChildrenRecursive(child, timeCode);
+            }
+        }
+    }
+    
+    ////////////////////////////////////////////////////////////////////////////////
+    // Handle-to-prim cache for fast handle lookups
+    // This avoids expensive Python stage traversal
+    ////////////////////////////////////////////////////////////////////////////////
+    struct HandleCacheEntry
+    {
+        pxr::SdfPath path;
+        std::string name;
+    };
+    
+    struct HandleCache
+    {
+        std::unordered_map<uint64_t, std::vector<HandleCacheEntry>> handleToEntries;
+        bool isValid = false;
+        
+        void clear()
+        {
+            handleToEntries.clear();
+            isValid = false;
+        }
+    };
+    
+    static HandleCache gHandleCache;
+}
+
+void updateOvdVisibility(double timeCode)
+{
+    omni::usd::UsdContext* context = omni::usd::UsdContext::getContext();
+    if (!context)
+        return;
+    
+    pxr::UsdStageRefPtr stage = context->getStage();
+    if (!stage)
+        return;
+    
+    // Use SdfChangeBlock for batched notifications (better performance)
+    {
+        pxr::SdfChangeBlock changeBlock;
+        
+        // Update visibility for /Scenes
+        pxr::UsdPrim scenesPrim = stage->GetPrimAtPath(pxr::SdfPath("/Scenes"));
+        if (scenesPrim)
+        {
+            setVisibleChildrenRecursive(scenesPrim, timeCode);
+        }
+        
+        // Update visibility for /Shared
+        pxr::UsdPrim sharedPrim = stage->GetPrimAtPath(pxr::SdfPath("/Shared"));
+        if (sharedPrim)
+        {
+            setVisibleChildrenRecursive(sharedPrim, timeCode);
+        }
+    }
+}
+
+void buildHandleCache()
+{
+    gHandleCache.clear();
+    
+    omni::usd::UsdContext* context = omni::usd::UsdContext::getContext();
+    if (!context)
+        return;
+    
+    pxr::UsdStageRefPtr stage = context->getStage();
+    if (!stage)
+        return;
+    
+    // Traverse the entire stage once and cache all handle->path mappings
+    for (const pxr::UsdPrim& prim : stage->TraverseAll())
+    {
+        pxr::UsdAttribute handleAttr = prim.GetAttribute(handleToken);
+        if (handleAttr)
+        {
+            uint64_t handle = 0;
+            if (handleAttr.Get(&handle))
+            {
+                HandleCacheEntry entry;
+                entry.path = prim.GetPath();
+                entry.name = prim.GetName();
+                gHandleCache.handleToEntries[handle].push_back(entry);
+            }
+        }
+    }
+    
+    gHandleCache.isValid = true;
+}
+
+void invalidateHandleCache()
+{
+    gHandleCache.clear();
+}
+
+void getHandlePrimNamesBatch(const uint64_t* handles, size_t numHandles, double timeCode,
+                             char* outNames, bool* outIsActionable)
+{
+    if (!handles || !outNames || !outIsActionable || numHandles == 0)
+        return;
+    
+    // Ensure cache is valid
+    if (!gHandleCache.isValid)
+    {
+        buildHandleCache();
+    }
+    
+    omni::usd::UsdContext* context = omni::usd::UsdContext::getContext();
+    pxr::UsdStageRefPtr stage = context ? context->getStage() : nullptr;
+    
+    for (size_t i = 0; i < numHandles; ++i)
+    {
+        char* nameOut = outNames + (i * 256);
+        nameOut[0] = '\0';
+        outIsActionable[i] = false;
+        
+        uint64_t handle = handles[i];
+        if (handle == 0)
+        {
+            strncpy(nameOut, "NULL", 255);
+            continue;
+        }
+        
+        auto it = gHandleCache.handleToEntries.find(handle);
+        if (it == gHandleCache.handleToEntries.end() || it->second.empty() || !stage)
+        {
+            strncpy(nameOut, "INVALID", 255);
+            continue;
+        }
+        
+        // Find the best prim for this handle
+        const HandleCacheEntry* bestEntry = nullptr;
+        bool bestIsVisible = false;
+        double bestLastActiveTime = -1.0;
+        bool bestHasViz = false;
+        
+        for (const HandleCacheEntry& entry : it->second)
+        {
+            pxr::UsdPrim prim = stage->GetPrimAtPath(entry.path);
+            if (!prim)
+                continue;
+            
+            pxr::UsdAttribute vizAttr = prim.GetAttribute(vizToken);
+            bool hasViz = vizAttr.IsValid();
+            bool isVisible = false;
+            double lastActiveTime = -1.0;
+            
+            if (hasViz)
+            {
+                vizAttr.Get(&isVisible, timeCode);
+                
+                if (!isVisible)
+                {
+                    std::vector<double> timeSamples;
+                    vizAttr.GetTimeSamples(&timeSamples);
+                    for (auto rit = timeSamples.rbegin(); rit != timeSamples.rend(); ++rit)
+                    {
+                        if (*rit <= timeCode)
+                        {
+                            bool wasVisible = false;
+                            vizAttr.Get(&wasVisible, *rit);
+                            if (wasVisible)
+                            {
+                                lastActiveTime = *rit;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            bool useThisEntry = false;
+            if (!bestEntry)
+            {
+                useThisEntry = true;
+            }
+            else if (hasViz && !bestHasViz)
+            {
+                useThisEntry = true;
+            }
+            else if (!hasViz && bestHasViz)
+            {
+                useThisEntry = false;
+            }
+            else if (hasViz && bestHasViz)
+            {
+                if (isVisible && !bestIsVisible)
+                    useThisEntry = true;
+                else if (!isVisible && bestIsVisible)
+                    useThisEntry = false;
+                else if (!isVisible && !bestIsVisible && lastActiveTime > bestLastActiveTime)
+                    useThisEntry = true;
+            }
+            
+            if (useThisEntry)
+            {
+                bestEntry = &entry;
+                bestIsVisible = isVisible;
+                bestLastActiveTime = lastActiveTime;
+                bestHasViz = hasViz;
+            }
+        }
+        
+        if (bestEntry)
+        {
+            strncpy(nameOut, bestEntry->name.c_str(), 255);
+            nameOut[255] = '\0';
+            outIsActionable[i] = !bestHasViz || bestIsVisible;
+        }
+        else
+        {
+            strncpy(nameOut, "INVALID", 255);
+        }
+    }
+}
+
 void fillInterface(omni::physx::IPhysXPvd& iface)
 {
     iface.ovdToUsd = ovdToUsd;
@@ -362,4 +626,8 @@ void fillInterface(omni::physx::IPhysXPvd& iface)
     iface.loadOvd = loadOvd;
     iface.getMessages = getMessages;
     iface.clearMessages = clearMessages;
+    iface.updateOvdVisibility = updateOvdVisibility;
+    iface.buildHandleCache = buildHandleCache;
+    iface.invalidateHandleCache = invalidateHandleCache;
+    iface.getHandlePrimNamesBatch = getHandlePrimNamesBatch;
 }

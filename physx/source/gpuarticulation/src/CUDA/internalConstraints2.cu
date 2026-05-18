@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -159,7 +159,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 		//KS - maxFrictionForce stores the friction coefficient...
 		if (nbDofs)
 		{	
-			PxReal frictionCoefficient = dofs->mConstraintData.mFrictionCoefficient[threadIndexInWarp] * stepDt;
+			PxReal deprecatedFrictionCoefficient = dofs->mConstraintData.mDeprecatedFrictionCoefficient[threadIndexInWarp] * stepDt;
 
 			PxU32 jointType = link.mJointType[threadIndexInWarp];
 			const bool isAngularConstraint = jointType == PxArticulationJointType::eREVOLUTE || jointType == PxArticulationJointType::eREVOLUTE_UNWRAPPED || jointType == PxArticulationJointType::eSPHERICAL;
@@ -189,9 +189,16 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 
 						if (hasDrive)
 						{
-							float4 top = dofs[i].mLocalMotionMatrix.mTopxyz_bx[threadIndexInWarp];
-							PxReal targetPos = dofs[i].mConstraintData.mDriveTargetPos[threadIndexInWarp];
-							driveAxis += PxVec3(top.x, top.y, top.z)*targetPos;
+							// The code further below relies on x,y,z of a PxVec3 to map to twist, swing1, swing2
+							PX_COMPILE_TIME_ASSERT(PxArticulationAxis::eTWIST == 0);
+							PX_COMPILE_TIME_ASSERT(PxArticulationAxis::eSWING1 == 1);
+							PX_COMPILE_TIME_ASSERT(PxArticulationAxis::eSWING2 == 2);
+							assert(i < 3);
+
+							const PxU32 axisIndex = dofs[i].mDofIds[threadIndexInWarp];
+							assert(axisIndex < 3);
+
+							driveAxis[axisIndex] = dofs[i].mConstraintData.mDriveTargetPos[threadIndexInWarp];
 							hasAngularDrives = true;
 						}
 					}
@@ -241,7 +248,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 					{
 						loadSpatialMatrix(artiLinks[parent].mSpatialResponseMatrix, threadIndexInWarp, parentResponse);
 						Cm::UnAlignedSpatialVector bias = loadSpatialVector(link.mBiasForce, threadIndexInWarp);
-						transmissionForce = bias.magnitude() * frictionCoefficient;
+						transmissionForce = bias.magnitude() * deprecatedFrictionCoefficient;
 						cfm = PxMax(artiLinks[parent].mCfm[threadIndexInWarp], link.mCfm[threadIndexInWarp]);
 						loaded = true;
 					}
@@ -304,7 +311,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 
 					const PxReal recipResponse = 1.0f / (unitResponse + cfm);
 
-					dofs[i].mConstraintData.mMaxFrictionForce[threadIndexInWarp] = transmissionForce;
+					dofs[i].mConstraintData.mMaxDeprecatedFrictionForce[threadIndexInWarp] = transmissionForce;
 
 					//Set up drives...
 					if (motion == PxArticulationMotion::eLIMITED)
@@ -327,7 +334,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 									error, targetVelocity,
 									isTGSSolver));
 						dofs[i].mConstraintData.mConstraintMaxImpulse[threadIndexInWarp] = maxForce * maxForceScale;
-						}
+					}
 					else
 					{
 						//Zero drives...
@@ -963,26 +970,19 @@ static __device__ void setupInternalSpatialTendonConstraints(
 				//constraint.mResponse[threadIndexInWarp] = unitResponse;
 				constraint.mRecipResponse[threadIndexInWarp] = recipResponse;
 
-				const PxReal a = stepDt * (stepDt*stiffness + damping);
+				constraint.setTendonImplicitSpringParams(
+					computeTendonSpringParams(
+						stepDt, isTGSSolver, 
+						unitResponse,
+						stiffness, damping,
+						limitStiffness), threadIndexInWarp);
 
-				const PxReal a2 = stepDt * (stepDt* limitStiffness + damping);
-
-				const PxReal x = unitResponse > 0.f ? 1.0f / (1.0f + a * unitResponse) : 0.f;
-
-				const PxReal x2 = unitResponse > 0.f ? 1.0f / (1.0f + a2 * unitResponse) : 0.f;
-
-				constraint.mVelMultiplier[threadIndexInWarp] = -x * a;
-				constraint.mImpulseMultiplier[threadIndexInWarp] = isTGSSolver ? 1.f : 1.f - x;
-				constraint.mBiasCoefficient[threadIndexInWarp] = (-stiffness * x * stepDt);
 				constraint.mAppliedForce[threadIndexInWarp] = 0.f;
+				constraint.mLimitAppliedForce[threadIndexInWarp] = 0.f;
 
 				constraint.mAccumulatedLength[threadIndexInWarp] = u;
 				constraint.mLink0[threadIndexInWarp] = rAttachmentLinkIndex;
 				constraint.mLink1[threadIndexInWarp] = linkInd;
-
-				constraint.mLimitImpulseMultiplier[threadIndexInWarp] = isTGSSolver ? 1.f : 1.f - x2;
-				constraint.mLimitBiasCoefficient[threadIndexInWarp] = (-limitStiffness * x2 * stepDt);
-				constraint.mLimitAppliedForce[threadIndexInWarp] = 0.f;
 
 				constraint.mRestDistance[threadIndexInWarp] = attachmentData.mRestDistance[threadIndexInWarp];
 				constraint.mLowLimit[threadIndexInWarp] = attachmentData.mLowLimit[threadIndexInWarp];
@@ -1144,25 +1144,18 @@ static __device__ void setupInternalFixedTendonConstraints(
 
 			constraint.mRecipResponse[threadIndexInWarp] = recipResponse;
 
-			const PxReal a = stepDt * (stepDt*stiffness + damping);
+			constraint.setTendonImplicitSpringParams(
+				computeTendonSpringParams(
+					stepDt, isTGSSolver,
+					unitResponse,
+					stiffness, damping, 
+					limitStiffness), threadIndexInWarp);
 
-			const PxReal a2 = stepDt * (stepDt*limitStiffness + damping);
-
-			const PxReal x = unitResponse > 0.f ? 1.0f / (1.0f + a * unitResponse) : 0.f;
-
-			const PxReal x2 = unitResponse > 0.f ? 1.0f / (1.0f + a2 * unitResponse) : 0.f;
-
-			constraint.mVelMultiplier[threadIndexInWarp] = -x * a;
-			constraint.mImpulseMultiplier[threadIndexInWarp] = isTGSSolver ? 1.f : 1.f - x;
-			constraint.mBiasCoefficient[threadIndexInWarp] = (-stiffness * x * stepDt);
 			constraint.mAppliedForce[threadIndexInWarp] = 0.f;
+			constraint.mLimitAppliedForce[threadIndexInWarp] = 0.f;
 			
 			constraint.mLink0[threadIndexInWarp] = sLinkIndex;
 			constraint.mLink1[threadIndexInWarp] = cLinkInd;
-
-			constraint.mLimitImpulseMultiplier[threadIndexInWarp] = isTGSSolver ? 1.f : 1.f - x2;
-			constraint.mLimitBiasCoefficient[threadIndexInWarp] = (-limitStiffness * x2 * stepDt);
-			constraint.mLimitAppliedForce[threadIndexInWarp] = 0.f;
 		
 
 			//assign constraint index to tendon joint data
@@ -1758,7 +1751,7 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 						PxReal appliedDriveImpulse = thisDof.mConstraintData.mDriveImpulse[threadIdx.x];
 						const PxReal recipResponse = thisDof.mConstraintData.mRecipResponse[threadIdx.x];
 						const PxReal response = thisDof.mConstraintData.mResponse[threadIdx.x];
-						const PxReal maxFrictionForce = thisDof.mConstraintData.mMaxFrictionForce[threadIdx.x];
+						const PxReal maxFrictionForce = thisDof.mConstraintData.mMaxDeprecatedFrictionForce[threadIdx.x];
 						const Cm::UnAlignedSpatialVector deltaVA = loadSpatialVector(thisDof.mConstraintData.mDeltaVA, threadIdx.x);
 						const Cm::UnAlignedSpatialVector deltaVB = loadSpatialVector(thisDof.mConstraintData.mDeltaVB, threadIdx.x);
 
@@ -1772,7 +1765,7 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 						const PxReal maxImpulse = thisDof.mConstraintData.mMaxEffort[threadIdx.x] * effectiveDt;
 						const PxReal speedImpulseGradient = thisDof.mConstraintData.mSpeedEffortGradient[threadIdx.x] / effectiveDt;
 						const PxReal velocityDependentResistance = thisDof.mConstraintData.mVelocityDependentResistance[threadIdx.x] * effectiveDt;
-						const PxReal externalJointImpulse = articulation.jointForce[jointOffset+dof] * effectiveDt;
+						const PxReal externalJointImpulse =  thisDof.mConstraintData.mExternalEffort[threadIdx.x] * effectiveDt;
 						const PxReal maxActuatorVelocity = thisDof.mConstraintData.mMaxActuatorVelocity[threadIdx.x];
 
 						if (!(isTGS && isVelIter))
@@ -2393,24 +2386,18 @@ static __device__ void solveInternalSpatialConstraints(
 
 				const PxReal jointV = row1.innerProduct(childVel) - parentV;
 
-				const PxReal velMultiplier = constraintData.mVelMultiplier[threadIndexInWarp];
-				const PxReal biasCoefficient = constraintData.mBiasCoefficient[threadIndexInWarp];
-				const PxReal appliedForce = constraintData.mAppliedForce[threadIndexInWarp];
-				const PxReal impulseMultiplier = constraintData.mImpulseMultiplier[threadIndexInWarp];
-
-				const PxReal limitBiasCoefficient = constraintData.mLimitBiasCoefficient[threadIndexInWarp];
-				const PxReal limitAppiledForce = constraintData.mLimitAppliedForce[threadIndexInWarp];
-				const PxReal limitImpulseMultiplier = constraintData.mLimitImpulseMultiplier[threadIndexInWarp];
-
-				const PxReal unclampedForce = jointV * velMultiplier + error * biasCoefficient + appliedForce * impulseMultiplier;
-
-				PxReal unclampedForce2 = (error2 * limitBiasCoefficient) + limitAppiledForce * limitImpulseMultiplier;
-
-				const PxReal deltaF = (unclampedForce - appliedForce) + (unclampedForce2 - limitAppiledForce);
+				PxReal unclampedForce = 0.0f;
+				PxReal unclampedLimitForce = 0.0f;
+				PxReal deltaF = 0.0f;
+				computeTendonImpulse(
+					1.0f,
+					constraintData.getTendonImplicitSpringParams(threadIndexInWarp),
+					error, jointV, error2,
+					constraintData.mAppliedForce[threadIndexInWarp], constraintData.mLimitAppliedForce[threadIndexInWarp],
+					unclampedForce, unclampedLimitForce, deltaF);
 
 				constraintData.mAppliedForce[threadIndexInWarp] = unclampedForce;
-
-				constraintData.mLimitAppliedForce[threadIndexInWarp] = unclampedForce2;
+				constraintData.mLimitAppliedForce[threadIndexInWarp] = unclampedLimitForce;
 
 				parentV += constraintData.mDeltaVA[threadIndexInWarp] * -deltaF;
 
@@ -2613,27 +2600,18 @@ static __device__ void solveInternalFixedConstraints(
 
 			PxgArticulationInternalTendonConstraintData& constraint = constraintBlock[constraintId];
 
-			const PxReal recipCoefficient = tjData.mRecipCoefficient[threadIndexInWarp];
-			const PxReal velMultiplier = constraint.mVelMultiplier[threadIndexInWarp];
-			const PxReal biasCoefficient = constraint.mBiasCoefficient[threadIndexInWarp];
-			const PxReal limitBiasCoefficient = constraint.mLimitBiasCoefficient[threadIndexInWarp];
-			const PxReal impulseMultiplier = constraint.mImpulseMultiplier[threadIndexInWarp];
-			const PxReal appliedForce = constraint.mAppliedForce[threadIndexInWarp];
-			const PxReal limitImpulseMultiplier = constraint.mLimitImpulseMultiplier[threadIndexInWarp];
-			const PxReal limitAppliedForce = constraint.mLimitAppliedForce[threadIndexInWarp];
-
-			const PxReal unclampedForce = ((velocity * velMultiplier + error * biasCoefficient)*recipCoefficient)
-				+ appliedForce * impulseMultiplier;
-
-
-			const PxReal unclampedForce2 = (limitError * limitBiasCoefficient * recipCoefficient)
-				+ limitAppliedForce * limitImpulseMultiplier;
-
-			const PxReal deltaF = ((unclampedForce - appliedForce) + (unclampedForce2 - limitAppliedForce));
+			PxReal unclampedForce = 0.0f;
+			PxReal unclampedLimitForce = 0.0f;
+			PxReal deltaF = 0.0f;
+			computeTendonImpulse( 
+				tjData.mRecipCoefficient[threadIndexInWarp],
+				constraint.getTendonImplicitSpringParams(threadIndexInWarp),			
+				error, velocity, limitError,
+				constraint.mAppliedForce[threadIndexInWarp], constraint.mLimitAppliedForce[threadIndexInWarp],
+				unclampedForce, unclampedLimitForce, deltaF);
 
 			constraint.mAppliedForce[threadIndexInWarp] = unclampedForce;
-			constraint.mLimitAppliedForce[threadIndexInWarp] = unclampedForce2;
-
+			constraint.mLimitAppliedForce[threadIndexInWarp] = unclampedLimitForce;
 
 			rootImp += deltaF;
 
@@ -2818,7 +2796,7 @@ const PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal biasCoefficient,
 //two warp each block
 extern "C" __global__
 void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal dt,
-	const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime, const PxReal biasCoefficient, 
+	const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime, const PxReal articulationBiasCoefficient,
 	const PxU32* const PX_RESTRICT staticContactUniqueIds,
 	const PxU32* const PX_RESTRICT staticJointUniqueIds,
 	const PxgSolverSharedDesc<IterativeSolveData>* const PX_RESTRICT sharedDesc,
@@ -2828,19 +2806,20 @@ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc,
     const bool doFrictionDrivePosLimit, const Dy::ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, const bool doStaticContactsAnd1dConstraints)
 {
 	// This kernel also resets articulation reference counts to zero after all usage.
+	const PxReal erp = articulationBiasCoefficient;
 	if(residualReportingEnabled)
 		artiSolveInternalConstraints1T<IterativeSolveData, false, true>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
-			sharedDesc, biasCoefficient, doFriction, isExternalForcesEveryTgsIterationEnabled,
+			sharedDesc, erp, doFriction, isExternalForcesEveryTgsIterationEnabled,
 			doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 	else
 		artiSolveInternalConstraints1T<IterativeSolveData, false, false>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
-			sharedDesc, biasCoefficient, doFriction, isExternalForcesEveryTgsIterationEnabled,
+			sharedDesc, erp, doFriction, isExternalForcesEveryTgsIterationEnabled,
 			doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 }
 
 extern "C" __global__
 void artiSolveInternalConstraintsTGS1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal dt,
-	const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime, const PxReal biasCoefficient,
+	const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime, const PxReal articulationBiasCoefficient,
 	const PxU32* const PX_RESTRICT staticContactUniqueIds,
 	const PxU32* const PX_RESTRICT staticJointUniqueIds,
 	const PxgSolverSharedDesc<IterativeSolveDataTGS>* const PX_RESTRICT sharedDesc,
@@ -2849,7 +2828,7 @@ void artiSolveInternalConstraintsTGS1T(PxgArticulationCoreDesc* PX_RESTRICT scDe
 	const bool doFrictionDrivePosLimit, const Dy::ArticulationConstraintProcessingConfig::VelLimit::Enum doVelLimit, const bool doStaticContactsAnd1dConstraints)
 {
 	// This kernel also resets articulation reference counts to zero after all usage.
-	const PxReal erp = PxMin(0.7f, biasCoefficient);
+	const PxReal erp = articulationBiasCoefficient;
 	if(residualReportingEnabled)
 		artiSolveInternalConstraints1T<IterativeSolveDataTGS, true, true>(scDesc, dt, invDt, elapsedTime, velocityIteration, staticContactUniqueIds, staticJointUniqueIds,
 			sharedDesc, erp, doFriction, isExternalForceEveryStep, doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);

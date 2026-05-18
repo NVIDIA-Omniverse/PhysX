@@ -1,6 +1,6 @@
 # NVIDIA PhysX SDK 5
 
-Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -57,7 +57,7 @@ For copyright details, please refer to the license files included in the package
 | CMake                     | Kitware, Inc. and Contributors                                                      | cmake                            |
 | LLVM                      | University of Illinois at Urbana-Champaign                                          | clang-physxmetadata              |
 | Visual Studio Locator     | Microsoft Corporation                                                               | VsWhere                          |
-| Freeglut                  | Pawel W. Olszta                                                                     | freeglut-windows<br>opengl-linux |
-| Mesa 3-D graphics library | Brian Paul                                                                          | opengl-linux                     |
+| Freeglut                  | Pawel W. Olszta                                                                     | freeglut-windows                 |
+| Mesa 3-D graphics library | Brian Paul                                                                          | OpenGL                           |
 | RapidJSON                 | THL A29 Limited, a Tencent company, and Milo Yip<br>Alexander Chemeris (msinttypes) | rapidjson                        |
 | OpenGL Ext Wrangler Lib   | Nigel Stewart, Milan Ikits, Marcelo E. Magallon, Lev Povalahev                      | [SDK_ROOT]/snippets/graphics     |

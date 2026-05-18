@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -71,12 +71,13 @@ VolumeDeformablePostSolveCallback::~VolumeDeformablePostSolveCallback()
     releaseMemory();
 }
 
-void VolumeDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(size_t deformableIndex, PxVec3* mAllSkinnedVerticesH)
+void VolumeDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(size_t deformableIndex, PxVec3* allSkinnedVerticesH)
 {
-    if (!mAllSkinnedVerticesH || deformableIndex >= mSkinningData.size() || !mSkinningData[deformableIndex].mAllSkinnedVerticesD)
+    // TODO: Potential optimization to use the copy stream instead of mSkinningStream
+    if (!allSkinnedVerticesH || deformableIndex >= mSkinningData.size() || !mSkinningData[deformableIndex].mAllSkinnedVerticesD)
         return;
 
-    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, mAllSkinnedVerticesH, mSkinningData[deformableIndex].mAllSkinnedVerticesD, mSkinningData[deformableIndex].mNumSkinnedVertices, mSkinningStream);
+    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, allSkinnedVerticesH, mSkinningData[deformableIndex].mAllSkinnedVerticesD, mSkinningData[deformableIndex].mNumSkinnedVertices, mSkinningStream);
 }
 
 void VolumeDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
@@ -102,9 +103,11 @@ void VolumeDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
             mSkinningData[i].packageSkinningData(mPackagedSkinningDataH[i]);
         }
 
-        PxCudaHelpersExt::copyHToD(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize);
+        PxCudaHelpersExt::copyHToDAsync(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize, mSkinningStream);
 
         mSkinning->evaluateVerticesEmbeddedIntoVolume(mPackagedSkinningDataD, skinningDataSize, mSkinningStream);
+
+        mCudaContextManager->getCudaContext()->eventRecord(startEvent, mSkinningStream);
     }
 }
 
@@ -180,12 +183,13 @@ SurfaceDeformablePostSolveCallback::~SurfaceDeformablePostSolveCallback()
     releaseMemory();
 }
 
-void SurfaceDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(size_t deformableIndex, PxVec3* mAllSkinnedVerticesH)
+void SurfaceDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(size_t deformableIndex, PxVec3* allSkinnedVerticesH)
 {
-    if (!mAllSkinnedVerticesH || deformableIndex >= mSkinningData.size() || !mSkinningData[deformableIndex].mSkinnedVerticesD)
+    // TODO: Potential optimization to use the copy stream instead of mSkinningStream
+    if (!allSkinnedVerticesH || deformableIndex >= mSkinningData.size() || !mSkinningData[deformableIndex].mSkinnedVerticesD)
         return;
 
-    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, mAllSkinnedVerticesH, mSkinningData[deformableIndex].mSkinnedVerticesD, mSkinningData[deformableIndex].mNumSkinnedVertices, mSkinningStream);
+    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, allSkinnedVerticesH, mSkinningData[deformableIndex].mSkinnedVerticesD, mSkinningData[deformableIndex].mNumSkinnedVertices, mSkinningStream);
 }
 
 void SurfaceDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
@@ -211,10 +215,12 @@ void SurfaceDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
             mSkinningData[i].packageSkinningData(mPackagedSkinningDataH[i]);
         }
 
-        PxCudaHelpersExt::copyHToD(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize);
+        PxCudaHelpersExt::copyHToDAsync(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize, mSkinningStream);
 
         mSkinning->computeNormalVectors(mPackagedSkinningDataD, skinningDataSize, mSkinningStream);
         mSkinning->evaluateVerticesEmbeddedIntoSurface(mPackagedSkinningDataD, skinningDataSize, mSkinningStream);
+
+        mCudaContextManager->getCudaContext()->eventRecord(startEvent, mSkinningStream);
     }
 }
 

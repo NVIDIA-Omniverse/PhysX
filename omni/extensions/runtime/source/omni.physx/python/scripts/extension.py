@@ -1,11 +1,13 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ext
-from .. import get_physx_interface, get_physxunittests_interface, get_physx_visualization_interface, get_physx_scene_query_interface, get_physx_cooking_interface, get_physx_cooking_private_interface, get_physx_simulation_interface, get_physx_benchmarks_interface, get_physx_attachment_private_interface, get_physx_property_query_interface, get_physx_stage_update_interface, get_physx_statistics_interface
+from .ifaces import get_physx_interface, get_physxunittests_interface, get_physx_visualization_interface, get_physx_scene_query_interface, get_physx_cooking_interface, get_physx_cooking_private_interface, get_physx_simulation_interface, get_physx_benchmarks_interface, get_physx_attachment_private_interface, get_physx_property_query_interface, get_physx_stage_update_interface, get_physx_statistics_interface
 from ..bindings._physx import release_physx_interface, release_physx_interface_scripting, release_physxunittests_interface, release_physx_visualization_interface, release_physx_scene_query_interface, release_physx_cooking_interface, release_physx_cooking_private_interface, release_physx_simulation_interface, release_physx_attachment_private_interface, release_physx_benchmarks_interface, release_physx_property_query_interface, release_physx_stage_update_interface, release_physx_statistics_interface
 import os, sys
 import ctypes
+
 
 class PhysxExtension(omni.ext.IExt):
     def on_startup(self):

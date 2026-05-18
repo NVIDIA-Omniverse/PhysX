@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.test
 import os
 import omni.ui as ui
@@ -567,67 +568,60 @@ class DebugViewTests(omni.kit.test.AsyncTestCase):
         omni.timeline.get_timeline_interface().stop()
         
         await self.new_stage()
-        
-    # Disable global sleeping
-    async def test_disable_sleeping_debug_window(self):
+
+    # Disable sleeping via schema setting
+    async def test_disable_sleeping_schema(self):
+        # Test 1: Sleeping enabled (default)
         await self.new_stage()
         stage = omni.usd.get_context().get_stage()
         stage_id = UsdUtils.StageCache.Get().GetId(stage).ToLongInt()
-        
+
+        # Create physics scene with default settings (sleeping enabled)
+        scene_prim = UsdPhysics.Scene.Define(stage, "/World/physicsScene").GetPrim()
+
         cube_prim = self.setup_stage(stage)
-        xformable = UsdGeom.Xformable(cube_prim)
         physx_schema = PhysxSchema.PhysxRigidBodyAPI.Apply(cube_prim)
         physx_schema.GetDisableGravityAttr().Set(True)
 
-        window = ui.Workspace.get_window("Physics Debug")
-        window.focus()
-        for _ in range(5):
-            await omni.kit.app.get_app().next_update_async()
-                
-        scroll_frame = ui_test.find("Physics Debug//Frame/VStack[0]/ScrollingFrame[0]")        
-        scroll_frame.widget.scroll_y = 0
-
-        for _ in range(5):
-            await omni.kit.app.get_app().next_update_async()
-                                
-        cf = ui_test.find("Physics Debug//Frame/**/CollapsableFrame[*].title=='Simulation Overrides'")
-                    
-        # play check sleeping
+        # play check sleeping (sleeping enabled by default)
         omni.timeline.get_timeline_interface().play()
         for _ in range(50):
             await omni.kit.app.get_app().next_update_async()
-            
+
         cube_encoded = PhysicsSchemaTools.sdfPathToInt(cube_prim.GetPrimPath())
-                
+
         is_sleeping = get_physx_simulation_interface().is_sleeping(stage_id, cube_encoded)
         self.assertTrue(is_sleeping)
-        
+
         omni.timeline.get_timeline_interface().stop()
 
-        # disable sleeping play again
-        checkboxLabel = cf.find("**/Label[0].text=='Disable Sleeping'")
-        await ui_test.emulate_mouse_move_and_click(checkboxLabel.position + ui_test.Vec2(200, 5))
-        for _ in range(5):
-            await omni.kit.app.get_app().next_update_async()
+        # Test 2: Sleeping disabled via schema - need new stage since flag is read at scene creation
+        await self.new_stage()
+        stage = omni.usd.get_context().get_stage()
+        stage_id = UsdUtils.StageCache.Get().GetId(stage).ToLongInt()
+
+        # Create physics scene with sleeping disabled (set BEFORE play)
+        scene_prim = UsdPhysics.Scene.Define(stage, "/World/physicsScene").GetPrim()
+        physx_scene_api = PhysxSchema.PhysxSceneAPI.Apply(scene_prim)
+        physx_scene_api.CreateDisableSleepingAttr().Set(True)
+
+        cube_prim = self.setup_stage(stage)
+        physx_schema = PhysxSchema.PhysxRigidBodyAPI.Apply(cube_prim)
+        physx_schema.GetDisableGravityAttr().Set(True)
 
         omni.timeline.get_timeline_interface().play()
         for _ in range(50):
             await omni.kit.app.get_app().next_update_async()
-            
+
         cube_encoded = PhysicsSchemaTools.sdfPathToInt(cube_prim.GetPrimPath())
-                
+
         is_sleeping = get_physx_simulation_interface().is_sleeping(stage_id, cube_encoded)
         self.assertTrue(not is_sleeping)
-        
+
         omni.timeline.get_timeline_interface().stop()
-        
-        # set it back
-        await ui_test.emulate_mouse_move_and_click(checkboxLabel.position + ui_test.Vec2(200, 5))
-        for _ in range(5):
-            await omni.kit.app.get_app().next_update_async()
 
         await self.new_stage()
-        
+
     # PhysX Debug vis test
     async def test_physx_debug_vis_debug_window(self):
         await self.new_stage()

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -137,7 +137,6 @@ TEST_CASE_TEMPLATE("Articulation Spherical Joint Tests", T, USDChange, FabricCha
             {
                 const TfToken changeToken = gPhysxJointAxisMaxJointVelocityAttributeNameToken[i];
                 changeTemplate.setAttributeValue(sphericalJointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -185,7 +184,6 @@ TEST_CASE_TEMPLATE("Articulation Spherical Joint Tests", T, USDChange, FabricCha
             {
                 const TfToken changeToken = gPhysxJointAxisArmatureAttributeNameToken[i];
                 changeTemplate.setAttributeValue(sphericalJointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -233,7 +231,6 @@ TEST_CASE_TEMPLATE("Articulation Spherical Joint Tests", T, USDChange, FabricCha
             {
                 const TfToken changeToken = gPhysxJointAxisStaticFrictionEffortAttributeNameToken[i];
                 changeTemplate.setAttributeValue(sphericalJointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -282,7 +279,6 @@ TEST_CASE_TEMPLATE("Articulation Spherical Joint Tests", T, USDChange, FabricCha
             {
                 const TfToken changeToken = gPhysxJointAxisDynamicFrictionEffortAttributeNameToken[i];
                 changeTemplate.setAttributeValue(sphericalJointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);
@@ -330,7 +326,6 @@ TEST_CASE_TEMPLATE("Articulation Spherical Joint Tests", T, USDChange, FabricCha
             {
                 const TfToken changeToken = gPhysxJointAxisViscousFrictionCoefficientAttributeNameToken[i];
                 changeTemplate.setAttributeValue(sphericalJointPath, changeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
 
             physxSim->simulate(0.01f, 0.0f);

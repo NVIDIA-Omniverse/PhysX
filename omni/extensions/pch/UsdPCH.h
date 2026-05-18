@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
+
 #pragma once
 
 // !!! DO NOT INCLUDE THIS FILE IN A HEADER !!!
@@ -39,9 +40,7 @@
 // std::vsnprintf. By doing it here before everything else, we avoid this nonsense.
 #include <cstdio>
 
-// Python must be included first because it monkeys with macros that cause
-// TBB to fail to compile in debug mode if TBB is included before Python
-#include <boost/python/object.hpp>
+#include <pxr/external/boost/python.hpp>
 #include <pxr/base/arch/stackTrace.h>
 #include <pxr/base/arch/threads.h>
 #include <pxr/base/gf/api.h>
@@ -105,6 +104,7 @@
 #include <pxr/usd/usd/usdFileFormat.h>
 #include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usd/usdGeom/capsule.h>
+#include <pxr/usd/usdGeom/imageable.h>
 #include <pxr/usd/usdGeom/cone.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/basisCurves.h>

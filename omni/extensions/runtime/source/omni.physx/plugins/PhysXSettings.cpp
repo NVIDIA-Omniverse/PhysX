@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
+
 
 #include "UsdPCH.h"
 #include "PhysXSettings.h"
@@ -64,7 +65,6 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingLogRobotics, false },
         { kSettingLogSceneMultiGPU, false },
         { kSettingSimulateEmptyScene, false },
-        { kSettingDisableSleeping, false },
         { kSettingSynchronousKernelLaunches, false },
         { kSettingShowCollisionGroupsWindow, false },
         { kSettingDisableContactProcessing, false },
@@ -90,7 +90,7 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingDisplayDeformables, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayDeformableMeshType, 0 },
         { kSettingDisplayDeformableAttachments, false },
-        { kSettingEnableDeformableBeta, false },
+        { kSettingEnableDeformableDeprecated, false },
         { kSettingDisplayParticles, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayParticlesParticlePositions, int(ui::ParticlePositionType::eSimPositions) },
         { kSettingDisplayParticlesParticleRadius, int(ui::ParticleRadiusType::eParticleContactOffset) },

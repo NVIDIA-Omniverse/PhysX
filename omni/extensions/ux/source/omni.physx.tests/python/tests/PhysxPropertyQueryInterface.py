@@ -1,10 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx.scripts.utils
 import omni.physx.scripts.physicsUtils as physicsUtils
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, TestCategory
-from omni.physx import get_physx_property_query_interface, get_physx_cooking_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_property_query_interface, get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physx.bindings._physx import PhysxPropertyQueryArticulationResponse, PhysxPropertyQueryRigidBodyResponse, PhysxPropertyQueryColliderResponse, PhysxPropertyQueryResult, PhysxPropertyQueryMode
 from pxr import Gf, UsdGeom, UsdPhysics, UsdUtils, PhysicsSchemaTools, PhysxSchema
 import time

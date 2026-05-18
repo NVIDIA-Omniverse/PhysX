@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -832,6 +832,7 @@ public:
 
         request.primStageId = UsdUtilsStageCache::Get().GetId(usdPrim.GetStage()).ToLongInt();
         request.primId = asInt(usdPrim.GetPath());
+        request.primMeshText = { usdPrim.GetPath().GetText(), strlen(usdPrim.GetPath().GetText()) };
 
         // If we haven't loaded the mesh from the in memory mesh cache, we go further to see if it is in the local cache
         // or UsdPrim itself
@@ -2241,7 +2242,7 @@ public:
             for (size_t i = 0; i < pxrSrcPointsInSim.size(); ++i)
             {
                 pxr::GfVec3f& srcPoint = pxrSrcPointsInSim[i];
-                srcPoint = srcToSim.Transform(srcPoint);
+                srcPoint = pxr::GfVec3f(srcToSim.Transform(srcPoint));
             }
         }
 
@@ -2465,7 +2466,7 @@ public:
             for (size_t i = 0; i < pxrSrcPointsInSim.size(); ++i)
             {
                 pxr::GfVec3f& srcPoint = pxrSrcPointsInSim[i];
-                srcPoint = srcToSim.Transform(srcPoint);
+                srcPoint = pxr::GfVec3f(srcToSim.Transform(srcPoint));
             }
         }
 
@@ -2725,7 +2726,7 @@ public:
             GfMatrix4d collToSim = collToWorld * worldToSim;
             for (size_t i = 0; i < collMeshBindPoints.size(); ++i)
             {
-                collMeshBindPoints[i] = collToSim.Transform(collMeshBindPoints[i]);
+                collMeshBindPoints[i] = pxr::GfVec3f(collToSim.Transform(collMeshBindPoints[i]));
             }
             pxrCollBindPointsInSim.swap(collMeshBindPoints);
             pxrSimBindPoints.swap(simMeshBindPoints);

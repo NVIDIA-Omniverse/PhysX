@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
+
 #include "UsdPCH.h"
 
 #include "DebugVisualizationCollisionMesh.h"
@@ -229,50 +230,6 @@ public:
     bool setupFabricAttributes(omni::fabric::UsdStageId usdStageId)
     {
         return false;
-        using namespace omni::fabric;
-        const Token localMatrixToken(gLocalMatrixTokenString);
-        const Token meshCenterToken("_collisionMeshDebugViewCenter");
-        const Token meshRootToken("_collisionMeshDebugViewRoot");
-        const Token meshDiagonalToken("_collisionMeshDebugViewDiagonal");
-        const Token meshCollisionTag("_collisionMeshDebugTag");
-        const Type typeDouble16(BaseDataType::eDouble, 16, 0, AttributeRole::eMatrix);
-        const Type typeFloat3(BaseDataType::eFloat, 3, 0, AttributeRole::eVector);
-        const Type typeFloat1(BaseDataType::eFloat);
-        const Type tagType(BaseDataType::eTag);
-
-        StageReaderWriterId fabricStageId = { 0 };
-        IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<IStageReaderWriter>();
-        if (iStageReaderWriter)
-        {
-            fabricStageId = iStageReaderWriter->get(usdStageId);
-        }
-        if (fabricStageId.id)
-        {
-            StageReaderWriter stage = fabricStageId;
-            iStageReaderWriter->prefetchPrim(usdStageId, asInt(mRootPrim));
-            stage.createAttribute(asInt(mRootPrim), localMatrixToken, typeDouble16);
-
-            for (auto& i : mCollisionPrims)
-            {
-                Path primPath = asInt(i.mPrim.GetPrimPath());
-                iStageReaderWriter->prefetchPrim(usdStageId, primPath);
-                stage.createAttributes<5>(primPath, {
-                                                        AttrNameAndType(tagType, meshCollisionTag),
-                                                        AttrNameAndType(typeDouble16, localMatrixToken),
-                                                        AttrNameAndType(typeFloat3, meshCenterToken),
-                                                        AttrNameAndType(typeFloat3, meshRootToken),
-                                                        AttrNameAndType(typeFloat1, meshDiagonalToken),
-                                                    });
-                carb::Float3& meshCenter = *stage.getAttributeWr<carb::Float3>(primPath, meshCenterToken);
-                meshCenter = i.mMeshCenter;
-                carb::Float3& meshRoot = *stage.getAttributeWr<carb::Float3>(primPath, meshRootToken);
-                meshRoot = i.mRootCenter;
-                float& diagonal = *stage.getAttributeWr<float>(primPath, meshDiagonalToken);
-                diagonal = mDiagonalAxisLength;
-            }
-            return true;
-        }
-        return false;
     }
 
     bool syncRootTransformToFabric(omni::fabric::UsdStageId usdStageId, const pxr::UsdPrim& prim)
@@ -289,7 +246,8 @@ public:
         if (fabricStageId.id)
         {
             StageReaderWriter stage = fabricStageId;
-            pxr::GfMatrix4d& rootMat = *stage.getAttributeWr<pxr::GfMatrix4d>(asInt(mRootPrim), localMatrixToken);
+            pxr::GfMatrix4d& rootMat = *stage.getAttributeWr<pxr::GfMatrix4d>(
+                omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), mRootPrim), localMatrixToken);
             if (prim)
             {
                 rootMat = pxr::UsdGeomXformable(prim).ComputeLocalToWorldTransform(pxr::UsdTimeCode::Default());
@@ -316,8 +274,8 @@ public:
         {
             StageReaderWriter stage = fabricStageId;
             // Look for all children collision meshes
-            const set<AttrNameAndType_v2> requiredAll = {
-                AttrNameAndType_v2(tagType, meshCollisionTag),
+            const set<AttrNameAndType> requiredAll = {
+                AttrNameAndType(tagType, meshCollisionTag),
             };
             stage.findPrims(requiredAll);
 

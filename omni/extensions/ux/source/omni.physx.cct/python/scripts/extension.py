@@ -1,16 +1,15 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ext
 from .physxCct import PhysXCct
 import omni.physxdemos as demo
 from omni.physxuicommon import windowmenuitem
-from omni.physx.scripts.utils import safe_import_tests
 from .. import get_physx_cct_interface
 from ..bindings._physxCct import release_physx_cct_interface
 
 DEMO_MODULE = "omni.physxcct.scripts.scenes"
-safe_import_tests("omni.physxcct.scripts.tests")
 
 
 class PhysxCctExtension(omni.ext.IExt):

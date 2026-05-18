@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -231,6 +231,50 @@ void processCylinderAxis(pxr::UsdPrim* prim, OmniPvdAttributeSample* attrib, Omn
     }
 }
 
+pxr::UsdAttribute getOrCreateAttribute(pxr::UsdPrim& prim, const pxr::TfToken& token, OmniPvdDataType::Enum dataType, bool isArray)
+{
+    pxr::UsdAttribute attr = prim.GetAttribute(token);
+    if (!attr)
+    {
+        switch (dataType)
+        {
+        case OmniPvdDataType::eINT8:
+        case OmniPvdDataType::eINT16:
+        case OmniPvdDataType::eINT32:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->IntArray : pxr::SdfValueTypeNames->Int);
+            break;
+        case OmniPvdDataType::eINT64:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->Int64Array : pxr::SdfValueTypeNames->Int64);
+            break;
+        case OmniPvdDataType::eUINT8:
+        case OmniPvdDataType::eUINT16:
+        case OmniPvdDataType::eUINT32:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->UIntArray : pxr::SdfValueTypeNames->UInt);
+            break;
+        case OmniPvdDataType::eUINT64:
+        case OmniPvdDataType::eOBJECT_HANDLE:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->UInt64Array : pxr::SdfValueTypeNames->UInt64);
+            break;
+        case OmniPvdDataType::eFLOAT32:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->FloatArray : pxr::SdfValueTypeNames->Float);
+            break;
+        case OmniPvdDataType::eFLOAT64:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->DoubleArray : pxr::SdfValueTypeNames->Double);
+            break;
+        case OmniPvdDataType::eSTRING:
+            attr = prim.CreateAttribute(token, isArray ? pxr::SdfValueTypeNames->StringArray : pxr::SdfValueTypeNames->String);
+            break;
+        default:
+            break;
+        }
+    }
+    return attr;
+}
+
+// Explicit template instantiations
+template void processCustomAttribute<OmniPvdAttributeSample>(pxr::UsdPrim& prim, OmniPvdAttributeSample* attrib, OmniPvdAttributeDef* attribDef);
+template void processCustomAttribute<OmniPvdUniqueList>(pxr::UsdPrim& prim, OmniPvdUniqueList* attrib, OmniPvdAttributeDef* attribDef);
+
 int getComponentByteSize(const OmniPvdDataType::Enum dataEnumVal)
 {
     int bytesPerComponent = 1;
@@ -308,23 +352,20 @@ bool processSpecialEnums(
     OmniPvdAttributeDef* attribDef
 )
 {
-    bool isSpecialProcessing = false;
+    if (!prim) return false;
 
-    if (!prim) return isSpecialProcessing;
-
-    TfHashMap<uint32_t, TfToken> *mapPtr;
+    TfHashMap<uint32_t, TfToken> *mapPtr = nullptr;
     
+    // Check for known enum attributes by class and attribute name
     if (isSameString(attribDef->mClass->mClassName.c_str(), "PxArticulationJointReducedCoordinate"))
     {
         if (isSameString(attribDef->mAttributeName.c_str(), "motion"))
         {
             mapPtr = &OmniPvd::articulationJointMotionMap;
-            isSpecialProcessing = true;
         }
         else if (isSameString(attribDef->mAttributeName.c_str(), "driveType"))
         {
             mapPtr = &OmniPvd::articulationJointDriveTypeMap;
-            isSpecialProcessing = true;
         }
     }
     else if (isSameString(attribDef->mClass->mClassName.c_str(), "PxJoint"))
@@ -332,11 +373,12 @@ bool processSpecialEnums(
         if (isSameString(attribDef->mAttributeName.c_str(), "motions") || isSameString(attribDef->mAttributeName.c_str(), "d6Motions"))
         {
             mapPtr = &OmniPvd::jointD6MotionMap;
-            isSpecialProcessing = true;
         }
     }
 
-    if (isSpecialProcessing)
+    if (!mapPtr) return false;
+
+    if (mapPtr)
     {
         const OmniPvdDataType::Enum dataEnumVal = OmniPvdDataType::Enum(attribDef->mDataType);
         int componentByteSize = getComponentByteSize(dataEnumVal);
@@ -373,300 +415,7 @@ bool processSpecialEnums(
         }
     }
 
-    return isSpecialProcessing;
-}
-
-void processCustomAttribute(
-    pxr::UsdPrim &prim,
-    OmniPvdAttributeSample *attrib,
-    OmniPvdAttributeDef* attribDef
-)
-{
-    if (!prim) return;
-    if (!attribDef->mPxrToken)
-    {
-        // should never happen
-        return;
-    }
-    if (processSpecialEnums(prim, attrib, attribDef))
-    {
-        return;
-    }
-    // = attributeInstList->mAttributeDef;
-    const OmniPvdDataType::Enum dataEnumVal = OmniPvdDataType::Enum(attribDef->mDataType);
-    int componentByteSize = getComponentByteSize(dataEnumVal);
-    int nbrValsIncoming = attrib->mDataLen / componentByteSize;
-    if (nbrValsIncoming >= 1)
-    {
-        pxr::UsdAttribute customAttr = prim.GetAttribute(*(attribDef->mPxrToken));
-        /////////////////////////////////////////////////////////////////////////////////
-        // Create the attribute if it was not already created
-        /////////////////////////////////////////////////////////////////////////////////
-        if (!customAttr)
-        {
-            switch (dataEnumVal)
-            {
-            case OmniPvdDataType::eINT8:
-            case OmniPvdDataType::eINT16:
-            case OmniPvdDataType::eINT32:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->Int);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->IntArray);
-                }
-            }
-            break;
-            case OmniPvdDataType::eINT64:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->Int64);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->Int64Array);
-                }
-            }
-            break;
-            case OmniPvdDataType::eUINT8:
-            case OmniPvdDataType::eUINT16:
-            case OmniPvdDataType::eUINT32:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->UInt);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->UIntArray);
-                }
-            }
-            break;
-            case OmniPvdDataType::eUINT64:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->UInt64);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->UInt64Array);
-                }
-            }
-            break;
-            case OmniPvdDataType::eFLOAT32:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->Float);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->FloatArray);
-                }
-            }
-            break;
-            case OmniPvdDataType::eFLOAT64:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->Double);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->DoubleArray);
-                }
-            }
-            break;
-            case OmniPvdDataType::eSTRING:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->String);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->StringArray);
-                }
-
-            }
-            break;
-            case OmniPvdDataType::eOBJECT_HANDLE:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->UInt64);
-                }
-                else
-                {
-                    customAttr = prim.CreateAttribute(*(attribDef->mPxrToken), pxr::SdfValueTypeNames->UInt64Array);
-                }
-            }
-            break;
-            // What about enum?
-            default:
-                break;
-            }
-        }
-
-        if (customAttr)
-        {
-            switch (dataEnumVal)
-            {
-            case OmniPvdDataType::eINT8:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<int32_t, int8_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<int32_t, int8_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eINT16:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<int32_t, int16_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<int32_t, int16_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            case OmniPvdDataType::eINT32:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<int32_t, int32_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<int32_t, int32_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eINT64:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<int64_t, int64_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<int64_t, int64_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eUINT8:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<uint32_t, uint8_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<uint32_t, uint8_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eUINT16:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<uint32_t, uint16_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<uint32_t, uint16_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eUINT32:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<uint32_t, uint32_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<uint32_t, uint32_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eUINT64:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<uint64_t, uint64_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<uint64_t, uint64_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eFLOAT32:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<float, float>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<float, float>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eFLOAT64:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<double, double>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<double, double>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            case OmniPvdDataType::eSTRING:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    char* srcVal = reinterpret_cast<char*>(attrib->mData);
-                    std::string dstVal(srcVal);
-                    customAttr.Set(dstVal, (double)attrib->mTimeStamp);
-                }
-                else
-                {
-                    // How to decode the string from the incoming data?
-                }
-            }
-            break;
-            case OmniPvdDataType::eOBJECT_HANDLE:
-            {
-                if (attribDef->mNbrFields == 1)
-                {
-                    setSingleValueAttrib<uint64_t, uint64_t>(customAttr, attrib);
-                }
-                else
-                {
-                    setMultiValueAttrib<uint64_t, uint64_t>(customAttr, attrib, nbrValsIncoming);
-                }
-            }
-            break;
-            default:
-                break;
-            }
-        }
-    }
+    return true;
 }
 
 void processEnum(

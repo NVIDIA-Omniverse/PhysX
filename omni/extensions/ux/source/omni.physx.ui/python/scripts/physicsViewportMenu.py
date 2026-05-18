@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ext
 import carb.settings
 import omni.ui as ui
@@ -128,7 +129,7 @@ class PhysxViewportMenu:
                 # first time, by passing None as subscription, we just set the setting changes notification as active
                 safe_subscribe_to_setting_change(None, [simulationDataVisualizerItem], physx_bindings.SETTING_DISPLAY_SIMULATION_DATA_VISUALIZER)
 
-                deformable_beta_enabled = carb.settings.get_settings().get(physx_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+                deformable_deprecated_enabled = carb.settings.get_settings().get(physx_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
                 with ui.Menu("Colliders", delegate=ViewportMenuDelegate()):
                     create_radioboxes_for_setting(physx_bindings.SETTING_DISPLAY_COLLIDERS, ["None", "Selected", "All"], none_selected_all_store_setting)
@@ -140,7 +141,7 @@ class PhysxViewportMenu:
                 with ui.Menu("Tendons", delegate=ViewportMenuDelegate()):
                     create_radioboxes_for_setting(physx_bindings.SETTING_DISPLAY_TENDONS, ["None", "Selected", "All"], none_selected_all_store_setting)
                 # DEPRECATED
-                if not deformable_beta_enabled:
+                if deformable_deprecated_enabled:
                     with ui.Menu("Deformable Body (deprecated)", delegate=ViewportMenuDelegate()):
                         create_radioboxes_for_setting(physx_bindings.SETTING_DISPLAY_DEFORMABLE_BODIES, ["None", "Selected", "All"], none_selected_all_store_setting)
                         ui.Separator()
@@ -151,8 +152,8 @@ class PhysxViewportMenu:
                         create_checkbox_for_setting("Hide Actor 0", physx_bindings.SETTING_DISPLAY_ATTACHMENTS_HIDE_ACTOR_0)
                         create_checkbox_for_setting("Hide Actor 1", physx_bindings.SETTING_DISPLAY_ATTACHMENTS_HIDE_ACTOR_1)
                 #~DEPRECATED
-                if deformable_beta_enabled:
-                    with ui.Menu("Deformables (beta)", delegate=ViewportMenuDelegate()):
+                if not deformable_deprecated_enabled:
+                    with ui.Menu("Deformables", delegate=ViewportMenuDelegate()):
                         create_radioboxes_for_setting(physx_bindings.SETTING_DISPLAY_DEFORMABLES, ["None", "Selected", "All"], none_selected_all_store_setting)
                         ui.Separator()
                         create_radioboxes_for_setting(

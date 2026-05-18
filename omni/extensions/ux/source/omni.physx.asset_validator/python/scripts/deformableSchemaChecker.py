@@ -1,18 +1,17 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
 __all__ = ["DeformableSchemaChecker"]
 
-from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion
-from omni.asset_validator.core.complianceChecker import is_omni_path
+from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion, is_omni_path
 from pxr import Usd, UsdPhysics, UsdUtils, UsdGeom, PhysxSchema, Sdf, Gf, UsdShade, Vt, Tf
 from typing import Any, List, Dict, Set, Optional, Tuple, Union, Type
 import carb
 import usdrt
 import omni
 import omni.physx.bindings._physx as physx_bindings
-from omni.physx import acquire_physx_attachment_private_interface
+from omni.physx.scripts.ifaces import acquire_physx_attachment_private_interface
 import numpy as np
 from .utils import check_timeline_playing
 

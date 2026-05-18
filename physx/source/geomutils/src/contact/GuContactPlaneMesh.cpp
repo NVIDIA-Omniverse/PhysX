@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -111,7 +111,7 @@ bool Gu::contactPlaneMesh(GU_CONTACT_METHOD_ARGS)
 	const void* PX_RESTRICT tris = shapeMesh.triangleMesh->getTriangles();
 
 	PxBitMap bitmap;
-	bitmap.resize(shapeMesh.triangleMesh->getNbVertices(), false); //TODO: Not ideal, dynamic allocation for every function call
+	bitmap.resize(shapeMesh.triangleMesh->getNbVertices()); //TODO: Not ideal, dynamic allocation for every function call
 
 	// FIXME: Make use of bvh to reduce number of checks here
 	bool contact = false;

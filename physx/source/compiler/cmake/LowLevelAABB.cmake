@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build LowLevelAABB common
@@ -49,6 +49,7 @@ SOURCE_GROUP("include" FILES ${LLAABB_HEADERS})
 SET(LLAABB_SOURCE	
 	${LLAABB_DIR}/src/BpAABBManager.cpp
 	${LLAABB_DIR}/src/BpAABBManagerBase.cpp
+	${LLAABB_DIR}/src/BpBoxPruningKernels.h
 	${LLAABB_DIR}/src/BpBroadPhase.cpp
 	${LLAABB_DIR}/src/BpBroadPhaseUpdate.cpp
 	${LLAABB_DIR}/src/BpBroadPhaseABP.cpp

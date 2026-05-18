@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -338,7 +338,6 @@ extern "C" __global__ void computeArtiMassMatrices(
 	float* PX_RESTRICT data,
 	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
 	const PxU32 maxDofs,
-	const bool rootMotion,
 	const PxgArticulation* PX_RESTRICT articulations)
 {
 	const PxU32 jobIndex = threadIdx.y + blockIdx.x * blockDim.y;
@@ -357,11 +356,10 @@ extern "C" __global__ void computeArtiMassMatrices(
 		const PxU32 linkCount = arti.data.numLinks;
 		const PxU32 dofCount = arti.data.numJointDofs;
 		const bool fixBase = arti.data.flags & PxArticulationFlag::eFIX_BASE;
-		const PxU32 rootDof = (rootMotion && !fixBase) ? 6 : 0; // Add the DoF of the root in the floating base case
-		const PxU32 bufferDof = rootMotion ? 6 : 0;
+		const PxU32 rootDof = fixBase ? 0 : 6; // Add the DoF of the root in the floating base case
 		const PxU32 matSize = dofCount + rootDof;
 
-		float* massMatrix = &data[jobIndex * (maxDofs + bufferDof) * (maxDofs + bufferDof)];
+		float* massMatrix = &data[jobIndex * (maxDofs + 6) * (maxDofs + 6)];
 		for (int i = threadIndex; i < matSize * matSize; i += WARP_SIZE)
 			massMatrix[i] = 0;
 
@@ -488,7 +486,7 @@ extern "C" __global__ void computeArtiMassMatrices(
 				if (parentLink == 0)
 				{
 					// For floating base, calculate the resulting force on the root
-					if (!fixBase && rootMotion)
+					if (!fixBase)
 					{
 						for (PxU32 dof0 = 0; dof0 < jointData.nbDof; ++dof0)
 						{
@@ -534,7 +532,7 @@ extern "C" __global__ void computeArtiMassMatrices(
 		}
 
 		// Adding the spatial articulated inertia of the root
-		if (threadIndex == 0 && !fixBase && rootMotion)
+		if (threadIndex == 0 && !fixBase)
 		{
 			// Note that the spatial articulated inertia assumes that the root angular acceleration comes first,
 			// while the mass matrix assumes that the root linear acceleration comes first
@@ -563,22 +561,6 @@ extern "C" __global__ void computeArtiMassMatrices(
 				}
 			}
 		}
-		else if (!fixBase && !rootMotion)
-		{
-			__syncwarp();
-
-			Dy::SpatialMatrix baseInvI = spatialInertias[0].invertInertia();
-
-			for (PxU32 row = threadIndex; row < dofCount; row += WARP_SIZE)
-			{
-				const Cm::UnAlignedSpatialVector& m0 = worldMotionMatrices[row];
-				for (PxU32 col = 0; col < dofCount; ++col)
-				{
-					const Cm::UnAlignedSpatialVector& m1 = worldMotionMatrices[col];
-					massMatrix[row * dofCount + col] -= m0.innerProduct(baseInvI * m1);
-				}
-			}
-		}
 		__syncwarp();
 	}
 }
@@ -595,7 +577,6 @@ extern "C" __global__ void computeArtiGravityForces(
 	float* PX_RESTRICT data,
 	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
 	const PxU32 maxDofs,
-	const bool rootMotion,
 	const PxgArticulation* articulations, const PxVec3 gravity)
 {
 	const PxU32 jobIndex = threadIdx.y + blockIdx.x * blockDim.y;
@@ -609,192 +590,63 @@ extern "C" __global__ void computeArtiGravityForces(
 		const PxU32 linkCount = arti.data.numLinks;
 		const PxU32 dofCount = arti.data.numJointDofs;
 		const bool fixBase = arti.data.flags & PxArticulationFlag::eFIX_BASE;
-		const PxU32 rootDof = (rootMotion && !fixBase) ? 6 : 0; // Add the DoF of the root in the floating base case
-		const PxU32 bufferDof = rootMotion ? 6 : 0;
+		const PxU32 rootDof = fixBase ? 0 : 6; // Add the DoF of the root in the floating base case
 		const PxVec3 tGravity = -gravity;
 
-		float* PX_RESTRICT gravityCompensationForces = &data[jobIndex * (maxDofs + bufferDof)];
+		float* PX_RESTRICT gravityCompensationForces = &data[jobIndex * (maxDofs + 6)];
 
-		if (rootMotion || fixBase)
+		// I use this as a tmp buffer to store ZAForce vectors of all links
+		Cm::UnAlignedSpatialVector* PX_RESTRICT zAForces = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.zAForces); // ???
+
+		for (PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
 		{
-			// I use this as a tmp buffer to store ZAForce vectors of all links
-			Cm::UnAlignedSpatialVector* PX_RESTRICT zAForces = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.zAForces); // ???
-
-			for (PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
-			{
-				const float4 invIM = arti.linkProps[link].invInertiaXYZ_invMass;
-				const PxReal mass = invIM.w == 0.f ? 0.f : (1.f / invIM.w);
-				zAForces[link].top = tGravity * mass;
-				zAForces[link].bottom = PxVec3(0);
-			}
-
-			__syncwarp();
-
-			for (PxU32 link = (linkCount - 1); link > 0; --link)
-			{
-				const PxTransform& body2World = arti.linkBody2Worlds[link];
-				const PxU32 parentLink = arti.parents[link];
-				const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
-
-				if (threadIndex == 0)
-					zAForces[parentLink] += translateSpatialVector(body2World.p - parentBody2World.p, zAForces[link]);
-
-				const ArticulationJointCoreData& jointData = arti.jointData[link];
-				PxReal* force = &gravityCompensationForces[jointData.jointOffset];
-
-				if (threadIndex < jointData.nbDof)
-					force[threadIndex + rootDof] = link; // I'll just store dof's link index here and use it in the next loop
-			}
-
-			__syncwarp();
-
-			for (PxU32 dof = threadIndex; dof < dofCount; dof += WARP_SIZE)
-			{
-				PxU32 link = (PxU32)gravityCompensationForces[dof + rootDof];
-				const ArticulationJointCoreData& jointData = arti.jointData[link];
-				const PxTransform& body2World = arti.linkBody2Worlds[link];
-				Cm::UnAlignedSpatialVector dofMotion = arti.motionMatrix[link][dof - jointData.jointOffset].rotate(body2World);
-				gravityCompensationForces[dof + rootDof] = dofMotion.innerProduct(zAForces[link]);
-			}
-
-			// Add root DoFs contribution
-			if (threadIndex == 0 && rootDof == 6)
-			{
-				gravityCompensationForces[0] = zAForces[0].top.x;
-				gravityCompensationForces[1] = zAForces[0].top.y;
-				gravityCompensationForces[2] = zAForces[0].top.z;
-				gravityCompensationForces[3] = zAForces[0].bottom.x;
-				gravityCompensationForces[4] = zAForces[0].bottom.y;
-				gravityCompensationForces[5] = zAForces[0].bottom.z;
-			}
-
-			__syncwarp();
+			const float4 invIM = arti.linkProps[link].invInertiaXYZ_invMass;
+			const PxReal mass = invIM.w == 0.f ? 0.f : (1.f / invIM.w);
+			zAForces[link].top = tGravity * mass;
+			zAForces[link].bottom = PxVec3(0);
 		}
-		else
+
+		__syncwarp();
+
+		for (PxU32 link = (linkCount - 1); link > 0; --link)
 		{
-			// I use this as a tmp buffer to store world space spatial inertias of all links
-			Dy::SpatialMatrix* PX_RESTRICT spatialInertias = reinterpret_cast<Dy::SpatialMatrix*>(arti.worldSpatialArticulatedInertia); // ???
-			// I use this as a tmp buffer to store motion velocities of all links ??? Or not. The velocities seem valid. Maybe I don't need to compute them ???
-			Cm::UnAlignedSpatialVector* PX_RESTRICT motionVelocities = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.motionVelocities); // ???
-			// I use this as a tmp buffer to store motion accelerations of all links
-			Cm::UnAlignedSpatialVector* PX_RESTRICT motionAccelerations = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.motionAccelerations); // ???
-			// I use this as a tmp buffer to store ZAForce vectors of all links
-			Cm::UnAlignedSpatialVector* PX_RESTRICT zAForces = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.zAForces); // ???
-
-			// Compute links inertias
-
-			for (PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
-			{
-				const float4 invIM = arti.linkProps[link].invInertiaXYZ_invMass;
-				const PxReal mass = invIM.w == 0.f ? 0.f : (1.f / invIM.w);
-				const PxVec3 localInertia = PxVec3(invIM.x == 0.f ? 0.f : (1.f / invIM.x), invIM.y == 0.f ? 0.f : (1.f / invIM.y), invIM.z == 0.f ? 0.f : (1.f / invIM.z));
-				Dy::SpatialMatrix spatialInertia;
-				spatialInertia.topLeft = PxMat33(PxZero);
-				spatialInertia.topRight = PxMat33::createDiagonal(PxVec3(mass));
-				Cm::transformInertiaTensor(localInertia, PxMat33(arti.linkBody2Worlds[link].q), spatialInertia.bottomLeft);
-				spatialInertias[link] = spatialInertia;
-			}
-
-			__syncwarp();
-
-			if (threadIndex == 0) // @@@ ??? Can I optimize it somehow?
-			{
-				for (PxU32 link = linkCount - 1; link > 0; --link)
-				{
-					const PxTransform& body2World = arti.linkBody2Worlds[link];
-					const PxU32 parentLink = arti.parents[link];
-					const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
-					const PxVec3 rw = body2World.p - parentBody2World.p;
-					PxMat33 skewSymmetric(PxVec3(0, rw.z, -rw.y), PxVec3(-rw.z, 0, rw.x), PxVec3(rw.y, -rw.x, 0));
-					Dy::SpatialMatrix parentSpaceSpatialInertia = spatialInertias[link];
-					translateInertia(skewSymmetric, parentSpaceSpatialInertia);
-					spatialInertias[parentLink] += parentSpaceSpatialInertia;
-				}
-			}
-
-			__syncwarp();
-
-			// Compute motion velocities ??? Should I even do this?
+			const PxTransform& body2World = arti.linkBody2Worlds[link];
+			const PxU32 parentLink = arti.parents[link];
+			const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
 
 			if (threadIndex == 0)
-			{
-				for (PxU32 link = 1; link < linkCount; ++link)
-				{
-					const PxTransform& body2World = arti.linkBody2Worlds[link];
-					const PxU32 parentLink = arti.parents[link];
-					const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
-					motionVelocities[link] = translateSpatialVector(parentBody2World.p - body2World.p, motionVelocities[parentLink]);
-				}
-			}
+				zAForces[parentLink] += translateSpatialVector(body2World.p - parentBody2World.p, zAForces[link]);
 
-			__syncwarp();
+			const ArticulationJointCoreData& jointData = arti.jointData[link];
+			PxReal* force = &gravityCompensationForces[jointData.jointOffset];
 
-			// Init za-forces
-
-			for (PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
-			{
-				const float4 invIM = arti.linkProps[link].invInertiaXYZ_invMass;
-				const PxReal mass = invIM.w == 0.f ? 0.f : (1.f / invIM.w);
-				const PxMat33& I = spatialInertias[link].bottomLeft;
-				const PxVec3& vA = motionVelocities[link].top;
-				zAForces[link].top = -tGravity * mass; // ??? @@@ Yea, fix-base version has no minus here.
-				zAForces[link].bottom = vA.cross(I * vA);
-			}
-
-			__syncwarp();
-
-			for (PxU32 link = (linkCount - 1); link > 0; --link)
-			{
-				const PxTransform& body2World = arti.linkBody2Worlds[link];
-				const PxU32 parentLink = arti.parents[link];
-				const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
-
-				if (threadIndex == 0)
-					zAForces[parentLink] += translateSpatialVector(body2World.p - parentBody2World.p, zAForces[link]);
-			}
-
-			__syncwarp();
-
-			// Compute motion acceleration
-
-			if (threadIndex == 0)
-			{
-				Dy::SpatialMatrix invInertia = spatialInertias[0].invertInertia();
-				motionAccelerations[0] = -(invInertia * zAForces[0]);
-			}
-			for (PxU32 link = 1; link < linkCount; ++link)
-			{
-				const PxTransform& body2World = arti.linkBody2Worlds[link];
-				const PxU32 parentLink = arti.parents[link];
-				const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
-				if (threadIndex == 0)
-				{
-					motionAccelerations[link] = translateSpatialVector(parentBody2World.p - body2World.p, motionAccelerations[parentLink]);
-					zAForces[link] = spatialInertias[link] * motionAccelerations[link] + zAForces[link];
-				}
-
-				const ArticulationJointCoreData& jointData = arti.jointData[link];
-				PxReal* force = &gravityCompensationForces[jointData.jointOffset];
-
-				if (threadIndex < jointData.nbDof)
-					force[threadIndex] = link; // I'll just store dof's link index here and use it in the next loop
-			}
-
-			__syncwarp();
-
-			// Compute joint forces
-
-			for (PxU32 dof = threadIndex; dof < dofCount; dof += WARP_SIZE)
-			{
-				PxU32 link = (PxU32)gravityCompensationForces[dof];
-				const ArticulationJointCoreData& jointData = arti.jointData[link];
-				const PxTransform& body2World = arti.linkBody2Worlds[link];
-				Cm::UnAlignedSpatialVector dofMotion = arti.motionMatrix[link][dof - jointData.jointOffset].rotate(body2World);
-				gravityCompensationForces[dof] = dofMotion.innerProduct(zAForces[link]);
-			}
-
-			__syncwarp();
+			if (threadIndex < jointData.nbDof)
+				force[threadIndex + rootDof] = link; // I'll just store dof's link index here and use it in the next loop
 		}
+
+		__syncwarp();
+
+		for (PxU32 dof = threadIndex; dof < dofCount; dof += WARP_SIZE)
+		{
+			PxU32 link = (PxU32)gravityCompensationForces[dof + rootDof];
+			const ArticulationJointCoreData& jointData = arti.jointData[link];
+			const PxTransform& body2World = arti.linkBody2Worlds[link];
+			Cm::UnAlignedSpatialVector dofMotion = arti.motionMatrix[link][dof - jointData.jointOffset].rotate(body2World);
+			gravityCompensationForces[dof + rootDof] = dofMotion.innerProduct(zAForces[link]);
+		}
+
+		// Add root DoFs contribution
+		if (threadIndex == 0 && rootDof == 6)
+		{
+			gravityCompensationForces[0] = zAForces[0].top.x;
+			gravityCompensationForces[1] = zAForces[0].top.y;
+			gravityCompensationForces[2] = zAForces[0].top.z;
+			gravityCompensationForces[3] = zAForces[0].bottom.x;
+			gravityCompensationForces[4] = zAForces[0].bottom.y;
+			gravityCompensationForces[5] = zAForces[0].bottom.z;
+		}
+
+		__syncwarp();
 	}
 }
 
@@ -805,7 +657,6 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 	float* PX_RESTRICT data,
 	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
 	const PxU32 maxDofs,
-	const bool rootMotion,
 	const PxgArticulation* articulations)
 {
 	const PxU32 jobIndex = threadIdx.y + blockIdx.x * blockDim.y;
@@ -828,10 +679,9 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 		const PxU32 linkCount = arti.data.numLinks;
 		const PxU32 dofCount = arti.data.numJointDofs;
 		const bool fixBase = arti.data.flags & PxArticulationFlag::eFIX_BASE;
-		const PxU32 rootDof = (rootMotion && !fixBase) ? 6 : 0; // Add the DoF of the root in the floating base case
-		const PxU32 bufferDof = rootMotion ? 6 : 0;
+		const PxU32 rootDof = fixBase ? 0 : 6; // Add the DoF of the root in the floating base case
 
-		float* PX_RESTRICT coriolisForces = &data[jobIndex * (maxDofs + bufferDof)];
+		float* PX_RESTRICT coriolisForces = &data[jobIndex * (maxDofs + 6)];
 
 		// Velocities
 		// It seems to be unnecessary to recalculate the motion velocities as we always call
@@ -966,12 +816,6 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 
 			if (threadIndex == 0)
 			{
-				if (!rootMotion)
-				{
-					Dy::SpatialMatrix invInertia = spatialInertias[0].invertInertia();
-					motionAccelerations[0] = -(invInertia * zAForces[0]);
-				}
-
 				for (PxU32 link = 1; link < linkCount; ++link)
 				{
 					const PxTransform& body2World = arti.linkBody2Worlds[link];
@@ -998,7 +842,7 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 
 		// Add root contribution
 
-		if (rootMotion && threadIndex == 0 && !fixBase)
+		if (threadIndex == 0 && !fixBase)
 		{
 			coriolisForces[0] = zAForces[0].top.x;
 			coriolisForces[1] = zAForces[0].top.y;
@@ -1017,6 +861,7 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 // We have to separate the calculation of the total mass from the calculation
 // of the sum of COM in case there are more than 32 links in one articulation.
 extern "C" __global__ void computeArtiCOM(
+	const PxU32 nbIndices,
 	PxVec3* PX_RESTRICT data,
 	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,
 	const bool rootFrame,
@@ -1025,53 +870,56 @@ extern "C" __global__ void computeArtiCOM(
 	const PxU32 jobIndex = threadIdx.y + blockIdx.x * blockDim.y;
 	const PxU32 threadIndex = threadIdx.x;
 
-	const PxU32 artiIndex = gpuIndices[jobIndex];
-	const PxgArticulation& arti = articulations[artiIndex];
-
-	PxVec3* articulationCOM = &data[jobIndex];
-	const PxU32 linkCount = arti.data.numLinks;
-
-	// calculate the total mass of the articulation and store it temporarily in articulationCOM->x
-	for(PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
+	if(jobIndex < nbIndices)
 	{
-		const PxReal mass = 1.0f / arti.linkProps[link].invInertiaXYZ_invMass.w;
+		const PxU32 artiIndex = gpuIndices[jobIndex];
+		const PxgArticulation& arti = articulations[artiIndex];
 
-		// calculate the total mass and store it temporarily in articulationCOM->x
-		PxRedAddGlobal(&articulationCOM->x, mass);
-	}
+		PxVec3* articulationCOM = &data[jobIndex];
+		const PxU32 linkCount = arti.data.numLinks;
 
-	__syncwarp();
+		// calculate the total mass of the articulation and store it temporarily in articulationCOM->x
+		for(PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
+		{
+			const PxReal mass = 1.0f / arti.linkProps[link].invInertiaXYZ_invMass.w;
 
-	PxReal totalMass = articulationCOM->x;
+			// calculate the total mass and store it temporarily in articulationCOM->x
+			PxRedAddGlobal(&articulationCOM->x, mass);
+		}
 
-	// calculate the COM as the sum of body COM
-	for(PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
-	{
-		const PxVec3 childPose = arti.linkBody2Worlds[link].p;
-		const PxReal mass = 1.0f / arti.linkProps[link].invInertiaXYZ_invMass.w;
-		const PxVec3 COM = childPose * mass;
+		__syncwarp();
+
+		PxReal totalMass = articulationCOM->x;
 
 		// calculate the COM as the sum of body COM
-		PxRedAddGlobal(&articulationCOM->x, COM[0]);
-		PxRedAddGlobal(&articulationCOM->y, COM[1]);
-		PxRedAddGlobal(&articulationCOM->z, COM[2]);
-	}
-
-	if(threadIndex == 0)
-	{
-		// remove the total mass from articulationCOM->x
-		articulationCOM->x -= totalMass;
-
-		*articulationCOM /= totalMass;
-
-		// move to the root frame
-		if(rootFrame)
+		for(PxU32 link = threadIndex; link < linkCount; link += WARP_SIZE)
 		{
-			*articulationCOM = arti.linkBody2Worlds[0].getInverse().transform(*articulationCOM);
-		}
-	}
+			const PxVec3 childPose = arti.linkBody2Worlds[link].p;
+			const PxReal mass = 1.0f / arti.linkProps[link].invInertiaXYZ_invMass.w;
+			const PxVec3 COM = childPose * mass;
 
-	__syncwarp();
+			// calculate the COM as the sum of body COM
+			PxRedAddGlobal(&articulationCOM->x, COM[0]);
+			PxRedAddGlobal(&articulationCOM->y, COM[1]);
+			PxRedAddGlobal(&articulationCOM->z, COM[2]);
+		}
+
+		if(threadIndex == 0)
+		{
+			// remove the total mass from articulationCOM->x
+			articulationCOM->x -= totalMass;
+
+			*articulationCOM /= totalMass;
+
+			// move to the root frame
+			if(rootFrame)
+			{
+				*articulationCOM = arti.linkBody2Worlds[0].getInverse().transform(*articulationCOM);
+			}
+		}
+
+		__syncwarp();
+	}
 }
 
 // This is an optimized port of FeatherstoneArticulation::getCentroidalMomentumMatrix

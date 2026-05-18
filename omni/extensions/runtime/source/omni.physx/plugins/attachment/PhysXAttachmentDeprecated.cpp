@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1150,7 +1150,7 @@ bool getDeformableMeshInfoDeprecated(const SdfPath& deformablePath, DeformableMe
             for (size_t i = 0; i < femClothDesc->points.size(); ++i)
             {
                 GfVec3f position = { femClothDesc->points[i].x, femClothDesc->points[i].y, femClothDesc->points[i].z };
-                position = clothToWorld.Transform(position);
+                position = pxr::GfVec3f(clothToWorld.Transform(position));
                 deformableMeshInfo.positions[i] = *(Float3*)position.data();
             }
 
@@ -1185,7 +1185,7 @@ bool getDeformableMeshInfoDeprecated(const SdfPath& deformablePath, DeformableMe
             for (size_t i = 0; i < particleClothDesc->points.size(); ++i)
             {
                 GfVec3f position = { particleClothDesc->points[i].x, particleClothDesc->points[i].y, particleClothDesc->points[i].z };
-                position = clothToWorld.Transform(position);
+                position = pxr::GfVec3f(clothToWorld.Transform(position));
                 deformableMeshInfo.positions[i] = *(Float3*)position.data();
             }
 

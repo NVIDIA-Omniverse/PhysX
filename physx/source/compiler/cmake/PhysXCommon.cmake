@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXCommon common
@@ -105,7 +105,6 @@ SET(PHYSXCOMMON_GEOMETRY_HEADERS
 	${PHYSX_ROOT_DIR}/include/geometry/PxCustomGeometry.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxConvexCoreGeometry.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometry.h
-	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryInternal.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryHelpers.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryHit.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryQuery.h
@@ -179,6 +178,8 @@ SET(PHYSXCOMMON_GU_HEADERS
 	${GU_SOURCE_DIR}/include/GuConvexSupport.h
 	${GU_SOURCE_DIR}/include/GuConvexGeometry.h
 	${GU_SOURCE_DIR}/include/GuRefGjkEpa.h
+	${GU_SOURCE_DIR}/include/GuMeshDepenetration.h
+	${GU_SOURCE_DIR}/include/GuLocalCluster.h
 )
 SOURCE_GROUP(geomutils\\include FILES ${PHYSXCOMMON_GU_HEADERS})
 
@@ -450,6 +451,7 @@ SET(PHYSXCOMMON_GU_MESH_SOURCE
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMesh.h
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMeshUtils.h
 	${GU_SOURCE_DIR}/src/mesh/GuTriangleRefinement.h
+	${GU_SOURCE_DIR}/src/mesh/GuMeshDepenetration.cpp
 )
 SOURCE_GROUP(geomutils\\src\\mesh FILES ${PHYSXCOMMON_GU_MESH_SOURCE})
 

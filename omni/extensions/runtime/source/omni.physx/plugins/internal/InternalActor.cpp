@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -123,11 +123,11 @@ void InternalActor::switchFromKinematic()
     ActorInitialDataMap::iterator initFit = db.mInitialActorDataMap.find(mPrim.GetPrimPath());
     if (initFit == db.mInitialActorDataMap.end())
     {
-        initializeDynamicActor();
+        initializeDynamicActor(true);
     }
 }
 
-void InternalActor::initializeDynamicActor()
+void InternalActor::initializeDynamicActor(bool runtimeInitialization)
 {
     const bool useFabric = OmniPhysX::getInstance().getCachedSettings().fabricEnabled;
     const bool updateUSD = OmniPhysX::getInstance().getCachedSettings().updateToUsd &&
@@ -236,6 +236,14 @@ void InternalActor::initializeDynamicActor()
                 if (posAttr && orAttr && orAttr.GetSpec().GetValueType() == quatf)
                 {                    
                     mFlags |= InternalActorFlag::eFAST_TRANSFORM;
+                    // If runtime initialization, we switched from a kinematic body, the transformation
+                    // might not match the initial USD one, we should apply the one from the current PhysX data
+                    if (runtimeInitialization && mActor)
+                    {
+                        const PxTransform globalPose = mActor->getGlobalPose();
+                        posAttr->SetDefaultValue(VtValue(GfVec3f(toVec3f(globalPose.p))));
+                        orAttr->SetDefaultValue(VtValue((GfQuatf&)globalPose.q));
+                    }
                 }
             }
         }

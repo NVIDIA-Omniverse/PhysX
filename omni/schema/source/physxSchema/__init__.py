@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+#
 from pxr import Tf
 
 # PreparePythonModule didn't make it's way into USD

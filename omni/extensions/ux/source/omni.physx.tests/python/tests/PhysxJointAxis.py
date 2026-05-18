@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import typing
 import carb
 import omni.physx.scripts.utils
@@ -670,7 +671,7 @@ class PhysxJointAxisAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Arti
         physxJointAPI = PhysxSchema.PhysxJointAPI.Apply(childLinkInboundJointPrim)
 
         # Spherical joints do not behave the same as prismatic/revolute joints for reasons unknown.
-        # This issue is tracked in NVBug 5199927
+        # This issue is tracked in nvbugs (NVBug 5199927)
         permittedErrorLargeArmature = [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.01, 0.01, 0.01]
         permittedErrorSmallArmature = [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.1, 0.1, 0.1]
 
@@ -822,7 +823,7 @@ class PhysxJointAxisAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Arti
         physxJointAPI = PhysxSchema.PhysxJointAPI.Apply(childLinkInboundJointPrim)
 
         # Spherical joints do not behave the same as prismatic/revolute joints for reasons unknown.
-        # This issue is tracked in nvbug 5199927
+        # This issue is tracked in nvbugs (NVBug 5199927)
         permittedErrorSmallFriction = [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.1, 0.1, 0.1]
        
         # Case 1
@@ -968,7 +969,7 @@ class PhysxJointAxisAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Arti
         physxJointAPI = PhysxSchema.PhysxJointAPI.Apply(childLinkInboundJointPrim)
 
         # Spherical joints do not behave the same as prismatic/revolute joints for reasons unknown.
-        # This issue is tracked in nvbug 5199927
+        # This issue is tracked in nvbugs (NVBug 5199927)
         permittedError = [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.1, 0.1, 0.1]
        
         # Case 1

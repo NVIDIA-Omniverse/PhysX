@@ -22,13 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "BpAABBManager.h"
 
-#define NB_SENTINELS	6
+#define NB_SENTINELS			6
+
+// PT: BOUNDS_DOUBLE_BUFFERING avoids some memcopies during sorting, at the cost of
+// increased memory usage. The jury is still out. It feels better to save memory
+// in this case, as the extended buffers can also produce more cache misses anyway.
+#define BOUNDS_DOUBLE_BUFFERING	0
 
 #include "foundation/PxHashSet.h"
 #include "CmUtils.h"
@@ -73,12 +78,12 @@ namespace Bp
 {
 static PX_FORCE_INLINE uint32_t PxComputeHash(const Pair& p)
 {
-	return PxU32(physx::PxComputeHash( (p.mID0&0xffff)|(p.mID1<<16)) );
+	return hash(p.mID0, p.mID1);
 }
 
 static PX_FORCE_INLINE uint32_t PxComputeHash(const AggPair& p)
 {
-	return PxU32(physx::PxComputeHash( (p.mIndex0&0xffff)|(p.mIndex1<<16)) );
+	return hash(p.mIndex0, p.mIndex1);
 }
 
 static PX_FORCE_INLINE bool shouldPairBeDeleted(const GroupsArrayPinnedSafe& groups, ShapeHandle h0, ShapeHandle h1)
@@ -95,22 +100,11 @@ static PX_FORCE_INLINE bool shouldPairBeDeleted(const GroupsArrayPinnedSafe& gro
 	// PT: TODO: revisit/optimize all that stuff once it works
 	class Aggregate : public PxUserAllocated
 	{
+														PX_NOCOPY(Aggregate)
 		public:
-//														Aggregate(BoundsIndex index, bool selfCollisions);
 														Aggregate(BoundsIndex index, PxAggregateFilterHint filterHint);
 														~Aggregate();
 
-						const BoundsIndex				mIndex;
-		private:
-						PxArray<BoundsIndex>			mAggregated;	// PT: TODO: replace with linked list?
-		public:
-						PersistentSelfCollisionPairs*	mSelfCollisionPairs;
-						PxU32							mDirtyIndex;	// PT: index in mDirtyAggregates
-		private:
-						AABB_Xi*						mInflatedBoundsX;
-						AABB_YZ*						mInflatedBoundsYZ;
-						PxU32							mAllocatedSize;
-		public:
 		PX_FORCE_INLINE	PxU32							getNbAggregated()		const	{ return mAggregated.size();					}
 		PX_FORCE_INLINE	BoundsIndex						getAggregated(PxU32 i)	const	{ return mAggregated[i];						}
 		PX_FORCE_INLINE	const BoundsIndex*				getIndices()			const	{ return mAggregated.begin();					}
@@ -132,21 +126,37 @@ static PX_FORCE_INLINE bool shouldPairBeDeleted(const GroupsArrayPinnedSafe& gro
 						void							allocateBounds();
 						void							computeBounds(const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances) /*PX_RESTRICT*/;
 
+#if BOUNDS_DOUBLE_BUFFERING
+		PX_FORCE_INLINE	const AABB_Xi*					getBoundsX()		const	{ return mInflatedBoundsX + (mFlip ? (mAllocatedSize + NB_SENTINELS) : 0);	}
+		PX_FORCE_INLINE	const AABB_YZ*					getBoundsYZ()		const	{ return mInflatedBoundsYZ + (mFlip ? mAllocatedSize: 0);					}
+		PX_FORCE_INLINE	AABB_Xi*						getBoundsXCopy()			{ return mInflatedBoundsX + (mFlip ? 0 : (mAllocatedSize + NB_SENTINELS));	}
+		PX_FORCE_INLINE	AABB_YZ*						getBoundsYZCopy()			{ return mInflatedBoundsYZ + (mFlip ? 0 : mAllocatedSize);					}
+#else
 		PX_FORCE_INLINE	const AABB_Xi*					getBoundsX()	const	{ return mInflatedBoundsX;	}
 		PX_FORCE_INLINE	const AABB_YZ*					getBoundsYZ()	const	{ return mInflatedBoundsYZ;	}
+#endif
 		PX_FORCE_INLINE	void							getSortedMinBounds()
 														{
 															if(mDirtySort)
 																sortBounds();
 														}
-		PX_FORCE_INLINE	PxAggregateFilterHint			getFilterHint()	const	{ return mFilterHint;		}
-		private:
-						PxBounds3						mBounds;
-						PxAggregateFilterHint			mFilterHint;
-						bool							mDirtySort;
+		PX_FORCE_INLINE	PxAggregateFilterHint			getFilterHint()	const	{ return PxAggregateFilterHint(mFilterHint);		}
 
+						PxArray<BoundsIndex>			mAggregated;	// PT: TODO: replace with linked list?
+						AABB_Xi*						mInflatedBoundsX;
+						AABB_YZ*						mInflatedBoundsYZ;
+						PersistentSelfCollisionPairs*	mSelfCollisionPairs;
+						PxBounds3						mBounds;
+						const BoundsIndex				mIndex;
+						PxU32							mDirtyIndex;	// PT: index in mDirtyAggregates
+						PxU32							mAllocatedSize;
+						PxU8							mFilterHint;
+						bool							mDirtySort;
+#if BOUNDS_DOUBLE_BUFFERING
+						bool							mFlip;
+#endif
+		private:
 						void							sortBounds();
-						PX_NOCOPY(Aggregate)
 	};
 
 ///
@@ -164,10 +174,10 @@ namespace
 	class MBP_PairManager : public PairManagerData
 	{
 		public:
-											MBP_PairManager()	{}
-											~MBP_PairManager()	{}
+										MBP_PairManager()	{}
+										~MBP_PairManager()	{}
 
-		PX_FORCE_INLINE	InternalPair*		addPair(PxU32 id0, PxU32 id1);
+		PX_FORCE_INLINE	InternalPair*	addPair(PxU32 id0, PxU32 id1);
 	};
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -182,8 +192,6 @@ PX_FORCE_INLINE InternalPair* MBP_PairManager::addPair(PxU32 id0, PxU32 id1)
 ///////////////////////////////////////////////////////////////////////////////
 
 }
-
-	typedef MBP_PairManager	PairArray;
 
 ///
 
@@ -200,7 +208,7 @@ class PersistentPairs : public PxUserAllocated
 												const bool* lut, VolumeData* volumeData, PxArray<AABBOverlap>* createdOverlaps, PxArray<AABBOverlap>* destroyedOverlaps);
 					void			outputDeletedOverlaps(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData);
 	private:
-	virtual			void			findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)	= 0;
+	virtual			void			findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)	= 0;
 	protected:
 					PxU32			mTimestamp;
 					MBP_PairManager	mPM;
@@ -209,282 +217,51 @@ class PersistentPairs : public PxUserAllocated
 };
 
 /////
-	#define PosXType2	PxU32
 
-#if PX_INTEL_FAMILY
-	#define SIMD_OVERLAP_TEST_14a(box)	_mm_movemask_ps(_mm_cmpngt_ps(b, _mm_load_ps(box)))==15
-
-	#define SIMD_OVERLAP_INIT_9c(box)	\
-			__m128 b = _mm_shuffle_ps(_mm_load_ps(&box.mMinY), _mm_load_ps(&box.mMinY), 78);\
-			const float Coeff = -1.0f;\
-			b = _mm_mul_ps(b, _mm_load1_ps(&Coeff));
-
-	#define SIMD_OVERLAP_TEST_9c(box)					\
-			const __m128 a = _mm_load_ps(&box.mMinY);	\
-			const __m128 d = _mm_cmpge_ps(a, b);		\
-			if(_mm_movemask_ps(d)==15)
-#else
-	#define SIMD_OVERLAP_TEST_14a(box)	BAllEqFFFF(V4IsGrtr(b, V4LoadA(box)))
-
-	#define SIMD_OVERLAP_INIT_9c(box)				\
-			Vec4V b = V4PermZWXY(V4LoadA(&box.mMinY));	\
-			b = V4Mul(b, V4Load(-1.0f));
-
-	#define SIMD_OVERLAP_TEST_9c(box)				\
-			const Vec4V a = V4LoadA(&box.mMinY);	\
-			const Vec4V d = V4IsGrtrOrEq(a, b);		\
-			if(BAllEqTTTT(d))
-#endif
-
-	#define	CODEALIGN16		//_asm	align 16
-#ifdef ABP_SIMD_OVERLAP
-	#define SIMD_OVERLAP_PRELOAD_BOX0	SIMD_OVERLAP_INIT_9c(box0)
-	#define SIMD_OVERLAP_TEST(x)		SIMD_OVERLAP_TEST_9c(x)
-#else
-	#define SIMD_OVERLAP_PRELOAD_BOX0
-#endif
-
-#ifndef ABP_SIMD_OVERLAP
-static PX_FORCE_INLINE int intersect2D(const AABB_YZ& a, const AABB_YZ& b)
-{
-	const bool b0 = b.mMaxY < a.mMinY;
-	const bool b1 = a.mMaxY < b.mMinY;
-	const bool b2 = b.mMaxZ < a.mMinZ;
-	const bool b3 = a.mMaxZ < b.mMinZ;
-//	const bool b4 = b0 || b1 || b2 || b3;
-	const bool b4 = b0 | b1 | b2 | b3;
-	return !b4;
-}
-#endif
-
-#ifdef ABP_SIMD_OVERLAP
-	#define ABP_OVERLAP_TEST(x)	SIMD_OVERLAP_TEST(x)
-#else
-	#define ABP_OVERLAP_TEST(x)	if(intersect2D(box0, x))
-#endif
-
-//#define BIP_VERSION_1
-
-	struct outputPair_Bipartite
+	struct outputPair_Shared
 	{
-#ifdef BIP_VERSION_1
-		outputPair_Bipartite(PairArray* pairManager, Aggregate* aggregate0, Aggregate* aggregate1, const Bp::FilterGroup::Enum* groups, const bool* lut) :
-#else
-		outputPair_Bipartite(PairArray* pairManager, const BoundsIndex* remap0, const BoundsIndex* remap1, const Bp::FilterGroup::Enum* groups, const bool* lut) :
-#endif
+		outputPair_Shared	(MBP_PairManager* pairManager, const Bp::FilterGroup::Enum* groups, const bool* lut) :
 			mPairManager	(pairManager),
-#ifdef BIP_VERSION_1
-			mAggregate0		(aggregate0),
-			mAggregate1		(aggregate1),
-#else
-			mRemap0			(remap0),
-			mRemap1			(remap1),
-#endif
 			mGroups			(groups),
-			mLUT			(lut)
+			mLUT			(lut),
+			mInToOut0		(NULL),
+			mInToOut1		(NULL)
 		{
 		}
 
 		PX_FORCE_INLINE	void outputPair(PxU32 index0, PxU32 index1)
 		{
-#ifdef BIP_VERSION_1
-			const PxU32 aggIndex0 = mAggregate0->getAggregated(index0);
-			const PxU32 aggIndex1 = mAggregate1->getAggregated(index1);
-#else
-			const PxU32 aggIndex0 = mRemap0[index0];
-			const PxU32 aggIndex1 = mRemap1[index1];
-#endif
+			const PxU32 aggIndex0 = mInToOut0[index0];
+			const PxU32 aggIndex1 = mInToOut1[index1];
 			if(groupFiltering(mGroups[aggIndex0], mGroups[aggIndex1], mLUT))
 				mPairManager->addPair(aggIndex0, aggIndex1);
 		}
 
-		PairArray*						mPairManager;
-#ifdef BIP_VERSION_1
-		Aggregate*						mAggregate0;
-		Aggregate*						mAggregate1;
-#else
-		const BoundsIndex*				mRemap0;
-		const BoundsIndex*				mRemap1;
-#endif
+		MBP_PairManager*				mPairManager;
 		const Bp::FilterGroup::Enum*	mGroups;
 		const bool*						mLUT;
+		const BoundsIndex*				mInToOut0;
+		const BoundsIndex*				mInToOut1;
 	};
 
-template<int codepath>
-static void boxPruningKernel(	PairArray* PX_RESTRICT pairManager, const bool* PX_RESTRICT lut,
-#ifdef BIP_VERSION_1
-								Aggregate* PX_RESTRICT aggregate0, Aggregate* PX_RESTRICT aggregate1,
-#else
-								PxU32 nb0, const BoundsIndex* PX_RESTRICT remap0, const AABB_Xi* PX_RESTRICT boxes0_X, const AABB_YZ* PX_RESTRICT boxes0_YZ,
-								PxU32 nb1, const BoundsIndex* PX_RESTRICT remap1, const AABB_Xi* PX_RESTRICT boxes1_X, const AABB_YZ* PX_RESTRICT boxes1_YZ,
-#endif
-								const Bp::FilterGroup::Enum* PX_RESTRICT groups)
+/////
+
+	#define PosXType2	PxU32
+
+	typedef	AABB_YZ	SIMD_AABB_YZ4;
+	typedef	AABB_Xi	SIMD_AABB_X4;
+
+static PX_FORCE_INLINE void outputPair(outputPair_Shared& pairManager, PxU32 index0, PxU32 index1)
 {
-#ifdef BIP_VERSION_1
-	outputPair_Bipartite pm(pairManager, aggregate0, aggregate1, groups, lut);
-
-	const PxU32 nb0 =  aggregate0->getNbAggregated();
-	const PxU32 nb1 =  aggregate1->getNbAggregated();
-	const AABB_Xi* PX_RESTRICT boxes0_X = aggregate0->getBoundsX();
-	const AABB_YZ* PX_RESTRICT boxes0_YZ = aggregate0->getBoundsYZ();
-	const AABB_Xi* PX_RESTRICT boxes1_X = aggregate1->getBoundsX();
-	const AABB_YZ* PX_RESTRICT boxes1_YZ = aggregate1->getBoundsYZ();
-#else
-//	outputPair_Bipartite pm(pairManager, aggregate0->getIndices(), aggregate1->getIndices(), groups, lut);
-	outputPair_Bipartite pm(pairManager, remap0, remap1, groups, lut);
-#endif
-
-	PxU32 index0 = 0;
-	PxU32 runningIndex1 = 0;
-
-	while(runningIndex1<nb1 && index0<nb0)
-	{
-		const AABB_Xi& box0_X = boxes0_X[index0];
-		const PosXType2 maxLimit = box0_X.mMaxX;
-
-		const PosXType2 minLimit = box0_X.mMinX;
-		if(!codepath)
-		{
-			while(boxes1_X[runningIndex1].mMinX<minLimit)
-				runningIndex1++;
-		}
-		else
-		{
-			while(boxes1_X[runningIndex1].mMinX<=minLimit)
-				runningIndex1++;
-		}
-
-		const AABB_YZ& box0 = boxes0_YZ[index0];
-		SIMD_OVERLAP_PRELOAD_BOX0
-
-		if(gUseRegularBPKernel)
-		{
-			PxU32 index1 = runningIndex1;
-
-			while(boxes1_X[index1].mMinX<=maxLimit)
-			{
-				ABP_OVERLAP_TEST(boxes1_YZ[index1])
-				{
-					pm.outputPair(index0, index1);
-				}
-				index1++;
-			}
-		}
-		else
-		{
-			PxU32 Offset = 0;
-			const char* const CurrentBoxListYZ = reinterpret_cast<const char*>(&boxes1_YZ[runningIndex1]);
-			const char* const CurrentBoxListX = reinterpret_cast<const char*>(&boxes1_X[runningIndex1]);
-
-			if(!gUnrollLoop)
-			{
-				while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)
-				{
-					const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2);
-#ifdef ABP_SIMD_OVERLAP
-					if(SIMD_OVERLAP_TEST_14a(box))
-#else
-					if(intersect2D(box0, *reinterpret_cast<const AABB_YZ*>(box)))
-#endif
-					{
-						const PxU32 Index1 = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes1_X))>>3;
-						pm.outputPair(index0, Index1);
-					}
-					Offset += 8;
-				}
-			}
-			else
-			{
-
-#define BIP_VERSION4
-#ifdef BIP_VERSION4
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK4(x, label)	{const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-								if(SIMD_OVERLAP_TEST_14a(box))	\
-								goto label;	}
-#else
-	#define BLOCK4(x, label)	{const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-								if(intersect2D(box0, *reinterpret_cast<const AABB_YZ*>(box)))	\
-								goto label;	}
-#endif
-		goto StartLoop4;
-		CODEALIGN16
-FoundOverlap3:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap2:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap1:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap0:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap:
-		{
-			const PxU32 Index1 = PxU32(CurrentBoxListX + Offset - 8 - reinterpret_cast<const char*>(boxes1_X))>>3;
-			pm.outputPair(index0, Index1);
-		}
-		CODEALIGN16
-StartLoop4:
-		while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset + 8*5)<=maxLimit)
-		{
-			BLOCK4(0, FoundOverlap0)
-			BLOCK4(8, FoundOverlap1)
-			BLOCK4(16, FoundOverlap2)
-			BLOCK4(24, FoundOverlap3)
-			Offset += 40;
-			BLOCK4(-8, FoundOverlap)
-		}
-#undef BLOCK4
-#endif
-
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)			\
-				{if(SIMD_OVERLAP_TEST_14a(reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2)))	\
-						goto OverlapFound;										\
-					Offset += 8;
-#else
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)			\
-				{if(intersect2D(box0, *reinterpret_cast<const AABB_YZ*>(CurrentBoxListYZ + Offset*2)))	\
-						goto OverlapFound;										\
-					Offset += 8;
-#endif
-
-		goto LoopStart;
-		CODEALIGN16
-OverlapFound:
-		{
-			const PxU32 Index1 = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes1_X))>>3;
-			pm.outputPair(index0, Index1);
-		}
-		Offset += 8;
-		CODEALIGN16
-LoopStart:
-		BLOCK
-			BLOCK
-				BLOCK
-				}
-			}
-			goto LoopStart;
-		}
-#undef BLOCK
-			}
-		}
-
-		index0++;
-	}
+	pairManager.outputPair(index0, index1);
 }
 
+#include "BpBoxPruningKernels.h"
+
 static PX_FORCE_INLINE void doBipartiteBoxPruning_Leaf(
-		PairArray* PX_RESTRICT pairManager, const bool* PX_RESTRICT lut,
+		MBP_PairManager* PX_RESTRICT pairManager, const bool* PX_RESTRICT lut,
 		Aggregate* PX_RESTRICT aggregate0, Aggregate* PX_RESTRICT aggregate1, const Bp::FilterGroup::Enum* PX_RESTRICT groups)
 {
-#ifdef BIP_VERSION_1
-	boxPruningKernel<0>(pairManager, lut, aggregate0, aggregate1, groups);
-	boxPruningKernel<1>(pairManager, lut, aggregate1, aggregate0, groups);
-#else
 	const PxU32 nb0 =  aggregate0->getNbAggregated();
 	const PxU32 nb1 =  aggregate1->getNbAggregated();
 	const BoundsIndex* PX_RESTRICT remap0 = aggregate0->getIndices();
@@ -493,180 +270,10 @@ static PX_FORCE_INLINE void doBipartiteBoxPruning_Leaf(
 	const AABB_YZ* PX_RESTRICT boxes0_YZ = aggregate0->getBoundsYZ();
 	const AABB_Xi* PX_RESTRICT boxes1_X = aggregate1->getBoundsX();
 	const AABB_YZ* PX_RESTRICT boxes1_YZ = aggregate1->getBoundsYZ();
-	boxPruningKernel<0>(pairManager, lut, nb0, remap0, boxes0_X, boxes0_YZ, nb1, remap1, boxes1_X, boxes1_YZ, groups);
-	boxPruningKernel<1>(pairManager, lut, nb1, remap1, boxes1_X, boxes1_YZ, nb0, remap0, boxes0_X, boxes0_YZ, groups);
-#endif
-}
 
-	struct outputPair_Complete
-	{
-		outputPair_Complete(PairArray* pairManager, Aggregate* aggregate, const Bp::FilterGroup::Enum* groups, const bool* lut) :
-			mPairManager	(pairManager),
-			mAggregate		(aggregate),
-			mGroups			(groups),
-			mLUT			(lut)
-		{
-		}
-
-		PX_FORCE_INLINE	void outputPair(PxU32 index0, PxU32 index1)
-		{
-			const PxU32 aggIndex0 = mAggregate->getAggregated(index0);
-			const PxU32 aggIndex1 = mAggregate->getAggregated(index1);
-
-			if(groupFiltering(mGroups[aggIndex0], mGroups[aggIndex1], mLUT))
-				mPairManager->addPair(aggIndex0, aggIndex1);
-		}
-
-		PairArray*						mPairManager;
-		Aggregate*						mAggregate;
-		const Bp::FilterGroup::Enum*	mGroups;
-		const bool*						mLUT;
-	};
-
-static void doCompleteBoxPruning_Leaf(	PairArray* PX_RESTRICT pairManager, const bool* PX_RESTRICT lut,
-										Aggregate* PX_RESTRICT aggregate, const Bp::FilterGroup::Enum* PX_RESTRICT groups)
-{
-	outputPair_Complete pm(pairManager, aggregate, groups, lut);
-	const PxU32 nb =  aggregate->getNbAggregated();
-	const AABB_Xi* PX_RESTRICT boxes_X = aggregate->getBoundsX();
-	const AABB_YZ* PX_RESTRICT boxes_YZ = aggregate->getBoundsYZ();
-
-	PxU32 index0 = 0;
-	PxU32 runningIndex = 0;
-	while(runningIndex<nb && index0<nb)
-	{
-		const AABB_Xi& box0_X = boxes_X[index0];
-		const PosXType2 maxLimit = box0_X.mMaxX;
-
-		const PosXType2 minLimit = box0_X.mMinX;
-		while(boxes_X[runningIndex++].mMinX<minLimit);
-
-		const AABB_YZ& box0 = boxes_YZ[index0];
-		SIMD_OVERLAP_PRELOAD_BOX0
-
-		if(gUseRegularBPKernel)
-		{
-			PxU32 index1 = runningIndex;
-			while(boxes_X[index1].mMinX<=maxLimit)
-			{
-				ABP_OVERLAP_TEST(boxes_YZ[index1])
-				{
-					pm.outputPair(index0, index1);
-				}
-				index1++;
-			}
-		}
-		else
-		{
-			PxU32 Offset = 0;
-			const char* const CurrentBoxListYZ = reinterpret_cast<const char*>(&boxes_YZ[runningIndex]);
-			const char* const CurrentBoxListX = reinterpret_cast<const char*>(&boxes_X[runningIndex]);
-
-			if(!gUnrollLoop)
-			{
-				while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)
-				{
-					const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2);
-#ifdef ABP_SIMD_OVERLAP
-					if(SIMD_OVERLAP_TEST_14a(box))
-#else
-					if(intersect2D(box0, *reinterpret_cast<const AABB_YZ*>(box)))
-#endif
-					{
-						const PxU32 Index = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes_X))>>3;
-						pm.outputPair(index0, Index);
-					}
-					Offset += 8;
-				}
-			}
-			else
-			{
-
-#define VERSION4c
-#ifdef VERSION4c
-#define VERSION3	// Enable this as our safe loop
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK4(x, label)	{const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-							if(SIMD_OVERLAP_TEST_14a(box))					\
-								goto label;	}
-#else
-	#define BLOCK4(x, label)	{const AABB_YZ* box = reinterpret_cast<const AABB_YZ*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-							if(intersect2D(box0, *box))													\
-								goto label;	}
-#endif
-		goto StartLoop4;
-		CODEALIGN16
-FoundOverlap3:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap2:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap1:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap0:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap:
-		{
-			const PxU32 Index = PxU32(CurrentBoxListX + Offset - 8 - reinterpret_cast<const char*>(boxes_X))>>3;
-			pm.outputPair(index0, Index);
-		}
-		CODEALIGN16
-StartLoop4:
-		while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset + 8*5)<=maxLimit)
-		{
-			BLOCK4(0, FoundOverlap0)
-			BLOCK4(8, FoundOverlap1)
-			BLOCK4(16, FoundOverlap2)
-			BLOCK4(24, FoundOverlap3)
-			Offset += 40;
-			BLOCK4(-8, FoundOverlap)
-		}
-#endif
-
-#define VERSION3
-#ifdef VERSION3
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)			\
-				{if(SIMD_OVERLAP_TEST_14a(reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2)))	\
-						goto BeforeLoop;										\
-					Offset += 8;
-#else
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)			\
-				{if(intersect2D(box0, *reinterpret_cast<const AABB_YZ*>(CurrentBoxListYZ + Offset*2)))	\
-						goto BeforeLoop;										\
-					Offset += 8;
-#endif
-
-		goto StartLoop;
-		CODEALIGN16
-BeforeLoop:
-		{
-			const PxU32 Index = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes_X))>>3;
-			pm.outputPair(index0, Index);
-			Offset += 8;
-		}
-		CODEALIGN16
-StartLoop:
-		BLOCK
-			BLOCK
-				BLOCK
-					BLOCK
-						BLOCK
-						}
-					}
-				}
-			}
-			goto StartLoop;
-		}
-#endif
-			}
-		}
-
-		index0++;
-	}
+	outputPair_Shared pm(pairManager, groups, lut);
+	boxPruningKernel<0>(nb0, nb1, boxes0_X, boxes1_X, boxes0_YZ, boxes1_YZ, remap0, remap1, &pm);
+	boxPruningKernel<1>(nb1, nb0, boxes1_X, boxes0_X, boxes1_YZ, boxes0_YZ, remap1, remap0, &pm);
 }
 
 /////
@@ -677,7 +284,7 @@ class PersistentActorAggregatePair : public PersistentPairs
 								PersistentActorAggregatePair(Aggregate* aggregate, ShapeHandle actorHandle);
 	virtual						~PersistentActorAggregatePair()	{}
 
-	virtual			void		findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
+	virtual			void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
 	virtual			bool		update(AABBManager& manager, BpCacheData* data);
 
 					ShapeHandle	mAggregateHandle;
@@ -692,7 +299,7 @@ PersistentActorAggregatePair::PersistentActorAggregatePair(Aggregate* aggregate,
 {
 }
 
-void PersistentActorAggregatePair::findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)
+void PersistentActorAggregatePair::findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)
 {
 	if(0)
 	{
@@ -739,8 +346,9 @@ void PersistentActorAggregatePair::findOverlaps(PairArray& pairs, const PxBounds
 	const AABB_Xi* PX_RESTRICT boxes1_X = inflatedBoundsX;
 	const AABB_YZ* PX_RESTRICT boxes1_YZ = &inflatedBoundsYZ;
 
-	boxPruningKernel<0>(&pairs, lut, nb0, remap0, boxes0_X, boxes0_YZ, nb1, remap1, boxes1_X, boxes1_YZ, groups);
-	boxPruningKernel<1>(&pairs, lut, nb1, remap1, boxes1_X, boxes1_YZ, nb0, remap0, boxes0_X, boxes0_YZ, groups);
+	outputPair_Shared pm(&pairs, groups, lut);
+	boxPruningKernel<0>(nb0, nb1, boxes0_X, boxes1_X, boxes0_YZ, boxes1_YZ, remap0, remap1, &pm);
+	boxPruningKernel<1>(nb1, nb0, boxes1_X, boxes0_X, boxes1_YZ, boxes0_YZ, remap1, remap0, &pm);
 
 	}
 }
@@ -767,7 +375,7 @@ class PersistentAggregateAggregatePair : public PersistentPairs
 								PersistentAggregateAggregatePair(Aggregate* aggregate0, Aggregate* aggregate1);
 	virtual						~PersistentAggregateAggregatePair()	{}
 
-	virtual			void		findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
+	virtual			void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
 	virtual			bool		update(AABBManager& manager, BpCacheData*);
 
 					ShapeHandle	mAggregateHandle0;
@@ -784,7 +392,7 @@ PersistentAggregateAggregatePair::PersistentAggregateAggregatePair(Aggregate* ag
 {
 }
 
-void PersistentAggregateAggregatePair::findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT /*bounds*/, const float* PX_RESTRICT /*contactDistances*/, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)
+void PersistentAggregateAggregatePair::findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT /*bounds*/, const float* PX_RESTRICT /*contactDistances*/, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)
 {
 	mAggregate0->getSortedMinBounds();
 	mAggregate1->getSortedMinBounds();
@@ -813,7 +421,7 @@ class PersistentSelfCollisionPairs : public PersistentPairs
 						PersistentSelfCollisionPairs(Aggregate* aggregate);
 	virtual				~PersistentSelfCollisionPairs()	{}
 
-	virtual	void		findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
+	virtual	void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
 
 			Aggregate*	mAggregate;
 };
@@ -823,25 +431,36 @@ PersistentSelfCollisionPairs::PersistentSelfCollisionPairs(Aggregate* aggregate)
 {
 }
 
-void PersistentSelfCollisionPairs::findOverlaps(PairArray& pairs, const PxBounds3* PX_RESTRICT/*bounds*/, const float* PX_RESTRICT/*contactDistances*/, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)
+void PersistentSelfCollisionPairs::findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT/*bounds*/, const float* PX_RESTRICT/*contactDistances*/, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)
 {
 	mAggregate->getSortedMinBounds();
-	doCompleteBoxPruning_Leaf(&pairs, lut, mAggregate, groups);
+	const PxU32 nb = mAggregate->getNbAggregated();
+	const AABB_Xi* PX_RESTRICT boxes_X = mAggregate->getBoundsX();
+	const AABB_YZ* PX_RESTRICT boxes_YZ = mAggregate->getBoundsYZ();
+
+	outputPair_Shared pm(&pairs, groups, lut);
+	doCompleteBoxPruning_Leaf(&pm, nb, boxes_X, boxes_YZ, mAggregate->getIndices());
 }
 
 /////
 
 Aggregate::Aggregate(BoundsIndex index, PxAggregateFilterHint filterHint) :
-	mIndex				(index),
 	mInflatedBoundsX	(NULL),
 	mInflatedBoundsYZ	(NULL),
+	mIndex				(index),
 	mAllocatedSize		(0),
-	mFilterHint			(filterHint),
+	mFilterHint			(PxU8(filterHint)),
 	mDirtySort			(false)
+#if BOUNDS_DOUBLE_BUFFERING
+	, mFlip				(false)
+#endif
 {
+	PX_ASSERT(!(filterHint & 0xffffff00));	// PT: we are storing this in a byte
 	resetDirtyState();
 	const PxU32 selfCollisions = PxGetAggregateSelfCollisionBit(filterHint);
 	mSelfCollisionPairs = selfCollisions ? PX_NEW(PersistentSelfCollisionPairs)(this) : NULL;
+
+	//printf("%d\n", sizeof(Aggregate));	// 96 => 80
 }
 
 Aggregate::~Aggregate()
@@ -859,82 +478,98 @@ void Aggregate::sortBounds()
 	if(nbObjects<2)
 		return;
 
+	AABB_Xi* PX_RESTRICT boundsX = const_cast<AABB_Xi*>(getBoundsX());
+	AABB_YZ* PX_RESTRICT boundsYZ = const_cast<AABB_YZ*>(getBoundsYZ());
+
+	PX_ALLOCA(minPosBounds, InflatedType, nbObjects+1);
+	bool alreadySorted =  true;
+	InflatedType previousB = boundsX[0].mMinX;
+	minPosBounds[0] = previousB;
+	for(PxU32 i=1;i<nbObjects;i++)
 	{
-		PX_ALLOCA(minPosBounds, InflatedType, nbObjects+1);
-		bool alreadySorted =  true;
-		InflatedType previousB = mInflatedBoundsX[0].mMinX;
-		minPosBounds[0] = previousB;
-		for(PxU32 i=1;i<nbObjects;i++)
-		{
-			const InflatedType minB = mInflatedBoundsX[i].mMinX;
-			if(minB<previousB)
-				alreadySorted = false;
-			previousB = minB;
-			minPosBounds[i] = minB;
-		}
-		if(alreadySorted)
-			return;
+		const InflatedType minB = boundsX[i].mMinX;
+		if(minB<previousB)
+			alreadySorted = false;
+		previousB = minB;
+		minPosBounds[i] = minB;
+	}
+	if(alreadySorted)
+		return;
 
-		{
-		Cm::RadixSortBuffered mRS;
+	{
+	Cm::RadixSortBuffered mRS;
 
-		minPosBounds[nbObjects] = 0xffffffff;
-		mRS.Sort(minPosBounds, nbObjects+1, /*RadixHint::*/RADIX_UNSIGNED);
+	minPosBounds[nbObjects] = 0xffffffff;
+	mRS.Sort(minPosBounds, nbObjects+1, RADIX_UNSIGNED);
 
-		if(0)
+	if(0)
+	{
+		PxArray<PxU32> copy = mAggregated;
+		AABB_Xi* boundsXCopy = PX_ALLOCATE(AABB_Xi, nbObjects, "mInflatedBounds");
+		AABB_YZ* boundsYZCopy = PX_ALLOCATE(AABB_YZ, nbObjects, "mInflatedBounds");
+		PxMemCopy(boundsXCopy, boundsX, nbObjects*sizeof(AABB_Xi));
+		PxMemCopy(boundsYZCopy, boundsYZ, nbObjects*sizeof(AABB_YZ));
+		const PxU32* Sorted = mRS.GetRanks();
+		for(PxU32 i=0;i<nbObjects;i++)
 		{
-			PxArray<PxU32> copy = mAggregated;
-			AABB_Xi* boundsXCopy = PX_ALLOCATE(AABB_Xi, nbObjects, "mInflatedBounds");
-			AABB_YZ* boundsYZCopy = PX_ALLOCATE(AABB_YZ, nbObjects, "mInflatedBounds");
-			PxMemCopy(boundsXCopy, mInflatedBoundsX, nbObjects*sizeof(AABB_Xi));
-			PxMemCopy(boundsYZCopy, mInflatedBoundsYZ, nbObjects*sizeof(AABB_YZ));
-			const PxU32* Sorted = mRS.GetRanks();
-			for(PxU32 i=0;i<nbObjects;i++)
-			{
-				const PxU32 sortedIndex = Sorted[i];
-				mAggregated[i] = copy[sortedIndex];
-				mInflatedBoundsX[i] = boundsXCopy[sortedIndex];
-				mInflatedBoundsYZ[i] = boundsYZCopy[sortedIndex];
-			}
-			PX_FREE(boundsYZCopy);
-			PX_FREE(boundsXCopy);
+			const PxU32 sortedIndex = Sorted[i];
+			mAggregated[i] = copy[sortedIndex];
+			boundsX[i] = boundsXCopy[sortedIndex];
+			boundsYZ[i] = boundsYZCopy[sortedIndex];
 		}
-		else
-		{
-			PxArray<PxU32> copy = mAggregated;	// PT: TODO: revisit this, avoid the copy like we do for the other buffers
-			AABB_Xi* sortedBoundsX = PX_ALLOCATE(AABB_Xi, (nbObjects+NB_SENTINELS), "mInflatedBounds");
-			AABB_YZ* sortedBoundsYZ = PX_ALLOCATE(AABB_YZ, (nbObjects), "mInflatedBounds");
+		PX_FREE(boundsYZCopy);
+		PX_FREE(boundsXCopy);
+	}
+	else
+	{
+		PxArray<PxU32> copy = mAggregated;	// PT: TODO: revisit this, avoid the copy like we do for the other buffers
+		AABB_Xi* sortedBoundsX = PX_ALLOCATE(AABB_Xi, (nbObjects+NB_SENTINELS), "mInflatedBounds");
+		AABB_YZ* sortedBoundsYZ = PX_ALLOCATE(AABB_YZ, (nbObjects), "mInflatedBounds");
 
-			const PxU32* Sorted = mRS.GetRanks();
-			for(PxU32 i=0;i<nbObjects;i++)
-			{
-				const PxU32 sortedIndex = Sorted[i];
-				mAggregated[i] = copy[sortedIndex];
-				sortedBoundsX[i] = mInflatedBoundsX[sortedIndex];
-				sortedBoundsYZ[i] = mInflatedBoundsYZ[sortedIndex];
-			}
-			for(PxU32 i=0;i<NB_SENTINELS;i++)
-				sortedBoundsX[nbObjects+i].initSentinel();
-			mAllocatedSize = nbObjects;
-			PX_FREE(mInflatedBoundsYZ);
-			PX_FREE(mInflatedBoundsX);
-			mInflatedBoundsX = sortedBoundsX;
-			mInflatedBoundsYZ = sortedBoundsYZ;
+		const PxU32* Sorted = mRS.GetRanks();
+		for(PxU32 i=0;i<nbObjects;i++)
+		{
+			const PxU32 sortedIndex = Sorted[i];
+			mAggregated[i] = copy[sortedIndex];
+			sortedBoundsX[i] = boundsX[sortedIndex];
+			sortedBoundsYZ[i] = boundsYZ[sortedIndex];
 		}
-		}
+		for(PxU32 i=0;i<NB_SENTINELS;i++)
+			sortedBoundsX[nbObjects+i].initSentinel();
+		mAllocatedSize = nbObjects;
+		PX_FREE(boundsYZ);
+		PX_FREE(boundsX);
+		boundsX = sortedBoundsX;
+		boundsYZ = sortedBoundsYZ;
+	}
 	}
 }
 
 void Aggregate::allocateBounds()
 {
 	const PxU32 size = getNbAggregated();
-	if(size!=mAllocatedSize)
+	if(size != mAllocatedSize)
 	{
 		mAllocatedSize = size;
 		PX_FREE(mInflatedBoundsYZ);
 		PX_FREE(mInflatedBoundsX);
-		mInflatedBoundsX = PX_ALLOCATE(AABB_Xi, (size+NB_SENTINELS), "mInflatedBounds");
-		mInflatedBoundsYZ = PX_ALLOCATE(AABB_YZ, (size), "mInflatedBounds");
+		const PxU32 sizeNeededX = size + NB_SENTINELS;
+#if BOUNDS_DOUBLE_BUFFERING
+		mInflatedBoundsX = PX_ALLOCATE(AABB_Xi, sizeNeededX * 2, "mInflatedBoundsX");
+		mInflatedBoundsYZ = PX_ALLOCATE(AABB_YZ, size * 2, "mInflatedBoundsYZ");
+
+		for(PxU32 i=0;i<NB_SENTINELS;i++)
+		{
+			mInflatedBoundsX[size+i].initSentinel();
+			mInflatedBoundsX[sizeNeededX+size+i].initSentinel();
+		}
+#else
+		mInflatedBoundsX = PX_ALLOCATE(AABB_Xi, sizeNeededX, "mInflatedBoundsX");
+		mInflatedBoundsYZ = PX_ALLOCATE(AABB_YZ, size, "mInflatedBoundsYZ");
+
+		for(PxU32 i=0;i<NB_SENTINELS;i++)
+			mInflatedBoundsX[size+i].initSentinel();
+#endif
 	}
 }
 
@@ -944,6 +579,9 @@ void Aggregate::computeBounds(const PxBounds3* PX_RESTRICT bounds, const float* 
 
 	const PxU32 size = getNbAggregated();
 	PX_ASSERT(size);
+
+	AABB_Xi* PX_RESTRICT boundsX = const_cast<AABB_Xi*>(getBoundsX());
+	AABB_YZ* PX_RESTRICT boundsYZ = const_cast<AABB_YZ*>(getBoundsYZ());
 
 	// PT: TODO: delay the conversion to integers until we sort (i.e. really need) the aggregated bounds?
 	PX_ALIGN(16, PxVec4) boxMin;
@@ -967,8 +605,8 @@ void Aggregate::computeBounds(const PxBounds3* PX_RESTRICT bounds, const float* 
 		maximumV = V4Add(V4LoadU(&b.maximum.x), offsetV);
 		V4StoreA(minimumV, &boxMin.x);
 		V4StoreA(maximumV, &boxMax.x);
-		mInflatedBoundsX[0].initFromPxVec4(boxMin, boxMax);
-		mInflatedBoundsYZ[0].initFromPxVec4(boxMin, boxMax);
+		boundsX[0].initFromPxVec4(boxMin, boxMax);
+		boundsYZ[0].initFromPxVec4(boxMin, boxMax);
 	}
 
 	for(PxU32 i=1;i<size;i++)
@@ -988,8 +626,8 @@ void Aggregate::computeBounds(const PxBounds3* PX_RESTRICT bounds, const float* 
 		maximumV = V4Max(maximumV, aggregatedBoundsMaxV);
 		V4StoreA(aggregatedBoundsMinV, &boxMin.x);
 		V4StoreA(aggregatedBoundsMaxV, &boxMax.x);
-		mInflatedBoundsX[i].initFromPxVec4(boxMin, boxMax);
-		mInflatedBoundsYZ[i].initFromPxVec4(boxMin, boxMax);
+		boundsX[i].initFromPxVec4(boxMin, boxMax);
+		boundsYZ[i].initFromPxVec4(boxMin, boxMax);
 	}
 
 	StoreBounds(mBounds, minimumV, maximumV);
@@ -1005,8 +643,6 @@ void Aggregate::computeBounds(const PxBounds3* PX_RESTRICT bounds, const float* 
 			printf("SAME BOUNDS\n");
 		}
 	}*/
-	for(PxU32 i=0;i<NB_SENTINELS;i++)
-		mInflatedBoundsX[size+i].initSentinel();
 	mDirtySort = true;
 }
 
@@ -1564,7 +1200,7 @@ void AABBManager::updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBa
 		mBoundsArray.hasChanged(),
 		false);
 
-	PX_ASSERT(updateData.isValid(false));
+	PX_ASSERT(updateData.isValid(mContextID) == BroadPhaseUpdateError::eNO_ERROR);
 
 	const bool b = updateData.getNumCreatedHandles() || updateData.getNumRemovedHandles();
 
@@ -1983,22 +1619,133 @@ class SortAggregateBoundsParallel : public Cm::Task
 public:
 	static const PxU32 MaxPairs = 16;
 	Aggregate** mAggregates;
-	PxU32 mNbAggs;
+	const PxU32 mNbAggs;
 
-	SortAggregateBoundsParallel(PxU64 contextID, Aggregate** aggs, PxU32 nbAggs) : Cm::Task(contextID),
-		mAggregates(aggs), mNbAggs(nbAggs)
+	SortAggregateBoundsParallel(PxU64 contextID, Aggregate** aggs, PxU32 nbAggs) : Cm::Task(contextID), mAggregates(aggs), mNbAggs(nbAggs)
 	{
 	}
 
 	void runInternal()
 	{
 		PX_PROFILE_ZONE("SortBounds", mContextID);
-		for (PxU32 i = 0; i < mNbAggs; i++)
-		{
-			Aggregate* aggregate = mAggregates[i];
 
-			aggregate->getSortedMinBounds();
+		// PT: it appears that we now sort the bounds all the time during the broadphase, which defeats the purpose of the
+		// initial lazy-evaluation approach. We still leave that code in place (Aggregate::sortBounds) to catch potential
+		// edge cases but we take advantage of the current batching here (multiple sorts done at the same time in the same
+		// task/thread) to reduce the number of allocations.
+		// Initial code:
+		//	const PxU32 nb = mNbAggs;
+		//	for(PxU32 i=0; i<nb; i++)
+		//		mAggregates[i]->getSortedMinBounds();
+
+		Cm::RadixSortBuffered rs;
+
+		// PT: we will use the stack instead of actual allocations for "small" aggregates.
+		PxU32 minPosBoundsCapa = 1024;
+		InflatedType stackMinPosBounds[1024];
+		InflatedType* minPosBounds = stackMinPosBounds;
+#if !BOUNDS_DOUBLE_BUFFERING
+		PxU32 objectsCapa = 1024;
+		AABB_Xi stackBoundsXCopy[1024];
+		AABB_YZ stackBoundsYZCopy[1024];
+		AABB_Xi* boundsXCopy = stackBoundsXCopy;
+		AABB_YZ* boundsYZCopy = stackBoundsYZCopy;
+#endif
+		const PxU32 nb = mNbAggs;
+		for(PxU32 j=0; j<nb; j++)
+		{
+			Aggregate* agg = mAggregates[j];
+			if(!agg->mDirtySort)
+				continue;
+			agg->mDirtySort = false;
+
+			const PxU32 nbObjects = agg->getNbAggregated();
+			if(nbObjects<2)
+				continue;
+
+			const PxU32 nbNeeded = nbObjects;
+			if(nbNeeded > minPosBoundsCapa)	// PT: reuse previous buffers if we can
+			{
+				minPosBoundsCapa = nbNeeded;
+				minPosBounds = PX_ALLOCATE(InflatedType, nbNeeded, "keys");
+			}
+
+			{
+				const AABB_Xi* inflatedBoundsX = agg->getBoundsX();
+
+				// PT: we need to copy the minX values to a separate buffer for the radix sort's API.
+				bool alreadySorted =  true;
+				InflatedType previousB = inflatedBoundsX[0].mMinX;
+				minPosBounds[0] = previousB;
+				for(PxU32 i=1; i<nbObjects; i++)
+				{
+					const InflatedType minB = inflatedBoundsX[i].mMinX;
+					if(minB<previousB)
+						alreadySorted = false;
+					previousB = minB;
+					minPosBounds[i] = minB;
+				}
+				// PT: we could have used the already-sorted test inside the radix sort itself but that doesn't
+				// work when sharing the same radix for all aggregates (we'd need to reset the ranks).
+				if(alreadySorted)
+					continue;
+			}
+
+			const PxU32* sorted = rs.Sort(minPosBounds, nbNeeded, RADIX_UNSIGNED).GetRanks();
+
+			// PT: we have a choice between memcopies or allocations in general here. In this version
+			// we do copies while avoiding some allocations compared to the original code (Aggregate::sortBounds).
+			PxU32* copy = rs.GetRecyclable();
+			PxMemCopy(copy, agg->mAggregated.begin(), nbObjects * sizeof(PxU32));
+
+#if BOUNDS_DOUBLE_BUFFERING
+			const AABB_Xi* inflatedBoundsX = agg->getBoundsX();
+			const AABB_YZ* inflatedBoundsYZ = agg->getBoundsYZ();
+
+			AABB_Xi* boundsXCopy = agg->getBoundsXCopy();
+			AABB_YZ* boundsYZCopy = agg->getBoundsYZCopy();
+
+			for(PxU32 i=0;i<nbObjects;i++)
+			{
+				const PxU32 sortedIndex = sorted[i];
+				agg->mAggregated[i] = copy[sortedIndex];
+				boundsXCopy[i] = inflatedBoundsX[sortedIndex];
+				boundsYZCopy[i] = inflatedBoundsYZ[sortedIndex];
+			}
+			agg->mFlip = !agg->mFlip;
+#else
+			if(nbObjects > objectsCapa)	// PT: reuse previous buffers if we can
+			{
+				objectsCapa = nbObjects;
+				boundsXCopy = PX_ALLOCATE(AABB_Xi, nbObjects, "mInflatedBounds");
+				boundsYZCopy = PX_ALLOCATE(AABB_YZ, nbObjects, "mInflatedBounds");
+			}
+
+			AABB_Xi* inflatedBoundsX = agg->mInflatedBoundsX;
+			AABB_YZ* inflatedBoundsYZ = agg->mInflatedBoundsYZ;
+			PxMemCopy(boundsXCopy, inflatedBoundsX, nbObjects * sizeof(AABB_Xi));
+			PxMemCopy(boundsYZCopy, inflatedBoundsYZ, nbObjects * sizeof(AABB_YZ));
+
+			// PT: now we copy back the data in sorted order, to the aggregate buffers.
+			for(PxU32 i=0;i<nbObjects;i++)
+			{
+				const PxU32 sortedIndex = sorted[i];
+				agg->mAggregated[i] = copy[sortedIndex];
+				inflatedBoundsX[i] = boundsXCopy[sortedIndex];
+				inflatedBoundsYZ[i] = boundsYZCopy[sortedIndex];
+			}
+#endif
 		}
+
+#if !BOUNDS_DOUBLE_BUFFERING
+		if(boundsXCopy != stackBoundsXCopy)
+			PX_FREE(boundsXCopy);
+
+		if(boundsYZCopy != stackBoundsYZCopy)
+			PX_FREE(boundsYZCopy);
+#endif
+		if(minPosBounds != stackMinPosBounds)
+			PX_FREE(minPosBounds);
 	}
 
 	virtual const char* getName() const { return "SortAggregateBoundsParallel"; }

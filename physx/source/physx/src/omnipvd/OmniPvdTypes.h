@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -394,7 +394,7 @@ OMNI_PVD_CLASS_END              (PxAggregate)
 // PxConstraint
 ////////////////////////////////////////////////////////////////////////////////
 // Just a place holder class to be extended and improved in
-// PX-3394
+// JIRA: PX-3394
 ////////////////////////////////////////////////////////////////////////////////
 OMNI_PVD_CLASS_BEGIN				(PxConstraint)
 OMNI_PVD_CLASS_END					(PxConstraint)

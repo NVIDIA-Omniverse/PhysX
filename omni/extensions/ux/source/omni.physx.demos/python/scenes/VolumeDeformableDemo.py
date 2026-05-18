@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni
 from omni.physx.scripts import deformableUtils, physicsUtils
 import omni.physx.bindings._physx as physx_settings_bindings
@@ -9,11 +10,11 @@ import omni.usd
 from pxr import UsdGeom, Gf
 import carb
 
-deformable_beta_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 class VolumeDeformableDemo(demo.Base):
     title = "Volume Deformable"
-    category = demo.Categories.DEFORMABLES if deformable_beta_on else demo.Categories.NONE
+    category = demo.Categories.DEFORMABLES if not deformable_deprecated_on else demo.Categories.NONE
     short_description = "Volume deformable body setup"
     description = "This snippet sets up a volume deformable body scene"
 

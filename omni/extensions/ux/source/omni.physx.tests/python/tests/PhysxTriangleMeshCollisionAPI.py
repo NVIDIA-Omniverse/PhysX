@@ -1,12 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import unittest
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, TestCategory
 from omni.physxcommands import SetRigidBodyCommand
 from omni.physx.scripts import physicsUtils
 from omni.physxtests import utils
-from omni.physx import get_physx_cooking_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from pxr import Gf, UsdPhysics, UsdGeom, Sdf, PhysxSchema
 import omni.timeline
 
@@ -67,7 +69,7 @@ class PhysxTriangleMeshCollisionAPITestKitStage(PhysicsKitStageAsyncTestCase):
         physicsUtils.set_or_add_translate_op(self._torus_mesh, Gf.Vec3f(0.0, 1.0, 0.0))
         SetRigidBodyCommand.execute(self._torus_path, "none", False)        
 
-    @unittest.skip("NVBug 5454903")
+    @unittest.skip("OMPE-50589")
     async def test_sdf_cooking(self):
         await self.setup_stage()
 
@@ -122,12 +124,16 @@ class PhysxTriangleMeshCollisionAPITestKitStage(PhysicsKitStageAsyncTestCase):
         # sanity check - cube should fall into the torus if SDF collision is on
         await utils.play_and_step_and_pause(self, 10)
 
-        # it's already cooked so wt don't expect anything to be cooked or read from cache
-        await self._expect_cooking_hits_or_misses(additional_cache_misses=0, additional_cache_hits=0)
+        # it's already cooked so we don't expect anything to be cooked or read from cache
+        # EA: can't test the hits or misses, running simulation changes the cooking statistics.
+        # await self._expect_cooking_hits_or_misses(additional_cache_misses=0, additional_cache_hits=0)
         pos = omni.usd.get_world_transform_matrix(self._cube_mesh).ExtractTranslation()
         self.assertLess(pos[1], 1.0)
 
-    @unittest.skip("NVBug 5454903")
+        # stop the sim to clean up
+        await utils.stop_timeline(self)
+
+    @unittest.skip("OMPE-50589")
     async def test_sdf_change_approximation(self):
 
         await self.setup_stage()
@@ -149,7 +155,7 @@ class PhysxTriangleMeshCollisionAPITestKitStage(PhysicsKitStageAsyncTestCase):
         self.assertLess(pos[1], 1.0)
 
         # stop the sim - should force a reset
-        await utils.play_and_step_and_stop(self, 1)
+        await utils.stop_timeline(self)
 
         # change back to convex hull
         meshcollisionAPI.CreateApproximationAttr().Set("convexHull")
@@ -172,6 +178,8 @@ class PhysxTriangleMeshCollisionAPITestKitStage(PhysicsKitStageAsyncTestCase):
         pos = omni.usd.get_world_transform_matrix(self._cube_mesh).ExtractTranslation()
         self.assertLess(pos[1], 1.0)
 
+        # stop the sim to clean up
+        await utils.stop_timeline(self)
 
     async def test_sdf_load_from_file(self):
         filename = "sdf.usda"
@@ -215,6 +223,9 @@ class PhysxTriangleMeshCollisionAPITestKitStage(PhysicsKitStageAsyncTestCase):
 
         pos = omni.usd.get_world_transform_matrix(new_stage.GetPrimAtPath(self._cube_path)).ExtractTranslation()
         self.assertLess(pos[1], 1.0)
+
+        # stop the sim to clean up
+        await utils.stop_timeline(self)
 
     async def test_SDF_wait_for_cooking_to_finish(self):
         stage = await self.new_stage()

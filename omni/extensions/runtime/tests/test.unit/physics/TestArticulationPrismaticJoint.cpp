@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -107,7 +107,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         // change value
         value = 10.0f;
         changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -139,7 +138,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         // change value
         value = 5.0f;
         changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -170,7 +168,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         // change value
         value = 10.0;
         changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -201,7 +198,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         // change value
         value = 10.0;
         changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -241,7 +237,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 10.0;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -272,7 +267,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 10.0;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -303,7 +297,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 10.0;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -335,8 +328,9 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 10.0;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken2, value);
+            physxSim->simulate(0.01f, 0.0f);
+            physxSim->fetchResults();
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -367,7 +361,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         // change value
         value = 10.0;
         changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -400,7 +393,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         // change value
         value = 90.0f;
         changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -439,7 +431,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 90.0f;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -470,7 +461,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 90.0f;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -501,7 +491,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 90.0f;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 
@@ -532,7 +521,6 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             // change value
             value = 90.0f;
             changeTemplate.setAttributeValue(prismaticJointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 

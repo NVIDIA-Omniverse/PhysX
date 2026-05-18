@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -213,7 +213,7 @@ namespace physx
 	}
 
 	void PxgArticulationCore::gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity,
-		const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled)
+		const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, const bool isSleepingDisabled)
 	{
 		CUstream stream = mStream; //*mSolverStream
 		//CUstream stream = *mSolverStream;
@@ -253,6 +253,7 @@ namespace physx
 		mArticulationCoreDesc->gravity = gravity;
 		mArticulationCoreDesc->invLengthScale = invLengthScale;
 		mArticulationCoreDesc->isExternalForcesEveryTgsIterationEnabled = isExternalForcesEveryTgsIterationEnabled;
+		mArticulationCoreDesc->isSleepingDisabled = isSleepingDisabled;
 		mArticulationCoreDesc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
 		mArticulationCoreDesc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
 		//mArticulationCoreDesc->nbSlabs = nbSlabs;
@@ -400,7 +401,7 @@ namespace physx
 		}
 	}
 
-	PxU32 PxgArticulationCore::computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat)
+	PxU32 PxgArticulationCore::computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat, const bool isSleepingDisabled)
 	{
 		mNbActiveArticulation = nbArticulations;
 
@@ -418,7 +419,7 @@ namespace physx
 			//CUstream stream = *mSolverStream;
 
 			//layoutDeltaVBuffer(offset, nbArticulations, nbSlabs, /**mSolverStream*/mStream);
-			gpuMemDmaUpArticulationDesc(offset, nbArticulations, dt, gravity, invLengthScale, isExternalForcesEveryTgsIterationEnabled);
+			gpuMemDmaUpArticulationDesc(offset, nbArticulations, dt, gravity, invLengthScale, isExternalForcesEveryTgsIterationEnabled, isSleepingDisabled);
 
 			KernelWrangler* wrangler = mGpuKernelWranglerManager->getKernelWrangler();
 
@@ -624,7 +625,7 @@ namespace physx
 	// solvePartitions).
 
 	void PxgArticulationCore::propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration,
-		const PxReal elapsedTime, const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
+		const PxReal elapsedTime, const PxReal articulationBiasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
 		CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled)
 	{
 #if ARTI_GPU_DEBUG
@@ -677,7 +678,7 @@ namespace physx
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
 					CUDA_KERNEL_PARAM(artiCoreDescptr),
-					CUDA_KERNEL_PARAM(biasCoefficient),
+					CUDA_KERNEL_PARAM(articulationBiasCoefficient),
 					CUDA_KERNEL_PARAM(dt),
 					CUDA_KERNEL_PARAM(invDt),
 					CUDA_KERNEL_PARAM(velocityIteration),
@@ -703,7 +704,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(invDt),
 					CUDA_KERNEL_PARAM(velocityIteration),
 					CUDA_KERNEL_PARAM(elapsedTime),
-					CUDA_KERNEL_PARAM(biasCoefficient),
+					CUDA_KERNEL_PARAM(articulationBiasCoefficient),
 					CUDA_KERNEL_PARAM(staticContactUniqueIds),
 					CUDA_KERNEL_PARAM(staticJointUniqueIds),
 					CUDA_KERNEL_PARAM(sharedDesc),
@@ -1771,8 +1772,6 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eMASS_MATRICES
-			case PxArticulationGPUAPIComputeType::eGENERALIZED_MASS_MATRICES:
 			case PxArticulationGPUAPIComputeType::eMASS_MATRICES:
 			{
 				// Needed in case joint positions have been changed before the call
@@ -1783,7 +1782,6 @@ namespace physx
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eMASS_MATRICES);
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -1791,7 +1789,6 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
 					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
 				};
 
@@ -1801,8 +1798,6 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION
-			case PxArticulationGPUAPIComputeType::eGENERALIZED_GRAVITY_FORCES:
 			case PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION:
 			{
 				// Needed in case joint positions have been changed before the call
@@ -1813,7 +1808,6 @@ namespace physx
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION);
 
 				const PxVec3 gravity = mGpuContext->getGravity();
 
@@ -1823,7 +1817,6 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
 					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
 					CUDA_KERNEL_PARAM(gravity),
 				};
@@ -1834,8 +1827,6 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION
-			case PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_FORCES:
 			case PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION:
 			{
 				// Needed in case joint positions have been changed before the call
@@ -1847,7 +1838,6 @@ namespace physx
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION);
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -1855,7 +1845,6 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
 					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
 				};
 
@@ -1880,6 +1869,7 @@ namespace physx
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
+					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(rootFrame),

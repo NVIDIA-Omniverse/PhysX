@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -18,7 +18,6 @@
 #include <private/omni/physx/IPhysxStageUpdate.h>
 #include <omni/physx/IPhysxStageUpdateNode.h>
 
-static constexpr char kPlaySimulations[] = "/app/player/playSimulations";
 
 const struct carb::PluginImplDesc kPluginImpl = { "omni.physx.stageupdate.plugin", "Physics", "NVIDIA",
                                                   carb::PluginHotReload::eDisabled, "dev" };
@@ -51,18 +50,20 @@ public:
         mStageUpdate = omni::kit::getStageUpdate();
         mIPhysxStageUpdate = framework->tryAcquireInterface<omni::physx::IPhysxStageUpdate>();
 
-        omni::kit::IApp* app = carb::getCachedInterface<omni::kit::IApp>();
-
-        mExtensionEnableSub = subscribeToExtensionEnable(
-            app->getExtensionManager(),
-            [this](const char* extName) {
-                CARB_LOG_WARN("Only one of omni.physx.stageupdate or omni.physics.stageupdate can be enabled. Detaching omni.physx.stageupdate.");
-                destroyStageUpdateNode();
-            },
-            nullptr,
-            "omni.physics.stageupdate",
-            "on_physics_stageupdate_enabled"
-        );
+        omni::kit::IApp* app = framework->tryAcquireInterface<omni::kit::IApp>();
+        if (app) // if not available, we assume the user knows what they are doing
+        {
+            mExtensionEnableSub = subscribeToExtensionEnable(
+                app->getExtensionManager(),
+                [this](const char* extName) {
+                    CARB_LOG_WARN("Only one of omni.physx.stageupdate or omni.physics.stageupdate can be enabled. Detaching omni.physx.stageupdate.");
+                    destroyStageUpdateNode();
+                },
+                nullptr,
+                "omni.physics.stageupdate",
+                "on_physics_stageupdate_enabled"
+               );
+        }
 
         attachStageUpdate();
     }
@@ -147,11 +148,7 @@ void physXUpdate(float currentTime, float elapsedSecs, const omni::kit::StageUpd
 
 void physXResume(float currentTime, void*)
 {
-    carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
-    const bool playSimulation = settings->getAsBool(kPlaySimulations);
-
-    if (gStageUpdateImpl && gStageUpdateImpl->getIPhysxStageUpdate() && !gStageUpdateImpl->timeLineEventsBlocked() &&
-        playSimulation)
+    if (gStageUpdateImpl && gStageUpdateImpl->getIPhysxStageUpdate() && !gStageUpdateImpl->timeLineEventsBlocked())
     {
         gStageUpdateImpl->getIPhysxStageUpdate()->onResume(currentTime);
     }

@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ext
 import carb
 import carb.profiler
@@ -815,22 +816,6 @@ class OmniPVdObjectTreeWindow(ui.Window):
                     self._delegate._tree = self._tree
                     self._tree.set_selection_changed_fn(self._delegate.on_selection_of_item)
 
-    def _setVisibleChildren(self, prim):
-        if not prim:
-            return
-        if prim.HasAttribute("omni:pvdi:viz"):
-            if not prim.GetAttribute("omni:pvdi:viz").Get(self.cached_time):
-                UsdGeom.Imageable(prim).MakeInvisible()
-            else:
-                UsdGeom.Imageable(prim).MakeVisible()
-                children_iterator = prim.GetChildren()
-                for child_prim in children_iterator:
-                    self._setVisibleChildren(child_prim)
-        else:
-            children_iterator = prim.GetChildren()
-            for child_prim in children_iterator:
-                self._setVisibleChildren(child_prim)
-
     def _updatedFromEvent(self):
         if not hasattr(self, "_model"):
             return
@@ -843,9 +828,12 @@ class OmniPVdObjectTreeWindow(ui.Window):
         if stage:
             stage.SetInterpolationType(Usd.InterpolationTypeHeld)
             self.cached_time = self.get_time()
-            with Sdf.ChangeBlock():
-                self._setVisibleChildren(stage.GetPrimAtPath("/Scenes"))
-                self._setVisibleChildren(stage.GetPrimAtPath("/Shared"))
+            # PERFORMANCE OPTIMIZATION: Use C++ implementation for visibility update
+            # This is much faster than Python recursion for large scenes
+            # Note: C++ implementation uses SdfChangeBlock internally to batch changes
+            from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
+            pvd_interface = acquire_physx_pvd_interface()
+            pvd_interface.update_ovd_visibility(self.cached_time)
             self._model._expanded_select_items = []
             selected_prim_paths = usd_context.get_selection().get_selected_prim_paths()
             for path in selected_prim_paths:
@@ -1218,6 +1206,8 @@ class PhysxPvdExtension(omni.ext.IExt):
         self._stage_event_sub_ovd = None
         self._settings_subs = []
         self._omniPvdEnabledCheckbox = None
+        self._sim_step_model = None
+        self._sim_step_field_sub = None
         super().__init__()
 
     def modTime(self, fileName):
@@ -1322,6 +1312,20 @@ class PhysxPvdExtension(omni.ext.IExt):
 
         def on_stage_event_omnipvd_enable():
             self._ovdLoaded = False
+            
+            # Invalidate handle caches on stage open
+            # This ensures the caches get rebuilt for the new stage
+            try:
+                from omni.physxpvd.scripts.property_widget.usd_helpers import invalidate_handle_cache
+                invalidate_handle_cache()  # Python cache
+            except Exception:
+                pass
+            try:
+                from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
+                pvd_interface = acquire_physx_pvd_interface()
+                pvd_interface.invalidate_handle_cache()  # C++ cache
+            except Exception:
+                pass
 
             # check the stage if OmniPVD stage?
             is_OVD_stage = False
@@ -1504,12 +1508,14 @@ class PhysxPvdExtension(omni.ext.IExt):
             distantLight.CreateAngleAttr(0.53)
             distantLight.CreateSpecularAttr().Set(0.0)
 
+            metersPerStageUnit = 1
+            tolerancesScaleDefined = False
+
             stage.SetEditTarget(stage.GetSessionLayer())
 
             cam = UsdGeom.Camera.Define(stage, "/OmniverseKit_Persp")
             if cam:
                 # Fix for the camera clipping range using the physx tolerances scale
-                clipRangeWasSet = false = False
                 physxInstancePrim = stage.GetPrimAtPath("/Scenes/PxPhysics/PxPhysics_1")
                 if physxInstancePrim:
                     if physxInstancePrim.HasAttribute("omni:pvd:tolerancesScale"):
@@ -1517,13 +1523,17 @@ class PhysxPvdExtension(omni.ext.IExt):
                         if tolerancesScale:
                             metersPerStageUnit = 1 / tolerancesScale[0]
                             cam.CreateClippingRangeAttr(Gf.Vec2f(0.01/metersPerStageUnit, 1000000))
-                            clipRangeWasSet = True
+                            
+                            tolerancesScaleDefined = True
                             # Set the default global gizmo slider scale, which works like a multiplier
                             carb.settings.get_settings().set(SETTING_OMNIPVD_GIZMO_GLOBAL_SCALE, 1.0/metersPerStageUnit)
-                if not clipRangeWasSet:
+                if not tolerancesScaleDefined:
                     cam.CreateClippingRangeAttr(Gf.Vec2f(0.000001, 1000000))
 
             stage.SetEditTarget(stage.GetRootLayer())
+
+            if tolerancesScaleDefined:
+                UsdGeom.SetStageMetersPerUnit(stage, metersPerStageUnit)
 
             resolution = vp_utils.get_active_viewport().resolution
             viewport_api = get_active_viewport()
@@ -1989,14 +1999,20 @@ class PhysxPvdExtension(omni.ext.IExt):
 
     # User input a sim step (or some other function did)
     def _ovd_timeline_sim_step_id_changed(self, item, event_type):
-        if self._isLoadingOVD or self._sliderIsActive:
+        if self._isLoadingOVD:
             return
         if event_type == carb.settings.ChangeEventType.CHANGED:
-            self._isTimelineFrameTypeOverridden = False
             simStepIdOrig = carb.settings.get_settings().get_as_int(SETTING_OMNIPVD_TIMELINE_SIM_STEP_ID)
             simStepId = self._ovd_timeline_cap_simstep_min_max(simStepIdOrig)
             if simStepId != simStepIdOrig:
                 carb.settings.get_settings().set_int(SETTING_OMNIPVD_TIMELINE_SIM_STEP_ID, simStepId)
+            # Keep the sim step UI model in sync with the setting
+            if hasattr(self, '_sim_step_model') and self._sim_step_model:
+                self._sim_step_model.set_value(simStepId)
+            # Skip frame loading when slider is active (slider handles its own frame loading)
+            if self._sliderIsActive:
+                return
+            self._isTimelineFrameTypeOverridden = False
             frameStepsPerSimStep = self._ovd_timeline_get_frames_per_step()
             frameIdMin = self._ovd_timeline_step_to_min_frame(simStepId)
             frameIdMax = frameIdMin + frameStepsPerSimStep -1
@@ -2041,7 +2057,18 @@ class PhysxPvdExtension(omni.ext.IExt):
             ui.Spacer(width=5)
             with ui.VStack(width = 0):
                 ui.Spacer(height=3)
-                create_setting_widget(SETTING_OMNIPVD_TIMELINE_SIM_STEP_ID, SettingType.INT, width = uiWidth, height = uiHeight2, tooltip = "Current simulation step, click and drag to change")
+                # Custom sim step widget that only updates on edit_end to avoid loading
+                # intermediate frames when typing (e.g., typing "500" would otherwise load 5, 50, 500)
+                self._sim_step_model = ui.SimpleIntModel(carb.settings.get_settings().get_as_int(SETTING_OMNIPVD_TIMELINE_SIM_STEP_ID))
+                self._sim_step_field = ui.IntDrag(model=self._sim_step_model, width=uiWidth, height=uiHeight2, tooltip="Current simulation step, click and drag to change")
+                
+                def sim_step_end_edit(model):
+                    if self._isLoadingOVD or self._sliderIsActive:
+                        return
+                    newSimStep = model.get_value_as_int()
+                    carb.settings.get_settings().set_int(SETTING_OMNIPVD_TIMELINE_SIM_STEP_ID, newSimStep)
+                
+                self._sim_step_field_sub = self._sim_step_model.subscribe_end_edit_fn(sim_step_end_edit)
             ui.Spacer(width=2)
             self._frame_type_label = ui.Button("Post", tooltip = "Toggle between Pre-Simulation and Post-Simulation views", width = uiWidth, height = uiHeight)
             self._frame_type_label.set_clicked_fn(self._ovd_timeline_frametype_clicked)
@@ -2373,7 +2400,6 @@ class PhysxPvdExtension(omni.ext.IExt):
     def on_startup(self, ext_id):
         self._ext_path = omni.kit.app.get_app().get_extension_manager().get_extension_path(ext_id)
         self._icons_path =  icon_folder = f"{os.path.join(self._ext_path, PhysxPvdExtension.icons_folder)}"
-        print(f"icon_path{self._icons_path}")
         ################################################################################
         # Preload library plugin dependencies, to make them discoverable
         ################################################################################
@@ -2479,5 +2505,7 @@ class PhysxPvdExtension(omni.ext.IExt):
         self._timelineSub = None
         self._settings_subs = []
         self._stage_event_sub_ovd = None
+        self._sim_step_model = None
+        self._sim_step_field_sub = None
 
 safe_import_tests("omni.physxpvd.scripts.tests")

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -1093,6 +1093,10 @@ namespace physx
 		//accumulate velocity delta for rigid body and impulse delta for articulation link
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
 							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, false);
+
+		// if the contact is between articulation and soft body, after accumulated all the related contact's
+		// impulse, we need to propagate the accumulated impulse to the articulation block solver
+		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
 	}
 
 	void PxgSoftBodyCore::solveRSContactsOutputRigidDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
@@ -1159,6 +1163,8 @@ namespace physx
 		//impulse, we need to propagate the accumulated impulse to the articulation block solver
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
 							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, true);
+
+		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
 	}
 
 

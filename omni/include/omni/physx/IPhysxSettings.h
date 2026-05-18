@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -78,8 +78,6 @@ DEFINE_PHYSX_SETTING(kSettingExposePrimPathNames, "/exposePrimPathNames");
 DEFINE_PHYSX_SETTING(kSettingForceParseOnlySingleScene, "/forceParseOnlySingleScene");
 /// @private
 DEFINE_PHYSX_SETTING(kSettingSimulateEmptyScene, "/simulateEmptyScene");
-/// (bool) Disable sleeping for all PhysX SDK objects, useful for debugging, should not be used for production.
-DEFINE_PHYSX_SETTING(kSettingDisableSleeping, "/disableSleeping");
 /// (bool) Enable synchronous CUDA kernel launches. This is very useful if you need to pin point the CUDA kernel that is failing.
 DEFINE_PHYSX_SETTING(kSettingSynchronousKernelLaunches, "/enableSynchronousKernelLaunches");
 /// (bool) Disable contact processing in omni.physx.
@@ -374,9 +372,9 @@ DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayDeformableMeshType, "/visualizati
 DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayDeformableAttachments, "/visualizationDisplayDeformableAttachments");
 
 /** @rst
-    (bool) Toggles between new deformable feature (beta) and deprecated deformable/particle-cloth graphical user interfaces.
+    (bool) Toggles between new deformable feature and deprecated deformable/particle-cloth graphical user interfaces.
     @endrst */
-DEFINE_PERSISTENT_PHYSX_SETTING(kSettingEnableDeformableBeta, "/enableDeformableBeta");
+DEFINE_PERSISTENT_PHYSX_SETTING(kSettingEnableDeformableDeprecated, "/enableDeformableDeprecated");
 
 /** @rst
     (int) Enables viewport debug visualization overlay of particles.

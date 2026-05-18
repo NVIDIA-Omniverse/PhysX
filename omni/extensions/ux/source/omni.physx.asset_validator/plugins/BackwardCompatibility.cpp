@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -429,8 +429,8 @@ void checkJoints(bool& ret, pxr::UsdStageWeakPtr stage, usdrt::UsdStageRefPtr us
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsJoint")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<UsdPhysicsJoint>().GetTypeName();
@@ -466,8 +466,8 @@ void checkPhysicsMaterialAPI(bool& ret, pxr::UsdStageWeakPtr stage, usdrt::UsdSt
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysicsMaterialAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string typeName("PhysicsMaterialAPI");
@@ -479,8 +479,8 @@ void checkScenes(bool& ret, pxr::UsdStageWeakPtr stage, usdrt::UsdStageRefPtr us
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsScene")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<UsdPhysicsScene>().GetTypeName();
@@ -505,8 +505,8 @@ void checkPhysxSchemaPhysxSceneAPI(bool& ret, pxr::UsdStageWeakPtr stage, usdrt:
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxSceneAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxSceneAPI>().GetTypeName();
@@ -523,8 +523,8 @@ void checkPhysxSchemaPhysxRigidBodyAPI(bool& ret, pxr::UsdStageWeakPtr stage, us
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxRigidBodyAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxRigidBodyAPI>().GetTypeName();
@@ -539,8 +539,8 @@ void checkPhysxSchemaPhysxTriangleMeshCollisionAPI(bool& ret, pxr::UsdStageWeakP
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxTriangleMeshCollisionAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         TOKEN_CHECK(checkAttributes, "physxsdfcollision:resolution")
@@ -557,8 +557,8 @@ void checkPhysxSchemaUsdPhysicsCollisionAPI(bool& ret, pxr::UsdStageWeakPtr stag
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysicsCollisionAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxCollisionAPI>().GetTypeName();
@@ -570,8 +570,8 @@ void checkPhysxSchemaPhysxCollisionAPI(bool& ret, pxr::UsdStageWeakPtr stage, us
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxCollisionAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxCollisionAPI>().GetTypeName();
@@ -583,8 +583,8 @@ void checkPhysxSchemaPhysxMaterialAPI(bool& ret, pxr::UsdStageWeakPtr stage, usd
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxMaterialAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxMaterialAPI>().GetTypeName();
@@ -596,8 +596,8 @@ void checkPhysxSchemaPhysxJointAPI(bool& ret, pxr::UsdStageWeakPtr stage, usdrt:
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxJointAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxJointAPI>().GetTypeName();
@@ -611,8 +611,8 @@ void checkPhysxSchemaPhysxArticulationAPI(bool& ret, pxr::UsdStageWeakPtr stage,
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxArticulationAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxArticulationAPI>().GetTypeName();
@@ -625,8 +625,8 @@ void checkPhysxSchemaPhysxArticulationForceSensorAPI(bool& ret, pxr::UsdStageWea
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxArticulationForceSensorAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         CARB_LOG_WARN(
             "Physics backwardsCompatibility: PhysxArticulationForceSensorAPI has been removed. Prim (%s).",
             usdPath.GetText());
@@ -641,8 +641,8 @@ void checkPhysxArticulationJoint(bool& ret, pxr::UsdStageWeakPtr stage, usdrt::U
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsJoint")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<UsdPhysicsJoint>().GetTypeName();
@@ -654,8 +654,8 @@ void checkUsdPhysicsRevoluteJoint(bool& ret, pxr::UsdStageWeakPtr stage, usdrt::
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsRevoluteJoint")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<UsdPhysicsRevoluteJoint>().GetTypeName();
@@ -667,8 +667,8 @@ void checkUsdPhysicsSphericalJoint(bool& ret, pxr::UsdStageWeakPtr stage, usdrt:
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsSphericalJoint")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<UsdPhysicsSphericalJoint>().GetTypeName();
@@ -680,8 +680,8 @@ void checkPhysxSchemaPhysxTriggerAPI(bool& ret, pxr::UsdStageWeakPtr stage, usdr
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxTriggerAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxTriggerAPI>().GetTypeName();
@@ -710,8 +710,8 @@ void checkPhysxSchemaPhysxVehicleContextAPI(bool& ret, pxr::UsdStageWeakPtr stag
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxVehicleContextAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxVehicleContextAPI>().GetTypeName();
@@ -724,8 +724,8 @@ void checkPhysxSchemaPhysxVehicleControllerAPI(bool& ret, pxr::UsdStageWeakPtr s
 {
     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxVehicleControllerAPI")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
-        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+        const omni::fabric::Path fabricPath(usdrtPath);
+        const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
         UsdPrim usdPrim = stage->GetPrimAtPath(usdPath);
         const std::string& primPathStr = usdrtPath.GetString();
         static const std::string& typeName = TfType::Find<PhysxSchemaPhysxVehicleControllerAPI>().GetTypeName();

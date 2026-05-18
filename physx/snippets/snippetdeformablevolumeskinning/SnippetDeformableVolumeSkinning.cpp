@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -116,6 +116,11 @@ public:
 	void copyDeviceToHostAsync(CUstream stream, PxU32 numElementsToCopy = 0xFFFFFFFF)
 	{
 		PxCudaHelpersExt::copyDToHAsync(*mContextManager, mHostData, mDeviceData, PxMin(numElementsToCopy, mNumElements), stream);
+	}
+
+	void copyHostToDeviceAsync(CUstream stream, PxU32 numElementsToCopy = 0xFFFFFFFF)
+	{
+		Ext::PxCudaHelpersExt::copyHToDAsync(*mContextManager, mDeviceData, mHostData, PxMin(numElementsToCopy, mNumElements), stream);
 	}
 
 	void release()
@@ -225,11 +230,11 @@ struct PostSolveCallback : BasePostSolveCallback, PxUserAllocated
 		for (PxU32 i = 0; i < skinningHelpers.size(); ++i) 		
 			skinningHelpers[i].packageGpuData(packagedSkinningData.mHostData[i]);
 		
-		packagedSkinningData.copyHostToDevice(skinningHelpers.size());
+		packagedSkinningData.copyHostToDeviceAsync(mSkinningStream, skinningHelpers.size());
 
 		skinning->evaluateVerticesEmbeddedIntoVolume(packagedSkinningData.mDeviceData, skinningHelpers.size(), mSkinningStream);
 
-		//mSkinnedVertices.copyDeviceToHostAsync(mSkinningStream);
+		mContextManager->getCudaContext()->eventRecord(startEvent, mSkinningStream);
 	}
 
 	virtual void synchronize()

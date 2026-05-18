@@ -1,6 +1,6 @@
 [package]
 title = "Extension Test Run Environment"
-version = "107.3.24"
+version = "109.0.10"
 keywords = ["app"]
 
 [dependencies]
@@ -16,7 +16,8 @@ localMode = true
 
 # physics custom settings
 [settings]
-app.fastShutdown = true
+app.useFabricSceneDelegate = true
+app.fastShutdown = false
 app.menu.legacy_mode = false
 crashreporter.enabled=false
 crashreporter.skipOldDumpUpload=true
@@ -41,7 +42,7 @@ exts."omni.kit.test".stdoutFailPatterns.exclude=[
 ]
 
 # Sync with repo.toml repo_test.generate_report_cmd and repo_test.suites.coverage.generate_report_cmd
-exts."omni.kit.test".testExtOutputPath="${kit}/../_testoutput"
+exts."omni.kit.test".testExtOutputPath="${app}/../_testoutput"
 
 # Disable code change analyzer so that all tests run
 exts."omni.kit.test".testExtCodeChangeAnalyzerEnabled=false
@@ -49,8 +50,14 @@ exts."omni.kit.test".testExtCodeChangeAnalyzerEnabled=false
 # Show ignored error messages so we are aware locally
 exts."omni.kit.test".stdoutFailPatterns.trimExcludedMessages = false
 
-# Hang fix for startup tests with a telemetry dep
+# Hang fixes for startup tests with a telemetry dep
 exts."omni.kit.telemetry".skipDeferredStartup=true
+telemetry.enableAnonymousData=false
+telemetry.disableInternalSessionCheck=true
+# Disable sending of all telemetry messages
+privacy.usage=false
+privacy.personalization=false
+privacy.performance=false
 
 [settings.exts."omni.kit.debug.python"]
 # Host and port for listen to debugger for
@@ -77,4 +84,5 @@ folders = [
     "${kit}/experiences/kit",
     "${app}/../exts",
     "${app}/../extsPhysics",
+    "${app}/../extsPhysicsRepo",
 ]

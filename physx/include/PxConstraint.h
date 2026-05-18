@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -101,7 +101,7 @@ public:
 
 	\see PxPhysics.createConstraint, PxBase.release()
 	*/
-	virtual void				release()														= 0;
+	virtual void				release()														PX_OVERRIDE = 0;
 
 	/**
 	\brief Retrieves the scene which this constraint belongs to.
@@ -259,15 +259,17 @@ public:
 
 	\return The residual for this constraint.
 
+	\deprecated
+
 	\see PxConstraintResidual
 	*/
-	virtual PxConstraintResidual getSolverResidual() const = 0;
+	PX_DEPRECATED virtual PxConstraintResidual getSolverResidual() const = 0;
 
 			void*				userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
 
 protected:
 	PX_INLINE					PxConstraint(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL) {}
-	PX_INLINE					PxConstraint(PxBaseFlags baseFlags) : PxBase(baseFlags), userData(NULL) {}
+	PX_INLINE					PxConstraint(PxBaseFlags baseFlags) : PxBase(baseFlags)	{}
 	virtual						~PxConstraint() {}
 	virtual	bool				isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxConstraint", PxBase); }
 

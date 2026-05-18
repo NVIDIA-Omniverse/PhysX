@@ -22,18 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScBodySim.h"
 #include "ScShapeSim.h"
-#include "ScScene.h"
 #include "ScArticulationSim.h"
-#include "PxsContext.h"
-#include "PxsSimpleIslandManager.h"
-#include "PxsSimulationController.h"
-#include "ScSimStateData.h"
+#include "ScArticulationCore.h"
 
 using namespace physx;
 using namespace Dy;
@@ -163,7 +159,7 @@ BodySim::~BodySim()
 	mCore.setSim(NULL);
 }
 
-void BodySim::updateCached(PxBitMapPinned* shapeChangedMap)
+void BodySim::updateCached_NotThreadSafe(PxBitMapPinned* shapeChangedMap)
 {
 	if(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN))
 	{
@@ -172,12 +168,12 @@ void BodySim::updateCached(PxBitMapPinned* shapeChangedMap)
 		while (nbElems--)
 		{
 			ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-			current->updateCached(0, shapeChangedMap);
+			current->updateCached_NotThreadSafe(0, shapeChangedMap);
 		}
 	}
 }
 
-void BodySim::updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray)
+void BodySim::updateCached_ThreadSafe(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray)
 {
 	PX_ASSERT(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN));	// PT: should not be called otherwise
 
@@ -186,7 +182,7 @@ void BodySim::updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& b
 	while (nbElems--)
 	{
 		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-		current->updateCached(transformCache, boundsArray);
+		current->updateCached_ThreadSafe(transformCache, boundsArray);
 	}
 }
 
@@ -546,7 +542,7 @@ void BodySim::internalWakeUpBase(PxReal wakeCounterValue)	//this one can only in
 		getBodyCore().setWakeCounterFromSim(wakeCounterValue);
 
 		//we need to update the gpu body sim because we reset the wake counter for the body core
-		mScene.updateBodySim(*this);
+		mScene.gpu_updateBodySim(*this);
 		setActive(true);
 		notifyWakeUp();
 
@@ -564,6 +560,31 @@ void BodySim::notifyReadyForSleeping()
 void BodySim::notifyNotReadyForSleeping()
 {
 	mScene.getSimpleIslandManager()->activateNode(mNodeIndex);
+}
+
+bool BodySim::checkSleepReadinessBesidesWakeCounter()
+{
+	// If sleeping is disabled in the scene, bodies are never ready for sleep
+	if(mScene.getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+		return false;
+
+	const BodyCore& bodyCore = getBodyCore();
+	const SimStateData* simStateData = getSimStateData(false);
+	const VelocityMod* velmod = simStateData ? simStateData->getVelocityModData() : NULL;
+
+	bool readyForSleep = bodyCore.getLinearVelocity().isZero() && bodyCore.getAngularVelocity().isZero();
+	if (readVelocityModFlag(VMF_ACC_DIRTY))
+	{
+		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerSec().isZero());
+		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerSec().isZero());
+	}
+	if (readVelocityModFlag(VMF_VEL_DIRTY))
+	{
+		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerStep().isZero());
+		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerStep().isZero());
+	}
+
+	return readyForSleep;
 }
 
 void BodySim::notifyWakeUp()
@@ -587,11 +608,11 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 
 	PxReal wc = core.getWakeCounter();
 	
+	if(wc < wakeCounterResetTime * 0.5f || wc < dt)
 	{
 		PxVec3 bcSleepLinVelAcc = mLLBody.mSleepLinVelAcc;
 		PxVec3 bcSleepAngVelAcc = mLLBody.mSleepAngVelAcc;
 
-		if(wc < wakeCounterResetTime * 0.5f || wc < dt)
 		{
 			const PxTransform& body2World = getBody2World();
 
@@ -849,7 +870,7 @@ void BodySim::freezeTransforms(PxBitMapPinned* shapeChangedMap)
 	while (nbElems--)
 	{
 		ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
-		sim->updateCached(PxsTransformFlag::eFROZEN, shapeChangedMap);
+		sim->updateCached_NotThreadSafe(PxsTransformFlag::eFROZEN, shapeChangedMap);
 		sim->destroySqBounds();
 	}
 }

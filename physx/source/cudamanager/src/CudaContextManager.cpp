@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "foundation/PxAssert.h"
 #include "foundation/PxAtomic.h"
@@ -58,9 +58,6 @@
 #include "cudamanager/PxCudaContext.h"
 
 #if PX_WIN32 || PX_WIN64
-
-// Enable/disable NVIDIA secure load library code
-#define SECURE_LOAD_LIBRARY !PX_PUBLIC_RELEASE
 
 #include "foundation/windows/PxWindowsInclude.h"
 
@@ -1178,6 +1175,10 @@ PxCUresult CudaCtx::launchKernel(
 			extra
 		);
 
+		PX_ASSERT(mLastResult != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES);
+		if (mLastResult == CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES)
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, file, line, "Kernel launch failed - register resource overflow. Error: %i\n", mLastResult);
+
 		if (mLaunchSynchronous)
 		{
 			mLastResult = cuStreamSynchronize(hStream);
@@ -1219,6 +1220,10 @@ PxCUresult CudaCtx::launchKernel(
 			kernelParams,
 			extra
 		);
+
+		PX_ASSERT(mLastResult != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES);
+		if (mLastResult == CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES)
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, file, line, "Kernel launch failed - register resource overflow. Error: %i\n", mLastResult);
 
 		if (mLaunchSynchronous)
 		{

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -144,7 +144,8 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
                 {
                     // disable compliance and restore restitution from USD:
                     float restitution = 0.0f;  // fallback to 0.0
-                    getValue<float>(attachedStage, objectRecord->mPath, UsdPhysicsTokens.Get()->physicsRestitution, timeCode, restitution);
+                    getValue<float>(attachedStage, objectRecord->mPath, UsdPhysicsTokens.Get()->physicsRestitution,
+                                    timeCode, restitution, false);
                     material->setRestitution(restitution);
                 }
             }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -60,13 +60,13 @@ public:
 	virtual								~NpDeformableVolumeMaterial();
 
 	// PxBase
-	virtual	void						release();
+	virtual	void						release() PX_OVERRIDE;
 	//~PxBase
 
 	// PxRefCounted
-	virtual	void						acquireReference();
-	virtual	PxU32						getReferenceCount() const;
-	virtual	void						onRefCountZero();
+	virtual	void						acquireReference() PX_OVERRIDE;
+	virtual	PxU32						getReferenceCount() const PX_OVERRIDE;
+	virtual	void						onRefCountZero() PX_OVERRIDE;
 	//~PxRefCounted
 
 	// PxDeformableMaterial
@@ -83,11 +83,11 @@ public:
 	virtual	PxReal						getDamping() const	PX_OVERRIDE;
 	virtual	void						setElasticityDamping(PxReal damping)	PX_OVERRIDE;
 	virtual	PxReal						getElasticityDamping() const	PX_OVERRIDE;
-	virtual	void						setDampingScale(PxReal scale);
-	virtual	PxReal						getDampingScale() const;
-	virtual	void						setMaterialModel(PxDeformableVolumeMaterialModel::Enum model);
+	virtual	void						setDampingScale(PxReal scale) PX_OVERRIDE;
+	virtual	PxReal						getDampingScale() const PX_OVERRIDE;
+	virtual	void						setMaterialModel(PxDeformableVolumeMaterialModel::Enum model) PX_OVERRIDE;
 	virtual	PxDeformableVolumeMaterialModel::Enum 
-										getMaterialModel() const;
+										getMaterialModel() const PX_OVERRIDE;
 	virtual	void						setDeformThreshold(PxReal threshold);
 	virtual	PxReal						getDeformThreshold() const;
 	virtual	void						setDeformLowLimitRatio(PxReal threshold);

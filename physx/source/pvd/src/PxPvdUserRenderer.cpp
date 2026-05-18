@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxPvdUserRenderImpl.h"
 #include "PxPvdInternalByteStreams.h"
@@ -90,7 +90,7 @@ struct RenderWriter : public RenderSerializer
 		write(val.position);
 		write(val.size);
 
-		uint32_t amount = static_cast<uint32_t>(strlen(val.string)) + 1;
+		uint32_t amount = static_cast<uint32_t>(strnlen(val.string, UINT32_MAX - 1)) + 1;
 		write(amount);
 		if(amount)
 			write(val.string, amount);
@@ -135,7 +135,7 @@ struct UserRenderer : public PvdUserRenderer
 	virtual ~UserRenderer()
 	{
 	}
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		PVD_DELETE(this);
 	}
@@ -152,33 +152,33 @@ struct UserRenderer : public PvdUserRenderer
 		if(mBuffer.size() >= mBufferCapacity)
 			flushRenderEvents();
 	}
-	virtual void setInstanceId(const void* iid)
+	virtual void setInstanceId(const void* iid) PX_OVERRIDE
 	{
 		handleEvent(SetInstanceIdRenderEvent(PVD_POINTER_TO_U64(iid)));
 	}
 	// Draw these points associated with this instance
-	virtual void drawPoints(const PxDebugPoint* points, uint32_t count)
+	virtual void drawPoints(const PxDebugPoint* points, uint32_t count) PX_OVERRIDE
 	{
 		handleEvent(PointsRenderEvent(points, count));
 	}
 	// Draw these lines associated with this instance
-	virtual void drawLines(const PxDebugLine* lines, uint32_t count)
+	virtual void drawLines(const PxDebugLine* lines, uint32_t count) PX_OVERRIDE
 	{
 		handleEvent(LinesRenderEvent(lines, count));
 	}
 	// Draw these triangles associated with this instance
-	virtual void drawTriangles(const PxDebugTriangle* triangles, uint32_t count)
+	virtual void drawTriangles(const PxDebugTriangle* triangles, uint32_t count) PX_OVERRIDE
 	{
 		handleEvent(TrianglesRenderEvent(triangles, count));
 	}
 
-	virtual void drawText(const PxDebugText& text)
+	virtual void drawText(const PxDebugText& text) PX_OVERRIDE
 	{
 		handleEvent(TextRenderEvent(text));
 	}
 
 	virtual void drawRenderbuffer(const PxDebugPoint* pointData, uint32_t pointCount, const PxDebugLine* lineData,
-	                              uint32_t lineCount, const PxDebugTriangle* triangleData, uint32_t triangleCount)
+	                              uint32_t lineCount, const PxDebugTriangle* triangleData, uint32_t triangleCount) PX_OVERRIDE
 	{
 		handleEvent(DebugRenderEvent(pointData, pointCount, lineData, lineCount, triangleData, triangleCount));
 	}
@@ -205,14 +205,14 @@ struct UserRenderer : public PvdUserRenderer
 		handleEvent(DoubleConeRenderEvent(t, angle, true));
 	}
 	// Clear the immedate buffer.
-	virtual void flushRenderEvents()
+	virtual void flushRenderEvents() PX_OVERRIDE
 	{
 		if(mClient)
 			mClient->handleBufferFlush(mBuffer.begin(), mBuffer.size());
 		mBuffer.clear();
 	}
 
-	virtual void setClient(RendererEventClient* client)
+	virtual void setClient(RendererEventClient* client) PX_OVERRIDE
 	{
 		mClient = client;
 	}

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -227,7 +227,7 @@ namespace physx
 
 		\note For spherical joints, target must be in range [-Pi, Pi].
 
-		\note The target is specified in the parent frame of the joint. If Gp, Gc are the parent and child actor poses in the world frame and Lp, Lc are the parent and child joint frames expressed in the parent and child actor frames then the joint will drive the parent and child links to poses that obey Gp * Lp * J = Gc * Lc. For joints restricted to angular motion, J has the form PxTranfsorm(PxVec3(PxZero), PxExp(PxVec3(twistTarget, swing1Target, swing2Target))).  For joints restricted to linear motion, J has the form PxTransform(PxVec3(XTarget, YTarget, ZTarget), PxQuat(PxIdentity)).
+		\note The target is specified in the parent frame of the joint. If Gp, Gc are the parent and child actor poses in the world frame and Lp, Lc are the parent and child joint frames expressed in the parent and child actor frames then the joint will drive the parent and child links to poses that obey Gp * Lp * J = Gc * Lc. For joints restricted to angular motion, J has the form PxTransform(PxVec3(PxZero), PxExp(PxVec3(twistTarget, swing1Target, swing2Target))).  For joints restricted to linear motion, J has the form PxTransform(PxVec3(XTarget, YTarget, ZTarget), PxQuat(PxIdentity)).
 
 		\note For spherical joints with more than 1 degree of freedom, the joint target angles taken together can collectively represent a rotation of greater than Pi around a vector. When this happens the rotation that matches the joint drive target is not the shortest path rotation.  The joint pose J that is the outcome after driving to the target pose will always be the equivalent of the shortest path rotation.
 
@@ -436,7 +436,7 @@ namespace physx
 		\note For PxArticulationJointType::eREVOLUTE_UNWRAPPED, jointPos must be in range [-PX_MAX_REAL, PX_MAX_REAL].
 		\note For PxArticulationJointType::ePRISMATIC, jointPos must be in range [-PX_MAX_REAL, PX_MAX_REAL].
 
-		\note Joint position is specified in the parent frame of the joint. If Gp, Gc are the parent and child actor poses in the world frame and Lp, Lc are the parent and child joint frames expressed in the parent and child actor frames then the parent and child links will be given poses that obey Gp * Lp * J = Gc * Lc with J denoting the joint pose. For joints restricted to angular motion, J has the form PxTranfsorm(PxVec3(PxZero), PxExp(PxVec3(twistPos, swing1Pos, swing2Pos))).  For joints restricted to linear motion, J has the form PxTransform(PxVec3(xPos, yPos, zPos), PxQuat(PxIdentity)).
+		\note Joint position is specified in the parent frame of the joint. If Gp, Gc are the parent and child actor poses in the world frame and Lp, Lc are the parent and child joint frames expressed in the parent and child actor frames then the parent and child links will be given poses that obey Gp * Lp * J = Gc * Lc with J denoting the joint pose. For joints restricted to angular motion, J has the form PxTransform(PxVec3(PxZero), PxExp(PxVec3(twistPos, swing1Pos, swing2Pos))).  For joints restricted to linear motion, J has the form PxTransform(PxVec3(xPos, yPos, zPos), PxQuat(PxIdentity)).
 
 		\note For spherical joints with more than 1 degree of freedom, the input joint positions taken together can collectively represent a rotation of greater than Pi around a vector. When this happens the rotation that matches the joint positions is not the shortest path rotation.  The joint pose J that is the outcome of setting and applying the joint positions will always be the equivalent of the shortest path rotation.
 
@@ -538,10 +538,10 @@ namespace physx
 		virtual		const char*		getName()			const	= 0;
 
 	protected:
-		PX_INLINE								PxArticulationJointReducedCoordinate(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
-		PX_INLINE								PxArticulationJointReducedCoordinate(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
+		PX_INLINE			PxArticulationJointReducedCoordinate(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL)   {}
+		PX_INLINE			PxArticulationJointReducedCoordinate(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 		
-		virtual	bool							isKindOf(const char* name)	const { PX_IS_KIND_OF(name, "PxArticulationJointReducedCoordinate", PxBase); }
+		virtual	bool		isKindOf(const char* name)	const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxArticulationJointReducedCoordinate", PxBase); }
 	};
 
 #if !PX_DOXYGEN

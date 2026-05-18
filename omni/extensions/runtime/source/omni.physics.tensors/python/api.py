@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physics.tensors import acquire_tensor_api, float32, uint8, uint32
 import carb
 
@@ -727,21 +728,6 @@ class ArticulationView:
             raise Exception("Unable to obtain Jacobian shape")
         return shape
 
-    # DEPRECATED
-    @property
-    def mass_matrix_shape(self):
-        """
-            The mass_matrix_shape property indicates the dimension of the mass matrix of the articulations in the view.
-            The mass matrix dimension depends on the number of degrees of freedom of the articulations and is max_dofs x max_dofs.
-
-            .. warning::
-                This property is deprecated and will be removed in the future. Use :py:data:`ArticulationView.generalized_mass_matrix_shape` instead.
-        """
-        shape = self._backend.mass_matrix_shape
-        if shape is None:
-            raise Exception("Unable to obtain Mass Matrix shape")
-        return shape
-
     @property
     def generalized_mass_matrix_shape(self):
         """
@@ -785,22 +771,22 @@ class ArticulationView:
 
             Note: 
                 The metatype features static information about articulation links and joints as follows:
-                - link_count: The total number of links in the articulation.
-                - joint_count: The total number of joints in the articulation.
-                - dof_count: The total number of degrees of freedom in the articulation.
-                - link_names: A list of the link names in the articulation. If duplicate names are present, an incrementing number is appended to the original name.
-                - link_parents: A list of each link’s parent name. This corresponds to the link_names list above.
-                - joint_names: A list of the joint names in the articulation. If duplicate names are present, an incrementing number is appended to the original name.
-                - dof_names: A list of the DOF (Degrees Of Freedom) names. It corresponds to the joint name and an incrementing number is appended for each DOF of spherical joints.
-                - link_indices: A mapping from link names to link index.
-                - link_parent_indices: A mapping from link names to the index of their parent link.
-                - joint_indices: A mapping from joint names to their index.
-                - dof_indices: A mapping from DOF names to their index.
-                - joint_types: A list of the type of each joint.
-                - joint_dof_offsets: A list indicating the start offset of each joint’s DOFs.
-                - joint_dof_counts: A list indicating how many DOFs each joint has.
-                - dof_types: A list of the type of each DOF.
-                - fixed_base: A boolean indicating if the base link is fixed (True) or floating (False).
+                * link_count: The total number of links in the articulation.
+                * joint_count: The total number of joints in the articulation.
+                * dof_count: The total number of degrees of freedom in the articulation.
+                * link_names: A list of the link names in the articulation. If duplicate names are present, an incrementing number is appended to the original name.
+                * link_parents: A list of each link’s parent name. This corresponds to the link_names list above.
+                * joint_names: A list of the joint names in the articulation. If duplicate names are present, an incrementing number is appended to the original name.
+                * dof_names: A list of the DOF (Degrees Of Freedom) names. It corresponds to the joint name and an incrementing number is appended for each DOF of spherical joints.
+                * link_indices: A mapping from link names to link index.
+                * link_parent_indices: A mapping from link names to the index of their parent link.
+                * joint_indices: A mapping from joint names to their index.
+                * dof_indices: A mapping from DOF names to their index.
+                * joint_types: A list of the type of each joint.
+                * joint_dof_offsets: A list indicating the start offset of each joint’s DOFs.
+                * joint_dof_counts: A list indicating how many DOFs each joint has.
+                * dof_types: A list of the type of each DOF.
+                * fixed_base: A boolean indicating if the base link is fixed (True) or floating (False).
 
             Returns:
                 ArticulationMetatype: The metatype of the articulation at the given index.
@@ -1316,7 +1302,7 @@ class ArticulationView:
             raise Exception("Failed to set DOF max forces in backend")
 
     def set_dof_drive_model_properties(self, data, indices):
-        """ Sets the degrees of freedom (DOF) drive model properties for articulations indicated by indices.
+        r""" Sets the degrees of freedom (DOF) drive model properties for articulations indicated by indices.
 
             The drive model properties tensor is composed of the following properties (provided in the order of appearance in the array):
 
@@ -2128,35 +2114,6 @@ class ArticulationView:
 
         return self._jacobians
 
-    # DEPRECATED
-    def get_mass_matrices(self):
-        """ Gets the mass matrices for all articulations in the view.
-
-            This matrix represents the joint space inertia of the articulation and can be used to convert joint accelerations into joint forces/torques.
-
-            .. warning::
-                This function is deprecated and will be removed in the future. Use :py:func:`ArticulationView.get_generalized_mass_matrices` instead.
-
-            .. note::
-                * The function raises an exception if the mass matrices cannot be obtained from the backend.
-                * For floating base articulations, the mass matrix provided does not allow to convert root accelerations into root forces/torques.
-
-            Returns:
-                Union[np.ndarray, torch.Tensor, wp.array]: An array of mass matrices with shape (count, mass_matrix_shape.numCols, mass_matrix_shape.numRows) where count is the number of articulations in the view and mass_matrix_shape.numCols and mass_matrix_shape.numRows are the number of columns and rows of the mass matrix.
-        """
-        if not hasattr(self, "_mass_matrices"):
-            shape = self.mass_matrix_shape
-            self._mass_matrices, self._mass_matrices_desc = self._frontend.create_tensor(
-                # (self.count, shape[0], shape[1]), float32
-                (self.count, shape[0], shape[1]),
-                float32,
-            )
-
-        if not self._backend.get_mass_matrices(self._mass_matrices_desc):
-            raise Exception("Failed to get Mass Matrices from backend")
-
-        return self._mass_matrices
-
     def get_generalized_mass_matrices(self):
         """ Gets the mass matrices for all articulations in the view.
 
@@ -2191,32 +2148,6 @@ class ArticulationView:
 
         return self._generalized_mass_matrices
 
-    # DEPRECATED
-    def get_coriolis_and_centrifugal_forces(self):
-        """ Gets the Coriolis and Centrifugal forces for all articulations in the view.
-
-            .. warning::
-                This function is deprecated and will be removed in the future. Use :py:func:`ArticulationView.get_coriolis_and_centrifugal_compensation_forces` instead.
-
-            .. note::
-                * The function raises an exception if the Coriolis and Centrifugal forces cannot be obtained from the backend.
-                * For floating base articulations, this API does not provide the Coriolis and Centrifugal forces acting on the root.
-
-            Returns:
-                Union[np.ndarray, torch.Tensor, wp.array]: An array of Coriolis and Centrifugal forces with shape (count, max_dofs) where count is the number of articulations in the view and max_dofs is the maximum number of degrees of freedom in all the view's articulations.
-        """
-        if not hasattr(self, "_coriolis_centrifugal"):
-            self._coriolis_centrifugal, self._coriolis_centrifugal_desc = self._frontend.create_tensor(
-                # (self.count, self.max_dofs), float32
-                (self.count, self.max_dofs),
-                float32,
-            )
-
-        if not self._backend.get_coriolis_and_centrifugal_forces(self._coriolis_centrifugal_desc):
-            raise Exception("Failed to get Coriolis and Centrifugal forces from backend")
-
-        return self._coriolis_centrifugal
-
     def get_coriolis_and_centrifugal_compensation_forces(self):
         """ Gets the Coriolis and Centrifugal compensation forces for all articulations in the view.
 
@@ -2250,32 +2181,6 @@ class ArticulationView:
             raise Exception("Failed to get Coriolis and Centrifugal compensation forces from backend")
 
         return self._coriolis_compensation_forces
-
-    # DEPRECATED
-    def get_generalized_gravity_forces(self):
-        """ Gets the Generalized Gravity forces for all articulations in the view.
-
-            .. warning::
-                This function is deprecated and will be removed in the future. Use :py:func:`ArticulationView.get_gravity_compensation_forces` instead.
-
-            .. note::
-                * The function raises an exception if the Generalized Gravity forces cannot be obtained from the backend.
-                * For floating base articulations, this API does not provide the Generalized Gravity forces acting on the root.
-
-            Returns:
-                Union[np.ndarray, torch.Tensor, wp.array]: An array of Generalized Gravity forces with shape (count, max_dofs) where count is the number of articulations in the view and max_dofs is the maximum number of degrees of freedom in all the view's articulations.
-        """
-        if not hasattr(self, "_generalized_gravity"):
-            self._generalized_gravity, self._generalized_gravity_desc = self._frontend.create_tensor(
-                # (self.count, self.max_dofs), float32
-                (self.count, self.max_dofs),
-                float32,
-            )
-
-        if not self._backend.get_generalized_gravity_forces(self._generalized_gravity_desc):
-            raise Exception("Failed to get Generalized Gravity forces from backend")
-
-        return self._generalized_gravity
 
     def get_gravity_compensation_forces(self):
         """ Gets the Gravity compensation forces for all articulations in the view.
@@ -2726,6 +2631,46 @@ class ArticulationView:
             raise Exception("Failed to get articulation material properties from backend")
 
         return self._material_properties
+    
+    def get_compliant_material_properties(self):
+        """ Gets the compliant material properties for all shapes in the view.
+
+            The compliant material properties array is composed of the following properties (provided in the order of appearance in the array):
+            * stiffness
+            * damping
+
+            The method provides the combine mode of the above properties as well in the second returned argument.
+            The combine mode can be one of the following values:
+            * 0: Combine mode is average
+            * 1: Combine mode is minimum
+            * 2: Combine mode is multiply
+            * 3: Combine mode is maximum
+
+            .. note::
+                The function raises an exception if the compliant material properties cannot be obtained from the backend.
+
+            Returns:
+                Tuple[Union[np.ndarray, torch.Tensor, wp.array], Union[np.ndarray, torch.Tensor, wp.array]]: A tuple of arrays where the first array is the compliant material properties with shape (count, max_shapes, 2) where count is the number of articulations objects in the view and max_shapes is the maximum number of shapes in all the articulations in the view. The 2 elements of the last dimension are the stiffness and damping respectively. The second array is the combine mode of the compliant material properties with shape (count, max_shapes, 2) where count is the number of articulations in the view and max_shapes is the maximum number of shapes in all the articulaitons in the view. The last two elements of the last dimension are the combine mode of the stiffness and damping respectively.               
+            Example:
+                .. code-block:: python
+
+                  >>> import omni.physics.tensors as tensors
+                  >>> sim_view = tensors.create_simulation_view("warp")
+                  >>> articulation_view = sim_view.create_articulation_view("/World/Franka_*") # This assumes that the prims referenced by "/World/Franka_*" were already created in the stage
+                  >>> compliant_material_properties, compliant_material_combine_mode = articulation_view.get_compliant_material_properties()
+                  >>> compliant_material_properties_np = compliant_material_properties.numpy().reshape(articulation_view.count, articulation_view.max_shapes, 2)
+                  >>> compliant_material_combine_mode_np = compliant_material_combine_mode.numpy().reshape(articulation_view.count, articulation_view.max_shapes, 2)
+        """
+        if not hasattr(self, "_compliant_material_properties"):
+            self._compliant_material_properties, self._compliant_material_properties_desc = self._frontend.create_tensor((self.count, self.max_shapes, 2), float32, -1)
+
+        if not hasattr(self, "_compliant_material_combination"):
+            self._compliant_material_combination, self._compliant_material_combination_desc = self._frontend.create_tensor((self.count, self.max_shapes, 2), uint8, -1)
+
+        if not self._backend.get_compliant_material_properties(self._compliant_material_properties_desc, self._compliant_material_combination_desc):
+            raise Exception("Failed to get articulation compliant material properties from backend")
+
+        return self._compliant_material_properties, self._compliant_material_combination
 
     def get_contact_offsets(self):
         """ Gets the contact offsets for all shapes in the view.
@@ -2817,6 +2762,54 @@ class ArticulationView:
 
         if not self._backend.set_material_properties(data_desc, indices_desc):
             raise Exception("Failed to set articulation material properties in backend")
+
+    def set_compliant_material_properties(self, data, combination_data, indices):
+        """ Sets the compliant material properties for shapes indicated by indices.
+
+            .. note::
+                * The function raises an exception if the compliant material properties cannot be set in the backend.
+
+            Args:
+                data (Union[np.ndarray, torch.Tensor, wp.array]): An array of compliant material properties with shape (count, max_shapes, 4) where count is the number of articulations in the view and max_shapes is the maximum number of shapes in all the view's articulations. The 4 elements of the last dimension are the static friction, dynamic friction, compliant stiffness, and compliant damping, respectively.
+                combination_data (Union[np.ndarray, torch.Tensor, wp.array]): An array of compliant material combination modes with shape (count, max_shapes, 3) where count is the number of articulations in the view and max_shapes is the maximum number of shapes in all the view's articulations. The 3 elements of the last dimension are the friction, compliant stiffness, and compliant damping combine mode.
+                indices (Union[np.ndarray, torch.Tensor, wp.array]): An array of indices of articulations to set the compliant material properties for. The array can have any dimension (user_count, 1) as long as all indices are less than the number of articulations in the view (count). Note that providing repeated indices can lead to undefined behavior as the subsitutions may be performed in parallel.
+	
+            .. note::
+                combination mode values can take any of the following integers:
+                * 0 for Average combine mode, i.e. result = (shape_1_property + shape_2_property) / 2
+                * 1 for minimum combine mode, i.e. result = min(shape_1_property, shape_2_property)
+                * 2 for multiply combine mode, i.e. result = shape_1_property * shape_2_property
+                * 3 for maximum combine mode, i.e. result = max(shape_1_property, shape_2_property)
+
+            Example:
+                .. code-block:: python
+
+                  >>> import omni.physics.tensors as tensors
+                  >>> sim_view = tensors.create_simulation_view("warp")
+                  >>> articulation_view = sim_view.create_articulation_view("/World/Franka_*") # This assumes that the prims referenced by "/World/Franka_*" were already created in the stage
+                  >>> all_indices = wp_utils.arange(articulation_view.count)
+                  >>> compliant_material_properties_np = numpy.zeros([articulation_view.count, articulation_view.max_shapes, 4]) # Create an array with the expected shape
+                  >>> compliant_material_properties_np[0, 1, 0] = 0.5 # Modify the static friction of shape 1 of articulation 0
+                  >>> compliant_material_properties_np[0, 2, 1] = 0.5 # Modify the dynamic friction of shape 2 of articulation 0
+                  >>> compliant_material_properties_np[1, 1, 2] = 100.0 # Modify the compliant stiffness of shape 1 of articulation 1
+                  >>> compliant_material_properties_np[1, 1, 3] = 10.0 # Modify the compliant damping of shape 1 of articulation 1
+                  >>> combination_data_np = numpy.zeros([articulation_view.count, articulation_view.max_shapes, 3])
+                  >>> combination_data_np[0, 1, 0] = 0 # Modify the friction combine mode of shape 1 of articulation 0
+                  >>> combination_data_np[0, 1, 1] = 1 # Modify the compliant stiffness combine mode of shape 1 of articulation 0
+                  >>> material_properties_wp = warp.from_numpy(compliant_material_properties_np, dtype=warp.float32, device="cpu") # Convert back to a format accepted by the tensor API
+                  >>> combination_data_wp = warp.from_numpy(combination_data_np, dtype=warp.uint8, device="cpu") # Convert back to a format accepted by the tensor API
+                  >>> articulation_view.set_compliant_material_properties(material_properties_wp, combination_data_wp, all_indices)
+        """
+
+        data = self._frontend.as_contiguous_float32(data)
+        combination_data = self._frontend.as_contiguous_uint8(combination_data)
+        indices = self._frontend.as_contiguous_uint32(indices)
+        data_desc = self._frontend.get_tensor_desc(data)
+        combination_data_desc = self._frontend.get_tensor_desc(combination_data)
+        indices_desc = self._frontend.get_tensor_desc(indices)
+
+        if not self._backend.set_compliant_material_properties(data_desc, combination_data_desc, indices_desc):
+            raise Exception("Failed to set articulation compliant material properties")
 
     def set_contact_offsets(self, data, indices):
         """ Sets the contact offsets for shapes indicated by indices.
@@ -3727,7 +3720,7 @@ class RigidBodyView:
         return self._inv_inertias
 
     def get_disable_gravities(self):
-        """ Receives whether the gravity is activated on rigid objects.
+        """ Receives whether gravity is activated on rigid objects.
 
             .. note::
                 The function raises an exception if the disable gravities cannot be obtained from the backend.
@@ -3755,7 +3748,7 @@ class RigidBodyView:
         """ Receives whether rigid objects are simulated or not.
 
             .. note::
-                The function raises an exception if the disable gravities cannot be obtained from the backend.
+                The function raises an exception if the disable simulations cannot be obtained from the backend.
 
             Returns:
                 Union[np.ndarray, torch.Tensor, wp.array]: An array of simulation flags (1 for non-simulated and 0 for simulated) with shape (count, 1) where count is the number of rigid objects in the view.
@@ -3905,7 +3898,8 @@ class RigidBodyView:
         """ Sets the rigid objects simulation activation flag for objects indicated by indices.
 
             .. note::
-                The function raises an exception if the disable simulations cannot be set in the backend.
+                * The function raises an exception if the disable simulations cannot be set in the backend.
+                * When re-enabling simulation (setting flag to 0), rigid bodies may remain in sleep mode and appear unresponsive to physics until explicitly woken up. Consider calling :py:func:`wake_up` after re-enabling simulation to ensure bodies respond immediately to forces and gravity.
 
             Args:
                 data (Union[np.ndarray, torch.Tensor, wp.array]): An array of simulation activation flags (1 for non-simulated and 0 for simulated) with shape (count, 1) where count is the number of rigid objects in the view.
@@ -3918,10 +3912,17 @@ class RigidBodyView:
                   >>> sim_view = tensors.create_simulation_view("warp")
                   >>> rigid_body_view = sim_view.create_rigid_body_view("/World/Cube_*") # This assumes that the prims referenced by "/World/Cube_*" were already created in the stage
                   >>> all_indices = wp_utils.arange(rigid_body_view.count)
-                  >>> rb_disable_simulations_np = numpy.zeros(rigid_body_view.count) # Create an array with the expected shape
-                  >>> rb_disable_simulations_np[:] = False # Disable the simulation for all rigid bodies
-                  >>> rb_disable_simulations_wp = warp.from_numpy(rb_disable_simulations_np, dtype=warp.uint8, device="cpu") # Convert back to a format accepted by the tensor API
-                  >>> rigid_body_view.set_disable_simulations(rb_disable_simulations_wp, all_indices) # Set whether the simulation is enabled or not for all rigid bodies
+                  
+                  >>> # Disable simulation for all rigid bodies
+                  >>> rb_disable_simulations_np = numpy.ones(rigid_body_view.count) # 1 = disable simulation
+                  >>> rb_disable_simulations_wp = warp.from_numpy(rb_disable_simulations_np, dtype=warp.uint8, device="cpu")
+                  >>> rigid_body_view.set_disable_simulations(rb_disable_simulations_wp, all_indices)
+                  
+                  >>> # Later, re-enable simulation and wake up bodies to ensure immediate response
+                  >>> rb_enable_simulations_np = numpy.zeros(rigid_body_view.count) # 0 = enable simulation  
+                  >>> rb_enable_simulations_wp = warp.from_numpy(rb_enable_simulations_np, dtype=warp.uint8, device="cpu")
+                  >>> rigid_body_view.set_disable_simulations(rb_enable_simulations_wp, all_indices)
+                  >>> rigid_body_view.wake_up(all_indices) # Wake up bodies to ensure they respond to physics
         """
         data = self._frontend.as_contiguous_uint8(data)
         indices = self._frontend.as_contiguous_uint32(indices)
@@ -3930,6 +3931,34 @@ class RigidBodyView:
 
         if not self._backend.set_disable_simulations(data_desc, indices_desc):
             raise Exception("Failed to set rigid body disable simulations in backend")
+
+    def wake_up(self, indices=None):
+        """ Wakes up rigid bodies indicated by indices.
+
+            .. note::
+                * The function raises an exception if the wake up operation cannot be performed in the backend.
+                * The simulation backend does not allow waking up objects that have disable simulation set. Such objects will be ignored during the wake up operation.
+
+            Args:
+                indices (Union[np.ndarray, torch.Tensor, wp.array], optional): An array of indices of rigid objects to wake up. The array can have any dimension (user_count, 1) as long as all indices are less than the number of rigid objects in the view (count). If None, all rigid objects in the view will be woken up. Note that providing repeated indices can lead to undefined behavior as the operations may be performed in parallel.
+
+            Example:
+                .. code-block:: python
+
+                  >>> import omni.physics.tensors as tensors
+                  >>> sim_view = tensors.create_simulation_view("warp")
+                  >>> rigid_body_view = sim_view.create_rigid_body_view("/World/Cube_*") # This assumes that the prims referenced by "/World/Cube_*" were already created in the stage
+                  >>> all_indices = wp_utils.arange(rigid_body_view.count)
+                  >>> rigid_body_view.wake_up(all_indices) # Wake up all rigid bodies
+                  >>> rigid_body_view.wake_up() # Wake up all rigid bodies (equivalent to the above)
+        """
+        indices_desc = None
+        if indices is not None:
+            indices = self._frontend.as_contiguous_uint32(indices)
+            indices_desc = self._frontend.get_tensor_desc(indices)
+
+        if not self._backend.wake_up(indices_desc):
+            raise Exception("Failed to wake up rigid bodies in backend")
 
     def get_material_properties(self):
         """ Gets the material properties for all rigid objects in the view.
@@ -3962,6 +3991,47 @@ class RigidBodyView:
             raise Exception("Failed to get rigid body material properties from backend")
 
         return self._material_properties
+
+    def get_compliant_material_properties(self):
+        """ Gets the compliant material properties for all rigid objects in the view.
+
+            The compliant material properties array is composed of the following properties (provided in the order of appearance in the array):
+            * stiffness
+            * damping
+
+            The method provides the combine mode of the above properties as well in the second returned argument.
+            The combine mode can be one of the following values:
+            * 0: Combine mode is average
+            * 1: Combine mode is minimum
+            * 2: Combine mode is multiply
+            * 3: Combine mode is maximum
+
+            .. note::
+                The function raises an exception if the compliant material properties cannot be obtained from the backend.
+
+            Returns:
+                Tuple[Union[np.ndarray, torch.Tensor, wp.array], Union[np.ndarray, torch.Tensor, wp.array]]: A tuple of arrays where the first array is the compliant material properties with shape (count, max_shapes, 2) where count is the number of rigid objects in the view and max_shapes is the maximum number of shapes in all the rigid objects in the view. The 2 elements of the last dimension are the stiffness and damping respectively. The second array is the combine mode of the compliant material properties with shape (count, max_shapes, 2) where count is the number of rigid objects in the view and max_shapes is the maximum number of shapes in all the rigid objects in the view. The 2 elements of the last dimension are the combine mode of the stiffness and damping respectively.
+
+            Example:
+                .. code-block:: python
+
+                  >>> import omni.physics.tensors as tensors
+                  >>> sim_view = tensors.create_simulation_view("warp")
+                  >>> rigid_body_view = sim_view.create_rigid_body_view("/World/Cube_*") # This assumes that the prims referenced by "/World/Cube_*" were already created in the stage
+                  >>> rb_compliant_material_properties, rb_combine_modes = rigid_body_view.get_compliant_material_properties() # Get the compliant material properties for all rigid bodies in the view
+                  >>> rb_compliant_material_properties_np = rb_compliant_material_properties.numpy().reshape(rigid_body_view.count, rigid_body_view.max_shapes, 2)
+                  >>> rb_combine_modes_np = rb_combine_modes.numpy().reshape(rigid_body_view.count, rigid_body_view.max_shapes, 2)
+        """
+        if not hasattr(self, "_compliant_material_properties"):
+            self._compliant_material_properties, self._compliant_material_properties_desc = self._frontend.create_tensor((self.count, self.max_shapes, 2), float32, -1)
+
+        if not hasattr(self, "_compliant_material_combine_modes"):
+            self._compliant_material_combine_modes, self._compliant_material_combine_modes_desc = self._frontend.create_tensor((self.count, self.max_shapes, 2), uint8, -1)
+
+        if not self._backend.get_compliant_material_properties(self._compliant_material_properties_desc, self._compliant_material_combine_modes_desc):
+            raise Exception("Failed to get rigid body compliant material properties from backend")
+
+        return self._compliant_material_properties, self._compliant_material_combine_modes
 
     def get_contact_offsets(self):
         """ Gets the contact offsets for all rigid objects in the view.
@@ -4050,6 +4120,54 @@ class RigidBodyView:
 
         if not self._backend.set_material_properties(data_desc, indices_desc):
             raise Exception("Failed to set rigid body material properties in backend")
+
+    def set_compliant_material_properties(self, data, combination_data, indices):
+        """ Sets the compliant material properties for rigid objects indicated by indices.
+
+            .. note::
+                The function raises an exception if the compliant material properties cannot be set in the backend.
+	
+            .. note::
+                combination mode values can take any of the following integers:
+                * 0 for Average combine mode, i.e. result = (shape_1_property + shape_2_property) / 2
+                * 1 for minimum combine mode, i.e. result = min(shape_1_property, shape_2_property)
+                * 2 for multiply combine mode, i.e. result = shape_1_property * shape_2_property
+                * 3 for maximum combine mode, i.e. result = max(shape_1_property, shape_2_property)
+
+            Args:
+                data (Union[np.ndarray, torch.Tensor, wp.array]): An array of compliant material properties with shape (count, max_shapes, 4) where count is the number of rigid objects in the view and max_shapes is the maximum number of shapes in all the rigid objects in the view. The 4 elements of the last dimension are the static friction, dynamic friction, compliant stiffness, and compliant damping respectively.
+                combination_data (Union[np.ndarray, torch.Tensor, wp.array]): An array of compliant material combination properties with shape (count, 3) where count is the number of rigid objects in the view. The 4 elements of the last dimension are the combination mode for friction, stiffness, and damping, respectively.
+                indices (Union[np.ndarray, torch.Tensor, wp.array]): An array of indices of rigid objects to set the compliant material properties for. The array can have any dimension (user_count, 1) as long as all indices are less than the number of rigid objects in the view (count). Note that providing repeated indices can lead to undefined behavior as the subsitutions may be performed in parallel.
+
+            Example:
+                .. code-block:: python
+                
+                  >>> import omni.physics.tensors as tensors
+                  >>> sim_view = tensors.create_simulation_view("warp")
+                  >>> rigid_body_view = sim_view.create_rigid_body_view("/World/Cube_*") # This assumes that the prims referenced by "/World/Cube_*" were already created in the stage
+                  >>> all_indices = wp_utils.arange(rigid_body_view.count)
+                  >>> rb_compliant_material_properties_np = numpy.zeros([rigid_body_view.count, rigid_body_view.max_shapes, 4]) # Create an array with the expected shape
+                  >>> rb_compliant_material_properties_np[:, :, 0] = 0.5 # Modify the static friction for all rigid bodies and all shapes
+                  >>> rb_compliant_material_properties_np[:, :, 1] = 0.5 # Modify the dynamic friction for all rigid bodies and all shapes
+                  >>> rb_compliant_material_properties_np[:, :, 2] = 100.0 # Modify the compliant stiffness for all rigid bodies and all shapes
+                  >>> rb_compliant_material_properties_np[:, :, 3] = 10.0 # Modify the compliant damping for all rigid bodies and all shapes
+                  >>> rb_compliant_material_properties_wp = warp.from_numpy(rb_compliant_material_properties_np, dtype=warp.float32, device="cpu") # Convert back to a format accepted by the tensor API
+                  >>> rb_combination_data_np = numpy.zeros([rigid_body_view.count, 3]) # Create an array with the expected shape
+                  >>> rb_combination_data_np[:, 0] = 1 # Modify the friction combination mode for all rigid bodies
+                  >>> rb_combination_data_np[:, 1] = 1 # Modify the stiffness combination mode for all rigid bodies
+                  >>> rb_combination_data_np[:, 2] = 1 # Modify the damping combination mode for all rigid bodies
+                  >>> rb_combination_data_wp = warp.from_numpy(rb_combination_data_np, dtype=warp.uint32, device="cpu") # Convert back to a format accepted by the tensor API
+        """
+        data = self._frontend.as_contiguous_float32(data)
+        combination_data = self._frontend.as_contiguous_uint8(combination_data)
+        indices = self._frontend.as_contiguous_uint32(indices)
+        data_desc = self._frontend.get_tensor_desc(data)
+        combination_data_desc = self._frontend.get_tensor_desc(combination_data)
+        indices_desc = self._frontend.get_tensor_desc(indices)
+
+        if not self._backend.set_compliant_material_properties(data_desc, combination_data_desc, indices_desc):
+            raise Exception("Failed to set rigid body compliant material properties")
+        
 
     def set_contact_offsets(self, data, indices):
         """ Sets the contact offsets for rigid objects indicated by indices.

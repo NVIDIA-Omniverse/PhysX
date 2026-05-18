@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,13 +35,11 @@ namespace physx
 {
 	PxgTGSDynamicsContext::PxgTGSDynamicsContext(Cm::FlushPool& flushPool, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
 		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-		PxReal maxBiasCoefficient,
-		PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager,
-		bool externalForcesEveryTgsIterationEnabled, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled)
+		PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager,
+		PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags)
 		:
-		PxgGpuContext(flushPool, islandManager, maxNumPartitions, maxNumStaticPartitions, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast,
-			maxBiasCoefficient, simStats, heapMemoryManager, lengthScale, enableDirectGPUAPI, contextID, isResidualReportingEnabled, true)
+		PxgGpuContext(flushPool, islandManager, maxNumPartitions, maxNumStaticPartitions,
+			maxBiasCoefficient, simStats, heapMemoryManager, lengthScale, contextID, true, sceneFlags)
 	{
 		mWorldSolverBody.linearVelocity = PxVec3(0);
 		mWorldSolverBody.angularVelocity = PxVec3(0);
@@ -53,6 +51,7 @@ namespace physx
 		mWorldSolverBodyData.body2World = PxAlignedTransform(PxIdentity);
 		mWorldSolverBodyData.islandNodeIndex = PxNodeIndex(PX_INVALID_NODE);
 		mWorldSolverBodyData.offsetSlop = 0.f;
+		mWorldSolverBodyData.flags = 0;
 
 		mWorldTxIData.sqrtInvInertia = PxMat33(PxZero);
 		mWorldTxIData.deltaBody2World = PxTransform(PxIdentity);
@@ -111,7 +110,7 @@ namespace physx
 		mArtiConstraintsPerPartition.reserve(1024);
 
 		mGpuSolverCore->releaseContext();
-	    mIsExternalForcesEveryTgsIterationEnabled = externalForcesEveryTgsIterationEnabled;
+    	mIsExternalForcesEveryTgsIterationEnabled = sceneFlags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
 	}
 
 	void PxgTGSDynamicsContext::destroy()

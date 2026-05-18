@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -50,10 +50,8 @@ namespace omni
             using omni::fabric::AttributeRole;
             using omni::fabric::BaseDataType;
 
-            omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
-            mSoftBodySchemaToken = iToken->getHandle("PhysxDeformableBodyAPI");
-            mPointsToken = iToken->getHandle("points");
+            mSoftBodySchemaToken = omni::fabric::Token::createImmortal("PhysxDeformableBodyAPI");
+            mPointsToken = omni::fabric::Token::createImmortal("points");
             mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
 
             carb::settings::ISettings* iSettings = carb::getCachedInterface<carb::settings::ISettings>();
@@ -299,8 +297,8 @@ namespace omni
                 {
                     DeformableBodyDataDeprecated* it = mSoftBodies[i];
 
-                    SdfPath path = it->prim.GetPath();
-                    omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+                    const SdfPath path = it->prim.GetPath();
+                    const omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), path);
 
                     GfMatrix4f parentToWorld = GfMatrix4f(UsdGeomXform(it->prim).ComputeParentToWorldTransform(UsdTimeCode::Default()));
                     GfMatrix4f worldToSoftbody = (GfMatrix4f(it->initialPrimToParent) * parentToWorld).GetInverse();
@@ -418,7 +416,7 @@ namespace omni
                 DeformableBodyDataDeprecated* it = mSoftBodies[i];
 
                 SdfPath path = it->prim.GetPath();
-                omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+                const omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), path);
 
                 if (mGPUInterop)
                 {
@@ -478,11 +476,9 @@ namespace omni
             mTypeQuat = omni::fabric::Type(BaseDataType::eFloat, 4, 0, AttributeRole::eQuaternion);
             mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
 
-            omni::fabric::Token::iToken = getFramework()->tryAcquireInterface<omni::fabric::IToken>();
-
-            mWorldMatrixToken = omni::fabric::Token::iToken->getHandle(gWorldMatrixTokenString);
-            mSoftBodySchemaToken = omni::fabric::Token::iToken->getHandle("PhysxDeformableBodyAPI");
-            mPointsToken = omni::fabric::Token::iToken->getHandle("points");
+            mWorldMatrixToken = omni::fabric::Token::createImmortal(gWorldMatrixTokenString);
+            mSoftBodySchemaToken = omni::fabric::Token::createImmortal("PhysxDeformableBodyAPI");
+            mPointsToken = omni::fabric::Token::createImmortal("points");
 
             mPhysxSimulationInterface = carb::getCachedInterface<omni::physx::IPhysxSimulation>();
         }
@@ -494,8 +490,9 @@ namespace omni
         void DeformableBodyManagerDeprecated::registerSoftBody(UsdGeomXformCache& xfCache, uint64_t stageId, omni::fabric::IStageReaderWriter* iStageReaderWriter,
             omni::fabric::StageReaderWriterId stageInProgress, const UsdPrim& prim)
         {
-            SdfPath path = prim.GetPath();
-            omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+            const SdfPath path = prim.GetPath();
+            const omni::fabric::Path pathHandle =
+                omni::fabric::convertToPathType<omni::fabric::Path>(iStageReaderWriter->getFabricId(stageInProgress), path);
 
             UsdGeomPointBased pointBased(prim);
             VtArray<GfVec3f> points;
@@ -534,7 +531,7 @@ namespace omni
             sd.numCollVerts = collPoints.size();
            // printf("+++ Registering GPU SoftBody %s numVerts=%zu numCollVerts=%zu\n", path.GetText(), sd.numVerts, sd.numCollVerts);
 
-            PositionCache::const_iterator fit = mInitialPositions.find(pathHandle.path);
+            PositionCache::const_iterator fit = mInitialPositions.find(pathHandle);
             if (fit == mInitialPositions.end())
             {
                 bool resetsXformStack;
@@ -548,7 +545,7 @@ namespace omni
                     initPos[i] = toFloat3(points[i]);
                 }
 
-                mInitialPositions[pathHandle.path] = initPos;
+                mInitialPositions[pathHandle] = initPos;
             }            
 
             mIsDirty = true;
@@ -573,7 +570,7 @@ namespace omni
             {
                 mSoftBodiesSet.clear();
 
-                std::vector<omni::fabric::PathC> emptyPaths;
+                std::vector<omni::fabric::Path> emptyPaths;
 
                 for (auto& it : mSoftBodies)
                 {
@@ -655,8 +652,8 @@ namespace omni
 
         void DeformableBodyManagerDeprecated::setInitialTransformation(omni::fabric::StageReaderWriter& stage)
         {
-            const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAll = { omni::fabric::AttrNameAndType_v2(mTypeAppliedSchema, mSoftBodySchemaToken) };
-            const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAny = { omni::fabric::AttrNameAndType_v2(mTypeFloat3Array, mPointsToken) };
+            const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAll = { omni::fabric::AttrNameAndType(mTypeAppliedSchema, mSoftBodySchemaToken) };
+            const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAny = { omni::fabric::AttrNameAndType(mTypeFloat3Array, mPointsToken) };
 
             omni::fabric::PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             size_t bucketCount = primBuckets.bucketCount();
@@ -668,7 +665,7 @@ namespace omni
                     // AD: attention, we will get a pointer to the pointer here. not really intuitive.
                     carb::Float3* positions = *(stage.getAttributeWr<carb::Float3*>(path, mPointsToken));
 
-                    PositionCache::const_iterator fit = mInitialPositions.find(omni::fabric::PathC(path).path);
+                    PositionCache::const_iterator fit = mInitialPositions.find(path);
                     if (fit != mInitialPositions.end() && positions)
                     {
                         for (size_t j = 0; j < fit->second.size(); ++j)
@@ -684,8 +681,8 @@ namespace omni
 
         void DeformableBodyManagerDeprecated::saveToUsd(omni::fabric::StageReaderWriter& stage, UsdStageRefPtr& usdStage)
         {
-            const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAll = { omni::fabric::AttrNameAndType_v2(mTypeAppliedSchema, mSoftBodySchemaToken) };
-            const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAny = { omni::fabric::AttrNameAndType_v2(mTypeFloat3Array, mPointsToken) };
+            const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAll = { omni::fabric::AttrNameAndType(mTypeAppliedSchema, mSoftBodySchemaToken) };
+            const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAny = { omni::fabric::AttrNameAndType(mTypeFloat3Array, mPointsToken) };
 
             omni::fabric::PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             size_t bucketCount = primBuckets.bucketCount();
@@ -699,7 +696,7 @@ namespace omni
                     const SdfPath primPath = omni::fabric::toSdfPath(path);
                     UsdPrim prim = usdStage->GetPrimAtPath(primPath);
 
-                    size_t size = mSoftBodies[omni::fabric::PathC(path)].numVerts;
+                    size_t size = mSoftBodies[path].numVerts;
                     {
                         UsdAttribute pointsAttr = prim.GetAttribute(UsdGeomTokens->points);
                         if (pointsAttr)

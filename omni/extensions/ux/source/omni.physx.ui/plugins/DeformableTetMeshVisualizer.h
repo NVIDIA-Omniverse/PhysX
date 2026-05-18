@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -25,6 +25,8 @@ public:
     virtual void updateTopology() override;
     virtual void updatePoints() override;
 
+    std::unordered_set<uint32_t> getFilteredTetIds(const pxr::VtArray<pxr::GfVec3i>& filteredSurfaceFaceVertexIndices);
+
 private:
     void computeRenderMeshPointsWithoutGap(const pxr::VtVec3fArray& originalPoints, pxr::VtVec3fArray& newPoints);
     void computeRenderMeshPointsGap(const pxr::VtVec3fArray& originalPoints, const float gap, pxr::VtVec3fArray& newPoints);
@@ -42,6 +44,7 @@ private:
     pxr::VtVec3fArray mColorTable; // Lookup table from original index to original color
     std::vector<pxr::GfVec4f> mTargetShrinkPointsBarycentric;
     std::vector<uint32_t> mSurfaceTriangles;
+    std::unordered_set<SortedTriangle, TriangleHash, SortedTriangleEqualFunction> mSurfaceTrianglesSet;
     float mGap;
 };
 

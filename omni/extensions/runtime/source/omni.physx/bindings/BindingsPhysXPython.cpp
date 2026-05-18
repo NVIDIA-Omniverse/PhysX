@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -30,9 +30,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-//See comment for gMimicJointNaturalFrequencyAttributeName and remove accordingly.
-#include <omni/physx/PhysxTokens.h>
 
 CARB_BINDINGS("carb.physx.python")
 
@@ -390,7 +387,6 @@ PYBIND11_MODULE(_physx, m)
     ADD_SETTING("SETTING_EXPOSE_PRIM_PATH_NAMES", kSettingExposePrimPathNames);
     ADD_SETTING("SETTING_FORCE_PARSE_ONLY_SINGLE_SCENE", kSettingForceParseOnlySingleScene);
     ADD_SETTING("SETTING_SIMULATE_EMPTY_SCENE", kSettingSimulateEmptyScene);
-    ADD_SETTING("SETTING_DISABLE_SLEEPING", kSettingDisableSleeping);
     ADD_SETTING("SETTING_ENABLE_SYNCHRONOUS_KERNEL_LAUNCHES", kSettingSynchronousKernelLaunches);
     ADD_SETTING("SETTING_DISABLE_CONTACT_PROCESSING", kSettingDisableContactProcessing);
 
@@ -460,7 +456,7 @@ PYBIND11_MODULE(_physx, m)
     ADD_SETTING("SETTING_DISPLAY_DEFORMABLE_MESH_TYPE", kSettingDisplayDeformableMeshType);
     ADD_SETTING("SETTING_DISPLAY_DEFORMABLE_ATTACHMENTS", kSettingDisplayDeformableAttachments);
 
-    ADD_SETTING("SETTING_ENABLE_DEFORMABLE_BETA", kSettingEnableDeformableBeta);
+    ADD_SETTING("SETTING_ENABLE_DEFORMABLE_DEPRECATED", kSettingEnableDeformableDeprecated);
 
     ADD_SETTING("SETTING_DISPLAY_PARTICLES", kSettingDisplayParticles);
     ADD_SETTING("SETTING_VISUALIZATION_GAP", kSettingVisualizationGap);
@@ -509,15 +505,7 @@ PYBIND11_MODULE(_physx, m)
 
     // Custom attributes
     m.attr("METADATA_ATTRIBUTE_NAME_LOCALSPACEVELOCITIES") = py::str(kLocalSpaceVelocitiesMetadataAttributeName);
-
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTX") = py::str(gMimicJointNaturalFrequencyAttributeName[0]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTY") = py::str(gMimicJointNaturalFrequencyAttributeName[1]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTZ") = py::str(gMimicJointNaturalFrequencyAttributeName[2]);
-
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTX") = py::str(gMimicJointDampingRatioAttributeName[0]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTY") = py::str(gMimicJointDampingRatioAttributeName[1]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTZ") = py::str(gMimicJointDampingRatioAttributeName[2]);
-
+ 
     // codeless schema API and attributes
 
     m.attr("PERF_ENV_API") = py::str(pxr::PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI);

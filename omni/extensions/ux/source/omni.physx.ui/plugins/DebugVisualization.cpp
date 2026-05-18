@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1656,7 +1656,7 @@ void DebugVisualization::updateUsdBasedDebugVisualizationInGroupsFabric(float me
     auto forEach = [&stage](const std::vector<usdrt::SdfPath>& vec, auto fn) {
         for (const usdrt::SdfPath& sdfPath : vec)
         {
-            const omni::fabric::PathC pathC(sdfPath);
+            const omni::fabric::Path pathC(sdfPath);
             const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
             const pxr::UsdPrim& prim = stage->GetPrimAtPath(usdPath);
             if (!prim)
@@ -1827,8 +1827,16 @@ pxr::GfMatrix4d DebugVisualization::GetLocalToWorldTransform(const pxr::UsdPrim&
     CARB_PROFILE_ZONE(0, "DebugVisualization::GetLocalToWorldTransform");
     if (mFabricEnabled && mQueryFabricWhileSim && mSceneIsPlaying && mFabricSync)
     {
+        omni::fabric::IStageReaderWriter* iStageReaderWriter =
+            carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+        omni::fabric::ISimStageWithHistory* iSimStageWithHistory =
+            carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+        omni::fabric::StageReaderWriterId stageInProgress = iStageReaderWriter->get(mFabricSync->getStageId());
+
         const pxr::SdfPath& primPath = prim.GetPrimPath();
-        const usdrt::GfMatrix4d matrix = mFabricSync->computeWorldXform(omni::fabric::asInt(primPath));
+        const usdrt::GfMatrix4d matrix =
+            mFabricSync->computeWorldXform(omni::fabric::convertToPathType<omni::fabric::Path>(
+                iStageReaderWriter->getFabricId(stageInProgress), primPath));
         pxr::GfMatrix4d convertedMat;
         memcpy(&convertedMat, &matrix, sizeof(pxr::GfMatrix4d));
         return convertedMat;

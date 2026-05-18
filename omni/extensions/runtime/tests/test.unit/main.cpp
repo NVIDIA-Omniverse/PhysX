@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv)
     bool enablePVD = false;
     bool disableAssertDialog = false;
 
-    // It's TestGlobalSettings::get documentation that is stating we must const_cast.
+    // const_cast to modify the global settings
     auto testGlobals = const_cast<carb::TestGlobalSettings&>(carb::TestGlobalSettings::get());
     testGlobals.carbLogEnabled = true;
 
@@ -84,8 +84,6 @@ int main(int argc, char** argv)
 
     addOption("g,carb-log", "Enable Carbonite Framework logging.",
               cxxopts::value<bool>(testGlobals.carbLogEnabled));
-    addOption("w,wait-kit-debugger", "Run kit process (if test runs any) with a flag to wait for debugger attach.",
-              cxxopts::value<bool>(testGlobals.kitWaitForDebugger));
     addOption("flaky", "Tests marked as [flaky] are disabled by default. This option enables them.",
               cxxopts::value<bool>(flaky));
     addOption("pvd", "Enable PVD support.",
@@ -104,14 +102,6 @@ int main(int argc, char** argv)
               "Set Carbonite Framework logging log level. Default is " + carbLogLevel +
                   ". Use with --carb-log. Valid values: " + carbLogLevelList,
               cxxopts::value<std::string>(carbLogLevel));
-    addOption("carb-golden", "Generate golden comparison images.",
-              cxxopts::value<bool>(testGlobals.generateGoldenImages));
-    addOption("carb-golden-failure", "Generate golden comparison image only for tests that fail comparison.",
-              cxxopts::value<bool>(testGlobals.generateGoldenFailureOnly));
-    addOption("carb-no-vulkan", "Skips running Vulkan tests.",
-              cxxopts::value<bool>(testGlobals.skipVulkan));
-    addOption("carb-no-d3d12", "Skips running Direct3D 12 tests.",
-              cxxopts::value<bool>(testGlobals.skipDirect3D12));
     addOption("repeat", "Sets the number of times to repeat tests. Set to negative to repeat infinitely.",
               cxxopts::value<int>(repeatCount));
 

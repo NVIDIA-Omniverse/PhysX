@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1239,8 +1239,9 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
     const TfToken& mimicJointRotZ = PhysxSchemaTokens.Get()->rotZ;
     const TfToken& mimicJointGearing = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_Gearing;
     const TfToken& mimicJointOffset = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_Offset;
- 
-     const TfToken& mimicJointReferenceJoint = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_ReferenceJoint;
+    const TfToken& mimicJointNaturalFrequency = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_NaturalFrequency;
+    const TfToken& mimicJointDampingRatio = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_DampingRatio;
+    const TfToken& mimicJointReferenceJoint = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_ReferenceJoint;
     const TfToken& mimicJointReferenceJointAxis = PhysxSchemaTokens.Get()->physxMimicJoint_MultipleApplyTemplate_ReferenceJointAxis;
 
     const TfToken* mimicJointInstanceTokens[] = { &mimicJointRotX, &mimicJointRotY, &mimicJointRotZ };
@@ -1287,9 +1288,11 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
         const std::string mimicJointOffsetName = schemaRegistry.MakeMultipleApplyNameInstance(mimicJointOffset, instanceToken);
         REGISTER_CHANGE(changeParams, mimicJointOffsetName, mimicJointRequirementCheckMethods[i], mimicJointOffsetUpdateMethods[i]);
 
-        REGISTER_CHANGE(changeParams, gMimicJointNaturalFrequencyAttributeNameToken[i].GetText(), mimicJointRequirementCheckMethods[i], mimicJointNaturalFrequencyUpdateMethods[i]);
+        const std::string mimicJointNaturalFrequencyName = schemaRegistry.MakeMultipleApplyNameInstance(mimicJointNaturalFrequency, instanceToken);
+        REGISTER_CHANGE(changeParams, mimicJointNaturalFrequencyName, mimicJointRequirementCheckMethods[i], mimicJointNaturalFrequencyUpdateMethods[i]);
 
-        REGISTER_CHANGE(changeParams, gMimicJointDampingRatioAttributeNameToken[i].GetText(), mimicJointRequirementCheckMethods[i], mimicJointDampingRatioUpdateMethods[i]);
+        const std::string mimicJointDampingRatioName = schemaRegistry.MakeMultipleApplyNameInstance(mimicJointDampingRatio, instanceToken);
+        REGISTER_CHANGE(changeParams, mimicJointDampingRatioName, mimicJointRequirementCheckMethods[i], mimicJointDampingRatioUpdateMethods[i]);
 
         // changing the reference joint relationship should trigger a release and re-parsing
         const std::string mimicJointReferenceJointName = schemaRegistry.MakeMultipleApplyNameInstance(mimicJointReferenceJoint, instanceToken);

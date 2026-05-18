@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -2489,6 +2489,7 @@ template<> struct PxEnumTraits< physx::PxPruningStructureType::Enum > { PxEnumTr
 		{ "eENABLE_BODY_ACCELERATIONS", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_BODY_ACCELERATIONS ) },
 		{ "eENABLE_SOLVER_RESIDUAL_REPORTING", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING ) },
 		{ "eSOLVE_ARTICULATION_CONTACT_LAST", static_cast<PxU32>( physx::PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST ) },
+		{ "eDISABLE_SLEEPING", static_cast<PxU32>( physx::PxSceneFlag::eDISABLE_SLEEPING ) },
 		{ "eMUTABLE_FLAGS", static_cast<PxU32>( physx::PxSceneFlag::eMUTABLE_FLAGS ) },
 		{ NULL, 0 }
 	};

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -431,16 +431,16 @@ bool computeSprungMasses(float mass, uint32_t upAxisIndex, const carb::Float3* p
 
         // to ensure the index can be mapped by doing a bit shift to the left (equivalent to multiplication by 2).
         // Note that for the purpose of computing the sprung mass values, ePosX and eNegX etc. are equivalent
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosX == 0, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegX == 1, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosY == 2, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegY == 3, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosZ == 4, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegZ == 5, "");
-        const ::physx::vehicle2::PxVehicleAxes::Enum upAxisEnum = static_cast<const ::physx::vehicle2::PxVehicleAxes::Enum>(
+        static_assert(::physx::PxVehicleAxes::ePosX == 0, "");
+        static_assert(::physx::PxVehicleAxes::eNegX == 1, "");
+        static_assert(::physx::PxVehicleAxes::ePosY == 2, "");
+        static_assert(::physx::PxVehicleAxes::eNegY == 3, "");
+        static_assert(::physx::PxVehicleAxes::ePosZ == 4, "");
+        static_assert(::physx::PxVehicleAxes::eNegZ == 5, "");
+        const ::physx::PxVehicleAxes::Enum upAxisEnum = static_cast<const ::physx::PxVehicleAxes::Enum>(
             upAxisIndex << 1);
 
-        if (::physx::vehicle2::PxVehicleComputeSprungMasses(positionCount, sprungMassPositions, mass, upAxisEnum, sprungMasses))
+        if (::physx::PxVehicleComputeSprungMasses(positionCount, sprungMassPositions, mass, upAxisEnum, sprungMasses))
             return true;
         else
         {
@@ -683,7 +683,7 @@ static bool computeSuspensionFrameTransformsUSDInternal(pxr::UsdPrim& vehiclePri
                 vehiclePrim.GetPath().GetText());
         }
     
-        GfVec3f centerOfMassWorldPos = primToWorld.TransformAffine(centerOfMassLocal);  // note: takes scale into account
+        GfVec3f centerOfMassWorldPos = pxr::GfVec3f(primToWorld.TransformAffine(centerOfMassLocal));  // note: takes scale into account
     
         GfQuatf rot((vehicleOrientWorld * principalAxes).GetNormalized());
         vehicleRefTransformWorld = ::physx::PxTransform(

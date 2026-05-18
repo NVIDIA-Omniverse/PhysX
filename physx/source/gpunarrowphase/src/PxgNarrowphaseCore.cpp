@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -1623,7 +1623,7 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 			// it looks like we're only syncing here because of the overflow messages? is it ok to skip this sync if we don't run this block because there are no pairs?
 			CUresult result = mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %d\n", result);
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %u\n", result);
 		}	
 
 		PxU32 err = mPatchAndContactCountersReadback->getOverflowError();
@@ -1631,19 +1631,19 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 		{
 			if (err & PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW)
 			{
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Contact buffer overflow detected, please increase its size to at least %i in the scene desc!\n", mPatchAndContactCountersReadback->contactsBytes/sizeof(PxContact));
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Contact buffer overflow detected, please increase its size to at least %u in the scene desc!\n", mPatchAndContactCountersReadback->contactsBytes/sizeof(PxContact));
 			}
 
 			if (err & PxgPatchAndContactCounters::PATCH_BUFFER_OVERFLOW)
 			{
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Patch buffer overflow detected, please increase its size to at least %i in the scene desc!\n", mPatchAndContactCountersReadback->patchesBytes/sizeof(PxContactPatch));
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Patch buffer overflow detected, please increase its size to at least %u in the scene desc!\n", mPatchAndContactCountersReadback->patchesBytes/sizeof(PxContactPatch));
 			}
 		}
 
 		// AD: todo verify that we catch all the overflows with this.
 		if (*mMaxConvexMeshTempMemory > mCollisionStackSizeBytes)
 		{
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", *mMaxConvexMeshTempMemory);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %u in the scene desc! Contacts have been dropped.\n", *mMaxConvexMeshTempMemory);
 		}
 
 #if PX_ENABLE_SIM_STATS
@@ -1734,7 +1734,7 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 
 			CUresult result =  mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Fetching GPU Narrowphase failed! %d\n", result);
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Fetching GPU Narrowphase failed! %u\n", result);
 		}
 		
 		//KS - no need for atomics - we now fetch all results at once!
@@ -8891,7 +8891,7 @@ void PxgGpuNarrowphaseCore::prepareGpuNarrowphase(PxsTransformCache& cache, cons
 		sizeof(PxgPatchAndContactCounters), mStream);
 
 	if(result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"prepareGpuNarrowphase GPU error! code %d \n", result);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"prepareGpuNarrowphase GPU error! code %u \n", result);
 
 	mGpuShapesManager.mHasShapeInstanceChanged = false;
 }

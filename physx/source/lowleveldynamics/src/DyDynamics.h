@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 #define DY_DYNAMICS_H
 
 #include "DyDynamicsBase.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "CmTask.h"
 #include "CmPool.h"
 #include "PxcThreadCoherentCache.h"
@@ -115,25 +115,10 @@ class DynamicsContext : public DynamicsContextBase
 {
 	PX_NOCOPY(DynamicsContext)
 public:
-	
-										DynamicsContext(PxcNpMemBlockPool* memBlockPool,
-														PxcScratchAllocator& scratchAllocator,
-														Cm::FlushPool& taskPool,
-														PxvSimStats& simStats,
-														PxTaskManager* taskManager,
-														PxVirtualAllocatorCallback* allocatorCallback,
-														PxsMaterialManager* materialManager,
-														IG::SimpleIslandManager& islandManager,
-														PxU64 contextID,
-														bool enableStabilization,
-														bool useEnhancedDeterminism,
-														bool solveArticulationContactLast,
-														PxReal maxBiasCoefficient,
-														bool frictionEveryIteration,
-														PxReal lengthScale,
-														bool isResidualReportingEnabled
-														);
-
+										DynamicsContext(PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool,
+														PxvSimStats& simStats, PxVirtualAllocatorCallback* allocatorCallback,
+														PxsMaterialManager* materialManager, IG::SimpleIslandManager& islandManager,
+														PxU64 contextID, PxReal maxBiasCoefficient, PxReal lengthScale, PxSceneFlags sceneFlags);
 	virtual								~DynamicsContext();
 
 	// Context

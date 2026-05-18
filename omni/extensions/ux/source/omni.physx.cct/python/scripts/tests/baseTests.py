@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from pxr import Gf, UsdGeom, UsdPhysics, PhysxSchema
 from omni.physxcct import get_physx_cct_interface
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase

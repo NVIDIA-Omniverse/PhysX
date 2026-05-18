@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -118,7 +118,7 @@ struct DofImpl
 {
     ::physx::PxArticulationJointReducedCoordinate* joint = nullptr;
     ::physx::PxArticulationAxis::Enum axis = ::physx::PxArticulationAxis::eTWIST;
-    ::physx::PxU32 driveType = 0;
+    ::physx::PxU32 isEnvelopeUsed = 0;
 };
 
 // represents an articulation instance

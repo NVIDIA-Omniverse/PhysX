@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -25,14 +25,9 @@
 
 #include <omni/physx/PhysxTokens.h>
 
-#include "particles/FabricParticles.h"
-
 using namespace pxr;
 using namespace carb;
 using namespace omni::physics::schema;
-
-const omni::fabric::IToken* omni::fabric::Token::iToken = nullptr;
-const omni::fabric::IPath* omni::fabric::Path::iPath = nullptr;
 
 static TfToken fabricWorldMatrix(omni::physx::gWorldMatrixTokenString);
 static TfToken fabricLocalMatrix(omni::physx::gLocalMatrixTokenString);
@@ -216,16 +211,16 @@ void PrimChangeMap::clearStageSpecificChanges()
     m_stageSpecificChanges.clear();
 }
 
-void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const pxr::UsdPrim* primIn, UsdGeomXformCache* xfCache, bool fastCache)
+void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const pxr::UsdPrim* primIn, UsdGeomXformCache* xfCache, bool fabricCache)
 {
     UsdLoad* usdLoad = UsdLoad::getUsdLoad();
 
-    // read the xform directly from body prim not from fastcache
+    // read the xform directly from body prim not from fabricCache
     // the notification came from USD, so lets use USD data
     PhysXUsdPhysicsInterface::Transform fcTransform;
 
     bool scaleProvided = true;
-    if (!fastCache)
+    if (!fabricCache)
     {
         const UsdPrim prim = primIn ? *primIn : attachedStage.getStage()->GetPrimAtPath(primPath);
 
@@ -247,17 +242,15 @@ void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const 
         {
             const omni::fabric::UsdStageId stageId = { uint64_t(attachedStage.getStageId()) };
             auto stageInProgress = iStageReaderWriter->get(stageId);
+            const omni::fabric::FabricId fabricId = iStageReaderWriter->getFabricId(stageInProgress);
 
             if (stageInProgress.id)
             {
-                if (!omni::fabric::Token::iToken)
-                    omni::fabric::Token::iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
                 // Grab a pointer to in-memory representation for the attribute value, in this
                 // case a pointer to a T. Will be NULL if attribute doesn't exist in fabric
                 {
-                    auto valueSpan =
-                        iStageReaderWriter->getAttributeRd(stageInProgress, omni::fabric::asInt(primPath),
+                    auto valueSpan = iStageReaderWriter->getAttributeRd(
+                        stageInProgress, omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, primPath),
                             *usdLoad->getFabricTokens().worldMatrix);
 
                     const pxr::GfMatrix4d* valuePtr = (const pxr::GfMatrix4d*)valueSpan.ptr;
@@ -295,8 +288,7 @@ void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const 
         auto it = entries->begin();
         while (it != entries->end())
         {
-            if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                primPath, it->second, fcTransform, true, scaleProvided))
+            if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage, primPath, it->second, fcTransform, fabricCache, true, scaleProvided))
             {
                 structChange = true;
                 if (it->first == eArticulationLink)
@@ -401,7 +393,7 @@ void movePointInstancer(AttachedStage& attachedStage, const pxr::UsdPrim& prim)
             if (size_t(indices[i]) < targets.size())
             {
                 const GfVec3f instancePos = i < positions.size() ? positions[i] : GfVec3f(0.0f);
-                const GfVec3f transfPos = instancerMatrix.Transform(instancePos);
+                const GfVec3f transfPos = pxr::GfVec3f(instancerMatrix.Transform(instancePos));
 
                 const GfQuatf instanceOrient = i < orientations.size() ? GfQuatf(orientations[i]) : GfQuatf(1.0f);
                 const GfQuatf transfOrient = instanceOrient * instancerRotation;
@@ -412,7 +404,7 @@ void movePointInstancer(AttachedStage& attachedStage, const pxr::UsdPrim& prim)
 
                 ObjectIdMap::const_iterator& it = targetEntries[indices[i]];
                 if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                    targets[indices[i]], it->second, fcTransform))
+                    targets[indices[i]], it->second, fcTransform, false))
                 {
                     structChange = true;
                     break;
@@ -1264,7 +1256,8 @@ void checkChange(AttachedStage& attachedStage, const PropertyChange& change, con
     }
 }
 
-void transformationChange(AttachedStage& attachedStage, const gsl::span<const pxr::GfMatrix4d>& matrices, size_t index,  const pxr::SdfPath& primPath)
+// Fabric codepath
+void fabricTransformationChange(AttachedStage& attachedStage, const gsl::span<const pxr::GfMatrix4d>& matrices, size_t index,  const pxr::SdfPath& primPath)
 {
     PhysXUsdPhysicsInterface::Transform fcTransform;
     bool scaleProvided = false;
@@ -1293,7 +1286,7 @@ void transformationChange(AttachedStage& attachedStage, const gsl::span<const px
         while (it != entries->end())
         {
             attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                primPath, it->second, fcTransform, true, scaleProvided);
+                primPath, it->second, fcTransform, true, true, scaleProvided);
             it++;
         }
     }
@@ -1303,11 +1296,6 @@ void fabricChangeTracking(AttachedStage& attachedStage, float currentTime)
 {
     UsdLoad* usdLoad = UsdLoad::getUsdLoad();
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-
-    if (!omni::fabric::Token::iToken)
-        omni::fabric::Token::iToken = carb::getCachedInterface<omni::fabric::IToken>();
-    if (!omni::fabric::Path::iPath)
-        omni::fabric::Path::iPath = carb::getCachedInterface<omni::fabric::IPath>();
 
     const omni::fabric::UsdStageId stageId = { uint64_t(attachedStage.getStageId()) };
     omni::fabric::StageReaderWriter stageInProgress = OmniPhysX::getInstance().getIStageReaderWriter()->get(stageId);
@@ -1389,7 +1377,7 @@ void fabricChangeTracking(AttachedStage& attachedStage, float currentTime)
                             for (const omni::fabric::Path& path : paths)
                             {
                                 const pxr::SdfPath primPath = omni::fabric::toSdfPath(path);
-                                transformationChange(attachedStage, matrices, index, primPath);
+                                fabricTransformationChange(attachedStage, matrices, index, primPath);
                                 index++;
                             }
                         }
@@ -1398,21 +1386,19 @@ void fabricChangeTracking(AttachedStage& attachedStage, float currentTime)
                             for (const size_t index : changeType.changedIndices)
                             {
                                 const pxr::SdfPath primPath = omni::fabric::toSdfPath(paths[index]);
-                                transformationChange(attachedStage, matrices, index, primPath);
+                                fabricTransformationChange(attachedStage, matrices, index, primPath);
                             }
                         }
                     }
 
                     if (attributeName == fabricPositionInvMasses && !particlePositionsUpdated)
                     {
-                        particlePositionsUpdated = true;
-                        omniPhysX.getFabricParticles()->updateParticles(changesByType, i, changeType.attr.name);
+                        particlePositionsUpdated = true;                    
                     }
 
                     if (attributeName == fabricVelocitiesFloat4 && !particleVelocitiesUpdated)
                     {
-                        particleVelocitiesUpdated = true;
-                        omniPhysX.getFabricParticles()->updateParticles(changesByType, i, changeType.attr.name);
+                        particleVelocitiesUpdated = true;                   
                     }
                 }
 
@@ -1568,7 +1554,7 @@ void processUpdates(AttachedStage& attachedStage, float currentTime)
                     while (it != entries->end())
                     {
                         attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                            prim.GetPrimPath(), it->second, fcTransform);
+                            prim.GetPrimPath(), it->second, fcTransform, false);
                         it++;
                     }
                 }

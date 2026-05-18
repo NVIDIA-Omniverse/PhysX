@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -36,6 +36,7 @@
 #include "PxgCudaBuffer.h"
 #include "PxSpatialMatrix.h"
 #include "DyFeatherstoneArticulation.h"
+#include "DyCpuGpuArticulation.h"
 #include "foundation/PxUserAllocated.h"
 #include "vector_types.h"
 
@@ -498,6 +499,7 @@ namespace physx
 		PxReal						mMaxActuatorVelocity[32];
 		PxReal						mVelocityDependentResistance[32];
 		PxReal						mSpeedEffortGradient[32];
+		PxReal						mExternalEffort[32];
 
 		PxReal						mDriveTargetPos[32];
 		PxReal						mArmature[32];
@@ -512,8 +514,8 @@ namespace physx
 		PxReal						mAccumulatedFrictionImpulse[32];
 
 		//old friction
-		PxReal						mMaxFrictionForce[32];
-		PxReal						mFrictionCoefficient[32];
+		PxReal						mMaxDeprecatedFrictionForce[32];
+		PxReal						mDeprecatedFrictionCoefficient[32];
 
 		//new friction
 		PxReal						mStaticFrictionEffort[32];
@@ -567,6 +569,23 @@ namespace physx
 		PxReal						mRestDistance[32];
 		PxReal						mLowLimit[32];
 		PxReal						mHighLimit[32];
+
+		PX_CUDA_CALLABLE PX_FORCE_INLINE void setTendonImplicitSpringParams(const Dy::TendonImplicitSpringParams& springParams, const PxU32 threadIndexInWarp)
+		{		
+			mBiasCoefficient[threadIndexInWarp] = springParams.biasCoefficient;
+			mVelMultiplier[threadIndexInWarp] = springParams.velMultiplier;
+			mImpulseMultiplier[threadIndexInWarp] = springParams.impulseMultiplier;
+			mLimitBiasCoefficient[threadIndexInWarp] = springParams.limitBiasCoefficient;
+			mLimitImpulseMultiplier[threadIndexInWarp] = springParams.limitImpulseMultiplier;
+		}
+
+		PX_CUDA_CALLABLE PX_FORCE_INLINE Dy::TendonImplicitSpringParams	getTendonImplicitSpringParams(const PxU32 threadIndexInWarp) const
+		{
+			Dy::TendonImplicitSpringParams springParams(
+				mBiasCoefficient[threadIndexInWarp], mVelMultiplier[threadIndexInWarp], mImpulseMultiplier[threadIndexInWarp], 
+				mLimitBiasCoefficient[threadIndexInWarp], mLimitImpulseMultiplier[threadIndexInWarp]);
+			return springParams;
+		}
 	};
 
 	struct PxgArticulationBlockDofData

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -420,8 +420,7 @@ extern "C" __global__ void computeAverageSolverBodyVelocityTGS(
 	
 extern "C" __global__ void propagateAverageSolverBodyVelocityTGS(
 	const PxgSolverCoreDesc* solverDesc,
-	const PxgSolverSharedDesc<IterativeSolveDataTGS>* sharedDesc, bool isVelocityIteration, bool isLastPosIteration,
-	PxReal biasCoefficient)
+	const PxgSolverSharedDesc<IterativeSolveDataTGS>* sharedDesc, bool isVelocityIteration, bool isLastPosIteration)
 {
 	//Buffer to store read data in. We then add on first 6 words to 2nd 6 words
 

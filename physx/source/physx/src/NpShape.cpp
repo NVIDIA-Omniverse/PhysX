@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,8 +30,10 @@
 #include "NpRigidStatic.h"
 #include "NpRigidDynamic.h"
 #include "NpArticulationLink.h"
-#include "NpDeformableSurface.h"
-#include "NpDeformableVolume.h"
+#if PX_SUPPORT_GPU_PHYSX
+	#include "NpDeformableSurface.h"
+	#include "NpDeformableVolume.h"
+#endif
 
 #include "omnipvd/NpOmniPvdSetData.h"
 
@@ -86,20 +88,32 @@ NpShape::~NpShape()
 	{
 #if PX_SUPPORT_GPU_PHYSX
 		for (PxU32 i = 0; i < nbMaterials; i++)
-			RefCountable_decRefCount(*scGetMaterial<NpDeformableSurfaceMaterial>(i));
+		{
+			NpDeformableSurfaceMaterial* material = scGetMaterial<NpDeformableSurfaceMaterial>(i);
+			if(material)
+				RefCountable_decRefCount(*material);
+		}
 #endif
 	}
 	else if(flags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE)
 	{ 
 #if PX_SUPPORT_GPU_PHYSX
 		for (PxU32 i = 0; i < nbMaterials; i++)
-			RefCountable_decRefCount(*scGetMaterial<NpDeformableVolumeMaterial>(i));
+		{
+			NpDeformableVolumeMaterial* material = scGetMaterial<NpDeformableVolumeMaterial>(i);
+			if(material)
+				RefCountable_decRefCount(*material);
+		}
 #endif
 	}
 	else
 	{
 		for (PxU32 i = 0; i < nbMaterials; i++)
-			RefCountable_decRefCount(*scGetMaterial<NpMaterial>(i));
+		{
+			NpMaterial* material = scGetMaterial<NpMaterial>(i);
+			if(material)
+				RefCountable_decRefCount(*material);
+		}
 	}
 }
 

@@ -1,11 +1,15 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import asyncio
 import carb
-import carb.logging
+from pathlib import Path
+import os
+import stat
 from pxr import Gf, UsdPhysics, Sdf, UsdGeom
 import omni.usd
+import omni.client
 import omni.kit.stage_templates
 from omni.physx import get_physx_interface, get_physxunittests_interface
 from omni.physx.scripts.assets_paths import AssetFolders
@@ -149,6 +153,71 @@ async def wait_for_stage_loading_status(usd_context=None, max_loops=2):
             continue
         loops += 1
     carb.log_info(f"total waits: {total_waits}")
+
+
+def safe_delete_file(file_name: str) -> bool:
+    try:
+        os.remove(file_name)
+    except Exception as e:
+        carb.log_error(f"Removal of file '{file_name}' caused the following exception: {e}.")
+        return False
+    return True
+
+
+def get_random_word(length: int) -> str:
+    import random
+    import string
+
+    letters = string.ascii_lowercase + string.digits
+    return "".join(random.choice(letters) for _ in range(length))  #NOSONAR
+
+
+def get_temp_file_path(file_name: str, random_prefix: bool = False) -> Path:
+    if random_prefix:
+        file_name = get_random_word(8) + "_" + file_name
+    temp_path = Path(omni.kit.test.get_test_output_path())
+    return temp_path.joinpath(file_name)
+
+
+def copy_file(src: str, tgt: str, enforce_write_permission: bool, behavior: omni.client.CopyBehavior = omni.client.CopyBehavior.OVERWRITE):
+    omni.client.copy(src, tgt, behavior)
+    if not os.path.exists(tgt):
+        raise FileNotFoundError(f"copy_file: target file {tgt} does not exist")
+    if enforce_write_permission:
+        os.chmod(tgt, os.stat(tgt).st_mode | stat.S_IWRITE)
+
+class TmpFile:
+    def __init__(self, tmp_filename: str = "", random_prefix: bool = False):
+        # generate tmp path
+        if tmp_filename:
+            self.path = str(get_temp_file_path(tmp_filename, random_prefix))
+        else:
+            raise ValueError("tmp_filename src_filename")
+
+    def get_path(self):
+        return self.path
+
+    def delete(self):
+        safe_delete_file(self.path)
+
+    def __str__(self):
+        return self.path
+
+
+class TmpFileFromSrc(TmpFile):
+    def __init__(self, src_directory: str = "", src_filename: str = "", tmp_filename: str = "", random_prefix: bool = False):
+        # generate tmp path
+        if tmp_filename:
+            self.path = str(get_temp_file_path(tmp_filename, random_prefix))
+        elif src_filename:
+            self.path = str(get_temp_file_path(src_filename, random_prefix))
+        else:
+            raise ValueError("Either tmp_filename or src_filename must be provided")
+
+        # copy file to tmp path if src is defined
+        if src_filename:
+            src_path = Path(src_filename) if not src_directory else Path(src_directory).joinpath(src_filename)
+            copy_file(str(src_path), self.path, enforce_write_permission = True)
 
 
 # deprecated

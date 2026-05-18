@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -172,7 +172,7 @@ public:
 		PxsKernelWranglerManager* gpuKernelWrangler,
 		PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 		const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase,
-		PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim,
+		PxBoundsArrayPinnedSafe& bounds, IG::IslandSim* islandSim,
 		physx::Dy::Context* dynamicsContext, const PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
 		bool useGpuBP) = 0;
 
@@ -192,11 +192,9 @@ public:
 	*/
 	virtual Dy::Context* createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
 		PxCudaContextManager* cudaContextManager, 
-		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal maxBiasCoefficient,
-		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-		bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
-		PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled) = 0;
+		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, PxReal maxBiasCoefficient,
+		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager, PxSolverType::Enum solverType,
+		PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags) = 0;
 };
 
 }

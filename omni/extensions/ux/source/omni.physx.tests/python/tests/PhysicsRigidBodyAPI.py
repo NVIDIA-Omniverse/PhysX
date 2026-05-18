@@ -1,9 +1,11 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx
 import omni.physx.scripts.utils as physicsBaseUtils
 import omni.physx.scripts.physicsUtils as physicsUtils
+from omni.physx.scripts import utils as physxUtils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, PhysicsKitStageAsyncTestCase, TestCategory
 from omni.physx import get_physx_interface, get_physx_simulation_interface
 from omni.physxtests import utils
@@ -179,6 +181,34 @@ class PhysicsRigidBodyAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
         
         xform_ops = xformable.GetXformOpOrderAttr().Get()
         self.assertTrue(len(xform_ops) == 5)
+
+    async def test_physics_metrics_assembler_xformop_rotation(self):
+        stage = await self.new_stage()
+
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+        
+        xform = UsdGeom.Cube.Define(stage, "/cube")
+        UsdPhysics.RigidBodyAPI.Apply(xform.GetPrim())
+        UsdPhysics.CollisionAPI.Apply(xform.GetPrim())
+
+        rot_z_45 = Gf.Quatf(Gf.Rotation(Gf.Vec3d(0.0, 0.0, 1.0), 45.0).GetQuat())
+
+        xformable = UsdGeom.Xformable(xform.GetPrim())
+        xformable.AddTranslateOp().Set(Gf.Vec3d(2,3,4))
+        xformable.AddOrientOp().Set(rot_z_45)
+        xformable.AddScaleOp().Set(Gf.Vec3d(0.0002))
+        xformable.AddRotateXOp(opSuffix="unitsResolve").Set(90.0)
+
+        orient_attr = xform.GetPrim().GetAttribute("xformOp:orient")
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetImaginary(), rot_z_45.GetImaginary(), 1e-3))
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetReal(), rot_z_45.GetReal(), 1e-3))
+
+        self.step()
+
+        orient_attr = xform.GetPrim().GetAttribute("xformOp:orient")
+
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetImaginary(), rot_z_45.GetImaginary(), 1e-3))
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetReal(), rot_z_45.GetReal(), 1e-3))
         
     async def test_physics_kinematic_setup(self):
         stage = await self.new_stage()
@@ -1777,7 +1807,7 @@ class PhysicsRigidBodyAPITestAsyncRB(rigidbody.AsyncTestCase):
         )
 
     async def test_physics_userpath_set_rigid_body(self):
-        for approx in rigidbody.approximations:
+        for approx in physxUtils.MESH_APPROXIMATIONS.keys():
             print(approx)
             await self.base_basic_userpath_command_test(
                 lambda primPath: SetRigidBodyCommand.execute(primPath, approx, False),

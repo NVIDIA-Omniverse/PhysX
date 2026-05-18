@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,7 +32,6 @@
 
 #include "common/PxProfileZone.h"
 #include "PxsRigidBody.h"
-#include "PxsContactManager.h"
 #include "DyDynamics.h"
 #include "DyBodyCoreIntegrator.h"
 #include "DySolverCore.h"
@@ -95,14 +94,12 @@ struct SolverIslandObjects
 	}
 };
 
-Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
-								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, 
-								PxsMaterialManager* materialManager, IG::SimpleIslandManager& islandManager, PxU64 contextID,
-								bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled)
+Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool, PxvSimStats& simStats,
+								PxVirtualAllocatorCallback* allocatorCallback,  PxsMaterialManager* materialManager,
+								IG::SimpleIslandManager& islandManager, PxU64 contextID, PxReal maxBiasCoefficient,
+								PxReal lengthScale, PxSceneFlags sceneFlags)
 {
-	return PX_NEW(DynamicsContext)(	memBlockPool, scratchAllocator, taskPool, simStats, taskManager, allocatorCallback, materialManager, islandManager, contextID,
-									enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, frictionEveryIteration, lengthScale, isResidualReportingEnabled);
+	return PX_NEW(DynamicsContext)(	memBlockPool, taskPool, simStats, allocatorCallback, materialManager, islandManager, contextID, maxBiasCoefficient, lengthScale, sceneFlags);
 }
 
 void DynamicsContext::destroy()
@@ -112,23 +109,17 @@ void DynamicsContext::destroy()
 }
 
 DynamicsContext::DynamicsContext(	PxcNpMemBlockPool* memBlockPool,
-									PxcScratchAllocator& /*scratchAllocator*/,
 									Cm::FlushPool& taskPool,
 									PxvSimStats& simStats,
-									PxTaskManager* /*taskManager*/,
 									PxVirtualAllocatorCallback* allocatorCallback,
 									PxsMaterialManager* materialManager,
 									IG::SimpleIslandManager& islandManager,
 									PxU64 contextID,
-									bool enableStabilization,
-									bool useEnhancedDeterminism,
-									bool solveArticulationContactLast,
 									PxReal maxBiasCoefficient,
-									bool frictionEveryIteration,
 									PxReal lengthScale,
-									bool isResidualReportingEnabled) :
-	DynamicsContextBase				(memBlockPool, taskPool, simStats, allocatorCallback, materialManager, islandManager, contextID, maxBiasCoefficient, lengthScale, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, isResidualReportingEnabled),
-	mSolveFrictionEveryIteration	(frictionEveryIteration)
+									PxSceneFlags sceneFlags) :
+	DynamicsContextBase				(memBlockPool, taskPool, simStats, allocatorCallback, materialManager, islandManager, contextID, maxBiasCoefficient, lengthScale, sceneFlags),
+	mSolveFrictionEveryIteration	(sceneFlags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION)
 {
 	createThresholdStream(*allocatorCallback);
 	createForceChangeThresholdStream(*allocatorCallback);
@@ -390,7 +381,7 @@ public:
 				while(iter.hasNextPatch())
 				{
 					iter.nextPatch();
-					while(iter.hasNextContact())
+					while(iter.hasNextContact() && (size < PxContactBuffer::MAX_CONTACTS))
 					{
 						PX_ASSERT(size < PxContactBuffer::MAX_CONTACTS);
 						iter.nextContact();
@@ -621,14 +612,7 @@ public:
 	virtual const char* getName() const { return "PxsDynamics.createForceChangeThresholdStream"; }
 };
 
-struct ConstraintLess
-{
-	bool operator()(const PxSolverConstraintDesc& left, const PxSolverConstraintDesc& right) const
-	{
-		return reinterpret_cast<Constraint*>(left.constraint)->index > reinterpret_cast<Constraint*>(right.constraint)->index;
-	}
-};
-
+#if PGS_SUPPORT_COMPOUND_CONSTRAINTS
 struct ArticulationSortPredicate
 {
 	bool operator()(const PxsIndexedContactManager*& left, const PxsIndexedContactManager*& right) const
@@ -636,6 +620,7 @@ struct ArticulationSortPredicate
 		return left->contactManager->getIndex() < right->contactManager->getIndex();
 	}
 };
+#endif
 
 class SolverArticulationUpdateTask : public Cm::Task
 {
@@ -708,17 +693,6 @@ private:
 	PX_NOCOPY(SolverArticulationUpdateTask)
 };
 
-struct EnhancedSortPredicate
-{
-	bool operator()(const PxsIndexedContactManager& left, const PxsIndexedContactManager& right) const
-	{
-		const PxcNpWorkUnit& unit0 = left.contactManager->getWorkUnit();
-		const PxcNpWorkUnit& unit1 = right.contactManager->getWorkUnit();
-		return (unit0.mTransformCache0 < unit1.mTransformCache0) ||
-			((unit0.mTransformCache0 == unit1.mTransformCache0) && (unit0.mTransformCache1 < unit1.mTransformCache1));
-	}
-};
-
 class PxsSolverStartTask : public Cm::Task
 {
 	PxsSolverStartTask& operator=(const PxsSolverStartTask&);
@@ -787,153 +761,13 @@ public:
 
 		const ThreadContext& mThreadContext = *mIslandContext.mThreadContext;
 
-		PxsBodyCore** PX_RESTRICT bodyArrayPtr = mThreadContext.mBodyCoreArray;
-		PxsRigidBody** PX_RESTRICT rigidBodyPtr = mThreadContext.mRigidBodyArray;
-		FeatherstoneArticulation** PX_RESTRICT articulationPtr = mThreadContext.mArticulationArray;
-
-		PxU32* PX_RESTRICT bodyRemapTable = mThreadContext.bodyRemapTable;
-		PxU32* PX_RESTRICT nodeIndexArray = mThreadContext.mNodeIndexArray;
-
-		PxU32 nbIslands = mObjects.numIslands;
+		const PxU32 nbIslands = mObjects.numIslands;
 		const IG::IslandId* const islandIds = mObjects.islandIds;
+		PxU32* PX_RESTRICT bodyRemapTable = mThreadContext.bodyRemapTable;
 
-		const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
+		mContext.iterateIslandsNodes(mIslandContext.mCounts, nbIslands, islandIds, mThreadContext.mBodyCoreArray, mThreadContext.mRigidBodyArray, mThreadContext.mArticulationArray, bodyRemapTable, mThreadContext.mNodeIndexArray);
 
-		PxU32 bodyIndex = 0, articIndex = 0;
-
-		{
-			PX_PROFILE_ZONE("IterateIslandsNodes", mContextID);
-
-			for (PxU32 i = 0; i < nbIslands; ++i)
-			{
-				const IG::Island& island = islandSim.getIsland(islandIds[i]);
-
-				PxNodeIndex currentIndex = island.mRootNode;
-
-				while (currentIndex.isValid())
-				{
-					const IG::Node& node = islandSim.getNode(currentIndex);
-
-					if (node.getNodeType() == IG::Node::eARTICULATION_TYPE)
-					{
-						articulationPtr[articIndex++] = getObjectFromIG<FeatherstoneArticulation>(node);
-					}
-					else
-					{
-						PX_ASSERT(bodyIndex < (mIslandContext.mCounts.bodies + mContext.mKinematicCount + 1));
-						nodeIndexArray[bodyIndex++] = currentIndex.index();
-					}
-
-					currentIndex = node.mNextNode;
-				}
-			}
-		}
-
-		//Bodies can come in a slightly jumbled order from islandGen. It's deterministic if the scene is 
-		//identical but can vary if there are additional bodies in the scene in a different island.
-		if (mEnhancedDeterminism)
-			PxSort(nodeIndexArray, bodyIndex);
-
-		for (PxU32 a = 0; a < bodyIndex; ++a)
-		{
-			const PxNodeIndex currentIndex(nodeIndexArray[a]);
-			PxsRigidBody* rigid = getRigidBodyFromIG(islandSim, currentIndex);
-			rigidBodyPtr[a] = rigid;
-			bodyArrayPtr[a] = &rigid->getCore();
-			bodyRemapTable[islandSim.getActiveNodeIndex(currentIndex)] = a;
-		}
-
-		{
-			PX_PROFILE_ZONE("IterateIslandsContactEdges", mContextID);
-
-			PxsIndexedContactManager* indexedManagers = mObjects.contactManagers;
-
-			PxU32 currentContactIndex = 0;
-			for(PxU32 i = 0; i < nbIslands; ++i)
-			{
-				const IG::Island& island = islandSim.getIsland(islandIds[i]);
-
-				IG::EdgeIndex contactEdgeIndex = island.mFirstEdge[IG::Edge::eCONTACT_MANAGER];
-
-				while(contactEdgeIndex != IG_INVALID_EDGE)
-				{
-					const IG::Edge& edge = islandSim.getEdge(contactEdgeIndex);
-
-					PxsContactManager* contactManager = mIslandManager.getContactManager(contactEdgeIndex);
-
-					if(contactManager)
-					{
-						const PxNodeIndex nodeIndex1 = islandSim.mCpuData.getNodeIndex1(contactEdgeIndex);
-						const PxNodeIndex nodeIndex2 = islandSim.mCpuData.getNodeIndex2(contactEdgeIndex);
-
-						PxsIndexedContactManager& indexedManager = indexedManagers[currentContactIndex++];
-						indexedManager.contactManager = contactManager;
-
-						PX_ASSERT(!nodeIndex1.isStaticBody());
-						{
-							const IG::Node& node1 = islandSim.getNode(nodeIndex1);
-
-							//Is it an articulation or not???
-							if(node1.getNodeType() == IG::Node::eARTICULATION_TYPE)
-							{
-								indexedManager.articulation0 = nodeIndex1.getInd();
-								indexedManager.indexType0 = PxsIndexedInteraction::eARTICULATION;
-							}
-							else
-							{
-								if(node1.isKinematic())
-								{
-									indexedManager.indexType0 = PxsIndexedInteraction::eKINEMATIC;
-									indexedManager.solverBody0 = islandSim.getActiveNodeIndex(nodeIndex1);
-								}
-								else
-								{
-									indexedManager.indexType0 = PxsIndexedInteraction::eBODY;
-									indexedManager.solverBody0 = bodyRemapTable[islandSim.getActiveNodeIndex(nodeIndex1)];
-								}
-								PX_ASSERT(indexedManager.solverBody0 < (mIslandContext.mCounts.bodies + mContext.mKinematicCount + 1));
-							}
-						}
-
-						if(nodeIndex2.isStaticBody())
-						{
-							indexedManager.indexType1 = PxsIndexedInteraction::eWORLD;
-						}
-						else
-						{
-							const IG::Node& node2 = islandSim.getNode(nodeIndex2);
-
-							//Is it an articulation or not???
-							if(node2.getNodeType() == IG::Node::eARTICULATION_TYPE)
-							{
-								indexedManager.articulation1 = nodeIndex2.getInd();
-								indexedManager.indexType1 = PxsIndexedInteraction::eARTICULATION;
-							}
-							else
-							{
-								if(node2.isKinematic())
-								{
-									indexedManager.indexType1 = PxsIndexedInteraction::eKINEMATIC;
-									indexedManager.solverBody1 = islandSim.getActiveNodeIndex(nodeIndex2);
-								}
-								else
-								{
-									indexedManager.indexType1 = PxsIndexedInteraction::eBODY;
-									indexedManager.solverBody1 = bodyRemapTable[islandSim.getActiveNodeIndex(nodeIndex2)];
-								}
-								PX_ASSERT(indexedManager.solverBody1 < (mIslandContext.mCounts.bodies + mContext.mKinematicCount + 1));
-							}
-						}
-					}
-					contactEdgeIndex = edge.mNextIslandEdge;
-				}
-			}
-
-			if (mEnhancedDeterminism)
-				PxSort(indexedManagers, currentContactIndex, EnhancedSortPredicate());
-
-			mIslandContext.mCounts.contactManagers = currentContactIndex;
-		}
+		mIslandContext.mCounts.contactManagers = mContext.iterateIslandsContactEdges(mIslandContext.mCounts, nbIslands, islandIds, mObjects.contactManagers, bodyRemapTable);
 	}
 
 	void integrate()
@@ -993,6 +827,7 @@ public:
 		const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
 
 		{
+			// PT: TODO: refactor with TGS
 			PX_PROFILE_ZONE("IterateIslandsConstraintEdges", mContextID);
 
 			for(PxU32 i = 0; i < nbIslands; ++i)
@@ -1206,7 +1041,7 @@ public:
 								++numHeaders;
 								CompoundContactManager& header = mThreadContext.compoundConstraints.insert();
 								header.mStartIndex = startIndex;
-								header.mStride = PxTo16(stride);	
+								header.mStride = PxTo16(stride);
 								header.mReducedContactCount = PxTo16(contactCount);
 								PxsContactManager* manager1 = constraints[startIndex]->contactManager;
 								PxcNpWorkUnit& unit = manager1->getWorkUnit();
@@ -1394,10 +1229,9 @@ public:
 	const bool					mEnhancedDeterminism;
 };
 
-// PT: 368 => 367 => 351 lines of assembly
 static void integrate(	const IG::IslandSim& islandSim, PxSolverBodyData* PX_RESTRICT solverBodyData, PxsRigidBody** PX_RESTRICT rigidBodies,
 						Cm::SpatialVector* PX_RESTRICT motionVelocityArray, PxSolverBody* PX_RESTRICT solverBodies, 
-						PxU32 count, PxF32 dt, bool enableStabilization)
+						PxU32 count, PxF32 dt, bool enableStabilization, bool isSleepingDisabled)
 {
 	for(PxU32 i=0; i<count; i++)
 	{
@@ -1415,8 +1249,11 @@ static void integrate(	const IG::IslandSim& islandSim, PxSolverBodyData* PX_REST
 		core.linearVelocity = data.linearVelocity;
 		core.angularVelocity = data.angularVelocity;
 
-		const PxU32 hasStaticTouch = islandSim.getIslandStaticTouchCount(PxNodeIndex(data.nodeIndex));
-		sleepCheck(rigidBodies[i], dt, enableStabilization, motionVelocityArray[i], hasStaticTouch);
+		if(!isSleepingDisabled)
+		{
+			const PxU32 hasStaticTouch = islandSim.getIslandStaticTouchCount(PxNodeIndex(data.nodeIndex));
+			sleepCheck(rigidBodies[i], dt, enableStabilization, motionVelocityArray[i], hasStaticTouch);
+		}
 	}
 }
 
@@ -1605,7 +1442,7 @@ public:
 					solveV_Blocks(params, mContext.solveFrictionEveryIteration(), mContext.mSolveArticulationContactLast);
 
 					PxSolverBodyData* solverBodyData2 = solverBodyDatas + mSolverBodyOffset + 1;
-					integrate(mIslandSim, solverBodyData2, mObjects.bodies, mThreadContext.motionVelocityArray, solverBodies, mIslandContext.mCounts.bodies, mContext.mDt, mContext.mEnableStabilization);
+					integrate(mIslandSim, solverBodyData2, mObjects.bodies, mThreadContext.motionVelocityArray, solverBodies, mIslandContext.mCounts.bodies, mContext.mDt, mContext.mEnableStabilization, mContext.isSleepingDisabled());
 
 					for(PxU32 cnt=0;cnt<mIslandContext.mCounts.articulations;cnt++)
 					{
@@ -1875,56 +1712,10 @@ void DynamicsContext::update(Cm::FlushPool& /*flushPool*/, PxBaseTask* continuat
 	PxvNphaseImplementationContext* nphase, PxU32 /*maxPatches*/, PxU32 maxArticulationLinks,
 	PxReal dt, const PxVec3& gravity, PxBitMapPinned& /*changedHandleMap*/)
 {
-	PX_PROFILE_ZONE("Dynamics.solverQueueTasks", mContextID);
-
-	mOutputIterator = nphase->getContactManagerOutputs();
-
-	mDt = dt;
-	mInvDt = dt == 0.0f ? 0.0f : 1.0f / dt;
-	mGravity = gravity;
-
-	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
-
-	const PxU32 islandCount = islandSim.getNbActiveIslands();
-
-	const PxU32 activatedContactCount = islandSim.getNbActivatedEdges(IG::Edge::eCONTACT_MANAGER);
-	const IG::EdgeIndex* const activatingEdges = islandSim.getActivatedEdges(IG::Edge::eCONTACT_MANAGER);
-
-	{
-		PX_PROFILE_ZONE("resetFrictionPatchCount", mContextID);
-
-		for (PxU32 a = 0; a < activatedContactCount; ++a)
-		{
-			PxsContactManager* cm = mIslandManager.getContactManager(activatingEdges[a]);
-			if (cm)
-				cm->getWorkUnit().mFrictionPatchCount = 0; //KS - zero the friction patch count on any activating edges
-		}
-	}
-
-#if PX_ENABLE_SIM_STATS
-	if (islandCount > 0)
-	{
-		mSimStats.mNbActiveKinematicBodies = islandSim.getNbActiveKinematics();
-		mSimStats.mNbActiveDynamicBodies = islandSim.getNbActiveNodes(IG::Node::eRIGID_BODY_TYPE);
-		mSimStats.mNbActiveConstraints = islandSim.getNbActiveEdges(IG::Edge::eCONSTRAINT);
-	}
-	else
-	{
-		mSimStats.mNbActiveKinematicBodies = islandSim.getNbActiveKinematics();
-		mSimStats.mNbActiveDynamicBodies = 0;
-		mSimStats.mNbActiveConstraints = 0;
-	}
-#else
-	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
-#endif
-
-	mThresholdStreamOut = 0;
-
-	resetThreadContexts();
-
-	//If there is no work to do then we can do nothing at all.
-	if(!islandCount)
+	if(!updateShared(nphase, dt, gravity))
 		return;
+
+	PX_PROFILE_ZONE("Dynamics.solverQueueTasks", mContextID);
 
 	//Block to make sure it doesn't run before stage2 of update!
 	lostTouchTask->addReference();
@@ -1943,6 +1734,7 @@ void DynamicsContext::update(Cm::FlushPool& /*flushPool*/, PxBaseTask* continuat
 
 	mWorldSolverBody.linearVelocity = mWorldSolverBody.angularState = PxVec3(0.f);
 
+	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
 	const PxU32 kinematicCount = islandSim.getNbActiveKinematics();
 	const PxNodeIndex* const kinematicIndices = islandSim.getActiveKinematics();
 	mKinematicCount = kinematicCount;
@@ -2077,6 +1869,9 @@ void DynamicsContext::updatePostKinematic(IG::SimpleIslandManager& simpleIslandM
 			nbContactManagers += island.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
 			constraintCount = nbConstraints + nbContactManagers;
 			currentIsland++;
+
+			if(mUseEnhancedDeterminism)
+				break;
 		}
 
 		objectStarts.numIslands = currentIsland - startIsland;
@@ -2318,7 +2113,7 @@ void DynamicsContext::integrateCoreParallel(SolverIslandParams& params, Cm::Spat
 	{
 		const PxI32 remainder = PxMin(numBodies - index, bodyRemainder);
 		bodyRemainder -= remainder;
-		integrate(islandSim, solverBodyData + index, rigidBodies + index, motionVelocityArray + index, solverBodies + index, remainder, mDt, mEnableStabilization);
+		integrate(islandSim, solverBodyData + index, rigidBodies + index, motionVelocityArray + index, solverBodies + index, remainder, mDt, mEnableStabilization, isSleepingDisabled());
 		numIntegrated += remainder;
 
 		{

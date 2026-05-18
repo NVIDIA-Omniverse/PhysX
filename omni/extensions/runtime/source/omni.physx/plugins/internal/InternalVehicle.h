@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -41,23 +41,23 @@ public:
 
     void init(const usdparser::VehicleContextDesc&, ::physx::PxScene&);
 
-    ::physx::vehicle2::PxVehiclePhysXSimulationContext& getContext()
+    ::physx::PxVehiclePhysXSimulationContext& getContext()
     {
         return mPhysXContext;
     }
-    const ::physx::vehicle2::PxVehiclePhysXSimulationContext& getContext() const
+    const ::physx::PxVehiclePhysXSimulationContext& getContext() const
     {
         return mPhysXContext;
     }
 
-    const ::physx::vehicle2::PxVehicleFrame& getFrame() const
+    const ::physx::PxVehicleFrame& getFrame() const
     {
         return mPhysXContext.frame;
     }
 
 
 private:
-    ::physx::vehicle2::PxVehiclePhysXSimulationContext mPhysXContext;
+    ::physx::PxVehiclePhysXSimulationContext mPhysXContext;
 };
 
 
@@ -88,12 +88,12 @@ public:
                                              InternalPhysXDatabase&);
     static void release(InternalTireFrictionTable&);
 
-    static const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams* getDefault()
+    static const ::physx::PxVehiclePhysXMaterialFrictionParams* getDefault()
     {
         return &sDefaultMaterialFrictionTable;
     }
 
-    ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams* getMaterialFrictionTable()
+    ::physx::PxVehiclePhysXMaterialFrictionParams* getMaterialFrictionTable()
     {
         return &mMaterialFrictionTable;
     }
@@ -106,8 +106,8 @@ public:
     void update(const pxr::VtArray<float>& frictionValues);
 
 private:
-    ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams mMaterialFrictionTable;
-    static ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams sDefaultMaterialFrictionTable;
+    ::physx::PxVehiclePhysXMaterialFrictionParams mMaterialFrictionTable;
+    static ::physx::PxVehiclePhysXMaterialFrictionParams sDefaultMaterialFrictionTable;
     static DefaultInitializer sDefaultInitializer;
 };
 
@@ -156,7 +156,7 @@ public:
         {
         }
 
-        void init(pxr::UsdPrim&, pxr::UsdPrim&, const ::physx::PxShape*);
+        void init(pxr::UsdPrim&, pxr::UsdPrim&, const ::physx::PxShape*, usdparser::ObjectId shapeId);
 
         pxr::GfMatrix4d initialTransform;
         pxr::GfMatrix4d initialShapeTransform; // not used if there is no collision shape or if it is
@@ -174,6 +174,7 @@ public:
 
         pxr::UsdPrim shapePrim; // invalid if there is no collision shape
         const ::physx::PxShape* shape; // NULL if there is no collision shape
+        usdparser::Axis cylinderAxis; // axis information for cylinder shapes
     };
 
     struct InitialControllerValues
@@ -287,7 +288,7 @@ private:
     // conversion because PhysX starts with 0 for reverse, while our USD schema starts with -1
     inline int toPhysXGear(const int targetGear) const
     {
-        if (targetGear != ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR)
+        if (targetGear != ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR)
             return targetGear + 1;
         else
             return targetGear;
@@ -295,7 +296,7 @@ private:
 
     inline int fromPhysXGear(const uint32_t targetGear) const
     {
-        if (targetGear != ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR)
+        if (targetGear != ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR)
             return static_cast<int>(targetGear) - 1;
         else
             return static_cast<int>(targetGear);
@@ -353,7 +354,7 @@ public:
 
 class InternalVehicleWheelReferenceList : public Allocateable
 {
-    static_assert(::physx::vehicle2::PxVehicleLimits::eMAX_NB_WHEELS <= 32, ""); // using bits of uint32 to mark wheel
+    static_assert(::physx::PxVehicleLimits::eMAX_NB_WHEELS <= 32, ""); // using bits of uint32 to mark wheel
                                                                                  // indices
 
 public:

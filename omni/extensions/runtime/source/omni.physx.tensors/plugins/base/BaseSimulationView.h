@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -74,12 +74,15 @@ public:
 
     void findMatchingSoftBodyMaterials(const std::string& pattern, std::vector<SoftBodyMaterialEntry>& entriesRet);
 
+    void processVolumeDeformableBodyEntries(const std::vector<std::string>& patterns, std::vector<DeformableBodyEntry>& entries);
     void findMatchingVolumeDeformableBodies(const std::string& pattern,
                                             std::vector<DeformableBodyEntry>& entriesRet);
 
+    void processSurfaceDeformableBodyEntries(const std::vector<std::string>& patterns, std::vector<DeformableBodyEntry>& entries);
     void findMatchingSurfaceDeformableBodies(const std::string& pattern,
                                              std::vector<DeformableBodyEntry>& entriesRet);
 
+    void processDeformableMaterialEntries(const std::vector<std::string>& patterns, std::vector<DeformableMaterialEntry>& entries);
     void findMatchingDeformableMaterials(const std::string& pattern,
                                          std::vector<DeformableMaterialEntry>& entriesRet);
 
@@ -162,7 +165,13 @@ public:
     void _onChildRelease(const BaseParticleClothView* pcView);
     void _onChildRelease(const BaseParticleMaterialView* pmView);
 
-    ::physx::PxMaterial* createSharedMaterial(float staticFriction, float dynamicFriction, float restitution);
+    ::physx::PxMaterial* createSharedMaterial(float staticFriction,
+                                              float dynamicFriction,
+                                              float restitution,
+                                              float damping,
+                                              ::physx::PxCombineMode::Enum frictionCombineMode,
+                                              ::physx::PxCombineMode::Enum restitutionCombineMode,
+                                              ::physx::PxCombineMode::Enum dampingCombineMode);
 
     bool getValid() const override
     {
@@ -189,13 +198,13 @@ public:
     std::unordered_set<::physx::PxArticulationSpatialTendon*> spatialTendons;
 
     // fabric for kinematics
-    omni::fabric::TokenC mRigidBodySchemaToken;
-    omni::fabric::TokenC mWorldMatrixToken;
-    omni::fabric::TokenC mLocalMatrixToken;
-    omni::fabric::TokenC mDynamicBodyToken;
-    omni::fabric::TokenC mRigidBodyWorldPositionToken;
-    omni::fabric::TokenC mRigidBodyWorldOrientationToken;
-    omni::fabric::TokenC mRigidBodyWorldScaleToken;
+    omni::fabric::Token mRigidBodySchemaToken;
+    omni::fabric::Token mWorldMatrixToken;
+    omni::fabric::Token mLocalMatrixToken;
+    omni::fabric::Token mDynamicBodyToken;
+    omni::fabric::Token mRigidBodyWorldPositionToken;
+    omni::fabric::Token mRigidBodyWorldOrientationToken;
+    omni::fabric::Token mRigidBodyWorldScaleToken;
 
 protected:
     bool isValid = true;

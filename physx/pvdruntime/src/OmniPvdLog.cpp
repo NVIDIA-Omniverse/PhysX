@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -51,7 +51,9 @@ void OmniPvdLog::outputLine(const char* fmt, ...)
 	char logLineBuff[2048];
 	va_list args;
 	va_start(args, fmt);
-		vsprintf(logLineBuff, fmt, args);
+	int n = vsnprintf(logLineBuff, sizeof(logLineBuff), fmt, args);
 	va_end(args);
+	if (n < 0)
+		logLineBuff[0] = '\0';
 	mLogFunction(logLineBuff);
 }

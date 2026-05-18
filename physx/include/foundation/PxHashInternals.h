@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -201,10 +201,12 @@ class PxHashBase : private PxAllocator
 		mEntriesCount = 0;
 	}
 
-	void reserve(uint32_t size)
+	bool reserve(uint32_t size)
 	{
 		if(size > mHashSize)
-			reserveInternal(size);
+			return reserveInternal(size);
+
+		return true;
 	}
 
 	PX_INLINE const Entry* getEntries() const
@@ -226,6 +228,32 @@ class PxHashBase : private PxAllocator
 		mTimestamp++;
 
 		return mEntries + entryIndex;
+	}
+
+	void getStats(uint32_t& nbEmptySlots, uint32_t& maxCollisions)
+	{
+		uint32_t nbZero = 0;
+		uint32_t maxColl = 0;
+		const uint32_t hashSize = mHashSize;
+		for(uint32_t h=0; h<hashSize; h++)
+		{
+			uint32_t nbEntries = 0;
+			uint32_t index = mHash[h];
+			while(index != EOL)
+			{
+				nbEntries++;
+				index = mEntriesNext[index];
+			}
+			if(nbEntries)
+			{
+				if(nbEntries > maxColl)
+					maxColl = nbEntries;
+			}
+			else
+				nbZero++;
+		}
+		nbEmptySlots = nbZero;
+		maxCollisions = maxColl;
 	}
 
   private:
@@ -340,7 +368,7 @@ class PxHashBase : private PxAllocator
 		return true;
 	}
 
-	PX_NOINLINE void reserveInternal(uint32_t size)
+	PX_NOINLINE bool reserveInternal(uint32_t size)
 	{
 		if(!PxIsPowerOfTwo(size))
 			size = PxNextPowerOfTwo(size);
@@ -366,8 +394,15 @@ class PxHashBase : private PxAllocator
 			newEntriesByteOffset += (16 - (newEntriesByteOffset & 15)) & 15;
 			const uint64_t newBufferByteSize = newEntriesByteOffset + newEntriesCapacity * sizeof(Entry);
 
+			// PT: PxNextPowerOfTwo() can overflow and return 0, in which case newBufferByteSize is 0.
+			// We catch this case explicitly here, as there is no guarantee that PxAllocator::allocate(0)
+			// returns a null pointer.
+			if(!newBufferByteSize)
+				return false;
+
 			newBuffer = reinterpret_cast<uint8_t*>(PxAllocator::allocate(newBufferByteSize, PX_FL));
-			PX_ASSERT(newBuffer);
+			if(!newBuffer)
+				return false;
 
 			newHash = reinterpret_cast<uint32_t*>(newBuffer);
 			newEntriesNext = reinterpret_cast<uint32_t*>(newBuffer + newEntriesNextBytesOffset);
@@ -427,14 +462,16 @@ class PxHashBase : private PxAllocator
 		mEntriesCapacity = newEntriesCapacity;
 
 		freeListAdd(oldEntriesCapacity, newEntriesCapacity);
+
+		return true;
 	}
 
-	void grow()
+	bool grow()
 	{
 		PX_ASSERT((mFreeList == EOL) || (compacting && (mEntriesCount == mEntriesCapacity)));
 
-		uint32_t size = mHashSize == 0 ? 16 : mHashSize * 2;
-		reserve(size);
+		const uint32_t size = mHashSize == 0 ? 16 : mHashSize * 2;
+		return reserve(size);
 	}
 
 	uint8_t* mBuffer;
@@ -665,25 +702,35 @@ class PxHashSetBase
 	{
 		return mBase.find(k) != 0;
 	}
+
 	PX_INLINE bool erase(const Key& k)
 	{
 		return mBase.erase(k);
 	}
+
 	PX_INLINE uint32_t size() const
 	{
 		return mBase.size();
 	}
+
 	PX_INLINE uint32_t capacity() const
 	{
 		return mBase.capacity();
 	}
-	PX_INLINE void reserve(uint32_t size)
+
+	PX_INLINE bool reserve(uint32_t size)
 	{
-		mBase.reserve(size);
+		return mBase.reserve(size);
 	}
+
 	PX_INLINE void clear()
 	{
 		mBase.clear();
+	}
+
+	PX_INLINE void getStats(uint32_t& nbEmptySlots, uint32_t& maxCollisions)
+	{
+		mBase.getStats(nbEmptySlots, maxCollisions);
 	}
 
   protected:
@@ -745,37 +792,50 @@ class PxHashMapBase
 	{
 		return mBase.find(k);
 	}
+
 	PX_INLINE bool erase(const Key& k)
 	{
 		return mBase.erase(k);
 	}
+
 	PX_INLINE bool erase(const Key& k, Entry& e)
 	{		
 		return mBase.erase(k, e);
 	}
+
 	PX_INLINE uint32_t size() const
 	{
 		return mBase.size();
 	}
+
 	PX_INLINE uint32_t capacity() const
 	{
 		return mBase.capacity();
 	}
+
 	PX_INLINE Iterator getIterator()
 	{
 		return Iterator(mBase);
 	}
+
 	PX_INLINE EraseIterator getEraseIterator()
 	{
 		return EraseIterator(mBase);
 	}
-	PX_INLINE void reserve(uint32_t size)
+
+	PX_INLINE bool reserve(uint32_t size)
 	{
-		mBase.reserve(size);
+		return mBase.reserve(size);
 	}
+
 	PX_INLINE void clear()
 	{
 		mBase.clear();
+	}
+
+	PX_INLINE void getStats(uint32_t& nbEmptySlots, uint32_t& maxCollisions)
+	{
+		mBase.getStats(nbEmptySlots, maxCollisions);
 	}
 
   protected:

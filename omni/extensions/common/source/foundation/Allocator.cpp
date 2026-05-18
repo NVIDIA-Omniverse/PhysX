@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -59,8 +59,9 @@ static const char* AllocString(const char* str)
 {
     if (!str)
         return nullptr;
-    char* mem = (char*)LOCAL_MALLOC(strlen(str) + 1);
-    strcpy(mem, str);
+    size_t len = strlen(str) + 1;
+    char* mem = (char*)LOCAL_MALLOC(len);
+    memcpy(mem, str, len);
     return mem;
 }
 

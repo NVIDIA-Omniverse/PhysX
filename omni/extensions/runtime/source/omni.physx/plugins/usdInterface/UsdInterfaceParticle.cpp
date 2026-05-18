@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -11,7 +11,6 @@
 #include <usdLoad/Mass.h>
 
 #include <particles/PhysXParticlePost.h>
-#include <particles/FabricParticles.h>
 #include <common/utilities/UsdMaterialParsing.h>
 
 #include <PhysXTools.h>
@@ -513,10 +512,6 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
     internalParticleSet->mPositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, particleDesc.maxParticles);
     internalParticleSet->mVelocities = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, particleDesc.maxParticles);
 
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    internalParticleSet->mFabric = particleDesc.useFabric;
-#endif
-
     const std::vector<carb::Float3>& positionSrc = particleDesc.simulationPoints.empty() ? particleDesc.points : particleDesc.simulationPoints;
 
     for (int index = 0; index < particleDesc.numParticles; ++index)
@@ -524,7 +519,7 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
         internalParticleSet->mPhases[index] = internalParticleSet->mPhase;
 
         GfVec3f localPos = { positionSrc[index].x, positionSrc[index].y, positionSrc[index].z };
-        GfVec3f pos = localToWorld.Transform(localPos);
+        GfVec3f pos = pxr::GfVec3f(localToWorld.Transform(localPos));
 
         internalParticleSet->mPositions[index] = PxVec4(pos[0], pos[1], pos[2], internalParticleSet->mParticleInvMass);
 
@@ -582,13 +577,6 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
     {
         internalParticleSet->mPositions[index] = PxVec4(0.0f, 0.0f, 0.0f, internalParticleSet->mParticleInvMass);
     }
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    if (internalParticleSet->mFabric)
-    {
-        OmniPhysX::getInstance().getFabricParticles()->initializeParticleSet(internalParticleSet);
-    }
-#endif
 
     // create primVars for Q1/Q2/Q3
     if (hasAnisotropy && usdPrim.IsA<UsdGeomPoints>())
@@ -717,13 +705,13 @@ ObjectId PhysXUsdPhysicsInterface::createParticleClothDeprecated(usdparser::Atta
     for (int index = 0; index < numParticles; ++index)
     {
         GfVec3f position = { clothDesc.points[index].x, clothDesc.points[index].y, clothDesc.points[index].z };
-        GfVec3f p = localToWorld.Transform(position);
+        GfVec3f p = pxr::GfVec3f(localToWorld.Transform(position));
 
         internalCloth->mPhases[index] = phase;
         internalCloth->mPositions[index] = PxVec4(p[0], p[1], p[2], invMassPerParticle[index]);
 
         GfVec3f restPos = { clothDesc.restPoints[index].x, clothDesc.restPoints[index].y, clothDesc.restPoints[index].z };
-        GfVec3f pRest = localToWorld.Transform(restPos);
+        GfVec3f pRest = pxr::GfVec3f(localToWorld.Transform(restPos));
 
         internalCloth->mVelocities[index] = PxVec4(clothDesc.velocities[index].x, clothDesc.velocities[index].y, clothDesc.velocities[index].z, 0.0f);
 

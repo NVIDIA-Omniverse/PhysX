@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1728,9 +1728,11 @@ class PxScene : public PxSceneSQSystem
 
 	\note The scene flag eENABLE_SOLVER_RESIDUAL_REPORTING must be set, otherwise the residual will not be computed and the function will return zero.
 
+	\deprecated
+
 	\return The residual as a root mean squared or max value of the all corrections applied by the solver in the last position and in the last velocity iteration.
 	*/
-	virtual		PxSceneResidual		getSolverResidual() const = 0;
+	PX_DEPRECATED virtual	PxSceneResidual		getSolverResidual() const = 0;
 
 	/**
 	\brief Sets the post-solve callback for deformable surface GPU computations. Allows to schedule custom work to be done by the GPU as soon as possible after the deformable surface solver finishes.

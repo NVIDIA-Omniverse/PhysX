@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import typing
 import os
@@ -1147,6 +1148,8 @@ class RunnerInContextAsync(Runner):
 
         if self.sync_params.sync_fabric:
             self.iphysx_fc.detach_stage()
+
+        self.iphysx.reset_simulation()
 
         # restore stage settings
         await omni.kit.app.get_app().next_update_async()

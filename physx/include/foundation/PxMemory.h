@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -47,7 +47,7 @@ namespace physx
 
 	\return Pointer to memory block (same as input)
 	*/
-	PX_FORCE_INLINE void* PxMemZero(void* dest, PxU32 count)
+	PX_FORCE_INLINE void* PxMemZero(void* dest, PxU64 count)
 	{
 		// This is to avoid undefined behavior
 		return (count != 0) ? physx::intrinsics::memZero(dest, count) : NULL;
@@ -62,7 +62,7 @@ namespace physx
 
 	\return Pointer to memory block (same as input)
 	*/
-	PX_FORCE_INLINE void* PxMemSet(void* dest, PxI32 c, PxU32 count)
+	PX_FORCE_INLINE void* PxMemSet(void* dest, PxI32 c, PxU64 count)
 	{
 		// This is to avoid undefined behavior
 		return (count != 0) ? physx::intrinsics::memSet(dest, c, count) : NULL;
@@ -79,7 +79,7 @@ namespace physx
 
 	\return Pointer to destination memory block
 	*/
-	PX_FORCE_INLINE void* PxMemCopy(void* dest, const void* src, PxU32 count)
+	PX_FORCE_INLINE void* PxMemCopy(void* dest, const void* src, PxU64 count)
 	{
 		// This is to avoid undefined behavior
 		return (count != 0) ? physx::intrinsics::memCopy(dest, src, count) : NULL;
@@ -96,7 +96,7 @@ namespace physx
 
 	\return Pointer to destination memory block
 	*/
-	PX_FORCE_INLINE void* PxMemMove(void* dest, const void* src, PxU32 count)
+	PX_FORCE_INLINE void* PxMemMove(void* dest, const void* src, PxU64 count)
 	{
 		return physx::intrinsics::memMove(dest, src, count);
 	}

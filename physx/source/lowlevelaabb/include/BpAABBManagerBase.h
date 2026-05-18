@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -109,7 +109,7 @@ namespace Bp
 	{
 												PX_NOCOPY(BoundsArray)
 	public:
-												BoundsArray(PxVirtualAllocator& allocator) : mBounds(allocator), mHasAnythingChanged(true)	{} //needs to be set explicitly for PxgBounds first copy
+												BoundsArray(PxVirtualAllocator& allocator) : mBounds(allocator.getCallback()), mHasAnythingChanged(true)	{} //needs to be set explicitly for PxgBounds first copy
 
 		virtual									~BoundsArray(){}
 
@@ -131,7 +131,6 @@ namespace Bp
 													mHasAnythingChanged = true;
 												}
 
-
 		virtual void							setBounds(const PxBounds3& bounds, PxU32 index)
 												{
 	//												PX_CHECK_AND_RETURN(bounds.isValid() && !bounds.isEmpty(), "BoundsArray::setBounds - illegal bounds\n");
@@ -141,7 +140,7 @@ namespace Bp
 
 		PX_FORCE_INLINE const PxBounds3*		begin()					const	{ return mBounds.begin();		}
 		PX_FORCE_INLINE PxBounds3*				begin()							{ return mBounds.begin();		}
-		PX_FORCE_INLINE PxBoundsArrayPinned&	getBounds()						{ return mBounds;				}
+		PX_FORCE_INLINE PxBoundsArrayPinnedSafe&	getBounds()					{ return mBounds;				}
 		PX_FORCE_INLINE	const PxBounds3&		getBounds(PxU32 index)	const	{ return mBounds[index];		}
 		PX_FORCE_INLINE PxU32					size()					const	{ return mBounds.size();		}
 		PX_FORCE_INLINE	bool					hasChanged()			const	{ return mHasAnythingChanged;	}
@@ -160,7 +159,7 @@ namespace Bp
 													mHasAnythingChanged = true;
 												}
 	protected:
-						PxBoundsArrayPinned		mBounds;
+						PxBoundsArrayPinnedSafe	mBounds;
 						bool					mHasAnythingChanged;
 	};
 

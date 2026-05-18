@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -43,8 +43,6 @@ using namespace omni::fabric;
 
 extern carb::settings::ISettings* gSettings;
 
-const omni::fabric::IToken* omni::fabric::Token::iToken = nullptr;
-
 pxr::UsdStageRefPtr gStage = nullptr;
 omni::physx::IPhysxPrivate* gPhysXPrivate = nullptr;
 
@@ -71,10 +69,10 @@ namespace
 
     GfMatrix4d computeLocalMatrix(omni::fabric::USDHierarchy& usdHierarchy, omni::fabric::StageReaderWriter& stage,
                                   const omni::fabric::Path& path, const GfMatrix4d& worldMatrix, 
-                                  const omni::fabric::TokenC& worldMatrixToken)
+                                  const omni::fabric::Token& worldMatrixToken)
     {
-        omni::fabric::PathC parentPath = usdHierarchy.getParent(path);
-        while (parentPath != omni::fabric::kUninitializedPath)
+        omni::fabric::Path parentPath = usdHierarchy.getParent(path);
+        while (parentPath != omni::fabric::Path())
         {
             const pxr::GfMatrix4d* parentWorldMatrix = stage.getAttributeRd<pxr::GfMatrix4d>(parentPath, worldMatrixToken);
             if (parentWorldMatrix)
@@ -185,30 +183,28 @@ FabricManager::FabricManager()
 
     gPhysXPrivate = carb::getCachedInterface<omni::physx::IPhysxPrivate>();
 
-    omni::fabric::Token::iToken = getFramework()->tryAcquireInterface<omni::fabric::IToken>();
+    mWorldMatrixToken = omni::fabric::Token::createImmortal(gWorldMatrixTokenString);
+    mLocalMatrixToken = omni::fabric::Token::createImmortal(gLocalMatrixTokenString);
+    mWorldForceToken = omni::fabric::Token::createImmortal(gWorldForceTokenString);
+    mWorldTorqueToken = omni::fabric::Token::createImmortal(gWorldTorqueTokenString);
+    mPointsToken = omni::fabric::Token::createImmortal(gPointsTokenString);
+    mInitPointsToken = omni::fabric::Token::createImmortal(gInitPointsTokenString);
+    mPhysXPtrToken = omni::fabric::Token::createImmortal(gPhysXPtrTokenString);
+    mPhysXPtrInstancedToken = omni::fabric::Token::createImmortal(gPhysXPtrInstancedTokenString);
 
-    mWorldMatrixToken = omni::fabric::Token::iToken->getHandle(gWorldMatrixTokenString);
-    mLocalMatrixToken = omni::fabric::Token::iToken->getHandle(gLocalMatrixTokenString);
-    mWorldForceToken = omni::fabric::Token::iToken->getHandle(gWorldForceTokenString);
-    mWorldTorqueToken = omni::fabric::Token::iToken->getHandle(gWorldTorqueTokenString);
-    mPointsToken = omni::fabric::Token::iToken->getHandle(gPointsTokenString);
-    mInitPointsToken = omni::fabric::Token::iToken->getHandle(gInitPointsTokenString);
-    mPhysXPtrToken = omni::fabric::Token::iToken->getHandle(gPhysXPtrTokenString);
-    mPhysXPtrInstancedToken = omni::fabric::Token::iToken->getHandle(gPhysXPtrInstancedTokenString);
+    mDynamicBodyToken = omni::fabric::Token::createImmortal(gDynamicBodyTokenString);
 
-    mDynamicBodyToken = omni::fabric::Token::iToken->getHandle(gDynamicBodyTokenString);
+    mLinVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsVelocity.GetText());
+    mAngVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsAngularVelocity.GetText());
 
-    mLinVelToken = omni::fabric::Token::iToken->getHandle(UsdPhysicsTokens->physicsVelocity.GetText());
-    mAngVelToken = omni::fabric::Token::iToken->getHandle(UsdPhysicsTokens->physicsAngularVelocity.GetText());
+    mResidualRmsPosIterToken = omni::fabric::Token::createImmortal(PhysxSchemaTokens->physxResidualReportingRmsResidualPositionIteration.GetText());
+    mResidualMaxPosIterToken = omni::fabric::Token::createImmortal(PhysxSchemaTokens->physxResidualReportingMaxResidualPositionIteration.GetText());
+    mResidualRmsVelIterToken = omni::fabric::Token::createImmortal(PhysxSchemaTokens->physxResidualReportingRmsResidualVelocityIteration.GetText());
+    mResidualMaxVelIterToken = omni::fabric::Token::createImmortal(PhysxSchemaTokens->physxResidualReportingMaxResidualVelocityIteration.GetText());
 
-    mResidualRmsPosIterToken = omni::fabric::Token::iToken->getHandle(PhysxSchemaTokens->physxResidualReportingRmsResidualPositionIteration.GetText());
-    mResidualMaxPosIterToken = omni::fabric::Token::iToken->getHandle(PhysxSchemaTokens->physxResidualReportingMaxResidualPositionIteration.GetText());
-    mResidualRmsVelIterToken = omni::fabric::Token::iToken->getHandle(PhysxSchemaTokens->physxResidualReportingRmsResidualVelocityIteration.GetText());
-    mResidualMaxVelIterToken = omni::fabric::Token::iToken->getHandle(PhysxSchemaTokens->physxResidualReportingMaxResidualVelocityIteration.GetText());
-
-    mRigidBodyWorldPositionToken = omni::fabric::Token::iToken->getHandle(gRigidBodyWorldPositionTokenString);
-    mRigidBodyWorldOrientationToken = omni::fabric::Token::iToken->getHandle(gRigidBodyWorldOrientationTokenString);
-    mRigidBodyWorldScaleToken = omni::fabric::Token::iToken->getHandle(gRigidBodyWorldScaleTokenString);
+    mRigidBodyWorldPositionToken = omni::fabric::Token::createImmortal(gRigidBodyWorldPositionTokenString);
+    mRigidBodyWorldOrientationToken = omni::fabric::Token::createImmortal(gRigidBodyWorldOrientationTokenString);
+    mRigidBodyWorldScaleToken = omni::fabric::Token::createImmortal(gRigidBodyWorldScaleTokenString);
 
     mFloat1Type = omni::fabric::Type(
         omni::fabric::BaseDataType::eFloat, 1, 0, omni::fabric::AttributeRole::eNone);
@@ -427,17 +423,17 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
             const size_t minBatchSize = 2000;
             const size_t numThreads = tasking->getDesc().threadCount;
 
-            const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenRigidBody),
-                                                                       AttrNameAndType_v2(typeAppliedType, mDynamicBodyToken) };
-            const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(typeMatrix4d, mWorldMatrixToken),
-                                                                        AttrNameAndType_v2(typeMatrix4d, mLocalMatrixToken),
-                                                                        AttrNameAndType_v2(typeFloat3, mLinVelToken),
-                                                                        AttrNameAndType_v2(typeFloat3, mAngVelToken),
-                                                                        AttrNameAndType_v2(typeUint64, mPhysXPtrToken),
-                                                                        AttrNameAndType_v2(typeUint64, mPhysXPtrInstancedToken),
-                                                                        AttrNameAndType_v2(typeDouble3, mRigidBodyWorldPositionToken),
-                                                                        AttrNameAndType_v2(typeQuat, mRigidBodyWorldOrientationToken),
-                                                                        AttrNameAndType_v2(typeFloat3, mRigidBodyWorldScaleToken) };
+            const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenRigidBody),
+                                                                       AttrNameAndType(typeAppliedType, mDynamicBodyToken) };
+            const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeMatrix4d, mWorldMatrixToken),
+                                                                        AttrNameAndType(typeMatrix4d, mLocalMatrixToken),
+                                                                        AttrNameAndType(typeFloat3, mLinVelToken),
+                                                                        AttrNameAndType(typeFloat3, mAngVelToken),
+                                                                        AttrNameAndType(typeUint64, mPhysXPtrToken),
+                                                                        AttrNameAndType(typeUint64, mPhysXPtrInstancedToken),
+                                                                        AttrNameAndType(typeDouble3, mRigidBodyWorldPositionToken),
+                                                                        AttrNameAndType(typeQuat, mRigidBodyWorldOrientationToken),
+                                                                        AttrNameAndType(typeFloat3, mRigidBodyWorldScaleToken) };
 
             PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             size_t bucketCount = primBuckets.bucketCount();
@@ -518,7 +514,7 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
                                   rigidBodyWorldTransformation.q.z });
 
                         pxr::GfVec3d scale(1.0);
-                        TransformationCache::const_iterator fit = mInitialTransformation.find(PathC(path).path);
+                        TransformationCache::const_iterator fit = mInitialTransformation.find(path);
                         if (fit != mInitialTransformation.end())
                         {
 
@@ -549,11 +545,11 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
         if (updateTransformations)
         {
             CARB_PROFILE_ZONE(0, "FabricManager::update - Vehicle Wheels");
-           const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenVehicleWheelAttachment),
-                                                                       AttrNameAndType_v2(typeMatrix4d, mWorldMatrixToken),
-                                                                       AttrNameAndType_v2(typeMatrix4d, mLocalMatrixToken)
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenVehicleWheelAttachment),
+                                                                       AttrNameAndType(typeMatrix4d, mWorldMatrixToken),
+                                                                       AttrNameAndType(typeMatrix4d, mLocalMatrixToken)
             };
-            //AttrNameAndType_v2(typeFloat3, tokenScale) };
+            //AttrNameAndType(typeFloat3, tokenScale) };
 
             PrimBucketList primBuckets = stage.findPrims(requiredAll);
             size_t bucketCount = primBuckets.bucketCount();
@@ -575,7 +571,7 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
                         const int wheelIndex = iPhysX->getWheelIndex(usdPath);
                         if (wheelIndex >= 0)
                         {
-                            WheelMap::const_iterator fit = mWheelVehicleMap.find(PathC(path).path);
+                            WheelMap::const_iterator fit = mWheelVehicleMap.find(path);
                             if (fit != mWheelVehicleMap.end() && fit->second > 0)
                             {
                                 omni::physx::usdparser::ObjectId vehicleId = fit->second;
@@ -590,7 +586,7 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
                                     pxr::GfQuatd rotation(wOrient.w, wOrient.x, wOrient.y, wOrient.z);
                                     pxr::GfVec3f scale(1.0f);
                                     TransformationCache::const_iterator fit =
-                                        mInitialTransformation.find(PathC(path).path);
+                                        mInitialTransformation.find(path);
                                     if (fit != mInitialTransformation.end())
                                     {
 
@@ -628,11 +624,11 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
         {
             CARB_PROFILE_ZONE(0, "FabricManager::update - Residuals");
 
-            const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenResidualReporting) };
-            const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(typeFloat, mResidualRmsPosIterToken),
-                AttrNameAndType_v2(typeFloat, mResidualMaxPosIterToken),
-                AttrNameAndType_v2(typeFloat, mResidualRmsVelIterToken) ,
-                AttrNameAndType_v2(typeFloat, mResidualMaxVelIterToken) };
+            const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenResidualReporting) };
+            const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeFloat, mResidualRmsPosIterToken),
+                AttrNameAndType(typeFloat, mResidualMaxPosIterToken),
+                AttrNameAndType(typeFloat, mResidualRmsVelIterToken) ,
+                AttrNameAndType(typeFloat, mResidualMaxVelIterToken) };
 
             const PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             const size_t bucketCount = primBuckets.bucketCount();
@@ -709,9 +705,9 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
             for(auto& ts : mTokenJointStates)
             {
                 const Token tokenJointStateAPI = ts.token;
-               const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenJointStateAPI) };
-               const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(typeFloat, ts.madPositionToken),
-                                                                        AttrNameAndType_v2(typeFloat,  ts.madVelocityToken) };
+               const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenJointStateAPI) };
+               const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeFloat, ts.madPositionToken),
+                                                                        AttrNameAndType(typeFloat,  ts.madVelocityToken) };
 
                 PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
                 size_t bucketCount = primBuckets.bucketCount();
@@ -742,7 +738,7 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
                             continue;
                         }
 
-                        JointStateCache::const_iterator it = mInitialJointStates.find(PathC(path).path);
+                        JointStateCache::const_iterator it = mInitialJointStates.find(path);
                         if (it != mInitialJointStates.end())
                         {
                             const omni::physx::JointStateData& jointStateData = it->second;
@@ -751,7 +747,7 @@ void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdat
                             {
                                 if(!jointStateData.enabled[jointAxis])
                                     continue;
-                                if(jointStateData.fabricTokenC[jointAxis] != omni::fabric::asInt(ts.usdToken).token)
+                                if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
                                     continue;
                                 if(jointStateData.physxAxis[jointAxis] != ts.physxAxis)
                                     continue;
@@ -820,14 +816,14 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
     {
         bool validPath;
         bool usdPath;
-        omni::fabric::PathC path;
+        omni::fabric::Path path;
         bool dynamicBody;
         GfTransform transform;
     };
 
     const size_t numPaths = rbPaths.size();
     std::vector<RigidBodyInitData> rbInitData(numPaths);
-    std::unordered_map<omni::fabric::PathC, GfTransform> rbInitTransforms;
+    std::unordered_map<omni::fabric::Path, GfTransform> rbInitTransforms;
 
     usdrt::UsdStageRefPtr usdrtStage = usdrt::UsdStage::Attach(mStageId.id, stageInProgress);
 
@@ -835,19 +831,19 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
     const size_t batchSize = 200;
     const size_t numBatches = (numPaths / batchSize) + 1;
 
-    auto&& computeFunc = [this, usdrtStage,&stage, numPaths, batchSize, numBatches, rbPaths,
+    auto&& computeFunc = [this, usdrtStage, &stage, numPaths, batchSize, numBatches, rbPaths,
                           &rbInitData](size_t batchIndex)
     {
         const size_t startIndex = batchIndex * batchSize;
         const size_t endIndex = (batchIndex == (numBatches - 1)) ? numPaths : (batchIndex + 1) * batchSize;
         for (size_t i = startIndex; i < endIndex; i++)
         {
-            const omni::fabric::PathC pathC(rbPaths[i]);
-            auto iterProto = mPointInstanceProtos.find(pathC.path);
+            const omni::fabric::Path pathC(rbPaths[i]);
+            auto iterProto = mPointInstanceProtos.find(pathC);
             const pxr::SdfPath usdPath = (iterProto != mPointInstanceProtos.end()) ? iterProto->second.usdProtoPath : omni::fabric::toSdfPath(pathC);
             const UsdPrim prim = gStage->GetPrimAtPath(usdPath);
             
-            const TransformationCache::const_iterator initialtranformFit = mInitialTransformation.find(pathC.path);
+            const TransformationCache::const_iterator initialtranformFit = mInitialTransformation.find(pathC);
             if (initialtranformFit != mInitialTransformation.end())
             {
                 // already initialized
@@ -889,7 +885,7 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
                             }
                             rbInitData[i].dynamicBody = true;
                         }
-                        rbInitData[i].path = omni::fabric::PathC(rbPaths[i]);                        
+                        rbInitData[i].path = omni::fabric::Path(rbPaths[i]);                        
                         rbInitData[i].validPath = true;
                         rbInitData[i].usdPath = false;
                     }
@@ -916,7 +912,7 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
                         rbInitData[i].transform = tr;
                         rbInitData[i].dynamicBody = true;
                     }
-                    rbInitData[i].path = omni::fabric::PathC(rbPaths[i]);                    
+                    rbInitData[i].path = omni::fabric::Path(rbPaths[i]);                    
                     rbInitData[i].validPath = true;
                     rbInitData[i].usdPath = true;
                 }
@@ -951,7 +947,7 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
                     const GfVec3d& wScale = initData.transform.GetScale();
                     Float3 scale = { float(wScale[0]), float(wScale[1]), float(wScale[2]) };
 
-                    auto& initTrans = mInitialTransformation[initData.path.path];
+                    auto& initTrans = mInitialTransformation[initData.path];
                     initTrans.translation = pos;
                     initTrans.orientation = orient;
                     initTrans.scale = scale;
@@ -1010,7 +1006,7 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
             }
         };
         using PrimsByBucket = tbb::concurrent_hash_map<omni::fabric::BucketNamesAndTypes,
-                                                            std::vector<omni::fabric::PathC>, TbbAttrNameAndTypeCompare>;
+                                                            std::vector<omni::fabric::Path>, TbbAttrNameAndTypeCompare>;
 
         // Figure out the buckets we have
         PrimsByBucket rbsByBucket;
@@ -1033,7 +1029,7 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
             PrimsByBucket::accessor accessor;
             if (rbsByBucket.insert(accessor, std::move(bucket)))
             {
-                accessor->second = std::vector<omni::fabric::PathC>();
+                accessor->second = std::vector<omni::fabric::Path>();
             }
             accessor->second.push_back(initData.path);
         };
@@ -1078,11 +1074,11 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
 
         omni::fabric::USDHierarchy usdHierarchy(stage.getFabricId());
 
-        const omni::fabric::set<AttrNameAndType_v2> requiredAll = {
-            AttrNameAndType_v2(typeAppliedSchema, tokenRigidBody), AttrNameAndType_v2(typeAppliedType, mDynamicBodyToken)
+        const omni::fabric::set<AttrNameAndType> requiredAll = {
+            AttrNameAndType(typeAppliedSchema, tokenRigidBody), AttrNameAndType(typeAppliedType, mDynamicBodyToken)
         };
-        const omni::fabric::set<AttrNameAndType_v2> requiredAny = {
-             AttrNameAndType_v2(typeMatrix4d, mWorldMatrixToken), AttrNameAndType_v2(typeMatrix4d, mLocalMatrixToken)
+        const omni::fabric::set<AttrNameAndType> requiredAny = {
+             AttrNameAndType(typeMatrix4d, mWorldMatrixToken), AttrNameAndType(typeMatrix4d, mLocalMatrixToken)
         };
 
         PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
@@ -1098,7 +1094,7 @@ void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>
             {
                 pxr::GfMatrix4d wMat(1.0);
 
-                std::unordered_map<omni::fabric::PathC, GfTransform>::const_iterator fit = rbInitTransforms.find(path);
+                std::unordered_map<omni::fabric::Path, GfTransform>::const_iterator fit = rbInitTransforms.find(path);
                 if (fit != rbInitTransforms.end())
                 {
                     const GfTransform& tr = fit->second;
@@ -1123,7 +1119,9 @@ void FabricManager::toggleKinematics(bool kinematics, const UsdPrim& usdPrim)
         StageReaderWriterId stageInProgress = iStageReaderWriter->get(mStageId);
         StageReaderWriter stage(stageInProgress);
 
-        const omni::fabric::PathC primPath = omni::fabric::asInt(usdPrim.GetPrimPath());
+        const omni::fabric::Path primPath =
+            omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), usdPrim.GetPrimPath());
+
         if (!kinematics)
         {
             std::vector<usdrt::SdfPath> paths;
@@ -1142,7 +1140,10 @@ void FabricManager::initializeWheel(pxr::UsdGeomXformCache& xfCache, const pxr::
     const GfMatrix4d worldPose = xfCache.GetLocalToWorldTransform(prim);
     const GfTransform tr(worldPose);
 
-    omni::fabric::PathC primPath = omni::fabric::asInt(prim.GetPrimPath());
+    StageReaderWriter stage(stageInProgress);
+
+    omni::fabric::Path primPath =
+        omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), prim.GetPrimPath());
 
     iStageReaderWriter->createAttribute(
         stageInProgress, primPath, mWorldMatrixToken, (omni::fabric::TypeC)mMatrix4dType);
@@ -1158,14 +1159,14 @@ void FabricManager::initializeWheel(pxr::UsdGeomXformCache& xfCache, const pxr::
         if (parent.HasAPI<PhysxSchemaPhysxVehicleAPI>())
         {
             const usdparser::ObjectId objectId = iPhysX->getObjectId(parent.GetPrimPath(), ePTVehicle);
-            mWheelVehicleMap[primPath.path] = objectId;
+            mWheelVehicleMap[primPath] = objectId;
             break;
         }
         parent = parent.GetParent();
     }
 
     // store the initial transformations so that we move things back
-    const TransformationCache::const_iterator fit = mInitialTransformation.find(primPath.path);
+    const TransformationCache::const_iterator fit = mInitialTransformation.find(primPath);
     if (fit == mInitialTransformation.end())
     {
         const GfVec3d wPos = tr.GetTranslation();
@@ -1176,7 +1177,7 @@ void FabricManager::initializeWheel(pxr::UsdGeomXformCache& xfCache, const pxr::
         const GfVec3d wScale = tr.GetScale();
         Float3 scale = { float(wScale[0]), float(wScale[1]), float(wScale[2]) };
 
-        auto& initTrans = mInitialTransformation[primPath.path];
+        auto& initTrans = mInitialTransformation[primPath];
         initTrans.translation = pos;
         initTrans.orientation = orient;
         initTrans.scale = scale;
@@ -1189,7 +1190,7 @@ void FabricManager::initializeResiduals(const pxr::UsdPrim& prim,
 {
     StageReaderWriter stage(stageInProgress);
     const pxr::SdfPath usdPath = prim.GetPrimPath();
-    omni::fabric::PathC primPath = omni::fabric::asInt(usdPath);
+    omni::fabric::Path primPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), usdPath);
 
     std::array<AttrNameAndType, 4> attrNameTypeVec = {
                 AttrNameAndType(mFloat1Type, mResidualRmsPosIterToken),
@@ -1209,9 +1210,9 @@ void FabricManager::initializeJointState(const pxr::UsdPrim& prim,
     IPhysxJoint* iPhysxJoint = carb::getCachedInterface<IPhysxJoint>();
     IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
     const pxr::SdfPath usdPath = prim.GetPrimPath();
-    omni::fabric::PathC primPath = omni::fabric::asInt(usdPath);
+     omni::fabric::Path primPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), usdPath);
 
-    JointStateCache::const_iterator fit = mInitialJointStates.find(primPath.path);
+    JointStateCache::const_iterator fit = mInitialJointStates.find(primPath);
     if (fit != mInitialJointStates.end())
     {
         // already initialized
@@ -1222,7 +1223,7 @@ void FabricManager::initializeJointState(const pxr::UsdPrim& prim,
 
     omni::physx::JointStateData jointStateData;
     iPhysxJoint->getJointStateData(objectId, &jointStateData);
-    mInitialJointStates[primPath.path] = jointStateData;
+    mInitialJointStates[primPath] = jointStateData;
     for (auto& ts : mTokenJointStates)
     {
         const Token tokenJointStateAPI = ts.token;
@@ -1232,7 +1233,7 @@ void FabricManager::initializeJointState(const pxr::UsdPrim& prim,
                 continue;
             // This is needed because otherwise we would be creating both angular and rotX outputs for RevoluteJoint
             // as they both map to physx eTWIST
-            if(jointStateData.fabricTokenC[jointAxis] != omni::fabric::asInt(ts.usdToken).token)
+            if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
                 continue;
             if (jointStateData.physxAxis[jointAxis] != ts.physxAxis)
                 continue;
@@ -1343,7 +1344,7 @@ void FabricManager::resume()
                 CARB_PROFILE_ZONE(0, "FabricManager::resume:wheelAttachmentInitialization");
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxVehicleWheelAttachmentAPI")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                     if (prim)
@@ -1361,7 +1362,7 @@ void FabricManager::resume()
                 {
                     for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken(schemaName)))
                     {
-                        const omni::fabric::PathC pathC(usdrtPath);
+                        const omni::fabric::Path pathC(usdrtPath);
                         const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                         const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                         if (prim)
@@ -1374,7 +1375,7 @@ void FabricManager::resume()
                 CARB_PROFILE_ZONE(0, "FabricManager::resume:residualInitialization");
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxResidualReportingAPI")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                     if (prim)
@@ -1385,7 +1386,7 @@ void FabricManager::resume()
                 CARB_PROFILE_ZONE(0, "FabricManager::resume:deformableBodyInitialization");
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxDeformableBodyAPI")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                     if (prim)
@@ -1396,7 +1397,7 @@ void FabricManager::resume()
                 CARB_PROFILE_ZONE(0, "FabricManager::resume:deformableSurfaceInitialization");
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxDeformableSurfaceAPI")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                     if (prim)
@@ -1407,7 +1408,7 @@ void FabricManager::resume()
                 CARB_PROFILE_ZONE(0, "FabricManager::resume:particleClothInitialization");
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxParticleClothAPI")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                     if (prim)
@@ -1418,7 +1419,7 @@ void FabricManager::resume()
                 CARB_PROFILE_ZONE(0, "FabricManager::resume:deformableBodyInitialization");
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("OmniPhysicsDeformableBodyAPI")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
                     if (prim)
@@ -1545,29 +1546,39 @@ void FabricManager::setInitialTransformations()
         {
             for (const auto& instancer : mInitialPointInstancers)
             {
-                const omni::fabric::Path instPath = omni::fabric::asInt(instancer.first);
+                const omni::fabric::Path instPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), instancer.first);
                 if (!stage.primExists(instPath))
                 {
-                    CARB_LOG_WARN("FabricManager::update invalid point instancer: %s.", instPath.getText());
+                    CARB_LOG_WARN("FabricManager::update invalid point instancer: %s.", instPath.getString().c_str());
                     continue;
                 }
                 const size_t count = instancer.second.positions.size();
-                if (count != stage.getArrayAttributeSize(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->positions)))
+                if (count !=
+                    stage.getArrayAttributeSize(instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(
+                                                              stage.getFabricId(), pxr::UsdGeomTokens->positions)))
                 {
-                    stage.setArrayAttributeSize(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->positions), count);
+                    stage.setArrayAttributeSize(instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(
+                                                              stage.getFabricId(), pxr::UsdGeomTokens->positions), count);
                 }
-                if (count != stage.getArrayAttributeSize(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->orientations)))
+                if (count !=
+                    stage.getArrayAttributeSize(instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(
+                                                              stage.getFabricId(), pxr::UsdGeomTokens->orientations)))
                 {
-                    stage.setArrayAttributeSize(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->orientations), count);
+                    stage.setArrayAttributeSize(instPath,
+                                                omni::fabric::convertToTokenType<omni::fabric::Token>(
+                                                    stage.getFabricId(), pxr::UsdGeomTokens->orientations),
+                                                count);
                 }
-                gsl::span<pxr::GfVec3f> positions =
-                    stage.getArrayAttribute<pxr::GfVec3f>(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->positions));
+                gsl::span<pxr::GfVec3f> positions = stage.getArrayAttribute<pxr::GfVec3f>(
+                    instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(
+                                  stage.getFabricId(), pxr::UsdGeomTokens->positions));
                 gsl::span<pxr::GfQuath> orientations = stage.getArrayAttribute<pxr::GfQuath>(
-                    instPath, omni::fabric::asInt(pxr::UsdGeomTokens->orientations));
+                    instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(
+                                  stage.getFabricId(), pxr::UsdGeomTokens->orientations));
                 if (positions.size() != count || orientations.size() != count)
                 {
                     CARB_LOG_WARN("FabricManager::update mismatched array attribute size on point instancer: %s.",
-                                   instPath.getText());
+                                  instPath.getString().c_str());
                     continue;
                 }
                 memcpy(positions.data(), instancer.second.positions.data(), sizeof(pxr::GfVec3f) * count);
@@ -1577,12 +1588,12 @@ void FabricManager::setInitialTransformations()
 
         // Update vehicles (rigid bodies)
         {
-           const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenRigidBody),
-                                                                     AttrNameAndType_v2(typeAppliedType, mDynamicBodyToken) };
-           const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(typeMatrix4d, tokenWorldMatrix),
-                                                                     AttrNameAndType_v2(typeMatrix4d, tokenLocalMatrix),
-                                                                     AttrNameAndType_v2(typeFloat3, tokenLinVelocity),
-                                                                     AttrNameAndType_v2(typeFloat3, tokenAngularVelocity) };
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenRigidBody),
+                                                                     AttrNameAndType(typeAppliedType, mDynamicBodyToken) };
+           const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeMatrix4d, tokenWorldMatrix),
+                                                                     AttrNameAndType(typeMatrix4d, tokenLocalMatrix),
+                                                                     AttrNameAndType(typeFloat3, tokenLinVelocity),
+                                                                     AttrNameAndType(typeFloat3, tokenAngularVelocity) };
 
             PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             size_t bucketCount = primBuckets.bucketCount();
@@ -1597,7 +1608,7 @@ void FabricManager::setInitialTransformations()
                 size_t j = 0;
                 for (const omni::fabric::Path& path : paths)
                 {
-                    TransformationCache::const_iterator fit = mInitialTransformation.find(PathC(path).path);
+                    TransformationCache::const_iterator fit = mInitialTransformation.find(path);
                     if (fit != mInitialTransformation.end())
                     {
                         pxr::GfVec3d t(double(fit->second.translation.x), double(fit->second.translation.y),
@@ -1620,9 +1631,9 @@ void FabricManager::setInitialTransformations()
         // Update vehicle wheels
         {
             CARB_PROFILE_ZONE(0, "FabricManager::update - Vehicle Wheels");
-           const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenVehicleWheelAttachment),
-                                                                       AttrNameAndType_v2(typeDouble3, tokenLocalMatrix),
-                                                                       AttrNameAndType_v2(typeDouble3, tokenWorldMatrix)};
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenVehicleWheelAttachment),
+                                                                       AttrNameAndType(typeDouble3, tokenLocalMatrix),
+                                                                       AttrNameAndType(typeDouble3, tokenWorldMatrix)};
 
             PrimBucketList primBuckets = stage.findPrims(requiredAll);
             size_t bucketCount = primBuckets.bucketCount();
@@ -1640,7 +1651,7 @@ void FabricManager::setInitialTransformations()
                     size_t j = 0;
                     for (const omni::fabric::Path& path : paths)
                     {
-                        TransformationCache::const_iterator it = mInitialTransformation.find(PathC(path).path);
+                        TransformationCache::const_iterator it = mInitialTransformation.find(path);
                         if (it != mInitialTransformation.end())
                         {
                             pxr::GfVec3d t(double(it->second.translation.x), double(it->second.translation.y),
@@ -1673,9 +1684,9 @@ void FabricManager::setInitialTransformations()
             for(auto& ts : mTokenJointStates)
             {
                 const Token tokenJointStateAPI = ts.token;
-               const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenJointStateAPI),
-                                                                        AttrNameAndType_v2(typeFloat, ts.madPositionToken),
-                                                                        AttrNameAndType_v2(typeFloat, ts.madVelocityToken) };
+               const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenJointStateAPI),
+                                                                        AttrNameAndType(typeFloat, ts.madPositionToken),
+                                                                        AttrNameAndType(typeFloat, ts.madVelocityToken) };
 
                 PrimBucketList primBuckets = stage.findPrims(requiredAll);
                 size_t bucketCount = primBuckets.bucketCount();
@@ -1692,7 +1703,7 @@ void FabricManager::setInitialTransformations()
                     size_t fcItemIndex = 0;
                     for (const omni::fabric::Path& path : paths)
                     {
-                        JointStateCache::const_iterator it = mInitialJointStates.find(PathC(path).path);
+                        JointStateCache::const_iterator it = mInitialJointStates.find(path);
                         if (it != mInitialJointStates.end())
                         {
                             const omni::physx::JointStateData& jointStateData = it->second;
@@ -1700,7 +1711,7 @@ void FabricManager::setInitialTransformations()
                             {
                                 if(!jointStateData.enabled[jointAxis])
                                     continue;
-                                if(jointStateData.fabricTokenC[jointAxis] != omni::fabric::asInt(ts.usdToken).token)
+                                if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
                                     continue;
                                 if(jointStateData.physxAxis[jointAxis] != ts.physxAxis)
                                     continue;
@@ -1766,11 +1777,11 @@ void FabricManager::saveToUsd()
 
         // Update rigid bodies to USD
         {
-           const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenRigidBody),
-                                                                     AttrNameAndType_v2(typeAppliedType, mDynamicBodyToken) };
-           const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(typeMatrix4d, tokenWorldMatrix),
-                                                                     AttrNameAndType_v2(typeFloat3, tokenLinVelocity),
-                                                                     AttrNameAndType_v2(typeFloat3, tokenAngularVelocity) };
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenRigidBody),
+                                                                     AttrNameAndType(typeAppliedType, mDynamicBodyToken) };
+           const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeMatrix4d, tokenWorldMatrix),
+                                                                     AttrNameAndType(typeFloat3, tokenLinVelocity),
+                                                                     AttrNameAndType(typeFloat3, tokenAngularVelocity) };
 
             PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             size_t bucketCount = primBuckets.bucketCount();
@@ -1806,7 +1817,7 @@ void FabricManager::saveToUsd()
 
                     omni::usd::UsdUtils::setLocalTransformMatrix(prim, mtx * worldToParentMat, timeCode, false, &changeBlock);
 
-                    TransformationCache::iterator it = mInitialTransformation.find(PathC(path).path);
+                    TransformationCache::iterator it = mInitialTransformation.find(path);
                     if (it != mInitialTransformation.end())
                     {
                         const pxr::GfVec3d& pos = tr.GetTranslation();
@@ -1847,9 +1858,9 @@ void FabricManager::saveToUsd()
             for(auto& ts : mTokenJointStates)
             {
                 const Token tokenJointStateAPI = ts.token;
-               const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenJointStateAPI),
-                                                                        AttrNameAndType_v2(typeFloat, ts.madPositionToken),
-                                                                        AttrNameAndType_v2(typeFloat, ts.madVelocityToken) };
+               const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenJointStateAPI),
+                                                                        AttrNameAndType(typeFloat, ts.madPositionToken),
+                                                                        AttrNameAndType(typeFloat, ts.madVelocityToken) };
 
                 PrimBucketList primBuckets = stage.findPrims(requiredAll);
                 size_t bucketCount = primBuckets.bucketCount();
@@ -1868,7 +1879,7 @@ void FabricManager::saveToUsd()
                     {
                         const pxr::SdfPath primPath = omni::fabric::toSdfPath(path);
                         UsdPrim prim = gStage->GetPrimAtPath(primPath);
-                        JointStateCache::iterator it = mInitialJointStates.find(PathC(path).path);
+                        JointStateCache::iterator it = mInitialJointStates.find(path);
                         if (it != mInitialJointStates.end())
                         {
                             omni::physx::JointStateData& jointStateData = it->second;
@@ -1876,7 +1887,7 @@ void FabricManager::saveToUsd()
                             {
                                 if(!jointStateData.enabled[jointAxis])
                                     continue;
-                                if(jointStateData.fabricTokenC[jointAxis] != omni::fabric::asInt(ts.usdToken).token)
+                                if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
                                     continue;
                                 if(jointStateData.physxAxis[jointAxis] != ts.physxAxis)
                                     continue;
@@ -1906,11 +1917,11 @@ void FabricManager::saveToUsd()
         }
         {
             const Token tokenResidualReporting("PhysxResidualReportingAPI");
-            const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenResidualReporting) };
-            const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(typeFloat, mResidualRmsPosIterToken),
-                AttrNameAndType_v2(typeFloat, mResidualMaxPosIterToken),
-                AttrNameAndType_v2(typeFloat, mResidualRmsVelIterToken) ,
-                AttrNameAndType_v2(typeFloat, mResidualMaxVelIterToken) };
+            const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenResidualReporting) };
+            const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeFloat, mResidualRmsPosIterToken),
+                AttrNameAndType(typeFloat, mResidualMaxPosIterToken),
+                AttrNameAndType(typeFloat, mResidualRmsVelIterToken) ,
+                AttrNameAndType(typeFloat, mResidualMaxVelIterToken) };
 
             const PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             const size_t bucketCount = primBuckets.bucketCount();
@@ -1950,14 +1961,14 @@ void FabricManager::saveToUsd()
     }
 }
 
-bool FabricManager::getInitialTransformation(const omni::fabric::PathC& path,
+bool FabricManager::getInitialTransformation(const omni::fabric::Path& path,
                                              carb::Float3& translation,
                                              carb::Float4& orientation,
                                              carb::Float3& scale)
 {
-    if (path != omni::fabric::kUninitializedPath)
+    if (path != omni::fabric::Path())
     {
-        TransformationCache::const_iterator fit = mInitialTransformation.find(path.path);
+        TransformationCache::const_iterator fit = mInitialTransformation.find(path);
         if (fit != mInitialTransformation.end())
         {
             translation = fit->second.translation;
@@ -1983,9 +1994,9 @@ void FabricManager::initializePointInstancer(pxr::UsdStageWeakPtr usdStage,
     instancer.GetPrototypesRel().GetTargets(&protos);
 
     const pxr::SdfPath primPath = prim.GetPrimPath();
-    omni::fabric::PathC fcPath = omni::fabric::asInt(primPath);
+    omni::fabric::Path fcPath = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), primPath);
     auto fcProtos =
-        srw.getArrayAttributeRd<omni::fabric::PathC>(fcPath, omni::fabric::asInt(pxr::UsdGeomTokens->prototypes));
+        srw.getArrayAttributeRd<omni::fabric::Path>(fcPath, omni::fabric::convertToTokenType<omni::fabric::Token>(srw.getFabricId(), pxr::UsdGeomTokens->prototypes));
 
     if (fcProtos.size() != protos.size())
     {
@@ -2061,10 +2072,10 @@ void FabricManager::initializePointInstancer(pxr::UsdStageWeakPtr usdStage,
             continue;
         }
         const auto fcProtoPath = fcProtos[protoIdx]; 
-        auto iter = mPointInstanceProtos.find(fcProtoPath.path);
+        auto iter = mPointInstanceProtos.find(fcProtoPath);
         if (iter == mPointInstanceProtos.end())
         {
-            iter = mPointInstanceProtos.insert({ fcProtoPath.path, {} }).first;
+            iter = mPointInstanceProtos.insert({ fcProtoPath, {} }).first;
             iter->second.instancerPath = prim.GetPrimPath();
             iter->second.usdProtoPath = protos[protoIdx];
             iter->second.protoTransfromInverse = protoData.transformInv;
@@ -2084,7 +2095,7 @@ void FabricManager::parsePointInstancers(pxr::UsdStageWeakPtr usdStage,
     StageReaderWriter srw{stageInProgress};
     for (auto& rtPath : instancerPaths)
     {
-        const omni::fabric::PathC fcPath{rtPath};
+        const omni::fabric::Path fcPath{rtPath};
         const pxr::UsdPrim prim = usdStage->GetPrimAtPath(omni::fabric::toSdfPath(fcPath));
         if (prim.IsA<pxr::UsdGeomPointInstancer>())
         {
@@ -2097,7 +2108,7 @@ bool FabricManager::updatePointInstancer(const omni::fabric::Path primPath,
                                          omni::fabric::StageReaderWriter& stage,
                                          pxr::UsdGeomXformCache& xformCache)
 {
-    auto iterProto = mPointInstanceProtos.find(primPath.asPathC().path);
+    auto iterProto = mPointInstanceProtos.find(primPath);
     if (iterProto == mPointInstanceProtos.end())
     {
         return false;
@@ -2132,14 +2143,17 @@ bool FabricManager::updatePointInstancer(const omni::fabric::Path primPath,
             return false;
         }
     }
-    const omni::fabric::Token positionsToken = omni::fabric::asInt(pxr::UsdGeomTokens->positions);
-    const omni::fabric::Token orientationsToken = omni::fabric::asInt(pxr::UsdGeomTokens->orientations);
+    const omni::fabric::Token positionsToken =
+        omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), pxr::UsdGeomTokens->positions);
+    const omni::fabric::Token orientationsToken =
+        omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), pxr::UsdGeomTokens->orientations);
     const size_t maxIdx = protoData.indices.back();
-    const omni::fabric::Path instPath = omni::fabric::asInt(protoData.instancerPath);
-    gsl::span<GfVec3f> positions =
-        stage.getArrayAttribute<GfVec3f>(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->positions));
-    gsl::span<GfQuath> orientations =
-        stage.getArrayAttribute<GfQuath>(instPath, omni::fabric::asInt(pxr::UsdGeomTokens->orientations));
+    const omni::fabric::Path instPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), protoData.instancerPath);
+    gsl::span<GfVec3f> positions = stage.getArrayAttribute<GfVec3f>(
+        instPath,
+        omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), pxr::UsdGeomTokens->positions));
+    gsl::span<GfQuath> orientations = stage.getArrayAttribute<GfQuath>(
+        instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), pxr::UsdGeomTokens->orientations));
     if (maxIdx >= positions.size() || maxIdx >= orientations.size())
     {
         return false;

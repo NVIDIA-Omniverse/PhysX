@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1646,7 +1646,7 @@ static __device__ inline void writeContactsToStream4threads(
 	{
 		//each 4 thread in a warp deal with a pair. Each thread in a group write to one contact to the output cm. 
 		const PxU32 elementGlobalIndex = warpBeg + baseOffs + groupId;
-		PxTransform t1;
+		PxTransform t1(PxIdentity);
 		PxReal contactDist;
 		PxGeometryType::Enum type0;
 		PxGeometryType::Enum type1;

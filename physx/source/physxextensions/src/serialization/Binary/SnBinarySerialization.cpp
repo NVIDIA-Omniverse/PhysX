@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -82,7 +82,7 @@ using namespace Sn;
 //// import references:
 //// one entry per required reference to external collection
 //------------------------------------------------------------------------------------
-// alignment 
+// alignment
 // PxU32 size
 // (PxSerialObjectId id, PxType type)*size
 //
@@ -92,7 +92,7 @@ using namespace Sn;
 //// one entry per object in the collection with id
 //// object indices point into the manifest table (objects in the same collection)
 //------------------------------------------------------------------------------------
-// alignment 
+// alignment
 // PxU32 size
 // (PxSerialObjectId id, SerialObjectIndex objIndex)*size
 //
@@ -104,10 +104,10 @@ using namespace Sn;
 //// depending on whether the entry references the same collection or the external one
 //// one section for pointer type references and one for index type references.
 //------------------------------------------------------------------------------------
-// alignment 
+// alignment
 // PxU32 sizePtrs;
 // (size_t reference, PxU32 kind, SerialObjectIndex objIndex)*sizePtrs
-// PxU32 sizeHandle16; 
+// PxU32 sizeHandle16;
 // (PxU16 reference, PxU32 kind, SerialObjectIndex objIndex)*sizeHandle16
 //
 //
@@ -125,12 +125,12 @@ using namespace Sn;
 // (PxConcreteType type, --)
 // .
 // .
-// 
+//
 //
 // -----------------------------------------------------------------------------------
 //// extra data:
 //// extra data memory block
-//// serialized and deserialized by PxBase implementations 
+//// serialized and deserialized by PxBase implementations
 ////----------------------------------------------------------------------------------
 // extra data
 //
@@ -142,19 +142,19 @@ namespace
 	{
 	public:
 
-		PX_INLINE OutputStreamWriter(PxOutputStream& stream) 
+		PX_INLINE OutputStreamWriter(PxOutputStream& stream)
 		:	mStream(stream)
 		,	mCount(0)
 		{}
 
-		PX_INLINE	PxU32	write(const void* src, PxU32 offset)		
-		{		
-			PxU32 count = mStream.write(src, offset);
+		PX_INLINE	PxU64	write(const void* src, PxU64 offset)
+		{
+			PxU64 count = mStream.write(src, offset);
 			mCount += count;
 			return count;
 		}
 
-		PX_INLINE	PxU32	getStoredSize()
+		PX_INLINE	PxU64	getStoredSize()
 		{
 			return mCount;
 		}
@@ -163,19 +163,19 @@ namespace
 
 		OutputStreamWriter& operator=(const OutputStreamWriter&);
 		PxOutputStream& mStream;
-		PxU32 mCount;
+		PxU64 mCount;
 	};
 
 	class LegacySerialStream : public PxSerializationContext
 	{
 	public:
-		LegacySerialStream(OutputStreamWriter& writer, 
+		LegacySerialStream(OutputStreamWriter& writer,
 						   const PxCollection& collection,
 						   bool exportNames) : mWriter(writer), mCollection(collection), mExportNames(exportNames) {}
-		void		writeData(const void* buffer, PxU32 size)	{ mWriter.write(buffer, size);		}
-		PxU32		getTotalStoredSize()						{ return mWriter.getStoredSize();	}
-		void		alignData(PxU32 alignment) 
-		{ 
+		void		writeData(const void* buffer, PxU64 size)	{ mWriter.write(buffer, size);		}
+		PxU64		getTotalStoredSize()						{ return mWriter.getStoredSize();	}
+		void		alignData(PxU32 alignment)
+		{
 			if(!alignment)
 				return;
 
@@ -193,7 +193,7 @@ namespace
 
 		virtual void	registerReference(PxBase&, PxU32, size_t)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, PX_FL, 
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, PX_FL,
 					"Cannot register references during exportData, exportExtraData.");
 		}
 
@@ -203,7 +203,7 @@ namespace
 		}
 		virtual void writeName(const char* name)
 		{
-			PxU32 len = name && mExportNames ? PxU32(strlen(name)) + 1 : 0;
+			PxU32 len = name && mExportNames ? PxU32(strnlen(name, UINT32_MAX - 1)) + 1 : 0;
 			writeData(&len, sizeof(len));
 			if(len) writeData(name, len);
 		}
@@ -233,7 +233,7 @@ namespace
 
 	    PxU32 markedPadding = 0;
 #if PX_CHECKED
-		if(!hasDeserializedAssets) 
+		if(!hasDeserializedAssets)
 			markedPadding = 1;
 #endif
 		stream.writeData(&markedPadding, sizeof(PxU32));
@@ -250,21 +250,21 @@ namespace
 bool PxSerialization::serializeCollectionToBinary(PxOutputStream& outputStream, PxCollection& pxCollection, PxSerializationRegistry& sr, const PxCollection* pxExternalRefs, bool exportNames)
 {
 	if(!PxSerialization::isSerializable(pxCollection, sr, pxExternalRefs))
-		return false; 
-		
+		return false;
+
 	Collection& collection = static_cast<Collection&>(pxCollection);
 	const Collection* externalRefs = static_cast<const Collection*>(pxExternalRefs);
-	
+
 	//temporary memory stream which allows fixing up data up stream
-	
+
 	SerializationRegistry& sn = static_cast<SerializationRegistry&>(sr);
-	
+
 	// sort collection by "order" value (this will be the order in which they get serialized)
 	sortCollection(collection, sn, false);
 
-	//initialized the context with the sorted collection. 
+	//initialized the context with the sorted collection.
 	SerializationContext context(collection, externalRefs);
-	
+
 	// gather reference information
     bool hasDeserializedAssets = false;
 	{
@@ -287,7 +287,7 @@ bool PxSerialization::serializeCollectionToBinary(PxOutputStream& outputStream, 
 	// now start the actual serialization into the output stream
 	OutputStreamWriter writer(outputStream);
 	LegacySerialStream stream(writer, collection, exportNames);
-	
+
 	writeHeader(stream, hasDeserializedAssets);
 
 	// write size of collection
@@ -314,7 +314,7 @@ bool PxSerialization::serializeCollectionToBinary(PxOutputStream& outputStream, 
 		const PxU32 nb = manifestTable.size();
 		stream.writeData(&nb, sizeof(PxU32));
 		stream.writeData(manifestTable.begin(), manifestTable.size()*sizeof(ManifestEntry));
-			
+
 		//store offset for end of object buffer (PxU32 offset)
 		stream.writeData(&headerOffset, sizeof(PxU32));
 	}
@@ -332,7 +332,7 @@ bool PxSerialization::serializeCollectionToBinary(PxOutputStream& outputStream, 
 	{
 		PxU32 nbIds = collection.getNbIds();
 		PxArray<ExportReference> exportReferences(nbIds);
-		//we can't get quickly from id to object index in collection. 
+		//we can't get quickly from id to object index in collection.
 		//if we only need this here, its not worth to build a hash
 		nbIds = 0;
 		for (PxU32 i=0;i<collection.getNbObjects();i++)
@@ -373,7 +373,7 @@ bool PxSerialization::serializeCollectionToBinary(PxOutputStream& outputStream, 
 		}
 
 		stream.alignData(PX_SERIAL_ALIGN);
-		
+
 		stream.writeData(&nbInternalPtrReferences, sizeof(PxU32));
 		stream.writeData(internalReferencesPtr.begin(), internalReferencesPtr.size()*sizeof(InternalReferencePtr));
 

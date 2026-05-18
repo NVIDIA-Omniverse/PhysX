@@ -36,6 +36,10 @@ project ("omni.physx.fabric.plugin")
         
     }
 
+    kit_version_num = read_kit_sdk_version()
+
+    defines { "KIT_SDK_VERSION="..kit_version_num }
+
     links { "cuda", "cudart_static", "carb" }
 
     filter { "configurations:debug" }
@@ -63,6 +67,11 @@ project ("omni.physx.fabric.plugin")
 
     files { "python/**.py" }
     vpaths { ['python/*'] = "python/**.py" }
+
+    -- SdfApplyListOrdering inconsistent dll linkage warning
+    filter { "files:plugins/FabricManager.cpp", "system:windows"}
+        buildoptions { "/wd4273" }
+    filter {}
 
 project ("omni.physx.fabric.python")
     carboniteBindingsPython {

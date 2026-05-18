@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -421,10 +421,10 @@ void PxgSolverCore::constructSolverSharedDescCommon(PxgSolverSharedDescBase& sha
 	sharedDesc.deltaOutOffset = mSolverBodyOutputVelocityOffset;
 }
 
-// PT: I don't understand the existing code. We already have a constructSolverSharedDescCommon function above, working on a
-// PxgSolverSharedDescBase structure. But there is still plenty of "constructSolverDesc" code that could be shared between
-// PGS and TGS when we initialize PxgSolverCoreDesc (which doesn't inherit from PxgSolverSharedDescBase). I just started moving
-// that shared code here, without touching the other bits.
+// TODO: Refactor code sharing between PGS and TGS solvers. The existing constructSolverSharedDescCommon function
+// works on PxgSolverSharedDescBase structure, but there is additional "constructSolverDesc" code that could be
+// shared between PGS and TGS when initializing PxgSolverCoreDesc (which doesn't inherit from PxgSolverSharedDescBase).
+// Consider consolidating the shared initialization logic.
 void PxgSolverCore::constructSolverDesc(PxgSolverCoreDesc& scDesc, PxU32 numIslands, PxU32 numSolverBodies, PxU32 numConstraintBatchHeader, PxU32 numArticConstraints, PxU32 numSlabs, bool enableStabilization)
 {
 	CUdeviceptr islandContextPoold = mIslandContextPool;//mIslandContextPool.getDevicePtr(0);

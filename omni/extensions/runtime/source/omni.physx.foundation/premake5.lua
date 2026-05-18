@@ -27,30 +27,9 @@ project ("omni.physx.foundation")
     repo_build.utility_project()
     location (workspaceDir.."/%{prj.name}")
 
-    -- copy foundation, that is precached from precacheforbuild.kit and bump it
+    -- copy precached extension
     copy_extensions_from_cache("omni.physx.foundation")
 
-    -- currently we need to copy current physxgpu.dll to a copy of omni.physx.foundation, this copies the base
-    -- the dll copy is in the foundation ext premake so it's done also when building in MSVS
-    -- bump version in the copy, otherwise appdata folder of the same version will be prioritized
-    exts_dir = abs_path.."/extsPhysics"
-    postbuildcommands {root.."/_build/target-deps/python/python "..root.."/tools/bump_foundation_version.py "..exts_dir.." 107.3.0-oss.0 107.3.0-oss.1"}
-
-    -- now postcache extensions to copy the rest of the exts from
-    local call_cmd = abs_path.."/kit/kit "..abs_path.."/apps/postcacheforbuild.kit --allow-root --portable --ext-precache-mode --/crashreporter/gatherUserStory=0 --/app/settings/persistent=0 --/app/settings/loadUserConfig=0 --/app/extensions/parallelPullEnabled=1 --/exts/omni.kit.registry.nucleus/omitExtVersion=1 --/app/enableStdoutOutput=1 --/app/extensions/detailedSolverExplanation=1 --/app/extensions/registryEnabled=1 --/app/extensions/mkdirExtFolders=0 --/app/extensions/registryCacheFull="..abs_path.."/exts --/app/extensions/target/config=release --ext-folder "..abs_path.."/extsPhysics --portable-root "..abs_path
-    print(call_cmd)
-    postbuildcommands {call_cmd}
-
-    -- copy to main folder so the exts are prioritized over non-oss ones
-    copy_extensions_from_cache("omni.kvdb")
-    copy_extensions_from_cache("omni.localcache")
-    copy_extensions_from_cache("omni.physx.cooking")
-    copy_extensions_from_cache("omni.physx.telemetry")
-    copy_extensions_from_cache("omni.physics")
-    copy_extensions_from_cache("omni.physics.stageupdate")
-    copy_extensions_from_cache("omni.physics.physx")
-
-    -- currently we need to copy current physxgpu.dll to a copy of omni.physx.foundation
     if _OPTIONS["devphysx"] then
         if os.target() == "windows" then
             -- turning off fastupdate will force this project to build each time and thus running the DLL copy

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -20,8 +20,6 @@
 #include <private/omni/physx/IPhysxPrivate.h>
 #include <omni/physx/IPhysxSimulation.h>
 //#include <omni/physx/IPhysxSettings.h>
-#include <omni/usd/UsdContextIncludes.h>
-#include <omni/usd/UsdContext.h>
 
 #include <limits>
 
@@ -56,34 +54,29 @@ ISimulationView* SimulationBackend::createSimulationView(long stageId)
 
     UsdStageRefPtr usdStage;
 
-    if (stageId != -1)
+    if (stageId == -1)
     {
-        // get the inicated stage from the stage cache
-        usdStage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(stageId));
-        if (!usdStage)
+        // By default, get the stage currently attached to the PhysX simulation interface.
+        if (!g_physxSimulation)
         {
-            CARB_LOG_ERROR("Failed to find stage id %ld in the stage cache", stageId);
+            CARB_LOG_ERROR("Failed to get attached USD stage: PhysX simulation interface is not available");
+            return nullptr;
+        }
+
+        stageId = g_physxSimulation->getAttachedStage();
+        if (stageId == 0 || stageId == -1)
+        {
+            CARB_LOG_ERROR("Failed to get a valid attached USD stage id from PhysX simulation");
             return nullptr;
         }
     }
-    else
+
+    // Get the indicated stage from the stage cache.
+    usdStage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(stageId));
+    if (!usdStage)
     {
-        // by default, get the stage currently attached to the usd context
-        omni::usd::UsdContext* usdCtx = omni::usd::UsdContext::getContext();
-        if (!usdCtx)
-        {
-            CARB_LOG_ERROR("Failed to get USD context");
-            return nullptr;
-        }
-
-        usdStage = usdCtx->getStage();
-        if (!usdStage)
-        {
-            CARB_LOG_ERROR("Failed to get active stage in the USD context");
-            return nullptr;
-        }
-
-        stageId = usdCtx->getStageId();
+        CARB_LOG_ERROR("Failed to find stage id %ld in the stage cache", stageId);
+        return nullptr;
     }
 
     // reset stale simulation data, if needed

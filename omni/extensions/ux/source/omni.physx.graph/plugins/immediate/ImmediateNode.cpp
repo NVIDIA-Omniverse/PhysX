@@ -1,9 +1,10 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
 #include "UsdPCH.h"
 #include <omni/fabric/FabricUSD.h>
+#include <omni/fabric/usd/PathConversion.h>
 
 #include "ImmediateNode.h"
 #include "ImmediateShared.h"
@@ -16,45 +17,6 @@ using namespace ::physx;
 using namespace omni::physx::graph;
 using namespace pxr;
 using namespace omni::fabric;
-NameToken const ImmediateNode::kSourcePrimPathToken =
-    asInt(TfToken("sourcePrimPath", TfToken::Immortal));
-NameToken const ImmediateNode::kSourcePrimTypeToken =
-    asInt(TfToken("sourcePrimType", TfToken::Immortal));
-NameToken const ImmediateNode::kSourcePrimTypeMeshToken =
-    asInt(TfToken("Mesh", TfToken::Immortal));
-NameToken const ImmediateNode::kPointsToken = asInt(TfToken("points", TfToken::Immortal));
-NameToken const ImmediateNode::kFaceVertexCountsToken =
-    asInt(TfToken("faceVertexCounts", TfToken::Immortal));
-NameToken const ImmediateNode::kFaceVertexIndicesToken =
-    asInt(TfToken("faceVertexIndices", TfToken::Immortal));
-NameToken const ImmediateNode::kHolesIndicesToken =
-    asInt(TfToken("holeIndices", TfToken::Immortal));
-NameToken const ImmediateNode::kOrientationToken =
-    asInt(TfToken("orientation", TfToken::Immortal));
-NameToken const ImmediateNode::kRightHandedToken =
-    asInt(TfToken("rightHanded", TfToken::Immortal));
-NameToken const ImmediateNode::kWorldMatrixToken =
-    asInt(TfToken("worldMatrix", TfToken::Immortal));
-NameToken const ImmediateNode::kPhysicsCollisionApproximation =
-    asInt(TfToken("physics:approximation", TfToken::Immortal));
-NameToken const ImmediateNode::kBoundingBoxMax =
-    asInt(TfToken("bboxMaxCorner", TfToken::Immortal));
-NameToken const ImmediateNode::kBoundingBoxMin =
-    asInt(TfToken("bboxMinCorner", TfToken::Immortal));
-NameToken const ImmediateNode::kBoundingBoxTransform =
-    asInt(TfToken("bboxTransform", TfToken::Immortal));
-NameToken const ImmediateNode::kMeshKey = asInt(TfToken("meshKey", TfToken::Immortal));
-NameToken const ImmediateNode::kCollisionApproximationConvexHull =
-    asInt(TfToken("convexHull", TfToken::Immortal));
-NameToken const ImmediateNode::kXFormOpTranslate =
-    asInt(TfToken("xformOp:translate", TfToken::Immortal));
-NameToken const ImmediateNode::kXFormOpRotateXYZ =
-    asInt(TfToken("xformOp:rotateXYZ", TfToken::Immortal));
-NameToken const ImmediateNode::kXFormOpScale = asInt(TfToken("xformOp:scale", TfToken::Immortal));
-NameToken const ImmediateNode::kXFormOpOrder = asInt(TfToken("xformOpOrder", TfToken::Immortal));
-NameToken const ImmediateNode::kNormals = asInt(TfToken("normals", TfToken::Immortal));
-NameToken const ImmediateNode::kPrimVarsSt = asInt(TfToken("primvars:st", TfToken::Immortal));
-NameToken const ImmediateNode::kExtent = asInt(TfToken("extent", TfToken::Immortal));
 
 
 ImmediateShared& ImmediateNode::getGlobals()
@@ -70,6 +32,11 @@ bool ImmediateNode::fillMeshInputViewFromBundle(ogn::OmniGraphDatabase& db,
 {
     const GraphContextObj& context = db.abi_context();
     const long stageId = context.iContext->getStageId(context);
+
+    omni::graph::core::BackendId backendId;
+    omni::graph::core::GraphObj graphObj = context.iContext->getGraph(context);
+    graphObj.iGraph->getBackendId(graphObj, backendId);
+    omni::fabric::FabricId fabricId(backendId.id);
 
     UsdStageWeakPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(stageId));
     const double metersPerUnit = UsdGeomGetStageMetersPerUnit(stage);
@@ -91,19 +58,19 @@ bool ImmediateNode::fillMeshInputViewFromBundle(ogn::OmniGraphDatabase& db,
             return false;
         }
 
-        const auto primPathAttribute = childBundle.attributeByName(ImmediateNode::kSourcePrimPathToken);
+        const auto primPathAttribute = childBundle.attributeByName(omni::fabric::Token::createImmortal("sourcePrimPath"));
         Token primPath = *primPathAttribute.getCpu<Token>();
         NameToken tokenPath = primPath;
 
-        ConstAttributeDataHandle pointsAttr = getAttributeR(context, child, ImmediateNode::kPointsToken);
-        ConstAttributeDataHandle facesAttr = getAttributeR(context, child, ImmediateNode::kFaceVertexCountsToken);
-        ConstAttributeDataHandle indicesAttr = getAttributeR(context, child, ImmediateNode::kFaceVertexIndicesToken);
-        ConstAttributeDataHandle holesAttr = getAttributeR(context, child, ImmediateNode::kHolesIndicesToken);
-        ConstAttributeDataHandle matrixAttr = getAttributeR(context, child, ImmediateNode::kWorldMatrixToken);
+        ConstAttributeDataHandle pointsAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("points"));
+        ConstAttributeDataHandle facesAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("faceVertexCounts"));
+        ConstAttributeDataHandle indicesAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("faceVertexIndices"));
+        ConstAttributeDataHandle holesAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("holeIndices"));
+        ConstAttributeDataHandle matrixAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("worldMatrix"));
         ConstAttributeDataHandle approximationAttr =
-            getAttributeR(context, child, ImmediateNode::kPhysicsCollisionApproximation);
-        ConstAttributeDataHandle orientationAttr = getAttributeR(context, child, ImmediateNode::kOrientationToken);
-        ConstAttributeDataHandle meshKeyAttr = getAttributeR(context, child, ImmediateNode::kMeshKey);
+            getAttributeR(context, child, omni::fabric::Token::createImmortal("physics:approximation"));
+        ConstAttributeDataHandle orientationAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("orientation"));
+        ConstAttributeDataHandle meshKeyAttr = getAttributeR(context, child, omni::fabric::Token::createImmortal("meshKey"));
 
         if (pointsAttr.isValid() && facesAttr.isValid() && indicesAttr.isValid() && matrixAttr.isValid())
         {
@@ -122,12 +89,11 @@ bool ImmediateNode::fillMeshInputViewFromBundle(ogn::OmniGraphDatabase& db,
                 int index = (int)inputMeshView.size();
                 MeshInputView mesh;
                 mesh.meshView.primStageId = stageId;
-                mesh.meshView.primTokenId = tokenPath.token;
-                mesh.meshView.primId =
-                    asInt(SdfPath(db.tokenToString(mesh.meshView.primTokenId))).path;
+                mesh.meshView.primTokenId = omni::fabric::fabricTokenToHandle(tokenPath);
+                mesh.meshView.primId = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, tokenPath.getText());
                 if (approximation)
                 {
-                    mesh.meshCollision.collisionApproximation = approximation->token;
+                    mesh.meshCollision.collisionApproximation = omni::fabric::fabricTokenToHandle(*approximation);
                 }
                 mesh.meshCollision.metersPerUnit = metersPerUnit;
 
@@ -170,7 +136,7 @@ bool ImmediateNode::fillMeshInputViewFromBundle(ogn::OmniGraphDatabase& db,
                 if (orientationAttr.isValid())
                 {
                     mesh.meshView.cookingMeshView.rightHandedOrientation =
-                        *orientation == ImmediateNode::kRightHandedToken;
+                        *orientation == omni::fabric::Token::createImmortal("rightHanded");
                 }
                 if (holesAttr.isValid())
                 {
@@ -179,7 +145,7 @@ bool ImmediateNode::fillMeshInputViewFromBundle(ogn::OmniGraphDatabase& db,
                 }
                 if (primToIndicesMap)
                 {
-                    (*primToIndicesMap)[tokenPath.token] = inputMeshView.size();
+                    (*primToIndicesMap)[tokenPath] = inputMeshView.size();
                 }     
                 inputMeshView.push_back(mesh);
             }
@@ -239,7 +205,7 @@ bool ImmediateNode::fillMeshInputViewFromTargets(ogn::OmniGraphDatabase& db,
         MeshInputView mesh;
         mesh.meshView.usePrimID = true;
         mesh.meshView.primStageId = stageId;
-        mesh.meshView.primId = target.path;
+        mesh.meshView.primId = target;
         mesh.meshCollision.metersPerUnit = metersPerUnit;
 
         // Get approximation type if specified.
@@ -248,7 +214,7 @@ bool ImmediateNode::fillMeshInputViewFromTargets(ogn::OmniGraphDatabase& db,
         if (colMeshAPI)
         {
             colMeshAPI.GetApproximationAttr().Get(&approximationType);
-            mesh.meshCollision.collisionApproximation = asInt(approximationType).token;
+            mesh.meshCollision.collisionApproximation = omni::fabric::tfTokenToHandle(approximationType);
         }
         
         mesh.worldMatrix = xfCache.GetLocalToWorldTransform(targetPrim);
@@ -317,8 +283,8 @@ bool ImmediateNode::fillBoxOverlapPairsVector(omni::graph::core::ogn::OmniGraphD
 bool ImmediateNode::validateMeshBundle(ogn::OmniGraphDatabase& db,
                                        const ogn::BundleContents<ogn::kOgnInput, ogn::kCpu>& childBundle)
 {
-    const auto primPathAttribute = childBundle.attributeByName(ImmediateNode::kSourcePrimPathToken);
-    const auto primTypeAttribute = childBundle.attributeByName(ImmediateNode::kSourcePrimTypeToken);
+    const auto primPathAttribute = childBundle.attributeByName(omni::fabric::Token::createImmortal("sourcePrimPath"));
+    const auto primTypeAttribute = childBundle.attributeByName(omni::fabric::Token::createImmortal("sourcePrimType"));
 
     if (!primPathAttribute.isValid() || !primTypeAttribute.isValid())
     {
@@ -328,7 +294,7 @@ bool ImmediateNode::validateMeshBundle(ogn::OmniGraphDatabase& db,
     Token primType = *primTypeAttribute.getCpu<Token>();
     Token primPath = *primPathAttribute.getCpu<Token>();
     NameToken tokenPath = primPath;
-    if (primType != ImmediateNode::kSourcePrimTypeMeshToken)
+    if (primType != omni::fabric::Token::createImmortal("Mesh"))
     {
         db.logError("'%s' is not a Mesh Prim type", db.tokenToString(primPath));
         return false;
@@ -347,8 +313,8 @@ void ImmediateNode::checkCookingWarnings(omni::graph::core::ogn::OmniGraphDataba
         const MeshCookedData& mcd = meshCookedData[idx];
         if (!mcd.isValid)
         {
-            const omni::fabric::PathC pathC(meshes[idx].meshView.primId);
-            db.logError("Cooking for Prim '%s' has failed", toSdfPath(pathC).GetName());
+            const SdfPath path = omni::fabric::toSdfPath(meshes[idx].meshView.primId);
+            db.logError("Cooking for Prim '%s' has failed", path.GetName());
         }
     }
 }

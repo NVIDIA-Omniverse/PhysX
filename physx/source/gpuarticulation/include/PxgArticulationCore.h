@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -69,11 +69,11 @@ namespace physx
 		PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgHeapMemoryAllocatorManager* heapMemoryManager);
 		~PxgArticulationCore();
 
-		void gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled);
+		void gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, const bool isSleepingDisabled);
 		
 		void createStaticContactAndConstraintsBatch(const PxU32 nbArticulations);
 
-		PxU32 computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat);
+		PxU32 computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat, const bool isSleepingDisabled);
 		PxU32 setupInternalConstraints(const PxU32 nbArticulations, const PxReal stepDt, const PxReal dt, const PxReal invDt, const bool isTGSSolver);
 		void syncStream();
 
@@ -82,7 +82,7 @@ namespace physx
 		void syncUnconstrainedVelocities();
 
 		void propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime,
-			const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
+			const PxReal articulationBiasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
 			CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled = false);
 
 		//These two methods are for articulation vs soft body interaction

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -556,7 +556,7 @@ public:
             PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
             InternalVehicle** vehicles = mInternalScene->mVehicles.data();
             const InternalVehicleContext& internalContext = mInternalScene->getVehicleContext();
-            ::physx::vehicle2::PxVehiclePhysXSimulationContext simContext = internalContext.getContext();
+            ::physx::PxVehiclePhysXSimulationContext simContext = internalContext.getContext();
 
             do
             {
@@ -600,18 +600,18 @@ PhysXStepper::~PhysXStepper()
     mVehicleUpdateTasks.clear();
 };
 
-void PhysXStepper::customizeVehicleSimulationContext(::physx::vehicle2::PxVehiclePhysXSimulationContext& context,
+void PhysXStepper::customizeVehicleSimulationContext(::physx::PxVehiclePhysXSimulationContext& context,
     const PhysXActorVehicleBase& vehicle, PhysXSetup& physxSetup)
 {
-    if (vehicle.getRoadGeometryQueryType() == ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryType::eSWEEP)
+    if (vehicle.getRoadGeometryQueryType() == ::physx::PxVehiclePhysXRoadGeometryQueryType::eSWEEP)
     {
         // to ensure the code further below stays valid
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosX == 0, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegX == 1, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosY == 2, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegY == 3, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosZ == 4, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegZ == 5, "");
+        static_assert(::physx::PxVehicleAxes::ePosX == 0, "");
+        static_assert(::physx::PxVehicleAxes::eNegX == 1, "");
+        static_assert(::physx::PxVehicleAxes::ePosY == 2, "");
+        static_assert(::physx::PxVehicleAxes::eNegY == 3, "");
+        static_assert(::physx::PxVehicleAxes::ePosZ == 4, "");
+        static_assert(::physx::PxVehicleAxes::eNegZ == 5, "");
         static_assert(usdparser::Axis::eX == 0, "");
         static_assert(usdparser::Axis::eY == 1, "");
         static_assert(usdparser::Axis::eZ == 2, "");
@@ -626,11 +626,11 @@ void PhysXStepper::customizeVehicleSimulationContext(::physx::vehicle2::PxVehicl
 
     context.tireSlipParams = vehicle.getTireSlipParams();
 
-    const ::physx::vehicle2::PxVehicleTireStickyParams& tireStickyParams = vehicle.getTireStickyParams();
-    context.tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL] =
-        tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL];
-    context.tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL] =
-        tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL];
+    const ::physx::PxVehicleTireStickyParams& tireStickyParams = vehicle.getTireStickyParams();
+    context.tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL] =
+        tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL];
+    context.tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL] =
+        tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL];
 }
 
 void PhysXStepper::createVehicleUpdateTasks()
@@ -876,12 +876,12 @@ void PhysXStepper::updateVehicles()
         PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
         InternalVehicle** vehicles = internalScene.mVehicles.data();
         InternalVehicleContext& internalContext = internalScene.getVehicleContext();
-        ::physx::vehicle2::PxVehiclePhysXSimulationContext& simContext = internalContext.getContext();
+        ::physx::PxVehiclePhysXSimulationContext& simContext = internalContext.getContext();
         PxScene* pxScene = mPhysXScene->getScene();
         simContext.gravity = pxScene->getGravity();  // in case gravity is modified during simulation
 
         // creating a copy that can get modified per vehicle instance
-        ::physx::vehicle2::PxVehiclePhysXSimulationContext simContextMod = simContext;
+        ::physx::PxVehiclePhysXSimulationContext simContextMod = simContext;
 
         {
             CARB_PROFILE_ZONE(0, "PhysXVehicleSimBeginUpdate");
@@ -1303,7 +1303,6 @@ static uint32_t roundUpToNextPowerOfTwo(uint32_t value)
 static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit, const PhysxSceneDesc& physxSceneDesc,
     OmniFilterCallback* filterCallback, OmniContactReportCallback* reportCallback)
 {
-    PxScene* physxScene = nullptr;
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     carb::settings::ISettings* iSettings = omniPhysX.getISettings();
     ::physx::PxTolerancesScale tolerances = physxSetup.getDefaultTolerances(metersPerUnit);
@@ -1357,10 +1356,14 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
     if (physxSceneDesc.enableResidualReporting)
         sceneDesc.flags |= PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING;
 
+    if (physxSceneDesc.disableSleeping)
+        sceneDesc.flags |= PxSceneFlag::eDISABLE_SLEEPING;
+
     // suppress readback
     if (sceneDesc.flags.isSet(PxSceneFlag::eENABLE_GPU_DYNAMICS) && suppressReadback)
     {
         sceneDesc.flags |= PxSceneFlag::eENABLE_DIRECT_GPU_API;
+        sceneDesc.flags |= PxSceneFlag::eDISABLE_SLEEPING; // Raise the disable sleeping flag to not raise a warning
 
         // Disable active actors feature if suppress readback is enabled
         sceneDesc.flags &= ~PxSceneFlag::eENABLE_ACTIVE_ACTORS;
@@ -1487,7 +1490,7 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
         sceneDesc.filterCallback = filterCallback;
     }
 
-    physxScene = physxSetup.getPhysics()->createScene(sceneDesc);
+    PxScene* physxScene = physxSetup.getPhysics()->createScene(sceneDesc);
 
     if (!physxScene)
     {
@@ -1496,6 +1499,7 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
         {
             CARB_LOG_WARN("Not enough GPU memory available to create a PhysicsScene, falling back to CPU simulation.");
             sceneDesc.flags.clear(PxSceneFlag::eENABLE_GPU_DYNAMICS);
+            sceneDesc.flags.clear(PxSceneFlag::eENABLE_DIRECT_GPU_API);
             sceneDesc.broadPhaseType = PxBroadPhaseType::ePABP;
 
             // AD: we don't reset the cudaContextManager skip state here - CPU sim does not need it and it will be

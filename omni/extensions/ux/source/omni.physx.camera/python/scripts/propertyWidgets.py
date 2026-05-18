@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ui
 import omni.usd
 import omni.kit.undo
@@ -128,4 +129,3 @@ class PropertyWidgetCameraBase(SimplePropertyWidget):
 # request to rebuild property window on next draw, it's ok to call multiple times
 def rebuild_property_window():
     omni.kit.window.property.get_window()._window.frame.rebuild()
-

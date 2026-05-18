@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -256,7 +256,7 @@ namespace Dy
 	}
 
 	void FeatherstoneArticulation::inverseDynamicFloatingBase(ArticulationData& data, const PxVec3& gravity,
-		ScratchData& scratchData, bool computeCoriolis, const bool rootMotion)
+		ScratchData& scratchData, bool computeCoriolis)
 	{
 		//pass 1
 		computeLinkVelocities(data, scratchData);
@@ -277,8 +277,7 @@ namespace Dy
 		computeCompositeSpatialInertiaAndZAForceInv(data, scratchData);
 
 		//pass 3
-		const bool coriolisFloatingBase = (computeCoriolis && rootMotion);
-		computeRelativeGeneralizedForceInv(data, scratchData, coriolisFloatingBase);
+		computeRelativeGeneralizedForceInv(data, scratchData, computeCoriolis);
 	}
 
 
@@ -516,7 +515,7 @@ namespace Dy
 		mArticulationData.setDataDirty(false);
 	}
 
-	void FeatherstoneArticulation::getGeneralizedGravityForce(const PxVec3& gravity, PxArticulationCache& cache, const bool rootMotion)
+	void FeatherstoneArticulation::getGeneralizedGravityForce(const PxVec3& gravity, PxArticulationCache& cache)
 	{
 
 		if (mArticulationData.getDataDirty())
@@ -554,68 +553,47 @@ namespace Dy
 		PxcScratchAllocator* allocator = reinterpret_cast<PxcScratchAllocator*>(cache.scratchAllocator);
 		const PxU32 linkCount = mArticulationData.getLinkCount();
 		const bool fixBase = mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE;
-		const PxU32 rootDof = (rootMotion && !fixBase) ? 6 : 0; //add the DoF of the root in the floating base case
+		const PxU32 rootDof = fixBase ? 0 : 6; //add the DoF of the root in the floating base case
 
 		//note that with the new API, for both fixed-base and floating-base, we consider no acceleration for all joints and all links
 		//this is consistent with the assumption behind the equation of motion
-		if (rootMotion || fixBase)
+		Cm::SpatialVectorF* spatialZAForces = reinterpret_cast<Cm::SpatialVectorF*>(allocator->alloc(sizeof(Cm::SpatialVectorF) * linkCount));
+
+		for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 		{
-			Cm::SpatialVectorF* spatialZAForces = reinterpret_cast<Cm::SpatialVectorF*>(allocator->alloc(sizeof(Cm::SpatialVectorF) * linkCount));
+			ArticulationLink& link = mArticulationData.getLink(linkID);
 
-			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-			{
-				ArticulationLink& link = mArticulationData.getLink(linkID);
+			PxsBodyCore& core = *link.bodyCore;
 
-				PxsBodyCore& core = *link.bodyCore;
+			const PxReal m = 1.0f / core.inverseMass;
 
-				const PxReal m = 1.0f / core.inverseMass;
+			const PxVec3 linkGravity = tGravity;
 
-				const PxVec3 linkGravity = tGravity;
-
-				spatialZAForces[linkID].top = m * linkGravity;
-				spatialZAForces[linkID].bottom = PxVec3(0.0f);
-			}
-
-			ScratchData scratchData;
-			scratchData.spatialZAVectors = spatialZAForces;
-
-			if (rootMotion)
-				scratchData.jointForces = &cache.gravityCompensationForce[rootDof];
-			else
-				scratchData.jointForces = cache.jointForce;
-
-			computeGeneralizedForceInv(mArticulationData, scratchData);
-
-			//add the gravity compensation for the root, force first
-			if (rootDof == 6)
-			{
-				Cm::SpatialVectorF* zaForce = scratchData.spatialZAVectors;
-				cache.gravityCompensationForce[0] = zaForce[0].top.x;
-				cache.gravityCompensationForce[1] = zaForce[0].top.y;
-				cache.gravityCompensationForce[2] = zaForce[0].top.z;
-				cache.gravityCompensationForce[3] = zaForce[0].bottom.x;
-				cache.gravityCompensationForce[4] = zaForce[0].bottom.y;
-				cache.gravityCompensationForce[5] = zaForce[0].bottom.z;
-			}
-
-			//release spatialZA vectors
-			allocator->free(spatialZAForces);
+			spatialZAForces[linkID].top = m * linkGravity;
+			spatialZAForces[linkID].bottom = PxVec3(0.0f);
 		}
-		else
+
+		ScratchData scratchData;
+		scratchData.spatialZAVectors = spatialZAForces;
+
+		scratchData.jointForces = &cache.gravityCompensationForce[rootDof];
+
+		computeGeneralizedForceInv(mArticulationData, scratchData);
+
+		//add the gravity compensation for the root, force first
+		if (rootDof == 6)
 		{
-			//old API for floating-base articulations, the root link is assumed to be in free fall
-			ScratchData scratchData;
-			PxU8* tempMemory = allocateScratchSpatialData(allocator, linkCount, scratchData);
-
-			scratchData.jointVelocities = NULL;
-			scratchData.jointAccelerations = NULL;
-			scratchData.jointForces = cache.jointForce;
-			scratchData.externalAccels = NULL;
-
-			inverseDynamicFloatingBase(mArticulationData, tGravity, scratchData, false);
-
-			allocator->free(tempMemory);
+			Cm::SpatialVectorF* zaForce = scratchData.spatialZAVectors;
+			cache.gravityCompensationForce[0] = zaForce[0].top.x;
+			cache.gravityCompensationForce[1] = zaForce[0].top.y;
+			cache.gravityCompensationForce[2] = zaForce[0].top.z;
+			cache.gravityCompensationForce[3] = zaForce[0].bottom.x;
+			cache.gravityCompensationForce[4] = zaForce[0].bottom.y;
+			cache.gravityCompensationForce[5] = zaForce[0].bottom.z;
 		}
+
+		//release spatialZA vectors
+		allocator->free(spatialZAForces);
 
 #if FEATHERSTONE_DEBUG
 		//compare joint force
@@ -631,7 +609,7 @@ namespace Dy
 	}
 
 	//gravity, acceleration and external force(external acceleration) are zero
-	void  FeatherstoneArticulation::getCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion)
+	void FeatherstoneArticulation::getCoriolisAndCentrifugalForce(PxArticulationCache& cache)
 	{
 		if (mArticulationData.getDataDirty())
 		{
@@ -651,17 +629,14 @@ namespace Dy
 		scratchData.jointVelocities = cache.jointVelocity;
 		scratchData.jointAccelerations = NULL;
 		scratchData.externalAccels = NULL;
-		if (rootMotion)
-			scratchData.jointForces = &cache.coriolisForce[rootDof];
-		else
-			scratchData.jointForces = cache.jointForce;
+		scratchData.jointForces = &cache.coriolisForce[rootDof];
 		
 		if (fixBase)
 			inverseDynamic(mArticulationData, PxVec3(0.0f), scratchData, true);
 		else
-			inverseDynamicFloatingBase(mArticulationData, PxVec3(0.0f), scratchData, true, rootMotion);
+			inverseDynamicFloatingBase(mArticulationData, PxVec3(0.0f), scratchData, true);
 
-		if(rootMotion && !fixBase)
+		if(!fixBase)
 		{
 			//add the Coriolis compensation for the root, force first
 			Cm::SpatialVectorF* zaForce = scratchData.spatialZAVectors;
@@ -677,7 +652,7 @@ namespace Dy
 	}
 
 	//gravity, joint acceleration and joint velocity are zero
-	void  FeatherstoneArticulation::getGeneralizedExternalForce(PxArticulationCache& cache)
+	void FeatherstoneArticulation::getGeneralizedExternalForce(PxArticulationCache& cache)
 	{
 		if (mArticulationData.getDataDirty())
 		{
@@ -1966,18 +1941,17 @@ namespace Dy
 		allocator->free(compositeSpatialInertia);
 	}
 
-	void FeatherstoneArticulation::calculateHFloatingBase(PxArticulationCache& cache, const bool rootMotion)
+	void FeatherstoneArticulation::calculateHFloatingBase(PxArticulationCache& cache)
 	{
 		const PxU32 elementCount = mArticulationData.getDofs();
-		const PxU32 rootDof = rootMotion ? 6 : 0;
 
 		PxReal* massMatrix = cache.massMatrix;
 
-		PxMemZero(massMatrix, sizeof(PxReal) * (elementCount + rootDof) * (elementCount + rootDof));
+		PxMemZero(massMatrix, sizeof(PxReal) * (elementCount + 6) * (elementCount + 6));
 
 		const PxU32 linkCount = mArticulationData.getLinkCount();
 		const PxU32 dofCount = mArticulationData.getDofs();
-		const PxU32 matSize = dofCount + rootDof; // Add the DoF of the root
+		const PxU32 matSize = dofCount + 6; // Add the DoF of the root
 
 		PxcScratchAllocator* allocator = reinterpret_cast<PxcScratchAllocator*>(cache.scratchAllocator);
 
@@ -2019,7 +1993,7 @@ namespace Dy
 			}
 
 			// Hii, Hij, Hji
-			const PxU32 j = computeHi(mArticulationData, i, massMatrix, f, rootDof);
+			const PxU32 j = computeHi(mArticulationData, i, massMatrix, f, 6);
 
 			// transform F to the base link space
 			// ArticulationLinkData& fDatum = linkData[j];
@@ -2030,69 +2004,44 @@ namespace Dy
 				f[ind] = translateSpatialVector(brw, f[ind]);
 			}
 
-			if(rootMotion)
+			// add the resulting force on the root
+			for(PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
-				// add the resulting force on the root
-				for(PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
+				const PxU32 col = jointDatum.jointOffset + ind + 6;
+				const Cm::SpatialVectorF& tf = f[ind];
+				for(PxU32 row = 0; row < 6; ++row)
 				{
-					const PxU32 col = jointDatum.jointOffset + ind + rootDof;
-					const Cm::SpatialVectorF& tf = f[ind];
-					for(PxU32 row = 0; row < 6; ++row)
-					{
-						massMatrix[col * matSize + row] = tf[row];
-						massMatrix[col + row * matSize] = tf[row];
-					}
+					massMatrix[col * matSize + row] = tf[row];
+					massMatrix[col + row * matSize] = tf[row];
 				}
 			}
 		}
 
-		if(rootMotion)
+		// adding the spatial articulated inertia of the root
+		// note that the spatial articulated inertia assumes that the root angular acceleration comes first,
+		// while the mass matrix assumes that the root linear acceleration comes first
+		// we have therefore to invert the angular and linear component of the spatial articulated inertia
+		// this also ensures that the mass matrix is symmetric
+		const PxReal* rootSpatialInertia = reinterpret_cast<PxReal*>(&compositeSpatialInertia[0]);
+		for(PxU32 row = 0; row < 6; ++row)
 		{
-			// adding the spatial articulated inertia of the root
-			// note that the spatial articulated inertia assumes that the root angular acceleration comes first,
-			// while the mass matrix assumes that the root linear acceleration comes first
-			// we have therefore to invert the angular and linear component of the spatial articulated inertia
-			// this also ensures that the mass matrix is symmetric
-			const PxReal* rootSpatialInertia = reinterpret_cast<PxReal*>(&compositeSpatialInertia[0]);
-			for(PxU32 row = 0; row < 6; ++row)
+			const PxU32 rowSpatialInertia = (row < 3) ? row : row - 3; // Convert to the index of a 3 x 3 matrix
+			// Only process elements above the diagonal as the matrix is symmetric
+			for(PxU32 col = row; col < 6; ++col)
 			{
-				const PxU32 rowSpatialInertia = (row < 3) ? row : row - 3; // Convert to the index of a 3 x 3 matrix
-				// Only process elements above the diagonal as the matrix is symmetric
-				for(PxU32 col = row; col < 6; ++col)
-				{
-					// This offset is due to how the spatial matrix is indexed and how the linear amd angular components
-					// of the acceleration should be inverted, the index is as follows
-					//	0	3	6	9	12	15								9	12	15	0	3	6
-					//	1	4	7	10	13	16								10	23	16	1	4	7
-					//	2	5	8	11	14	17	inversion linear/angular	11	24	17	2	5	8
-					//	18	21	24	0	1	2	------------------------>	0	1	2	18	21	24
-					//	19	22	25	3	4	5								3	4	5	19	22	25
-					//	20	23	26	6	7	8								6	7	8	20	23	26
-					const PxU32 offset = (row > 2) ? 18 : (col < 3) * 9;
-					const PxU32 colSpatialInertia = (col < 3) ? col : col - 3; // Convert to the index of a 3 x 3 matrix
-					const PxU32 index = offset + colSpatialInertia * 3 + rowSpatialInertia;
-					massMatrix[row * matSize + col] = rootSpatialInertia[index];
-					massMatrix[col * matSize + row] = rootSpatialInertia[index];
-				}
-			}
-		}
-		else
-		{
-			//Ib = base link composite inertia tensor
-			//compute transpose(F) * inv(Ib) *F
-			Dy::SpatialMatrix invI0 = compositeSpatialInertia[0].invertInertia();
-
-			//H - transpose(F) * inv(Ib) * F;
-			for (PxU32 row = 0; row < elementCount; ++row)
-			{
-				const Cm::SpatialVectorF& f = F[row];
-				for (PxU32 col = 0; col < elementCount; ++col)
-				{
-					const Cm::SpatialVectorF invIf = invI0 * F[col];
-					const PxReal v = f.innerProduct(invIf);
-					const PxU32 index = row * elementCount + col;
-					massMatrix[index] = massMatrix[index] - v;
-				}
+				// This offset is due to how the spatial matrix is indexed and how the linear amd angular components
+				// of the acceleration should be inverted, the index is as follows
+				//	0	3	6	9	12	15								9	12	15	0	3	6
+				//	1	4	7	10	13	16								10	23	16	1	4	7
+				//	2	5	8	11	14	17	inversion linear/angular	11	24	17	2	5	8
+				//	18	21	24	0	1	2	------------------------>	0	1	2	18	21	24
+				//	19	22	25	3	4	5								3	4	5	19	22	25
+				//	20	23	26	6	7	8								6	7	8	20	23	26
+				const PxU32 offset = (row > 2) ? 18 : (col < 3) * 9;
+				const PxU32 colSpatialInertia = (col < 3) ? col : col - 3; // Convert to the index of a 3 x 3 matrix
+				const PxU32 index = offset + colSpatialInertia * 3 + rowSpatialInertia;
+				massMatrix[row * matSize + col] = rootSpatialInertia[index];
+				massMatrix[col * matSize + row] = rootSpatialInertia[index];
 			}
 		}
 
@@ -2147,7 +2096,7 @@ namespace Dy
 		computeGeneralizedForceInv(mArticulationData, scratchData);
 	}
 
-	void FeatherstoneArticulation::getGeneralizedMassMatrixCRB(PxArticulationCache& cache, const bool rootMotion)
+	void FeatherstoneArticulation::getGeneralizedMassMatrixCRB(PxArticulationCache& cache)
 	{
 		if (mArticulationData.getDataDirty())
 		{
@@ -2162,7 +2111,7 @@ namespace Dy
 		}
 		else
 		{
-			calculateHFloatingBase(cache, rootMotion);
+			calculateHFloatingBase(cache);
 		}
 
 	}

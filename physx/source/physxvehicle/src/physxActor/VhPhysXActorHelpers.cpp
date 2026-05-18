@@ -22,21 +22,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
+#include "vehicle/PxVehicleParams.h"
 
-#include "vehicle2/rigidBody/PxVehicleRigidBodyParams.h"
+#include "vehicle/rigidBody/PxVehicleRigidBodyParams.h"
 
-#include "vehicle2/suspension/PxVehicleSuspensionHelpers.h"
-#include "vehicle2/suspension/PxVehicleSuspensionParams.h"
+#include "vehicle/suspension/PxVehicleSuspensionHelpers.h"
+#include "vehicle/suspension/PxVehicleSuspensionParams.h"
 
-#include "vehicle2/physxActor/PxVehiclePhysXActorStates.h"
-#include "vehicle2/physxActor/PxVehiclePhysXActorHelpers.h"
+#include "vehicle/physxActor/PxVehiclePhysXActorStates.h"
+#include "vehicle/physxActor/PxVehiclePhysXActorHelpers.h"
 
-#include "vehicle2/wheel/PxVehicleWheelParams.h"
+#include "vehicle/wheel/PxVehicleWheelParams.h"
 
 #include "cooking/PxCooking.h"
 #include "PxPhysics.h"
@@ -48,8 +48,6 @@
 
 
 namespace physx
-{
-namespace vehicle2
 {
 
 void createShapes(
@@ -184,5 +182,4 @@ void PxVehiclePhysXActorDestroy
 	}
 }
 
-} //namespace vehicle2
 } //namespace physx

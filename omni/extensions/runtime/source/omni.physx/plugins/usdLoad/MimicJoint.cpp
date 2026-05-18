@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -15,9 +15,6 @@
 
 #include <omni/physx/IPhysxSettings.h>
 #include <OmniPhysX.h>
-
-//See comment for gMimicJointNaturalFrequencyAttributeName and remove accordingly.
-#include <omni/physx/PhysxTokens.h>
 
 using namespace pxr;
 using namespace omni::physics::schema;
@@ -221,20 +218,8 @@ void parseMimicJoints(const pxr::UsdStageWeakPtr stage, const pxr::UsdPrim& usdP
 
                         mimicJointAPI.GetGearingAttr().Get(&desc.gearing);
                         mimicJointAPI.GetOffsetAttr().Get(&desc.offset);
-
-                        float naturalFrequency = 0.0f;
-                        if(usdPrim.HasAttribute(gMimicJointNaturalFrequencyAttributeNameToken[i]))
-                        {
-                            usdPrim.GetAttribute(gMimicJointNaturalFrequencyAttributeNameToken[i]).Get(&naturalFrequency);
-                        }
-                        desc.naturalFrequency = naturalFrequency;
-
-                        float dampingRatio = 0.0f;
-                        if(usdPrim.HasAttribute(gMimicJointDampingRatioAttributeNameToken[i]))
-                        {
-                            usdPrim.GetAttribute(gMimicJointDampingRatioAttributeNameToken[i]).Get(&dampingRatio);
-                        }
-                        desc.dampingRatio = dampingRatio;           
+                        mimicJointAPI.GetNaturalFrequencyAttr().Get(&desc.naturalFrequency);
+                        mimicJointAPI.GetDampingRatioAttr().Get(&desc.dampingRatio);
 
                         TfToken refJointAxis;
                         mimicJointAPI.GetReferenceJointAxisAttr().Get(&refJointAxis);

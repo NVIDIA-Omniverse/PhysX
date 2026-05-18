@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -156,18 +156,32 @@ public:
         db.outputs.materialPaths().resize(bOutputMaterialsAsTokens ? gatherList.size() : 0);
         db.outputs.materialPrims().resize(gatherList.size());
 
-         for (const SweepHit& hit : gatherList)
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+
+        for (const SweepHit& hit : gatherList)
         {
-            db.outputs.colliderPrims()[n] = static_cast<omni::fabric::PathC>(hit.collision);
-            db.outputs.bodyPrims()[n] = static_cast<omni::fabric::PathC>(hit.rigidBody);
-            if(bOutputCollidersAsTokens) db.outputs.colliderPrimPaths()[n] = asNameToken(hit.collision);
-            if(bOutputBodiesAsTokens) db.outputs.bodyPrimPaths()[n] = asNameToken(hit.rigidBody);
+            db.outputs.colliderPrims()[n] = omni::fabric::convertToPathType<omni::fabric::Path>(
+                fabricId, omni::fabric::handleToSdfPath(hit.collision));
+            db.outputs.bodyPrims()[n] = omni::fabric::convertToPathType<omni::fabric::Path>(
+                fabricId, omni::fabric::handleToSdfPath(hit.rigidBody));
+            if (bOutputCollidersAsTokens)
+                db.outputs.colliderPrimPaths()[n] = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.collision).GetText());
+            if (bOutputBodiesAsTokens)
+                db.outputs.bodyPrimPaths()[n] = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.rigidBody).GetText());
             db.outputs.positions()[n] = hit.position;
             db.outputs.normals()[n] = hit.normal;
             db.outputs.distances()[n] = hit.distance;
             db.outputs.faceIndexes()[n] = hit.faceIndex;
-            if(bOutputMaterialsAsTokens) db.outputs.materialPaths()[n] = asNameToken(hit.material);
-            db.outputs.materialPrims()[n] = static_cast<omni::fabric::PathC>(hit.material);
+            if (bOutputMaterialsAsTokens)
+                db.outputs.materialPaths()[n] = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.material).GetText());
+            db.outputs.materialPrims()[n] = omni::fabric::convertToPathType<omni::fabric::Path>(
+                fabricId, omni::fabric::handleToSdfPath(hit.material));
             n++;
         }
         db.outputs.execOut() = kExecutionAttributeStateEnabled;
@@ -176,4 +190,3 @@ public:
 };
 
 REGISTER_OGN_NODE()
-

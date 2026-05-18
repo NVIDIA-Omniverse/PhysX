@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -72,7 +72,6 @@ TEST_CASE_TEMPLATE("Scene Tests", T, USDChange, FabricChange)
         // disable collision API -> shape should be disabled
         direction[1] = 1.0f;
         changeTemplate.setAttributeValue(physicsScenePath, changeToken, direction);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -99,7 +98,6 @@ TEST_CASE_TEMPLATE("Scene Tests", T, USDChange, FabricChange)
         // disable collision API -> shape should be disabled
         magnitude = 1.0f;
         changeTemplate.setAttributeValue(physicsScenePath, changeToken, magnitude);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -1068,6 +1066,21 @@ TEST_CASE("Scene Attribute Tests",
         PxSceneFlags sceneFlags = scenePtr->getFlags();
         CHECK(sceneFlags.isSet(PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS));
     }
+
+    SUBCASE("Solve Articulation Contact Last")
+    {
+        physxSceneAPI.CreateSolveArticulationContactLastAttr().Set(true);
+
+        physxSim->attachStage(stageId);
+
+        PxScene* scenePtr = reinterpret_cast<PxScene*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+        REQUIRE(scenePtr != nullptr);
+
+        PxSceneFlags sceneFlags = scenePtr->getFlags();
+        CHECK(sceneFlags.isSet(PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST));
+    }
+
+
 
     // Common post-test actions
     physxSim->detachStage();

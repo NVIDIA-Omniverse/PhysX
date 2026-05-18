@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -63,8 +63,11 @@ public:
     virtual ISoftBodyMaterialView* createSoftBodyMaterialView(const char* pattern) = 0;
 
     virtual IDeformableBodyView* createVolumeDeformableBodyView(const char* pattern) = 0;
+    virtual IDeformableBodyView* createVolumeDeformableBodyView(const std::vector<std::string>& patterns) = 0;
     virtual IDeformableBodyView* createSurfaceDeformableBodyView(const char* pattern) = 0;
+    virtual IDeformableBodyView* createSurfaceDeformableBodyView(const std::vector<std::string>& patterns) = 0;
     virtual IDeformableMaterialView* createDeformableMaterialView(const char* pattern) = 0;
+    virtual IDeformableMaterialView* createDeformableMaterialView(const std::vector<std::string>& patterns) = 0;
 
     virtual IParticleSystemView* createParticleSystemView(const char* pattern) = 0;
 

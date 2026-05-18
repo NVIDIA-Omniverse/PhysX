@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 from collections import defaultdict, namedtuple
 from omni.kit.property.usd.usd_model_base import UsdBase
@@ -13,7 +14,7 @@ import omni.ui as ui
 import omni.kit.undo
 import omni.physx.bindings._physx as pxb
 from omni.physx import get_physx_interface
-from omni.physx import get_physx_attachment_private_interface
+from omni.physx.scripts.ifaces import get_physx_attachment_private_interface
 from omni.physx.bindings._physx import SimulationEvent
 from omni.kit.property.usd import PrimPathWidget
 from omni.kit.property.usd.widgets import ICON_PATH
@@ -40,13 +41,6 @@ import asyncio
 import math
 import enum
 import carb.settings
-from omni.physx.bindings._physx import (
-    MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTX,
-    MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTY,
-    MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTZ,
-    MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTX,
-    MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTY,
-    MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTZ)
 
 ADD_GLYPH = omni.kit.ui.get_custom_glyph_code("${glyphs}/menu_context.svg")
 EYE_GLYPH = omni.kit.ui.get_custom_glyph_code("${glyphs}/eye.svg")
@@ -387,6 +381,8 @@ class MainFrameWidget(SimplePropertyWidget):
         # shared checks
         self.is_a_omnijoint = False
 
+        self._listener = None
+
     def clean(self):
         super().clean()
         self._popup_menu = None
@@ -564,14 +560,14 @@ class PhysicsWidget(UsdPropertiesWidget):
         return True
 
     def _on_usd_changed(self, notice, stage):
-        # If the stage unit parameters change, it will trigger a notice for the absoluteRootPath.
+        # If the stage parameters change, it will trigger a notice for the absoluteRootPath.
         if SdfPath.absoluteRootPath in notice.GetChangedInfoOnlyPaths() and stage == self._units_stage:
-            stage_kilograms_per_unit = UsdPhysics.GetStageKilogramsPerUnit(stage)
-            stage_meters_per_unit = UsdGeom.GetStageMetersPerUnit(stage)
-            if self._stage_kilograms_per_unit != stage_kilograms_per_unit or self._stage_meters_per_unit != stage_meters_per_unit:
-                self._stage_kilograms_per_unit = stage_kilograms_per_unit
-                self._stage_meters_per_unit = stage_meters_per_unit
+            stage_info = database.StageInfo(stage)
+            
+            if stage_info != self._stage_info:
+                self._stage_info = stage_info
                 self.request_rebuild()
+
 
         super()._on_usd_changed(notice, stage)
 
@@ -589,8 +585,7 @@ class PhysicsWidget(UsdPropertiesWidget):
 
         if stage:
             self._units_stage = stage
-            self._stage_kilograms_per_unit = UsdPhysics.GetStageKilogramsPerUnit(stage)
-            self._stage_meters_per_unit = UsdGeom.GetStageMetersPerUnit(stage)
+            self._stage_info = database.StageInfo(stage)
 
         super().build_items()
 
@@ -739,9 +734,21 @@ class PhysicsWidget(UsdPropertiesWidget):
             ui.VStack(height=0)
             self.show_frame(False)
 
+    def get_property_sentinels(self, base_name: str) -> dict:
+        sentinels = {}
+        for key, value in database.property_sentinels.get(base_name, {}).items():
+            if callable(key):
+                key = key(self._stage_info)
+            if callable(value):
+                value = value(self._stage_info)
+
+            sentinels[key] = value
+            
+        return sentinels
+
     def build_property_item(self, stage, prop, prim_paths):
         def precompute_menu():
-            sentinels_cpy = {k: v for k, v in database.property_sentinels.get(prop.base_name, {}).items()}
+            sentinels_cpy = self.get_property_sentinels(prop.base_name)
             sentinels_inv = {v: k for k, v in sentinels_cpy.items()}
             property_utils = self._property_utils.get(prop.base_name, {})
             items = []
@@ -859,8 +866,8 @@ class PhysicsWidget(UsdPropertiesWidget):
                 # for per channel builders the last model is AbstractItemModel covering all
                 return models[-1], models[:-1]
 
-        sentinels = database.property_sentinels.get(prop.base_name)
-        if sentinels is None:
+        sentinels = self.get_property_sentinels(prop.base_name)
+        if len(sentinels.keys()) == 0:
             model, _ = build_widget()
         else:
             with ui.ZStack():
@@ -1510,7 +1517,7 @@ class PhysxLimitExtJointWidget(ChildJointWidget):
                 filtered_props.append(UiProp().from_property_spec(prop_spec, prim, self._limit_api, self._limit_instance, self._limit_prefix))
 
         for prop in filtered_props:
-            prop.metadata[Sdf.PropertySpec.DisplayGroupKey] = prop.display_group = "Advanced"
+            prop.metadata[Sdf.PropertySpec.DisplayGroupKey] = prop.display_group = "Limit Configuration"
             prop.display_group_collapsed = True
 
         return super()._filter_props_to_build(prim) + filtered_props
@@ -1629,7 +1636,7 @@ class ExtendedColliderWidget(PhysicsWidget):
             curr_approx_name = mesh_api.GetApproximationAttr().Get()
             curr_approx_api = utils.MESH_APPROXIMATIONS.get(curr_approx_name)
             for approx_name, approx_api in utils.MESH_APPROXIMATIONS.items():
-                if approx_api is not None and (curr_approx_api != approx_api or not prim.HasAPI(approx_api)):
+                if approx_api is not None and curr_approx_api != approx_api:
                     try_inactivate(approx_api, approx_name, curr_approx_name)
 
         if prim.IsA(UsdGeom.Cylinder) or prim.IsA(UsdGeom.Cone):
@@ -2112,10 +2119,6 @@ class ExtendedSceneWidget(PhysicsWidget):
         filtered_props = super()._filter_props_to_build(prim)
 
         filtered_props.append(UiProp().from_custom("physxScene:envIdInBoundsBitCount", "Number of bits used for EnvIDs in bounds", "Advanced", 'int', -1))
-
-        solveArtContactLastDocs = ("Order articulation contact constraints and articulation joint"
-            "maximum velocity constraints so that they are solved after all other constraints in the solver")
-        filtered_props.append(UiProp().from_custom("physxScene:solveArticulationContactLast", "Solve Articulation Contact Last", "", 'bool', False, solveArtContactLastDocs))
 
         return filtered_props
 
@@ -3066,31 +3069,7 @@ class ExtendedParticleSystemWidget(PhysicsWidget):
 
         return filtered_props
 
-
 class ExtendedMimicJointWidget(PhysicsWidget):
-
-    
-    prop_data_custom = {
-        MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTX: ("Natural Frequency", "rotX", 'float', 0.0, "The natural frequency of mimic joint compliance. A mimic joint with naturalFrequency <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint."),
-        MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTY: ("Natural Frequency", "rotY", 'float', 0.0, "The natural frequency of mimic joint compliance. A mimic joint with naturalFrequency <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint."),
-        MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTZ: ("Natural Frequency", "rotZ", 'float', 0.0, "The natural frequency of mimic joint compliance. A mimic joint with naturalFrequency <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint."),
-        MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTX: ("Damping Ratio", "rotX", 'float', 0.0, "The damping ratio of mimic joint compliance. A mimic joint with dampingRatio <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint."),
-        MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTY: ("Damping Ratio", "rotY", 'float', 0.0, "The damping ratio of mimic joint compliance. A mimic joint with dampingRatio <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint."),
-        MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTZ: ("Damping Ratio", "rotZ", 'float', 0.0, "The damping ratio of mimic joint compliance. A mimic joint with dampingRatio <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint."),
-    }
-
-    def _filter_props_to_build(self, prim):
-
-        filtered_props = super()._filter_props_to_build(prim)
-
-        for prop_name, (disp_name, disp_group, prop_type, default_val, docs) in self.prop_data_custom.items():
-            mimicJoint = PhysxSchema.PhysxMimicJointAPI(prim, disp_group)
-            if mimicJoint:
-                prop = UiProp().from_custom(prop_name, disp_name, disp_group, prop_type, default_val, docs)
-                filtered_props.append(prop)
-
-        return filtered_props
-
 
     def _build_property_item(self, stage, prop, prim_paths):
 
@@ -3104,7 +3083,7 @@ class ExtendedMimicJointWidget(PhysicsWidget):
             # reference joint axis attribute widget should be enabled/disabled.
             # Hence, a rebuild should get triggered by any change.
             model.value_model.add_value_changed_fn(changed)
-
+            
         elif (prop.base_name == "referenceJointAxis"):
             # The reference joint axis attribute widget should be disabled if the reference
             # joint is a single degree of freedom joint (prismatic/revolute) because the

@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import typing
 import carb
 import omni.physx.scripts.utils
@@ -10,13 +11,7 @@ from omni.physx import get_physx_simulation_interface, get_physx_replicator_inte
 from omni.physxtests import utils
 from pxr import Usd, Gf, Sdf, UsdGeom, UsdPhysics, UsdUtils, PhysxSchema
 import math
-from omni.physx.bindings._physx import (
-    MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTX,
-    MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTY,
-    MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTZ,
-    MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTX,
-    MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTY,
-    MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTZ)
+
 
 
 JOINT_TYPE_PRISMATIC = 0
@@ -1280,9 +1275,7 @@ class PhysxMimicJointAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
         # axis of joint
         jointAxes = [JOINT_AXIS_X, JOINT_AXIS_Y, JOINT_AXIS_Z]
         rotTokens = [UsdPhysics.Tokens.rotX, UsdPhysics.Tokens.rotY, UsdPhysics.Tokens.rotZ]
-        naturalFrequencyTokens = [MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTX, MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTY, MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTZ]
-        dampingRatioTokens = [MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTX, MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTY, MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTZ]
-
+ 
         # params of root link
         # we set moi = (rootMass, rootMass, rootMass)
         rootMass = 1.0
@@ -1317,8 +1310,6 @@ class PhysxMimicJointAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
 
         jointAxis = jointAxes[axis]
         rotToken = rotTokens[axis]
-        naturalFrequencyToken = naturalFrequencyTokens[axis]
-        dampingRatioToken = dampingRatioTokens[axis]
 
         physicsScene = self._create_zero_gravity_scene(stage)
 
@@ -1369,13 +1360,9 @@ class PhysxMimicJointAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
             link1JointStateAPI.GetVelocityAttr().Set(q1dotStart)
 
             # Set the mimic joint compliance
-            if 0==i:
-                link0JointPrim.CreateAttribute(naturalFrequencyToken, Sdf.ValueTypeNames.Float).Set(nf)
-                link0JointPrim.CreateAttribute(dampingRatioToken, Sdf.ValueTypeNames.Float).Set(dr)
-            else:
-                link0JointPrim.GetAttribute(naturalFrequencyToken).Set(nf)
-                link0JointPrim.GetAttribute(dampingRatioToken).Set(dr)
-
+            mimicJoint1API.GetNaturalFrequencyAttr().Set(nf)
+            mimicJoint1API.GetDampingRatioAttr().Set(dr)
+ 
             # Compute the predicted outcome
             predicted = self.predictMimicJointComplianceOutcome(rAA, rAB, rBB, rBA, gearing, offset, nf, dr, q0Start, q1Start, q0dotStart, q1dotStart, dt)
             q0dotEndPredicted = predicted[0]

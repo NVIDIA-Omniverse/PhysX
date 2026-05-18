@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import numpy as np
 import carb
@@ -372,7 +373,9 @@ class FrankaDemoBase(demo.AsyncDemoBase):
 
         scene.CreateGravityDirectionAttr().Set(Gf.Vec3f(0.0, 0.0, -1.0))
         scene.CreateGravityMagnitudeAttr().Set(self._gravity_magnitude)
-        utils.set_physics_scene_asyncsimrender(scene.GetPrim())
+        
+        # disable async because it is not safe to use Numpy from async callbacks
+        utils.set_physics_scene_asyncsimrender(scene.GetPrim(), False)
         physxSceneAPI = PhysxSchema.PhysxSceneAPI.Apply(scene.GetPrim())
         physxSceneAPI.GetTimeStepsPerSecondAttr().Set(self._time_steps_per_second)
 

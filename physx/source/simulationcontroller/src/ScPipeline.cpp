@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -181,7 +181,7 @@ public:
 	virtual void runInternal() 
 	{
 		for (PxU32 a = 0; a < mNbShapes; ++a)
-			mShapes[a]->updateCached(mCache, mBoundsArray);
+			mShapes[a]->updateCached_ThreadSafe(mCache, mBoundsArray);
 	}
 
 	virtual const char* getName() const { return "DirtyShapeUpdatesTask";  }
@@ -646,6 +646,10 @@ namespace
 				ShapeSimBase* s0 = reinterpret_cast<ShapeSimBase*>(pair.mUserData1);
 				ShapeSimBase* s1 = reinterpret_cast<ShapeSimBase*>(pair.mUserData0);
 
+				//### PT: DEFENSIVE coding for OMPE-71676
+				if(!s0 || !s1)
+					continue;
+
 				ElementSimInteraction* interaction = mNPhaseCore->createRbElementInteraction(mFinfo[i], *s0, *s1, *currentCm, *currentSI, *currentEI, false);
 				if(interaction)
 				{
@@ -814,8 +818,8 @@ void Sc::Scene::preallocateContactManagers(PxBaseTask* continuation)
 			const PxU32 nb = filterTask->mNbToKeep + filterTask->mNbToSuppress;
 			if(pairs + createdOverlapCount != filterTask->mPairs)	// PT: always happens for first task, sometimes for all tasks if nothing was filtered
 			{
-				PxMemCopy(pairs + createdOverlapCount, filterTask->mPairs, sizeof(AABBOverlap) * nb);
-				PxMemCopy(fInfo + createdOverlapCount, filterTask->mFinfo, sizeof(FilterInfo) * nb);
+				PxMemMove(pairs + createdOverlapCount, filterTask->mPairs, sizeof(AABBOverlap) * nb);
+				PxMemMove(fInfo + createdOverlapCount, filterTask->mFinfo, sizeof(FilterInfo) * nb);
 			}
 			createdOverlapCount += nb;
 			batchSize += nb;
@@ -861,17 +865,20 @@ void Sc::Scene::processLostTouchPairs()
 		ActorSim* body1 = pairs[i].body1;
 		ActorSim* body2 = pairs[i].body2;
 
-		// If one has been deleted, we wake the other one
+		// BUGFIX 5813869: If one has been deleted, only wake the other if non-null; skip pair if either pointer is null.
 		const PxIntBool deletedBody1 = mLostTouchPairsDeletedBodyIDs.boundedTest(pairs[i].body1ID);
 		const PxIntBool deletedBody2 = mLostTouchPairsDeletedBodyIDs.boundedTest(pairs[i].body2ID);
 		if(deletedBody1 || deletedBody2)
 		{
-			if(!deletedBody1) 
+			if(!deletedBody1 && body1)
 				body1->internalWakeUp();
-			if(!deletedBody2) 
+			if(!deletedBody2 && body2)
 				body2->internalWakeUp();
 			continue;
 		}
+
+		if(!body1 || !body2)
+			continue;
 
 		const bool b1Active = body1->isActive();
 		const bool b2Active = body2->isActive();
@@ -968,7 +975,7 @@ namespace
 						// PT: codepath needed for AttachmentTests.DeformableSurfaceFiltering_GPU, also reached in ParticleCollisionTests.RigidDeltaAccum etc
 						mGPUTypes.mLock.lock();	// PT: this is not a common case so we just use a plain mutex for now
 							// PT: record what we'll need to call mSimpleIslandManager->setEdgeConnected(edgeIdx, type) later
-							DelayedGPUTypes::Data& data = mGPUTypes.mDelayed.insert();
+							DelayedGPUTypes::Data& data = *mGPUTypes.mDelayed.insert();
 							data.mEdgeIndex = edgeIdx;
 							data.mType = type;
 						mGPUTypes.mLock.unlock();
@@ -2452,6 +2459,8 @@ void Sc::Scene::postThirdPassIslandGen(PxBaseTask* /*continuation*/)
 
 	putObjectsToSleep();
 
+	// Skip deactivating interactions when sleeping is disabled
+	if(!(mPublicFlags & PxSceneFlag::eDISABLE_SLEEPING))
 	{
 		PX_PROFILE_ZONE("Sc::Scene::putInteractionsToSleep", mContextId);
 		const IG::IslandSim& islandSim = mSimpleIslandManager->getSpeculativeIslandSim();
@@ -2659,8 +2668,8 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 				//if(!islandSim.getNode(bodySim->getNodeIndex()).isActive())
 				rigid->setPose(rigid->getLastCCDTransform());
 
-				bodySim->updateCached(&changedAABBMgrActorHandles);
-				updateBodySim(*bodySim);
+				bodySim->updateCached_NotThreadSafe(&changedAABBMgrActorHandles);
+				gpu_updateBodySim(*bodySim);
 
 				//solver is running in parallel with IG(so solver might solving the body which IG identify as deactivatedNodes). After we moved sleepCheck into the solver after integration, sleepChecks
 				//might have processed bodies that are now considered deactivated. This could have resulted in either freezing or unfreezing one of these bodies this frame, so we need to process those
@@ -2691,7 +2700,7 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 	const PxU32 nbActiveArticulations = islandSim.getNbActiveNodes(IG::Node::eARTICULATION_TYPE);
 
 	if(nbActiveArticulations)
-		mSimulationController->updateArticulationAfterIntegration(mLLContext, mAABBManager, mCcdBodies, continuation, islandSim, mDt);
+		mSimulationController->updateArticulationAfterIntegration(mLLContext, mAABBManager, mCcdBodies, continuation, islandSim, mDt, mDynamicsContext->isSleepingDisabled());
 
 	const PxU32 numArticsToDeactivate = islandSim.getNbNodesToDeactivate(IG::Node::eARTICULATION_TYPE);
 
@@ -2775,9 +2784,10 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 {
 	PX_PROFILE_ZONE("Sim.sceneFinalization", mContextId);
 
+#if PX_SUPPORT_GPU_PHYSX
 	if(mCCDContext)
 	{
-		if(mSimulationController->mGPU)	// PT: skip this on CPU, see empty CPU function called in updateBodySim
+		if(mSimulationController->mGPU)	// PT: skip this on CPU, see empty CPU function called in gpu_updateBodySim
 		{
 			//KS - force simulation controller to update any bodies updated by the CCD. When running GPU simulation, this would be required
 			//to ensure that cached body states are updated
@@ -2789,12 +2799,13 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 			for(PxU32 a=0; a<nbUpdatedBodies; ++a)
 			{
 				BodySim* bodySim = reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(updatedBodies[a]) - rigidBodyOffset);
-				updateBodySim(*bodySim);
+				gpu_updateBodySim(*bodySim);
 			}
 		}
 
 		mCCDContext->clearUpdatedBodies();
 	}
+#endif
 
 	fireOnAdvanceCallback();  // placed here because it needs to be done after sleep check and after potential CCD passes
 

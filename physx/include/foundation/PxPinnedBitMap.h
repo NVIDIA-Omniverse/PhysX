@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,26 +38,10 @@ namespace physx
 #endif
 
 /*!
-Overloaded allocation helper for pinned memory support
-*/
-PX_INLINE void* PxBitMapAlloc(PxPinnedAllocator<PxU32>& a, PxU32 bytes, const char* file, int line, uint32_t* cookie)
-{
-	return a.allocate(bytes, file, line, cookie);
-}
-
-/*!
-Overloaded de-allocation helper for pinned memory support
-*/
-PX_INLINE void PxBitMapDealloc(PxPinnedAllocator<PxU32>& a, void* ptr, uint32_t* cookie)
-{
-	a.deallocate(ptr, cookie);
-}
-
-/*!
 As opposed to PxPinnedArray, PxBitMapPinned has non-pinned allocation fallback, 
 same as PxPinnedArraySafe.
 */
-typedef PxBitMapBase< PxPinnedAllocator<PxU32> > PxBitMapPinned;
+using PxBitMapPinned = PxBitMapBase<PxPinnedAllocator<PxU32> >;
 
 
 #if !PX_DOXYGEN

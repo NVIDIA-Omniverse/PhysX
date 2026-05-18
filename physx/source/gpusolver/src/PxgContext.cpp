@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -337,10 +337,8 @@ namespace physx
 	}
 
 	PxgGpuContext::PxgGpuContext(Cm::FlushPool& flushPool, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-		PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled, bool isTGS) :
-		Dy::Context(islandManager, heapMemoryManager->mMappedMemoryAllocators, simStats, enableStabilization,
-			useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, lengthScale, contextID, isResidualReportingEnabled),
+		PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxReal lengthScale, PxU64 contextID, bool isTGS, PxSceneFlags sceneFlags) :
+		Dy::Context(islandManager, heapMemoryManager->mMappedMemoryAllocators, simStats, maxBiasCoefficient, lengthScale, contextID, sceneFlags),
 		mTotalEdges(0), mTotalPreviousEdges(0),
 		mFlushPool(flushPool), 
 		mSolvedThisFrame(false),
@@ -379,7 +377,7 @@ namespace physx
 		mIslandStaticTouchCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
 		mIsTGS(isTGS),
 		mIsExternalForcesEveryTgsIterationEnabled(false),
-		mEnableDirectGPUAPI(enableDirectGPUAPI),
+		mEnableDirectGPUAPI(sceneFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API),
 		mRecomputeArticulationBlockFormat(false),
 		mEnforceConstraintWriteBackToHostCopy(false),
 
@@ -796,6 +794,17 @@ namespace physx
 				{
 					mIslandManager->getAccurateIslandSim().deactivateNode_ForGPUSolver(nodeIndex);
 					mIslandManager->getSpeculativeIslandSim().deactivateNode_ForGPUSolver(nodeIndex);
+					
+					// Zero all velocities when naturally going to sleep (matches CPU behavior)
+					// This is required by the API documentation for sleep behavior
+					const Cm::UnAlignedSpatialVector memZero = Cm::UnAlignedSpatialVector::Zero();
+					for (PxU32 i = 0; i < numLinks; ++i)
+					{
+						sLinkVelocities[i] = memZero;
+					}
+					
+					// Zero joint velocities
+					PxMemZero(sJointVelocities, sizeof(PxReal) * numDofs);
 				}
 
 				Dy::ArticulationLink* links = artiData.getLinks();
@@ -2008,11 +2017,11 @@ void PxgGpuContext::doArticulationGPU()
 {
 	if(mIsTGS)
 	{
-		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, mIsExternalForcesEveryTgsIterationEnabled, mRecomputeArticulationBlockFormat);
+		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, mIsExternalForcesEveryTgsIterationEnabled, mRecomputeArticulationBlockFormat, mIsSleepingDisabled);
 	}
 	else
 	{
-		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, false, mRecomputeArticulationBlockFormat);
+		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, false, mRecomputeArticulationBlockFormat, mIsSleepingDisabled);
 		mGpuArticulationCore->setupInternalConstraints(mArticulationCount, mDt, mDt, 1.0f / mDt, false);
 	}
 }

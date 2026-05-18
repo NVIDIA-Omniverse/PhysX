@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import math
 import numpy as np
@@ -13,7 +14,7 @@ import omni.physx.bindings._physx as physx_settings_bindings
 from omni.physxdemos.utils import franka_helpers
 from omni.physxdemos.utils import numpy_utils
 
-deformable_beta_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 def orientation_error(desired, current):
     cc = numpy_utils.quat_conjugate(current)
@@ -72,7 +73,7 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
             self._reset_hydra_instancing_on_shutdown = True
 
     def create_jello_cube(self, stage, path, name, position, size, mesh_path, phys_material_path, grfx_material):
-        if deformable_beta_on:
+        if not deformable_deprecated_on:
             xform_path = path.AppendChild(name)
             xform = UsdGeom.Xform.Define(stage, xform_path)
             skinMesh_path = xform_path.AppendChild("mesh")
@@ -166,12 +167,12 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
         deformable_material_path = omni.usd.get_stage_next_free_path(stage, "/DeformableBodyMaterial", True)
         deformable_material2_path = omni.usd.get_stage_next_free_path(stage, "/DeformableBodyMaterial2", True)
 
-        if deformable_beta_on:
+        if not deformable_deprecated_on:
             deformableUtils.add_deformable_material(stage, deformable_material_path,
                 youngs_modulus=10000000.0,
                 poissons_ratio=0.499,
                 dynamic_friction=1.0,
-                density=300.0
+                density=100.0
             )
             mat_prim = stage.GetPrimAtPath(deformable_material_path)
             mat_prim.ApplyAPI("PhysxDeformableMaterialAPI")
@@ -195,7 +196,7 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
                 damping_scale=0.0,
                 elasticity_damping=0.0001,
                 dynamic_friction=1.0,
-                density=300,
+                density=100,
             )
             deformableUtils.add_deformable_body_material(
                 stage,
@@ -283,6 +284,7 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
             physxArticulationAPI = PhysxSchema.PhysxArticulationAPI.Apply(franka_xform.GetPrim())
             physxArticulationAPI.GetSolverPositionIterationCountAttr().Set(self.pos_iterations)
             physxArticulationAPI.GetSolverVelocityIterationCountAttr().Set(self.vel_iterations)
+            physxArticulationAPI.CreateSleepThresholdAttr().Set(0)
             # setup fingers
             prim = stage.GetPrimAtPath(str(env_xform.GetPath()) + "/franka/panda_leftfinger/geometry")
             bindingAPI = UsdShade.MaterialBindingAPI.Apply(prim)
@@ -320,6 +322,7 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
             )
             rigidbody_api.CreateSolverPositionIterationCountAttr(self.pos_iterations)
             rigidbody_api.CreateSolverVelocityIterationCountAttr(self.vel_iterations)
+            rigidbody_api.CreateSleepThresholdAttr().Set(0)
 
             # create soft cube
             self.create_jello_cube(
@@ -379,7 +382,7 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
         self.init_pos = init_hand_transforms[:, :3]
         self.init_rot = init_hand_transforms[:, 3:]
 
-        if deformable_beta_on:
+        if not deformable_deprecated_on:
             self.boxes = sim.create_volume_deformable_body_view("/World/envs/*/box")
         else:
             self.boxes = sim.create_soft_body_view("/World/envs/*/box")
@@ -400,6 +403,13 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
 
         # prevent garbage collector from deleting the sim 
         self.sim = sim
+        
+        # Initialize timers for each environment
+        self.grip_timer = np.zeros(self.num_envs)  # tracks how long we've been gripping
+        self.drop_timer = np.zeros(self.num_envs)  # tracks time since dropping
+        self.grip_duration = 1.0  # seconds to hold cube before releasing
+        self.drop_delay = 0.5  # seconds to wait before allowing gripper to close again
+        self.was_gripped = np.zeros(self.num_envs, dtype=bool)  # track previous grip state
 
     def on_shutdown(self):
         self.frankas = None
@@ -439,7 +449,15 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
 
         # determine if we're holding the box (grippers are closed and box is near)
         gripper_sep = dof_pos[:, 7] + dof_pos[:, 8]
-        gripped = (gripper_sep < self.box_size) & (box_dist < grasp_offset * 2.0)
+        
+        # Use different thresholds for gripping vs releasing to add hysteresis
+        if hasattr(self, 'was_gripped'):
+            # If we were gripped, use more relaxed thresholds to maintain grip
+            grip_threshold = np.where(self.was_gripped, self.box_size * 1.2, self.box_size)
+            dist_threshold = np.where(self.was_gripped, grasp_offset * 2.5, grasp_offset * 2.0)
+            gripped = (gripper_sep < grip_threshold) & (box_dist < dist_threshold)
+        else:
+            gripped = (gripper_sep < self.box_size) & (box_dist < grasp_offset * 2.0)
 
         # determine if the box is unreachable (too far from initial box position)
         from_start = box_pos - self.init_box_transforms[:, :3]
@@ -478,11 +496,31 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
         # update position targets
         pos_targets = dof_pos + u  # * 0.3
 
-        # close the grippers when we're near the box; if looping, open them when we return to starting position
+        # Update timers
+        # Check if it's time to release (held for grip_duration)
+        time_to_release = self.grip_timer >= self.grip_duration
+        
+        # Track how long we've been gripping
+        # Reset grip timer when we're releasing or not gripping
+        self.grip_timer = np.where(gripped & ~time_to_release, self.grip_timer + dt, 0)
+        
+        # Update drop timer
+        self.drop_timer = np.maximum(0, self.drop_timer - dt)
+        
+        # When releasing, start the drop timer
+        just_released = time_to_release & (self.drop_timer == 0)
+        self.drop_timer = np.where(just_released, self.drop_delay, self.drop_timer)
+        
+        # Don't allow closing gripper if:
+        # 1. We've held the cube long enough (time to release)
+        # 2. We're in the drop delay period
+        can_close = ~time_to_release & (self.drop_timer <= 0)
+        
+        # close the grippers when we're near the box and allowed to
         if self.loop:
-            close_gripper = np.where(gripped, (box_dist < grasp_offset * 1.5), (box_dist < grasp_offset * 1.1))
+            close_gripper = (box_dist < grasp_offset * 1.1) & can_close
         else:
-            close_gripper = box_dist < grasp_offset
+            close_gripper = (box_dist < grasp_offset) & can_close
 
         grip0 = 0.015
         grip1 = 0.05
@@ -500,6 +538,9 @@ class FrankaDeformableDemo(demo.AsyncDemoBase):
 
         # apply position targets
         self.frankas.set_dof_position_targets(pos_targets, self.franka_indices)
+        
+        # Update grip state for next frame
+        self.was_gripped = gripped
 
     def get_franka_parameters(self):
         default_dof_pos = [0.0, 0.0, 0.0, -0.95, 0.0, 1.12, 0.0, 0.02, 0.02]

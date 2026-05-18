@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -30,9 +30,7 @@
 #include <PxPhysicsAPI.h>
 #include <physicsSchemaTools/physicsSchemaTokens.h>
 
-#include <omni/usd/UsdContextIncludes.h>
-#include <omni/usd/UsdContext.h>
-
+#include <omni/physx/IPhysxSimulation.h>
 #include <omni/physx/IPhysxFabric.h>
 #include <omni/physx/IPhysxJoint.h>
 #include <omni/physx/IPhysxReplicator.h>
@@ -54,8 +52,6 @@ using namespace physx;
 using namespace omni::fabric;
 using namespace carb;
 using omni::physics::tensors::ObjectType;
-const omni::fabric::IToken* omni::fabric::Token::iToken = nullptr;
-const omni::fabric::IPath* omni::fabric::Path::iPath = nullptr;
 
 
 namespace omni
@@ -223,26 +219,27 @@ BaseSimulationView::BaseSimulationView(UsdStageRefPtr stage)
     callback.userData = this;
     subscriptionObjId = g_physx->subscribeObjectChangeNotifications(callback);
     mTimeline = omni::timeline::getTimeline();
-    mTimelineEvtSub = carb::events::createSubscriptionToPop(
-        mTimeline->getTimelineEventStream(),
-        [this](carb::events::IEvent* e) {
-            if (static_cast<omni::timeline::TimelineEventType>(e->type) == omni::timeline::TimelineEventType::eStop)
-            {
-                this->invalidate();
-            }
-        },
-        0, "BaseSimulationView::BaseSimulationView");
+    if (mTimeline)
+    {
+        mTimelineEvtSub = carb::events::createSubscriptionToPop(
+            mTimeline->getTimelineEventStream(),
+            [this](carb::events::IEvent* e) {
+                if (static_cast<omni::timeline::TimelineEventType>(e->type) == omni::timeline::TimelineEventType::eStop)
+                {
+                    this->invalidate();
+                }
+            },
+            0, "BaseSimulationView::BaseSimulationView");
+    }
 
 
     // set up fabric for updating kinematic transforms
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
-    mWorldMatrixToken = iToken->getHandle(gWorldMatrixTokenString);
-    mDynamicBodyToken = iToken->getHandle(gDynamicBodyTokenString);
-    mLocalMatrixToken = iToken->getHandle(gLocalMatrixTokenString);
-    mRigidBodyWorldPositionToken = iToken->getHandle(gRigidBodyWorldPositionTokenString);
-    mRigidBodyWorldOrientationToken = iToken->getHandle(gRigidBodyWorldOrientationTokenString);
-    mRigidBodyWorldScaleToken = iToken->getHandle(gRigidBodyWorldScaleTokenString);
+    mWorldMatrixToken = omni::fabric::Token::createImmortal(gWorldMatrixTokenString);
+    mDynamicBodyToken = omni::fabric::Token::createImmortal(gDynamicBodyTokenString);
+    mLocalMatrixToken = omni::fabric::Token::createImmortal(gLocalMatrixTokenString);
+    mRigidBodyWorldPositionToken = omni::fabric::Token::createImmortal(gRigidBodyWorldPositionTokenString);
+    mRigidBodyWorldOrientationToken = omni::fabric::Token::createImmortal(gRigidBodyWorldOrientationTokenString);
+    mRigidBodyWorldScaleToken = omni::fabric::Token::createImmortal(gRigidBodyWorldScaleTokenString);
 
 }
 
@@ -276,7 +273,24 @@ void BaseSimulationView::InitializeKinematicBodies()
  
  
     IStageReaderWriter* iSip = carb::getCachedInterface<IStageReaderWriter>();
-    long stageID = omni::usd::UsdContext::getContext()->getStageId();
+    if (!iSip)
+    {
+        CARB_LOG_ERROR("Failed to acquire IStageReaderWriter interface");
+        return;
+    }
+
+    long stageID = 0;
+    if (g_physxSimulation)
+    {
+        stageID = g_physxSimulation->getAttachedStage();
+    }
+
+    if (stageID == 0 || stageID == -1)
+    {
+        CARB_LOG_ERROR("Failed to get a valid attached USD stage id from PhysX simulation for kinematic bodies");
+        return;
+    }
+
     StageReaderWriter stageRW = iSip->get(stageID);    
 
     omni::fabric::Type double3Type = omni::fabric::Type(
@@ -307,7 +321,8 @@ void BaseSimulationView::InitializeKinematicBodies()
                 rboAPI.GetKinematicEnabledAttr().Get(&kinematic);
                 if (kinematic)
                 {
-                    const omni::fabric::PathC primPath = omni::fabric::asInt(prim.GetPrimPath());
+                    const omni::fabric::Path primPath =
+                        omni::fabric::convertToPathType<omni::fabric::Path>(stageRW.getFabricId(), prim.GetPrimPath());
 
                     std::array<omni::fabric::AttrNameAndType, 5> attrNameTypeVec = {
                         omni::fabric::AttrNameAndType(mMatrix4dType, mWorldMatrixToken),
@@ -353,8 +368,8 @@ void BaseSimulationView::InitializeKinematicBodies()
 
                     omni::fabric::USDHierarchy usdHierarchy(stageRW.getFabricId());
                     pxr::GfMatrix4d localPose(1.0);
-                    omni::fabric::PathC parentPath = usdHierarchy.getParent(primPath);
-                    while (parentPath != omni::fabric::kUninitializedPath)
+                    omni::fabric::Path parentPath = usdHierarchy.getParent(primPath);
+                    while (parentPath != omni::fabric::Path())
                     {
                         pxr::GfMatrix4d* parentWorldMatrix = (pxr::GfMatrix4d*)(iSip->getAttributeWr(stageRW.getId(), parentPath, mWorldMatrixToken)).ptr;
                         if (parentWorldMatrix)
@@ -379,9 +394,19 @@ void BaseSimulationView::InitializeKinematicBodies()
 
 BaseSimulationView::~BaseSimulationView()
 {
-    g_physx->unsubscribeObjectChangeNotifications(subscriptionObjId);
+    // Guard against shutdown-order issues: if PhysX plugin has already unloaded,
+    // skip cleanup that would access dangling pointers (Python finalization race)
+    if (g_physx)
+    {
+        g_physx->unsubscribeObjectChangeNotifications(subscriptionObjId);
+    }
     invalidate();
-    GetSimulationBackend().removeSimulationView(this);
+    
+    // Guard against backend being destroyed during plugin shutdown
+    if (auto* backend = GetSimulationBackend())
+    {
+        backend->removeSimulationView(this);
+    }
 
     for (auto artiView : mArtiViews)
     {
@@ -639,8 +664,8 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
         
         for (auto& prim : matches)
         {
-            usdrt::SdfPath path = prim.GetPath();
-            omni::fabric::PathC fabricPath = omni::fabric::PathC(path); // convert usdrt::SdfPath to omni::fabric::PathC
+            const usdrt::SdfPath path = prim.GetPath();
+            omni::fabric::Path fabricPath(path); // convert usdrt::SdfPath to omni::fabric::PathC
             const pxr::SdfPath& sdfPath = omni::fabric::toSdfPath(fabricPath);
             pathsRet.push_back(sdfPath);
             //printf("%s\n", path.GetText());
@@ -824,6 +849,48 @@ void BaseSimulationView::findMatchingRigidBodies(const std::string& pattern, std
         printf("  %s: %s @ %p\n", entry.path.GetString().c_str(), entry.body->getConcreteTypeName(), entry.body);
     }
     */
+}
+
+void BaseSimulationView::processVolumeDeformableBodyEntries(const std::vector<std::string>& patterns,
+                                                           std::vector<DeformableBodyEntry>& entries)
+{
+    for (const auto& pattern : patterns)
+    {
+        size_t currentSize = entries.size();
+        findMatchingVolumeDeformableBodies(pattern, entries);
+        if (entries.size() == currentSize)
+        {
+            CARB_LOG_ERROR("Pattern '%s' did not match any volume deformable bodies\n", pattern.c_str());
+        }
+    }
+}
+
+void BaseSimulationView::processSurfaceDeformableBodyEntries(const std::vector<std::string>& patterns,
+                                                            std::vector<DeformableBodyEntry>& entries)
+{
+    for (const auto& pattern : patterns)
+    {
+        size_t currentSize = entries.size();
+        findMatchingSurfaceDeformableBodies(pattern, entries);
+        if (entries.size() == currentSize)
+        {
+            CARB_LOG_ERROR("Pattern '%s' did not match any surface deformable bodies\n", pattern.c_str());
+        }
+    }
+}
+
+void BaseSimulationView::processDeformableMaterialEntries(const std::vector<std::string>& patterns,
+                                                         std::vector<DeformableMaterialEntry>& entries)
+{
+    for (const auto& pattern : patterns)
+    {
+        size_t currentSize = entries.size();
+        findMatchingDeformableMaterials(pattern, entries);
+        if (entries.size() == currentSize)
+        {
+            CARB_LOG_ERROR("Pattern '%s' did not match any deformable materials\n", pattern.c_str());
+        }
+    }
 }
 
 void BaseSimulationView::findMatchingSoftBodies(const std::string& pattern, std::vector<SoftBodyEntry>& entriesRet)
@@ -1535,7 +1602,7 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
             jointChild = joint->getChildPose();
 
             PxArticulationJointType::Enum jointType = joint->getJointType();
-            PxU32 drive = 0;
+            PxU32 isEnvelopeUsed = 0;
 
             std::string performanceEnvelopeAPI = PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI.GetString();
             switch (jointType)
@@ -1551,7 +1618,7 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                 if (jointPrim)
                 {
                     if (jointPrim.HasAPI(PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI, UsdPhysicsTokens->angular))
-                        drive = 1;
+                        isEnvelopeUsed = 1;
                 }
                 else
                 {
@@ -1561,12 +1628,12 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                     {
                         if (schema == usdrt::TfToken(performanceEnvelopeAPI + ":" + UsdPhysicsTokens->angular.GetText()))
                         {
-                            drive = 1;
+                            isEnvelopeUsed = 1;
                             break;
                         }
                     }
                 }
-                dofImpls.push_back({ joint, PxArticulationAxis::eTWIST, drive });
+                dofImpls.push_back({ joint, PxArticulationAxis::eTWIST, isEnvelopeUsed });
                 break;
             case PxArticulationJointType::ePRISMATIC:
                 jointDesc.type = JointType::ePrismatic;
@@ -1574,7 +1641,7 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                 if (jointPrim)
                 {
                     if (jointPrim.HasAPI(PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI, UsdPhysicsTokens->linear))
-                        drive = 1;
+                        isEnvelopeUsed = 1;
                 }
                 else
                 {
@@ -1583,12 +1650,12 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                     {
                         if (schema == usdrt::TfToken(performanceEnvelopeAPI + ":" + UsdPhysicsTokens->linear.GetString()))
                         {
-                            drive = 1;
+                            isEnvelopeUsed = 1;
                             break;
                         }
                     }
                 }
-                dofImpls.push_back({ joint, PxArticulationAxis::eX, drive });
+                dofImpls.push_back({ joint, PxArticulationAxis::eX, isEnvelopeUsed });
                 break;
             case PxArticulationJointType::eSPHERICAL:
                 if (!rotationQuat.isIdentity())
@@ -1617,7 +1684,7 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                         }
                         jointDesc.dofs.emplace_back(dofName, DofType::eRotation);
                         if (jointPrim.HasAPI(PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI, UsdPhysicsTokens->rotX))
-                            drive = 1;
+                            isEnvelopeUsed = 1;
                     }
                     else
                     {
@@ -1640,12 +1707,13 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                         {
                             if (schema == usdrt::TfToken(performanceEnvelopeAPI + ":" + UsdPhysicsTokens->rotX.GetString()))
                             {
-                                drive = 1;
+                                isEnvelopeUsed = 1;
                                 break;
                             }
                         }                        
                     }
-                    dofImpls.push_back({joint, PxArticulationAxis::eTWIST, drive });
+                    dofImpls.push_back({joint, PxArticulationAxis::eTWIST, isEnvelopeUsed });
+                    isEnvelopeUsed = 0;
                 }
                 if (joint->getMotion(PxArticulationAxis::eSWING1) != PxArticulationMotion::eLOCKED)
                 {
@@ -1667,7 +1735,7 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                         }
                         jointDesc.dofs.emplace_back(dofName, DofType::eRotation);
                         if (jointPrim.HasAPI(PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI, UsdPhysicsTokens->rotY))
-                            drive = 1;
+                            isEnvelopeUsed = 1;
                     }
                     else
                     {
@@ -1689,12 +1757,13 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                         {
                             if (schema == usdrt::TfToken(performanceEnvelopeAPI + ":" + UsdPhysicsTokens->rotY.GetString()))
                             {
-                                drive = 1;
+                                isEnvelopeUsed = 1;
                                 break;
                             }
                         }
                     }
-                    dofImpls.push_back({joint, PxArticulationAxis::eSWING1, drive });
+                    dofImpls.push_back({joint, PxArticulationAxis::eSWING1, isEnvelopeUsed });
+                    isEnvelopeUsed = 0;
                 }
                 if (joint->getMotion(PxArticulationAxis::eSWING2) != PxArticulationMotion::eLOCKED)
                 {
@@ -1716,7 +1785,7 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                         }
                         jointDesc.dofs.emplace_back(dofName, DofType::eRotation);
                         if (jointPrim.HasAPI(PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI, UsdPhysicsTokens->rotZ))
-                            drive = 1;
+                            isEnvelopeUsed = 1;
                     }
                     else
                     {
@@ -1738,12 +1807,12 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
                         {
                             if (schema == usdrt::TfToken(performanceEnvelopeAPI + ":" + UsdPhysicsTokens->rotZ.GetString()))
                             {
-                                drive = 1;
+                                isEnvelopeUsed = 1;
                                 break;
                             }
                         }
                     }
-                    dofImpls.push_back({joint, PxArticulationAxis::eSWING2, drive });
+                    dofImpls.push_back({joint, PxArticulationAxis::eSWING2, isEnvelopeUsed });
                 }
                 //printf("FreeD6RotationAxesFlags = %u\n", PxU32(freeRotationAxes[i]));
                 break;
@@ -2920,11 +2989,36 @@ void BaseSimulationView::step(float dt)
     }
 #endif
 
-    GetSimulationBackend().incrementStepCount();
+    if (auto* backend = GetSimulationBackend())
+    {
+        backend->incrementStepCount();
+    }
 }
 
-PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction, float dynamicFriction, float restitution)
+PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
+                                                     float dynamicFriction,
+                                                     float restitution,
+                                                     float damping,
+                                                     PxCombineMode::Enum frictionCombineMode,
+                                                     PxCombineMode::Enum restitutionCombineMode,
+                                                     PxCombineMode::Enum dampingCombineMode)
 {
+    if (static_cast<int>(frictionCombineMode) >= static_cast<int>(PxCombineMode::Enum::eN_VALUES))
+    {
+        CARB_LOG_WARN("frictionCombineMode mode is out of range. Using PxCombineMode::eAVERAGE instead.");
+        frictionCombineMode = PxCombineMode::eAVERAGE;
+    }
+    if (static_cast<int>(restitutionCombineMode) >= static_cast<int>(PxCombineMode::Enum::eN_VALUES))
+    {
+        CARB_LOG_WARN("restitutionCombineMode mode is out of range. Using PxCombineMode::eAVERAGE instead.");
+        restitutionCombineMode = PxCombineMode::eAVERAGE;
+    }
+    if (static_cast<int>(dampingCombineMode) >= static_cast<int>(PxCombineMode::Enum::eN_VALUES))
+    {
+        CARB_LOG_WARN("dampingCombineMode mode is out of range. Using PxCombineMode::eAVERAGE instead.");
+        dampingCombineMode = PxCombineMode::eAVERAGE;
+    }
+
     std::string key;
     char keybuffer[100];
     snprintf(keybuffer, 100, "%.6f", staticFriction);
@@ -2932,6 +3026,14 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction, float
     snprintf(keybuffer, 100, "%.6f", dynamicFriction);
     key += std::string(keybuffer) + "_";
     snprintf(keybuffer, 100, "%.6f", restitution);
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%.6f", damping);
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(frictionCombineMode));
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(restitutionCombineMode));
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(dampingCombineMode));
     key += std::string(keybuffer);
 
     std::unordered_map<std::string, PxMaterial*>::const_iterator got = mMaterials.find(key);
@@ -2948,6 +3050,7 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction, float
             material->setStaticFriction(staticFriction);
             material->setDynamicFriction(dynamicFriction);
             material->setRestitution(restitution);
+            material->setDamping(damping);
 
             mUnusedMaterials.erase(mUnusedMaterials.begin());
         }
@@ -2957,14 +3060,15 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction, float
             {
                 PxPhysics& physics = g_physxPrivate->getPhysXScene()->getPhysics();
                 material = physics.createMaterial(staticFriction, dynamicFriction, restitution);
+                material->setDamping(damping);
             }
         }
 
         if (material) {
             // Assign the new values to the material
-            material->setFrictionCombineMode(PxCombineMode::eAVERAGE);
-            material->setRestitutionCombineMode(PxCombineMode::eAVERAGE);
-            material->setDampingCombineMode(PxCombineMode::eAVERAGE);
+            material->setFrictionCombineMode(frictionCombineMode);
+            material->setRestitutionCombineMode(restitutionCombineMode);
+            material->setDampingCombineMode(dampingCombineMode);
             mMaterials[key] = material;
         }
     }
@@ -3052,7 +3156,7 @@ void BaseSimulationView::_hackFixMaterialConnectivity()
         for (auto& path : materialPrimPaths)
         {
             connectivity.connectIfNot(
-                static_cast<omni::fabric::PathC>(path), static_cast<omni::fabric::PathC>(path.GetParentPath()));
+                omni::fabric::Path(path), omni::fabric::Path(path.GetParentPath()));
         }
 
         connectivity.popConnectionType();

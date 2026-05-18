@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -41,7 +41,7 @@
 #include "../../lowleveldynamics/src/DyPGS.h"
 #include "../../lowleveldynamics/shared/DyCpuGpuArticulation.h"
 #include "GuPersistentContactManifold.h"
-#include "NpConstraint.h"
+#include "../../physx/src/NpConstraint.h"	// PT: otherwise we must add "physx/src" to include path
 #include "common/PxProfileZone.h"
 
 #include "../../lowleveldynamics/include/DyFeatherstoneArticulation.h"
@@ -849,10 +849,9 @@ bool immediate::PxGenerateContacts(	const PxGeometry* const * geom0, const PxGeo
 }
 
 immArticulation::immArticulation(const PxArticulationDataRC& data) :
-	FeatherstoneArticulation(this),
-	mFlags					(data.flags),
-	mImmDirty				(true),
-	mJCalcDirty				(true)
+	mFlags		(data.flags),
+	mImmDirty	(true),
+	mJCalcDirty	(true)
 {
 	// PT: TODO: we only need the flags here, maybe drop the solver desc?
 	getSolverDesc().initData(NULL, &mFlags);
@@ -938,7 +937,7 @@ PxU32 immArticulation::addLink(const PxU32 parentIndex, const PxArticulationLink
 				(((index!=0) && joint) && (parent && (parent->getArticulation() == this))));*/
 
 	// PT: TODO: add ctors everywhere
-	ArticulationLink& link = mLinks.insert();
+	ArticulationLink& link = *mLinks.insert();
 
 	// void BodySim::postActorFlagChange(PxU32 oldFlags, PxU32 newFlags)
 	bodyCore->disableGravity	= data.disableGravity;
@@ -1728,10 +1727,8 @@ void immediate::PxIntegrateSolverBodiesTGS(PxTGSSolverBodyVel* solverBody, const
 
 
 #include "PxvGlobals.h"
-#include "PxPhysXGpu.h"
 #include "BpBroadPhase.h"
 #include "PxsHeapMemoryAllocator.h"
-#include "PxsKernelWrangler.h"
 #include "PxsMemoryManager.h"
 
 PX_COMPILE_TIME_ASSERT(sizeof(Bp::FilterGroup::Enum)==sizeof(PxBpFilterGroup));
@@ -2010,6 +2007,8 @@ const PxU32* ImmCPUBP::getOutOfBoundsObjects()	const
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_SUPPORT_GPU_PHYSX
+#include "PxPhysXGpu.h"
+
 namespace
 {
 	class ImmGPUBP : public ImmCPUBP, public PxAllocatorCallback
@@ -2037,11 +2036,9 @@ namespace
 				PxsHeapMemoryAllocatorManager*	mHeapMemoryAllocationManager;
 	};
 }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if PX_SUPPORT_GPU_PHYSX
 ImmGPUBP::ImmGPUBP(const PxBroadPhaseDesc& desc) :
 	ImmCPUBP					(desc),
 	mPxGpu						(NULL),

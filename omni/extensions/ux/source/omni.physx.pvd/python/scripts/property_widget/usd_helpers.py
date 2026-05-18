@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from re import sub
 from omni.usd import get_context
 from omni.timeline import get_timeline_interface
@@ -15,6 +16,78 @@ _global_reference_history = []  # List of context dictionaries
 _global_reference_history_index = -1
 _max_history_size = 50
 _target_scroll_position = None  # For storing target scroll position during navigation
+
+################################################################################
+# PERFORMANCE OPTIMIZATION: Handle-to-prim cache
+# Caches handle -> prim path mapping to avoid expensive full stage traversal
+# on every handle lookup. The cache is invalidated on stage changes.
+################################################################################
+class HandlePrimCache:
+    def __init__(self):
+        self._handle_to_paths = {}  # handle -> list of prim paths
+        self._is_valid = False
+        self._stage_id = None  # Track which stage this cache is for
+    
+    def invalidate(self):
+        """Invalidate the cache."""
+        self._handle_to_paths = {}
+        self._is_valid = False
+        self._stage_id = None
+    
+    def _build_cache(self, stage):
+        """Build the handle-to-path cache by traversing the stage once."""
+        self._handle_to_paths = {}
+        self._stage_id = id(stage) if stage else None
+        
+        if not stage:
+            self._is_valid = False
+            return
+        
+        # Traverse once and cache all handle -> path mappings
+        for prim in stage.TraverseAll():
+            if prim.HasAttribute("omni:pvdi:handle"):
+                handle_attr = prim.GetAttribute("omni:pvdi:handle")
+                handle = handle_attr.Get()
+                if handle is not None:
+                    handle_int = int(handle)
+                    if handle_int not in self._handle_to_paths:
+                        self._handle_to_paths[handle_int] = []
+                    self._handle_to_paths[handle_int].append(prim.GetPath())
+        
+        self._is_valid = True
+    
+    def ensure_valid(self, stage):
+        """Ensure the cache is valid for the current stage."""
+        if stage is None:
+            self.invalidate()
+            return False
+        
+        current_stage_id = id(stage)
+        if not self._is_valid or self._stage_id != current_stage_id:
+            self._build_cache(stage)
+        
+        return self._is_valid
+    
+    def get_paths_for_handle(self, handle):
+        """Get cached prim paths for a handle. Returns empty list if not found."""
+        handle_int = int(handle)
+        return self._handle_to_paths.get(handle_int, [])
+    
+    def get_all_handles(self):
+        """Get all cached handles."""
+        return set(self._handle_to_paths.keys())
+
+# Global cache instance
+_handle_prim_cache = HandlePrimCache()
+
+def invalidate_handle_cache():
+    """Invalidate the handle-to-prim cache. Call this on stage open/close."""
+    global _handle_prim_cache
+    _handle_prim_cache.invalidate()
+
+def get_handle_prim_cache():
+    """Get the global handle-to-prim cache."""
+    return _handle_prim_cache
 
 def register_reference_navigation_delegate(delegate):
     """Register a delegate for reference navigation."""
@@ -57,8 +130,9 @@ def add_to_global_reference_history(prim_path, ui_context=None):
     if _global_reference_history_index < len(_global_reference_history) - 1:
         _global_reference_history = _global_reference_history[:_global_reference_history_index + 1]
     
-    # Add new entry if it's different from the current one
+    # Add new entry or update existing if same prim but with new UI context
     if not _global_reference_history or _global_reference_history[-1]['prim_path'] != prim_path:
+        # Different prim - add new entry
         _global_reference_history.append(context_entry)
         _global_reference_history_index = len(_global_reference_history) - 1
         
@@ -66,6 +140,10 @@ def add_to_global_reference_history(prim_path, ui_context=None):
         if len(_global_reference_history) > _max_history_size:
             _global_reference_history.pop(0)
             _global_reference_history_index = len(_global_reference_history) - 1
+    elif ui_context:
+        # Same prim but with new UI context - update the context
+        _global_reference_history[-1]['ui_context'] = ui_context
+        _global_reference_history[-1]['timestamp'] = context_entry['timestamp']
     
     # Update button states on current delegate
     if _reference_navigation_delegate and hasattr(_reference_navigation_delegate, '_update_reference_navigation_buttons'):
@@ -85,8 +163,30 @@ def navigate_reference_history_prev():
         from omni.usd import get_context
         get_context().get_selection().set_selected_prim_paths([prim_path], True)
         
-        # Restore UI context (pagination, scroll position)
-        _restore_ui_context(ui_context)
+        # Force property window rebuild after selection change
+        import asyncio
+        import omni.kit.app as kit_app
+        async def delayed_rebuild_and_restore():
+            # Wait for selection change to propagate
+            for _ in range(3):
+                await kit_app.get_app().next_update_async()
+            
+            # Force rebuild the property window
+            try:
+                import omni.kit.window.property as property_window
+                window = property_window.get_window()
+                if window and hasattr(window, '_window') and hasattr(window._window, 'frame'):
+                    window._window.frame.rebuild()
+            except Exception:
+                pass
+            
+            # Wait for rebuild to complete
+            for _ in range(3):
+                await kit_app.get_app().next_update_async()
+            
+            # Then restore UI context
+            _restore_ui_context(ui_context)
+        asyncio.ensure_future(delayed_rebuild_and_restore())
         
         # Update button states
         if _reference_navigation_delegate and hasattr(_reference_navigation_delegate, '_update_reference_navigation_buttons'):
@@ -109,8 +209,30 @@ def navigate_reference_history_next():
         from omni.usd import get_context
         get_context().get_selection().set_selected_prim_paths([prim_path], True)
         
-        # Restore UI context (pagination, scroll position)
-        _restore_ui_context(ui_context)
+        # Force property window rebuild after selection change
+        import asyncio
+        import omni.kit.app as kit_app
+        async def delayed_rebuild_and_restore():
+            # Wait for selection change to propagate
+            for _ in range(3):
+                await kit_app.get_app().next_update_async()
+            
+            # Force rebuild the property window
+            try:
+                import omni.kit.window.property as property_window
+                window = property_window.get_window()
+                if window and hasattr(window, '_window') and hasattr(window._window, 'frame'):
+                    window._window.frame.rebuild()
+            except Exception:
+                pass
+            
+            # Wait for rebuild to complete
+            for _ in range(3):
+                await kit_app.get_app().next_update_async()
+            
+            # Then restore UI context
+            _restore_ui_context(ui_context)
+        asyncio.ensure_future(delayed_rebuild_and_restore())
         
         # Update button states
         if _reference_navigation_delegate and hasattr(_reference_navigation_delegate, '_update_reference_navigation_buttons'):
@@ -194,20 +316,37 @@ def get_time():
     return timeline.get_current_time() * timeline.get_time_codes_per_seconds()
 
 def select_by_object_handle(target_handle):
+    """
+    Select a prim by its object handle.
+    OPTIMIZED: Uses cached handle-to-path mapping instead of full stage traversal.
+    """
+    global _handle_prim_cache
+    
+    stage = get_context().get_stage()
+    if not stage:
+        return
+    
     curr_time = get_time()
-    for prim in get_context().get_stage().TraverseAll():
-        traversing_handle = get_object_handle(prim)
-        if not traversing_handle:
+    
+    # Ensure cache is valid and use it for lookup
+    _handle_prim_cache.ensure_valid(stage)
+    
+    # Get cached paths for this handle (much faster than full traversal)
+    cached_paths = _handle_prim_cache.get_paths_for_handle(target_handle)
+    
+    for prim_path in cached_paths:
+        prim = stage.GetPrimAtPath(prim_path)
+        if not prim:
             continue
-        if int(traversing_handle) != int(target_handle):
-            continue
+        
+        # Check visibility at current time
         if prim.HasAttribute("omni:pvdi:viz"):
             if not prim.GetAttribute("omni:pvdi:viz").Get(curr_time):
                 continue
         else:
             continue
         
-        prim_path = str(prim.GetPath())
+        prim_path_str = str(prim_path)
         
         # Add to reference navigation history
         try:
@@ -221,10 +360,10 @@ def select_by_object_handle(target_handle):
                 add_to_global_reference_history(current_prim_path, ui_context)
             
             # Then set the new selection (target object)
-            get_context().get_selection().set_selected_prim_paths([prim_path], True)
+            get_context().get_selection().set_selected_prim_paths([prim_path_str], True)
             
             # And add the target to history as well (without UI context since it's the destination)
-            add_to_global_reference_history(prim_path)
+            add_to_global_reference_history(prim_path_str)
                 
         except Exception:
             pass

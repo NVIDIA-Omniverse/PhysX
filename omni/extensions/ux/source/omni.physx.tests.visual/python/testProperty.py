@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import unittest
 import omni.kit.ui_test as ui_test
@@ -10,6 +11,7 @@ import omni.usd
 from omni.kit.property.physx import Manager, database, databaseUtils
 from omni.kit.property.physx.widgets import MainFrameWidget, PhysicsMaterialBindingWidget
 from omni.physx.scripts import particleUtils, physicsUtils, deformableUtils
+from omni.physx.scripts import utils as physxUtils
 from omni.physx import get_physx_cooking_interface
 from omni.physxtests import utils
 from omni.physxtests.tests import PhysicsUtils
@@ -550,3 +552,57 @@ class PhysxPropertyTest(TestCase):
         self.assertEqual(model.get_value(), "none")
         model.set_value("convexHull")
         self.assertEqual(model.get_value(), "convexHull")
+
+    async def test_physics_ui_physics_scene_properties(self):
+        stage = await self.new_stage()
+
+        path = omni.usd.get_stage_next_free_path(stage, "/physicsScene", True)
+        prim = UsdPhysics.Scene.Define(stage, path).GetPrim()
+
+        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+        UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+
+        await self._select_and_focus_property_window([prim.GetPath().pathString])
+        self.assertTrue(await self._test_physics_visual_component(prim, "_physics_scene_m_z_up"))
+
+        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
+        await self.wait(3)
+
+        self.assertTrue(await self._test_physics_visual_component(prim, "_physics_scene_m_y_up"))
+
+        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+        UsdGeom.SetStageMetersPerUnit(stage, 0.01)
+
+        await self.wait(3)
+
+        self.assertTrue(await self._test_physics_visual_component(prim, "_physics_scene_cm_z_up"))
+
+        await self.wait(3)
+        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
+
+        self.assertTrue(await self._test_physics_visual_component(prim, "_physics_scene_cm_y_up"))
+
+        stage = await self.new_stage()
+
+    async def test_physics_ui_mesh_approximation(self):
+        stage = await self.new_stage()
+        mesh = physicsUtils.create_mesh_cube(stage, "/capsuleActor", 100.0)
+        prim = mesh.GetPrim()
+        UsdPhysics.CollisionAPI.Apply(prim)
+        UsdPhysics.MeshCollisionAPI.Apply(prim)
+
+        for name, _ in physxUtils.MESH_APPROXIMATIONS.items():
+            #if name != UsdPhysics.Tokens.none:
+            prim.GetAttribute("physics:approximation").Set(name)
+            self.assertTrue(await self._test_physics_visual_component(prim, f"_mesh_approximation_{name}"))
+
+        xform = UsdGeom.Xform.Define(stage, "/xform")
+        prim = xform.GetPrim()
+        UsdPhysics.CollisionAPI.Apply(prim)
+        UsdPhysics.MeshCollisionAPI.Apply(prim)
+        PhysxSchema.PhysxMeshMergeCollisionAPI.Apply(prim)
+
+        for name, _ in physxUtils.MESH_APPROXIMATIONS.items():
+            #if name != UsdPhysics.Tokens.none:
+            prim.GetAttribute("physics:approximation").Set(name)
+            self.assertTrue(await self._test_physics_visual_component(prim, f"_mesh_approximation_{name}_meshmerge"))

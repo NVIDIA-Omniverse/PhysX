@@ -1,15 +1,15 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
 __all__ = ["CookingApproximationChecker"]
 
-from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion
-from omni.asset_validator.core.complianceChecker import is_omni_path
+from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion, is_omni_path
 from .. import get_physx_asset_validator_interface
 from pxr import Usd, UsdPhysics, UsdUtils, PhysicsSchemaTools, UsdGeom
 import carb
-from omni.physx import get_physx_interface, get_physx_simulation_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_interface, get_physx_simulation_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 import omni.physx.bindings._physx as physx_bindings
 import asyncio
 

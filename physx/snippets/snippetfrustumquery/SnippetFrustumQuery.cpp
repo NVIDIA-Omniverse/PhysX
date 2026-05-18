@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -217,9 +217,9 @@ void CustomScene::render() const
 		char buffer[256];
 #ifdef BENCHMARK_MODE
 		time = __rdtsc() - time;
-		sprintf(buffer, "%d visible objects (%d)\n", cb.mVisibles.size(), int(time/1024));
+		Pxsnprintf(buffer, sizeof(buffer), "%d visible objects (%d)\n", cb.mVisibles.size(), int(time/1024));
 #else
-		sprintf(buffer, "%d visible objects\n", cb.mVisibles.size());
+		Pxsnprintf(buffer, sizeof(buffer), "%d visible objects\n", cb.mVisibles.size());
 #endif
 		const PxVec3 color(1.0f, 0.5f, 0.25f);
 		for(PxU32 i=0;i<cb.mVisibles.size();i++)

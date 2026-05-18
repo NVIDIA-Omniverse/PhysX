@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -33,9 +33,7 @@ SurfaceDeformableBodySet::SurfaceDeformableBodySet()
     using omni::fabric::AttributeRole;
     using omni::fabric::BaseDataType;
 
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
-    mPointsToken = iToken->getHandle("points");
+    mPointsToken = omni::fabric::Token::createImmortal("points");
     mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
 
     carb::settings::ISettings* iSettings = carb::getCachedInterface<carb::settings::ISettings>();
@@ -61,8 +59,8 @@ void SurfaceDeformableBodySet::releaseBuffers()
         SurfaceDeformableBody& surfaceDeformableBody = *mSurfaceDeformableBodies[i];
 
         {
-            pxr::SdfPath path = surfaceDeformableBody.data.simMeshPrim.GetPath();
-            omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+            const pxr::SdfPath path = surfaceDeformableBody.data.simMeshPrim.GetPath();
+            const omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(mFabricId, path);
 
             if (surfaceDeformableBody.stagingPointsDevMap[pathHandle])
                 PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, surfaceDeformableBody.stagingPointsDevMap[pathHandle]);
@@ -70,8 +68,8 @@ void SurfaceDeformableBodySet::releaseBuffers()
 
         for (size_t i = 0; i < surfaceDeformableBody.skinMeshPrims.size(); ++i)
         {
-            pxr::SdfPath path = surfaceDeformableBody.skinMeshPrims[i].GetPath();
-            omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+            const pxr::SdfPath path = surfaceDeformableBody.skinMeshPrims[i].GetPath();
+            const omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(mFabricId, path);
 
             if (surfaceDeformableBody.stagingPointsDevMap[pathHandle])
                 PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, surfaceDeformableBody.stagingPointsDevMap[pathHandle]);
@@ -88,9 +86,9 @@ void SurfaceDeformableBodySet::releaseBuffers()
         cudaContextManager->getCudaContext()->streamDestroy(mDeformableBodyCopyStream);
 }
 
-void SurfaceDeformableBodySet::createFabricAttribute(omni::fabric::StageReaderWriter& srw, PxCudaContextManager* cudaContextManager, pxr::SdfPath path, uint32_t numVertices, std::unordered_map<omni::fabric::PathC, float3*>& stagingPointsDevMap)
+void SurfaceDeformableBodySet::createFabricAttribute(omni::fabric::StageReaderWriter& srw, PxCudaContextManager* cudaContextManager, pxr::SdfPath path, uint32_t numVertices, std::unordered_map<omni::fabric::Path, float3*>& stagingPointsDevMap)
 {
-    omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+    omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(mFabricId, path);
 
     srw.createPrim(pathHandle);
     srw.createAttribute(pathHandle, mPointsToken, mTypeFloat3Array);
@@ -107,6 +105,8 @@ void SurfaceDeformableBodySet::createFabricAttribute(omni::fabric::StageReaderWr
 
 void SurfaceDeformableBodySet::prepareBuffers(omni::fabric::StageReaderWriter& srw)
 {
+    mFabricId = srw.getFabricId();
+
     size_t numSurfaceDeformableBodies = mSurfaceDeformableBodies.size();
     if (numSurfaceDeformableBodies)
     {
@@ -169,16 +169,17 @@ void SurfaceDeformableBodySet::updateInternalSurfaceDeformableBodyData()
             PxCudaHelpersExt::copyDToHAsync(*cudaContextManager, it->data.simMeshPositionInvMassH, it->physXPtr->getPositionInvMassBufferD(), it->data.numSimMeshVertices, mDeformableBodyCopyStream);
 
             // Update allSkinnedVerticesH
-            PxCudaHelpersExt::copyDToHAsync(*cudaContextManager, it->data.allSkinnedVerticesH, it->data.allSkinnedVerticesD, it->data.numSkinMeshVertices, mDeformableBodyCopyStream);
+            if (it->data.numSkinMeshVertices > 0)
+                PxCudaHelpersExt::copyDToHAsync(*cudaContextManager, it->data.allSkinnedVerticesH, it->data.allSkinnedVerticesD, it->data.numSkinMeshVertices, mDeformableBodyCopyStream);
         }
     }
 }
 
 void SurfaceDeformableBodySet::prepareInteropData(omni::fabric::StageReaderWriter& srw, pxr::SdfPath path, DeformableBodyGPUData& gpuData,
                                                   void* src, uint32_t numVertices, pxr::GfMatrix4f worldToDeformableSurface,
-                                                  std::unordered_map<omni::fabric::PathC, float3*>& stagingPointsDevMap, std::unordered_map<omni::fabric::PathC, float3*>& fabricPointsCPUMap, const int srcPointsElemSize)
+                                                  std::unordered_map<omni::fabric::Path, float3*>& stagingPointsDevMap, std::unordered_map<omni::fabric::Path, float3*>& fabricPointsCPUMap, const int srcPointsElemSize)
 {
-    omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+    omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(mFabricId, path);
 
     if (mGPUInterop)
     {
@@ -295,7 +296,7 @@ void SurfaceDeformableBodySet::updateSurfaceDeformableBodies(omni::fabric::Stage
 
             {
                 pxr::SdfPath path = hostData->data.simMeshPrim.GetPath();
-                omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+                omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(mFabricId, path);
 
                 copyBuffer(hostData->fabricPointsCPUMap[pathHandle], hostData->data.simMeshPositionInvMassH, (unsigned int)hostData->data.numSimMeshVertices,
                            hostData->data.worldToSimMesh);
@@ -304,7 +305,7 @@ void SurfaceDeformableBodySet::updateSurfaceDeformableBodies(omni::fabric::Stage
             for (size_t i = 0; i < hostData->data.skinMeshPrims.size(); ++i)
             {
                 pxr::SdfPath path = hostData->data.skinMeshPrims[i].GetPath();
-                omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+                omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(mFabricId, path);
 
                 copyBuffer(hostData->fabricPointsCPUMap[pathHandle], hostData->data.allSkinnedVerticesH + hostData->data.skinMeshRanges[i].x, (unsigned int)hostData->data.skinMeshRanges[i].y,
                             hostData->data.worldToSkinMeshTransforms[i]);
@@ -323,9 +324,8 @@ SurfaceDeformableBodyManager::SurfaceDeformableBodyManager()
 
     mTypeFloat3 = omni::fabric::Type(BaseDataType::eFloat, 3, 0, AttributeRole::eNone);
     mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
-
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-    mPointsToken = iToken->getHandle("points");
+    
+    mPointsToken = omni::fabric::Token::createImmortal("points");
 }
 
 SurfaceDeformableBodyManager::~SurfaceDeformableBodyManager()
@@ -336,7 +336,7 @@ SurfaceDeformableBodyManager::~SurfaceDeformableBodyManager()
 void SurfaceDeformableBodyManager::registerDeformableBody(pxr::UsdGeomXformCache& xfCache, uint64_t stageId, omni::fabric::IStageReaderWriter* iStageReaderWriter, omni::fabric::StageReaderWriterId stageInProgress, const pxr::UsdPrim& prim)
 {
     pxr::SdfPath path = prim.GetPath();
-    omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+    omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(iStageReaderWriter->getFabricId(stageInProgress), path);
 
     // Check if deformable body is a valid surface deformable
     IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
@@ -361,15 +361,16 @@ void SurfaceDeformableBodyManager::registerDeformableBody(pxr::UsdGeomXformCache
     // add tag for hydra to pick this prim up
     constexpr omni::fabric::Type primTypeType(omni::fabric::BaseDataType::eTag, 1, 0, omni::fabric::AttributeRole::ePrimTypeName);
     const omni::fabric::Token primType("Deformable");
-    omni::fabric::PathC simMeshPathHandle = omni::fabric::asInt(data.simMeshPrim.GetPath());
+    omni::fabric::Path simMeshPathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(
+        iStageReaderWriter->getFabricId(stageInProgress) , data.simMeshPrim.GetPath());
     iStageReaderWriter->createAttribute(stageInProgress, simMeshPathHandle, primType, omni::fabric::TypeC(primTypeType));
 
-    PositionCache::const_iterator fit = mInitialPositions.find(simMeshPathHandle.path);
+    PositionCache::const_iterator fit = mInitialPositions.find(simMeshPathHandle);
     if (fit == mInitialPositions.end())
     {
         pxr::VtArray<carb::Float3> simMeshPositions;
         copyBuffer(simMeshPositions, simMeshPoints.data(), (unsigned int)simMeshPoints.size());
-        mInitialPositions[simMeshPathHandle.path] = simMeshPositions;
+        mInitialPositions[simMeshPathHandle] = simMeshPositions;
     }
 
     allSkinMeshPoints.reserve(data.numSkinMeshVertices);
@@ -386,15 +387,16 @@ void SurfaceDeformableBodyManager::registerDeformableBody(pxr::UsdGeomXformCache
             }
 
             // add tag for hydra to pick this prim up
-            omni::fabric::PathC skinMeshPathHandle = omni::fabric::asInt(data.skinMeshPrims[i].GetPath());
+            omni::fabric::Path skinMeshPathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(
+                iStageReaderWriter->getFabricId(stageInProgress), data.skinMeshPrims[i].GetPath());
             iStageReaderWriter->createAttribute(stageInProgress, skinMeshPathHandle, primType, omni::fabric::TypeC(primTypeType));
 
-            PositionCache::const_iterator fit = mInitialPositions.find(skinMeshPathHandle.path);
+            PositionCache::const_iterator fit = mInitialPositions.find(skinMeshPathHandle);
             if (fit == mInitialPositions.end())
             {
                 pxr::VtArray<carb::Float3> skinMeshPositions;
                 copyBuffer(skinMeshPositions, points.data(), (unsigned int)points.size());
-                mInitialPositions[skinMeshPathHandle.path] = skinMeshPositions;
+                mInitialPositions[skinMeshPathHandle] = skinMeshPositions;
             }
         }
     }
@@ -424,7 +426,7 @@ bool SurfaceDeformableBodyManager::prepareBuffers(omni::fabric::StageReaderWrite
     {
         mSurfaceDeformableBodySets.clear();
 
-        std::vector<omni::fabric::PathC> emptyPaths;
+        std::vector<omni::fabric::Path> emptyPaths;
 
         for (auto &it : mSurfaceDeformableBodies)
         {
@@ -503,7 +505,7 @@ void SurfaceDeformableBodyManager::setInitialTransformation(omni::fabric::StageR
 {
     for (const auto& initial : mInitialPositions)
     {
-        omni::fabric::PathC pathHandle = omni::fabric::PathC(initial.first);
+        const omni::fabric::Path pathHandle = initial.first;
 
         // AD: attention, we will get a pointer to the pointer here. not really intuitive.
         auto fabricAttr = stage.getAttributeWr<carb::Float3*>(pathHandle, mPointsToken);
@@ -527,7 +529,7 @@ void SurfaceDeformableBodyManager::saveToUsd(omni::fabric::StageReaderWriter& st
 {
     for (const auto& initial : mInitialPositions)
     {
-        omni::fabric::PathC pathHandle = omni::fabric::PathC(initial.first);
+        const omni::fabric::Path pathHandle = initial.first;
 
         const size_t size = stage.getArrayAttributeSize(pathHandle, mPointsToken);
         auto fabricAttr = stage.getAttributeRd<carb::Float3*>(pathHandle, mPointsToken);

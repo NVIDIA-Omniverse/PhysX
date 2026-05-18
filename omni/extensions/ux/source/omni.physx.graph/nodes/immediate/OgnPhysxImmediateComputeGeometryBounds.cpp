@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -99,8 +99,8 @@ public:
         // bbox[Min|Max]Corner attributes with world space aabb output by PhysX. We also add the computed cooking hash
         // named meshKey, that only hashes input mesh data (excluding cooking params).
 
-        static const NameToken point3Token = omni::fabric::asInt(pxr::TfToken("pointf[3]"));
-        static const NameToken uint128Token = omni::fabric::asInt(pxr::TfToken("uint64[]"));
+        static const NameToken point3Token = omni::fabric::Token::createImmortal(pxr::TfToken("pointf[3]").GetText());
+        static const NameToken uint128Token = omni::fabric::Token::createImmortal(pxr::TfToken("uint64[]").GetText());
         static const Type point3Type = db.typeFromName(point3Token);
         static const Type uint128Type = db.typeFromName(uint128Token);
         for (size_t i = 0; i < childrenCount; ++i)
@@ -110,24 +110,24 @@ public:
 
             BundleHandle outputChild = outputBundle->getChildBundle(i);
             ogn::BundleContents<ogn::kOgnOutput, ogn::kCpu> outputChildBundle(context, outputChild);
-            auto bboxMinAttr = outputChildBundle.attributeByName(ImmediateNode::kBoundingBoxMin);
-            auto bboxMaxAttr = outputChildBundle.attributeByName(ImmediateNode::kBoundingBoxMax);
-            auto meshKeyAttr = outputChildBundle.attributeByName(ImmediateNode::kMeshKey);
+            auto bboxMinAttr = outputChildBundle.attributeByName(omni::fabric::Token::createImmortal("bboxMinCorner"));
+            auto bboxMaxAttr = outputChildBundle.attributeByName(omni::fabric::Token::createImmortal("bboxMaxCorner"));
+            auto meshKeyAttr = outputChildBundle.attributeByName(omni::fabric::Token::createImmortal("meshKey"));
             if (!bboxMinAttr.isValid() || bboxMinAttr.type() != point3Type)
             {
                 // Remove silently fails if not there and handles the case of wrong type
-                outputChildBundle.removeAttribute(ImmediateNode::kBoundingBoxMin);
-                bboxMinAttr = outputChildBundle.addAttribute(ImmediateNode::kBoundingBoxMin, point3Type);
+                outputChildBundle.removeAttribute(omni::fabric::Token::createImmortal("bboxMinCorner"));
+                bboxMinAttr = outputChildBundle.addAttribute(omni::fabric::Token::createImmortal("bboxMinCorner"), point3Type);
             }
             if (!bboxMaxAttr.isValid() || bboxMaxAttr.type() != point3Type)
             {
-                outputChildBundle.removeAttribute(ImmediateNode::kBoundingBoxMax);
-                bboxMaxAttr = outputChildBundle.addAttribute(ImmediateNode::kBoundingBoxMax, point3Type);
+                outputChildBundle.removeAttribute(omni::fabric::Token::createImmortal("bboxMaxCorner"));
+                bboxMaxAttr = outputChildBundle.addAttribute(omni::fabric::Token::createImmortal("bboxMaxCorner"), point3Type);
             }
             if (!meshKeyAttr.isValid() || meshKeyAttr.type() != uint128Type)
             {
-                outputChildBundle.removeAttribute(ImmediateNode::kMeshKey);
-                meshKeyAttr = outputChildBundle.addAttribute(ImmediateNode::kMeshKey, uint128Type, 2);
+                outputChildBundle.removeAttribute(omni::fabric::Token::createImmortal("meshKey"));
+                meshKeyAttr = outputChildBundle.addAttribute(omni::fabric::Token::createImmortal("meshKey"), uint128Type, 2);
             }
             float* bboxMin = *bboxMinAttr.getCpu<float[3]>();
             float* bboxMax = *bboxMaxAttr.getCpu<float[3]>();
@@ -142,7 +142,7 @@ public:
             // transform by checking the "compute bounding boxes" on the "Read Prims" node that feeds into this one
             // Our "ComputeBoundingBox" node generates the bounds directly in world space, so there's no need for
             // transform
-            outputChildBundle.removeAttribute(ImmediateNode::kBoundingBoxTransform);
+            outputChildBundle.removeAttribute(omni::fabric::Token::createImmortal("bboxTransform"));
         }
         db.outputs.execOut() = kExecutionAttributeStateEnabled;
         return true;

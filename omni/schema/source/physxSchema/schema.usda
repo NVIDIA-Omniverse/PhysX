@@ -312,7 +312,7 @@ class "PhysxSceneAPI"
 
         displayGroup = "Advanced"
         displayName = "Enable Residual Reporting"
-        doc = """Calculates solver residuals and reports them through optional Residual Report APIs at a slight expense of performance."""
+        doc = """Deprecated. Calculates solver residuals and reports them through optional Residual Report APIs at a slight expense of performance."""
     )
 
     bool physxScene:enableExternalForcesEveryIteration = false (
@@ -324,6 +324,16 @@ class "PhysxSceneAPI"
         displayName = "Enable External Forces Every Iteration"
         doc = """Enables greater TGS solver stability."""
     )
+	
+	    bool physxScene:solveArticulationContactLast = false (
+        customData = {
+            string apiName = "solveArticulationContactLast"
+        }
+        displayGroup = "Advanced"
+        displayName = "Solve Articulation Contact Last"
+        doc = """Order articulation contact constraints and articulation joint maximum velocity constraints so that they are solved after all other constraints in the solver."""
+    )
+
 
     bool physxScene:enableSceneQuerySupport = true (
         customData = {
@@ -536,6 +546,16 @@ class "PhysxSceneAPI"
         doc = """Maximum velocity iteration count for all actors (rigid bodies, cloth, particles etc).
         Note that this setting will override solver iteration settings of individual actors that have requested more iterations.
             Range: [0, 255]"""
+    )
+
+    uniform bool physxScene:disableSleeping = false (
+        customData = {
+            string apiName = "disableSleeping"
+        }
+
+        displayGroup = "Advanced"
+        displayName = "Disable Sleeping"
+        doc = """Disables sleeping for all actors (rigids, articulations and deformables) in the scene."""
     )
 
 }
@@ -1661,7 +1681,7 @@ class "PhysxLimitAPI"
 
 class "PhysxResidualReportingAPI"
 (	
-	doc = """Gives access to residual values that inform about the remaining physics solver error present 
+	doc = """Deprecated. Gives access to residual values that inform about the remaining physics solver error present 
 		during the last position and during the last velocity iteration. The residual reporting must be enabled 
 		on the Physics Scene, otherwise the reported values will be zero. The API can be applied to either:
 		- Joints. The joint residual will be reported.
@@ -2528,8 +2548,9 @@ class "PhysxMimicJointAPI"
           be part of the same articulation. 2) once the simulation has started, a significant performance penalty will
           be incurred if a mimic joint is added or removed, if the referenceJoint relationship is changed or if the
           referenceJointAxis attributes is modified. 3) the mimic joint relationship is interpreted as a two-way
-          interaction and an impulse will get applied to the reference joint as well."""
-
+          interaction and an impulse will get applied to the reference joint as well. Mimic joints may be confiugred as 
+          hard constraints that will apply the forces necessary to maintain the mimic joint equation.  
+          Alternatively, mimic joints may be configured with compliance using natural frequency and damping attributes. """
     customData = {
         token apiSchemaType = "multipleApply"
         token propertyNamespacePrefix = "physxMimicJoint"
@@ -2594,6 +2615,32 @@ class "PhysxMimicJointAPI"
               Range: (-inf, inf)
               Units: distance or degrees (depending on whether the mimic joint's degree of freedom is linear or angular)"""
     )
+	
+    float naturalFrequency = 0.0 (
+        customData = {
+            string apiName = "naturalFrequency"
+        }
+
+        displayName = "Natural Frequency"
+
+        doc = """The natural frequency of mimic joint compliance. A mimic joint with naturalFrequency <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint.
+              Range: 
+              (-inf, inf)
+              Units: s^-1"""
+    )
+	
+    float dampingRatio = 0.0 (
+        customData = {
+            string apiName = "dampingRatio"
+        }
+
+        displayName = "Damping Ratio"
+
+        doc = """The damping ratio of mimic joint compliance. A mimic joint with dampingRatio <= 0 will behave as a hard constraint. Larger values of naturalFrequency and dampingRatio will make the mimic joint stiffer and more akin to a hard constraint.
+              Range: (-inf, inf)
+              Units: dimensionless"""
+    )
+
 }
 
 //

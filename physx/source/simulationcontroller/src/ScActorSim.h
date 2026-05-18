@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,6 +45,7 @@ class PxActor;
 
 namespace Sc
 {
+	class Scene;
 
 #define SC_NOT_IN_SCENE_INDEX		0xffffffff  // the body is not in the scene yet
 #define SC_NOT_IN_ACTIVE_LIST_INDEX	0xfffffffe  // the body is in the scene but not in the active list

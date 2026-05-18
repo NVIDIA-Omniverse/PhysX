@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -13,31 +13,6 @@ namespace physx
 {
 namespace graph
 {
-
-const omni::graph::core::NameToken asNameToken(const uint64_t PxPath)
-{
-    const omni::fabric::PathC pathC(PxPath);
-    const char* name = omni::fabric::toSdfPath(pathC).GetString().c_str();
-    const auto tokenInterface = carb::getCachedInterface<omni::fabric::IToken>();
-    if (!tokenInterface)
-    {
-        CARB_LOG_ERROR("Failed to translate PhysX path to NameToken - no token interface");
-        return omni::fabric::kUninitializedToken;
-    }
-    return tokenInterface->getHandle(name);
-}
-
-uint64_t toPhysX(const NameToken name)
-{
-    const auto tokenInterface = carb::getCachedInterface<omni::fabric::IToken>();
-    if (!tokenInterface)
-    {
-        CARB_LOG_ERROR("Failed to translate NameToken to PhysX path - no token interface");
-        return 0;
-    }
-    const char* name_txt = tokenInterface->getText(name);
-    return omni::fabric::asInt(pxr::SdfPath(name_txt)).path;
-}
 
 bool appendRelationshipPrimPathsToNameTokenArray(omni::graph::core::ogn::OmniGraphDatabase& db,
                                                  std::vector<NameToken>& pathVector,
@@ -78,11 +53,10 @@ void createPrimName(NameToken prefix, size_t index, gsl::span<NameToken> outputN
     memset(buffer, 0, size);
 
     // create primitive name
-    auto iToken = carb::getCachedInterface<IToken>();
     for (size_t i = 0; i < outputNames.size(); ++i)
     {
         std::snprintf(buffer, size, "%s%zu", prefixToken.GetText(), index + i);
-        outputNames[i] = iToken->getHandle(buffer);
+        outputNames[i] = omni::fabric::Token::createImmortal(buffer);
     }
 }
 } // namespace graph

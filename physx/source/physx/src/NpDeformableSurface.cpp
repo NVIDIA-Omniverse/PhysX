@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -266,7 +266,7 @@ void NpDeformableSurface::setSleepThreshold(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSleepThreshold() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSleepThreshold(v);
-	UPDATE_PVD_PROPERTY
+	UPDATE_PVD_PROPERTY			
 }
 
 PxReal NpDeformableSurface::getSleepThreshold() const
@@ -325,6 +325,10 @@ PxReal NpDeformableSurface::getWakeCounter() const
 
 bool NpDeformableSurface::isSleeping() const
 {
+	NpScene* npScene = getNpScene();
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+		return false;
+
 	Sc::DeformableSurfaceSim* sim = mCore.getSim();
 	if (sim)
 	{
@@ -395,9 +399,12 @@ bool NpDeformableSurface::attachShape(PxShape& shape)
 	
 void NpDeformableSurface::detachShape()
 {
-	Dy::DeformableSurfaceCore& core = mCore.getCore();
+	if (!mShape)
+		return;
 
 	PX_ASSERT(mDeviceMemoryAllocator);
+
+	Dy::DeformableSurfaceCore& core = mCore.getCore();
 
 	if (core.positionInvMass)
 	{
@@ -417,8 +424,7 @@ void NpDeformableSurface::detachShape()
 		core.restPosition = NULL;
 	}
 
-	if (mShape)
-		mShape->onActorDetach();
+	mShape->onActorDetach();
 	mShape = NULL;
 }
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -245,9 +245,8 @@ namespace Dy
 		return mLinksData[index];
 	}
 
-	FeatherstoneArticulation::FeatherstoneArticulation(void* userData)
-		: mUserData(userData), mContext(NULL), mUpdateSolverData(true),
-		mMaxDepth(0), mJcalcDirty(true)
+	FeatherstoneArticulation::FeatherstoneArticulation() :
+		mContext(NULL), mUpdateSolverData(true), mJcalcDirty(true)
 	{
 		mGPUDirtyFlags = 0;
 		mInternalErrorAccumulatorVelIter.reset();
@@ -861,8 +860,6 @@ namespace Dy
 		const Cm::SpatialVector& impulse,
 		Cm::SpatialVector& deltaVV) const
 	{
-		PX_ASSERT(impulse.pad0 == 0.f && impulse.pad1 == 0.f);
-
 		//impulse lin is contact normal, and ang is raxn. R is body2World, R(t) is world2Body
 		//| R(t),	0	|
 		//| R(t)*r, R(t)|
@@ -1603,17 +1600,7 @@ namespace Dy
 		{
 		case PxArticulationJointType::ePRISMATIC:
 		{
-			PxReal tJointPosition = jPosition[0] + (jVelocity[0]) * dt;
-
-			const PxU32 dofId = link.inboundJoint->dofIds[0];
-
-			if (link.inboundJoint->motion[dofId] == PxArticulationMotion::eLIMITED)
-			{
-				if (tJointPosition < (link.inboundJoint->limits[dofId].low))
-					tJointPosition = link.inboundJoint->limits[dofId].low;
-				if (tJointPosition >(link.inboundJoint->limits[dofId].high))
-					tJointPosition = link.inboundJoint->limits[dofId].high;
-			}
+			const PxReal tJointPosition = jPosition[0] + (jVelocity[0]) * dt;
 
 			jPosition[0] = tJointPosition;
 
@@ -1627,16 +1614,7 @@ namespace Dy
 		case PxArticulationJointType::eREVOLUTE:
 		case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
 		{
-			PxReal tJointPosition = jPosition[0] + (jVelocity[0]) * dt;
-
-			/*PxU8 dofId = link.inboundJoint->dofIds[0];
-			if (link.inboundJoint->motion[dofId] == PxArticulationMotion::eLIMITED)
-			{
-				if (tJointPosition < (link.inboundJoint->limits[dofId].low))
-					tJointPosition = link.inboundJoint->limits[dofId].low;
-				if (tJointPosition >(link.inboundJoint->limits[dofId].high))
-					tJointPosition = link.inboundJoint->limits[dofId].high;
-			}*/
+			const PxReal tJointPosition = jPosition[0] + (jVelocity[0]) * dt;
 
 			jPosition[0] = tJointPosition;
 		
@@ -1813,7 +1791,7 @@ namespace Dy
 		return deltaV;
 	}
 
-	void  FeatherstoneArticulation::getZ(const PxU32 linkID,
+	void FeatherstoneArticulation::getZ(const PxU32 linkID,
 		const ArticulationData& data, Cm::SpatialVectorF* Z, 
 		const Cm::SpatialVectorF& impulse)
 	{
@@ -2452,12 +2430,12 @@ namespace Dy
 
 		//const bool jointDrive = (j.driveType != PxArticulationJointDriveType::eNONE);
 
-		bool hasFriction = j.frictionCoefficient > 0.f;
+		bool hasDeprecatedFriction = j.frictionCoefficient > 0.f;
 
-		const PxReal fCoefficient = j.frictionCoefficient * stepDt;
+		const PxReal deprecatedFCoefficient = j.frictionCoefficient * stepDt;
 
 		
-		const PxReal transmissionForce = data.getTransmittedForce(linkID).magnitude() * fCoefficient;
+		const PxReal transmissionForce = data.getTransmittedForce(linkID).magnitude() * deprecatedFCoefficient;
 
 		// PT:: tag: scalar transform*transform
 		const PxTransform cA2w = pLink.bodyCore->body2World.transform(j.parentPose);
@@ -2493,12 +2471,15 @@ namespace Dy
 
 					if (hasDrive)
 					{
-						const PxVec3 axis = data.mMotionMatrix[jointDatum.jointOffset + tmpDofId].top;
-						PxReal target = data.mJointTargetPositions[jointDatum.jointOffset + tmpDofId];
+						// The code further below relies on x,y,z of a PxVec3 to map to twist, swing1, swing2
+						PX_COMPILE_TIME_ASSERT(PxArticulationAxis::eTWIST == 0);
+						PX_COMPILE_TIME_ASSERT(PxArticulationAxis::eSWING1 == 1);
+						PX_COMPILE_TIME_ASSERT(PxArticulationAxis::eSWING2 == 2);
+						PX_ASSERT(i < 3);
 
-						driveAxis += axis * target;
+						driveAxis[i] = data.mJointTargetPositions[jointDatum.jointOffset + tmpDofId];
+
 						hasAngularDrives = true;
-
 					}
 
 					tmpDofId++;
@@ -2506,12 +2487,12 @@ namespace Dy
 			}
 			
 			{
-				PxQuat qB2qA = cA2w.q.getConjugate() * cB2w.q;
-
 				{
 					//Spherical joint drive calculation using 3x child-space Euler angles
 					if (hasAngularDrives)
 					{
+						PxQuat qB2qA = cA2w.q.getConjugate() * cB2w.q;
+
 						PxReal angle = driveAxis.normalize();
 
 						if (angle < 1e-12f)
@@ -2521,6 +2502,7 @@ namespace Dy
 						}
 
 						PxQuat targetQ = PxQuat(angle, driveAxis);
+						// note: the targets are defined relative to the parent link joint frame, so this transform is targetQ2qA.
 
 						if (targetQ.dot(qB2qA) < 0.f)
 							targetQ = -targetQ;
@@ -2593,7 +2575,7 @@ namespace Dy
 				constraints->maxJointVelocity = j.maxJointVelocity[i];
 
 				constraints->accumulatedFrictionImpulse = 0.0f;
-				constraints->frictionMaxForce = hasFriction ? transmissionForce : 0.f;
+				constraints->deprecatedFrictionMaxForce = hasDeprecatedFriction ? transmissionForce : 0.f;
 
 				constraints->dynamicFrictionEffort = j.frictionParams[i].dynamicFrictionEffort;
 				constraints->staticFrictionEffort = j.frictionParams[i].staticFrictionEffort;
@@ -2676,7 +2658,7 @@ namespace Dy
 				constraints->maxJointVelocity = j.maxJointVelocity[i];
 
 				constraints->accumulatedFrictionImpulse = 0.f;
-				constraints->frictionMaxForce = hasFriction ? transmissionForce : 0.f;
+				constraints->deprecatedFrictionMaxForce = hasDeprecatedFriction ? transmissionForce : 0.f;
 				constraints->dynamicFrictionEffort = j.frictionParams[i].dynamicFrictionEffort;
 				constraints->staticFrictionEffort = j.frictionParams[i].staticFrictionEffort;
 				constraints->viscousFrictionCoefficient = j.frictionParams[i].viscousFrictionCoefficient;
@@ -2837,35 +2819,29 @@ namespace Dy
 			constraint->linkID0 = startLink;
 			constraint->linkID1 = attachment.linkInd;
 			constraint->recipResponse = recipResponse;
-
-			const PxReal a = stepDt * (stepDt*stiffness + damping);
-			const PxReal a2 = stepDt * (stepDt*limitStiffness + damping);
-
-			const PxReal x = unitResponse > 0.f ? 1.0f / (1.0f + a * unitResponse) : 0.f;
-			const PxReal x2 = unitResponse > 0.f ? 1.0f / (1.0f + a2 * unitResponse) : 0.f;
-
-			constraint->velMultiplier = -x * a;// * unitResponse;
-			//constraint->velMultiplier = -x * damping*stepDt;
-
-			constraint->impulseMultiplier = isTGSSolver ? 1.f : 1.f - x;
-			constraint->biasCoefficient = (-stiffness * x * stepDt);//*unitResponse;
 			constraint->appliedForce = 0.f;
+			constraint->limitAppliedForce = 0.f;
+
+			constraint->setTendonImplicitSpringParams(
+				computeTendonSpringParams
+					(stepDt, isTGSSolver,
+					 unitResponse,
+					stiffness, damping,
+					limitStiffness));
 
 			constraint->accumulatedLength = u;// + u*0.2f;
 			constraint->restDistance = attachment.restLength;
 			constraint->lowLimit = attachment.lowLimit;
 			constraint->highLimit = attachment.highLimit;
-
-			constraint->limitBiasCoefficient = (-limitStiffness * x2 * stepDt);//*unitResponse;
-			constraint->limitImpulseMultiplier = isTGSSolver ? 1.f : 1.f - x2;
-			constraint->limitAppliedForce = 0.f;
 		}
 	}
 
-	void FeatherstoneArticulation::updateSpatialTendonConstraintsRecursive(ArticulationAttachment* attachments, ArticulationData& data, const PxU32 attachmentID, PxReal accumLength,
-		const PxVec3& pAttachPoint)
+	void FeatherstoneArticulation::updateSpatialTendonConstraintsRecursive(
+		const ArticulationAttachment* attachments, const PxU32 attachmentID, 
+		const PxReal accumLength, const PxVec3& pAttachPoint, 
+		ArticulationData& data)
 	{
-		ArticulationAttachment& attachment = attachments[attachmentID];
+		const ArticulationAttachment& attachment = attachments[attachmentID];
 
 		//const PxReal restDist = attachment.restDistance;
 
@@ -2889,7 +2865,7 @@ namespace Dy
 				//index of child of link h on path to link linkID
 				const PxU32 child = PxLowestSetBit(children);
 
-				updateSpatialTendonConstraintsRecursive(attachments, data, child, u, cAttachPoint);
+				updateSpatialTendonConstraintsRecursive(attachments, child, u, cAttachPoint, data);
 			}
 		}
 		else
@@ -2990,28 +2966,14 @@ namespace Dy
 			constraint->linkID0 = startLink;
 			constraint->linkID1 = tendonJoint.linkInd;
 			constraint->recipResponse = recipResponse;
+			constraint->appliedForce = 0.0f;
+			constraint->limitAppliedForce = 0.0f;
 
-			const PxReal a = stepDt * (stepDt*stiffness + damping);
-
-			const PxReal a2 = stepDt * (stepDt*limitStiffness + damping);
-
-			PxReal x = unitResponse > 0.f ? 1.0f / (1.0f + a * unitResponse) : 0.f;
-
-			PxReal x2 = unitResponse > 0.f ? 1.0f / (1.0f + a2* unitResponse) : 0.f;
-
-			constraint->velMultiplier = -x * a;// * unitResponse;
-			
-			constraint->impulseMultiplier = isTGSSolver ? 1.f : 1.f - x;
-			constraint->biasCoefficient = (-stiffness * x * stepDt);//*unitResponse;
-			constraint->appliedForce = 0.f;
-			//constraint->accumulatedLength = jointPose;
-
-			constraint->limitImpulseMultiplier = isTGSSolver ? 1.f : 1.f - x2;
-			constraint->limitBiasCoefficient = (-limitStiffness * x2 * stepDt);//*unitResponse;
-			constraint->limitAppliedForce = 0.f;
-			
-			/*printf("(%i, %i) r0 %f, r1 %f cmf %f unitResponse %f recipResponse %f a %f x %f\n",
-				pLinkInd, tendonJoint.linkInd, r0, r1, cLink.cfm, unitResponse, recipResponse, a, x);*/
+			constraint->setTendonImplicitSpringParams(
+				computeTendonSpringParams
+					(stepDt, isTGSSolver, unitResponse, 
+					 stiffness, damping, 
+					 limitStiffness));
 		}
 
 		const PxU32 childCount = tendonJoint.childCount;
@@ -3434,7 +3396,7 @@ namespace Dy
 	}
 
 	//compute link's spatial inertia tensor
-	void  FeatherstoneArticulation::computeSpatialInertia(ArticulationData& data)
+	void FeatherstoneArticulation::computeSpatialInertia(ArticulationData& data)
 	{
 		for (PxU32 linkID = 0; linkID < data.getLinkCount(); ++linkID)
 		{
@@ -4617,7 +4579,7 @@ namespace Dy
 						// Friction force is accumulated through all position iterations only for PGS
 						const PxReal appliedFriction = data.isTGS ? 0.0f : constraint.accumulatedFrictionImpulse;
 						const PxReal frictionForce = PxClamp(-jointV * constraint.recipResponse + appliedFriction,
-															-constraint.frictionMaxForce, constraint.frictionMaxForce);
+															-constraint.deprecatedFrictionMaxForce, constraint.deprecatedFrictionMaxForce);
 						constraint.accumulatedFrictionImpulse = frictionForce; // This is not used for TGS
 
 						frictionDeltaF = frictionForce - appliedFriction;
@@ -5026,7 +4988,7 @@ namespace Dy
 					//index of child of link h on path to link linkID
 					const PxU32 child = PxLowestSetBit(children);
 
-					updateSpatialTendonConstraintsRecursive(attachments, mArticulationData, child, tendon->mOffset*coefficient, pAttachPoint);
+					updateSpatialTendonConstraintsRecursive(attachments, child, tendon->mOffset*coefficient, pAttachPoint, mArticulationData);
 				}
 			}
 		}
@@ -5056,25 +5018,28 @@ namespace Dy
 
 			PxReal error = constraint.restDistance - constraint.accumulatedLength;// + deltaP;
 
-			PxReal error2 = 0.f;
+			PxReal limitError = 0.f;
 			if (constraint.accumulatedLength > constraint.highLimit)
-				error2 = constraint.highLimit - constraint.accumulatedLength;
+				limitError = constraint.highLimit - constraint.accumulatedLength;
 			if (constraint.accumulatedLength < constraint.lowLimit)
-				error2 = constraint.lowLimit - constraint.accumulatedLength;
+				limitError = constraint.lowLimit - constraint.accumulatedLength;
 
 			PxReal jointV = constraint.row1.innerProduct(childV) - constraint.row0.innerProduct(parentV);
 
 			PX_ASSERT(PxIsFinite(jointV));
 
-			PxReal unclampedForce = (jointV * constraint.velMultiplier + error * constraint.biasCoefficient) /** constraint.recipResponse*/
-				+ constraint.appliedForce * constraint.impulseMultiplier;
-
-			PxReal unclampedForce2 = (error2 * constraint.limitBiasCoefficient) + constraint.limitAppliedForce * constraint.limitImpulseMultiplier;
-
-			const PxReal deltaF = (unclampedForce - constraint.appliedForce) + (unclampedForce2 - constraint.limitAppliedForce);
-
+			PxReal unclampedForce = 0.0f;
+			PxReal unclampedLimitForce = 0.0f;
+			PxReal deltaF = 0.0f;
+			computeTendonImpulse(
+				1.0f, 
+				constraint.getTendonImplicitSpringParams(),
+				error, jointV, limitError, 
+				constraint.appliedForce, constraint.limitAppliedForce,
+				unclampedForce, unclampedLimitForce, deltaF);
+				
 			constraint.appliedForce = unclampedForce;
-			constraint.limitAppliedForce = unclampedForce2;
+			constraint.limitAppliedForce = unclampedLimitForce;
 
 			//Accumulate error even if it is zero because the increment of the counter affects the RMS value  
 			//Ignore tendons for now
@@ -5091,12 +5056,13 @@ namespace Dy
 		}
 	}
 
-	PxVec3 FeatherstoneArticulation::calculateFixedTendonVelocityAndPositionRecursive(FixedTendonSolveData& solveData,
-		const Cm::SpatialVectorF& parentV, const Cm::SpatialVectorF& parentDeltaV, const PxU32 tendonJointID)
+	PxVec3 FeatherstoneArticulation::calculateFixedTendonVelocityAndPositionRecursive(
+		const ArticulationTendonJoint* tendonJoints, const PxU32 tendonJointID,
+		const Cm::SpatialVectorF& parentV, const Cm::SpatialVectorF& parentDeltaV)
 	{
-		ArticulationTendonJoint& tendonJoint = solveData.tendonJoints[tendonJointID];
+		const ArticulationTendonJoint& tendonJoint = tendonJoints[tendonJointID];
 
-		ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(tendonJoint.linkInd);
+		const ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(tendonJoint.linkInd);
 
 		Cm::SpatialVectorF deltaV = propagateAccelerationW(
 			mArticulationData.getRw(tendonJoint.linkInd), parentDeltaV, 
@@ -5107,7 +5073,7 @@ namespace Dy
 
 		Cm::SpatialVectorF childV = mArticulationData.mMotionVelocities[tendonJoint.linkInd] + deltaV;
 
-		PxU32 index = tendonJoint.mConstraintInd;
+		const PxU32 index = tendonJoint.mConstraintInd;
 		ArticulationInternalTendonConstraint& constraint = mArticulationData.mInternalFixedTendonConstraints[index];
 
 		const PxU32 childCount = tendonJoint.childCount;
@@ -5131,53 +5097,46 @@ namespace Dy
 			{
 				//index of child of link h on path to link linkID
 				const PxU32 child = PxLowestSetBit(children);
-				jointVError += calculateFixedTendonVelocityAndPositionRecursive(solveData, childV, deltaV, child);
+				jointVError += calculateFixedTendonVelocityAndPositionRecursive(tendonJoints, child, childV, deltaV);
 			}
 		}
 
 		return jointVError;
 	}
 
-	Cm::SpatialVectorF FeatherstoneArticulation::solveFixedTendonConstraintsRecursive(FixedTendonSolveData& solveData, 
-		const PxU32 tendonJointID)
+	Cm::SpatialVectorF FeatherstoneArticulation::solveFixedTendonConstraintsRecursive
+	(const ArticulationTendonJoint* tendonJoints,const PxU32 tendonJointID,
+	 const PxReal lengthError, const PxReal limitError, const PxReal jointV,
+	 PxReal& rootImp)
 	{
-		ArticulationTendonJoint& tendonJoint = solveData.tendonJoints[tendonJointID];
+		const ArticulationTendonJoint& tendonJoint = tendonJoints[tendonJointID];
 
-		ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(tendonJoint.linkInd);
+		const ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(tendonJoint.linkInd);
 			   
 		PxU32 index = tendonJoint.mConstraintInd;
 		ArticulationInternalTendonConstraint& constraint = mArticulationData.mInternalFixedTendonConstraints[index];
 
 		const PxU32 childCount = tendonJoint.childCount;
 
-		PxReal jointV = solveData.rootVel;
-
-		// calculate current accumulated tendon length from parent accumulated length
-
-		const PxReal lengthError = solveData.error;
-		PxReal limitError = solveData.limitError;
-
 		// the constraint bias coefficients need to flip signs together with the tendon joint's coefficient
 		// in order for the constraint force to point into the correct direction:
-		const PxReal coefficientSign = tendonJoint.recipCoefficient;// PxSign(tendonJoint.coefficient);
-		const PxReal biasCoefficient = constraint.biasCoefficient;
-		const PxReal limitBiasCoefficient = constraint.limitBiasCoefficient;
-		
-		PxReal unclampedForce = ((jointV * constraint.velMultiplier + lengthError * biasCoefficient)*coefficientSign)
-			+ constraint.appliedForce * constraint.impulseMultiplier;
-
-		PxReal unclampedForce2 = (limitError * limitBiasCoefficient * coefficientSign)
-			+ constraint.limitAppliedForce * constraint.limitImpulseMultiplier;
-
-		const PxReal deltaF = ((unclampedForce - constraint.appliedForce) + (unclampedForce2 - constraint.limitAppliedForce));
+		PxReal unclampedForce = 0.0f;
+		PxReal unclampedForceLimit = 0.0f;
+		PxReal deltaF = 0.0f;
+		computeTendonImpulse(
+			tendonJoint.recipCoefficient,
+			constraint.getTendonImplicitSpringParams(),
+			lengthError, jointV, limitError,
+			constraint.appliedForce, constraint.limitAppliedForce,
+			unclampedForce, unclampedForceLimit, deltaF);
 
 		//Ignore tendons for now
 		//(isVelIter ? mInternalErrorAccumulatorVelIter : mInternalErrorAccumulatorPosIter).accumulateErrorLocal(deltaF, constraint.recipResponse);
 
 		constraint.appliedForce = unclampedForce;
-		constraint.limitAppliedForce = unclampedForce2;
+		constraint.limitAppliedForce = unclampedForceLimit;
 
-		solveData.rootImp += deltaF;
+		rootImp += deltaF;
 	
 		Cm::SpatialVectorF impulse(constraint.row1.top * -deltaF, constraint.row1.bottom * -deltaF);
 		const Cm::SpatialVectorF YInt = impulse;
@@ -5188,8 +5147,7 @@ namespace Dy
 				//index of child of link h on path to link linkID
 				const PxU32 child = PxLowestSetBit(children);
 
-				Cm::SpatialVectorF propagatedImpulse = solveFixedTendonConstraintsRecursive(solveData, child);
-
+				Cm::SpatialVectorF propagatedImpulse = solveFixedTendonConstraintsRecursive(tendonJoints, child, lengthError, limitError, jointV, rootImp);
 
 				impulse.top += propagatedImpulse.top;
 				impulse.bottom += propagatedImpulse.bottom;
@@ -5239,55 +5197,43 @@ namespace Dy
 
 				Cm::SpatialVectorF parentDeltaV = parentV - mArticulationData.mMotionVelocities[startLink];
 
-				PxVec3 velError(0.f);
-							   
-				for (ArticulationAttachmentBitField children = pTendonJoint.children; children != 0; children &= (children - 1))
+				PxReal lengthError = 0.0f;
+				PxReal limitError = 0.0f;
+				PxReal rootVel = 0.0f;
 				{
-					//index of child of link h on path to link linkID
-					const PxU32 child = PxLowestSetBit(children);
+					//sum.x  = sum_i{c_i * jointSpeed_i}
+					//sum.y  = sum_i{c_i * jointPos_i}
+					//sum.x = nbArticulationJointsInTendon
+					PxVec3 sum(0.f);						   
+					for (ArticulationAttachmentBitField children = pTendonJoint.children; children != 0; children &= (children - 1))
+					{
+						//index of child of link h on path to link linkID
+						const PxU32 child = PxLowestSetBit(children);
+						sum += calculateFixedTendonVelocityAndPositionRecursive(tendonJoints, child, parentV, parentDeltaV);
+					}
 
-					FixedTendonSolveData solveData;
-					solveData.links = links;
-					solveData.erp = 1.f;
-					solveData.rootImp = 0.f;
-					solveData.error = tendon->mError;
-					solveData.tendonJoints = tendonJoints;
-
-					velError += calculateFixedTendonVelocityAndPositionRecursive(solveData, parentV, parentDeltaV, child);
+					const PxReal recipScale = sum.z == 0.f ? 0.f : 1.f / sum.z;
+					const PxReal length = sum.y + tendon->mOffset;
+					lengthError = (length - tendon->mRestLength)*recipScale;		
+					rootVel = sum.x*recipScale;
+					limitError = (length < tendon->mLowLimit) ? ((length - tendon->mLowLimit)*recipScale) : ((length > tendon->mHighLimit) ? (length - tendon->mHighLimit)*recipScale : 0.0f);
 				}
 				
-				const PxReal recipScale = velError.z == 0.f ? 0.f : 1.f / velError.z;
 
 				for (ArticulationAttachmentBitField children = pTendonJoint.children; children != 0; children &= (children - 1))
 				{
 					//index of child of link h on path to link linkID
 					const PxU32 child = PxLowestSetBit(children);
-					ArticulationTendonJoint& tendonJoint = tendonJoints[child];
+					const ArticulationTendonJoint& tendonJoint = tendonJoints[child];
 
-					ArticulationInternalTendonConstraint& constraint = mArticulationData.mInternalFixedTendonConstraints[tendonJoint.mConstraintInd];
-
-					const PxReal length = (velError.y + tendon->mOffset);
-
-					FixedTendonSolveData solveData;
-					solveData.links = links;
-					solveData.erp = 1.f;
-					solveData.rootImp = 0.f;
-					solveData.error = (length - tendon->mRestLength) * recipScale;
-					solveData.rootVel = velError.x*recipScale;
-
-					PxReal limitError = 0.f;
-					if (length < tendon->mLowLimit)
-						limitError = length - tendon->mLowLimit;
-					else if (length > tendon->mHighLimit)
-						limitError = length - tendon->mHighLimit;
-					solveData.limitError = limitError * recipScale;
-					solveData.tendonJoints = tendonJoints;
+					const ArticulationInternalTendonConstraint& constraint = mArticulationData.mInternalFixedTendonConstraints[tendonJoint.mConstraintInd];
 
 					//KS - TODO - hook up offsets
-					Cm::SpatialVectorF propagatedImpulse = solveFixedTendonConstraintsRecursive(solveData, child);
+					PxReal rootImp = 0.0f;
+					Cm::SpatialVectorF propagatedImpulse = solveFixedTendonConstraintsRecursive(tendonJoints, child, lengthError, limitError, rootVel, rootImp);
 
-					propagatedImpulse.top += constraint.row0.top * solveData.rootImp;
-					propagatedImpulse.bottom += constraint.row0.bottom * solveData.rootImp;
+					propagatedImpulse.top += constraint.row0.top * rootImp;
+					propagatedImpulse.bottom += constraint.row0.bottom * rootImp;
 
 					Z += propagatedImpulse;
 				}

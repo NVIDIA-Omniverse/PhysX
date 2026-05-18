@@ -1,11 +1,15 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
-from .bindings._physxCct import acquire_physx_cct_interface, IPhysxCct, CctEvent
 
-def get_physx_cct_interface() -> IPhysxCct:
-    if not hasattr(get_physx_cct_interface, "iface"):
-        get_physx_cct_interface.iface = acquire_physx_cct_interface()
-    return get_physx_cct_interface.iface
 
-from .scripts.extension import *
+# omni.physx.cct public API
+from .scripts.ifaces import *
+from .scripts import utils
+
+# make extension class privately visible
+from .scripts.extension import PhysxCctExtension as _PhysxCctExtension
+
+# safely import tests
+from omni.physx.scripts import safe_import_tests as _import
+_import("omni.physxcct.scripts.tests")

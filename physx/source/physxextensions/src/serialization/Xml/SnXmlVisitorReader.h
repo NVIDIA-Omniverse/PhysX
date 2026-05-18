@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -888,43 +888,6 @@ namespace physx { namespace Sn {
 		info.visitInstanceProperties( theOp );
 		return !hadError;
 	}
-
-	//
-	// Setting the angular drive config has to happen before setting any drive (because it resets drive parameters
-	// for angular drives). However, when the angular drive config feature got introduced, binary compatibility
-	// requirements did not allow to place the corresponding setter/getter in front of the drive param setter/getter.
-	// Thus this ugly temporary workaround to hardcode the desired order of operations. With the next major release,
-	// the public API methods can be re-arranged and then it should be possible to undo this sad workaround.
-	//
-	template<>
-	inline bool readAllProperties( PxRepXInstantiationArgs args, TReaderNameStack& names, PxProfileArray<PxU32>& contexts, XmlReader& reader, PxD6Joint* obj, XmlMemoryAllocator& alloc, PxCollection& collection, PxD6JointGeneratedInfo& info )
-	{
-		bool hadError = false;
-		RepXVisitorReader<PxD6Joint> theReader( names, contexts, args, reader, obj, alloc, collection, hadError);
-		RepXPropertyFilter<RepXVisitorReader<PxD6Joint> > theOp( theReader );
-		info.visitBaseProperties( theOp );
-
-		{
-			PxU32 inStartIndex = 0;
-			theOp( info.Motion, inStartIndex + 0 );
-			theOp( info.TwistAngle, inStartIndex + 1 );
-			theOp( info.Twist, inStartIndex + 2 );
-			theOp( info.SwingYAngle, inStartIndex + 3 );
-			theOp( info.SwingZAngle, inStartIndex + 4 );
-			theOp( info.DistanceLimit, inStartIndex + 5 );
-			theOp( info.LinearLimit, inStartIndex + 6 );
-			theOp( info.TwistLimit, inStartIndex + 7 );
-			theOp( info.SwingLimit, inStartIndex + 8 );
-			theOp( info.PyramidSwingLimit, inStartIndex + 9 );
-			theOp( info.AngularDriveConfig, inStartIndex + 10 );
-			theOp( info.Drive, inStartIndex + 11 );
-			theOp( info.DrivePosition, inStartIndex + 12 );
-			theOp( info.ConcreteTypeName, inStartIndex + 13 );
-		}
-
-		return !hadError;
-	}
-
 	
 	template<typename TObjType>
 	inline bool readAllProperties( PxRepXInstantiationArgs args, XmlReader& reader, TObjType* obj, XmlMemoryAllocator& alloc, PxCollection& collection )

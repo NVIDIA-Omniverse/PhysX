@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -407,7 +407,7 @@ void BroadPhaseSap::shiftOrigin(const PxVec3& shift, const PxBounds3* /*boundsAr
 }
 
 #if PX_CHECKED
-bool BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
+BroadPhaseUpdateError::Enum BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
 {
 	//Test that the created bounds haven't been added already (without first being removed).
 	const BpHandle* created=updateData.getCreatedHandles();
@@ -423,9 +423,9 @@ bool BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
 			{
 				const SapBox1D& box1d=mBoxEndPts[j][id];
 				if(box1d.mMinMax[0] != BP_INVALID_BP_HANDLE && box1d.mMinMax[0] != PX_REMOVED_BP_HANDLE)
-					return false;	//This box has been added already but without being removed.
+					return BroadPhaseUpdateError::eALREADY_ADDED;	//This box has been added already but without being removed.
 				if(box1d.mMinMax[1] != BP_INVALID_BP_HANDLE && box1d.mMinMax[1] != PX_REMOVED_BP_HANDLE)
-					return false;	//This box has been added already but without being removed.
+					return BroadPhaseUpdateError::eALREADY_ADDED;	//This box has been added already but without being removed.
 			}
 		}
 	}
@@ -437,7 +437,7 @@ bool BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
 	{
 		const BpHandle id = updated[i];
 		if(id >= mBoxesCapacity)
-			return false;
+			return BroadPhaseUpdateError::eOUT_OF_BOUNDS;
 	}
 
 	//Test that the updated bounds have been been added without being removed.
@@ -450,9 +450,9 @@ bool BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
 			const SapBox1D& box1d=mBoxEndPts[j][id];
 
 			if(BP_INVALID_BP_HANDLE == box1d.mMinMax[0] || PX_REMOVED_BP_HANDLE == box1d.mMinMax[0])
-				return false;	//This box has either not been added or has been removed
+				return BroadPhaseUpdateError::eNOT_IN_DATABASE;	//This box has either not been added or has been removed
 			if(BP_INVALID_BP_HANDLE == box1d.mMinMax[1] || PX_REMOVED_BP_HANDLE == box1d.mMinMax[1])
-				return false;	//This box has either not been added or has been removed
+				return BroadPhaseUpdateError::eNOT_IN_DATABASE;	//This box has either not been added or has been removed
 		}
 	}
 
@@ -463,7 +463,7 @@ bool BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
 	{
 		const BpHandle id = removed[i];
 		if(id >= mBoxesCapacity)
-			return false;
+			return BroadPhaseUpdateError::eOUT_OF_BOUNDS;
 	}
 
 	//Test that the removed bounds have already been added and haven't been removed.
@@ -476,12 +476,12 @@ bool BroadPhaseSap::isValid(const BroadPhaseUpdateData& updateData) const
 			const SapBox1D& box1d=mBoxEndPts[j][id];
 
 			if(BP_INVALID_BP_HANDLE == box1d.mMinMax[0] || PX_REMOVED_BP_HANDLE == box1d.mMinMax[0])
-				return false;	//This box has either not been added or has been removed
+				return BroadPhaseUpdateError::eALREADY_REMOVED;	//This box has either not been added or has been removed
 			if(BP_INVALID_BP_HANDLE == box1d.mMinMax[1] || PX_REMOVED_BP_HANDLE == box1d.mMinMax[1])
-				return false;	//This box has either not been added or has been removed
+				return BroadPhaseUpdateError::eALREADY_REMOVED;	//This box has either not been added or has been removed
 		}
 	}
-	return true;
+	return BroadPhaseUpdateError::eNO_ERROR;
 }
 #endif
 
@@ -508,9 +508,8 @@ bool BroadPhaseSap::setUpdateData(const BroadPhaseUpdateData& updateData)
 	PX_ASSERT(0==mDeletedPairsSize);
 
 #if PX_CHECKED
-	if(!BroadPhaseUpdateData::isValid(updateData, *this, false, mContextID))
+	if(updateData.isValid(mContextID, this) != BroadPhaseUpdateError::eNO_ERROR)
 	{
-		PX_CHECK_MSG(false, "Illegal BroadPhaseUpdateData \n");
 		mCreated			= NULL;
 		mCreatedSize		= 0;
 		mUpdated			= NULL;
@@ -519,6 +518,7 @@ bool BroadPhaseSap::setUpdateData(const BroadPhaseUpdateData& updateData)
 		mRemovedSize		= 0;
 		mBoxBoundsMinMax	= updateData.getAABBs();
 		mBoxGroups			= updateData.getGroups();
+
 		return false;
 	}
 #endif

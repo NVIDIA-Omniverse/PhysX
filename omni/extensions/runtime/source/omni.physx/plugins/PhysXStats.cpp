@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -89,7 +89,7 @@ std::vector<PhysXStats::PhysicsSceneStats> PhysXStats::getStatsPerPhysicsScene()
 
     for (const auto& path : vecUsdrtPhysicsScenes)
     {
-        omni::fabric::PathC fabricPath = omni::fabric::PathC(path); // convert usdrt::SdfPath to omni::fabric::PathC
+        const omni::fabric::Path fabricPath = omni::fabric::Path(path); // convert usdrt::SdfPath to omni::fabric::PathC
         const pxr::SdfPath& sdfPath = omni::fabric::toSdfPath(fabricPath);
         pxr::UsdPrim prim = mStage->GetPrimAtPath(sdfPath);
 

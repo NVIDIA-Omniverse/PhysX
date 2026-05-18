@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -96,33 +96,15 @@ static PX_FORCE_INLINE void setIdentity(PxMat44& m)
 	m.column3 = PxVec4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-// PT: TODO: PX-566
 static PX_FORCE_INLINE void setRotation(PxMat44& m, const PxQuat& q)
 {
-	const PxReal x = q.x;
-	const PxReal y = q.y;
-	const PxReal z = q.z;
-	const PxReal w = q.w;
+	const QuatV qV = V4LoadU(&q.x);
+	Vec3V column0V, column1V, column2V;
+	QuatGetMat33V(qV, column0V, column1V, column2V);
 
-	const PxReal x2 = x + x;
-	const PxReal y2 = y + y;
-	const PxReal z2 = z + z;
-
-	const PxReal xx = x2*x;
-	const PxReal yy = y2*y;
-	const PxReal zz = z2*z;
-
-	const PxReal xy = x2*y;
-	const PxReal xz = x2*z;
-	const PxReal xw = x2*w;
-
-	const PxReal yz = y2*z;
-	const PxReal yw = y2*w;
-	const PxReal zw = z2*w;
-
-	m.column0 = PxVec4(1.0f - yy - zz, xy + zw, xz - yw, 0.0f);
-	m.column1 = PxVec4(xy - zw, 1.0f - xx - zz, yz + xw, 0.0f);
-	m.column2 = PxVec4(xz + yw, yz - xw, 1.0f - xx - yy, 0.0f);
+	V4StoreU(Vec4V_From_Vec3V(column0V), &m.column0.x);
+	V4StoreU(Vec4V_From_Vec3V(column1V), &m.column1.x);
+	V4StoreU(Vec4V_From_Vec3V(column2V), &m.column2.x);
 }
 
 #define IEEE_1_0	0x3f800000	//!< integer representation of 1.0

@@ -22,29 +22,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "ScPhysics.h"
 #include "ScScene.h"
 #include "BpBroadPhase.h"
-#include "ScConstraintSim.h"
 #include "ScConstraintCore.h"
 #include "ScArticulationJointCore.h"
 #include "ScArticulationTendonCore.h"
 #include "ScArticulationMimicJointCore.h"
 #include "ScArticulationSim.h"
-#include "ScArticulationJointSim.h"
 #include "ScArticulationTendonSim.h"
 #include "ScArticulationMimicJointSim.h"
-#include "ScConstraintInteraction.h"
 #include "ScTriggerInteraction.h"
 #include "ScSimStats.h"
-#include "PxvGlobals.h"
 #include "PxsCCD.h"
 #include "ScSimulationController.h"
 #include "ScSqBoundsManager.h"
+#include "ScArticulationCore.h"
 #include "DyIslandManager.h"
 
 #if defined(__APPLE__) && defined(__POWERPC__)
@@ -52,6 +48,7 @@
 #endif
 
 #if PX_SUPPORT_GPU_PHYSX
+	#include "PxvGlobals.h"
 	#include "PxPhysXGpu.h"
 	#include "PxsKernelWrangler.h"
 	#include "PxsHeapMemoryAllocator.h"
@@ -82,12 +79,6 @@ PX_IMPLEMENT_OUTPUT_ERROR
 
 namespace physx { 
 namespace Sc {
-
-class LLArticulationRCPool : public PxPool<FeatherstoneArticulation, PxAlignedAllocator<64> >
-{
-public:
-	LLArticulationRCPool() {}
-};
 
 #if PX_SUPPORT_GPU_PHYSX
 
@@ -181,9 +172,7 @@ namespace
 				{
 					bpUpdates[nbBpUpdates++] = bodySim;
 
-					// PT: TODO: remove duplicate "isFrozen" test inside updateCached
-	//				bodySim->updateCached(NULL);
-					bodySim->updateCached(mCache, boundsArray);
+					bodySim->updateCached_ThreadSafe(mCache, boundsArray);
 				}
 
 				if(llBody.isFreezeThisFrame() && isFrozen)
@@ -214,6 +203,7 @@ namespace
 			if(nbBpUpdates>0 || nbFrozen > 0 || nbCcdBodies>0 || nbActivated>0 || nbDeactivated>0)
 			{
 				//Write active bodies to changed actor map
+				// PT: TODO: do that directly inside updateCached with atomics
 				mContext->getLock().lock();
 				PxBitMapPinned& changedAABBMgrHandles = mScene.getAABBManager()->getChangedAABBMgActorHandleMap();
 			
@@ -761,7 +751,6 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mStaticSimPool				= PX_NEW(PreallocatingPool<StaticSim>)(64, "StaticSim");
 	mBodySimPool				= PX_NEW(PreallocatingPool<BodySim>)(64, "BodySim");
 	mShapeSimPool				= PX_NEW(PreallocatingPool<ShapeSim>)(128, "ShapeSim");
-	mLLArticulationRCPool		= PX_NEW(LLArticulationRCPool);
 	mSimStateDataPool			= PX_NEW(PxPool<SimStateData>)("ScScene::SimStateData");
 
 	mSqBoundsManager			= PX_NEW(SqBoundsManager);
@@ -882,23 +871,19 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 
 	if (!useGpuDynamics)
 	{
+		// PT: we must pass mPublicFlags to the contexts in case it has been tweaked by the above code
+
 		if (desc.solverType == PxSolverType::ePGS)
 		{
-			mDynamicsContext = createDynamicsContext
-			(&mLLContext->getNpMemBlockPool(), mLLContext->getScratchAllocator(),
-				mLLContext->getTaskPool(), mLLContext->getSimStats(), &mLLContext->getTaskManager(), allocatorCallback, &getMaterialManager(),
-				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST, desc.maxBiasCoefficient,
-				desc.flags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION, desc.getTolerancesScale().length,
-				desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
+			mDynamicsContext = createDynamicsContext(&mLLContext->getNpMemBlockPool(), mLLContext->getTaskPool(), mLLContext->getSimStats(),
+													allocatorCallback, &getMaterialManager(), *mSimpleIslandManager, contextID,
+													desc.maxBiasCoefficient, desc.getTolerancesScale().length, mPublicFlags);
 		}
 		else
 		{
-			mDynamicsContext = createTGSDynamicsContext
-			(&mLLContext->getNpMemBlockPool(), mLLContext->getScratchAllocator(),
-				mLLContext->getTaskPool(), mLLContext->getSimStats(), &mLLContext->getTaskManager(), allocatorCallback, &getMaterialManager(),
-				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST,
-				desc.getTolerancesScale().length, desc.flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS,
-				desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
+			mDynamicsContext = createTGSDynamicsContext(&mLLContext->getNpMemBlockPool(), mLLContext->getTaskPool(), mLLContext->getSimStats(),
+														allocatorCallback, &getMaterialManager(), *mSimpleIslandManager, contextID,
+														desc.getTolerancesScale().length, mPublicFlags);
 		}
 
 		mLLContext->setNphaseImplementationContext(cpuNphaseImplementation);
@@ -923,10 +908,9 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		// PT: why are we using mPublicFlags in one case and desc in other cases?
 
 		mDynamicsContext = physxGpu->createGpuDynamicsContext(mLLContext->getTaskPool(), mGpuWranglerManagers, mLLContext->getCudaContextManager(),
-			desc.gpuDynamicsConfig, *mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST,
+			desc.gpuDynamicsConfig, *mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions,
 			desc.maxBiasCoefficient, desc.gpuComputeVersion, mLLContext->getSimStats(), mHeapMemoryAllocationManager, 
-			desc.flags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION, desc.flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS,
-			desc.solverType, desc.getTolerancesScale().length, directAPI, contextID, desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
+			desc.solverType, desc.getTolerancesScale().length, contextID, mPublicFlags);
 
 		void* contactStreamBase = NULL;
 		void* patchStreamBase = NULL;
@@ -981,7 +965,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mLLContext->createTransformCache(*allocatorCallback);
 	mLLContext->setContactDistance(mContactDistance);
 
-	mCCDContext = PX_NEW(PxsCCDContext)(mLLContext, mDynamicsContext->getThresholdStream(), *mLLContext->getNphaseImplementationContext(), desc.ccdThreshold);
+	mCCDContext = PX_NEW(PxsCCDContext)(mLLContext, mDynamicsContext->getThresholdStream(), *mLLContext->getNphaseImplementationContext(), desc.ccdThreshold, useGpuBroadphase || useGpuDynamics);
 	
 	setSolverBatchSize(desc.solverBatchSize);
 	setSolverArticBatchSize(desc.solverArticulationBatchSize);
@@ -1115,7 +1099,6 @@ void Sc::Scene::release()
 	PX_DELETE(mStaticSimPool);
 	PX_DELETE(mShapeSimPool);
 	PX_DELETE(mBodySimPool);
-	PX_DELETE(mLLArticulationRCPool);
 #if PX_SUPPORT_GPU_PHYSX
 	gpu_releasePools();
 #endif
@@ -1983,7 +1966,7 @@ const PxArray<PxContactPairHeader>& Sc::Scene::getQueuedContactPairHeaders()
 		if (i + 1 < nbActorPairs)
 			PxPrefetch(&(actorPairs[i + 1]->getContactStreamManager()));
 
-		PxContactPairHeader &pairHeader = mQueuedContactPairHeaders.insert();
+		PxContactPairHeader &pairHeader = *mQueuedContactPairHeaders.insert();
 		finalizeContactStreamAndCreateHeader(pairHeader, *aPair, cs, removedShapeTestMask);
 
 		cs.maxPairCount = cs.currentPairCount;
@@ -2842,16 +2825,6 @@ PX_INLINE void Sc::Scene::cleanUpSleepOrWokenBodies(PxCoalescedHashSet<BodyCore*
 	validMarker = true;
 }
 
-FeatherstoneArticulation* Sc::Scene::createLLArticulation(Sc::ArticulationSim* sim)
-{
-	return mLLArticulationRCPool->construct(sim);
-}
-
-void Sc::Scene::destroyLLArticulation(FeatherstoneArticulation& articulation)
-{
-	mLLArticulationRCPool->destroy(static_cast<Dy::FeatherstoneArticulation*>(&articulation));
-}
-
 PxU32 Sc::Scene::createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID)
 {
 	const Bp::BoundsIndex index = getElementIDPool().createID();
@@ -3036,18 +3009,16 @@ Sc::ConstraintCore*	Sc::Scene::findConstraintCore(const Sc::ActorSim* sim0, cons
 	return entry ? entry->second : NULL;
 }
 
-void Sc::Scene::updateBodySim(Sc::BodySim& bodySim)
-{
-	Dy::FeatherstoneArticulation* arti = NULL;
-	Sc::ArticulationSim* artiSim = bodySim.getArticulation();
-	if (artiSim)
-		arti = artiSim->getLowLevelArticulation();
-	mSimulationController->updateDynamic(arti, bodySim.getNodeIndex());
-}
-
 // PT: start moving PX_SUPPORT_GPU_PHYSX bits to the end of the file. Ideally/eventually they would move to a separate class or file,
 // to clearly decouple the CPU and GPU parts of the scene/pipeline.
 #if PX_SUPPORT_GPU_PHYSX
+void Sc::Scene::gpu_updateBodySim(Sc::BodySim& bodySim)
+{
+	ArticulationSim* artiSim = bodySim.getArticulation();
+	FeatherstoneArticulation* arti = artiSim ? artiSim->getLowLevelArticulation() : NULL;
+	mSimulationController->updateDynamic(arti, bodySim.getNodeIndex());
+}
+
 void Sc::Scene::gpu_releasePools()
 {
 	PX_DELETE(mLLDeformableSurfacePool);
@@ -3326,6 +3297,8 @@ void Sc::Scene::addDeformableSurface(DeformableSurfaceCore& deformableSurface)
 void Sc::Scene::removeDeformableSurface(DeformableSurfaceCore& deformableSurface)
 {
 	DeformableSurfaceSim* a = deformableSurface.getSim();
+	if(a)
+		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
 	PX_DELETE(a);
 	mDeformableSurfaces.erase(&deformableSurface);
 	mStats->gpuMemSizeDeformableSurfaces -= deformableSurface.getGpuMemStat();
@@ -3348,6 +3321,8 @@ void Sc::Scene::addDeformableVolume(DeformableVolumeCore& deformableVolume)
 void Sc::Scene::removeDeformableVolume(DeformableVolumeCore& deformableVolume)
 {
 	DeformableVolumeSim* a = deformableVolume.getSim();
+	if(a)
+		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
 	PX_DELETE(a);
 	mDeformableVolumes.erase(&deformableVolume);
 	mStats->gpuMemSizeDeformableVolumes -= deformableVolume.getGpuMemStat();
@@ -3372,6 +3347,8 @@ void Sc::Scene::addParticleSystem(ParticleSystemCore& particleSystem)
 void Sc::Scene::removeParticleSystem(ParticleSystemCore& particleSystem)
 {
 	ParticleSystemSim* a = particleSystem.getSim();
+	if(a)
+		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
 	PX_DELETE(a);
 	mParticleSystems.erase(&particleSystem);
 	mStats->gpuMemSizeParticles -= particleSystem.getShapeCore().getGpuMemStat();

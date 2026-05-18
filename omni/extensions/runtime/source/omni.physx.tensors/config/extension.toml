@@ -1,10 +1,10 @@
 [package]
-version = "107.3.0-oss.0"
+version = "109.0.10"
 authors = ["PhysX"]
 
 title = "PhysX Tensor API Implementation"
 description="PhysX Tensor API Implementation"
-repository=""
+repository = ""
 keywords = ["omniverse", "kit", "physics", "physx", "tensors"]
 category = "simulation"
 
@@ -20,9 +20,8 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physics.tensors" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.usd" = {}
+"omni.physics.tensors" = { version = "109.0.10", exact = true }
+"omni.physx" = { version = "109.0.10", exact = true }
 
 [[native.plugin]]
 path = "bin/*.plugin"

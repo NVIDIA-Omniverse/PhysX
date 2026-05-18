@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.commands
 import omni.physxdemos as demo
 
@@ -9,11 +10,11 @@ import omni.physx.bindings._physx as physx_settings_bindings
 from pxr import UsdGeom, Sdf, Gf, PhysxSchema
 import carb
 
-deformable_beta_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 class DeformableBodyAttachmentsDemo(demo.Base):
     title = "Deformable Body Attachments"
-    category = demo.Categories.DEFORMABLES if not deformable_beta_on else demo.Categories.NONE
+    category = demo.Categories.DEFORMABLES if deformable_deprecated_on else demo.Categories.NONE
     short_description = "Deformable body attachments"
     description = "This snippet shows the different types of deformable body attachments."
 

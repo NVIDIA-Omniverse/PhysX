@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -52,12 +52,19 @@ public:
     virtual bool setDisableGravities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDisableSimulations(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
 
+    virtual bool wakeUp(const TensorDesc* indexTensor) = 0;
+
     // materials/shapes
     virtual bool getMaterialProperties(const TensorDesc* dstTensor) const = 0;
+    virtual bool getCompliantMaterialProperties(const TensorDesc* dstTensor,
+                                                const TensorDesc* dstCombineModeTensor) const = 0;
     virtual bool getRestOffsets(const TensorDesc* dstTensor) const = 0;
     virtual bool getContactOffsets(const TensorDesc* dstTensor) const = 0;
 
     virtual bool setMaterialProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
+    virtual bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                                const TensorDesc* srcCombineTensor,
+                                                const TensorDesc* indexTensor) const = 0;
     virtual bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
     virtual bool setContactOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
 

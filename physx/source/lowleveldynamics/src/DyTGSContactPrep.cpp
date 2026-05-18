@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -193,13 +193,22 @@ namespace Dy
 		{}
 
 		PxReal projectVelocity(const PxVec3& linear, const PxVec3& angular) const;
-		PxVec3 getLinVel() const;
-		PxVec3 getAngVel() const;
 
 		Cm::SpatialVectorV getVelocity() const;
 		bool isKinematic() const 
 		{ 
 			return (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY) && mBody->isKinematic;
+		}
+
+		PX_FORCE_INLINE bool isRigidDynamic() const
+		{
+			// true if:
+			// - rigid body
+			// - not an articulation link
+			// - not kinematic
+			// - not static
+
+			return ((mLinkIndex == PxSolverConstraintDesc::RIGID_BODY) && (!mBody->isKinematic) && (mData->nodeIndex != PX_INVALID_NODE));
 		}
 
 		PxReal getCFM() const
@@ -211,19 +220,56 @@ namespace Dy
 
 	Cm::SpatialVector createImpulseResponseVector(const PxVec3& linear, const PxVec3& angular, const SolverExtBodyStep& body)
 	{
-		if (body.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+		// Note: articulations do use the raw constraint axes and do not multiply them by the square root of the inverse
+		//       inertia. For kinematic and static rigid bodies, the inverse inertia is zero and should not be used because it
+		//       could, for example, result in zero joint/constraint torque being reported even if there was a torque applied.
+		if (body.isRigidDynamic())
+		{
 			return Cm::SpatialVector(linear, body.mTxI->sqrtInvInertia * angular);
+		}
 
 		return Cm::SpatialVector(linear, angular);
 	}
 
 	Cm::SpatialVectorV createImpulseResponseVector(const aos::Vec3V& linear, const aos::Vec3V& angular, const SolverExtBodyStep& body)
 	{
-		if (body.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+		// See comment in non-SIMD version above
+		if (body.isRigidDynamic())
 		{
 			return Cm::SpatialVectorV(linear, M33MulV3(M33Load(body.mTxI->sqrtInvInertia), angular));
 		}
 		return Cm::SpatialVectorV(linear, angular);
+	}
+
+	static PX_FORCE_INLINE PxReal getImpulseResponse(const SolverExtBodyStep& b, const Cm::SpatialVector& impulse, Cm::SpatialVector& deltaV, PxReal dom, PxReal angDom)
+	{
+		if (b.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+		{
+			if (b.mData->invMass != 0.0f)
+			{
+				deltaV.linear = impulse.linear * b.mData->invMass * dom;
+				deltaV.angular =/* b.mBody->sqrtInvInertia * */impulse.angular * angDom;
+
+				return impulse.dot(deltaV);
+			}
+			else
+			{
+				// this codepath is important because if a constraint is attached to a static or kinematic, then the response should be
+				// zero but impulse.angular might not be zero
+				deltaV.linear = PxVec3(0.0f);
+				deltaV.angular = PxVec3(0.0f);
+				
+				return 0.0f;
+			}
+		}
+		else
+		{
+			//ArticulationHelper::getImpulseResponse(*b.mFsData, b.mLinkIndex, impulse.scale(dom, angDom), deltaV);
+			const FeatherstoneArticulation* articulation = b.mArticulation;
+			articulation->getImpulseResponse(b.mLinkIndex, impulse.scale(dom, angDom), deltaV);
+
+			return impulse.dot(deltaV);
+		}
 	}
 
 	PxReal getImpulseResponse(const SolverExtBodyStep& b0, const Cm::SpatialVector& impulse0, Cm::SpatialVector& deltaV0, PxReal dom0, PxReal angDom0,
@@ -240,34 +286,40 @@ namespace Dy
 		}
 		else
 		{
-			if (b0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-			{
-				deltaV0.linear = impulse0.linear * b0.mData->invMass * dom0;
-				deltaV0.angular =/* b0.mBody->sqrtInvInertia * */impulse0.angular * angDom0;
-			}
-			else
-			{
-				//ArticulationHelper::getImpulseResponse(*b0.mFsData, b0.mLinkIndex, impulse0.scale(dom0, angDom0), deltaV0);
-				const FeatherstoneArticulation* articulation = b0.mArticulation;
-				articulation->getImpulseResponse(b0.mLinkIndex, impulse0.scale(dom0, angDom0), deltaV0);
-			}
-
-			response = impulse0.dot(deltaV0);
-			if (b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-			{
-				deltaV1.linear = impulse1.linear * b1.mData->invMass * dom1;
-				deltaV1.angular = /*b1.mBody->sqrtInvInertia * */impulse1.angular * angDom1;
-			}
-			else
-			{
-				const FeatherstoneArticulation* articulation = b1.mArticulation;
-				articulation->getImpulseResponse(b1.mLinkIndex, impulse1.scale(dom1, angDom1), deltaV1);
-				//ArticulationHelper::getImpulseResponse(*b1.mFsData, b1.mLinkIndex, impulse1.scale(dom1, angDom1), deltaV1);
-			}
-			response += impulse1.dot(deltaV1);
+			response = getImpulseResponse(b0, impulse0, deltaV0, dom0, angDom0);
+			response += getImpulseResponse(b1, impulse1, deltaV1, dom1, angDom1);
 		}
 
 		return response;
+	}
+
+	static PX_FORCE_INLINE Vec3V getImpulseResponse(const SolverExtBodyStep& b, const Cm::SpatialVectorV& impulse, Cm::SpatialVectorV& deltaV, const FloatV& dom, const FloatV& angDom)
+	{
+		if (b.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+		{
+			if (b.mData->invMass != 0.0f)
+			{
+				deltaV.linear = V3Scale(impulse.linear, FMul(FLoad(b.mData->invMass), dom));
+				deltaV.angular = V3Scale(impulse.angular, angDom);
+
+				return V3Add(V3Mul(impulse.linear, deltaV.linear), V3Mul(impulse.angular, deltaV.angular));
+			}
+			else
+			{
+				// See comment in non-SIMD version further above
+
+				deltaV.linear = V3Zero();
+				deltaV.angular = V3Zero();
+
+				return V3Zero();
+			}
+		}
+		else
+		{
+			b.mArticulation->getImpulseResponse(b.mLinkIndex, impulse.scale(dom, angDom), deltaV);
+
+			return V3Add(V3Mul(impulse.linear, deltaV.linear), V3Mul(impulse.angular, deltaV.angular));
+		}
 	}
 
 	FloatV getImpulseResponse(const SolverExtBodyStep& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
@@ -276,27 +328,8 @@ namespace Dy
 	{
 		Vec3V response;
 		{
-			if (b0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-			{
-				deltaV0.linear = V3Scale(impulse0.linear, FMul(FLoad(b0.mData->invMass), dom0));
-				deltaV0.angular = V3Scale(impulse0.angular, angDom0);
-			}
-			else
-			{
-				b0.mArticulation->getImpulseResponse(b0.mLinkIndex, impulse0.scale(dom0, angDom0), deltaV0);
-			}
-
-			response = V3Add(V3Mul(impulse0.linear, deltaV0.linear), V3Mul(impulse0.angular, deltaV0.angular));
-			if (b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-			{
-				deltaV1.linear = V3Scale(impulse1.linear, FMul(FLoad(b1.mData->invMass), dom1));
-				deltaV1.angular = V3Scale(impulse1.angular, angDom1);
-			}
-			else
-			{
-				b1.mArticulation->getImpulseResponse(b1.mLinkIndex, impulse1.scale(dom1, angDom1), deltaV1);
-			}
-			response = V3Add(response, V3Add(V3Mul(impulse1.linear, deltaV1.linear), V3Mul(impulse1.angular, deltaV1.angular)));
+			response = getImpulseResponse(b0, impulse0, deltaV0, dom0, angDom0);
+			response = V3Add(response, getImpulseResponse(b1, impulse1, deltaV1, dom1, angDom1));
 		}
 
 		return V3SumElems(response);
@@ -935,19 +968,6 @@ namespace Dy
 	//	else
 	//		PxNormalToTangents(unitNormal, t0, t1);		//fallback
 	//}
-
-	PxVec3 SolverExtBodyStep::getLinVel() const
-	{
-		if (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-			return mBody->linearVelocity;
-		else
-		{
-			Cm::SpatialVectorV velocity = mArticulation->getLinkVelocity(mLinkIndex);
-			PxVec3 result;
-			V3StoreU(velocity.linear, result);
-			return result;
-		}
-	}
 
 	Cm::SpatialVectorV SolverExtBodyStep::getVelocity() const
 	{

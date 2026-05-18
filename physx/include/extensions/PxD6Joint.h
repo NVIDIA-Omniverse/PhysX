@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -113,20 +113,7 @@ struct PxD6AngularDriveConfig
 		A single set of drive parameters will be used for all angular degrees of freedom and PxD6Drive::eSLERP is the only valid option to set
 		those parameters (see #PxD6Joint::setDrive()).
 		*/
-		eSLERP,
-
-		/**
-		\deprecated
-
-		\brief Legacy mode that uses a precedence system to either use the slerp or swing/twist angular drive model.
-
-		\note In this config it is not possible to set separate drive parameters for the two swing axes.
-
-		For compatibility with previous versions of PhysX, drive parameters for PxD6Drive::eTWIST, PxD6Drive::eSWING and PxD6Drive::eSLERP
-		can be set alltogether with ::eSLERP taking precedence (see #PxD6Joint::setDrive()). Use of PxD6Drive::eSWING1 and PxD6Drive::eSWING2
-		is not allowed.
-		*/
-		eLEGACY PX_DEPRECATED
+		eSLERP
 	};
 };
 
@@ -156,48 +143,34 @@ struct PxD6Drive
 		eZ						= 2,	//!< drive along the Z-axis
 
 		/**
-		\deprecated
-
-		\brief rotational drive around the Y- and Z-axis
-
-		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eLEGACY.
-		*/
-		eSWING PX_DEPRECATED	= 3,
-
-		/**
 		\brief rotational drive around the X-axis
 
-		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eLEGACY or
-		      PxD6AngularDriveConfig::eSWING_TWIST.
+		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eSWING_TWIST.
 		*/
-		eTWIST					= 4,
-
-		/**
-		\brief drive of all three angular degrees along a SLERP-path
-
-		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eSLERP or
-		      PxD6AngularDriveConfig::eLEGACY.
-
-		\note If the angular drive configuration is set to PxD6AngularDriveConfig::eLEGACY, then eSLERP takes
-		      precedence over eSWING/eTWIST
-		*/
-		eSLERP					= 5,
+		eTWIST					= 3,
 
 		/**
 		\brief rotational drive around the Y-axis
 
 		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eSWING_TWIST.
 		*/
-		eSWING1					= 6,
+		eSWING1					= 4,
 
 		/**
 		\brief rotational drive around the Z-axis
 
 		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eSWING_TWIST.
 		*/
-		eSWING2					= 7,
+		eSWING2					= 5,
 
-		eCOUNT					= 8
+		/**
+		\brief drive of all three angular degrees along a SLERP-path
+
+		\note Only allowed if the angular drive configuration is set to PxD6AngularDriveConfig::eSLERP.
+		*/
+		eSLERP					= 6,
+
+		eCOUNT					= 7
 	};
 };
 
@@ -341,13 +314,6 @@ public:
 	virtual PxReal				getTwistAngle()	const	= 0;
 
 	/**
-	\brief get the twist angle of the joint
-
-	\deprecated Use getTwistAngle instead. Deprecated since PhysX version 4.0
-	*/
-	PX_DEPRECATED	PX_FORCE_INLINE PxReal				getTwist()	const	{ return getTwistAngle();	}
-
-	/**
 	\brief get the swing angle of the joint from the Y axis
 	*/
 	virtual PxReal				getSwingYAngle()	const	= 0;
@@ -378,16 +344,6 @@ public:
 	\see setDistanceLimit() PxJointLinearLimit
 	*/
 	virtual	PxJointLinearLimit	getDistanceLimit()	const	= 0;
-
-	/**
-	\deprecated Use setDistanceLimit instead. Deprecated since PhysX version 4.0
-	*/
-	PX_DEPRECATED	PX_FORCE_INLINE	void				setLinearLimit(const PxJointLinearLimit& limit)	{ setDistanceLimit(limit);		}
-
-	/**
-	\deprecated Use getDistanceLimit instead. Deprecated since PhysX version 4.0
-	*/
-	PX_DEPRECATED	PX_FORCE_INLINE	PxJointLinearLimit	getLinearLimit()	const						{ return getDistanceLimit();	}
 
 	/**
 	\brief Set the linear limit for a given linear axis. 
@@ -486,6 +442,32 @@ public:
 	virtual	PxJointLimitPyramid	getPyramidSwingLimit()	const	= 0;
 
 	/**
+	\brief Set the angular drive model to apply.
+
+	\note The configuration will limit the allowed set of angular drive types (see #PxD6Drive) to use
+	      when calling #PxD6Joint::setDrive().
+
+	\note Changing the angular drive model, will reset all the parameters for the angular drives to
+	      their default values (see #PxD6Joint::setDrive() for information on the default values).
+
+	\param[in] config The angular drive model to apply.
+
+	\see PxD6AngularDriveConfig getAngularDriveConfig()
+
+	<b>Default</b> PxD6AngularDriveConfig::eSWING_TWIST
+	*/
+	virtual void setAngularDriveConfig(PxD6AngularDriveConfig::Enum config) = 0;
+
+	/**
+	\brief Get the angular drive model to apply.
+
+	\return The angular drive model to apply.
+
+	\see PxD6AngularDriveConfig setAngularDriveConfig()
+	*/
+	virtual PxD6AngularDriveConfig::Enum getAngularDriveConfig() const = 0;
+
+	/**
 	\brief Set the drive parameters for the specified drive type.
 
 	\note The angular drive configuration (see #PxD6AngularDriveConfig) defines what type of
@@ -559,6 +541,19 @@ public:
 	virtual void				getDriveVelocity(PxVec3& linear, PxVec3& angular)	const	= 0;
 
 	/**
+	\brief Returns the GPU D6 joint index.
+
+	\note Only use in combination with enabled GPU dynamics and enabled direct GPU API
+	      (see #PxSceneFlag::eENABLE_GPU_DYNAMICS, #PxSceneFlag::eENABLE_DIRECT_GPU_API,
+		  #PxBroadPhaseType::eGPU)
+
+	\return The GPU index, or PX_INVALID_D6_JOINT_GPU_INDEX if the joint is not part of a PxScene.
+
+	\see PxDirectGPUAPI::getD6JointData()
+	*/
+	virtual PxD6JointGPUIndex getGPUIndex() const = 0;
+
+	/**
 	\brief Returns string name of PxD6Joint, used for serialization
 	*/
 	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	{ return "PxD6Joint"; }
@@ -580,49 +575,10 @@ protected:
 	/**
 	\brief Returns whether a given type name matches with the type of this instance
 	*/
-	virtual	bool				isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxD6Joint", PxJoint); }
+	virtual	bool				isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxD6Joint", PxJoint); }
 
 	//~serialization
-
-public:
-	/**
-	\brief Returns the GPU D6 joint index.
-
-	\note Only use in combination with enabled GPU dynamics and enabled direct GPU API
-	      (see #PxSceneFlag::eENABLE_GPU_DYNAMICS, #PxSceneFlag::eENABLE_DIRECT_GPU_API,
-		  #PxBroadPhaseType::eGPU)
-
-	\return The GPU index, or PX_INVALID_D6_JOINT_GPU_INDEX if the joint is not part of a PxScene.
-
-	\see PxDirectGPUAPI::getD6JointData()
-	*/
-	virtual PxD6JointGPUIndex getGPUIndex() const = 0;
-
-	/**
-	\brief Set the angular drive model to apply.
-
-	\note The configuration will limit the allowed set of angular drive types (see #PxD6Drive) to use
-	      when calling #PxD6Joint::setDrive().
-
-	\note Changing the angular drive model, will reset all the parameters for the angular drives to
-	      their default values (see #PxD6Joint::setDrive() for information on the default values).
-
-	\param[in] config The angular drive model to apply.
-
-	\see PxD6AngularDriveConfig getAngularDriveConfig()
-
-	<b>Default</b> PxD6AngularDriveConfig::eLEGACY but will soon change to PxD6AngularDriveConfig::eSWING_TWIST
-	*/
-	virtual void setAngularDriveConfig(PxD6AngularDriveConfig::Enum config) = 0;
-
-	/**
-	\brief Get the angular drive model to apply.
-
-	\return The angular drive model to apply.
-
-	\see PxD6AngularDriveConfig setAngularDriveConfig()
-	*/
-	virtual PxD6AngularDriveConfig::Enum getAngularDriveConfig() const = 0;
+	
 };
 
 #if !PX_DOXYGEN

@@ -19,7 +19,7 @@ local usd_plugin = require(root.."/_repo/deps/repo_usd/templates/premake/premake
 local options = {
     usd_root = root.."/_build/target-deps/usd/%{cfg.buildcfg}",
     boost_include_path = root.."/_build/target-deps/usd/%{cfg.buildcfg}/include/boost",
-    usd_lib_prefix = "",
+    usd_lib_prefix = "usd_",
     usd_suppress_warnings = true,
     python_root = root.."/_build/target-deps/python",
     plugin_include_dir = root.."/_build/%{cfg.system}-%{cfg.platform}/%{cfg.buildcfg}/schema/include/physxSchema",
@@ -30,9 +30,9 @@ local options = {
 
 print("Using plugin_include_dir: "..options.plugin_include_dir)
 
-local usd_libs = usd_prefix({
-    "arch","tf","vt","sdf","usd","usdGeom","usdPhysics"
-})
+local usd_libs = {
+    "arch","tf","vt","sdf","usd","usdGeom","usdPhysics", "boost"
+}
 
 local public_headers = {
     "api.h","jointStateAPI.h","physxSurfaceVelocityAPI.h","physxSceneQuasistaticAPI.h","physxMeshMergeCollisionAPI.h","physxArticulationAPI.h", "physxAutoAttachmentAPI.h","physxAutoParticleClothAPI.h","physxCameraAPI.h","physxCameraDroneAPI.h","physxCameraFollowAPI.h","physxCameraFollowLookAPI.h","physxCameraFollowVelocityAPI.h","physxCharacterControllerAPI.h","physxCollisionAPI.h","physxContactReportAPI.h","physxConvexDecompositionCollisionAPI.h","physxConvexHullCollisionAPI.h","physxCookedDataAPI.h","physxDeformableAPI.h","physxDeformableBodyAPI.h","physxDeformableBodyMaterialAPI.h","physxDeformableSurfaceAPI.h","physxDeformableSurfaceMaterialAPI.h","physxDiffuseParticlesAPI.h","physxForceAPI.h","physxIsosurfaceAPI.h","physxJointAPI.h","physxLimitAPI.h","physxMaterialAPI.h","physxMimicJointAPI.h","physxParticleAnisotropyAPI.h","physxParticleAPI.h","physxParticleClothAPI.h","physxParticleIsosurfaceAPI.h","physxParticleSamplingAPI.h","physxParticleSetAPI.h","physxParticleSmoothingAPI.h","physxParticleSystem.h","physxPBDMaterialAPI.h","physxPhysicsAttachment.h","physxPhysicsDistanceJointAPI.h","physxPhysicsGearJoint.h","physxPhysicsInstancer.h","physxPhysicsJointInstancer.h","physxPhysicsRackAndPinionJoint.h","physxRigidBodyAPI.h","physxSceneAPI.h","physxSDFMeshCollisionAPI.h","physxSphereFillCollisionAPI.h","physxTendonAttachmentAPI.h","physxTendonAttachmentLeafAPI.h","physxTendonAttachmentRootAPI.h","physxTendonAxisAPI.h","physxTendonAxisRootAPI.h","physxTriangleMeshCollisionAPI.h","physxTriangleMeshSimplificationCollisionAPI.h","physxTriggerAPI.h","physxTriggerStateAPI.h","physxVehicleAckermannSteeringAPI.h","physxVehicleAPI.h","physxVehicleAutoGearBoxAPI.h","physxVehicleBrakesAPI.h","physxVehicleClutchAPI.h","physxVehicleContextAPI.h","physxVehicleControllerAPI.h","physxVehicleDriveBasicAPI.h","physxVehicleDriveStandardAPI.h","physxVehicleEngineAPI.h","physxVehicleGearsAPI.h","physxVehicleMultiWheelDifferentialAPI.h","physxVehicleNonlinearCommandResponseAPI.h","physxVehicleSteeringAPI.h","physxVehicleSuspensionAPI.h","physxVehicleSuspensionComplianceAPI.h","physxVehicleTankControllerAPI.h","physxVehicleTankDifferentialAPI.h","physxVehicleTireAPI.h","physxVehicleTireFrictionTable.h","physxVehicleWheelAPI.h","physxVehicleWheelAttachmentAPI.h","physxVehicleWheelControllerAPI.h","tetrahedralMesh.h","tokens.h","physxResidualReportingAPI.h"
@@ -57,7 +57,6 @@ local python_module_files = {
 local resource_files = {
     "generatedSchema.usda","plugInfo.json","schema.usda"
 }
-
 
 -- USD plugin C++ project
 project("physxSchema")

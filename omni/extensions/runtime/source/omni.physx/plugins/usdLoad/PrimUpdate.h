@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -62,8 +62,8 @@ public:
         {
             if constexpr (std::is_same_v<T, pxr::TfToken>)
             {
-                const gsl::span<const omni::fabric::TokenC> data = 
-                    mStageInProgress.getAttributeArrayRd<omni::fabric::TokenC>(mChangesByType, mChangesIndex, mAttrName);
+                const gsl::span<const omni::fabric::Token> data = 
+                    mStageInProgress.getAttributeArrayRd<omni::fabric::Token>(mChangesByType, mChangesIndex, mAttrName);
                 mData = reinterpret_cast<const uint8_t*>(data.data());
                 mDataSize = (uint32_t)data.size();
             }
@@ -83,13 +83,23 @@ public:
         if (!mData)
             return false;
 
-        const T* data = reinterpret_cast<const T*>(mData);
         if (mCurrentIndex >= mDataSize)
         {
             return false;
         }
 
-        outData = data[mCurrentIndex];
+        if constexpr (std::is_same_v<T, pxr::TfToken>)
+        {
+            // tftoken retype needs special handling
+            const omni::fabric::Token* data = reinterpret_cast<const omni::fabric::Token*>(mData);
+            const omni::fabric::Token currentToken = data[mCurrentIndex];
+            outData = omni::fabric::toTfToken(currentToken);
+        }
+        else
+        {
+            const T* data = reinterpret_cast<const T*>(mData);
+            outData = data[mCurrentIndex];
+        }
         return true;
     }
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -615,7 +615,7 @@ static void updateParticlePositions(InternalParticleSet* internalParticleSet, co
     for (uint32_t i = 0; i < internalParticleSet->mNumParticles; i++)
     {
         GfVec3f localPos = positions[i];
-        GfVec3f pos = localToWorld.Transform(localPos);
+        GfVec3f pos = pxr::GfVec3f(localToWorld.Transform(localPos));
 
         positionsInvMass[i] = PxVec4(pos[0], pos[1], pos[2], internalParticleSet->mParticleInvMass);
     }

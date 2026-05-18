@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -79,6 +79,7 @@ namespace physx
 	class PxgGpuContext;
 	class PxgNphaseImplementationContext;
 	struct PxsCachedTransform;
+	class PxsKernelWranglerManager;
 
 	class PxgSimulationController;
 	class PxgCudaKernelWranglerManager;
@@ -592,7 +593,7 @@ namespace physx
 		virtual void updateArticulationJoint(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void updateArticulationExtAccel(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void updateArticulationAfterIntegration(PxsContext* /*llContext*/, Bp::AABBManagerBase* /*aabbManager*/,
-			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/) PX_OVERRIDE	{}
+			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/, bool /*isSleepingDisabled*/) PX_OVERRIDE	{}
 		virtual PxU32* getActiveBodies()	PX_OVERRIDE;
 		virtual PxU32* getDeactiveBodies()	PX_OVERRIDE;
 		virtual void** getRigidBodies()	PX_OVERRIDE;
@@ -608,7 +609,7 @@ namespace physx
 		virtual void	setBounds(Bp::BoundsArray* boundArray)	PX_OVERRIDE;
 		virtual void	reserve(const PxU32 nbBodies)	PX_OVERRIDE;
 
-		PX_INLINE PxU32   getArticulationRemapIndex(const PxU32 nodeIndex) { return mBodySimManager.getArticulationRemapIndex(nodeIndex); }
+		virtual PX_INLINE PxU32   getArticulationRemapIndex(const PxU32 nodeIndex) PX_OVERRIDE { return mBodySimManager.getArticulationRemapIndex(nodeIndex); }
 		
 		virtual void	setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) PX_OVERRIDE PX_FINAL;
 		virtual void	setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) PX_OVERRIDE PX_FINAL;
@@ -641,7 +642,7 @@ namespace physx
 		virtual	PxU32	getInternalShapeIndex(const PxsShapeCore& shapeCore)	PX_OVERRIDE PX_FINAL;
 
 		virtual void	syncParticleData()	PX_OVERRIDE;
-		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& aabbManager, bool useDirectApi)	PX_OVERRIDE;
+		virtual void	updateBoundsAndShapes(Bp::AABBManagerBase& aabbManager, bool useDirectApi)	PX_OVERRIDE;
 
 		PX_FORCE_INLINE PxgSimulationCore* getSimulationCore() { return mSimulationCore; }
 		PX_FORCE_INLINE PxgJointManager& getJointManager() { return mJointManager; }
@@ -754,7 +755,7 @@ namespace physx
 		void mergeBoundsAndTransformsChanges(PxgBoundsArray& directGPUBoundsArray,
 																	  PxsTransformCache& transformCache,
 																	  PxgCudaBuffer& gpuTransformCache, PxU32 boundsArraySize, PxU32 totalTransformCacheSize,
-																		 PxU32 numChanges, CUstream npStream);
+																		 PxU32 numChanges, CUdeviceptr updatedActorDescd, CUstream npStream);
 
 #if PXG_SC_DEBUG
 		void validateCacheAndBounds(PxBoundsArrayPinned& boundArray, PxCachedTransformArrayPinned& cachedTransform);

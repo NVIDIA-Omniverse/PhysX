@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,10 +42,6 @@ namespace Sc
 
 	class ArticulationCore
 	{
-		//---------------------------------------------------------------------------------
-		// Construction, destruction & initialization
-		//---------------------------------------------------------------------------------
-
 // PX_SERIALIZATION
 		public:
 													ArticulationCore(const PxEMPTY) : mSim(NULL), mCore(PxEmpty) {}
@@ -98,9 +94,9 @@ namespace Sc
 
 						void						commonInit() const;
 
-						void						computeGeneralizedGravityForce(PxArticulationCache& cache, const bool rootMotion) const;
+						void						computeGeneralizedGravityForce(PxArticulationCache& cache) const;
 
-						void						computeCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion) const;
+						void						computeCoriolisAndCentrifugalForce(PxArticulationCache& cache) const;
 
 						void						computeGeneralizedExternalForce(PxArticulationCache& cache) const;
 
@@ -114,7 +110,7 @@ namespace Sc
 
 						bool						computeLambda(PxArticulationCache& cache, PxArticulationCache& rollBackCache, const PxReal* const jointTorque, const PxVec3 gravity, const PxU32 maxIter) const;
 
-						void						computeGeneralizedMassMatrix(PxArticulationCache& cache, const bool rootMotion) const;
+						void						computeGeneralizedMassMatrix(PxArticulationCache& cache) const;
 
 						PxVec3						computeArticulationCOM(const bool rootFrame) const;
 

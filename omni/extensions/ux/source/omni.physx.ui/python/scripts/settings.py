@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.usd
 from omni import ui
 from omni.physx import get_physx_interface, get_physx_cooking_interface
@@ -93,7 +94,7 @@ class PhysicsPreferences(PreferenceBuilder):
         self._add_setting(SettingType.INT, "Add Menu Subtree Prim Limit", physx_bindings.SETTING_ADDMENU_SUBTREE_LIMIT, 0, 4294967295)
         self._add_setting(SettingType.BOOL, "Enable Attachment Authoring (Requires Stage Reload)", physx_bindings.SETTING_ENABLE_ATTACHMENT_AUTHORING)
         self._add_setting(SettingType.BOOL, "Enable Particle Authoring (Requires Stage Reload)", physx_bindings.SETTING_ENABLE_PARTICLE_AUTHORING)
-        self._add_setting(SettingType.BOOL, "Enable Deformable Schema Beta (Requires Restart)", physx_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+        self._add_setting(SettingType.BOOL, "Enable Deprecated Deformables (Requires Restart)", physx_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
         self._add_setting_combo_and_label(
             "Default Physics Simulator",
             physx_bindings.SETTING_DEFAULT_SIMULATOR,

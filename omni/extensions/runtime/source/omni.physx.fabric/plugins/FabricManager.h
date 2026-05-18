@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -68,11 +68,11 @@ struct PointIntancerData
     pxr::VtArray<pxr::GfQuath> orientations;
 };
 
-using TransformationCache = std::unordered_map<uint64_t, FabricRigidBodyData>;
-using JointStateCache = std::unordered_map<uint64_t, omni::physx::JointStateData>;
+using TransformationCache = std::unordered_map<omni::fabric::Path, FabricRigidBodyData>;
+using JointStateCache = std::unordered_map<omni::fabric::Path, omni::physx::JointStateData>;
 using PathSet = std::unordered_set<pxr::SdfPath, pxr::SdfPath::Hash>;
-using WheelMap = std::unordered_map<uint64_t, usdparser::ObjectId>;
-using PointInstanceProtoCache = std::unordered_map<uint64_t, ProtoInstanceData>;
+using WheelMap = std::unordered_map<omni::fabric::Path, usdparser::ObjectId>;
+using PointInstanceProtoCache = std::unordered_map<omni::fabric::Path, ProtoInstanceData>;
 using PointInstancerCache = std::unordered_map<pxr::SdfPath, PointIntancerData, pxr::SdfPath::Hash>;
 
 struct FabricUsdNoticeListener : public pxr::TfWeakBase
@@ -130,7 +130,7 @@ public:
 
     static ::physx::PxCudaContextManager* getCudaContextManager();
 
-    bool getInitialTransformation(const omni::fabric::PathC& path,
+    bool getInitialTransformation(const omni::fabric::Path& path,
                                   carb::Float3& translation,
                                   carb::Float4& orientation,
                                   carb::Float3& scale);
@@ -204,28 +204,28 @@ private:
     bool mPtrDirty;
     bool mKinematicBodyTransformationUpdateEnabled;
 
-    omni::fabric::TokenC mWorldMatrixToken;
-    omni::fabric::TokenC mLocalMatrixToken;
-    omni::fabric::TokenC mWorldForceToken;
-    omni::fabric::TokenC mWorldTorqueToken;
-    omni::fabric::TokenC mPointsToken;
-    omni::fabric::TokenC mInitPointsToken;
-    omni::fabric::TokenC mPhysXPtrToken;
-    omni::fabric::TokenC mPhysXPtrInstancedToken;
+    omni::fabric::Token mWorldMatrixToken;
+    omni::fabric::Token mLocalMatrixToken;
+    omni::fabric::Token mWorldForceToken;
+    omni::fabric::Token mWorldTorqueToken;
+    omni::fabric::Token mPointsToken;
+    omni::fabric::Token mInitPointsToken;
+    omni::fabric::Token mPhysXPtrToken;
+    omni::fabric::Token mPhysXPtrInstancedToken;
 
-    omni::fabric::TokenC mLinVelToken;
-    omni::fabric::TokenC mAngVelToken;
+    omni::fabric::Token mLinVelToken;
+    omni::fabric::Token mAngVelToken;
 
-    omni::fabric::TokenC mDynamicBodyToken;
+    omni::fabric::Token mDynamicBodyToken;
 
-    omni::fabric::TokenC mResidualRmsPosIterToken;
-    omni::fabric::TokenC mResidualMaxPosIterToken;
-    omni::fabric::TokenC mResidualRmsVelIterToken;
-    omni::fabric::TokenC mResidualMaxVelIterToken;
+    omni::fabric::Token mResidualRmsPosIterToken;
+    omni::fabric::Token mResidualMaxPosIterToken;
+    omni::fabric::Token mResidualRmsVelIterToken;
+    omni::fabric::Token mResidualMaxVelIterToken;
 
-    omni::fabric::TokenC mRigidBodyWorldPositionToken;
-    omni::fabric::TokenC mRigidBodyWorldOrientationToken;
-    omni::fabric::TokenC mRigidBodyWorldScaleToken;
+    omni::fabric::Token mRigidBodyWorldPositionToken;
+    omni::fabric::Token mRigidBodyWorldOrientationToken;
+    omni::fabric::Token mRigidBodyWorldScaleToken;
 
     omni::fabric::Type mFloat1Type;
     omni::fabric::Type mFloat3Type;

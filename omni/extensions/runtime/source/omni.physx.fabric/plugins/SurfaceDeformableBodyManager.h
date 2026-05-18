@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -22,14 +22,14 @@ namespace omni
 {
 namespace physx
 {
-using PositionCache = std::unordered_map<uint64_t, pxr::VtArray<carb::Float3>>;
+using PositionCache = std::unordered_map<omni::fabric::Path, pxr::VtArray<carb::Float3>>;
 
 struct SurfaceDeformableBody
 {
     InternalSurfaceDeformableBodyData data;
 
-    std::unordered_map<omni::fabric::PathC, float3*> stagingPointsDevMap;
-    std::unordered_map<omni::fabric::PathC, float3*> fabricPointsCPUMap;
+    std::unordered_map<omni::fabric::Path, float3*> stagingPointsDevMap;
+    std::unordered_map<omni::fabric::Path, float3*> fabricPointsCPUMap;
 
     std::vector<pxr::UsdPrim> skinMeshPrims;
 
@@ -52,15 +52,15 @@ public:
                                ::physx::PxCudaContextManager* cudaContextManager,
                                pxr::SdfPath path,
                                uint32_t numVertices,
-                               std::unordered_map<omni::fabric::PathC, float3*>& stagingPointsDevMap);
+                               std::unordered_map<omni::fabric::Path, float3*>& stagingPointsDevMap);
     void prepareInteropData(omni::fabric::StageReaderWriter& srw,
                             pxr::SdfPath path,
                             DeformableBodyGPUData& gpuData,
                             void* src,
                             uint32_t numVertices,
                             pxr::GfMatrix4f worldToDeformableSurface,
-                            std::unordered_map<omni::fabric::PathC, float3*>& stagingPointsDevMap,
-                            std::unordered_map<omni::fabric::PathC, float3*>& fabricPointsCPUMap, const int srcPointsElemSize);
+                            std::unordered_map<omni::fabric::Path, float3*>& stagingPointsDevMap,
+                            std::unordered_map<omni::fabric::Path, float3*>& fabricPointsCPUMap, const int srcPointsElemSize);
 
     uint32_t mNumFabricAttributes = 0;
     uint32_t mMaxPoints = 0;
@@ -82,6 +82,8 @@ private:
     omni::fabric::Token mPointsToken;
     omni::fabric::Type mTypeFloat3Array;
     bool mGPUInterop = false;
+
+    omni::fabric::FabricId mFabricId;
 };
 
 class SurfaceDeformableBodyManager
@@ -112,7 +114,7 @@ private:
 
     omni::fabric::Token mPointsToken;
 
-    std::unordered_map<omni::fabric::PathC, SurfaceDeformableBody> mSurfaceDeformableBodies;
+    std::unordered_map<omni::fabric::Path, SurfaceDeformableBody> mSurfaceDeformableBodies;
     std::unordered_map<::physx::PxScene*, SurfaceDeformableBodySet> mSurfaceDeformableBodySets;
 
     PositionCache mInitialPositions;

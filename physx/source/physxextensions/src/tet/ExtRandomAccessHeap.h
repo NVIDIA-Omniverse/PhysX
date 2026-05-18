@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef EXT_RANDOM_ACCESS_HEAP_H
 #define EXT_RANDOM_ACCESS_HEAP_H
@@ -157,8 +157,24 @@ namespace physx
 
 			void clear() 
 			{
-				heap.capacity() == 0 ? heap.resize(1) : heap.forceSize_Unsafe(1);
-				ids.capacity() == 0 ? ids.resize(1) : ids.forceSize_Unsafe(1);
+				if (heap.capacity() == 0)
+				{
+					heap.resize(1);
+				}
+				else
+				{
+					heap.forceSize_Unsafe(1);
+				}
+
+				if (ids.capacity() == 0)
+				{
+					ids.resize(1);
+				}
+				else
+				{
+					ids.forceSize_Unsafe(1);
+				}
+				
 				posOfId.forceSize_Unsafe(0);
 				nextId = 0;
 			}

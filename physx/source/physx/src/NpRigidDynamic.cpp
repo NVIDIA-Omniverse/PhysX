@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -427,7 +427,11 @@ bool NpRigidDynamic::isSleeping() const
 	NP_READ_CHECK(getNpScene());
 	PX_CHECK_AND_RETURN_VAL(getNpScene(), "PxRigidDynamic::isSleeping: Body must be in a scene.", true);
 
-	PX_CHECK_SCENE_API_READ_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxRigidDynamic::isSleeping() not allowed while simulation is running.", true);
+	NpScene* npScene = getNpScene();
+	if (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+		return false;
+
+	PX_CHECK_SCENE_API_READ_FORBIDDEN_AND_RETURN_VAL(npScene, "PxRigidDynamic::isSleeping() not allowed while simulation is running.", true);
 
 	return mCore.isSleeping();
 }
@@ -505,6 +509,7 @@ void NpRigidDynamic::wakeUp()
 {
 	NpScene* npScene = getNpScene();
 	NP_WRITE_CHECK(npScene);
+
 	PX_CHECK_AND_RETURN(npScene, "PxRigidDynamic::wakeUp: Body must be in a scene.");
 	PX_CHECK_AND_RETURN(!(mCore.getFlags() & PxRigidBodyFlag::eKINEMATIC), "PxRigidDynamic::wakeUp: Body must be non-kinematic!");
 	PX_CHECK_AND_RETURN(!(mCore.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)), "PxRigidDynamic::wakeUp: Not allowed if PxActorFlag::eDISABLE_SIMULATION is set!");
@@ -518,6 +523,13 @@ void NpRigidDynamic::putToSleep()
 {
 	NpScene* npScene = getNpScene();
 	NP_WRITE_CHECK(npScene);
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidDynamic::putToSleep(): sleeping is not supported when PxSceneFlag::eDISABLE_SLEEPING is enabled. Call ignored.");
+		return;
+	}
+
 	PX_CHECK_AND_RETURN(npScene, "PxRigidDynamic::putToSleep: Body must be in a scene.");
 	PX_CHECK_AND_RETURN(!(mCore.getFlags() & PxRigidBodyFlag::eKINEMATIC), "PxRigidDynamic::putToSleep: Body must be non-kinematic!");
 	PX_CHECK_AND_RETURN(!(mCore.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)), "PxRigidDynamic::putToSleep: Not allowed if PxActorFlag::eDISABLE_SIMULATION is set!");

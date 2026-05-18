@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1863,19 +1863,6 @@ namespace Dy
 		}
 	}
 
-	void FeatherstoneArticulation::enforcePrismaticLimits(PxReal& jPosition, ArticulationJointCore* joint)
-	{
-		const PxU32 dofId = joint->dofIds[0];
-		if (joint->motion[dofId] == PxArticulationMotion::eLIMITED)
-		{
-			if (jPosition < (joint->limits[dofId].low))
-				jPosition = joint->limits[dofId].low;
-
-			if (jPosition > (joint->limits[dofId].high))
-				jPosition = joint->limits[dofId].high;
-		}
-	}
-
 	PxQuat computeSphericalJointPositions(const PxQuat& relativeQuat,
 		const PxQuat& newRot, const PxQuat& pBody2WorldRot,
 		PxReal* jPositions, const Cm::UnAlignedSpatialVector* motionMatrix,
@@ -1961,10 +1948,6 @@ namespace Dy
 				jPositions[0] = jPos;
 
 			}
-			else if(joint->jointType == PxArticulationJointType::ePRISMATIC)
-			{
-				enforcePrismaticLimits(jPositions[0], joint);
-			}
 		}
 	}
 
@@ -2031,8 +2014,6 @@ namespace Dy
 				const PxReal delta = (jVelocity[0]) * dt;
 
 				PxReal jPos = jPosition[0] + delta;
-
-				enforcePrismaticLimits(jPos, joint);
 
 				jPosition[0] = jPos;
 

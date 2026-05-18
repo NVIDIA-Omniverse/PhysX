@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -82,16 +82,10 @@ namespace physx
 	class PxsContext;
 
 	class PxsRigidBody;
-	class PxsKernelWranglerManager;
-	class PxsHeapMemoryAllocatorManager;
-	class PxgParticleSystemCore;
 	struct PxConeLimitedConstraint;
 
 	struct PxsShapeCore;
 
-	class PxPhysXGpu;
-
-	struct PxgSolverConstraintManagerConstants;
 	struct PxsExternalAccelerationProvider;
 	
 	class PxsSimulationControllerCallback : public PxUserAllocated
@@ -266,7 +260,7 @@ namespace physx
 //		virtual void updateArticulationTendon(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 		virtual void updateArticulationExtAccel(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 		virtual void updateArticulationAfterIntegration(PxsContext*	/*llContext*/, Bp::AABBManagerBase* /*aabbManager*/,
-			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/)	{}
+			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/, bool /*isSleepingDisabled*/)	{}
 
 		virtual void mergeChangedAABBMgHandle() {}
 		virtual void gpuDmabackData(PxsTransformCache& /*cache*/, Bp::BoundsArray& /*boundArray*/, PxBitMapPinned& /*changedAABBMgrHandles*/, bool /*enableDirectGPUAPI*/){}
@@ -326,7 +320,7 @@ namespace physx
 
 		virtual void	syncParticleData()	{}
 
-		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool /*useDirectApi*/){}
+		virtual void	updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool /*useDirectApi*/){}
 
 #if PX_SUPPORT_GPU_PHYSX
 		virtual PxU32					getNbDeactivatedDeformableSurfaces()	const	{ return 0;		}

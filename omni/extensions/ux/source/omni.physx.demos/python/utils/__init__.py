@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import importlib
 from omni import ui
 import omni.kit.app
@@ -269,7 +270,9 @@ class AsyncDemoBase(Base):
         1. specifically release any views that you may create in on_tensor_start with self._some_view = None
         2. call this base class shutdown to cleanup properly with super().on_shutdown() at the end of your method
     - Be careful not to write to USD from the async called on_physics_step. Use the class attribute queue to communicate
-    between threads.
+    between threads. In addition, running Numpy math operations on tensor API data may call multithreaded math libraries
+    under the hood which can cause crashes in asynchronous simulation, so it is recommended to run the demo in synchronous mode
+    if Numpy is used, typically on tensor API data.
     """
 
     def on_physics_step(self, dt):

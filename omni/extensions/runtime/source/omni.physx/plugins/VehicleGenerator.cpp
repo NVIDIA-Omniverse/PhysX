@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -15,27 +15,27 @@ namespace omni
 namespace physx
 {
 
-static_assert(::physx::vehicle2::PxVehicleLimits::eMAX_NB_AXLES == ::physx::vehicle2::PxVehicleLimits::eMAX_NB_WHEELS, "");
+static_assert(::physx::PxVehicleLimits::eMAX_NB_AXLES == ::physx::PxVehicleLimits::eMAX_NB_WHEELS, "");
 // It should be possible to support cases where each wheel is controlled individually and thus
 // having a wheel per axle for up to the max wheel count.
 
-static_assert(VehicleDesc::maxNumberOfWheels == ::physx::vehicle2::PxVehicleLimits::eMAX_NB_WHEELS, "");
-static_assert(EngineDesc::maxNumberOfTorqueCurvePoints == ::physx::vehicle2::PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES, "");
-static_assert(GearsDesc::maxNumberOfGears == ::physx::vehicle2::PxVehicleGearboxParams::eMAX_NB_GEARS, "");
-static_assert(VehicleControllerDesc::automaticGearValue == ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR, "");
-static_assert(NonlinearCmdResponseDesc::maxNumberOfCommandValues == ::physx::vehicle2::PxVehicleCommandNonLinearResponseParams::eMAX_NB_COMMAND_VALUES, "");
-static_assert(NonlinearCmdResponseDesc::maxNumberOfSpeedResponses == ::physx::vehicle2::PxVehicleCommandValueResponseTable::eMAX_NB_SPEED_RESPONSES, "");
+static_assert(VehicleDesc::maxNumberOfWheels == ::physx::PxVehicleLimits::eMAX_NB_WHEELS, "");
+static_assert(EngineDesc::maxNumberOfTorqueCurvePoints == ::physx::PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES, "");
+static_assert(GearsDesc::maxNumberOfGears == ::physx::PxVehicleGearboxParams::eMAX_NB_GEARS, "");
+static_assert(VehicleControllerDesc::automaticGearValue == ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR, "");
+static_assert(NonlinearCmdResponseDesc::maxNumberOfCommandValues == ::physx::PxVehicleCommandNonLinearResponseParams::eMAX_NB_COMMAND_VALUES, "");
+static_assert(NonlinearCmdResponseDesc::maxNumberOfSpeedResponses == ::physx::PxVehicleCommandValueResponseTable::eMAX_NB_SPEED_RESPONSES, "");
 
 
-static uint32_t getIndex(const ::physx::vehicle2::PxVehicleAxes::Enum axisEnum)
+static uint32_t getIndex(const ::physx::PxVehicleAxes::Enum axisEnum)
 {
     // to ensure the index can be retrieved by doing a bit shift to the right (equivalent to division by 2)
-    static_assert(::physx::vehicle2::PxVehicleAxes::ePosX == 0, "");
-    static_assert(::physx::vehicle2::PxVehicleAxes::eNegX == 1, "");
-    static_assert(::physx::vehicle2::PxVehicleAxes::ePosY == 2, "");
-    static_assert(::physx::vehicle2::PxVehicleAxes::eNegY == 3, "");
-    static_assert(::physx::vehicle2::PxVehicleAxes::ePosZ == 4, "");
-    static_assert(::physx::vehicle2::PxVehicleAxes::eNegZ == 5, "");
+    static_assert(::physx::PxVehicleAxes::ePosX == 0, "");
+    static_assert(::physx::PxVehicleAxes::eNegX == 1, "");
+    static_assert(::physx::PxVehicleAxes::ePosY == 2, "");
+    static_assert(::physx::PxVehicleAxes::eNegY == 3, "");
+    static_assert(::physx::PxVehicleAxes::ePosZ == 4, "");
+    static_assert(::physx::PxVehicleAxes::eNegZ == 5, "");
 
     return (axisEnum >> 1);
 }
@@ -99,61 +99,61 @@ size_t PhysXVehicleBase::computeDataSizeExcludingClass(const usdparser::VehicleD
     memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(PhysXVehicleBase::mSteerCommandResponseStates[0]));
 
     memOffsets.suspensionParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleSuspensionParams));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleSuspensionParams));
 
     memOffsets.suspensionStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleSuspensionState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleSuspensionState));
 
     memOffsets.suspensionComplianceParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleSuspensionComplianceParams));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleSuspensionComplianceParams));
 
     memOffsets.suspensionComplianceStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleSuspensionComplianceState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleSuspensionComplianceState));
 
     memOffsets.suspensionForceParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleSuspensionForceParams));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleSuspensionForceParams));
 
     memOffsets.suspensionForcesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleSuspensionForce));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleSuspensionForce));
 
     memOffsets.roadGeomStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleRoadGeometryState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleRoadGeometryState));
 
     memOffsets.tireSlipStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireSlipState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireSlipState));
 
     memOffsets.tireGripStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireGripState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireGripState));
 
     memOffsets.tireDirectionStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireDirectionState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireDirectionState));
 
     memOffsets.tireSpeedStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireSpeedState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireSpeedState));
 
     memOffsets.tireCamberAngleStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireCamberAngleState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireCamberAngleState));
 
     memOffsets.tireStickyStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireStickyState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireStickyState));
 
     memOffsets.tireForceParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireForceParams));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireForceParams));
 
     memOffsets.tireForcesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleTireForce));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleTireForce));
 
     memOffsets.wheelParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleWheelParams));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleWheelParams));
 
     memOffsets.wheelRigidBody1dStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleWheelRigidBody1dState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleWheelRigidBody1dState));
 
     memOffsets.wheelLocalPosesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleWheelLocalPose));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleWheelLocalPose));
 
     memOffsets.wheelActuationStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehicleWheelActuationState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehicleWheelActuationState));
 
     memOffsets.suspensionLegacyParamsOffset = memSize;
     memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(SuspensionLegacyParams));
@@ -169,30 +169,30 @@ void PhysXVehicleBase::setDataPointers(uint8_t* memory, const PhysXVehicleBaseDa
     static_assert(sizeof(PhysXVehicleBase::mSteerCommandResponseStates[0]) == sizeof(::physx::PxReal), "");
     mSteerCommandResponseStates = reinterpret_cast<::physx::PxReal*>(memory + memOffsets.steerCommandResponseStatesOffset);
 
-    mSuspensionParams = reinterpret_cast<::physx::vehicle2::PxVehicleSuspensionParams*>(memory + memOffsets.suspensionParamsOffset);
-    mSuspensionStates = reinterpret_cast<::physx::vehicle2::PxVehicleSuspensionState*>(memory + memOffsets.suspensionStatesOffset);
-    mSuspensionComplianceParams = reinterpret_cast<::physx::vehicle2::PxVehicleSuspensionComplianceParams*>(memory + memOffsets.suspensionComplianceParamsOffset);
-    mSuspensionComplianceStates = reinterpret_cast<::physx::vehicle2::PxVehicleSuspensionComplianceState*>(memory + memOffsets.suspensionComplianceStatesOffset);
-    mSuspensionForceParams = reinterpret_cast<::physx::vehicle2::PxVehicleSuspensionForceParams*>(memory + memOffsets.suspensionForceParamsOffset);
-    mSuspensionForces = reinterpret_cast<::physx::vehicle2::PxVehicleSuspensionForce*>(memory + memOffsets.suspensionForcesOffset);
-    mRoadGeomStates = reinterpret_cast<::physx::vehicle2::PxVehicleRoadGeometryState*>(memory + memOffsets.roadGeomStatesOffset);
-    mTireSlipStates = reinterpret_cast<::physx::vehicle2::PxVehicleTireSlipState*>(memory + memOffsets.tireSlipStatesOffset);
-    mTireGripStates = reinterpret_cast<::physx::vehicle2::PxVehicleTireGripState*>(memory + memOffsets.tireGripStatesOffset);
-    mTireDirectionStates = reinterpret_cast<::physx::vehicle2::PxVehicleTireDirectionState*>(memory + memOffsets.tireDirectionStatesOffset);
-    mTireSpeedStates = reinterpret_cast<::physx::vehicle2::PxVehicleTireSpeedState*>(memory + memOffsets.tireSpeedStatesOffset);
-    mTireCamberAngleStates = reinterpret_cast<::physx::vehicle2::PxVehicleTireCamberAngleState*>(memory + memOffsets.tireCamberAngleStatesOffset);
-    mTireStickyStates = reinterpret_cast<::physx::vehicle2::PxVehicleTireStickyState*>(memory + memOffsets.tireStickyStatesOffset);
-    mTireForceParams = reinterpret_cast<::physx::vehicle2::PxVehicleTireForceParams*>(memory + memOffsets.tireForceParamsOffset);
-    mTireForces = reinterpret_cast<::physx::vehicle2::PxVehicleTireForce*>(memory + memOffsets.tireForcesOffset);
-    mWheelParams = reinterpret_cast<::physx::vehicle2::PxVehicleWheelParams*>(memory + memOffsets.wheelParamsOffset);
-    mWheelRigidBody1dStates = reinterpret_cast<::physx::vehicle2::PxVehicleWheelRigidBody1dState*>(memory + memOffsets.wheelRigidBody1dStatesOffset);
-	mWheelLocalPoses = reinterpret_cast<::physx::vehicle2::PxVehicleWheelLocalPose*>(memory + memOffsets.wheelLocalPosesOffset);
-    mWheelActuationStates = reinterpret_cast<::physx::vehicle2::PxVehicleWheelActuationState*>(memory + memOffsets.wheelActuationStatesOffset);
+    mSuspensionParams = reinterpret_cast<::physx::PxVehicleSuspensionParams*>(memory + memOffsets.suspensionParamsOffset);
+    mSuspensionStates = reinterpret_cast<::physx::PxVehicleSuspensionState*>(memory + memOffsets.suspensionStatesOffset);
+    mSuspensionComplianceParams = reinterpret_cast<::physx::PxVehicleSuspensionComplianceParams*>(memory + memOffsets.suspensionComplianceParamsOffset);
+    mSuspensionComplianceStates = reinterpret_cast<::physx::PxVehicleSuspensionComplianceState*>(memory + memOffsets.suspensionComplianceStatesOffset);
+    mSuspensionForceParams = reinterpret_cast<::physx::PxVehicleSuspensionForceParams*>(memory + memOffsets.suspensionForceParamsOffset);
+    mSuspensionForces = reinterpret_cast<::physx::PxVehicleSuspensionForce*>(memory + memOffsets.suspensionForcesOffset);
+    mRoadGeomStates = reinterpret_cast<::physx::PxVehicleRoadGeometryState*>(memory + memOffsets.roadGeomStatesOffset);
+    mTireSlipStates = reinterpret_cast<::physx::PxVehicleTireSlipState*>(memory + memOffsets.tireSlipStatesOffset);
+    mTireGripStates = reinterpret_cast<::physx::PxVehicleTireGripState*>(memory + memOffsets.tireGripStatesOffset);
+    mTireDirectionStates = reinterpret_cast<::physx::PxVehicleTireDirectionState*>(memory + memOffsets.tireDirectionStatesOffset);
+    mTireSpeedStates = reinterpret_cast<::physx::PxVehicleTireSpeedState*>(memory + memOffsets.tireSpeedStatesOffset);
+    mTireCamberAngleStates = reinterpret_cast<::physx::PxVehicleTireCamberAngleState*>(memory + memOffsets.tireCamberAngleStatesOffset);
+    mTireStickyStates = reinterpret_cast<::physx::PxVehicleTireStickyState*>(memory + memOffsets.tireStickyStatesOffset);
+    mTireForceParams = reinterpret_cast<::physx::PxVehicleTireForceParams*>(memory + memOffsets.tireForceParamsOffset);
+    mTireForces = reinterpret_cast<::physx::PxVehicleTireForce*>(memory + memOffsets.tireForcesOffset);
+    mWheelParams = reinterpret_cast<::physx::PxVehicleWheelParams*>(memory + memOffsets.wheelParamsOffset);
+    mWheelRigidBody1dStates = reinterpret_cast<::physx::PxVehicleWheelRigidBody1dState*>(memory + memOffsets.wheelRigidBody1dStatesOffset);
+	mWheelLocalPoses = reinterpret_cast<::physx::PxVehicleWheelLocalPose*>(memory + memOffsets.wheelLocalPosesOffset);
+    mWheelActuationStates = reinterpret_cast<::physx::PxVehicleWheelActuationState*>(memory + memOffsets.wheelActuationStatesOffset);
     mSuspensionLegacyParams = reinterpret_cast<SuspensionLegacyParams*>(memory + memOffsets.suspensionLegacyParamsOffset);
 }
 
 static void setForceOffset(const ::physx::PxVec3& offset, const ::physx::PxVec3& refFrame,
-    ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxVec3, 3>& table)
+    ::physx::PxVehicleFixedSizeLookupTable<::physx::PxVec3, 3>& table)
 {
     const ::physx::PxVec3 localOffset = offset - refFrame;
     table.addPair(0.0f, localOffset);
@@ -209,18 +209,18 @@ static void takeScaleIntoAccount(const carb::Float3& scale, ::physx::PxVec3& vec
 void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     const std::vector<uint32_t>& wheelIndexToDataMap,
     const float vehicleMass, const ::physx::PxVec3& vehicleMassSpaceInertiaTensor, const ::physx::PxTransform& vehicleMassFrame,
-    const ::physx::vehicle2::PxVehicleFrame& frame, const float lengthScale, const float gravityMagnitude)
+    const ::physx::PxVehicleFrame& frame, const float lengthScale, const float gravityMagnitude)
 {
     const uint32_t wheelCount = static_cast<uint32_t>(vehicleDesc.wheelAttachments.size());
 
     // this method should not get called if the number of wheels exceeds the limit
-    CARB_ASSERT(wheelCount <= ::physx::vehicle2::PxVehicleLimits::eMAX_NB_WHEELS);
-    CARB_ASSERT(wheelCount <= ::physx::vehicle2::PxVehicleLimits::eMAX_NB_AXLES);
+    CARB_ASSERT(wheelCount <= ::physx::PxVehicleLimits::eMAX_NB_WHEELS);
+    CARB_ASSERT(wheelCount <= ::physx::PxVehicleLimits::eMAX_NB_AXLES);
 
     mWheelCapacity = wheelCount;
 
     const PxTransform vehicleMassFrameInv = vehicleMassFrame.getInverse();
-    PxVec3 wheelAttPositionsAdjusted[vehicle2::PxVehicleLimits::eMAX_NB_WHEELS];
+    PxVec3 wheelAttPositionsAdjusted[::physx::PxVehicleLimits::eMAX_NB_WHEELS];
     // suspensionFramePosition or wheelCenterOfMassOffset transformed to body space and scale
     // taken into account
 
@@ -254,11 +254,11 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
         }
     }
 
-    float sprungMassValues[vehicle2::PxVehicleLimits::eMAX_NB_WHEELS];
+    float sprungMassValues[::physx::PxVehicleLimits::eMAX_NB_WHEELS];
     const bool computeSprungMassValues = !vehicleDesc.hasUserDefinedSprungMassValues;
     if (computeSprungMassValues)
     {
-        if (!::physx::vehicle2::PxVehicleComputeSprungMasses(wheelCount, wheelAttPositionsAdjusted, vehicleMass, frame.vrtAxis, sprungMassValues))
+        if (!::physx::PxVehicleComputeSprungMasses(wheelCount, wheelAttPositionsAdjusted, vehicleMass, frame.vrtAxis, sprungMassValues))
         {
             CARB_LOG_ERROR("PhysX Vehicle: sprung mass computation failed. Setup might be ill-conditioned. "
                 "Make sure the center of mass is enclosed by wheel positions. Mass will be divided by number "
@@ -284,9 +284,9 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     //---
 
     if (vehicleDesc.queryType == VehicleDesc::eRAYCAST)
-        mSuspensionStateCalculationParams.suspensionJounceCalculationType = ::physx::vehicle2::PxVehicleSuspensionJounceCalculationType::eRAYCAST;
+        mSuspensionStateCalculationParams.suspensionJounceCalculationType = ::physx::PxVehicleSuspensionJounceCalculationType::eRAYCAST;
     else
-        mSuspensionStateCalculationParams.suspensionJounceCalculationType = ::physx::vehicle2::PxVehicleSuspensionJounceCalculationType::eSWEEP;
+        mSuspensionStateCalculationParams.suspensionJounceCalculationType = ::physx::PxVehicleSuspensionJounceCalculationType::eSWEEP;
     mSuspensionStateCalculationParams.limitSuspensionExpansionVelocity = vehicleDesc.limitSuspensionExpansionVelocity;
 
     //---
@@ -322,8 +322,8 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
             sprungMass = suspDesc.sprungMass;
         }
 
-        ::physx::vehicle2::PxVehicleSuspensionParams& suspParam = mSuspensionParams[i];
-        new(&suspParam)(::physx::vehicle2::PxVehicleSuspensionParams)();
+        ::physx::PxVehicleSuspensionParams& suspParam = mSuspensionParams[i];
+        new(&suspParam)(::physx::PxVehicleSuspensionParams)();
 
         SuspensionLegacyParams& suspLegacyParams = mSuspensionLegacyParams[i];
         new(&suspLegacyParams)(SuspensionLegacyParams)();
@@ -391,14 +391,14 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
 
         //---
 
-        ::physx::vehicle2::PxVehicleSuspensionState& suspState = mSuspensionStates[i];
-        new(&suspState)(::physx::vehicle2::PxVehicleSuspensionState)();
+        ::physx::PxVehicleSuspensionState& suspState = mSuspensionStates[i];
+        new(&suspState)(::physx::PxVehicleSuspensionState)();
         suspState.setToDefault();
 
         //---
 
-        ::physx::vehicle2::PxVehicleSuspensionComplianceParams& suspComplianceParams = mSuspensionComplianceParams[i];
-        new(&suspComplianceParams)(::physx::vehicle2::PxVehicleSuspensionComplianceParams)();
+        ::physx::PxVehicleSuspensionComplianceParams& suspComplianceParams = mSuspensionComplianceParams[i];
+        new(&suspComplianceParams)(::physx::PxVehicleSuspensionComplianceParams)();
 
         if (suspComplianceDesc)
         {
@@ -510,28 +510,28 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
 
         //---
 
-        ::physx::vehicle2::PxVehicleSuspensionComplianceState& suspComplianceState = mSuspensionComplianceStates[i];
-        new(&suspComplianceState)(::physx::vehicle2::PxVehicleSuspensionComplianceState)();
+        ::physx::PxVehicleSuspensionComplianceState& suspComplianceState = mSuspensionComplianceStates[i];
+        new(&suspComplianceState)(::physx::PxVehicleSuspensionComplianceState)();
         suspComplianceState.setToDefault();
 
         //---
 
-        ::physx::vehicle2::PxVehicleSuspensionForceParams& suspForceParams = mSuspensionForceParams[i];
-        new(&suspForceParams)(::physx::vehicle2::PxVehicleSuspensionForceParams)();
+        ::physx::PxVehicleSuspensionForceParams& suspForceParams = mSuspensionForceParams[i];
+        new(&suspForceParams)(::physx::PxVehicleSuspensionForceParams)();
         suspForceParams.stiffness = suspDesc.springStrength;
         suspForceParams.damping = suspDesc.springDamperRate;
         suspForceParams.sprungMass = sprungMass;
 
         //---
 
-        ::physx::vehicle2::PxVehicleSuspensionForce& suspForces = mSuspensionForces[i];
-        new(&suspForces)(::physx::vehicle2::PxVehicleSuspensionForce)();
+        ::physx::PxVehicleSuspensionForce& suspForces = mSuspensionForces[i];
+        new(&suspForces)(::physx::PxVehicleSuspensionForce)();
         suspForces.setToDefault();
 
         //---
 
-        ::physx::vehicle2::PxVehicleRoadGeometryState& roadGeomState = mRoadGeomStates[i];
-        new(&roadGeomState)(::physx::vehicle2::PxVehicleRoadGeometryState)();
+        ::physx::PxVehicleRoadGeometryState& roadGeomState = mRoadGeomStates[i];
+        new(&roadGeomState)(::physx::PxVehicleRoadGeometryState)();
         roadGeomState.setToDefault();
 
         //---
@@ -545,44 +545,44 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
 
         //---
 
-        ::physx::vehicle2::PxVehicleTireSlipState& tireSlipState = mTireSlipStates[i];
-        new(&tireSlipState)(::physx::vehicle2::PxVehicleTireSlipState)();
+        ::physx::PxVehicleTireSlipState& tireSlipState = mTireSlipStates[i];
+        new(&tireSlipState)(::physx::PxVehicleTireSlipState)();
         tireSlipState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleTireGripState& tireGripState = mTireGripStates[i];
-        new(&tireGripState)(::physx::vehicle2::PxVehicleTireGripState)();
+        ::physx::PxVehicleTireGripState& tireGripState = mTireGripStates[i];
+        new(&tireGripState)(::physx::PxVehicleTireGripState)();
         tireGripState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleTireDirectionState& tireDirectionState = mTireDirectionStates[i];
-        new(&tireDirectionState)(::physx::vehicle2::PxVehicleTireDirectionState)();
+        ::physx::PxVehicleTireDirectionState& tireDirectionState = mTireDirectionStates[i];
+        new(&tireDirectionState)(::physx::PxVehicleTireDirectionState)();
         tireDirectionState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleTireSpeedState& tireSpeedState = mTireSpeedStates[i];
-        new(&tireSpeedState)(::physx::vehicle2::PxVehicleTireSpeedState)();
+        ::physx::PxVehicleTireSpeedState& tireSpeedState = mTireSpeedStates[i];
+        new(&tireSpeedState)(::physx::PxVehicleTireSpeedState)();
         tireSpeedState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleTireCamberAngleState& tireCamberAngleState = mTireCamberAngleStates[i];
-        new(&tireCamberAngleState)(::physx::vehicle2::PxVehicleTireCamberAngleState)();
+        ::physx::PxVehicleTireCamberAngleState& tireCamberAngleState = mTireCamberAngleStates[i];
+        new(&tireCamberAngleState)(::physx::PxVehicleTireCamberAngleState)();
         tireCamberAngleState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleTireStickyState& tireStickyState = mTireStickyStates[i];
-        new(&tireStickyState)(::physx::vehicle2::PxVehicleTireStickyState)();
+        ::physx::PxVehicleTireStickyState& tireStickyState = mTireStickyStates[i];
+        new(&tireStickyState)(::physx::PxVehicleTireStickyState)();
         tireStickyState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleTireForceParams& tireForceParams = mTireForceParams[i];
-        new(&tireForceParams)(::physx::vehicle2::PxVehicleTireForceParams)();
+        ::physx::PxVehicleTireForceParams& tireForceParams = mTireForceParams[i];
+        new(&tireForceParams)(::physx::PxVehicleTireForceParams)();
         if (tireDesc.restLoad > 0)
             tireForceParams.restLoad = tireDesc.restLoad;
         else
@@ -622,14 +622,14 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
 
         //---
 
-        ::physx::vehicle2::PxVehicleTireForce& tireForce = mTireForces[i];
-        new(&tireForce)(::physx::vehicle2::PxVehicleTireForce)();
+        ::physx::PxVehicleTireForce& tireForce = mTireForces[i];
+        new(&tireForce)(::physx::PxVehicleTireForce)();
         tireForce.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleWheelParams& wheelParams = mWheelParams[i];
-        new(&wheelParams)(::physx::vehicle2::PxVehicleWheelParams)();
+        ::physx::PxVehicleWheelParams& wheelParams = mWheelParams[i];
+        new(&wheelParams)(::physx::PxVehicleWheelParams)();
         wheelParams.radius = wheelDesc.radius;
         wheelParams.halfWidth = wheelDesc.width * 0.5f;
         wheelParams.mass = wheelDesc.mass;
@@ -638,20 +638,20 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
             
         //---
 
-        ::physx::vehicle2::PxVehicleWheelRigidBody1dState& wheelRigidBody1dState = mWheelRigidBody1dStates[i];
-        new(&wheelRigidBody1dState)(::physx::vehicle2::PxVehicleWheelRigidBody1dState)();
+        ::physx::PxVehicleWheelRigidBody1dState& wheelRigidBody1dState = mWheelRigidBody1dStates[i];
+        new(&wheelRigidBody1dState)(::physx::PxVehicleWheelRigidBody1dState)();
         wheelRigidBody1dState.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleWheelLocalPose& wheelLocalPose = mWheelLocalPoses[i];
-        new(&wheelLocalPose)(::physx::vehicle2::PxVehicleWheelLocalPose)();
+        ::physx::PxVehicleWheelLocalPose& wheelLocalPose = mWheelLocalPoses[i];
+        new(&wheelLocalPose)(::physx::PxVehicleWheelLocalPose)();
         wheelLocalPose.setToDefault();
             
         //---
 
-        ::physx::vehicle2::PxVehicleWheelActuationState& wheelActuationState = mWheelActuationStates[i];
-        new(&wheelActuationState)(::physx::vehicle2::PxVehicleWheelActuationState)();
+        ::physx::PxVehicleWheelActuationState& wheelActuationState = mWheelActuationStates[i];
+        new(&wheelActuationState)(::physx::PxVehicleWheelActuationState)();
         wheelActuationState.setToDefault();
     }
 
@@ -676,18 +676,18 @@ void PhysXVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     // defaults are set to high damping for backwards compatibility and since it can help stability
     // for scenarios like jointed vehicles.
 
-    mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdSpeed =
+    mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdSpeed =
         vehicleDesc.longitudinalStickyTireThresholdSpeed;
-    mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdTime =
+    mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdTime =
         vehicleDesc.longitudinalStickyTireThresholdTime;
-    mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL].damping =
+    mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL].damping =
         vehicleDesc.longitudinalStickyTireDamping;
 
-    mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL].thresholdSpeed =
+    mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL].thresholdSpeed =
         vehicleDesc.lateralStickyTireThresholdSpeed;
-    mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL].thresholdTime =
+    mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL].thresholdTime =
         vehicleDesc.lateralStickyTireThresholdTime;
-    mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL].damping =
+    mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL].damping =
         vehicleDesc.lateralStickyTireDamping;
 }
 
@@ -702,9 +702,9 @@ void PhysXVehicleBase::release(OmniPvdWriter* pvdWriter, ::physx::PxAllocatorCal
     }
 }
 
-void PhysXVehicleBase::simulate(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context)
+void PhysXVehicleBase::simulate(const float dt, const ::physx::PxVehicleSimulationContext& context)
 {
-    if (mSubstepGroupId != ::physx::vehicle2::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP)
+    if (mSubstepGroupId != ::physx::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP)
     {
         float forwardVelMagn = ::physx::PxAbs(getForwardVelocity(context.frame));
         const uint32_t substepCount = (forwardVelMagn < mSubstepThresholdLongitudinalSpeed) ? mLowForwardSpeedSubstepCount :
@@ -721,14 +721,14 @@ void PhysXVehicleBase::createPvdObjectHandles(::physx::PxAllocatorCallback& allo
     const uint32_t nbAntiRolls = 0;
     const OmniPvdContextHandle contextHandle = 1;  // hardcoded at the moment like in PhysX. Needs to be fetched from the PhysX scene
                                                    // as soon as PhysX makes proper use of contexts (see OM-83903)
-    mPvdObjectHandles = ::physx::vehicle2::PxVehiclePvdObjectCreate(
+    mPvdObjectHandles = ::physx::PxVehiclePvdObjectCreate(
         mWheelCapacity, nbAntiRolls, maxNbMaterialFrictionEntries, contextHandle, 
         allocator);
 }
 
 void PhysXVehicleBase::releasePvdObjectHandles(OmniPvdWriter& pvdWriter, ::physx::PxAllocatorCallback& allocator)
 {
-    ::physx::vehicle2::PxVehiclePvdObjectRelease(pvdWriter, allocator,
+    ::physx::PxVehiclePvdObjectRelease(pvdWriter, allocator,
         *mPvdObjectHandles);
 }
 
@@ -752,7 +752,7 @@ void PhysXVehicleBase::updateSprungMassProperties(const uint32_t wheelIndex,
 }
 
 void PhysXVehicleBase::updateMassProperties(const float mass, const ::physx::PxVec3& massSpaceInertiaTensor,
-    const ::physx::PxTransform* vehicleMassFrameChange, const ::physx::vehicle2::PxVehicleAxes::Enum upAxis,
+    const ::physx::PxTransform* vehicleMassFrameChange, const ::physx::PxVehicleAxes::Enum upAxis,
     const bool updateSprungMassRelatedValues, const bool updateMaxDroopValues, const bool updateRestLoad,
     const bool updateLatStiffY)
 {
@@ -797,12 +797,12 @@ void PhysXVehicleBase::updateMassProperties(const float mass, const ::physx::PxV
     }
 }
 
-bool PhysXVehicleBase::updateSprungMassProperties(const ::physx::vehicle2::PxVehicleAxes::Enum upAxis,
+bool PhysXVehicleBase::updateSprungMassProperties(const ::physx::PxVehicleAxes::Enum upAxis,
     const bool updateMaxDroopValues, const bool updateRestLoad, const bool updateLatStiffY,
     const bool deprecatedWheelCenterOfMassChange)
 {
-    float sprungMassValues[vehicle2::PxVehicleLimits::eMAX_NB_WHEELS];
-    PxVec3 sprungMassPositions[vehicle2::PxVehicleLimits::eMAX_NB_WHEELS];
+    float sprungMassValues[::physx::PxVehicleLimits::eMAX_NB_WHEELS];
+    PxVec3 sprungMassPositions[::physx::PxVehicleLimits::eMAX_NB_WHEELS];
     for (PxU32 i = 0; i < mWheelCapacity; i++)
     {
         if (deprecatedWheelCenterOfMassChange)
@@ -816,7 +816,7 @@ bool PhysXVehicleBase::updateSprungMassProperties(const ::physx::vehicle2::PxVeh
         }
     }
 
-    if (::physx::vehicle2::PxVehicleComputeSprungMasses(mWheelCapacity, sprungMassPositions,
+    if (::physx::PxVehicleComputeSprungMasses(mWheelCapacity, sprungMassPositions,
         mRigidBodyParams.mass, upAxis, sprungMassValues))
     {
         for (PxU32 i = 0; i < mWheelCapacity; i++)
@@ -843,7 +843,7 @@ void PhysXVehicleBase::setSuspensionForceAppPointOffset(const uint32_t wheelInde
 {
     CARB_ASSERT(wheelIndex < mWheelCapacity);
 
-    ::physx::vehicle2::PxVehicleSuspensionComplianceParams& suspComplianceParams = mSuspensionComplianceParams[wheelIndex];
+    ::physx::PxVehicleSuspensionComplianceParams& suspComplianceParams = mSuspensionComplianceParams[wheelIndex];
 
     suspComplianceParams.suspForceAppPoint.clear();
 
@@ -858,7 +858,7 @@ void PhysXVehicleBase::setTireForceAppPointOffset(const uint32_t wheelIndex, con
 {
     CARB_ASSERT(wheelIndex < mWheelCapacity);
 
-    ::physx::vehicle2::PxVehicleSuspensionComplianceParams& suspComplianceParams = mSuspensionComplianceParams[wheelIndex];
+    ::physx::PxVehicleSuspensionComplianceParams& suspComplianceParams = mSuspensionComplianceParams[wheelIndex];
 
     suspComplianceParams.tireForceAppPoint.clear();
 
@@ -868,7 +868,7 @@ void PhysXVehicleBase::setTireForceAppPointOffset(const uint32_t wheelIndex, con
         suspComplianceParams.tireForceAppPoint);
 }
 
-float PhysXVehicleBase::getForwardVelocity(const ::physx::vehicle2::PxVehicleFrame& frame) const
+float PhysXVehicleBase::getForwardVelocity(const ::physx::PxVehicleFrame& frame) const
 {
     const ::physx::PxVec3 forwardDir = mRigidBodyState.pose.q.rotate(frame.getLngAxis());
     const ::physx::PxReal forwardVelSignedMagn = forwardDir.dot(mRigidBodyState.linearVelocity);
@@ -963,9 +963,9 @@ static TVehicle* createInternal(::physx::PxRigidDynamic& vehicleActor,
     const usdparser::VehicleDesc& vehicleDesc,
     const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
     const std::vector<::physx::PxShape*>& wheelShapeMapping,
-    const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+    const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
     const std::vector<uint32_t>& wheelIndexToDataMap,
-    const ::physx::vehicle2::PxVehicleFrame& frame,
+    const ::physx::PxVehicleFrame& frame,
     const float gravityMagnitude,
     ::physx::PxAllocatorCallback* allocatorForPvd)
 {
@@ -1006,15 +1006,15 @@ static TVehicle* createInternal(::physx::PxRigidDynamic& vehicleActor,
 
 static ::physx::PxConstraintShaderTable gVehicleConstraintTable =
 {
-	::physx::vehicle2::vehicleConstraintSolverPrep,
-	::physx::vehicle2::visualiseVehicleConstraint,
+	::physx::vehicleConstraintSolverPrep,
+	::physx::visualiseVehicleConstraint,
 	::physx::PxConstraintFlag::Enum(0)
 };
 
-void vehicleConstraintsCreate(const ::physx::vehicle2::PxVehicleAxleDescription& axleDescription,
+void vehicleConstraintsCreate(const ::physx::PxVehicleAxleDescription& axleDescription,
     ::physx::PxPhysics& physics, ::physx::PxRigidBody& physxActor,
-    ::physx::vehicle2::PxVehicleConstraintConnector* vehicleConstraintConnectors,
-    ::physx::vehicle2::PxVehiclePhysXConstraints& vehicleConstraints)
+    ::physx::PxVehicleConstraintConnector* vehicleConstraintConnectors,
+    ::physx::PxVehiclePhysXConstraints& vehicleConstraints)
 {
 	vehicleConstraints.setToDefault();
 
@@ -1024,23 +1024,23 @@ void vehicleConstraintsCreate(const ::physx::vehicle2::PxVehicleAxleDescription&
 	//4 wheels therefore equals 1 PxConstraint 
 	//Iterate over each block of 4 wheels and create a PxConstraints for each block of 4.
 	uint32_t constraintIndex = 0;
-	for(uint32_t i = 0; i < axleDescription.getNbWheels(); i+= ::physx::vehicle2::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT)
+	for(uint32_t i = 0; i < axleDescription.getNbWheels(); i+= ::physx::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT)
 	{
         // placement new as the constraint connectors are already part of the vehicle mem block
-        ::physx::vehicle2::PxVehicleConstraintConnector* pxConnector = vehicleConstraintConnectors + constraintIndex;
-        new(pxConnector)(::physx::vehicle2::PxVehicleConstraintConnector)(vehicleConstraints.constraintStates + i);
+        ::physx::PxVehicleConstraintConnector* pxConnector = vehicleConstraintConnectors + constraintIndex;
+        new(pxConnector)(::physx::PxVehicleConstraintConnector)(vehicleConstraints.constraintStates + i);
 
 		::physx::PxConstraint* pxConstraint = physics.createConstraint(&physxActor, nullptr, *pxConnector, gVehicleConstraintTable,
-            sizeof(::physx::vehicle2::PxVehiclePhysXConstraintState)*::physx::vehicle2::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT);
+            sizeof(::physx::PxVehiclePhysXConstraintState)*::physx::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT);
 		vehicleConstraints.constraints[constraintIndex] = pxConstraint;
 		vehicleConstraints.constraintConnectors[constraintIndex] = pxConnector;
 		constraintIndex++;
 	}
 }
 
-void vehicleConstraintsDestroy(::physx::vehicle2::PxVehiclePhysXConstraints& vehicleConstraints)
+void vehicleConstraintsDestroy(::physx::PxVehiclePhysXConstraints& vehicleConstraints)
 {
-    for (uint32_t i = 0; i < ::physx::vehicle2::PxVehiclePhysXConstraintLimits::eNB_CONSTRAINTS_PER_VEHICLE; i++)
+    for (uint32_t i = 0; i < ::physx::PxVehiclePhysXConstraintLimits::eNB_CONSTRAINTS_PER_VEHICLE; i++)
     {
         if (vehicleConstraints.constraints[i])
         {
@@ -1063,19 +1063,19 @@ size_t PhysXActorVehicleBase::computeDataSizeExcludingClass(const usdparser::Veh
     memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxQueryFilterData));
 
     memOffsets.physxMaterialFrictionParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehiclePhysXMaterialFrictionParams*));
 
     memOffsets.physxRoadGeomQueryStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehiclePhysXRoadGeometryQueryState));
 
     memOffsets.physxSuspensionLimitConstraintParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehiclePhysXSuspensionLimitConstraintParams));
 
-    uint32_t connectorCount = wheelCount / ::physx::vehicle2::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT;
-    if ((connectorCount * ::physx::vehicle2::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT) < wheelCount)
+    uint32_t connectorCount = wheelCount / ::physx::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT;
+    if ((connectorCount * ::physx::PxVehiclePhysXConstraintLimits::eNB_WHEELS_PER_PXCONSTRAINT) < wheelCount)
         connectorCount++;
     memOffsets.physxConstraintConnectorsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(connectorCount * sizeof(::physx::vehicle2::PxVehicleConstraintConnector));
+    memSize += ALIGNED_SIZE_VEHICLE(connectorCount * sizeof(::physx::PxVehicleConstraintConnector));
 
     memOffsets.physxWheelShapeLocalPoseOffset = memSize;
     memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxTransform));
@@ -1087,10 +1087,10 @@ void PhysXActorVehicleBase::setDataPointers(uint8_t* memory, const PhysXActorVeh
 {
     PhysXVehicleBase::setDataPointers(memory, memOffsets);
     mPhysxRoadGeometryQueryParams.filterDataEntries = reinterpret_cast<::physx::PxQueryFilterData*>(memory + memOffsets.physxRoadGeomQueryFilterDatasOffset);
-    mPhysxMaterialFrictionParams = reinterpret_cast<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams**>(memory + memOffsets.physxMaterialFrictionParamsOffset);
-    mPhysxRoadGeometryQueryStates = reinterpret_cast<::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState*>(memory + memOffsets.physxRoadGeomQueryStatesOffset);
-    mPhysxSuspensionLimitConstraintParams = reinterpret_cast<::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams*>(memory + memOffsets.physxSuspensionLimitConstraintParamsOffset);
-    mPhysxConstraintConnectors = reinterpret_cast<::physx::vehicle2::PxVehicleConstraintConnector*>(memory + memOffsets.physxConstraintConnectorsOffset);
+    mPhysxMaterialFrictionParams = reinterpret_cast<const ::physx::PxVehiclePhysXMaterialFrictionParams**>(memory + memOffsets.physxMaterialFrictionParamsOffset);
+    mPhysxRoadGeometryQueryStates = reinterpret_cast<::physx::PxVehiclePhysXRoadGeometryQueryState*>(memory + memOffsets.physxRoadGeomQueryStatesOffset);
+    mPhysxSuspensionLimitConstraintParams = reinterpret_cast<::physx::PxVehiclePhysXSuspensionLimitConstraintParams*>(memory + memOffsets.physxSuspensionLimitConstraintParamsOffset);
+    mPhysxConstraintConnectors = reinterpret_cast<::physx::PxVehicleConstraintConnector*>(memory + memOffsets.physxConstraintConnectorsOffset);
     mPhysxWheelShapeLocalPoses = reinterpret_cast<::physx::PxTransform*>(memory + memOffsets.physxWheelShapeLocalPoseOffset);
 }
 
@@ -1102,9 +1102,9 @@ PhysXActorVehicleBase::~PhysXActorVehicleBase()
 void PhysXActorVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     ::physx::PxRigidDynamic& vehicleActor, ::physx::PxPhysics& pxPhysics,
     const std::vector<::physx::PxTransform>& wheelShapeLocalPoses, const std::vector<::physx::PxShape*>& wheelShapeMapping,
-    const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+    const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
     const std::vector<uint32_t>& wheelIndexToDataMap,
-    const ::physx::vehicle2::PxVehicleFrame& frame, const float gravityMagnitude)
+    const ::physx::PxVehicleFrame& frame, const float gravityMagnitude)
 {
     CARB_ASSERT(vehicleActor.getActorFlags() & ::physx::PxActorFlag::eDISABLE_GRAVITY);
 
@@ -1119,9 +1119,9 @@ void PhysXActorVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleD
     //---
 
     if (vehicleDesc.queryType == VehicleDesc::eRAYCAST)
-        mPhysxRoadGeometryQueryParams.roadGeometryQueryType = ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryType::eRAYCAST;
+        mPhysxRoadGeometryQueryParams.roadGeometryQueryType = ::physx::PxVehiclePhysXRoadGeometryQueryType::eRAYCAST;
     else
-        mPhysxRoadGeometryQueryParams.roadGeometryQueryType = ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryType::eSWEEP;
+        mPhysxRoadGeometryQueryParams.roadGeometryQueryType = ::physx::PxVehiclePhysXRoadGeometryQueryType::eSWEEP;
 
     mPhysxRoadGeometryQueryParams.filterCallback = &gVehicleQueryFilterCallback;
 
@@ -1159,17 +1159,17 @@ void PhysXActorVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleD
 
         //---
 
-        ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState& physxRoadGeomQueryState = mPhysxRoadGeometryQueryStates[i];
-        new(&physxRoadGeomQueryState)(::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState)();
+        ::physx::PxVehiclePhysXRoadGeometryQueryState& physxRoadGeomQueryState = mPhysxRoadGeometryQueryStates[i];
+        new(&physxRoadGeomQueryState)(::physx::PxVehiclePhysXRoadGeometryQueryState)();
         physxRoadGeomQueryState.setToDefault();
 
         //---
 
-        ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams& physxSuspensionLimitConstraintParams = mPhysxSuspensionLimitConstraintParams[i];
-        new(&physxSuspensionLimitConstraintParams)(::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams)();
+        ::physx::PxVehiclePhysXSuspensionLimitConstraintParams& physxSuspensionLimitConstraintParams = mPhysxSuspensionLimitConstraintParams[i];
+        new(&physxSuspensionLimitConstraintParams)(::physx::PxVehiclePhysXSuspensionLimitConstraintParams)();
         physxSuspensionLimitConstraintParams.restitution = 0.0f;
         physxSuspensionLimitConstraintParams.directionForSuspensionLimitConstraint =
-            ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams::eROAD_GEOMETRY_NORMAL;
+            ::physx::PxVehiclePhysXSuspensionLimitConstraintParams::eROAD_GEOMETRY_NORMAL;
 
         //---
 
@@ -1190,17 +1190,17 @@ void PhysXActorVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleD
         mPhysxConstraintConnectors, mPhysxConstraints);
 }
 
-void PhysXActorVehicleBase::simulateEnd(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context)
+void PhysXActorVehicleBase::simulateEnd(const float dt, const ::physx::PxVehicleSimulationContext& context)
 {
-    ::physx::vehicle2::PxVehiclePhysXActorEndComponent* actorEndComp = static_cast<::physx::vehicle2::PxVehiclePhysXActorEndComponent*>(this);
+    ::physx::PxVehiclePhysXActorEndComponent* actorEndComp = static_cast<::physx::PxVehiclePhysXActorEndComponent*>(this);
     actorEndComp->update(dt, context);
 
     if (mPvdObjectHandles)
     {
-        CARB_ASSERT(static_cast<const ::physx::vehicle2::PxVehiclePhysXSimulationContext&>(context).pvdContext.attributeHandles);
-        CARB_ASSERT(static_cast<const ::physx::vehicle2::PxVehiclePhysXSimulationContext&>(context).pvdContext.writer);
+        CARB_ASSERT(static_cast<const ::physx::PxVehiclePhysXSimulationContext&>(context).pvdContext.attributeHandles);
+        CARB_ASSERT(static_cast<const ::physx::PxVehiclePhysXSimulationContext&>(context).pvdContext.writer);
 
-        ::physx::vehicle2::PxVehiclePVDComponent* pvdComp = static_cast<::physx::vehicle2::PxVehiclePVDComponent*>(this);
+        ::physx::PxVehiclePVDComponent* pvdComp = static_cast<::physx::PxVehiclePVDComponent*>(this);
         pvdComp->update(dt, context);
     }
 }
@@ -1219,7 +1219,7 @@ void PhysXActorVehicleBase::removeWheelShape(const ::physx::PxShape* removedShap
     }
 }
 
-float PhysXActorVehicleBase::getForwardVelocity(const ::physx::vehicle2::PxVehicleFrame& frame) const
+float PhysXActorVehicleBase::getForwardVelocity(const ::physx::PxVehicleFrame& frame) const
 {
     const ::physx::PxVec3 linVel = mPhysxActor.rigidBody->getLinearVelocity();
     const PxTransform body2World = mPhysxActor.rigidBody->getGlobalPose() * mPhysxActor.rigidBody->getCMassLocalPose();
@@ -1271,19 +1271,19 @@ void PhysXActorVehicleBase::setToRestState()
 
 
 bool PhysXVehicleRawWheelControlBeginComponent::update(const ::physx::PxReal dt,
-    const ::physx::vehicle2::PxVehicleSimulationContext& context)
+    const ::physx::PxVehicleSimulationContext& context)
 {
     CARB_UNUSED(dt);
     CARB_UNUSED(context);
 
-    const ::physx::vehicle2::PxVehicleAxleDescription* axleDescription;
-    ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal> steerCommandResponseStates;
-    ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal> throttleCommandResponseStates;
-    ::physx::vehicle2::PxVehiclePhysXActor* physxActor;
-    ::physx::vehicle2::PxVehiclePhysXSteerState* physxSteerStates;
-    ::physx::vehicle2::PxVehiclePhysXConstraints* physxConstraints;
-    ::physx::vehicle2::PxVehicleRigidBodyState* rigidBodyState;
-    ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState> wheelRigidBody1dStates;
+    const ::physx::PxVehicleAxleDescription* axleDescription;
+    ::physx::PxVehicleArrayData<const ::physx::PxReal> steerCommandResponseStates;
+    ::physx::PxVehicleArrayData<const ::physx::PxReal> throttleCommandResponseStates;
+    ::physx::PxVehiclePhysXActor* physxActor;
+    ::physx::PxVehiclePhysXSteerState* physxSteerStates;
+    ::physx::PxVehiclePhysXConstraints* physxConstraints;
+    ::physx::PxVehicleRigidBodyState* rigidBodyState;
+    ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState> wheelRigidBody1dStates;
 
     getDataForPhysXVehicleRawWheelControlBeginComponent(axleDescription,
         steerCommandResponseStates, throttleCommandResponseStates,
@@ -1302,7 +1302,7 @@ bool PhysXVehicleRawWheelControlBeginComponent::update(const ::physx::PxReal dt,
             {
                 const uint32_t wheelIndex = axleDescription->wheelIdsInAxleOrder[i];
 
-                ::physx::vehicle2::PxVehiclePhysXSteerState& steerState = physxSteerStates[wheelIndex];
+                ::physx::PxVehiclePhysXSteerState& steerState = physxSteerStates[wheelIndex];
                 const PxReal steerAngle = steerCommandResponseStates[wheelIndex];
 
                 if (isSleeping)
@@ -1321,13 +1321,13 @@ bool PhysXVehicleRawWheelControlBeginComponent::update(const ::physx::PxReal dt,
 
         if (isSleeping)
         {
-            ::physx::vehicle2::PxVehiclePhysxActorSleepCheck(*axleDescription, *physxActor->rigidBody, NULL,
+            ::physx::PxVehiclePhysxActorSleepCheck(*axleDescription, *physxActor->rigidBody, NULL,
                 *rigidBodyState, *physxConstraints, wheelRigidBody1dStates, NULL);
             return false;
         }
     }
 
-    ::physx::vehicle2::PxVehicleReadRigidBodyStateFromPhysXActor(*physxActor->rigidBody, *rigidBodyState);
+    ::physx::PxVehicleReadRigidBodyStateFromPhysXActor(*physxActor->rigidBody, *rigidBodyState);
 
     return true;
 }
@@ -1340,7 +1340,7 @@ size_t PhysXVehicleRawWheelControl::computeDataSizeExcludingClass(const usdparse
     size_t memSize = PhysXActorVehicleBase::computeDataSizeExcludingClass(vehicleDesc, memOffsets);
 
     memOffsets.physxSteerStatesOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::vehicle2::PxVehiclePhysXSteerState));
+    memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(::physx::PxVehiclePhysXSteerState));
 
     memOffsets.throttleCommandResponseStatesOffset = memSize;
     memSize += ALIGNED_SIZE_VEHICLE(wheelCount * sizeof(PhysXVehicleRawWheelControl::mThrottleCommandResponseStates[0]));
@@ -1353,7 +1353,7 @@ void PhysXVehicleRawWheelControl::setDataPointers(uint8_t* memory,
 {
     PhysXActorVehicleBase::setDataPointers(memory, memOffsets);
 
-    mPhysxSteerStates = reinterpret_cast<::physx::vehicle2::PxVehiclePhysXSteerState*>(memory + memOffsets.physxSteerStatesOffset);
+    mPhysxSteerStates = reinterpret_cast<::physx::PxVehiclePhysXSteerState*>(memory + memOffsets.physxSteerStatesOffset);
 
     static_assert(sizeof(PhysXVehicleRawWheelControl::mThrottleCommandResponseStates[0]) == sizeof(::physx::PxReal), "");
     mThrottleCommandResponseStates = reinterpret_cast<::physx::PxReal*>(memory + memOffsets.throttleCommandResponseStatesOffset);
@@ -1362,9 +1362,9 @@ void PhysXVehicleRawWheelControl::setDataPointers(uint8_t* memory,
 void PhysXVehicleRawWheelControl::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     ::physx::PxRigidDynamic& vehicleActor, ::physx::PxPhysics& pxPhysics,
     const std::vector<::physx::PxTransform>& wheelShapeLocalPoses, const std::vector<::physx::PxShape*>& wheelShapeMapping,
-    const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+    const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
     const std::vector<uint32_t>& wheelIndexToDataMap,
-    const ::physx::vehicle2::PxVehicleFrame& frame, const float gravityMagnitude)
+    const ::physx::PxVehicleFrame& frame, const float gravityMagnitude)
 {
     PhysXActorVehicleBase::setDataValues(vehicleDesc, vehicleActor, pxPhysics,
         wheelShapeLocalPoses, wheelShapeMapping, tireMaterialFrictionTables,
@@ -1380,8 +1380,8 @@ void PhysXVehicleRawWheelControl::setDataValues(const usdparser::VehicleDesc& ve
 
         const usdparser::WheelAttachmentDesc& wheelAttDesc = vehicleDesc.wheelAttachments[dataIndex];
 
-        ::physx::vehicle2::PxVehiclePhysXSteerState& physxSteerState = mPhysxSteerStates[i];
-        new(&physxSteerState)(::physx::vehicle2::PxVehiclePhysXSteerState)();
+        ::physx::PxVehiclePhysXSteerState& physxSteerState = mPhysxSteerStates[i];
+        new(&physxSteerState)(::physx::PxVehiclePhysXSteerState)();
         physxSteerState.setToDefault();
 
         mThrottleCommandResponseStates[i] = 0.0f;
@@ -1391,26 +1391,26 @@ void PhysXVehicleRawWheelControl::setDataValues(const usdparser::VehicleDesc& ve
 void PhysXVehicleRawWheelControl::setComponentSequence()
 {
     bool success;
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleDirectDriveActuationStateComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleDirectDriveActuationStateComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehiclePhysXRoadGeometrySceneQueryComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehiclePhysXRoadGeometrySceneQueryComponent*>(this));
     CARB_ASSERT(success);
 
     mSubstepGroupId = mComponentSequence.beginSubstepGroup();
-    CARB_ASSERT(mSubstepGroupId != ::physx::vehicle2::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleSuspensionComponent*>(this));
+    CARB_ASSERT(mSubstepGroupId != ::physx::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP);
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleSuspensionComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleTireComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleTireComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehiclePhysXConstraintComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehiclePhysXConstraintComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleDirectDrivetrainComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleDirectDrivetrainComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleRigidBodyComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleRigidBodyComponent*>(this));
     CARB_ASSERT(success);
     mComponentSequence.endSubstepGroup();
 
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleWheelComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleWheelComponent*>(this));
     CARB_ASSERT(success);
 }
 
@@ -1419,9 +1419,9 @@ PhysXVehicleRawWheelControl* PhysXVehicleRawWheelControl::create(::physx::PxRigi
                                                                  const usdparser::VehicleDesc& vehicleDesc,
                                                                  const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
                                                                  const std::vector<::physx::PxShape*>& wheelShapeMapping,
-                                                                 const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+                                                                 const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
                                                                  const std::vector<uint32_t>& wheelIndexToDataMap,
-                                                                 const ::physx::vehicle2::PxVehicleFrame& frame,
+                                                                 const ::physx::PxVehicleFrame& frame,
                                                                  const float gravityMagnitude,
                                                                  ::physx::PxAllocatorCallback* allocatorForPvd)
 {
@@ -1438,7 +1438,7 @@ void PhysXVehicleRawWheelControl::release(OmniPvdWriter* pvdWriter, ::physx::PxA
     ICE_PLACEMENT_DELETE(this, PhysXVehicleRawWheelControl);
 }
 
-void PhysXVehicleRawWheelControl::simulateBegin(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context)
+void PhysXVehicleRawWheelControl::simulateBegin(const float dt, const ::physx::PxVehicleSimulationContext& context)
 {
     PhysXVehicleRawWheelControlBeginComponent* actorBeginComp = static_cast<PhysXVehicleRawWheelControlBeginComponent*>(this);
     actorBeginComp->update(dt, context);
@@ -1482,17 +1482,17 @@ size_t PhysXVehicleManagedWheelControl::computeDataSizeExcludingClass(const usdp
         vehicleDesc.brakes.size() : sBrakingSystemMaxCount;
 
     memOffsets.brakeCommandResponseParamsOffset = memSize;
-    memSize += ALIGNED_SIZE_VEHICLE(brakeCommandRespParamsCount * sizeof(::physx::vehicle2::PxVehicleBrakeCommandResponseParams));
+    memSize += ALIGNED_SIZE_VEHICLE(brakeCommandRespParamsCount * sizeof(::physx::PxVehicleBrakeCommandResponseParams));
 
     if ((vehicleDesc.steering) && (vehicleDesc.steering->type == SteeringDesc::eAckermann))
     {
         memOffsets.ackermannParamsOffset = memSize;
-        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::vehicle2::PxVehicleAckermannParams));
+        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::PxVehicleAckermannParams));
     }
     else
         memOffsets.ackermannParamsOffset = PhysXVehicleBaseDataMemoryOffsets::kInvalidOffset;
 
-    static_assert(::physx::vehicle2::PxVehicleLimits::eMAX_NB_WHEELS < 256, "");  // will use 1 byte per wheel index and index count
+    static_assert(::physx::PxVehicleLimits::eMAX_NB_WHEELS < 256, "");  // will use 1 byte per wheel index and index count
     memOffsets.wheelIndexListsOffset = memSize;
     memSize += ALIGNED_SIZE_VEHICLE(WheelIndexListType::eCOUNT * (wheelCount + 1) * sizeof(uint8_t));
 
@@ -1503,12 +1503,12 @@ void PhysXVehicleManagedWheelControl::setDataPointers(uint8_t* memory, const Phy
 {
     PhysXActorVehicleBase::setDataPointers(memory, memOffsets);
 
-    mBrakeCommandResponseParams = reinterpret_cast<::physx::vehicle2::PxVehicleBrakeCommandResponseParams*>(
+    mBrakeCommandResponseParams = reinterpret_cast<::physx::PxVehicleBrakeCommandResponseParams*>(
         memory + memOffsets.brakeCommandResponseParamsOffset);
 
     if (memOffsets.ackermannParamsOffset != PhysXVehicleBaseDataMemoryOffsets::kInvalidOffset)
     {
-        mAckermannParams = reinterpret_cast<::physx::vehicle2::PxVehicleAckermannParams*>(
+        mAckermannParams = reinterpret_cast<::physx::PxVehicleAckermannParams*>(
             memory + memOffsets.ackermannParamsOffset);
     }
     else
@@ -1518,11 +1518,11 @@ void PhysXVehicleManagedWheelControl::setDataPointers(uint8_t* memory, const Phy
 }
 
 static void setNonlinearCommandResponseParams(const NonlinearCmdResponseDesc& nonlinearCmdResponseDesc,
-    ::physx::vehicle2::PxVehicleCommandNonLinearResponseParams& nonlinearResponseParams)
+    ::physx::PxVehicleCommandNonLinearResponseParams& nonlinearResponseParams)
 {
     CARB_ASSERT(nonlinearCmdResponseDesc.commandValues.size() == nonlinearCmdResponseDesc.speedResponsesPerCommandValue.size());
-    CARB_ASSERT(nonlinearCmdResponseDesc.commandValues.size() <= ::physx::vehicle2::PxVehicleCommandNonLinearResponseParams::eMAX_NB_COMMAND_VALUES);
-    CARB_ASSERT(nonlinearCmdResponseDesc.speedResponses.size() <= ::physx::vehicle2::PxVehicleCommandValueResponseTable::eMAX_NB_SPEED_RESPONSES);
+    CARB_ASSERT(nonlinearCmdResponseDesc.commandValues.size() <= ::physx::PxVehicleCommandNonLinearResponseParams::eMAX_NB_COMMAND_VALUES);
+    CARB_ASSERT(nonlinearCmdResponseDesc.speedResponses.size() <= ::physx::PxVehicleCommandValueResponseTable::eMAX_NB_SPEED_RESPONSES);
 
     nonlinearResponseParams.nbCommandValues = static_cast<PxU16>(nonlinearCmdResponseDesc.commandValues.size());
     nonlinearResponseParams.nbSpeedResponses = static_cast<PxU16>(nonlinearCmdResponseDesc.speedResponses.size());
@@ -1573,9 +1573,9 @@ static void setNonlinearCommandResponseParams(const NonlinearCmdResponseDesc& no
 void PhysXVehicleManagedWheelControl::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     ::physx::PxRigidDynamic& vehicleActor, ::physx::PxPhysics& pxPhysics,
     const std::vector<::physx::PxTransform>& wheelShapeLocalPoses, const std::vector<::physx::PxShape*>& wheelShapeMapping,
-    const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+    const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
     const std::vector<uint32_t>& wheelIndexToDataMap,
-    const ::physx::vehicle2::PxVehicleFrame& frame, const float gravityMagnitude)
+    const ::physx::PxVehicleFrame& frame, const float gravityMagnitude)
 {
     PhysXActorVehicleBase::setDataValues(vehicleDesc, vehicleActor, pxPhysics, wheelShapeLocalPoses, wheelShapeMapping,
         tireMaterialFrictionTables, wheelIndexToDataMap, frame, gravityMagnitude);
@@ -1620,8 +1620,8 @@ void PhysXVehicleManagedWheelControl::setDataValues(const usdparser::VehicleDesc
 
     for (uint32_t i = 0; i < mCommandState.nbBrakes; i++)
     {
-        ::physx::vehicle2::PxVehicleBrakeCommandResponseParams& brakeRespParams = mBrakeCommandResponseParams[i];
-        new(&brakeRespParams)(::physx::vehicle2::PxVehicleBrakeCommandResponseParams)();
+        ::physx::PxVehicleBrakeCommandResponseParams& brakeRespParams = mBrakeCommandResponseParams[i];
+        new(&brakeRespParams)(::physx::PxVehicleBrakeCommandResponseParams)();
 
         if (brakingSystemCount)
             brakeRespParams.maxResponse = 0.0f;
@@ -1640,7 +1640,7 @@ void PhysXVehicleManagedWheelControl::setDataValues(const usdparser::VehicleDesc
 
         mExternalToInternalBrakesIndex[brakesIndex] = i;
 
-        ::physx::vehicle2::PxVehicleBrakeCommandResponseParams& brakeRespParams = mBrakeCommandResponseParams[i];
+        ::physx::PxVehicleBrakeCommandResponseParams& brakeRespParams = mBrakeCommandResponseParams[i];
 
         brakeRespParams.maxResponse = brakeDesc->maxBrakeTorque;
 
@@ -1734,8 +1734,8 @@ void PhysXVehicleManagedWheelControl::setDataValues(const usdparser::VehicleDesc
             const SteeringAckermannDesc* steerDesc = static_cast<const SteeringAckermannDesc*>(vehicleDesc.steering);
 
             CARB_ASSERT(mAckermannParams != nullptr);
-            ::physx::vehicle2::PxVehicleAckermannParams* ackermannParams = mAckermannParams;
-            new(ackermannParams)(::physx::vehicle2::PxVehicleAckermannParams)();
+            ::physx::PxVehicleAckermannParams* ackermannParams = mAckermannParams;
+            new(ackermannParams)(::physx::PxVehicleAckermannParams)();
 
             mSteerCommandResponseParams.maxResponse = steerDesc->maxSteerAngle;
 
@@ -1798,9 +1798,9 @@ void PhysXVehicleManagedWheelControl::setDataValues(const usdparser::VehicleDesc
     }
 }
 
-void PhysXVehicleManagedWheelControl::simulateBegin(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context)
+void PhysXVehicleManagedWheelControl::simulateBegin(const float dt, const ::physx::PxVehicleSimulationContext& context)
 {
-    ::physx::vehicle2::PxVehiclePhysXActorBeginComponent* actorBeginComp = static_cast<::physx::vehicle2::PxVehiclePhysXActorBeginComponent*>(this);
+    ::physx::PxVehiclePhysXActorBeginComponent* actorBeginComp = static_cast<::physx::PxVehiclePhysXActorBeginComponent*>(this);
     actorBeginComp->update(dt, context);
 }
 
@@ -1837,9 +1837,9 @@ void PhysXVehicleDirectDrive::setDataPointers(uint8_t* memory,
 void PhysXVehicleDirectDrive::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     ::physx::PxRigidDynamic& vehicleActor, ::physx::PxPhysics& pxPhysics,
     const std::vector<::physx::PxTransform>& wheelShapeLocalPoses, const std::vector<::physx::PxShape*>& wheelShapeMapping,
-    const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+    const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
     const std::vector<uint32_t>& wheelIndexToDataMap,
-    const ::physx::vehicle2::PxVehicleFrame& frame, const float gravityMagnitude)
+    const ::physx::PxVehicleFrame& frame, const float gravityMagnitude)
 {
     PhysXVehicleManagedWheelControl::setDataValues(vehicleDesc, vehicleActor, pxPhysics,
         wheelShapeLocalPoses, wheelShapeMapping, tireMaterialFrictionTables, wheelIndexToDataMap,
@@ -1848,7 +1848,7 @@ void PhysXVehicleDirectDrive::setDataValues(const usdparser::VehicleDesc& vehicl
     //---
 
     mTransmissionCommandState.setToDefault();
-    mTransmissionCommandState.gear = ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState::eFORWARD;
+    mTransmissionCommandState.gear = ::physx::PxVehicleDirectDriveTransmissionCommandState::eFORWARD;
 
     //---
 
@@ -1905,28 +1905,28 @@ void PhysXVehicleDirectDrive::setDataValues(const usdparser::VehicleDesc& vehicl
 void PhysXVehicleDirectDrive::setComponentSequence()
 {
     bool success;
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleDirectDriveCommandResponseComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleDirectDriveCommandResponseComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleDirectDriveActuationStateComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleDirectDriveActuationStateComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehiclePhysXRoadGeometrySceneQueryComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehiclePhysXRoadGeometrySceneQueryComponent*>(this));
     CARB_ASSERT(success);
 
     mSubstepGroupId = mComponentSequence.beginSubstepGroup();
-    CARB_ASSERT(mSubstepGroupId != ::physx::vehicle2::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleSuspensionComponent*>(this));
+    CARB_ASSERT(mSubstepGroupId != ::physx::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP);
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleSuspensionComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleTireComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleTireComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehiclePhysXConstraintComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehiclePhysXConstraintComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleDirectDrivetrainComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleDirectDrivetrainComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleRigidBodyComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleRigidBodyComponent*>(this));
     CARB_ASSERT(success);
     mComponentSequence.endSubstepGroup();
 
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleWheelComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleWheelComponent*>(this));
     CARB_ASSERT(success);
 }
 
@@ -1935,9 +1935,9 @@ PhysXVehicleDirectDrive* PhysXVehicleDirectDrive::create(::physx::PxRigidDynamic
                                                          const usdparser::VehicleDesc& vehicleDesc,
                                                          const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
                                                          const std::vector<::physx::PxShape*>& wheelShapeMapping,
-                                                         const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+                                                         const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
                                                          const std::vector<uint32_t>& wheelIndexToDataMap,
-                                                         const ::physx::vehicle2::PxVehicleFrame& frame,
+                                                         const ::physx::PxVehicleFrame& frame,
                                                          const float gravityMagnitude,
                                                          ::physx::PxAllocatorCallback* allocatorForPvd)
 {
@@ -1980,21 +1980,21 @@ size_t PhysXVehicleEngineDrive::computeDataSizeExcludingClass(const usdparser::V
     if (vehicleDesc.differential && (vehicleDesc.differential->type == DifferentialDesc::eTank))
     {
         memOffsets.transmissionCommandStateOffset = memSize;
-        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState));
+        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::PxVehicleTankDriveTransmissionCommandState));
 
         memOffsets.differentialParamsOffset = memSize;
-        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::vehicle2::PxVehicleTankDriveDifferentialParams));
+        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::PxVehicleTankDriveDifferentialParams));
 
         memOffsets.constraintGroupStateOffset = memSize;
-        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::vehicle2::PxVehicleWheelConstraintGroupState));
+        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::PxVehicleWheelConstraintGroupState));
     }
     else
     {
         memOffsets.transmissionCommandStateOffset = memSize;
-        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState));
+        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::PxVehicleEngineDriveTransmissionCommandState));
 
         memOffsets.differentialParamsOffset = memSize;
-        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams));
+        memSize += ALIGNED_SIZE_VEHICLE(sizeof(::physx::PxVehicleMultiWheelDriveDifferentialParams));
 
         memOffsets.constraintGroupStateOffset = PhysXVehicleBaseDataMemoryOffsets::kInvalidOffset;
     }
@@ -2020,10 +2020,10 @@ void PhysXVehicleEngineDrive::setDataPointers(uint8_t* memory,
 {
     PhysXVehicleManagedWheelControl::setDataPointers(memory, memOffsets);
 
-    mTransmissionCommandState = reinterpret_cast<::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*>(memory + memOffsets.transmissionCommandStateOffset);
-    mDifferentialParams = reinterpret_cast<::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*>(memory + memOffsets.differentialParamsOffset);
+    mTransmissionCommandState = reinterpret_cast<::physx::PxVehicleEngineDriveTransmissionCommandState*>(memory + memOffsets.transmissionCommandStateOffset);
+    mDifferentialParams = reinterpret_cast<::physx::PxVehicleMultiWheelDriveDifferentialParams*>(memory + memOffsets.differentialParamsOffset);
     if (memOffsets.constraintGroupStateOffset != PhysXVehicleBaseDataMemoryOffsets::kInvalidOffset)
-        mConstraintGroupState = reinterpret_cast<::physx::vehicle2::PxVehicleWheelConstraintGroupState*>(memory + memOffsets.constraintGroupStateOffset);
+        mConstraintGroupState = reinterpret_cast<::physx::PxVehicleWheelConstraintGroupState*>(memory + memOffsets.constraintGroupStateOffset);
     else
         mConstraintGroupState = nullptr;
 
@@ -2036,9 +2036,9 @@ void PhysXVehicleEngineDrive::setDataPointers(uint8_t* memory,
 void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicleDesc,
     ::physx::PxRigidDynamic& vehicleActor, ::physx::PxPhysics& pxPhysics,
     const std::vector<::physx::PxTransform>& wheelShapeLocalPoses, const std::vector<::physx::PxShape*>& wheelShapeMapping,
-    const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+    const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
     const std::vector<uint32_t>& wheelIndexToDataMap,
-    const ::physx::vehicle2::PxVehicleFrame& frame, const float gravityMagnitude)
+    const ::physx::PxVehicleFrame& frame, const float gravityMagnitude)
 {
     PhysXVehicleManagedWheelControl::setDataValues(vehicleDesc, vehicleActor, pxPhysics,
         wheelShapeLocalPoses, wheelShapeMapping, tireMaterialFrictionTables, wheelIndexToDataMap,
@@ -2054,8 +2054,8 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
     {
         mDifferentialType = DifferentialType::eTANK;
 
-        ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState =
-            static_cast<::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
+        ::physx::PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState =
+            static_cast<::physx::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
         tankDriveTransmissionCommandState->setToDefault();
 
         CARB_ASSERT(mConstraintGroupState);
@@ -2079,7 +2079,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
     mGearboxParams.ratios[neutralGear] = 0.0f;
 
     const uint32_t gearRatioCountWithoutNeutral = static_cast<uint32_t>(gearsDesc.ratios.size());
-    CARB_ASSERT(gearRatioCountWithoutNeutral < ::physx::vehicle2::PxVehicleGearboxParams::eMAX_NB_GEARS);  // "<" since neutral is not represented in USD
+    CARB_ASSERT(gearRatioCountWithoutNeutral < ::physx::PxVehicleGearboxParams::eMAX_NB_GEARS);  // "<" since neutral is not represented in USD
     for (uint32_t i = 1; i < gearRatioCountWithoutNeutral; i++)
     {
         mGearboxParams.ratios[neutralGear + i] = gearsDesc.ratios[i];
@@ -2094,7 +2094,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
     mGearboxState.currentGear = initialGear;
     mGearboxState.targetGear = initialGear;
 
-    mTransmissionCommandState->targetGear = mAutobox ? ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR :
+    mTransmissionCommandState->targetGear = mAutobox ? ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR :
         initialGear;
 
     //---
@@ -2110,7 +2110,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
         mAutobox->mParams.upRatios[gearRatioCountWithoutNeutral] = 0.0f;
 
         const uint32_t upRatioCount = static_cast<uint32_t>(autoGearboxDesc.upRatios.size());
-        CARB_ASSERT(upRatioCount < (::physx::vehicle2::PxVehicleGearboxParams::eMAX_NB_GEARS - 2));  // reverse, neutral and highest gear is not represented
+        CARB_ASSERT(upRatioCount < (::physx::PxVehicleGearboxParams::eMAX_NB_GEARS - 2));  // reverse, neutral and highest gear is not represented
                                                                                                      // in USD as the values would not be used
         for (uint32_t i = 0; i < upRatioCount; i++)
         {
@@ -2123,7 +2123,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
         mAutobox->mParams.downRatios[neutralGear + 1] = 0.0f;
 
         const uint32_t downRatioCount = static_cast<uint32_t>(autoGearboxDesc.downRatios.size());
-        CARB_ASSERT(downRatioCount < (::physx::vehicle2::PxVehicleGearboxParams::eMAX_NB_GEARS - 2));  // reverse, neutral and first is not represented
+        CARB_ASSERT(downRatioCount < (::physx::PxVehicleGearboxParams::eMAX_NB_GEARS - 2));  // reverse, neutral and first is not represented
                                                                                                        // in USD as the values would not be used
         for (uint32_t i = 0; i < downRatioCount; i++)
         {
@@ -2140,7 +2140,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
     CARB_ASSERT(driveStandardDesc.clutch);
     const usdparser::ClutchDesc& clutchDesc = *driveStandardDesc.clutch;
 
-    mClutchParams.accuracyMode = ::physx::vehicle2::PxVehicleClutchAccuracyMode::eBEST_POSSIBLE;
+    mClutchParams.accuracyMode = ::physx::PxVehicleClutchAccuracyMode::eBEST_POSSIBLE;
     mClutchParams.estimateIterations = 5;
 
     mClutchCommandResponseParams.maxResponse = clutchDesc.strength;
@@ -2188,8 +2188,8 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
         {
             mDifferentialType = DifferentialType::eTANK;
 
-            ::physx::vehicle2::PxVehicleTankDriveDifferentialParams* tankDifferentialParams =
-                static_cast<::physx::vehicle2::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
+            ::physx::PxVehicleTankDriveDifferentialParams* tankDifferentialParams =
+                static_cast<::physx::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
 
             TankDifferentialDesc* tankDiffDesc = static_cast<TankDifferentialDesc*>(vehicleDesc.differential);
             const uint32_t trackCount = static_cast<uint32_t>(tankDiffDesc->numberOfWheelsPerTrack.size());
@@ -2209,7 +2209,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
                 }
 
                 const uint32_t wheelIndexEntryCount = static_cast<uint32_t>(tankDiffDesc->wheelIndicesInTrackOrder.size());
-                CARB_ASSERT(wheelIndexEntryCount <= ::physx::vehicle2::PxVehicleLimits::eMAX_NB_WHEELS);
+                CARB_ASSERT(wheelIndexEntryCount <= ::physx::PxVehicleLimits::eMAX_NB_WHEELS);
 
                 static_assert(sizeof(int) == sizeof(tankDifferentialParams->wheelIdsInTrackOrder[0]), "");
                 memcpy(tankDifferentialParams->wheelIdsInTrackOrder, tankDiffDesc->wheelIndicesInTrackOrder.data(),
@@ -2258,7 +2258,7 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
     CARB_ASSERT(driveStandardDesc.engine);
     const usdparser::EngineDesc& engineDesc = *driveStandardDesc.engine;
 
-    CARB_ASSERT(engineDesc.torqueCurvePointCount <= vehicle2::PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES);
+    CARB_ASSERT(engineDesc.torqueCurvePointCount <= ::physx::PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES);
     for (uint32_t i = 0; i < engineDesc.torqueCurvePointCount; i++)
     {
         mEngineParams.torqueCurve.addPair(engineDesc.torqueCurve[i].x, engineDesc.torqueCurve[i].y);
@@ -2278,42 +2278,42 @@ void PhysXVehicleEngineDrive::setDataValues(const usdparser::VehicleDesc& vehicl
 void PhysXVehicleEngineDrive::setComponentSequence()
 {
     bool success;
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleEngineDriveCommandResponseComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleEngineDriveCommandResponseComponent*>(this));
     CARB_ASSERT(success);
 
     if (mDifferentialType == DifferentialType::eMULTI_WHEEL)
     {
-        success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialStateComponent*>(this));
+        success = mComponentSequence.add(static_cast<::physx::PxVehicleMultiWheelDriveDifferentialStateComponent*>(this));
         CARB_ASSERT(success);
     }
     else
     {
         CARB_ASSERT(mDifferentialType == DifferentialType::eTANK);
 
-        success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleTankDriveDifferentialStateComponent*>(this));
+        success = mComponentSequence.add(static_cast<::physx::PxVehicleTankDriveDifferentialStateComponent*>(this));
         CARB_ASSERT(success);
     }
 
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleEngineDriveActuationStateComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleEngineDriveActuationStateComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehiclePhysXRoadGeometrySceneQueryComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehiclePhysXRoadGeometrySceneQueryComponent*>(this));
     CARB_ASSERT(success);
 
     mSubstepGroupId = mComponentSequence.beginSubstepGroup();
-    CARB_ASSERT(mSubstepGroupId != ::physx::vehicle2::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleSuspensionComponent*>(this));
+    CARB_ASSERT(mSubstepGroupId != ::physx::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP);
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleSuspensionComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleTireComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleTireComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehiclePhysXConstraintComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehiclePhysXConstraintComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleEngineDrivetrainComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleEngineDrivetrainComponent*>(this));
     CARB_ASSERT(success);
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleRigidBodyComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleRigidBodyComponent*>(this));
     CARB_ASSERT(success);
     mComponentSequence.endSubstepGroup();
 
-    success = mComponentSequence.add(static_cast<::physx::vehicle2::PxVehicleWheelComponent*>(this));
+    success = mComponentSequence.add(static_cast<::physx::PxVehicleWheelComponent*>(this));
     CARB_ASSERT(success);
 }
 
@@ -2322,9 +2322,9 @@ PhysXVehicleEngineDrive* PhysXVehicleEngineDrive::create(::physx::PxRigidDynamic
                                                          const usdparser::VehicleDesc& vehicleDesc,
                                                          const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
                                                          const std::vector<::physx::PxShape*>& wheelShapeMapping,
-                                                         const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+                                                         const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
                                                          const std::vector<uint32_t>& wheelIndexToDataMap,
-                                                         const ::physx::vehicle2::PxVehicleFrame& frame,
+                                                         const ::physx::PxVehicleFrame& frame,
                                                          const float gravityMagnitude,
                                                          ::physx::PxAllocatorCallback* allocatorForPvd)
 {
@@ -2387,7 +2387,7 @@ void PhysXVehicleEngineDrive::setWheelToDriven(const uint32_t wheelIndex, const 
 }
 
 static void disableWheelInTankDifferential(const uint32_t wheelIndex,
-    ::physx::vehicle2::PxVehicleTankDriveDifferentialParams& tankDriveDiffParams)
+    ::physx::PxVehicleTankDriveDifferentialParams& tankDriveDiffParams)
 {
     for (uint32_t i = 0; i < tankDriveDiffParams.nbTracks; i++)
     {
@@ -2428,8 +2428,8 @@ void PhysXVehicleEngineDrive::disableWheel(const uint32_t wheelIndex)
 
     if (mDifferentialType == DifferentialType::eTANK)
     {
-        ::physx::vehicle2::PxVehicleTankDriveDifferentialParams* tankDriveDiffParams =
-            static_cast<::physx::vehicle2::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
+        ::physx::PxVehicleTankDriveDifferentialParams* tankDriveDiffParams =
+            static_cast<::physx::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
 
         disableWheelInTankDifferential(wheelIndex, *tankDriveDiffParams);
     }
@@ -2464,9 +2464,9 @@ PhysXActorVehicleBase* VehicleGenerator::createVehicle(::physx::PxRigidDynamic& 
                                                        const VehicleDesc& vehicleDesc,
                                                        const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
                                                        const std::vector<::physx::PxShape*>& wheelShapeMapping,
-                                                       const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+                                                       const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
                                                        const std::vector<uint32_t>& wheelIndexToDataMap,
-                                                       const ::physx::vehicle2::PxVehicleFrame& frame,
+                                                       const ::physx::PxVehicleFrame& frame,
                                                        const float gravityMagnitude,
                                                        ::physx::PxAllocatorCallback* allocatorForPvd)
 {

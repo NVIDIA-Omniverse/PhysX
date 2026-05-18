@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from operator import mod
 import omni.kit.commands
 import omni.usd
@@ -1310,7 +1311,7 @@ class PhysicsMassInfoBoxManipulator(sc.Manipulator):
                     if manipulator_query_status == PhysxPropertyQueryObject.Status.COMPLETE:
                             total_mass += manipulator._body_mass
                             prim_center_of_mass = components_divide(manipulator._body_center_of_mass, manipulator._transform_scale)
-                            prim_center_of_mass = manipulator._prim_xform.Transform(prim_center_of_mass)
+                            prim_center_of_mass = Gf.Vec3f(manipulator._prim_xform.Transform(prim_center_of_mass))
                             self._accumulated_center_of_mass += prim_center_of_mass * manipulator._body_mass
                     elif query_status != PhysxPropertyQueryObject.Status.FAIL:
                         query_status = manipulator_query_status
@@ -1330,7 +1331,7 @@ class PhysicsMassInfoBoxManipulator(sc.Manipulator):
 
                 if isinstance(self, PhysicsMassEditInfoBoxManipulator):
                     prim_center_of_mass = components_divide(mass_manipulators[0]._body_center_of_mass, mass_manipulators[0]._transform_scale)
-                    prim_center_of_mass = mass_manipulators[0]._prim_xform.Transform(prim_center_of_mass)
+                    prim_center_of_mass = Gf.Vec3f(mass_manipulators[0]._prim_xform.Transform(prim_center_of_mass))
                     info_box_position = prim_center_of_mass
                 else:
                     info_box_position = mass_manipulators[0]._prim_xform.ExtractTranslation()

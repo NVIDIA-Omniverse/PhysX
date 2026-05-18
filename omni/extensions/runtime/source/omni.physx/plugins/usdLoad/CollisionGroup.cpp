@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -80,12 +80,12 @@ void addChildPaths(usdrt::SdfPathSet& includePaths, usdrt::SdfPath path, omni::f
 {
     includePaths.insert(path);
 
-    const PathC firstChild = conn.getFirstChild(omni::fabric::PathC(path));
-    if (firstChild != kUninitializedPath)
+    const Path firstChild = conn.getFirstChild(omni::fabric::Path(path));
+    if (firstChild != Path())
     {
         addChildPaths(includePaths, usdrt::SdfPath(firstChild), conn);
-        PathC nextSibling = conn.getNextSibling(firstChild);
-        while (firstChild != nextSibling && nextSibling != kUninitializedPath)
+        Path nextSibling = conn.getNextSibling(firstChild);
+        while (firstChild != nextSibling && nextSibling != Path())
         {
             addChildPaths(includePaths, usdrt::SdfPath(nextSibling), conn);
             nextSibling = conn.getNextSibling(nextSibling);
@@ -132,8 +132,8 @@ void updateFabricCollisionGroups(AttachedStage& attachedStage)
             }
             for (const usdrt::SdfPath& p : includePaths)
             {
-                const omni::fabric::PathC pathCInclude(p);
-                const omni::fabric::PathC pathCPath(usdrtPath);
+                const omni::fabric::Path pathCInclude(p);
+                const omni::fabric::Path pathCPath(usdrtPath);
                 collisionGroupsMap[omni::fabric::toSdfPath(pathCInclude)].push_back(omni::fabric::toSdfPath(pathCPath));
             }        
         }

@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.test
 import omni.kit.commands
 from pxr import Gf, UsdGeom, UsdPhysics, PhysxSchema, Sdf, Usd
@@ -159,7 +160,7 @@ class PhysxParticleIsosurfaceAPITestKitStage(PhysicsKitStageAsyncTestCase):
         extent = UsdGeom.PointBased.ComputeExtent(pts)
         transform = pointbased.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
         for i in range(len(extent)):
-            extent[i] = transform.Transform(extent[i])
+            extent[i] = Gf.Vec3f(transform.Transform(extent[i]))
 
         return extent
 
@@ -168,7 +169,7 @@ class PhysxParticleIsosurfaceAPITestKitStage(PhysicsKitStageAsyncTestCase):
         extent = UsdGeom.PointBased.ComputeExtent(pts)
         transform = instancer.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
         for i in range(len(extent)):
-            extent[i] = transform.Transform(extent[i])
+            extent[i] = Gf.Vec3f(transform.Transform(extent[i]))
 
         return extent
 

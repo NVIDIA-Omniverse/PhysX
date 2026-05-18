@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -80,7 +80,7 @@ namespace physx
 		const unsigned int CU_MEMHOSTALLOC_DEVICEMAP = 0x02;
 		const unsigned int CU_MEMHOSTALLOC_PORTABLE = 0x01;
 
-		PxCUresult result = context->memHostAlloc(reinterpret_cast<void**>(&accumulatedSpringsPerPartitions), size_t(sizeof(PxU32) * PARTICLE_MAX_NUM_PARTITIONS_FINAL), CU_MEMHOSTALLOC_DEVICEMAP | CU_MEMHOSTALLOC_PORTABLE); // TODO AD: WTF where does 32 come from?
+		PxCUresult result = context->memHostAlloc(reinterpret_cast<void**>(&accumulatedSpringsPerPartitions), size_t(sizeof(PxU32) * PARTICLE_MAX_NUM_PARTITIONS_FINAL), CU_MEMHOSTALLOC_DEVICEMAP | CU_MEMHOSTALLOC_PORTABLE); // TODO: Document the rationale for PARTICLE_MAX_NUM_PARTITIONS_FINAL value
 		result = context->memHostAlloc(reinterpret_cast<void**>(&accumulatedCopiesPerParticles), size_t(sizeof(PxU32) * nbParticles), CU_MEMHOSTALLOC_DEVICEMAP | CU_MEMHOSTALLOC_PORTABLE);
 		result = context->memHostAlloc(reinterpret_cast<void**>(&orderedSprings), size_t(sizeof(PxParticleSpring) * nbSprings), CU_MEMHOSTALLOC_DEVICEMAP | CU_MEMHOSTALLOC_PORTABLE);
 		result = context->memHostAlloc(reinterpret_cast<void**>(&remapOutput), size_t(sizeof(PxU32) * nbSprings * 2), CU_MEMHOSTALLOC_DEVICEMAP | CU_MEMHOSTALLOC_PORTABLE);

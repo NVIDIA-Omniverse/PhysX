@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physx.scripts import physicsUtils, particleUtils
 import omni.physx.bindings._physx as physx_settings_bindings
 from pxr import UsdGeom, Gf, Sdf, UsdPhysics
@@ -10,11 +11,11 @@ import omni.physxdemos as demo
 from .ParticleDemoBaseDemo import ParticleDemoBase
 import carb
 
-deformable_beta_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_on = carb.settings.get_settings().get_as_bool(physx_settings_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 class ParticleClothDemo(demo.Base, ParticleDemoBase):
     title = "Particle Cloth"
-    category = demo.Categories.PARTICLES if not deformable_beta_on else demo.Categories.NONE
+    category = demo.Categories.PARTICLES if deformable_deprecated_on else demo.Categories.NONE
     short_description = "Basic demo showing setup of a plane mesh as a particle cloth"
     description = "A basic plane mesh is setup as a particle simulation cloth mesh."
 

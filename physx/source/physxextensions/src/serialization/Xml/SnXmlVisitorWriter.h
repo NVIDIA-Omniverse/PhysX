@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,6 +30,7 @@
 #define SN_XML_VISITOR_WRITER_H
 
 #include "foundation/PxInlineArray.h"
+#include "foundation/PxString.h"
 #include "RepXMetaDataPropertyVisitor.h"
 #include "SnPxStreamOperators.h"
 #include "SnXmlMemoryPoolStreams.h"
@@ -49,15 +50,15 @@ namespace physx { namespace Sn {
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxSerialization::serializeCollectionToXml: Reference \"%s\" could not be resolved.", inPropName);
 		}
-		
+
 		PxSerialObjectId theId = 0;
 		if( s )
 		{
 			theId = inCollection.getId( *s );
 			if( theId == 0 )
 				theId = static_cast<uint64_t>(size_t(inDatatype));
-		}	
-		
+		}
+
 		writer.write( inPropName, PxCreateRepXObject( inDatatype, theId ) );
 	}
 
@@ -75,7 +76,7 @@ namespace physx { namespace Sn {
 		inBuffer << inValue;
 		writeProperty( inWriter, inBuffer, inPropName );
 	}
-	
+
 	inline void writeProperty( XmlWriter& writer, PxCollection& inCollection, MemoryBuffer& /*inBuffer*/, const char* inPropName, const PxConvexMesh* inDatatype )
 	{
 		writeReference( writer, inCollection, inPropName, inDatatype );
@@ -103,7 +104,7 @@ namespace physx { namespace Sn {
 			PX_ASSERT(0);
 		}
 	}
-	
+
 	inline void writeProperty( XmlWriter& writer, PxCollection& inCollection, MemoryBuffer& /*inBuffer*/, const char* inPropName, PxTriangleMesh* inDatatype )
 	{
 		if (inDatatype->getConcreteType() == PxConcreteType::eTRIANGLE_MESH_BVH33)
@@ -126,7 +127,7 @@ namespace physx { namespace Sn {
 	{
 		writeReference( writer, inCollection, inPropName, inDatatype );
 	}
-	
+
 	inline void writeProperty( XmlWriter& writer, PxCollection& inCollection, MemoryBuffer& /*inBuffer*/, const char* inPropName, PxBVH33TriangleMesh* inDatatype )
 	{
 		writeReference( writer, inCollection, inPropName, inDatatype );
@@ -136,7 +137,7 @@ namespace physx { namespace Sn {
 	{
 		writeReference( writer, inCollection, inPropName, inDatatype );
 	}
-	
+
 	inline void writeProperty( XmlWriter& writer, PxCollection& inCollection, MemoryBuffer& /*inBuffer*/, const char* inPropName, PxBVH34TriangleMesh* inDatatype )
 	{
 		writeReference( writer, inCollection, inPropName, inDatatype );
@@ -201,7 +202,7 @@ namespace physx { namespace Sn {
 		bool added = false;
 
 		if ( flagValue )
-		{					
+		{
 			for ( PxU32 item =0; inTable[item].mName != NULL; ++item )
 			{
 				if ( (inTable[item].mValue & flagValue) != 0 )
@@ -211,26 +212,26 @@ namespace physx { namespace Sn {
 					tempBuf << inTable[item].mName;
 					added = true;
 				}
-			}	
+			}
 		}
 	}
 
 	inline void writePxVec3( PxOutputStream& inStream, const PxVec3& inVec ) { inStream << inVec; }
-	
+
 
 	template<typename TDataType>
 	inline const TDataType& PtrAccess( const TDataType* inPtr, PxU32 inIndex )
 	{
 		return inPtr[inIndex];
 	}
-	
+
 	template<typename TDataType>
 	inline void BasicDatatypeWrite( PxOutputStream& inStream, const TDataType& item ) { inStream << item; }
-	
+
 	template<typename TObjType, typename TAccessOperator, typename TWriteOperator>
 	inline void writeBuffer( XmlWriter& inWriter, MemoryBuffer& inTempBuffer
 							, PxU32 inObjPerLine, const TObjType* inObjType, TAccessOperator inAccessOperator
-							, PxU32 inBufSize, const char* inPropName, TWriteOperator inOperator )
+							, PxU64 inBufSize, const char* inPropName, TWriteOperator inOperator )
 	{
 		if ( inBufSize && inObjType )
 		{
@@ -264,13 +265,13 @@ namespace physx { namespace Sn {
 					inTempBuffer << "\n\t\t\t";
 				else
 					inTempBuffer << " ";
-				
+
 				inOperator( inTempBuffer, inAccessOperator( &inData[idx], 0  ) );
 			}
 			writeProperty( inWriter, inTempBuffer, inPropName );
 		}
 	}
-	
+
 
 	template<typename TDataType, typename TAccessOperator>
 	inline void writeStrideFlags( XmlWriter& inWriter, MemoryBuffer& inTempBuffer
@@ -285,7 +286,7 @@ namespace physx { namespace Sn {
 #endif
 		{
 			for ( PxU32 idx = 0; idx < inBufSize; ++idx )
-			{	
+			{
 				writeFlagsBuffer(inTempBuffer, inData[idx], inTable);
 
 				if ( idx && ( idx % inObjPerLine == 0 ) )
@@ -300,7 +301,7 @@ namespace physx { namespace Sn {
 	template<typename TDataType, typename TWriteOperator>
 	inline void writeBuffer( XmlWriter& inWriter, MemoryBuffer& inTempBuffer
 							, PxU32 inObjPerLine, const TDataType* inBuffer
-							, PxU32 inBufSize, const char* inPropName, TWriteOperator inOperator )
+							, PxU64 inBufSize, const char* inPropName, TWriteOperator inOperator )
 	{
 		writeBuffer( inWriter, inTempBuffer, inObjPerLine, inBuffer, PtrAccess<TDataType>, inBufSize, inPropName, inOperator );
 	}
@@ -312,9 +313,9 @@ namespace physx { namespace Sn {
 		for ( const PxU32ToName* conv = inConversions; conv->mName != NULL; ++conv )
 			if ( conv->mValue == theValue ) inWriter.write( inPropName, conv->mName );
 	}
-	
-	
-		
+
+
+
 	template<typename TObjType, typename TWriterType, typename TInfoType>
 	inline void handleComplexObj( TWriterType& oldVisitor, const TObjType* inObj, const TInfoType& info);
 
@@ -359,7 +360,7 @@ namespace physx { namespace Sn {
 	void handleShapes( TVisitor& visitor, const PxRigidActorShapeCollection& inProp )
 	{
 		PxShapeGeneratedInfo theInfo;
-		
+
 		PxU32 count( inProp.size( visitor.mObj ) );
 		if ( count )
 		{
@@ -370,7 +371,7 @@ namespace physx { namespace Sn {
 			{
 				const PxShape* shape = theData[idx];
 				visitor.pushName( "PxShape" );
-				
+
 				if( !shape->isExclusive() )
 				{
 					writeReference( visitor.mWriter, visitor.mCollection, "PxShapeRef", shape );
@@ -394,7 +395,7 @@ namespace physx { namespace Sn {
 			theData.resize( count );
 			inProp.get( visitor.mObj, theData.begin(), count );
 			visitor.pushName( "PxMaterialRef" );
-			
+
 			for( PxU32 idx =0; idx < count; ++idx )
 				writeReference( visitor.mWriter, visitor.mCollection, "PxMaterialRef", theData[idx] );
 			visitor.popName();
@@ -432,27 +433,27 @@ namespace physx { namespace Sn {
 
 		void gotoTopName()
 		{
-			if ( mNameStack.size() && mNameStack.back().mOpen == false ) 
+			if ( mNameStack.size() && mNameStack.back().mOpen == false )
 			{
 				mWriter.addAndGotoChild( mNameStack.back().mName );
 				mNameStack.back().mOpen = true;
 			}
 		}
 
-		void pushName( const char* inName ) 
-		{ 
+		void pushName( const char* inName )
+		{
 			gotoTopName();
-			mNameStack.pushBack( inName ); 
+			mNameStack.pushBack( inName );
 		}
 
 		void pushBracketedName( const char* inName ) { pushName( inName ); }
-		void popName() 
-		{ 
+		void popName()
+		{
 			if ( mNameStack.size() )
 			{
 				if ( mNameStack.back().mOpen )
 					mWriter.leaveChild();
-				mNameStack.popBack(); 
+				mNameStack.popBack();
 			}
 		}
 
@@ -470,7 +471,7 @@ namespace physx { namespace Sn {
 			TPropertyType propVal = inProp.get( mObj );
 			writeProperty( mWriter, mCollection, mTempBuffer, topName(), propVal );
 		}
-		
+
 		template<typename TAccessorType>
 		void enumProperty( PxU32 /*key*/, TAccessorType& inProp, const PxU32ToName* inConversions )
 		{
@@ -510,16 +511,16 @@ namespace physx { namespace Sn {
 				handleComplexObj( *this, &propVal, inInfo );
 			}
 		}
-		
+
 		template<typename TAccessorType, typename TInfoType>
 		void bufferCollectionProperty( PxU32* /*key*/, const TAccessorType& inProp, TInfoType& inInfo )
 		{
 			typedef typename TAccessorType::prop_type TPropertyType;
-			
+
 			PxU32 count( inProp.size( mObj ) );
 			PxInlineArray<TPropertyType,5> theData;
 			theData.resize( count );
-	
+
 			PxClassInfoTraits<TInfoType> theTraits;
 			PX_UNUSED(theTraits);
 			PxU32 numItems = inProp.get( mObj, theData.begin(), count );
@@ -531,51 +532,51 @@ namespace physx { namespace Sn {
 				popName();
 			}
 		}
-		
+
 		template<typename TAccessorType, typename TInfoType>
 		void extendedIndexedProperty( PxU32* /*key*/, const TAccessorType& inProp, TInfoType& /*inInfo */)
 		{
 			typedef typename TAccessorType::prop_type TPropertyType;
-			
+
 			PxU32 count( inProp.size( mObj ) );
 			PxInlineArray<TPropertyType,5> theData;
 			theData.resize( count );
-	
+
 			for(PxU32 i = 0; i < count; ++i)
 			{
 				char buffer[32] = { 0 };
-				sprintf( buffer, "id_%u", i );
+				Pxsnprintf( buffer, sizeof(buffer), "id_%u", i );
 				pushName( buffer );
-				
+
 				TPropertyType propVal = inProp.get( mObj, i );
 				TInfoType& infoType = PxClassInfoTraits<TPropertyType>().Info;
 				handleComplexObj(*this, &propVal, infoType);
 				popName();
-			}		
+			}
 		}
-		
+
 		template<typename TAccessorType, typename TInfoType>
 		void PxFixedSizeLookupTableProperty( PxU32* /*key*/, TAccessorType& inProp, TInfoType& /*inInfo */)
 		{
 			typedef typename TAccessorType::prop_type TPropertyType;
 			PxU32 count( inProp.size( mObj ) );
-			
+
 			PxU32 index = 0;
 			for(PxU32 i = 0; i < count; ++i)
 			{
 				char buffer[32] = { 0 };
-				sprintf( buffer, "id_%u", index++ );
+				Pxsnprintf( buffer, sizeof(buffer), "id_%u", index++ );
 				pushName( buffer );
 				TPropertyType propVal = inProp.getX( mObj , i);
 				writeProperty( mWriter, mCollection, mTempBuffer, topName(), propVal );
 				popName();
 
-				sprintf( buffer, "id_%u", index++ );
+				Pxsnprintf( buffer, sizeof(buffer), "id_%u", index++ );
 				pushName( buffer );
 				propVal = inProp.getY( mObj , i);
 				writeProperty( mWriter, mCollection, mTempBuffer, topName(), propVal );
 				popName();
-			}	
+			}
 		}
 
 		void handleShapes( const PxRigidActorShapeCollection& inProp )
@@ -629,16 +630,16 @@ namespace physx { namespace Sn {
 			if (joint)
 			{
 				pushName( "Joint" );
-				
+
 				handleComplexObj( *this, joint, PxArticulationJointReducedCoordinateGeneratedInfo());
-				
+
 				popName();
 			}
 		}
 	};
-	
+
 	typedef PxProfileHashMap< const PxSerialObjectId, const PxArticulationLink* > TArticulationLinkLinkMap;
-	
+
 	static void recurseAddLinkAndChildren( const PxArticulationLink* inLink, PxInlineArray<const PxArticulationLink*, 64>& ioLinks )
 	{
 		ioLinks.pushBack( inLink );
@@ -732,7 +733,7 @@ namespace physx { namespace Sn {
 	private:
 		RepXVisitorWriter<PxArticulationReducedCoordinate>& operator=(const RepXVisitorWriter<PxArticulationReducedCoordinate>&);
 	};
-	
+
 	template<>
 	struct RepXVisitorWriter<PxShape> : RepXVisitorWriterBase<PxShape>
 	{
@@ -756,7 +757,7 @@ namespace physx { namespace Sn {
 			PxClassInfoTraits<GeometryType> theTraits;
 			PxU32 count = theTraits.Info.totalPropertyCount();
 			if(count)
-			{				
+			{
 				handleComplexObj( *this, &theType, theTraits.Info);
 			}
 			else
@@ -784,7 +785,7 @@ namespace physx { namespace Sn {
 			}
 		}
 	};
-	
+
 	template<typename TObjType>
 	inline void writeAllProperties( TNameStack& inNameStack, const TObjType* inObj, XmlWriter& writer, MemoryBuffer& buffer, PxCollection& collection )
 	{
@@ -794,7 +795,7 @@ namespace physx { namespace Sn {
 		info.Info.visitBaseProperties( theOp );
 		info.Info.visitInstanceProperties( theOp );
 	}
-	
+
 	template<typename TObjType>
 	inline void writeAllProperties( TNameStack& inNameStack, TObjType* inObj, XmlWriter& writer, MemoryBuffer& buffer, PxCollection& collection )
 	{
@@ -804,14 +805,14 @@ namespace physx { namespace Sn {
 		info.Info.visitBaseProperties( theOp );
 		info.Info.visitInstanceProperties( theOp );
 	}
-	
+
 	template<typename TObjType>
 	inline void writeAllProperties( const TObjType* inObj, XmlWriter& writer, MemoryBuffer& buffer, PxCollection& collection )
 	{
 		TNameStack theNames( buffer.mManager->getWrapper() );
 		writeAllProperties( theNames, inObj, writer, buffer, collection );
 	}
-	
+
 	template<typename TObjType, typename TWriterType, typename TInfoType>
 	inline void handleComplexObj( TWriterType& oldVisitor, const TObjType* inObj, const TInfoType& /*info*/)
 	{
@@ -823,6 +824,6 @@ namespace physx { namespace Sn {
 	{
 		writeProperty( oldVisitor.mWriter, oldVisitor.mCollection, oldVisitor.mTempBuffer, oldVisitor.topName(), *inObj );
 	}
-	
+
 } }
 #endif

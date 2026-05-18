@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,7 +38,7 @@ namespace physx { namespace profile {
 	 *	Array type must be a pxu8 container.  Templated so that this object can write
 	 *	to different collections.
 	 */
-	
+
 	template<typename TArrayType>
 	struct EventSerializer
 	{
@@ -54,14 +54,14 @@ namespace physx { namespace profile {
 		uint32_t streamify( const char*, const char*& inType )
 		{
 			PX_ASSERT( inType != NULL );
-			uint32_t len( static_cast<uint32_t>( strlen( inType ) ) );
+			uint32_t len( static_cast<uint32_t>( strnlen( inType, UINT32_MAX - 1 ) ) );
 			++len; //include the null terminator
 			uint32_t writtenSize = 0;
 			writtenSize = mArray->write(len);
 			writtenSize += mArray->write(inType, len);
 			return writtenSize;
 		}
-		
+
 		uint32_t streamify( const char*, const uint8_t* inData, uint32_t len )
 		{
 			uint32_t writtenSize = mArray->write(len);
@@ -90,7 +90,7 @@ namespace physx { namespace profile {
 			}
 			return writtenSize;
 		}
-		
+
 		uint32_t streamify( const char* nm, const uint32_t& inType, EventStreamCompressionFlags::Enum inFlags )
 		{
 			uint32_t writtenSize = 0;
@@ -114,7 +114,7 @@ namespace physx { namespace profile {
 	/**
 	 *	The event deserializes takes a buffer implements the streamify functions
 	 *	by setting the passed in data to the data in the buffer.
-	 */	
+	 */
 	template<bool TSwapBytes>
 	struct EventDeserializer
 	{
@@ -164,7 +164,7 @@ namespace physx { namespace profile {
 				for( uint32_t idx = 0; idx < sizeof( TDataType ); ++idx, ++mData, --mLength )
 					theData[idx] = *mData;
 				bool temp = val();
-				if ( temp ) 
+				if ( temp )
 					BlockParseFunctions::swapBytes<sizeof(TDataType)>( theData );
 			}
 			return 0;
@@ -180,7 +180,7 @@ namespace physx { namespace profile {
 			mLength -= theLen;
 			return 0;
 		}
-		
+
 		uint32_t streamify( const char*, const uint8_t*& inData, uint32_t& len )
 		{
 			uint32_t theLen;
@@ -224,7 +224,7 @@ namespace physx { namespace profile {
 			}
 			return 0;
 		}
-		
+
 		uint32_t streamify( const char* nm, uint32_t& inType, EventStreamCompressionFlags::Enum inFlags )
 		{
 			switch( inFlags )

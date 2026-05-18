@@ -33,7 +33,10 @@ namespace pyboost11
 template <typename T>
 struct caster
 {
-    caster(pybind11::handle src) : obj(boost::python::handle<>(boost::python::borrowed(src.ptr()))), ext(obj)
+    caster(pybind11::handle src)
+        : obj(PXR_INTERNAL_NS::pxr_boost::python::handle<>(
+              PXR_INTERNAL_NS::pxr_boost::python::borrowed(src.ptr()))),
+          ext(obj)
     {
     }
 
@@ -55,12 +58,12 @@ struct caster
     // To-Python conversion.
     static pybind11::handle to_python(T& src)
     {
-        namespace bpy = boost::python;
+        namespace bpy = PXR_INTERNAL_NS::pxr_boost::python;
         return bpy::incref(bpy::object(src).ptr());
     }
 
-    boost::python::object obj;
-    boost::python::extract<T> ext;
+    PXR_INTERNAL_NS::pxr_boost::python::object obj;
+    PXR_INTERNAL_NS::pxr_boost::python::extract<T> ext;
 };
 
 } // end namespace pyboost11

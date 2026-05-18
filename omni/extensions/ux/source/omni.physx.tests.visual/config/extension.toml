@@ -3,10 +3,10 @@ category = "Internal"
 authors = ["PhysX"]
 title = "PhysX Visual Tests"
 description="Physx visual tests"
-repository=""
+repository = ""
 keywords = ["physx", "tests"]
 
-version = "107.3.0-oss.0"
+version = "109.0.10"
 
 icon = "icons/icon.png"
 preview_image = "icons/preview.png"
@@ -20,9 +20,10 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
-"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.tests" = { version = "109.0.10", exact = true }
+"omni.physx.ui" = { version = "109.0.10", exact = true }
+"omni.kit.property.physx" = { version = "109.0.10", exact = true }
+"omni.usd.schema.physx" = { version = "109.0.10", exact = true }
 "omni.kit.ui_test" = {}
 "omni.kit.viewport.utility" = {}
 
@@ -35,6 +36,7 @@ dependencies = [
     "omni.kit.mainwindow",
     "omni.physx.supportui",
     "omni.kit.window.stage",
+    "omni.hydra.usdrt_delegate",
 ]
 args = [
     "--/physics/developmentMode=true",
@@ -53,6 +55,9 @@ args = [
     "--no-window",
     "--/app/font/file='${fonts}/OpenSans-SemiBold.ttf'",
     "--/app/font/size=16",
+    "--/app/omni.usd/useFabricWorldBounds=0",  # workaround the difference of world bounds when framing in viewport with FSD on/off
+    "--/exts/omni.ui/Image/syncTextureLoad=true",
+    "--/app/file/ignoreUnsavedOnExit=true",
 ]
 timeout = 2700
 pyCoverageThreshold = 0

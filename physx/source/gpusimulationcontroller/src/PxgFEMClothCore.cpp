@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -155,11 +155,11 @@ namespace physx
 			const bool externalForcesEveryTgsIterationEnabled = mGpuContext->isExternalForcesEveryTgsIterationEnabled() && mGpuContext->isTGS();
 
 			PxgSimulationCore* core = mSimController->getSimulationCore();
-			const PxU32 maxNbCollisionPairUpdatesPerTimestep = core->getMaxNbCollisionPairUpdatesPerTimestep();
+			const PxU32 nbCollisionPairUpdatesPerTimestep = mIsTGS ? core->getMaxNbCollisionPairUpdatesPerTimestep() : 1;
 
-			// If maxNbCollisionPairUpdatesPerTimestep is zero, update collision pairs adaptively and automatically. Otherwise, update them
-			// maxNbCollisionPairUpdatesPerTimestep times per time step.
-			const bool adaptiveCollisionPairUpdate = maxNbCollisionPairUpdatesPerTimestep == 0u;
+			// If nbCollisionPairUpdatesPerTimestep is zero, update collision pairs adaptively and automatically. 
+			// Otherwise, update the contact pairs "nbCollisionPairUpdatesPerTimestep" times per time step.
+			const bool adaptiveCollisionPairUpdate = nbCollisionPairUpdatesPerTimestep == 0;
 
 			PxgDevicePointer<PxU8> updateClothContactPairsd = mUpdateClothContactPairs.getTypedDevicePtr();
 			
@@ -1318,15 +1318,29 @@ namespace physx
 
 		PxBitMapPinned::Iterator iter(clothChangedMap);
 
+		const PxU32 nbActiveFEMCloths = bodyManager.mActiveFEMCloths.size();
+		const PxU32 nbDeformableSurfaces = deformableSurfaces.size();
+
 		PxU32 dirtyIdx;
 		while((dirtyIdx = iter.getNext()) != PxBitMapPinned::Iterator::DONE)
 		{
-			PX_ASSERT(dirtyIdx < bodyManager.mActiveFEMClothIndex.size());
+			// BUGFIX 5813869: clothChangedMap is sized to nbTotalFEMCloths; active list may have been compacted (e.g. after removeActor).
+			// Bounds-check to avoid out-of-range access when add/remove happens between kernel run and this callback.
+			if(dirtyIdx >= nbActiveFEMCloths)
+				continue;
+
 			PxU32 idx = bodyManager.mActiveFEMCloths[dirtyIdx];
+			if(idx >= nbDeformableSurfaces)
+				continue;
+
+			Dy::DeformableSurface* surface = deformableSurfaces[idx];
+			if(!surface)
+				continue;
+
 			if(wakeCounters[idx] == 0.f)
-				mDeactivatingDeformableSurfaces.pushBack(deformableSurfaces[idx]);
+				mDeactivatingDeformableSurfaces.pushBack(surface);
 			else
-				mActivatingDeformableSurfaces.pushBack(deformableSurfaces[idx]);
+				mActivatingDeformableSurfaces.pushBack(surface);
 		}
 
 		clothChangedMap.clear();
@@ -1831,6 +1845,10 @@ namespace physx
 		// accumulate velocity delta for rigid body and impulse delta for articulation link
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
 							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, mIsTGS);
+
+		// if the contact is between articulation and soft body, after accumulated all the related contact's
+		// impulse, we need to propagate the accumulated impulse to the articulation block solver
+		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
 	}
 
 	void PxgFEMClothCore::solveClothRigidAttachment(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,

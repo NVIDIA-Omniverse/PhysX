@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -52,7 +52,7 @@ namespace deformables
         DeformablePostSolveCallback(CUstream stream, ::physx::PxCudaContextManager* cudaContextManager, ::physx::PxScene* scene);
         virtual ~DeformablePostSolveCallback() {};
 
-        virtual void copySkinnedVerticesDtoHAsync(size_t deformableIndex, ::physx::PxVec3* mAllSkinnedVerticesH) = 0;
+        virtual void copySkinnedVerticesDtoHAsync(size_t deformableIndex, ::physx::PxVec3* allSkinnedVerticesH) = 0;
         virtual void onPostSolve(CUevent startEvent) = 0;
 
         void synchronize();
@@ -73,7 +73,7 @@ namespace deformables
         VolumeDeformablePostSolveCallback(CUstream stream, ::physx::PxCudaContextManager* cudaContextManager, ::physx::PxScene* scene);
         ~VolumeDeformablePostSolveCallback();
 
-        virtual void copySkinnedVerticesDtoHAsync(size_t deformableIndex, ::physx::PxVec3* mAllSkinnedVerticesH);
+        virtual void copySkinnedVerticesDtoHAsync(size_t deformableIndex, ::physx::PxVec3* allSkinnedVerticesH);
         virtual void onPostSolve(CUevent startEvent);
 
         void addVolumeDeformableSkinningData(const VolumeDeformableSkinningData& skinningData);
@@ -95,7 +95,7 @@ namespace deformables
         SurfaceDeformablePostSolveCallback(CUstream stream, ::physx::PxCudaContextManager* cudaContextManager, ::physx::PxScene* scene);
         ~SurfaceDeformablePostSolveCallback();
 
-        virtual void copySkinnedVerticesDtoHAsync(size_t deformableIndex, ::physx::PxVec3* mAllSkinnedVerticesH);
+        virtual void copySkinnedVerticesDtoHAsync(size_t deformableIndex, ::physx::PxVec3* allSkinnedVerticesH);
         virtual void onPostSolve(CUevent startEvent);
 
         void addSurfaceDeformableSkinningData(const SurfaceDeformableSkinningData& skinningData);

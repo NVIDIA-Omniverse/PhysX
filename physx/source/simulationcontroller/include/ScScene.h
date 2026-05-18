@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -136,8 +136,6 @@ namespace Sc
 	class ArticulationSpatialTendonCore;
 	class ArticulationFixedTendonCore;
 	class ArticulationMimicJointCore;
-	class LLArticulationPool;
-	class LLArticulationRCPool;
 	class LLDeformableSurfacePool;
 	class LLDeformableVolumePool;
 	class LLParticleSystemPool;
@@ -383,7 +381,11 @@ namespace Sc
 					void						addArticulationSimControl(ArticulationCore& core);
 					void						removeArticulationSimControl(ArticulationCore& core);
 
-					void						updateBodySim(BodySim& sim);
+#if PX_SUPPORT_GPU_PHYSX
+					void						gpu_updateBodySim(BodySim& sim);
+#else
+	PX_FORCE_INLINE	void						gpu_updateBodySim(BodySim&)	{}
+#endif
 
 	PX_FORCE_INLINE	PxU32						getNbArticulations() const	{ return mArticulations.size();			}
 	PX_FORCE_INLINE	ArticulationCore* const*	getArticulations()			{ return mArticulations.getEntries();	}
@@ -540,9 +542,6 @@ namespace Sc
 					PxU32						createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID);
 
 					void						deleteAggregate(PxU32 id);
-
-					Dy::FeatherstoneArticulation*	createLLArticulation(ArticulationSim* sim);
-					void							destroyLLArticulation(Dy::FeatherstoneArticulation&);
 
 		PX_FORCE_INLINE	PxPool2<ConstraintInteraction, 4096>&	getConstraintInteractionPool()			{ return mConstraintInteractionPool;	}
 	public:
@@ -821,7 +820,6 @@ namespace Sc
 					Cm::PreallocatingPool<BodySim>*		mBodySimPool;
 					PxPool2<ConstraintSim, 4096>		mConstraintSimPool;
 					PxPool2<ArticulationJointSim, 4096>	mArticulationJointSimPool;
-					LLArticulationRCPool*				mLLArticulationRCPool;
 
 					PxHashMap<PxPair<const ActorSim*, const ActorSim*>, ConstraintCore*> mConstraintMap;
 														
@@ -1136,7 +1134,6 @@ namespace Sc
 #if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 					PxU64								mPadding;
 #endif
-					PxU64								mPadding2;
 					PX_ALIGN(16, PxsDeformableSurfaceMaterialManager	mDeformableSurfaceMaterialManager);
 					PX_ALIGN(16, PxsDeformableVolumeMaterialManager		mDeformableVolumeMaterialManager);
 					PX_ALIGN(16, PxsPBDMaterialManager		mPBDMaterialManager);

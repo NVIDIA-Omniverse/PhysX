@@ -22,79 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "GuTriangleMesh.h"
 #include "GuTriangleMeshBV4.h"
-#include "geometry/PxGeometryInternal.h"
 
 using namespace physx;
 using namespace Gu;
 
 namespace physx
 {
-
-// PT: temporary for Kit
-
-BV4TriangleMesh::BV4TriangleMesh(const PxTriangleMeshInternalData& data) : TriangleMesh(data)
-{
-	mMeshInterface.setNbTriangles(getNbTrianglesFast());
-	if(has16BitIndices())
-		mMeshInterface.setPointers(NULL, const_cast<IndTri16*>(reinterpret_cast<const IndTri16*>(getTrianglesFast())), getVerticesFast());
-	else
-		mMeshInterface.setPointers(const_cast<IndTri32*>(reinterpret_cast<const IndTri32*>(getTrianglesFast())), NULL, getVerticesFast());
-	mBV4Tree.mMeshInterface = &mMeshInterface;
-
-	mBV4Tree.mLocalBounds.mCenter = data.mAABB_Center;
-	mBV4Tree.mLocalBounds.mExtentsMagnitude = data.mAABB_Extents.magnitude();
-
-	mBV4Tree.mNbNodes = data.mNbNodes;
-	mBV4Tree.mNodes = data.mNodes;
-	mBV4Tree.mInitData = data.mInitData;
-	mBV4Tree.mCenterOrMinCoeff = data.mCenterOrMinCoeff;
-	mBV4Tree.mExtentsOrMaxCoeff = data.mExtentsOrMaxCoeff;
-	mBV4Tree.mQuantized = data.mQuantized;
-	mBV4Tree.mUserAllocated = true;
-}
-
-bool BV4TriangleMesh::getInternalData(PxTriangleMeshInternalData& data, bool takeOwnership)	const
-{
-	data.mNbVertices		= mNbVertices;
-	data.mNbTriangles		= mNbTriangles;
-	data.mVertices			= mVertices;
-	data.mTriangles			= mTriangles;
-	data.mFaceRemap			= mFaceRemap;
-	data.mAABB_Center		= mAABB.mCenter;
-	data.mAABB_Extents		= mAABB.mExtents;
-	data.mGeomEpsilon		= mGeomEpsilon;
-	data.mFlags				= mFlags;
-
-	data.mNbNodes			= mBV4Tree.mNbNodes;
-	data.mNodeSize			= mBV4Tree.mQuantized ? sizeof(BVDataPackedQ) : sizeof(BVDataPackedNQ);
-	data.mNodes				= mBV4Tree.mNodes;
-	data.mInitData			= mBV4Tree.mInitData;
-	data.mCenterOrMinCoeff	= mBV4Tree.mCenterOrMinCoeff;
-	data.mExtentsOrMaxCoeff	= mBV4Tree.mExtentsOrMaxCoeff;
-	data.mQuantized			= mBV4Tree.mQuantized;
-
-	if(takeOwnership)
-	{
-		const_cast<BV4TriangleMesh*>(this)->setBaseFlag(PxBaseFlag::eOWNS_MEMORY, false);
-		const_cast<BV4TriangleMesh*>(this)->mBV4Tree.mUserAllocated = true;
-	}
-
-	return true;
-}
-
-bool PxGetTriangleMeshInternalData(PxTriangleMeshInternalData& data, const PxTriangleMesh& mesh, bool takeOwnership)
-{
-	return static_cast<const TriangleMesh&>(mesh).getInternalData(data, takeOwnership);
-}
-
-//~ PT: temporary for Kit
-
 BV4TriangleMesh::BV4TriangleMesh(MeshFactory* factory, TriangleMeshData& d) : TriangleMesh(factory, d)
 {
 	PX_ASSERT(d.mType==PxMeshMidPhase::eBVH34);

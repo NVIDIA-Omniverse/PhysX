@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -520,7 +520,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 				dofBlock.mConstraintData.mLimits_LowLimitX_highLimitY[threadIndexInWarp] = make_float2(joint.limits[dofId].low, joint.limits[dofId].high);
 			
 				//old friction
-				dofBlock.mConstraintData.mFrictionCoefficient[threadIndexInWarp] = joint.frictionCoefficient;
+				dofBlock.mConstraintData.mDeprecatedFrictionCoefficient[threadIndexInWarp] = joint.frictionCoefficient;
 				//new friction
 				dofBlock.mConstraintData.mStaticFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].staticFrictionEffort;
 				dofBlock.mConstraintData.mDynamicFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].dynamicFrictionEffort;
@@ -639,7 +639,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 			PxU32 nextNbDofs = jointData1.nbDof;
 			PxU32 nextJointOffset = jointData1.jointOffset;
 			PxU32 nextDofId0 = joint1.dofIds[0];
-			PxReal nextFrictionCoefficient = joint1.frictionCoefficient;
+			PxReal nextDeprecatedFrictionCoefficient = joint1.frictionCoefficient;
 
 			for (PxU32 linkID = 1; linkID < numLinks; linkID++)
 			{
@@ -658,7 +658,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 				const PxU32 nbDofs = nextNbDofs;
 				const PxU32 jointOffset = nextJointOffset;
 				const PxU32 dofId0 = nextDofId0;
-				const PxReal frictionCoefficient = nextFrictionCoefficient;
+				const PxReal deprecatedFrictionCoefficient = nextDeprecatedFrictionCoefficient;
 
 				if(linkID!=numLinks-1)
 				{
@@ -677,7 +677,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 					nextNbDofs = nextJointData.nbDof;
 					nextJointOffset = nextJointData.jointOffset;
 					nextDofId0 = nextJoint.dofIds[0];
-					nextFrictionCoefficient = nextJoint.frictionCoefficient;
+					nextDeprecatedFrictionCoefficient = nextJoint.frictionCoefficient;
 				}
 
 				const PxReal* PX_RESTRICT jPos = &jointPositions[jointOffset];
@@ -698,7 +698,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 					dofBlock.mConstraintData.mArmature[threadIndexInWarp] = joint.armature[dofId];
 					dofBlock.mConstraintData.mLimits_LowLimitX_highLimitY[threadIndexInWarp] = make_float2(joint.limits[dofId].low, joint.limits[dofId].high);
 					
-					dofBlock.mConstraintData.mFrictionCoefficient[threadIndexInWarp] = frictionCoefficient;
+					dofBlock.mConstraintData.mDeprecatedFrictionCoefficient[threadIndexInWarp] = deprecatedFrictionCoefficient;
 
 					dofBlock.mConstraintData.mStaticFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].staticFrictionEffort;
 					dofBlock.mConstraintData.mDynamicFrictionEffort[threadIndexInWarp] = joint.frictionParams[dofId].dynamicFrictionEffort;
@@ -1367,23 +1367,22 @@ static __device__ PX_FORCE_INLINE void computeIs(
 static __device__ SpatialMatrix constructSpatialMatrix(const Cm::UnAlignedSpatialVector& Is, const Cm::UnAlignedSpatialVector& stI)
 {
 	//construct top left
-	PxVec3 tLeftC0 = Is.top * stI.top.x;
-	PxVec3 tLeftC1 = Is.top * stI.top.y;
-	PxVec3 tLeftC2 = Is.top * stI.top.z;
-
-	PxMat33 topLeft(tLeftC0, tLeftC1, tLeftC2);
+	const PxVec3 tLeftC0 = Is.top * stI.top.x;
+	const PxVec3 tLeftC1 = Is.top * stI.top.y;
+	const PxVec3 tLeftC2 = Is.top * stI.top.z;
+	const PxMat33 topLeft(tLeftC0, tLeftC1, tLeftC2);
 
 	//construct top right
-	PxVec3 tRightC0 = Is.top * stI.bottom.x;
-	PxVec3 tRightC1 = Is.top * stI.bottom.y;
-	PxVec3 tRightC2 = Is.top * stI.bottom.z;
-	PxMat33 topRight(tRightC0, tRightC1, tRightC2);
+	const PxVec3 tRightC0 = Is.top * stI.bottom.x;
+	const PxVec3 tRightC1 = Is.top * stI.bottom.y;
+	const PxVec3 tRightC2 = Is.top * stI.bottom.z;
+	const PxMat33 topRight(tRightC0, tRightC1, tRightC2);
 
 	//construct bottom left
-	PxVec3 bLeftC0 = Is.bottom * stI.top.x;
-	PxVec3 bLeftC1 = Is.bottom * stI.top.y;
-	PxVec3 bLeftC2 = Is.bottom * stI.top.z;
-	PxMat33 bottomLeft(bLeftC0, bLeftC1, bLeftC2);
+	const PxVec3 bLeftC0 = Is.bottom * stI.top.x;
+	const PxVec3 bLeftC1 = Is.bottom * stI.top.y;
+	const PxVec3 bLeftC2 = Is.bottom * stI.top.z;
+	const PxMat33 bottomLeft(bLeftC0, bLeftC1, bLeftC2);
 
 	return SpatialMatrix(topLeft, topRight, bottomLeft);
 }
@@ -1402,6 +1401,7 @@ static __device__ SpatialMatrix constructSpatialMatrix(const Cm::UnAlignedSpatia
 static __device__ Dy::SpatialMatrix computePropagateSpatialInertia_ZA_ZIc(PxgArticulationBlockLinkData& linkData,
 	PxgArticulationBlockDofData* dofData,
 	const Cm::UnAlignedSpatialVector* const PX_RESTRICT msIs, 
+	bool isExternalForcesEveryTgsIterationEnabled,
 	const PxReal* const PX_RESTRICT jF, // can be NULL in which case assume zero joint forces
 	const Cm::UnAlignedSpatialVector& Z,
 	const Cm::UnAlignedSpatialVector& ZIcInt,
@@ -1438,9 +1438,10 @@ static __device__ Dy::SpatialMatrix computePropagateSpatialInertia_ZA_ZIc(PxgArt
 		//link.qstZIc[ind] = jF[ind] - stZ;
 		//const PxReal qstZic = jF[0] - stZ;
 		const PxReal qstZ = -stZ;
-		const PxReal qstZIcInternal = (jF ? jF[0] : 0.0f) - stZInt;
+		const PxReal qstZIcInternal = (!isExternalForcesEveryTgsIterationEnabled && jF ? jF[0] : 0.0f) - stZInt;
 		dofData[0].mQstZ[threadIndexInWarp] = qstZ;
 		dofData[0].mQstZIcInternal[threadIndexInWarp] = qstZIcInternal;
+		dofData[0].mConstraintData.mExternalEffort[threadIndexInWarp] = jF? jF[0] : 0.0;
 
 		ZA += isInvD * qstZ;
 		ZAInt += isInvD * qstZIcInternal;
@@ -1475,7 +1476,7 @@ static __device__ Dy::SpatialMatrix computePropagateSpatialInertia_ZA_ZIc(PxgArt
 
 				//link.qstZIc[ind] = jF[ind] - stZ;
 				const PxReal qstZ = -stZ;
-				const PxReal qstZicInt = (jF ? jF[ind2] : 0.0f) - stZInt;
+				const PxReal qstZicInt = (!isExternalForcesEveryTgsIterationEnabled && jF ? jF[ind2] : 0.0f) - stZInt;
 				qstZG[ind2] = qstZ;
 				qstZIcIntG[ind2] = qstZicInt;
 				dofData[ind2].mQstZ[threadIndexInWarp] = qstZ;
@@ -1620,10 +1621,10 @@ static __device__ void computeArticulatedSpatialInertiaW(
 		Cm::UnAlignedSpatialVector translatedZA = spatialZA;
 		Cm::UnAlignedSpatialVector translatedZAInt = ZIcInt;
 
-		const PxReal* const PX_RESTRICT jF = isExternalForcesEveryTgsIterationEnabled ? NULL : &jointForces[jointOffset];
+		const PxReal* const PX_RESTRICT jF = &jointForces[jointOffset];
 
 		computeIs(dof, articulatedInertia, msIs, dofData, blockData, threadIdx.x);
-		Dy::SpatialMatrix spatialInertiaW = articulatedInertia - computePropagateSpatialInertia_ZA_ZIc(blockData, dofData, msIs, jF, spatialZA, ZIcInt, translatedZA, translatedZAInt, threadIdx.x, linkID);
+		Dy::SpatialMatrix spatialInertiaW = articulatedInertia - computePropagateSpatialInertia_ZA_ZIc(blockData, dofData, msIs, isExternalForcesEveryTgsIterationEnabled, jF, spatialZA, ZIcInt, translatedZA, translatedZAInt, threadIdx.x, linkID);
 
 		//accumulate childen's articulated zero acceleration force to parent's articulated zero acceleration
 		translateSpatialVectorInPlace(PxVec3(rwx, rwy, rwz), translatedZA);
@@ -2477,21 +2478,6 @@ static __device__ void computeAndEnforceJointPositions(
 
 			dof->mJointPositions[threadIndexInWarp] = jPos;
 		}
-		else if (jointType == PxArticulationJointType::ePRISMATIC)
-		{
-			if (dof->mMotion[threadIndexInWarp] == PxArticulationMotion::eLIMITED)
-			{
-				float2 limits_LowX_highY = dof->mConstraintData.mLimits_LowLimitX_highLimitY[threadIndexInWarp];
-				PxReal jPosition = dof->mJointPositions[threadIndexInWarp];
-				if (jPosition < limits_LowX_highY.x)
-					jPosition = limits_LowX_highY.x;
-
-				if (jPosition > limits_LowX_highY.y)
-					jPosition = limits_LowX_highY.y;
-
-				dof->mJointPositions[threadIndexInWarp] = jPosition;
-			}
-		}
 		else if (jointType == PxArticulationJointType::eSPHERICAL)
 		{
 
@@ -2563,9 +2549,6 @@ static __device__ void propagateLink(PxTransform& PX_RESTRICT body2World, const 
 
 		const PxReal pos = dof[0].mJointPositions[threadIndexInWarp] + delta;
 		dof[0].mJointPositions[threadIndexInWarp] = pos;
-
-		//KS - TODO - requires some plumbing!
-		//enforcePrismaticLimits(jPosition, joint);
 
 		newParentToChild = relativeQuat;
 		const Cm::UnAlignedSpatialVector motionMatrix = loadSpatialVector(dof[0].mLocalMotionMatrix, threadIndexInWarp);
@@ -3191,12 +3174,15 @@ extern "C" __global__ void updateBodiesLaunch_Part2(
 			if (!integrate)
 				posMotionV *= invDt;
 
-			//each thread produce a wc
-			sleepCheck1T(gSleepData[linkIndex], lwc, accumulatedPose,
-				posMotionV.bottom, posMotionV.top, dt, sleepThreshold,
-				inverseInertiaXYZ_invMass);
+			if (!scDesc->isSleepingDisabled)
+			{
+				//each thread produce a wc
+				sleepCheck1T(gSleepData[linkIndex], lwc, accumulatedPose,
+					posMotionV.bottom, posMotionV.top, dt, sleepThreshold,
+					inverseInertiaXYZ_invMass);
 
-			gLinkWakeCounters[linkIndex] = lwc;
+				gLinkWakeCounters[linkIndex] = lwc;
+			}
 		}
 	}
 }
@@ -3968,7 +3954,7 @@ extern "C" __global__ void stepArticulation1TTGS(const PxgArticulationCoreDesc* 
 			//deltaLin += deltaVelLin*dt; deltaAng += deltaVelAng*dt.
 			//In the limit that dt tends towards zero, these two methods should give the same outcome.
 			//currPos - origPos was found to accumulate more numeric noise.
-			//https://nvidia-omniverse.atlassian.net/browse/PX-3638
+			//PX-3638
 			//Computing dqAxis and dqAngle is likely more expensive than integrating the angular velocity.
 			deltaMotionVel *= stepDt;
 			deltaMotion += deltaMotionVel;
@@ -4190,8 +4176,9 @@ extern "C" __global__ void artiPushImpulse(
 				storeSpatialVector(linkData.mScratchImpulse, Cm::UnAlignedSpatialVector::Zero(), threadIndexInWarp);
 			}
 
+#if 0	// OMPE-66339
 			const bool fixedBase = articulation.mFlags[threadIndexInWarp] & PxArticulationFlag::eFIX_BASE;
-			
+
 			if (!fixedBase)
 			{
 				//(1) Compute updated link velocity...
@@ -4204,6 +4191,7 @@ extern "C" __global__ void artiPushImpulse(
 
 				storeSpatialVector(artiLinks[0].mScratchImpulse, Cm::UnAlignedSpatialVector::Zero(), threadIndexInWarp);
 			}
+#endif
 		}
 	}
 }

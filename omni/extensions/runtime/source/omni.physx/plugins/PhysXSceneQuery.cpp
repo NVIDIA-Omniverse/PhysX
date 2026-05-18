@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -12,8 +12,11 @@
 #include "ConeCylinderConvexMesh.h"
 
 #include "usdLoad/Collision.h"
+#include "usdLoad/FabricSync.h"
 #include "CookingDataAsync.h"
 #include <omni/physx/IPhysx.h>
+#include <omni/physx/PhysxTokens.h>
+#include <omni/fabric/usd/PathConversion.h>
 
 extern void* getPhysXPtr(const pxr::SdfPath& path, omni::physx::PhysXType type);
 
@@ -217,10 +220,42 @@ static PxConvexMeshGeometry usdToPxConvexMeshGeometry(UsdPrim& prim, const pxr::
 }
 
 
+static pxr::GfTransform computeWorldTransform(const UsdPrim& prim)
+{
+    omni::fabric::IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+
+    if(iStageReaderWriter)
+    {
+        omni::fabric::UsdStageId fabricStageId = { uint64_t(UsdUtilsStageCache::Get().GetId(OmniPhysX::getInstance().getStage()).ToLongInt()) };
+        flushUsdToFabric(fabricStageId, false, 0.0);
+        omni::fabric::StageReaderWriter fabricStageRW = iStageReaderWriter->get(fabricStageId);
+        if(fabricStageRW.getId() != omni::fabric::kInvalidStageReaderWriterId)
+        {
+            const omni::fabric::Path pathHandle =
+                omni::fabric::convertToPathType<omni::fabric::Path>(fabricStageRW.getFabricId(), prim.GetPath());            
+
+            const FabricTokens& fcTokens = UsdLoad::getUsdLoad()->getFabricTokens();
+            
+            if (fabricStageRW.attributeExists(pathHandle, *fcTokens.worldMatrix))
+            {
+                return pxr::GfTransform(*fabricStageRW.getAttributeRd<pxr::GfMatrix4d>(pathHandle, *fcTokens.worldMatrix));
+            }
+        }
+    }
+    return pxr::GfTransform(UsdGeomImageable(prim).ComputeLocalToWorldTransform(pxr::UsdTimeCode::Default()));
+}
+
 using geometrySceneQueryFn = std::function<bool(const PxGeometry& geom, const PxTransform& transform)>;
 
 static bool doShapeSceneQuery(uint64_t rPrimPath, geometrySceneQueryFn queryFn)
 {
+    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    if (physxSetup.getPhysXScenes().empty())
+    {
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
+    }
+
     const SdfPath primPath = intToPath(rPrimPath);
     UsdPrim prim = OmniPhysX::getInstance().getStage()->GetPrimAtPath(primPath);
     if(!prim.IsValid())
@@ -233,7 +268,9 @@ static bool doShapeSceneQuery(uint64_t rPrimPath, geometrySceneQueryFn queryFn)
         CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is not a UsdGeomGPrim: %s", prim.GetPath().GetText());
         return false;
     }
-    const pxr::GfTransform tr(UsdGeomXform(prim).ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+
+    const pxr::GfTransform tr = computeWorldTransform(prim);
+
     const pxr::GfVec3d sc = tr.GetScale();
     PxTransform transform(toPhysX(tr.GetTranslation()), toPhysX(tr.GetRotation().GetQuat()));
 
@@ -292,9 +329,14 @@ static bool doBoxSceneQuery(const carb::Float3& halfExtent, const carb::Float3& 
 static bool doMeshSceneQuery(uint64_t meshPath, geometrySceneQueryFn queryFn)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-    CookingDataAsync* cookingDataAsync = physxSetup.getCookingDataAsync();
+    if (physxSetup.getPhysXScenes().empty())
+    {
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
+    }
 
-    if (cookingDataAsync== nullptr || physxSetup.getPhysXScenes().empty())
+    CookingDataAsync* cookingDataAsync = physxSetup.getCookingDataAsync();
+    if (cookingDataAsync== nullptr)
     {
         return false;
     }
@@ -314,8 +356,8 @@ static bool doMeshSceneQuery(uint64_t meshPath, geometrySceneQueryFn queryFn)
     }
     Float3 scale = { 1.0f, 1.0f, 1.0f };
 
-    UsdGeomXformCache xfCache;
-    const pxr::GfTransform tr(xfCache.GetLocalToWorldTransform(prim));
+    const pxr::GfTransform tr = computeWorldTransform(prim);
+
     const pxr::GfVec3d sc = tr.GetScale();
     GfVec3ToFloat3(sc, scale);
     convexMeshDesc.meshScale = scale;
@@ -338,76 +380,78 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    if (!physxSetup.getPhysXScenes().empty())
+    if (physxSetup.getPhysXScenes().empty())
     {
-        const PxVec3 pos = toPhysX(origin);
-        PxVec3 dir = toPhysX(unitDir);
-        dir.normalize();
-
-        PxRaycastHit hit;
-        PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
-        if (bothSides)
-            hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
-        hit.distance = FLT_MAX;
-
-        bool ret = false;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
-        {
-            PxRaycastHit localHit;
-            const PxScene* scene = ref.second->getScene();
-            if (!scene)
-                continue;
-            const bool localRet = PxSceneQueryExt::raycastSingle(*scene, pos, dir, distance, hitFlags, localHit);
-            if (localRet && localHit.distance < hit.distance)
-            {
-                hit = localHit;
-                ret = localRet;
-            }
-        }
-        
-        if (ret)
-        {
-            outHit.distance = hit.distance;
-            outHit.normal = (const Float3&)hit.normal;
-            outHit.position = (const Float3&)hit.position;
-
-            // resolve face index from PhysX index to USD face index
-            FaceIndexResolve indexResolve(hit.shape);
-            outHit.faceIndex = indexResolve.resolveFaceIndex(hit.faceIndex);
-
-            const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
-            const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
-            outHit.collision = shapeIndex < db.getRecords().size() ? asInt(db.getRecords()[shapeIndex].mPath) : 0;
-            if (bodyIndex < db.getRecords().size())
-            {
-                const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
-                outHit.rigidBody = asInt(record.mPath);
-                if (record.mType == ePTActor)
-                {
-                    outHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
-                }                
-            }
-            else
-            {
-                outHit.rigidBody = 0;
-                outHit.protoIndex = 0xFFFFFFFF;
-            }
-            PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
-            PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
-            const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
-            if (material && material->userData)
-            {
-                const size_t materialIndex = (size_t)material->userData;
-                outHit.material = materialIndex < db.getRecords().size() ? asInt(db.getRecords()[materialIndex].mPath) : 0;
-            }
-            else
-            {
-                outHit.material = 0;
-            }
-        }
-        return ret;
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
     }
-    return false;
+
+    const PxVec3 pos = toPhysX(origin);
+    PxVec3 dir = toPhysX(unitDir);
+    dir.normalize();
+
+    PxRaycastHit hit;
+    PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
+    if (bothSides)
+        hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
+    hit.distance = FLT_MAX;
+
+    bool ret = false;
+    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    {
+        PxRaycastHit localHit;
+        const PxScene* scene = ref.second->getScene();
+        if (!scene)
+            continue;
+        const bool localRet = PxSceneQueryExt::raycastSingle(*scene, pos, dir, distance, hitFlags, localHit);
+        if (localRet && localHit.distance < hit.distance)
+        {
+            hit = localHit;
+            ret = localRet;
+        }
+    }
+    
+    if (ret)
+    {
+        outHit.distance = hit.distance;
+        outHit.normal = (const Float3&)hit.normal;
+        outHit.position = (const Float3&)hit.position;
+
+        // resolve face index from PhysX index to USD face index
+        FaceIndexResolve indexResolve(hit.shape);
+        outHit.faceIndex = indexResolve.resolveFaceIndex(hit.faceIndex);
+
+        const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
+        const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
+        outHit.collision = shapeIndex < db.getRecords().size() ? asInt(db.getRecords()[shapeIndex].mPath) : 0;
+        if (bodyIndex < db.getRecords().size())
+        {
+            const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
+            outHit.rigidBody = asInt(record.mPath);
+            if (record.mType == ePTActor)
+            {
+                outHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
+            }                
+        }
+        else
+        {
+            outHit.rigidBody = 0;
+            outHit.protoIndex = 0xFFFFFFFF;
+        }
+        PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
+        PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
+        const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
+        if (material && material->userData)
+        {
+            const size_t materialIndex = (size_t)material->userData;
+            outHit.material = materialIndex < db.getRecords().size() ? asInt(db.getRecords()[materialIndex].mPath) : 0;
+        }
+        else
+        {
+            outHit.material = 0;
+        }
+    }
+    return ret;
 }
 
 bool raycastAny(const carb::Float3& origin, const carb::Float3& unitDir, float distance, bool bothSides)
@@ -415,28 +459,31 @@ bool raycastAny(const carb::Float3& origin, const carb::Float3& unitDir, float d
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    if (!physxSetup.getPhysXScenes().empty())
+    if (physxSetup.getPhysXScenes().empty())
     {
-        const PxVec3 pos = toPhysX(origin);
-        PxVec3 dir = toPhysX(unitDir);
-        dir.normalize();
-        
-        PxHitFlags hitFlags = PxHitFlag::eDEFAULT | PxHitFlag::eANY_HIT;
-        if (bothSides)
-            hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;       
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
+    }
 
-        PxSceneQueryFilterData fdAny;
-        fdAny.flags |= PxQueryFlag::eANY_HIT;
-        PxRaycastBuffer buf;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
-        {            
-            const PxScene* scene = ref.second->getScene();
-            if (!scene)
-                continue;
-            scene->raycast(pos, dir, distance, buf, hitFlags, fdAny);
-            if(buf.hasBlock)
-                return true;
-        }
+    const PxVec3 pos = toPhysX(origin);
+    PxVec3 dir = toPhysX(unitDir);
+    dir.normalize();
+    
+    PxHitFlags hitFlags = PxHitFlag::eDEFAULT | PxHitFlag::eANY_HIT;
+    if (bothSides)
+        hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;       
+
+    PxSceneQueryFilterData fdAny;
+    fdAny.flags |= PxQueryFlag::eANY_HIT;
+    PxRaycastBuffer buf;
+    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    {            
+        const PxScene* scene = ref.second->getScene();
+        if (!scene)
+            continue;
+        scene->raycast(pos, dir, distance, buf, hitFlags, fdAny);
+        if(buf.hasBlock)
+            return true;
     }
     return false;
 }
@@ -518,29 +565,31 @@ bool raycastAll(const carb::Float3& origin, const carb::Float3& unitDir, float d
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    if (!physxSetup.getPhysXScenes().empty())
+    if (physxSetup.getPhysXScenes().empty())
     {
-        const PxVec3 pos = toPhysX(origin);
-        PxVec3 dir = toPhysX(unitDir);
-        dir.normalize();
-        
-        PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
-        if (bothSides)
-            hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
-        
-        const PxU32 hitBufferSize = 256;
-        PxRaycastHit hitBuffer[hitBufferSize];
-        RaycastCallback cb(hitBuffer, hitBufferSize, reportFn, db);
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
-        {
-            const PxScene* scene = ref.second->getScene();
-            if (!scene)
-                continue;
-            scene->raycast(pos, dir, distance, cb, hitFlags);
-        }
-        return cb.numHits ? true : false;
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
     }
-    return false;
+
+    const PxVec3 pos = toPhysX(origin);
+    PxVec3 dir = toPhysX(unitDir);
+    dir.normalize();
+    
+    PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
+    if (bothSides)
+        hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
+    
+    const PxU32 hitBufferSize = 256;
+    PxRaycastHit hitBuffer[hitBufferSize];
+    RaycastCallback cb(hitBuffer, hitBufferSize, reportFn, db);
+    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    {
+        const PxScene* scene = ref.second->getScene();
+        if (!scene)
+            continue;
+        scene->raycast(pos, dir, distance, cb, hitFlags);
+    }
+    return cb.numHits ? true : false;
 }
 
 struct SceneQueryFilterCallbackIgnorePrim : PxQueryFilterCallback
@@ -584,84 +633,86 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    if (!physxSetup.getPhysXScenes().empty())
+    if (physxSetup.getPhysXScenes().empty())
     {
-        PxVec3 dir(unitDir.x, unitDir.y, unitDir.z);
-        dir.normalize();
-
-        PxSweepHit hit;
-        hit.distance = FLT_MAX;
-        PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
-        if (bothSides)
-            hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
-        bool ret = false;
-        SceneQueryFilterCallbackIgnorePrim filter;
-        PxSceneQueryFilterData filterData;
-        if(primSelf)
-        {
-            filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
-            filterData.flags |= PxQueryFlag::ePREFILTER;
-        }
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
-        {
-            PxSweepHit localHit;
-            const PxScene* scene = ref.second->getScene();
-            if (!scene)
-                continue;
-            const bool localRet = PxSceneQueryExt::sweepSingle(*scene, geom, transform, dir, distance, hitFlags, localHit, filterData, (primSelf ? &filter : nullptr));
-            if (localRet && localHit.distance < hit.distance)
-            {
-                ret = true;
-                hit = localHit;
-            }
-        }
-
-        if (ret)
-        {
-            outHit.distance = hit.distance;
-            outHit.normal = (const Float3&)hit.normal;
-            outHit.position = (const Float3&)hit.position;
-
-            const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
-            const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
-            outHit.collision = shapeIndex < db.getRecords().size() ? asInt(db.getRecords()[shapeIndex].mPath) : 0;
-            if (bodyIndex < db.getRecords().size())
-            {
-                const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
-                outHit.rigidBody = asInt(record.mPath);
-                if (record.mType == ePTActor)
-                {
-                    outHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
-                }
-            }
-            else
-            {
-                outHit.rigidBody = 0;
-                outHit.protoIndex = 0xFFFFFFFF;
-            }
-
-            // resolve face index from PhysX index to USD face index
-            FaceIndexResolve indexResolve(hit.shape);
-            outHit.faceIndex = indexResolve.resolveFaceIndex(hit.faceIndex);
-
-            PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
-            PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
-            const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
-
-            if (material && material->userData)
-            {
-                const size_t materialIndex = (size_t)material->userData;
-                outHit.material = materialIndex < db.getRecords().size() ? asInt(db.getRecords()[materialIndex].mPath) : 0;
-            }
-            else
-            {
-                outHit.material = 0;
-            }
-
-        }
-        return ret;
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
     }
-    return false;
+
+    PxVec3 dir(unitDir.x, unitDir.y, unitDir.z);
+    dir.normalize();
+
+    PxSweepHit hit;
+    hit.distance = FLT_MAX;
+    PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
+    if (bothSides)
+        hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
+    bool ret = false;
+    SceneQueryFilterCallbackIgnorePrim filter;
+    PxSceneQueryFilterData filterData;
+    if(primSelf)
+    {
+        filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
+        filterData.flags |= PxQueryFlag::ePREFILTER;
+    }
+    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    {
+        PxSweepHit localHit;
+        const PxScene* scene = ref.second->getScene();
+        if (!scene)
+            continue;
+        const bool localRet = PxSceneQueryExt::sweepSingle(*scene, geom, transform, dir, distance, hitFlags, localHit, filterData, (primSelf ? &filter : nullptr));
+        if (localRet && localHit.distance < hit.distance)
+        {
+            ret = true;
+            hit = localHit;
+        }
+    }
+
+    if (ret)
+    {
+        outHit.distance = hit.distance;
+        outHit.normal = (const Float3&)hit.normal;
+        outHit.position = (const Float3&)hit.position;
+
+        const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
+        const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
+        outHit.collision = shapeIndex < db.getRecords().size() ? asInt(db.getRecords()[shapeIndex].mPath) : 0;
+        if (bodyIndex < db.getRecords().size())
+        {
+            const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
+            outHit.rigidBody = asInt(record.mPath);
+            if (record.mType == ePTActor)
+            {
+                outHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
+            }
+        }
+        else
+        {
+            outHit.rigidBody = 0;
+            outHit.protoIndex = 0xFFFFFFFF;
+        }
+
+        // resolve face index from PhysX index to USD face index
+        FaceIndexResolve indexResolve(hit.shape);
+        outHit.faceIndex = indexResolve.resolveFaceIndex(hit.faceIndex);
+
+        PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
+        PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
+        const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
+
+        if (material && material->userData)
+        {
+            const size_t materialIndex = (size_t)material->userData;
+            outHit.material = materialIndex < db.getRecords().size() ? asInt(db.getRecords()[materialIndex].mPath) : 0;
+        }
+        else
+        {
+            outHit.material = 0;
+        }
+
+    }
+    return ret;
 }
 
 bool sweepSphereClosest(float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
@@ -708,36 +759,38 @@ static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transfor
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    if (!physxSetup.getPhysXScenes().empty())
+    if (physxSetup.getPhysXScenes().empty())
     {
-        PxVec3 dir(unitDir.x, unitDir.y, unitDir.z);
-        dir.normalize();
-        
-        PxHitFlags hitFlags = PxHitFlag::eDEFAULT | PxHitFlag::eANY_HIT;
-        if (bothSides)
-            hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
-
-        PxSceneQueryFilterData fdAny;
-        fdAny.flags |= PxQueryFlag::eANY_HIT;
-        SceneQueryFilterCallbackIgnorePrim filter;
-        if(primSelf)
-        {
-            filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
-            fdAny.flags |= PxQueryFlag::ePREFILTER;
-        }        
-        PxSweepBuffer buf;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
-        {
-            const PxScene* scene = ref.second->getScene();
-            if (!scene)
-                continue;
-            scene->sweep(geom, transform, dir, distance, buf, hitFlags, fdAny, (primSelf ? &filter : nullptr));
-            if (buf.hasBlock)
-            {
-                return true;
-            }
-        }
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
+    }
+
+    PxVec3 dir(unitDir.x, unitDir.y, unitDir.z);
+    dir.normalize();
+    
+    PxHitFlags hitFlags = PxHitFlag::eDEFAULT | PxHitFlag::eANY_HIT;
+    if (bothSides)
+        hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
+
+    PxSceneQueryFilterData fdAny;
+    fdAny.flags |= PxQueryFlag::eANY_HIT;
+    SceneQueryFilterCallbackIgnorePrim filter;
+    if(primSelf)
+    {
+        filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
+        fdAny.flags |= PxQueryFlag::ePREFILTER;
+    }        
+    PxSweepBuffer buf;
+    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    {
+        const PxScene* scene = ref.second->getScene();
+        if (!scene)
+            continue;
+        scene->sweep(geom, transform, dir, distance, buf, hitFlags, fdAny, (primSelf ? &filter : nullptr));
+        if (buf.hasBlock)
+        {
+            return true;
+        }
     }
     return false;
 }
@@ -814,35 +867,37 @@ bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, cons
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    if (!physxSetup.getPhysXScenes().empty())
+    if (physxSetup.getPhysXScenes().empty())
     {
-        PxVec3 dir = toPhysX(unitDir);
-        dir.normalize();
-
-        PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
-        if (bothSides)
-            hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
-
-        const PxU32 hitBufferSize = 256;
-        PxSweepHit hitBuffer[hitBufferSize];
-        SweepCallback cb(hitBuffer, hitBufferSize, reportFn, db);
-        SceneQueryFilterCallbackIgnorePrim filter;
-        PxSceneQueryFilterData filterData;
-        if(primSelf)
-        {
-            filter = SceneQueryFilterCallbackIgnorePrim(primSelf, true);
-            filterData.flags |= PxQueryFlag::ePREFILTER;
-        }
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
-        {
-            const PxScene* scene = ref.second->getScene();
-            if (!scene)
-                continue;
-            scene->sweep(geom, transform, dir, distance, cb, hitFlags, filterData, (primSelf? &filter : nullptr));
-        }
-        return cb.numHits ? true : false;
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
+        return false;
     }
-    return false;
+
+    PxVec3 dir = toPhysX(unitDir);
+    dir.normalize();
+
+    PxHitFlags hitFlags = PxHitFlag::eDEFAULT;
+    if (bothSides)
+        hitFlags |= PxHitFlag::eMESH_BOTH_SIDES;
+
+    const PxU32 hitBufferSize = 256;
+    PxSweepHit hitBuffer[hitBufferSize];
+    SweepCallback cb(hitBuffer, hitBufferSize, reportFn, db);
+    SceneQueryFilterCallbackIgnorePrim filter;
+    PxSceneQueryFilterData filterData;
+    if(primSelf)
+    {
+        filter = SceneQueryFilterCallbackIgnorePrim(primSelf, true);
+        filterData.flags |= PxQueryFlag::ePREFILTER;
+    }
+    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    {
+        const PxScene* scene = ref.second->getScene();
+        if (!scene)
+            continue;
+        scene->sweep(geom, transform, dir, distance, cb, hitFlags, filterData, (primSelf? &filter : nullptr));
+    }
+    return cb.numHits ? true : false;
 }
 
 bool sweepSphereAll(float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
@@ -939,6 +994,7 @@ static uint32_t overlapInternal(const PxGeometry& geometry, const PxTransform& t
 
     if (physxSetup.getPhysXScenes().empty())
     {
+        CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return 0;
     }
 

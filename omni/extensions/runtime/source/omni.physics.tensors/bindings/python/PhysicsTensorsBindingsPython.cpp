@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include <carb/BindingsPythonUtils.h>
@@ -127,15 +127,30 @@ public:
     {
         PYBIND11_OVERLOAD_PURE_NAME(IDeformableBodyView*, ISimulationView, "create_volume_deformable_body_view", createVolumeDeformableBodyView, pattern);
     }
+    
+    IDeformableBodyView* createVolumeDeformableBodyView(const std::vector<std::string>& patterns) override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(IDeformableBodyView*, ISimulationView, "create_volume_deformable_body_view", createVolumeDeformableBodyView, patterns);
+    }
 
     IDeformableBodyView* createSurfaceDeformableBodyView(const char* pattern) override
     {
         PYBIND11_OVERLOAD_PURE_NAME(IDeformableBodyView*, ISimulationView, "create_surface_deformable_body_view", createSurfaceDeformableBodyView, pattern);
     }
+    
+    IDeformableBodyView* createSurfaceDeformableBodyView(const std::vector<std::string>& patterns) override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(IDeformableBodyView*, ISimulationView, "create_surface_deformable_body_view", createSurfaceDeformableBodyView, patterns);
+    }
 
     IDeformableMaterialView* createDeformableMaterialView(const char* pattern) override
     {
         PYBIND11_OVERLOAD_PURE_NAME(IDeformableMaterialView*, ISimulationView, "create_deformable_material_view", createDeformableMaterialView, pattern);
+    }
+    
+    IDeformableMaterialView* createDeformableMaterialView(const std::vector<std::string>& patterns) override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(IDeformableMaterialView*, ISimulationView, "create_deformable_material_view", createDeformableMaterialView, patterns);
     }
 
     IParticleSystemView* createParticleSystemView(const char* pattern) override
@@ -622,21 +637,9 @@ public:
         PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_jacobians", getJacobians, dstTensor);
     }
 
-    //DEPRECATED
-    bool getMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const override
-    {
-        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_mass_matrix_shape", getMassMatrixShape, numRows, numCols);
-    }
-
     bool getGeneralizedMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const override
     {
         PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_generalized_mass_matrix_shape", getGeneralizedMassMatrixShape, numRows, numCols);
-    }
-
-    //DEPRECATED
-    bool getMassMatrices(const TensorDesc* dstTensor) const override
-    {
-        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_mass_matrices", getMassMatrices, dstTensor);
     }
 
     bool getGeneralizedMassMatrices(const TensorDesc* dstTensor) const override
@@ -644,21 +647,9 @@ public:
         PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_generalized_mass_matrices", getGeneralizedMassMatrices, dstTensor);
     }
 
-    //DEPRECATED
-    bool getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const override
-    {
-        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_coriolis_and_centrifugal_forces", getCoriolisAndCentrifugalForces, dstTensor);
-    }
-
     bool getCoriolisAndCentrifugalCompensationForces(const TensorDesc* dstTensor) const override
     {
         PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_coriolis_and_centrifugal_compensation_forces", getCoriolisAndCentrifugalCompensationForces, dstTensor);
-    }
-
-    //DEPRECATED
-    bool getGeneralizedGravityForces(const TensorDesc* dstTensor) const override
-    {
-        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_generalized_gravity_forces", getGeneralizedGravityForces, dstTensor);
     }
 
     bool getGravityCompensationForces(const TensorDesc* dstTensor) const override
@@ -734,6 +725,12 @@ public:
     {
        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_material_properties", getMaterialProperties, dstTensor);
     }
+    bool getCompliantMaterialProperties(const TensorDesc* dstTensor, const TensorDesc* dstCombineModeTensor) const override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_compliant_material_properties",
+                                    getCompliantMaterialProperties, dstTensor, dstCombineModeTensor);
+    }
+
     bool getRestOffsets(const TensorDesc* dstTensor) const override
     {
        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "get_rest_offsets", getRestOffsets, dstTensor);
@@ -747,6 +744,15 @@ public:
     {
        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "set_material_properties", setMaterialProperties, srcTensor, indexTensor);
     }
+
+    bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                        const TensorDesc* combineModeTensor,
+                                        const TensorDesc* indexTensor) const override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "set_compliant_material_properties",
+                                    setCompliantMaterialProperties, srcTensor, combineModeTensor, indexTensor);
+    }
+
     bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const override
     {
        PYBIND11_OVERLOAD_PURE_NAME(bool, IArticulationView, "set_rest_offsets", setRestOffsets, srcTensor, indexTensor);
@@ -945,9 +951,19 @@ public:
         PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "set_disable_simulations", setDisableSimulations, srcTensor, indexTensor);
     }
 
+    bool wakeUp(const TensorDesc* indexTensor) override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "wake_up", wakeUp, indexTensor);
+    }
+
     bool getMaterialProperties(const TensorDesc* dstTensor) const override
     {
-       PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "get_material_properties", getMaterialProperties, dstTensor);
+        PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "get_material_properties", getMaterialProperties, dstTensor);
+    }
+    bool getCompliantMaterialProperties(const TensorDesc* dstTensor, const TensorDesc* dstCombineModeTensor) const override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "get_compliant_material_properties",
+                                    getCompliantMaterialProperties, dstTensor, dstCombineModeTensor);
     }
     bool getRestOffsets(const TensorDesc* dstTensor) const override
     {
@@ -962,6 +978,14 @@ public:
     {
        PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "set_material_properties", setMaterialProperties, srcTensor, indexTensor);
     }
+    bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                        const TensorDesc* combineModeTensor,
+                                        const TensorDesc* indexTensor) const override
+    {
+        PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "set_compliant_material_properties",
+                                    setCompliantMaterialProperties, srcTensor, combineModeTensor, indexTensor);
+    }
+
     bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const override
     {
        PYBIND11_OVERLOAD_PURE_NAME(bool, IRigidBodyView, "set_rest_offsets", setRestOffsets, srcTensor, indexTensor);
@@ -2184,15 +2208,6 @@ PYBIND11_MODULE(_physicsTensors, m)
                                    }
                                    return py::none();
                                })
-        .def_property_readonly("mass_matrix_shape", // deprecated
-                               [](const IArticulationView* aview) -> py::object {
-                                   uint32_t numRows = 0, numCols = 0;
-                                   if (aview && aview->getMassMatrixShape(&numRows, &numCols))
-                                   {
-                                       return py::make_tuple(numRows, numCols);
-                                   }
-                                   return py::none();
-                               })
         .def_property_readonly("generalized_mass_matrix_shape",
                                [](const IArticulationView* aview) -> py::object {
                                    uint32_t numRows = 0, numCols = 0;
@@ -2243,11 +2258,8 @@ PYBIND11_MODULE(_physicsTensors, m)
         .def("get_dof_position_targets", &IArticulationView::getDofPositionTargets)
         .def("get_dof_velocity_targets", &IArticulationView::getDofVelocityTargets)
         .def("get_jacobians", &IArticulationView::getJacobians)
-        .def("get_mass_matrices", &IArticulationView::getMassMatrices) // deprecated
         .def("get_generalized_mass_matrices", &IArticulationView::getGeneralizedMassMatrices)
-        .def("get_coriolis_and_centrifugal_forces", &IArticulationView::getCoriolisAndCentrifugalForces) // deprecated
         .def("get_coriolis_and_centrifugal_compensation_forces", &IArticulationView::getCoriolisAndCentrifugalCompensationForces)
-        .def("get_generalized_gravity_forces", &IArticulationView::getGeneralizedGravityForces) // deprecated
         .def("get_gravity_compensation_forces", &IArticulationView::getGravityCompensationForces)
         .def("get_articulation_centroidal_momentum", &IArticulationView::getArticulationCentroidalMomentum)
         .def("get_articulation_mass_center", &IArticulationView::getArticulationMassCenter)
@@ -2266,9 +2278,11 @@ PYBIND11_MODULE(_physicsTensors, m)
         .def("set_inertias", &IArticulationView::setInertias)
         .def("set_disable_gravities", &IArticulationView::setDisableGravities)
         .def("get_material_properties", &IArticulationView::getMaterialProperties)
+        .def("get_compliant_material_properties", &IArticulationView::getCompliantMaterialProperties)
         .def("get_contact_offsets", &IArticulationView::getContactOffsets)
         .def("get_rest_offsets", &IArticulationView::getRestOffsets)
         .def("set_material_properties", &IArticulationView::setMaterialProperties)
+        .def("set_compliant_material_properties", &IArticulationView::setCompliantMaterialProperties)
         .def("set_contact_offsets", &IArticulationView::setContactOffsets)
         .def("set_rest_offsets", &IArticulationView::setRestOffsets)
         .def("get_fixed_tendon_stiffnesses", &IArticulationView::getFixedTendonStiffnesses)
@@ -2423,10 +2437,13 @@ PYBIND11_MODULE(_physicsTensors, m)
         .def("set_inertias", &IRigidBodyView::setInertias)
         .def("set_disable_gravities", &IRigidBodyView::setDisableGravities)
         .def("set_disable_simulations", &IRigidBodyView::setDisableSimulations)
+        .def("wake_up", &IRigidBodyView::wakeUp)
         .def("get_material_properties", &IRigidBodyView::getMaterialProperties)
+        .def("get_compliant_material_properties", &IRigidBodyView::getCompliantMaterialProperties)
         .def("get_contact_offsets", &IRigidBodyView::getContactOffsets)
         .def("get_rest_offsets", &IRigidBodyView::getRestOffsets)
         .def("set_material_properties", &IRigidBodyView::setMaterialProperties)
+        .def("set_compliant_material_properties", &IRigidBodyView::setCompliantMaterialProperties)
         .def("set_contact_offsets", &IRigidBodyView::setContactOffsets)
         .def("set_rest_offsets", &IRigidBodyView::setRestOffsets)
         .def("check", &IRigidBodyView::check);
@@ -2701,9 +2718,12 @@ PYBIND11_MODULE(_physicsTensors, m)
         .def("create_rigid_body_view", py::overload_cast<const std::vector<std::string>&>(&ISimulationView::createRigidBodyView), py::return_value_policy::take_ownership)
         .def("create_soft_body_view", &ISimulationView::createSoftBodyView, py::return_value_policy::take_ownership)
         .def("create_soft_body_material_view", &ISimulationView::createSoftBodyMaterialView, py::return_value_policy::take_ownership)
-        .def("create_volume_deformable_body_view", &ISimulationView::createVolumeDeformableBodyView, py::return_value_policy::take_ownership)
-        .def("create_surface_deformable_body_view", &ISimulationView::createSurfaceDeformableBodyView, py::return_value_policy::take_ownership)
-        .def("create_deformable_material_view", &ISimulationView::createDeformableMaterialView, py::return_value_policy::take_ownership)
+        .def("create_volume_deformable_body_view", py::overload_cast<const char*>(&ISimulationView::createVolumeDeformableBodyView), py::return_value_policy::take_ownership)
+        .def("create_volume_deformable_body_view", py::overload_cast<const std::vector<std::string>&>(&ISimulationView::createVolumeDeformableBodyView), py::return_value_policy::take_ownership)
+        .def("create_surface_deformable_body_view", py::overload_cast<const char*>(&ISimulationView::createSurfaceDeformableBodyView), py::return_value_policy::take_ownership)
+        .def("create_surface_deformable_body_view", py::overload_cast<const std::vector<std::string>&>(&ISimulationView::createSurfaceDeformableBodyView), py::return_value_policy::take_ownership)
+        .def("create_deformable_material_view", py::overload_cast<const char*>(&ISimulationView::createDeformableMaterialView), py::return_value_policy::take_ownership)
+        .def("create_deformable_material_view", py::overload_cast<const std::vector<std::string>&>(&ISimulationView::createDeformableMaterialView), py::return_value_policy::take_ownership)
         .def("create_rigid_contact_view",
              py::overload_cast<const std::string, const std::vector<std::string>&, uint32_t>(
                  &ISimulationView::createRigidContactView),

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -332,13 +332,14 @@ PxReal PxGeometryQuery::pointDistance(const PxVec3& point, const PxGeometry& geo
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void PxGeometryQuery::computeGeomBounds(PxBounds3& bounds, const PxGeometry& geom, const PxTransform& pose, float offset, float inflation, PxGeometryQueryFlags queryFlags)
+bool PxGeometryQuery::computeGeomBounds(PxBounds3& bounds, const PxGeometry& geom, const PxTransform& pose, float offset, float inflation, PxGeometryQueryFlags queryFlags)
 {
 	PX_SIMD_GUARD_CNDT(queryFlags & PxGeometryQueryFlag::eSIMD_GUARD)
-	PX_CHECK_AND_RETURN(pose.isValid(), "PxGeometryQuery::computeGeomBounds(): pose is not valid.");
+	PX_CHECK_AND_RETURN_VAL(pose.isValid(), "PxGeometryQuery::computeGeomBounds(): pose is not valid.", false);
 
 	Gu::computeBounds(bounds, geom, pose, offset, inflation);
 	PX_ASSERT(bounds.isValid());
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

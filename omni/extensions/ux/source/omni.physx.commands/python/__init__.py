@@ -1,6 +1,43 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
+__all__ = [
+    "PhysicsCommand",
+    "AddPhysicsSceneCommand",
+    "AddRigidBodyMaterialCommand", 
+    "AddCollisionGroupCommand",
+    "AddPairFilterCommand",
+    "RemovePairFilterCommand",
+    "AddGroundPlaneCommand",
+    "SetRigidBodyCommand",
+    "SetStaticColliderCommand",
+    "RemoveRigidBodyCommand",
+    "RemoveStaticColliderCommand",
+    "CreateJointCommand",
+    "CreateJointsCommand",
+    "ApplyAPISchemaCommand",
+    "UnapplyAPISchemaCommand",
+    "RemoveAttributeCommand",
+    "RemoveRelationshipCommand",
+    "ChangeAttributeCommand",
+    "AddDistancePhysicsJointComponentCommand",
+    "RemoveDistancePhysicsJointComponentCommand",
+    "AddFixedPhysicsJointComponentCommand",
+    "RemoveFixedPhysicsJointComponentCommand",
+    "AddRevolutePhysicsJointComponentCommand",
+    "RemoveRevolutePhysicsJointComponentCommand",
+    "AddPrismaticPhysicsJointComponentCommand",
+    "RemovePrismaticPhysicsJointComponentCommand",
+    "AddSphericalPhysicsJointComponentCommand",
+    "RemoveSphericalPhysicsJointComponentCommand",
+    "RemoveTendonComponentsCommand",
+    "AddD6PhysicsJointComponentCommand",
+    "RemoveD6PhysicsJointComponentCommand",
+    "AddPhysicsComponentCommand",
+    "RemovePhysicsComponentCommand"
+]
+
 import inspect
 import carb
 import omni.kit.commands
@@ -356,7 +393,7 @@ class SetRigidBodyCommand(PhysicsCommand):
         kinematic: Physics param.
     """
     @autoassign
-    def __init__(self, path, approximationShape="convexHull", kinematic=False):
+    def __init__(self, path, approximationShape=UsdPhysics.Tokens.convexHull, kinematic=False):
         self._usd_context = omni.usd.get_context()
         self._loc_commands = []
 
@@ -1587,7 +1624,7 @@ class RemoveRevolutePhysicsJointComponentCommand(Command):
                 execute("RemoveAttribute", attribute="lowerLimit", prim=self._usd_prim)
                 execute("RemoveAttribute", attribute="upperLimit", prim=self._usd_prim)
                 execute("UnapplyAPISchema", api=UsdPhysics.DriveAPI, prim=self._usd_prim, api_prefix="PhysicsDrive", multiple_api_token="angular")
-                execute("UnapplyCodelessAPISchema", api="PhysxJointAxisAPI", prim=self._usd_prim, api_prefix="physxJointAxis", multiple_api_token="angular")
+                execute("UnapplyCodelessAPISchema", api="PhysxJointAxis", prim=self._usd_prim, api_prefix="physxJointAxis", multiple_api_token="angular")
                 execute("UnapplyAPISchema", api=PhysxSchema.JointStateAPI, prim=self._usd_prim, api_prefix="state", multiple_api_token="angular")
                 execute("UnapplyAPISchema", api=PhysxSchema.PhysxLimitAPI, prim=self._usd_prim, api_prefix="physxLimit", multiple_api_token="angular")
 

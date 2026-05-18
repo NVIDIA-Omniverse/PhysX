@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -54,7 +54,7 @@ void Sc::GPUActorSim::addToAABBMgr(Bp::FilterType::Enum type)
 	PxsTransformCache& cache = mScene.getLowLevelContext()->getTransformCache();
 	cache.initEntry(index);
 
-	cache.setTransformCache(PxTransform(PxIdentity), 0, index, index);
+	cache.setTransformCache(PxTransform(PxIdentity), 0, index);
 }
 
 void Sc::GPUActorSim::destroyLowLevelVolume()

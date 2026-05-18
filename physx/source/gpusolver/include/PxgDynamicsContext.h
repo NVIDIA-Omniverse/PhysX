@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,8 +52,8 @@ namespace physx
 	public:
 		PxgDynamicsContext(Cm::FlushPool& flushPool, PxsKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
 			const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-			bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal maxBiasCoefficient, PxvSimStats& simStats,
-			PxgHeapMemoryAllocatorManager* heapMemoryManager, bool frictionEveryIteration, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled);
+			PxReal maxBiasCoefficient, PxvSimStats& simStats,
+			PxgHeapMemoryAllocatorManager* heapMemoryManager, PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags);
 
 		virtual void						destroy();
 

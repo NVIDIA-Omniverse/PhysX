@@ -1,9 +1,10 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
 
 #include <carb/Defines.h>
+#include <carb/Assert.h>
 #include <private/omni/physics/schema/IUsdPhysicsListener.h>
 
 namespace omni

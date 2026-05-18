@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -164,7 +164,7 @@ namespace
         dstPoints.reserve(dstPoints.size() + srcPoints.size());
         for (size_t p = 0; p < srcPoints.size(); ++p)
         {
-            const GfVec3f& src = localToWorld.Transform(srcPoints[p]);
+            const GfVec3f& src = pxr::GfVec3f(localToWorld.Transform(srcPoints[p]));
             dstPoints.push_back({src[0], src[1], src[2], 0.0f});
         }
     }
@@ -246,7 +246,7 @@ namespace
         for (size_t i = 0; i < numPoints; ++i)
         {
             const PxVec4& src = positions[i];
-            points[i] = transform.Transform(GfVec3f(src.x, src.y, src.z));
+            points[i] = pxr::GfVec3f(transform.Transform(GfVec3f(src.x, src.y, src.z)));
         }
     }
 }

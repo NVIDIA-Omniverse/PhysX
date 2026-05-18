@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -40,8 +40,10 @@ namespace physx
 	\brief Structure representing residual values.
 
 	This struct holds residual values, typically used in physics simulations to measure error or discrepancy.
+
+	\deprecated
 	*/
-	struct PxResidual
+	struct PX_DEPRECATED PxResidual
 	{
 		PxReal rmsResidual; //!< Root mean square residual value.
 		PxReal maxResidual; //!< Maximum residual value.
@@ -53,22 +55,26 @@ namespace physx
 	\brief Structure representing residual values
 
 	This struct holds residual values for both position and velocity iterations.
+
+	\deprecated
 	*/
-	struct PxResiduals
+	struct PX_DEPRECATED PxResiduals
 	{
 		PxResidual positionIterationResidual; //!< Residual values for position iteration.
 		PxResidual velocityIterationResidual; //!< Residual values for velocity iteration.
 	};
 
-	typedef PxResiduals PxArticulationResidual;
-	typedef PxResiduals PxSceneResidual;
+	typedef PX_DEPRECATED PxResiduals PxArticulationResidual;
+	typedef PX_DEPRECATED PxResiduals PxSceneResidual;
 
 	/**
 	\brief Structure representing residual values for a constraint.
 
 	This struct holds residual values for both position and velocity iterations specific to a constraint.
+
+	\deprecated
 	*/
-	struct PxConstraintResidual
+	struct PX_DEPRECATED PxConstraintResidual
 	{
 		PxReal positionIterationResidual; //!< Residual value for position iteration.
 		PxReal velocityIterationResidual; //!< Residual value for velocity iteration.

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -27,7 +27,6 @@
 #include "attachment/PhysXTetFinder.h"
 #include "attachment/PhysXPointFinder.h"
 #include "particles/PhysXParticlePost.h"
-#include "particles/FabricParticles.h"
 #include "particles/PhysXParticleSampling.h"
 #include "PhysXSimulationCallbacks.h"
 #include "CookingDataAsync.h"
@@ -1206,7 +1205,7 @@ static float computeVehicleVelocity(const usdparser::ObjectId vehicleId,
             else
             {
                 const InternalVehicleContext& vehicleContext = internalVehicle->mInternalScene.getVehicleContext();
-                const ::physx::vehicle2::PxVehicleFrame& frame = vehicleContext.getFrame();
+                const ::physx::PxVehicleFrame& frame = vehicleContext.getFrame();
                 dir = fromPhysX(frame.getLngAxis());
             }
 

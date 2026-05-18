@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved. 
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved. 
 
 #define USE_GJK_VIRTUAL
 
@@ -56,6 +56,30 @@ using namespace Cm;
 using namespace physx;
 
 #define SB_PARTITION_LIMIT 8 // max # partitions allowed. This value SHOULD NOT change. See also PxgSoftBody.h.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+	bool validateTetrahedronIndices(const IndTetrahedron32* tetrahedrons, PxU32 numTetrahedrons, PxU32 numVertices)
+	{
+		for (PxU32 i = 0; i < numTetrahedrons; i++)
+		{
+			const IndTetrahedron32& tet = tetrahedrons[i];
+			for (PxU32 j = 0; j < 4; j++)
+			{
+				if (tet.mRef[j] >= numVertices)
+				{
+					PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+						"TetrahedronMeshBuilder: tetrahedron %u has vertex index %u >= numVertices %u. Invalid mesh data.",
+						i, tet.mRef[j], numVertices);
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1698,6 +1722,12 @@ void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshDa
 		
 	IndTetrahedron32* tetra = reinterpret_cast<IndTetrahedron32*>(collisionData.mGRB_primIndices);
 
+	if (!validateTetrahedronIndices(tetra, nbTetrahedrons, nbVerts))
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMeshBuilder::createCollisionModelMapping: invalid tetrahedron vertex indices.");
+		return;
+	}
+
 	for (PxU32 i = 0; i < nbTetrahedrons; i++)
 	{
 		IndTetrahedron32& tet = tetra[i];
@@ -1941,6 +1971,12 @@ void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulatio
 
 		IndTetrahedron32* tetrahedron32 = reinterpret_cast<IndTetrahedron32*>(simulationMesh.mTetrahedrons);
 		meshInterface.setPointers(tetrahedron32, NULL, gridModelVertices);
+
+		if (!validateTetrahedronIndices(tetrahedron32, simulationMesh.mNbTetrahedrons, simulationMesh.mNbVertices))
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMeshBuilder::computeModelsMapping: invalid tetrahedron vertex indices.");
+			return;
+		}
 
 		//writeTets("C:\\tmp\\grid.tet", gridModelVertices, simulationMesh.mNbVertices, tetrahedron32, simulationMesh.mNbTetrahedrons);
 		//writeTets("C:\\tmp\\col.tet", mVertices, mNbVertices, reinterpret_cast<IndTetrahedron32*>(mTetrahedrons), mNbTetrahedrons);

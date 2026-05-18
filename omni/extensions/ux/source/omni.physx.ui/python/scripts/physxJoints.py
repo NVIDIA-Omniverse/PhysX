@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb.settings
 from omni.usdphysicsui.scripts.physicsViewportOverlayPrimInfo import PhysicsUIPrimInfoOverlay, PhysicsUIViewportPrim
 from omni.usdphysicsui.scripts.physicsViewportOverlayJoints import JointEditManipulator

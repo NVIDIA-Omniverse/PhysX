@@ -1,14 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.asset_validator.core.tests import ValidationRuleTestCase, IsAFailure
-from omni.physxtests import utils
+from omni.physxtests import utils as test_utils
 from omni.physx.scripts.assets_paths import AssetFolders
 import carb
 import carb.tokens
 from pxr import Usd, PhysxSchema
 import omni.usd
-import omni.client
 
 from ..scripts.jointStateChecker import JointStateChecker
 
@@ -40,17 +40,17 @@ class JointStateCheckerTestCase(ValidationRuleTestCase):
         await omni.usd.get_context().new_stage_async()
 
         # Download the asset locally, so we can modify it (later)
-        temp_path = carb.tokens.get_tokens_interface().resolve("${temp}/")
-        temp_usd_file = temp_path
-        temp_usd_file += self.get_random_word(8)
-        temp_usd_file += "_JointAssetValidator.usd"
-        asset_path = f"{self._test_data_dir}/JointStateValidator/JointAssetValidator.usda"
-        await omni.client.copy_async(asset_path, temp_usd_file, omni.client.CopyBehavior.OVERWRITE)
+        temp_usd_file = test_utils.TmpFileFromSrc(
+            f"{self._test_data_dir}/JointStateValidator",
+            "JointAssetValidator.usda",
+            "_JointAssetValidator.usd",
+            random_prefix=True)
+
         prim_path = "/World/articulation"
 
         # Test 1: Fix Existing issues
         self.assertRule(
-            url=temp_usd_file,
+            url=temp_usd_file.get_path(),
             rule=JointStateChecker,
             asserts=[
                 IsAFailure(
@@ -60,10 +60,10 @@ class JointStateCheckerTestCase(ValidationRuleTestCase):
         )
 
         # Fix all issues with the suggestion provided by JointStateChecker
-        self.assertSuggestion(url=temp_usd_file, rule=JointStateChecker, predicate=None)
+        self.assertSuggestion(url=temp_usd_file.get_path(), rule=JointStateChecker, predicate=None)
 
         # Test 2: Apply a joint state that will not cause error and check it
-        stage: Usd.Stage = Usd.Stage.Open(temp_usd_file)
+        stage: Usd.Stage = Usd.Stage.Open(temp_usd_file.get_path())
 
         joint1: Usd.Prim = stage.GetPrimAtPath("/World/articulation/revoluteJoint")
         jointStateAPI = PhysxSchema.JointStateAPI.Apply(joint1, "angular")
@@ -71,6 +71,7 @@ class JointStateCheckerTestCase(ValidationRuleTestCase):
         Usd.Stage.Save(stage)
 
         # Check that there are no failures
-        self.assertRule(url=temp_usd_file, rule=JointStateChecker, asserts=[])
+        self.assertRule(url=temp_usd_file.get_path(), rule=JointStateChecker, asserts=[])
 
+        temp_usd_file.delete()
         omni.usd.get_context().close_stage()

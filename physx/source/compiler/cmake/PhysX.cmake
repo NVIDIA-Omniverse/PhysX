@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysX (PROJECT not SOLUTION) common
@@ -69,9 +69,7 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxDeletionListener.h
 	${PHYSX_ROOT_DIR}/include/PxFEMParameter.h #deprecated
 	${PHYSX_ROOT_DIR}/include/PxFiltering.h
-	${PHYSX_ROOT_DIR}/include/PxForceMode.h
 	${PHYSX_ROOT_DIR}/include/PxImmediateMode.h
-	${PHYSX_ROOT_DIR}/include/PxLockedData.h
 	${PHYSX_ROOT_DIR}/include/PxNodeIndex.h
 	${PHYSX_ROOT_DIR}/include/PxParticleBuffer.h
 	${PHYSX_ROOT_DIR}/include/PxParticleGpu.h

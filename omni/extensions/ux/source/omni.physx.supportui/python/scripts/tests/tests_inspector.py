@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.usd
 import omni.physxsupportui.bindings._physxSupportUi as pxsupportui
@@ -62,7 +63,7 @@ class PhysicsInspectorTests(TestCase):
         await self.setup_viewport_test(1000, 800)
         await ui_wait(20)
         all_tests_passed = True
-        all_tests_passed = all_tests_passed and await self.do_visual_test(
+        all_tests_passed &= await self.do_visual_test(
             img_name="",
             img_suffix="test_inspector_basic",
             use_distant_light=True,
@@ -82,7 +83,7 @@ class PhysicsInspectorTests(TestCase):
         # Move the joint somewhere using the inspector
         await ui_test.emulate_mouse_move_and_click(slider.position + ui_test.Vec2(20, 10))
         await self.step(num_steps=30)
-        all_tests_passed = all_tests_passed and await self.do_visual_test(
+        all_tests_passed &= await self.do_visual_test(
             img_name="",
             img_suffix="test_inspector_basic_simulation",
             use_distant_light=True,
@@ -94,7 +95,7 @@ class PhysicsInspectorTests(TestCase):
         await self.step(num_steps = 0, stop_timeline_after=True)
 
         # Now we should be back to the same state as just before entering simulation
-        all_tests_passed = all_tests_passed and await self.do_visual_test(
+        all_tests_passed &= await self.do_visual_test(
             img_name="",
             img_suffix="test_inspector_basic_simulation_after",
             use_distant_light=True,

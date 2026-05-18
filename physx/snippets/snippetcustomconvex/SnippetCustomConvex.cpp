@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -146,17 +146,17 @@ void initPhysics(bool /*interactive*/)
 	float margins[] = { 0.0f, 0.05f, 0.1f, 0.15f };
 	for (int i = 0; i < 50; ++i)
 	{
-		float height = heights[rand() % (sizeof(heights) / sizeof(heights[0]))];
-		float raduis = radiuss[rand() % (sizeof(radiuss) / sizeof(radiuss[0]))];
-		float margin = margins[rand() % (sizeof(margins) / sizeof(margins[0]))];
+		float height = heights[rand() % (sizeof(heights) / sizeof(heights[0]))];  // NOSONAR - rand() is fine for physics demo data
+		float raduis = radiuss[rand() % (sizeof(radiuss) / sizeof(radiuss[0]))];  // NOSONAR
+		float margin = margins[rand() % (sizeof(margins) / sizeof(margins[0]))];  // NOSONAR
 		float angle = PX_PIDIV2;
 		createCylinderActor(height, raduis, margin, (PxTransform(PxVec3(-2.0f, 2.0f + i * 2, 2.0f), PxQuat(angle, PxVec3(0.0f, 0.0f, 1.0f)))));
 	}
 	for (int i = 0; i < 50; ++i)
 	{
-		float height = heights[rand() % (sizeof(heights) / sizeof(heights[0]))];
-		float raduis = radiuss[rand() % (sizeof(radiuss) / sizeof(radiuss[0]))];
-		float margin = margins[rand() % (sizeof(margins) / sizeof(margins[0]))];
+		float height = heights[rand() % (sizeof(heights) / sizeof(heights[0]))];  // NOSONAR - rand() is fine for physics demo data
+		float raduis = radiuss[rand() % (sizeof(radiuss) / sizeof(radiuss[0]))];  // NOSONAR
+		float margin = margins[rand() % (sizeof(margins) / sizeof(margins[0]))];  // NOSONAR
 		float angle = PX_PIDIV2;
 		createConeActor(height, raduis, margin, (PxTransform(PxVec3(2.0f, 2.0f + i * 2, -2.0f), PxQuat(angle, PxVec3(0, 0, 1)))));
 	}

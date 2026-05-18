@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,7 +31,7 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxVec3.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "foundation/PxVecMath.h"
 
 namespace physx
@@ -91,7 +91,7 @@ struct SolverContactHeader
 	PX_FORCE_INLINE FloatV getDominance0() const			{ return V4GetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
 	PX_FORCE_INLINE FloatV getDominance1() const			{ return V4GetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
 
-	PX_FORCE_INLINE void setStaticFriction(PxF32 f)			{ V4WriteX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+/*	PX_FORCE_INLINE void setStaticFriction(PxF32 f)			{ V4WriteX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
 	PX_FORCE_INLINE void setDynamicFriction(PxF32 f)		{ V4WriteY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
 	PX_FORCE_INLINE void setDominance0(PxF32 f)				{ V4WriteZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
 	PX_FORCE_INLINE void setDominance1(PxF32 f)				{ V4WriteW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
@@ -99,7 +99,7 @@ struct SolverContactHeader
 	PX_FORCE_INLINE PxF32 getStaticFrictionPxF32() const	{ return V4ReadX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
 	PX_FORCE_INLINE PxF32 getDynamicFrictionPxF32() const	{ return V4ReadY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
 	PX_FORCE_INLINE PxF32 getDominance0PxF32() const		{ return V4ReadZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
-	PX_FORCE_INLINE PxF32 getDominance1PxF32() const		{ return V4ReadW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE PxF32 getDominance1PxF32() const		{ return V4ReadW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}*/
 }; 
 
 #if !PX_P64_FAMILY

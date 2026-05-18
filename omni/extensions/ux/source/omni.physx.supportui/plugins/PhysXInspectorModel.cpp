@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -596,7 +596,7 @@ void PhysXInspectorModelImpl::refreshModelStructure()
             {
                 for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsScene")))
                 {
-                    const omni::fabric::PathC pathC(usdrtPath);
+                    const omni::fabric::Path pathC(usdrtPath);
                     const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
                     if (!usdPath.IsEmpty())
                     {

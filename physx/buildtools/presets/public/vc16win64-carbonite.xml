@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <preset name="vc16win64-carbonite" comment="VC16 Win64 PhysX Carbonite settings, static libs for the SDK used">
   <platform targetPlatform="win64" compiler="vc16" />
   <CMakeSwitches>
@@ -7,7 +7,7 @@
     <cmakeSwitch name="PX_BUILDVISUALTESTS" value="False" comment="Generate the visual test projects" />
     <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="True" comment="Generate the OmniPVD project" />
     <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
-    <cmakeSwitch name="PX_BUILDVHACD" value="True" comment="Generate the vhacd project" />
+    <cmakeSwitch name="PX_BUILDVHACD" value="False" comment="Generate the vhacd project" />
     <cmakeSwitch name="PX_CMAKE_SUPPRESS_REGENERATION" value="False" comment="Disable zero_check projects" />
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />

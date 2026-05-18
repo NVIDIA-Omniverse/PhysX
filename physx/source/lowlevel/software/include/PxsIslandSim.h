@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -268,9 +268,7 @@ struct Island
 		}
 
 		for(PxU32 a = 0; a < Node::eTYPE_COUNT; ++a)
-		{
 			mNodeCount[a] = 0;
-		}
 	}
 };
 
@@ -599,6 +597,7 @@ private:
 	PX_FORCE_INLINE void makeEdgeActive(EdgeInstanceIndex index, bool testEdgeType);
 
 	IslandId addNodeToIsland(PxNodeIndex nodeIndex1, PxNodeIndex nodeIndex2, IslandId islandId2, bool active1, bool active2);
+	PX_FORCE_INLINE void removeNodeFromIsland(Island& island, PxNodeIndex nodeIndex);
 
 /*	PX_FORCE_INLINE  void notifyReadyForSleeping(const PxNodeIndex nodeIndex)
 	{
@@ -771,86 +770,6 @@ private:
 	}
 
 	void removeEdgeFromActivatingList(EdgeIndex index);
-
-	PX_FORCE_INLINE void removeEdgeFromIsland(Island& island, EdgeIndex edgeIndex)
-	{
-		Edge& edge = mEdges[edgeIndex];
-		if(edge.mNextIslandEdge != IG_INVALID_EDGE)
-		{
-			PX_ASSERT(mEdges[edge.mNextIslandEdge].mPrevIslandEdge == edgeIndex);
-			mEdges[edge.mNextIslandEdge].mPrevIslandEdge = edge.mPrevIslandEdge;
-		}
-		else
-		{
-			PX_ASSERT(island.mLastEdge[edge.mEdgeType] == edgeIndex);
-			island.mLastEdge[edge.mEdgeType] = edge.mPrevIslandEdge;
-		}
-
-		if(edge.mPrevIslandEdge != IG_INVALID_EDGE)
-		{
-			PX_ASSERT(mEdges[edge.mPrevIslandEdge].mNextIslandEdge == edgeIndex);
-			mEdges[edge.mPrevIslandEdge].mNextIslandEdge = edge.mNextIslandEdge;
-		}
-		else
-		{
-			PX_ASSERT(island.mFirstEdge[edge.mEdgeType] == edgeIndex);
-			island.mFirstEdge[edge.mEdgeType] = edge.mNextIslandEdge;
-		}
-
-		island.mEdgeCount[edge.mEdgeType]--;
-		edge.mNextIslandEdge = edge.mPrevIslandEdge = IG_INVALID_EDGE;
-	}
-
-	PX_FORCE_INLINE void addEdgeToIsland(Island& island, EdgeIndex edgeIndex)
-	{
-		Edge& edge = mEdges[edgeIndex];
-		PX_ASSERT(edge.mNextIslandEdge == IG_INVALID_EDGE && edge.mPrevIslandEdge == IG_INVALID_EDGE);
-
-		if(island.mLastEdge[edge.mEdgeType] != IG_INVALID_EDGE)
-		{
-			PX_ASSERT(mEdges[island.mLastEdge[edge.mEdgeType]].mNextIslandEdge == IG_INVALID_EDGE);
-			mEdges[island.mLastEdge[edge.mEdgeType]].mNextIslandEdge = edgeIndex;
-		}
-		else
-		{
-			PX_ASSERT(island.mFirstEdge[edge.mEdgeType] == IG_INVALID_EDGE);
-			island.mFirstEdge[edge.mEdgeType] = edgeIndex;
-		}
-
-		edge.mPrevIslandEdge = island.mLastEdge[edge.mEdgeType];
-		island.mLastEdge[edge.mEdgeType] = edgeIndex;
-		island.mEdgeCount[edge.mEdgeType]++;
-	}
-
-	PX_FORCE_INLINE void removeNodeFromIsland(Island& island, PxNodeIndex nodeIndex)
-	{
-		Node& node = mNodes[nodeIndex.index()];
-		if(node.mNextNode.isValid())
-		{
-			PX_ASSERT(mNodes[node.mNextNode.index()].mPrevNode.index() == nodeIndex.index());
-			mNodes[node.mNextNode.index()].mPrevNode = node.mPrevNode;
-		}
-		else
-		{
-			PX_ASSERT(island.mLastNode.index() == nodeIndex.index());
-			island.mLastNode = node.mPrevNode;
-		}
-
-		if(node.mPrevNode.isValid())
-		{
-			PX_ASSERT(mNodes[node.mPrevNode.index()].mNextNode.index() == nodeIndex.index());
-			mNodes[node.mPrevNode.index()].mNextNode = node.mNextNode;
-		}
-		else
-		{
-			PX_ASSERT(island.mRootNode.index() == nodeIndex.index());
-			island.mRootNode = node.mNextNode;
-		}
-
-		island.mNodeCount[node.mType]--;
-
-		node.mNextNode = node.mPrevNode = PxNodeIndex();
-	}
 };
 }
 }

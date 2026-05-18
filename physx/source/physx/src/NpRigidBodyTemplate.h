@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -92,7 +92,7 @@ public:
 	// The rule is: If an API method is used somewhere in here, it has to be redeclared, else GCC whines
 
 	// PxRigidActor
-	virtual			PxTransform			getGlobalPose() const = 0;
+	virtual			PxTransform			getGlobalPose() const PX_OVERRIDE = 0;
 	virtual			bool				attachShape(PxShape& shape)	PX_OVERRIDE;
 	//~PxRigidActor
 

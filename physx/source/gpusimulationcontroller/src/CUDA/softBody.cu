@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1124,15 +1124,6 @@ extern "C" __global__ void sb_clothContactPrepareLaunch(
 
 		const PxReal pen = normal_pen.w - thickness - PxLoad3(clothDelta - softbodyDelta).dot(normal);
 		const PxReal denom = clothDenom + softBodyDenom;
-
-		const uint4 triVertId = cloth.mTriangleVertexIndices[triInd];
-		float4 clothPos = clothBC.x * cloth.mPosition_InvMass[triVertId.x] +
-		                  clothBC.y * cloth.mPosition_InvMass[triVertId.y] +
-		                  clothBC.z * cloth.mPosition_InvMass[triVertId.z];
-		float4 softBodyPos = softBodyBC.x * softbody.mSimPosition_InvMass[tetVertInd.x] +
-		                     softBodyBC.y * softbody.mSimPosition_InvMass[tetVertInd.y] +
-		                     softBodyBC.z * softbody.mSimPosition_InvMass[tetVertInd.z] +
-		                     softBodyBC.w * softbody.mSimPosition_InvMass[tetVertInd.w];
 
 		constraint.barycentric0[threadIndexInWarp] = clothBC;
 		constraint.barycentric1[threadIndexInWarp] = softBodyBC;

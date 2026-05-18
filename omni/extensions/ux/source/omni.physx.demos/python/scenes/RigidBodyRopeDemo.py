@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 from pxr import UsdLux, UsdGeom, Sdf, Gf, UsdPhysics, UsdShade, PhysxSchema
 import omni.physxdemos as demo
@@ -203,4 +204,3 @@ class RigidBodyRopesDemo(demo.Base):
             jointInstancer.GetPhysicsBody1IndicesAttr().Set(body1indices)
             jointInstancer.GetPhysicsLocalPos1sAttr().Set(localPos1)
             jointInstancer.GetPhysicsLocalRot1sAttr().Set(localRot1)
-

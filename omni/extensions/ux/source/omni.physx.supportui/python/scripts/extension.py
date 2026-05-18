@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import os
 from functools import partial
 import carb.settings
@@ -21,9 +22,6 @@ from .rigid_body_selection_mode import RigidBodySelectionMode
 from .utils import refresh_manipulator_selector
 from .inspector import PhysXInspector
 from omni.physxuicommon import windowmenuitem
-
-from omni.physx.scripts.utils import safe_import_tests
-safe_import_tests("omni.physxsupportui.scripts.tests")
 
 
 class PhysxSupportUiExtension(omni.ext.IExt):

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -91,10 +91,10 @@ template<typename TAllocatorType>
 struct MemoryBufferBase : public PxOutputStream, public PxInputStream
 {
 	TAllocatorType* mManager;
-	mutable PxU32	mWriteOffset;
-	mutable PxU32	mReadOffset;
+	mutable PxU64	mWriteOffset;
+	mutable PxU64	mReadOffset;
 	PxU8*	mBuffer;
-	PxU32	mCapacity;
+	PxU64	mCapacity;
 
 
 	MemoryBufferBase( TAllocatorType* inManager )
@@ -122,7 +122,7 @@ struct MemoryBufferBase : public PxOutputStream, public PxInputStream
 		mWriteOffset = mReadOffset = 0;
 	}
 
-	virtual PxU32 read(void* dest, PxU32 count)
+	virtual PxU64 read(void* dest, PxU64 count)
 	{
 		bool fits = ( mReadOffset + count ) <= mWriteOffset;
 		PX_ASSERT( fits );
@@ -135,11 +135,11 @@ struct MemoryBufferBase : public PxOutputStream, public PxInputStream
 		return 0;
 	}
 
-	inline void checkCapacity( PxU32 inNewCapacity )
+	inline void checkCapacity( PxU64 inNewCapacity )
 	{
 		if ( mCapacity < inNewCapacity )
 		{
-			PxU32 newCapacity = 32;
+			PxU64 newCapacity = 32;
 			while( newCapacity < inNewCapacity )
 				newCapacity = newCapacity << 1;
 
@@ -152,7 +152,7 @@ struct MemoryBufferBase : public PxOutputStream, public PxInputStream
 		}
 	}
 
-	virtual PxU32 write(const void* src, PxU32 count)
+	virtual PxU64 write(const void* src, PxU64 count)
 	{
 		checkCapacity( mWriteOffset + count );
 		PxMemCopy( mBuffer + mWriteOffset, src, count );

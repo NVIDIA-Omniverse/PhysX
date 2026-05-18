@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 #define DY_TGS_DYNAMICS_H
 
 #include "DyDynamicsBase.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "CmSpatialVector.h"
 #include "CmTask.h"
 #include "CmPool.h"
@@ -142,23 +142,10 @@ class DynamicsTGSContext : public DynamicsContextBase
 {
 	PX_NOCOPY(DynamicsTGSContext)
 public:
-									DynamicsTGSContext(PxcNpMemBlockPool* memBlockPool,
-										PxcScratchAllocator& scratchAllocator,
-										Cm::FlushPool& taskPool,
-										PxvSimStats& simStats,
-										PxTaskManager* taskManager,
-										PxVirtualAllocatorCallback* allocatorCallback,
-										PxsMaterialManager* materialManager,
-										IG::SimpleIslandManager& islandManager,
-										PxU64 contextID,
-										bool enableStabilization,
-										bool useEnhancedDeterminism,
-										bool solveArticulationContactLast,
-										PxReal lengthScale,
-										bool isExternalForcesEveryTgsIterationEnabled,
-										bool isResidualReportingEnabled
-										);
-
+										DynamicsTGSContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool,
+															PxvSimStats& simStats, PxVirtualAllocatorCallback* allocatorCallback,
+															PxsMaterialManager* materialManager, IG::SimpleIslandManager& islandManager,
+															PxU64 contextID, PxReal lengthScale, PxSceneFlags sceneFlags);
 	virtual								~DynamicsTGSContext();
 
 	// Context
@@ -172,7 +159,7 @@ public:
 		
 	//~Context
 
-					void				updatePostKinematic(IG::SimpleIslandManager& simpleIslandManager, PxBaseTask* continuation, PxBaseTask* lostTouchTask, PxU32 maxLinks);
+					void				updatePostKinematic(PxBaseTask* continuation, PxBaseTask* lostTouchTask, PxU32 maxLinks);
 protected:
 
 	// PT: TODO: the thread stats are missing for TGS
@@ -198,14 +185,11 @@ protected:
 			void solveIsland(const SolverIslandObjectsStep& objects,
 				const PxsIslandIndices& counts,
 				PxU32 solverBodyOffset,
-				IG::SimpleIslandManager& islandManager,
 				PxU32* bodyRemapTable, PxsMaterialManager* materialManager,
 				PxsContactManagerOutputIterator& iterator,
 				PxBaseTask* continuation);
 
-			void prepareBodiesAndConstraints(const SolverIslandObjectsStep& objects,
-				IG::SimpleIslandManager& islandManager,
-				IslandContextStep& islandContext);
+			void prepareBodiesAndConstraints(const SolverIslandObjectsStep& objects, IslandContextStep& islandContext);
 
 			void setupDescs(IslandContextStep& islandContext, const SolverIslandObjectsStep& objects, PxU32* mBodyRemapTable, PxU32 mSolverBodyOffset,
 				PxsContactManagerOutputIterator& outputs);
@@ -221,9 +205,6 @@ protected:
 			void createSolverConstraints(PxSolverConstraintDesc* contactDescPtr, PxConstraintBatchHeader* headers, PxU32 nbHeaders,
 				PxsContactManagerOutputIterator& outputs, Dy::ThreadContext& islandThreadContext, Dy::ThreadContext& threadContext, PxReal stepDt, PxReal totalDt, 
 				PxReal invStepDt, PxReal biasCoefficient);
-
-			void solveConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, PxReal invStepDt,
-				const PxTGSSolverBodyTxInertia* const solverTxInertia, PxReal elapsedTime, PxReal minPenetration, SolverContext& cache);
 
 			void writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders, SolverContext& cache);
 
@@ -256,12 +237,11 @@ protected:
 			void applyArticulationTgsSubstepForces(Dy::ThreadContext& threadContext, PxU32 numArticulations, PxReal stepDt);
 
 			void iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-				PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, SolverContext& cache, PxReal biasCoefficient);
+				PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, SolverContext& cache);
 
 			void iterativeSolveIslandParallel(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
 				PxReal stepDt,  PxReal totalDt, PxU32 posIters, PxU32 velIters, PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts, PxI32* gravityCounts,
-				PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxI32* gravityProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize,
-				PxReal biasCoefficient);
+				PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxI32* gravityProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize);
 
 			void endIsland(ThreadContext& mThreadContext);
 

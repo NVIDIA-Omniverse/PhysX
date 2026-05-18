@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -312,8 +312,14 @@ public:
         bool warningPrinted = false;
         bool errorPrinted = false;
 
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+
         std::vector<NameToken> newNames(numOverlaps);
-        omni::physx::graph::createPrimName(context.iToken->getHandle("prim"), 0, { newNames.data(), newNames.size() });
+        omni::physx::graph::createPrimName(omni::fabric::StageReaderWriterUsd(fabricId).registerToken("prim"), 0,
+                                           { newNames.data(), newNames.size() });
         IBundle2* outputContactsBundle = db.outputs.contacts().abi_bundleInterface();
         outputContactsBundle->clearContents();
 
@@ -343,12 +349,12 @@ public:
             ogn::BundleContents<ogn::kOgnOutput, ogn::kCpu> outputChildBundle(
                 outputContactsBundle->getContext(), childHandle);
             ogn::RuntimeAttribute<ogn::kOgnOutput, ogn::kCpu> sourcePrimPathAttribute = outputChildBundle.addAttribute(
-                ImmediateNode::kSourcePrimPathToken, Type(BaseDataType::eToken, 1, 0, AttributeRole::eNone));
+                omni::fabric::Token::createImmortal("sourcePrimPath"), Type(BaseDataType::eToken, 1, 0, AttributeRole::eNone));
             *sourcePrimPathAttribute.getCpu<NameToken>() = newNames[idx];
 
-            static NameToken const kContactPoints = omni::fabric::asInt(pxr::TfToken("points", pxr::TfToken::Immortal));
-            static NameToken const kContactNormals = omni::fabric::asInt(pxr::TfToken("normals", pxr::TfToken::Immortal));
-            static NameToken const kContactDepths = omni::fabric::asInt(pxr::TfToken("depths", pxr::TfToken::Immortal));
+            static NameToken const kContactPoints = omni::fabric::Token::createImmortal("points");
+            static NameToken const kContactNormals = omni::fabric::Token::createImmortal("normals");
+            static NameToken const kContactDepths = omni::fabric::Token::createImmortal("depths");
 
             ogn::RuntimeAttribute<ogn::kOgnOutput, ogn::kCpu> contactPointsAttribute =
                 outputChildBundle.addAttribute(kContactPoints, Type(BaseDataType::eFloat, 3, 1, AttributeRole::eNone));

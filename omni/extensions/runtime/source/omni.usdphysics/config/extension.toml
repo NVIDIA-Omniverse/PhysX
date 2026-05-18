@@ -5,7 +5,7 @@ repository = ""
 keywords = ["physics"]
 category = "simulation"
 
-version = "107.3.0-oss.0"
+version = "109.0.10"
 authors = ["PhysX"]
 
 icon = "data/icon.png"
@@ -21,7 +21,7 @@ usd = true
 
 [dependencies]
 "omni.usd.libs" = { }
-"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd.schema.physx" = { version = "109.0.10", exact = true }
 
 [[python.module]]
 name = "omni.usdphysics"

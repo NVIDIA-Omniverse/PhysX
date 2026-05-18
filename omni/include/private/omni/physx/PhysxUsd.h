@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -503,6 +503,8 @@ struct PhysxSceneDesc : PhysxObjectDesc
     bool enableQuasistatic;
     pxr::SdfPathSet quasistaticActors;
 
+    bool disableSleeping;
+
     uint64_t gpuTempBufferCapacity;
     uint32_t gpuMaxRigidContactCount;
     uint32_t gpuMaxRigidPatchCount;
@@ -571,6 +573,7 @@ struct PhysxShapeDesc : PhysxObjectDesc
     carb::Float3 localScale;
     std::vector<ObjectId> materials;
     pxr::SdfPath rigidBody;
+    pxr::SdfPath sourceGprim;
     ObjectId collisionGroup;
     bool collisionEnabled;
 
@@ -818,6 +821,11 @@ struct StaticPhysxRigidBodyDesc : PhysxRigidBodyDesc
     {
         type = eStaticBody;
     }
+
+    // we need to anotate bodies that were created for colliders
+    // below a node, this should be prohibited, but its used, need
+    // to write validation against this
+    pxr::SdfPath sourceGPrimPath;
 };
 
 struct DynamicPhysxRigidBodyDesc : PhysxRigidBodyDesc

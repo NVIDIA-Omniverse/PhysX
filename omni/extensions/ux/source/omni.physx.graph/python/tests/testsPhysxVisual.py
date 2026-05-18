@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physxdemos as demo
 import omni.usd
 import omni.kit
@@ -8,9 +9,13 @@ try:
     from omni.physxtestsvisual.utils import TestCase
 
     class PhysxXGraphDemosTest(TestCase):
-        thresholds = {"SceneQueryRaycastDemo": 0.01}  # this is how you can customize tresholds for specific demo
+        thresholds = { # this is how you can customize thresholds for specific demos
+            "SceneQueryRaycastDemo": 0.01,
+            "SceneQueryMultipleDemo": 0.002,
+        }
         load_timeout = {"SomeDemo": 10000}
         use_camera_light = {"SceneQueryRaycastDemo": False}
+        spp = {"SceneQueryRaycastDemo": 128}
         async def _visual_base(self, exclude_list):
             async def do_prepare(scene_class):
                 print(scene_class.__module__)
@@ -38,6 +43,7 @@ try:
                     img_name="",
                     img_suffix=demo_name,
                     use_distant_light=PhysxXGraphDemosTest.use_camera_light.get(demo_name, True),
+                    spp=PhysxXGraphDemosTest.spp.get(demo_name, 1),
                     threshold=PhysxXGraphDemosTest.thresholds.get(demo_name, 0.0015),
                 )
                 await omni.usd.get_context().new_stage_async()
@@ -45,6 +51,7 @@ try:
             await demo.test("omni.physxgraph", do_prepare, do_test, exclude_list, test_case=self, inspect_offset=2)
 
         async def test_physics_graph_demos(self):
-            await self._visual_base([])
+            exclude_list = ["TriggerConveyorDemo"] # inconsistency between windows and linux, NvBug 5585436
+            await self._visual_base(exclude_list)
 except Exception:
     pass

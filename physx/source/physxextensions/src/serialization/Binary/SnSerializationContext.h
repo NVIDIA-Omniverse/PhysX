@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -218,8 +218,8 @@ namespace physx
 				}
 			}
 
-			virtual		void		writeData(const void* buffer, PxU32 size)		{	mMemStream.write(buffer, size);	}
-			virtual		PxU32		getTotalStoredSize()							{	return mMemStream.getSize(); }
+			virtual		void		writeData(const void* buffer, PxU64 size)		{	mMemStream.write(buffer, size);	}
+			virtual		PxU64		getTotalStoredSize()							{	return mMemStream.getSize(); }
 			virtual		void		alignData(PxU32 alignment = PX_SERIAL_ALIGN)		
 			{	
 				if(!alignment)
@@ -251,7 +251,7 @@ namespace physx
 			InternalPtrRefMap& getInternalPtrReferencesMap() { return mInternalPtrReferencesMap; }
 			InternalHandle16RefMap& getInternalHandle16ReferencesMap() { return mInternalHandle16ReferencesMap; }
 
-			PxU32		getSize()	const	{	return mMemStream.getSize(); }
+			PxU64		getSize()	const	{	return mMemStream.getSize(); }
 			PxU8*		getData()	const	{	return mMemStream.getData(); }
 
 

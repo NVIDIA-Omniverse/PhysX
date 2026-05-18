@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -1273,8 +1273,6 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 
 	CUdeviceptr artiDescd = mGpuContext->getArticulationCore()->getArticulationCoreDescd();
 
-	const PxReal biasCoefficient = islandContexts->mBiasCoefficient;
-
 	// resetVelocities (ZeroBodies) is called in "doConstraintPrepGPU"
 
 	for (PxU32 a = 0; a < numIslands; ++a)
@@ -1328,6 +1326,8 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		const Dy::ArticulationConstraintProcessingConfigGPU firstPassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getFirstPassConfig();
 		const Dy::ArticulationConstraintProcessingConfigGPU secondPassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSecondPassConfig();
 
+		const PxReal articulationBiasCoefficient = Dy::computeArticulationBiasCoefficient<true>(context.mNumPositionIterations);
+
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
 			PX_PROFILE_ZONE("GpuDynamics.Solve.PosIteration", 0);
@@ -1373,7 +1373,9 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 			{
 				//tendons + mimic joints + friction + drive + pos limit
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, firstPassArticulationConstraintProcessConfig, 
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient,  
+					firstPassArticulationConstraintProcessConfig, 
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
 					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
@@ -1388,7 +1390,9 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// solvePartitions).
 				//arti dynamic contact + arti 1d dynamic constraint  + arti static contact + arti static 1d constraint + arti vel limit
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, secondPassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient,
+					secondPassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
 					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
@@ -1403,7 +1407,8 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
 				// solvePartitions).
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient,
 					singlePassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
@@ -1480,8 +1485,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 						PX_CUDA_KERNEL_PARAM(mSolverCoreDescd),
 						PX_CUDA_KERNEL_PARAM(mSharedDescd),
 						PX_CUDA_KERNEL_PARAM(isVelocityIteration),
-						PX_CUDA_KERNEL_PARAM(isFinalIteration),
-						PX_CUDA_KERNEL_PARAM(biasCoefficient)
+						PX_CUDA_KERNEL_PARAM(isFinalIteration)
 					};
 
 					CUresult result = mCudaContext->launchKernel(propagateBodiesVelocityFunction, nbBlocksRequired, 1, 1, 32, PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY / 32, 1, 0, mStream, propagateBodiesVelocityParams, sizeof(propagateBodiesVelocityParams), 0, PX_FL);
@@ -1585,9 +1589,9 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU dmaConstraintResidual fail to launch kernel!!\n");
 			}
 
-			if (mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations > 0)
+			if (mGpuContext->getArticulationCore()->getNbActiveArticulations() > 0)
 			{
-				//perArticulationInternalError.resize(mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations);
+				//perArticulationInternalError.resize(mGpuContext->getArticulationCore()->getNbActiveArticulations());
 
 				CUfunction function = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::DMA_ARTICULATION_RESIDUAL);
 
@@ -1599,7 +1603,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				};
 
 				PxU32 threadBlockSize = 256;
-				PxU32 gridSize = (mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations + threadBlockSize - 1) / threadBlockSize;
+				PxU32 gridSize = (mGpuContext->getArticulationCore()->getNbActiveArticulations() + threadBlockSize - 1) / threadBlockSize;
 
 				PxCUresult result = mCudaContext->launchKernel(function, gridSize, 1, 1, threadBlockSize, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 				if (result != CUDA_SUCCESS)
@@ -1634,7 +1638,9 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 			if(solveArticulationContactLast)
 			{
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, firstPassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, 
+					firstPassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
 					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
@@ -1647,7 +1653,9 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
 				// solvePartitions).
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, secondPassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, 
+					secondPassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
 					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
@@ -1662,7 +1670,9 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
 				// solvePartitions).
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, singlePassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient,  
+					singlePassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
 					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
@@ -1733,8 +1743,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 						PX_CUDA_KERNEL_PARAM(mSolverCoreDescd),
 						PX_CUDA_KERNEL_PARAM(mSharedDescd),
 						PX_CUDA_KERNEL_PARAM(isVelocityIteration),
-						PX_CUDA_KERNEL_PARAM(isFinalIteration),
-						PX_CUDA_KERNEL_PARAM(biasCoefficient)
+						PX_CUDA_KERNEL_PARAM(isFinalIteration)
 					};
 
 					CUresult result = mCudaContext->launchKernel(propagateBodiesVelocityFunction, nbBlocksRequired, 1, 1, 32, PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY / 32, 1, 0, mStream, propagateBodiesVelocityParams, sizeof(propagateBodiesVelocityParams), 0, PX_FL);
@@ -1756,12 +1765,12 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		if (softbodyCore)
 		{
 			softbodyCore->copyContactCountsToHost();
-			softbodyCore->finalizeVelocities(mSharedDesc->dt, biasCoefficient, true);
+			softbodyCore->finalizeVelocities(mSharedDesc->dt, islandContexts->mBiasCoefficient, true);
 		}
 
 		for (PxU32 i = 0; i < numParticleCores; ++i)
 		{
-			particleCores[i]->finalizeVelocities(mSharedDesc->dt, biasCoefficient);
+			particleCores[i]->finalizeVelocities(mSharedDesc->dt, islandContexts->mBiasCoefficient);
 		}
 
 		if (femClothCore)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -703,7 +703,7 @@ void JointAuthoringManager::parseStage(pxr::UsdStageWeakPtr stage)
 
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsJoint")))
     {
-        const omni::fabric::PathC pathC(usdrtPath);
+        const omni::fabric::Path pathC(usdrtPath);
         const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
         mAddedPrims.insert(usdPath);
     }
@@ -1448,5 +1448,3 @@ bool JointAuthoringManager::notifyListenersAboutScale(uint64_t jointPath, const 
     }
     return handled;
 }
-
-

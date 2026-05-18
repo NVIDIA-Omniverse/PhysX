@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -244,84 +244,76 @@ namespace physx
 
 	class PxgBoundsArray : public Bp::BoundsArray
 	{
-				  PX_NOCOPY(PxgBoundsArray)
+	PX_NOCOPY(PxgBoundsArray)
 
-				  public:
-					  PxgBoundsArray(PxVirtualAllocator& allocator)
-						: BoundsArray(allocator)
-						, mIsFirstCopy(true)
-						, mChanges(allocator)
-						{
-						}
+	public:
+		PxgBoundsArray(PxVirtualAllocator& allocator) : BoundsArray(allocator), mIsFirstCopy(true), mChanges(allocator)
+		{
+		}
 
-						virtual ~PxgBoundsArray() PX_OVERRIDE
-						{
-							mChanges.clear();
-						}
+		virtual ~PxgBoundsArray() PX_OVERRIDE
+		{
+			mChanges.clear();
+		}
 
-						void updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index,
-										  PxU32 indexFrom) PX_OVERRIDE PX_FINAL 
-						{	
-							if(indexFrom == index) // new, needs to be copied from CPU
-							{
-								Gu::computeBounds(mBounds[index], geom, transform, 0.0f, 1.0f);
-								updateChanges(index, indexFrom, true);
-							}
-							else
-							{
-								updateChanges(index, indexFrom, false);
-							}							
-						}
+		virtual void updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index, PxU32 indexFrom) PX_OVERRIDE PX_FINAL 
+		{	
+			const bool isNew = indexFrom == index;
+
+			if(isNew) // new, needs to be copied from CPU
+				Gu::computeBounds(mBounds[index], geom, transform, 0.0f, 1.0f);
+
+			updateChanges(index, indexFrom, isNew);
+		}
  
-						void setBounds(const PxBounds3& bounds, PxU32 index) PX_OVERRIDE PX_FINAL
-						{															
-							mBounds[index] = bounds;						
-						    updateChanges(index, index, true);
-						}
+		virtual void setBounds(const PxBounds3& bounds, PxU32 index) PX_OVERRIDE PX_FINAL
+		{															
+			mBounds[index] = bounds;						
+			updateChanges(index, index, true);
+		}
 
-						PX_FORCE_INLINE PxU32 getNumberOfChanges()
-						{ 
-							return mChanges.size();
-						}
+		PX_FORCE_INLINE PxU32 getNumberOfChanges()	const
+		{ 
+			return mChanges.size();
+		}
 
-						PX_FORCE_INLINE PxArray<PxBoundTransformUpdate, PxVirtualAllocator>& getStagingBuffer()
-						{					
-							return mChanges;
-						}
+		PX_FORCE_INLINE PxArray<PxBoundTransformUpdate, PxVirtualAllocator>& getStagingBuffer()
+		{					
+			return mChanges;
+		}
 
-						PX_FORCE_INLINE void resetChanges() 
-						{ 
-							mChanges.reset();
-						}
+		PX_FORCE_INLINE void resetChanges() 
+		{ 
+			mChanges.reset();
+		}
 
-						PX_FORCE_INLINE bool isFirstCopy() 
-						{ 
-							return mIsFirstCopy;
-						} 
+		PX_FORCE_INLINE bool isFirstCopy()	const
+		{ 
+			return mIsFirstCopy;
+		} 
 
-						PX_FORCE_INLINE void setCopied() 
-						{ 
-							mIsFirstCopy = false; 
-						}
+		PX_FORCE_INLINE void setCopied() 
+		{ 
+			mIsFirstCopy = false; 
+		}
 
-				  private:
-						PX_FORCE_INLINE void updateChanges(PxU32 indexTo, PxU32 indexFrom, bool isNew)
-						{
-							if(!mIsFirstCopy)
-							{
-									PxBoundTransformUpdate update;
-									update.indexTo = indexTo;
-									update.indexFrom = indexFrom & 0x7FFFFFFF; 
-									if(isNew)
-										{
-											update.indexFrom |= (1U << 31);
-										}
-									mChanges.pushBack(update);
-							}
-						}
+	private:
+		PX_FORCE_INLINE void updateChanges(PxU32 indexTo, PxU32 indexFrom, bool isNew)
+		{
+			if(!mIsFirstCopy)
+			{
+				PxBoundTransformUpdate update;
+				update.indexTo = indexTo;
+				update.indexFrom = indexFrom & 0x7FFFFFFF; 
+				if(isNew)
+					update.indexFrom |= (1U << 31);
 
-						bool mIsFirstCopy;
-						PxArray<PxBoundTransformUpdate, PxVirtualAllocator> mChanges;
+				mChanges.pushBack(update);
+			}
+		}
+
+		bool mIsFirstCopy;
+		PxArray<PxBoundTransformUpdate, PxVirtualAllocator> mChanges;
 	};
 }
 

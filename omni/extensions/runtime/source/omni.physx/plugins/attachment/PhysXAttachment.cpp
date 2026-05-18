@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1170,7 +1170,7 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
 
             attachmentVtxIndicesDeformable.push_back(int32_t(vertexIndex));
 
-            GfVec3f rigidPos = worldToRigid.Transform(GfVec3f(vertexPos.x, vertexPos.y, vertexPos.z));
+            GfVec3f rigidPos = pxr::GfVec3f(worldToRigid.Transform(GfVec3f(vertexPos.x, vertexPos.y, vertexPos.z)));
             attachmentVtxPointsXformable.push_back(rigidPos);
         }
     }
@@ -1864,7 +1864,7 @@ void updateDeformableXformableAttachments(
 
                 attachmentVtxIndicesDeformable.push_back(int32_t(vertexIndex));
 
-                GfVec3f rigidPos = worldToRigid.Transform(GfVec3f(vertexPos.x, vertexPos.y, vertexPos.z));
+                GfVec3f rigidPos = GfVec3f(worldToRigid.Transform(GfVec3d(vertexPos.x, vertexPos.y, vertexPos.z)));
                 attachmentVtxPointsXformable.push_back(rigidPos);
             }
         }
@@ -1981,7 +1981,7 @@ bool getDeformableMeshInfo(DeformableMeshInfo& deformableMeshInfo, UsdPrim defor
     deformableMeshInfo.simPositions.resize(simMeshPoints.size());
     for (size_t i = 0; i < deformableMeshInfo.simPositions.size(); ++i)
     {
-        GfVec3f position = simToWorld.Transform(simMeshPoints[i]);
+        GfVec3f position = pxr::GfVec3f(simToWorld.Transform(simMeshPoints[i]));
         deformableMeshInfo.simPositions[i] = { position[0], position[1], position[2] };
     }
 
@@ -2021,7 +2021,7 @@ bool getDeformableMeshInfo(DeformableMeshInfo& deformableMeshInfo, UsdPrim defor
         deformableMeshInfo.collPositions.resize(collMeshPoints.size());
         for (size_t i = 0; i < deformableMeshInfo.collPositions.size(); ++i)
         {
-            GfVec3f position = collToWorld.Transform(collMeshPoints[i]);
+            GfVec3f position = pxr::GfVec3f(collToWorld.Transform(collMeshPoints[i]));
             deformableMeshInfo.collPositions[i] = { position[0], position[1], position[2] };
         }
 

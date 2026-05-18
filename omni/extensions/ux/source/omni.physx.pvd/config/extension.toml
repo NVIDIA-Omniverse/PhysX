@@ -1,16 +1,16 @@
 [package]
 title = "Omniverse PhysX PVD plugin"
 description="Omniverse PhysX PVD plugin."
+changelog="docs/CHANGELOG.md"
 repository = ""
 keywords = ["physics", "physx", "pvd", "omnipvd", "ovd"]
 category = "Simulation"
 authors = ["PhysX"]
 
-version = "107.3.0-oss.0"
+version = "109.0.10"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
-changelog="docs/CHANGELOG.md"
 readme  = "docs/README.md"
 support_level = "Example"
 
@@ -28,17 +28,17 @@ path = "bin/*.plugin"
 [dependencies]
 "omni.ui" = {}
 "omni.timeline" = {}
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "109.0.10", exact = true }
+"omni.physx.ui" = { version = "109.0.10", exact = true }
 "omni.debugdraw" = {}
 "omni.kit.menu.utils" = {}
 "omni.kit.window.toolbar" = {}
 "omni.kit.widget.stage" = {}
 "omni.kit.widget.settings" = {}
-"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
 "omni.kit.window.property" = {}
+"omni.kit.property.physx" = { version = "109.0.10", exact = true }
 "omni.kit.tool.asset_importer" = {}
-"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true, optional=true }
+"omni.physx.tests" = { version = "109.0.10", exact = true, optional=true }
 
 [[test]]
 dependencies = [

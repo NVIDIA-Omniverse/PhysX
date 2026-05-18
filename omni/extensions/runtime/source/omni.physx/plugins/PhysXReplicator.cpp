@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -608,7 +608,9 @@ namespace omni
                                 {
                                     const omni::fabric::Token fabricTransform("omni:fabric:worldMatrix");
                                     const pxr::GfMatrix4d* worldPose = stageRw.getAttributeRd<pxr::GfMatrix4d>(
-                                        omni::fabric::asInt(newSdfPath), fabricTransform);
+                                        omni::fabric::convertToPathType<omni::fabric::Path>(
+                                            stageRw.getFabricId(), newSdfPath),
+                                        fabricTransform);
                                     if (worldPose)
                                     {
                                         const GfTransform gftr(*worldPose);
@@ -631,7 +633,9 @@ namespace omni
                                     {
                                         const omni::fabric::Token fabricTransform("omni:fabric:worldMatrix");
                                         const pxr::GfMatrix4d* worldPose = stageRw.getAttributeRd<pxr::GfMatrix4d>(
-                                            omni::fabric::asInt(newSdfPath), fabricTransform);
+                                            omni::fabric::convertToPathType<omni::fabric::Path>(
+                                                stageRw.getFabricId(), newSdfPath),
+                                            fabricTransform);
                                         if (worldPose)
                                         {
                                             const GfTransform gftr(*worldPose);
@@ -1290,4 +1294,3 @@ void fillInterface(omni::physx::IPhysxReplicator& iface)
     iface.replicate = omni::physx::replicate;
     iface.isReplicatorStage = omni::physx::isReplicatorStage;
 }
-

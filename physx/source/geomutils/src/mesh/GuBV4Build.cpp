@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -43,6 +43,8 @@ using namespace Gu;
 using namespace aos;
 
 #define GU_BV4_USE_NODE_POOLS
+
+PX_IMPLEMENT_OUTPUT_ERROR
 
 static PX_FORCE_INLINE PxU32 largestAxis(const PxVec4& v)
 {
@@ -363,6 +365,8 @@ bool BV4_AABBTree::buildFromMesh(SourceMeshBase& mesh, PxU32 limit, BV4_BuildStr
 		// Allocate a pool of nodes
 		// PT: TODO: optimize memory here (TA34704)
 		mPool = PX_NEW(AABBTreeNode)[nbBoxes * 2 - 1];
+		if(!mPool)
+			return false;	// PT: OMPE-68715
 
 		// Setup initial node. Here we have a complete permutation of the app's primitives.
 		mPool->mNodePrimitives = mIndices;
@@ -1169,9 +1173,14 @@ static PX_FORCE_INLINE bool processNode(T* PX_RESTRICT data, const BV4Node* PX_R
 	const PxU32 childType = (childNode->getType() - 2) << 1;
 	const PxU64 data64 = size_t(childType + (nextID << GU_BV4_CHILD_OFFSET_SHIFT_COUNT));
 	if(data64 <= 0xffffffff)
+    {
 		data[i].mData = PxU32(data64);
+    }
 	else
+    {
+        outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Too many child nodes.  Adjust PxMidphaseDesc::mBVH34Desc::numPrimsPerLeaf or reduce the number of triangles in the mesh.");
 		return false;
+    }
 
 	//PX_ASSERT(data[i].mData == size_t(childType+(nextID<<3)));
 

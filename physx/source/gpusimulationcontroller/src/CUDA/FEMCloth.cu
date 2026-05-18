@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -172,7 +172,9 @@ void cloth_preIntegrateLaunch(
 	}
 }
 
-extern "C" __global__
+// __launch_bounds__ required: without it, debug (-G) builds use 79 registers/thread which at
+// 1024 threads/block exceeds the SM register file on Blackwell (sm_100), causing launch failure.
+extern "C" __global__ __launch_bounds__(PxgFEMClothKernelBlockDim::CLOTH_STEP, 1)
 void cloth_stepLaunch(
 	PxgFEMCloth* PX_RESTRICT femCloths, 
 	PxU32* activeId, 
@@ -518,7 +520,9 @@ void cloth_refitBoundLaunch(
 	}
 }
 
-extern "C" __global__ 
+// __launch_bounds__ required: without it, debug (-G) builds use 87 registers/thread which at
+// 1024 threads/block exceeds the SM register file on Blackwell (sm_100), causing launch failure.
+extern "C" __global__ __launch_bounds__(PxgFEMClothKernelBlockDim::CLOTH_STEP, 1)
 void cloth_averageTrianglePairVertsLaunch(
 	PxgFEMCloth* gFEMCloths, 
 	const PxU32* activeFEMCloths,	
@@ -1224,7 +1228,9 @@ void cloth_solveTrianglePairEnergyClusterLaunch(
 	}
 }
 
-extern "C" __global__ 
+// __launch_bounds__ required: without it, debug (-G) builds use 72 registers/thread which at
+// 1024 threads/block exceeds the SM register file on Blackwell (sm_100), causing launch failure.
+extern "C" __global__ __launch_bounds__(PxgFEMClothKernelBlockDim::CLOTH_STEP, 1)
 void cloth_finalizeVelocitiesLaunch(
 	PxgFEMCloth* PX_RESTRICT femCloths,
 	const PxU32* activeId,

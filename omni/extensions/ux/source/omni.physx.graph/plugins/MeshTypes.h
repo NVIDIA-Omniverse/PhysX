@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -6,6 +6,7 @@
 #include <gsl/span>
 #include <omni/physx/MeshKey.h>
 #include <omni/physx/IPhysxCookingService.h> // PhysxCookingMeshView
+#include <omni/fabric/core/interface/IPath.h>
 
 // MeshKey is just a 128 bit hash to identify a Mesh from its vertices/faces etc.
 typedef omni::physx::usdparser::MeshKey MeshKey;
@@ -19,7 +20,7 @@ struct MeshView
     omni::physx::PhysxCookingMeshView cookingMeshView;
     carb::Float3 signScale = { 1.0f, 1.0f, 1.0f };
     uint64_t primStageId = 0;
-    uint64_t primId = 0;
+    omni::fabric::Path primId;
     uint64_t primTokenId = 0;
     bool usePrimID = false;
 };

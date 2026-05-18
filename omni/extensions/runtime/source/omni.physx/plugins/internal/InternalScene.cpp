@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -681,6 +681,14 @@ static PXR_NS::GfMatrix4d getGfMatrix4d(const Transform& transform)
     return mat;
 }
 
+static PXR_NS::GfMatrix4d getGfMatrix4dGfTransform(const Transform& transform)
+{
+    PXR_NS::GfTransform gf(
+        transform.position, GfRotation(transform.orientation), GfVec3d(transform.scale), GfVec3d(0.0), GfRotation());
+
+    return gf.GetMatrix();
+}
+
 bool setPrimXformOpsFast(const InternalActor& actor, const SdfLayerHandle& layer, const GfMatrix4d& mat)
 {
     if (layer)
@@ -866,7 +874,7 @@ void processExtraTransforms(const InternalActor& actor, Transform& transform)
 {
     if (actor.mFlags & InternalActorFlag::eHAS_EXTRA_TRANSFORM)
     {
-        GfMatrix4d worldPose = getGfMatrix4d(transform);
+        GfMatrix4d worldPose = getGfMatrix4dGfTransform(transform);
         if (actor.mFlags & InternalActorFlag::eEXTRA_TRANSFORM_PRE_OP)
         {
             worldPose = worldPose * actor.mExtraTransfInv;
@@ -876,8 +884,9 @@ void processExtraTransforms(const InternalActor& actor, Transform& transform)
             worldPose = actor.mExtraTransfInv * worldPose;
         }
 
-        transform.position = GfVec3f(worldPose.ExtractTranslation());
-        transform.orientation = GfQuatf(worldPose.ExtractRotation().GetQuat());
+        GfTransform gf(worldPose);
+        transform.position = GfVec3f(gf.GetTranslation());
+        transform.orientation = GfQuatf(gf.GetRotation().GetQuat());
     }
 }
 
@@ -1992,11 +2001,6 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
         {
             if (!particleSet->mNumParticles || !particleSet->mEnabled || !particleSet->mDownloadDirtyFlags)
                 continue;
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-            if (particleSet->mFabric)
-                continue;
-#endif
 
             // transform particles from world space back to prim local space
             UsdGeomXform xform(particleSet->mPrim);

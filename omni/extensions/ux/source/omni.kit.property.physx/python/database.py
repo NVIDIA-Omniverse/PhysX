@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from collections import namedtuple, defaultdict
 from pxr import UsdPhysics, PhysxSchema, UsdGeom, Usd, UsdShade, Gf
 from .utils import Limits, generate_schema_aliases, generate_codeless_schema_aliases, get_schema_name
@@ -13,6 +14,8 @@ import carb.settings
 import math
 import copy
 import omni.physx.bindings._physx as pxb
+from typing import Callable
+from dataclasses import dataclass
 
 material_apis = [
     UsdPhysics.MaterialAPI,
@@ -199,8 +202,17 @@ extension_api_conditions = {
 }
 
 for name, api in physxUtils.MESH_APPROXIMATIONS.items():
+    def check(prim, name=name):
+        if not (prim.IsA(UsdGeom.Mesh) or (prim.IsA(UsdGeom.Xformable) and prim.HasAPI(PhysxSchema.PhysxMeshMergeCollisionAPI))):
+            return False
+        if not prim.HasAPI(UsdPhysics.MeshCollisionAPI):
+            return False
+        if UsdPhysics.MeshCollisionAPI(prim).GetApproximationAttr().Get() != name:
+            return False
+        return True
+
     if api is not None:
-        extension_api_conditions[api] = lambda prim: prim.IsA(UsdGeom.Mesh) and UsdPhysics.MeshCollisionAPI(prim) and UsdPhysics.MeshCollisionAPI(prim).GetApproximationAttr().Get() == name
+        extension_api_conditions[api] = check
 
 
 widget_extension_map = defaultdict(list, copy.deepcopy(extension_api_map))
@@ -321,7 +333,7 @@ generate_schema_aliases(schema_aliases, PhysxSchema, "PhysxSchema")
 generate_codeless_schema_aliases(schema_aliases, "physxSchemaAddition")
 generate_codeless_schema_aliases(schema_aliases, "omniUsdPhysicsDeformableSchema")
 
-deformable_beta_enabled = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_enabled = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 components = {
     UsdPhysics.RigidBodyAPI.__name__:
@@ -348,7 +360,7 @@ components = {
     Component(
         lambda p: p.HasAPI("OmniPhysicsDeformableBodyAPI"),
         lambda p: False,
-        "OmniPhysicsDeformableBodyAPI", "Deformable Body (beta)", "OmniPhysicsDeformableBodyAPI"
+        "OmniPhysicsDeformableBodyAPI", "Deformable Body", "OmniPhysicsDeformableBodyAPI"
     ),
     "OmniPhysicsVolumeDeformableSimAPI":
     Component(
@@ -390,7 +402,7 @@ components = {
     Component(
         lambda p: p.HasAPI("PhysxAutoDeformableAttachmentAPI"),
         lambda p: p.HasAPI("PhysxAutoDeformableAttachmentAPI"),
-        "PhysxAutoDeformableAttachmentAPI", "Deformable Attachment (beta)", "PhysxAutoDeformableAttachmentAPI"
+        "PhysxAutoDeformableAttachmentAPI", "Deformable Attachment", "PhysxAutoDeformableAttachmentAPI"
     ),
     PhysxSchema.PhysxCharacterControllerAPI.__name__:
     Component(
@@ -512,21 +524,21 @@ components = {
         lambda p: p.HasAPI(PhysxSchema.PhysxDeformableBodyMaterialAPI),
         lambda p: p.IsA(UsdShade.Material),
         "PhysxDeformableBodyMaterialAPI", "Deformable Body Material (deprecated)", PhysxSchema.PhysxDeformableBodyMaterialAPI,
-        can_show=lambda p: not deformable_beta_enabled
+        can_show=lambda p: deformable_deprecated_enabled
     ),
     "OmniPhysicsDeformableMaterialAPI":
     Component(
         lambda p: p.HasAPI("OmniPhysicsDeformableMaterialAPI"),
         lambda p: p.IsA(UsdShade.Material),
-        "OmniPhysicsDeformableMaterialAPI", "Deformable Material (beta)", "OmniPhysicsDeformableMaterialAPI",
-        can_show=lambda p: deformable_beta_enabled
+        "OmniPhysicsDeformableMaterialAPI", "Deformable Material", "OmniPhysicsDeformableMaterialAPI",
+        can_show=lambda p: not deformable_deprecated_enabled
     ),
     "OmniPhysicsSurfaceDeformableMaterialAPI":
     Component(
         lambda p: p.HasAPI("OmniPhysicsSurfaceDeformableMaterialAPI"),
         lambda p: p.IsA(UsdShade.Material),
-        "OmniPhysicsSurfaceDeformableMaterialAPI", "Surface Deformable Material (beta)", "OmniPhysicsSurfaceDeformableMaterialAPI",
-        can_show=lambda p: deformable_beta_enabled
+        "OmniPhysicsSurfaceDeformableMaterialAPI", "Surface Deformable Material", "OmniPhysicsSurfaceDeformableMaterialAPI",
+        can_show=lambda p: not deformable_deprecated_enabled
     ),
     PhysxSchema.PhysxVehicleContextAPI.__name__:
     Component(
@@ -588,7 +600,7 @@ components = {
         lambda p: p.HasAPI(PhysxSchema.PhysxDeformableBodyAPI),
         lambda p: p.IsA(UsdGeom.Mesh) and not pxb.hasconflictingapis_PhysxDeformableBodyAPI_deprecated(p, True),
         "PhysxDeformableBodyAPI", "Deformable Body (deprecated)", PhysxSchema.PhysxDeformableBodyAPI,
-        can_show=lambda p: not deformable_beta_enabled
+        can_show=lambda p: deformable_deprecated_enabled
     ),
     # DEPRECATED
     PhysxSchema.PhysxDeformableSurfaceAPI.__name__:
@@ -623,7 +635,7 @@ components = {
         lambda p: p.HasAPI(PhysxSchema.PhysxParticleClothAPI),
         lambda p: p.IsA(UsdGeom.Mesh) and not pxb.hasconflictingapis_PhysxParticleClothAPI_deprecated(p, False),
         "PhysxParticleClothAPI", "Particle Cloth (deprecated)", PhysxSchema.PhysxParticleClothAPI,
-        can_show=lambda p: not deformable_beta_enabled
+        can_show=lambda p: deformable_deprecated_enabled
     ),
     # DEPRECATED
     PhysxSchema.PhysxAutoParticleClothAPI.__name__:
@@ -853,26 +865,26 @@ extra_add_items = [
     ExtraAddItem(
         "Rigid Body with Colliders Preset",
         lambda p: not p._refresh_cache.has_rigidbody_api,
-        lambda p: execute("SetRigidBody", path=p.GetPath(), approximationShape="convexHull", kinematic=False),
+        lambda p: execute("SetRigidBody", path=p.GetPath(), approximationShape=UsdPhysics.Tokens.convexHull, kinematic=False),
         lambda p: p.IsA(UsdGeom.Xformable) and not p.IsA(PhysxSchema.PhysxParticleSystem) and not p._refresh_cache.hasconflictingapis_RigidBodyAPI,
     ),
     ExtraAddItem(
         "Colliders Preset",
         lambda p: not p._refresh_cache.has_collision_api,
-        lambda p: execute("SetStaticCollider", path=p.GetPath(), approximationShape="none"),
+        lambda p: execute("SetStaticCollider", path=p.GetPath(), approximationShape=UsdPhysics.Tokens.none),
         lambda p: p.IsA(UsdGeom.Xformable) and not p.IsA(PhysxSchema.PhysxParticleSystem) and not p._refresh_cache.hasconflictingapis_CollisionAPI,
     ),
     ExtraAddItem(
-        "Volume Deformable Body (beta)",
+        "Volume Deformable Body",
         lambda p: not p.HasAPI("OmniPhysicsDeformableBodyAPI"),
         lambda p: execute("SetVolumeDeformableBody", prim_path=p.GetPath()),
-        lambda p: deformable_beta_enabled and p.IsA(UsdGeom.TetMesh) and not pxb.hasconflictingapis_DeformableBodyAPI(p, True),
+        lambda p: not deformable_deprecated_enabled and p.IsA(UsdGeom.TetMesh) and not pxb.hasconflictingapis_DeformableBodyAPI(p, True),
     ),
     ExtraAddItem(
-        "Surface Deformable Body (beta)",
+        "Surface Deformable Body",
         lambda p: not p.HasAPI("OmniPhysicsDeformableBodyAPI"),
         lambda p: check_surface_deformable_application(p) and execute("SetSurfaceDeformableBody", prim_path=p.GetPath()),
-        lambda p: deformable_beta_enabled and p.IsA(UsdGeom.Mesh) and not pxb.hasconflictingapis_DeformableBodyAPI(p, True),
+        lambda p: not deformable_deprecated_enabled and p.IsA(UsdGeom.Mesh) and not pxb.hasconflictingapis_DeformableBodyAPI(p, True),
     ),
     ExtraAddItem(
         "Water Preset (PBD Material)",
@@ -1077,10 +1089,25 @@ property_info = {
     "physxScene:gpuMaxNumPartitions": InfoData(1, 32),
 }
 
+@dataclass()
+class StageInfo():
+    mpu: float
+    kgpu: float
+    up: str
+
+    def __init__(self, stage):
+        self.load(stage)
+
+    def load(self, stage):
+        self.kgpu = UsdPhysics.GetStageKilogramsPerUnit(stage)
+        self.mpu = UsdGeom.GetStageMetersPerUnit(stage)
+        self.up = UsdGeom.GetStageUpAxis(stage)
+
 not_authored_token = "N/A"
 
 property_sentinels = {
-    "physics:gravityMagnitude": {"Earth Gravity": Limits.FLT_NINF},
+    "physics:gravityMagnitude": {lambda stage_info: str(9.81 / stage_info.mpu): Limits.FLT_NINF},
+    "physics:gravityDirection": {lambda stage_info: {"Y": "(0.0, -1.0, 0.0)", "Z": "(0.0, 0.0, -1.0)"}.get(stage_info.up): Gf.Vec3f(0)},
     "physics:diagonalInertia": {"Ignore": Gf.Vec3f(0)},
     "physics:mass": {"Autocomputed": 0},
     "physics:density": {"Autocomputed": 0},

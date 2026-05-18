@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -108,6 +108,16 @@ ShapeDesc* parseCollisionInternal(const UsdStageWeakPtr stage, UsdGeomXformCache
                     }
                     desc = static_cast< ShapeDesc *>(sdesc);
                 }
+                else
+                {
+                    CARB_LOG_ERROR("Provided points geom with a PhysicsCollisionAPI does not have the same number of positions and widths, collision will not be created. Prim: %s", usdPrim.GetPrimPath().GetText());
+                    return nullptr;
+                }
+            }
+            else
+            {
+                CARB_LOG_ERROR("Provided points geom with a PhysicsCollisionAPI does not have widths, collision will not be created. Prim: %s", usdPrim.GetPrimPath().GetText());
+                return nullptr;
             }
         }
         else if (usdPrim.IsA<UsdGeomCube>())

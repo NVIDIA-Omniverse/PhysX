@@ -1,25 +1,8 @@
 //
 // Copyright 2016 Pixar
 //
-// Licensed under the Apache License, Version 2.0 (the "Apache License")
-// with the following modification; you may not use this file except in
-// compliance with the Apache License and the following modification to it:
-// Section 6. Trademarks. is deleted and replaced with:
-//
-// 6. Trademarks. This License does not grant permission to use the trade
-//    names, trademarks, service marks, or product names of the Licensor
-//    and its affiliates, except as required to comply with Section 4(c) of
-//    the License and to reproduce the content of the NOTICE file.
-//
-// You may obtain a copy of the Apache License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the Apache License with the above modification is
-// distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the Apache License for the specific
-// language governing permissions and limitations under the Apache License.
+// Licensed under the terms set forth in the LICENSE.txt file available at
+// https://openusd.org/license.
 //
 #ifndef PHYSXSCHEMA_TOKENS_H
 #define PHYSXSCHEMA_TOKENS_H
@@ -954,10 +937,18 @@ struct PhysxSchemaTokensType {
     /// 
     /// Property namespace prefix for the PhysxSchemaPhysxMimicJointAPI schema.
     const TfToken physxMimicJoint;
+    /// \brief "physxMimicJoint:__INSTANCE_NAME__:dampingRatio"
+    /// 
+    /// PhysxSchemaPhysxMimicJointAPI
+    const TfToken physxMimicJoint_MultipleApplyTemplate_DampingRatio;
     /// \brief "physxMimicJoint:__INSTANCE_NAME__:gearing"
     /// 
     /// PhysxSchemaPhysxMimicJointAPI
     const TfToken physxMimicJoint_MultipleApplyTemplate_Gearing;
+    /// \brief "physxMimicJoint:__INSTANCE_NAME__:naturalFrequency"
+    /// 
+    /// PhysxSchemaPhysxMimicJointAPI
+    const TfToken physxMimicJoint_MultipleApplyTemplate_NaturalFrequency;
     /// \brief "physxMimicJoint:__INSTANCE_NAME__:offset"
     /// 
     /// PhysxSchemaPhysxMimicJointAPI
@@ -1282,6 +1273,10 @@ struct PhysxSchemaTokensType {
     /// 
     /// PhysxSchemaPhysxSceneAPI
     const TfToken physxSceneCollisionSystem;
+    /// \brief "physxScene:disableSleeping"
+    /// 
+    /// PhysxSchemaPhysxSceneAPI
+    const TfToken physxSceneDisableSleeping;
     /// \brief "physxScene:enableCCD"
     /// 
     /// PhysxSchemaPhysxSceneAPI
@@ -1406,6 +1401,10 @@ struct PhysxSchemaTokensType {
     /// 
     /// PhysxSchemaPhysxSceneAPI
     const TfToken physxSceneReportKinematicStaticPairs;
+    /// \brief "physxScene:solveArticulationContactLast"
+    /// 
+    /// PhysxSchemaPhysxSceneAPI
+    const TfToken physxSceneSolveArticulationContactLast;
     /// \brief "physxScene:solverType"
     /// 
     /// PhysxSchemaPhysxSceneAPI

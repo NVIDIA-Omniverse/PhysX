@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -231,9 +231,53 @@ TEST_CASE("Simulator Simulation Tests",
 
     Simulation sim;
     sim.simulationFns = fns;
+    SimulationId simId;
+    const char* simulationName = "MockupSimulator";
+    SECTION("Simulation registry events")
+    {
+        struct eventDataStruct {
+            SimulationRegistryEventType::Enum eventType;
+            SimulationId id;
+            std::string name;
+        };
+        eventDataStruct eventData;
+        SubscriptionId subscriptionId = physics->subscribeSimulationRegistryEvents([&](const SimulationRegistryEventType::Enum eventType, const SimulationId& id, const char* name, void* userData) {
+            eventDataStruct* eventDataPtr = (eventDataStruct*)userData;
+            eventDataPtr->eventType = eventType;
+            eventDataPtr->id = id;
+            eventDataPtr->name.assign(name);
+        }, &eventData);
 
-    SimulationId simId = physics->registerSimulation(sim, "MockupSimulator");
-    REQUIRE(simId != kInvalidSimulationId);
+        REQUIRE(subscriptionId != kInvalidSubscriptionId);
+        simId = physics->registerSimulation(sim, simulationName);
+        REQUIRE(simId != kInvalidSimulationId);
+        REQUIRE(physics->isSimulationActive(simId));
+        REQUIRE(eventData.eventType == SimulationRegistryEventType::eSIMULATION_REGISTERED);
+        REQUIRE(eventData.id == simId);
+        REQUIRE(strcmp(eventData.name.c_str(), simulationName) == 0);
+
+        physics->deactivateSimulation(simId);
+        REQUIRE_FALSE(physics->isSimulationActive(simId));
+        REQUIRE(eventData.eventType == SimulationRegistryEventType::eSIMULATION_DEACTIVATED);
+        REQUIRE(eventData.id == simId);
+        REQUIRE(strcmp(eventData.name.c_str(), simulationName) == 0);
+
+        physics->activateSimulation(simId);
+        REQUIRE(physics->isSimulationActive(simId));
+        REQUIRE(eventData.eventType == SimulationRegistryEventType::eSIMULATION_ACTIVATED);
+        REQUIRE(eventData.id == simId);
+        REQUIRE(strcmp(eventData.name.c_str(), simulationName) == 0);
+
+        physics->unregisterSimulation(simId);
+        REQUIRE(eventData.eventType == SimulationRegistryEventType::eSIMULATION_UNREGISTERED);
+        REQUIRE(eventData.id == simId);
+        REQUIRE(strcmp(eventData.name.c_str(), simulationName) == 0);
+        physics->unsubscribeSimulationRegistryEvents(subscriptionId);
+        CARB_LOG_WARN("TestSimulatorSimulation: ending simulation registry events test");
+    }
+
+    simId = physics->registerSimulation(sim, simulationName);
+    REQUIRE(simId != kInvalidSimulationId);   
 
     SECTION("Stage attachment")
     {

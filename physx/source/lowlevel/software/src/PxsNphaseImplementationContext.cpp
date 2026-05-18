@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
        
@@ -157,16 +157,9 @@ public:
 					PxContactModifyPair& p = mModifiablePairArray[i];
 					const PxcNpWorkUnit& unit = cm.getWorkUnit();
 
-					p.shape[0] = gPxvOffsetTable.convertPxsShape2Px(unit.getShapeCore0());
-					p.shape[1] = gPxvOffsetTable.convertPxsShape2Px(unit.getShapeCore1());
-	
-					p.actor[0] = unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY0 | PxcNpWorkUnitFlag::eARTICULATION_BODY0) ?
-									gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(unit.mRigidCore0)
-								:	gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(unit.mRigidCore0);
-
-					p.actor[1] = unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY1 | PxcNpWorkUnitFlag::eARTICULATION_BODY1) ?
-									gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(unit.mRigidCore1)
-								:	gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(unit.mRigidCore1);
+					gPxvOffsetTable.fillPairPointers(p,	unit.getShapeCore0(), unit.getShapeCore1(), unit.mRigidCore0, unit.mRigidCore1,
+														unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY0 | PxcNpWorkUnitFlag::eARTICULATION_BODY0),
+														unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY1 | PxcNpWorkUnitFlag::eARTICULATION_BODY1));
 	
 					p.transform[0] = transformCache.getTransformCache(unit.mTransformCache0).transform;
 					p.transform[1] = transformCache.getTransformCache(unit.mTransformCache1).transform;
@@ -320,17 +313,18 @@ public:
 				PxU8* patchAddress = threadContext.mPatchStreamPool->mDataStream + threadContext.mPatchStreamPool->mDataStreamSize - patchIndex;
 	
 				PxU32 internalFlags = reinterpret_cast<PxContactPatch*>(output.contactPatches)->internalFlags;
-	
 
 				const bool hasIndices = (internalFlags & PxContactPatch::eHAS_FACE_INDICES);
-				const PxI32 increment2 = PxI32(output.nbContacts * sizeof(PxReal) + (hasIndices ? output.nbContacts * sizeof(PxU32) : 0));
-				const PxI32 index2 = PxAtomicAdd(&threadContext.mForceAndIndiceStreamPool->mSharedDataIndex, increment2);
+				const PxI32 forceAndFaceIncrement = PxI32(output.nbContacts * sizeof(PxReal) + (hasIndices ? output.nbContacts * sizeof(PxU32) : 0));
+				const PxI32 forceAndFaceIndex = PxAtomicAdd(&threadContext.mForceAndIndiceStreamPool->mSharedDataIndex, forceAndFaceIncrement);
 				
 				if (threadContext.mForceAndIndiceStreamPool->isOverflown())
 				{
 					PX_WARN_ONCE("Force buffer overflow detected, please increase its size in the scene desc!\n");
 					isOverflown = true;
 				}
+
+				PxU8* forceAndFaceAddress = threadContext.mForceAndIndiceStreamPool->mDataStream + threadContext.mForceAndIndiceStreamPool->mDataStreamSize - forceAndFaceIndex;
 
 				const PxI32 frictionIncrement = PxI32(frictionSize);
 				const PxI32 frictionIndex = PxAtomicAdd(&threadContext.mFrictionPatchStreamPool->mSharedDataIndex, frictionIncrement);
@@ -354,10 +348,13 @@ public:
 				}
 				else
 				{
-					output.contactForces = reinterpret_cast<PxReal*>(threadContext.mForceAndIndiceStreamPool->mDataStream + threadContext.mForceAndIndiceStreamPool->mDataStreamSize - index2);
-				
-					PxMemZero(output.contactForces, sizeof(PxReal) * output.nbContacts);
-					
+					PxMemZero(forceAndFaceAddress, sizeof(PxReal) * output.nbContacts);
+
+					if (hasIndices && output.getInternalFaceIndice())
+						PxMemCopy(forceAndFaceAddress + sizeof(PxReal) * output.nbContacts, output.getInternalFaceIndice(), sizeof(PxU32) * output.nbContacts);
+
+					output.contactForces = reinterpret_cast<PxReal*>(forceAndFaceAddress);
+
 					PxExtendedContact* contacts = reinterpret_cast<PxExtendedContact*>(contactAddress);
 					PxMemCopy(patchAddress, output.contactPatches, sizeof(PxContactPatch) * output.nbPatches);
 	
@@ -652,7 +649,7 @@ void PxsNphaseImplementationContext::registerContactManager(PxsContactManager* c
 	Gu::Cache cache;
 	mContext.createCache(cache, geomType0, geomType1);
 
-	PxsContactManagerOutput& output = mNewNarrowPhasePairs.mOutputContactManagers.insert();
+	PxsContactManagerOutput& output = *mNewNarrowPhasePairs.mOutputContactManagers.insert();
 	PxMemZero(&output, sizeof(output));
 	output.nbPatches = PxTo8(patchCount);
 

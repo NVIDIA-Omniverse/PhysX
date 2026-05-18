@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -55,9 +55,7 @@ namespace IG
 	class SimpleIslandManager;
 }
 
-class PxcScratchAllocator;
 struct PxvSimStats;
-class PxTaskManager;
 class PxsContactManager;
 struct PxsContactManagerOutputCounts;
 class PxvNphaseImplementationContext;
@@ -134,8 +132,13 @@ public:
 	PX_FORCE_INLINE PxU32										getContactErrorCounterPosIter() const { return (mContactErrorPosIter ? mContactErrorPosIter->mCounter : 0u) + (mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mCounter : 0u); }
 	PX_FORCE_INLINE PxReal										getMaxContactErrorPosIter() const { return PxMax(mContactErrorPosIter ? mContactErrorPosIter->mMaxError : 0.0f, mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mMaxError : 0.0f); }
 
-
-	PX_FORCE_INLINE bool										isResidualReportingEnabled() const { return mIsResidualReportingEnabled; }
+	/**
+	\brief Returns whether sleeping is disabled in the scene
+	\return True if sleeping is disabled (PxSceneFlag::eDISABLE_SLEEPING is set)
+	*/
+	PX_FORCE_INLINE bool										isSleepingDisabled()			const	{ return mIsSleepingDisabled;			}
+	PX_FORCE_INLINE bool										isResidualReportingEnabled()	const	{ return mIsResidualReportingEnabled;	}
+	PX_FORCE_INLINE bool										isEnhancedDeterminismEnabled()	const	{ return mUseEnhancedDeterminism;		}
 	
 	/**
 	\brief Destroys this dynamics context
@@ -191,30 +194,31 @@ public:
 protected:
 
 	Context(IG::SimpleIslandManager& islandManager, PxVirtualAllocatorCallback* allocatorCallback,
-			PxvSimStats& simStats, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-			PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID, bool isResidualReportingEnabled) :
+			PxvSimStats& simStats,
+			PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags) :
 		mThresholdStream			(NULL),
 		mForceChangedThresholdStream(NULL),		
 		mIslandManager				(islandManager),
 		mDt							(1.0f), 
 		mInvDt						(1.0f),
 		mMaxBiasCoefficient			(maxBiasCoefficient),
-		mEnableStabilization		(enableStabilization),
-		mUseEnhancedDeterminism		(useEnhancedDeterminism),
-		mSolveArticulationContactLast(solveArticulationContactLast),	 
+		mEnableStabilization		(sceneFlags & PxSceneFlag::eENABLE_STABILIZATION),
+		mUseEnhancedDeterminism		(sceneFlags & PxSceneFlag::eENABLE_ENHANCED_DETERMINISM),
+		mSolveArticulationContactLast(sceneFlags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST),
+		mIsSleepingDisabled			(sceneFlags & PxSceneFlag::eDISABLE_SLEEPING),
 		mBounceThreshold			(-2.0f),
 		mLengthScale				(lengthScale),
 		mSolverBatchSize			(32),
 		mConstraintWriteBackPool	(PxVirtualAllocator(allocatorCallback)),
 		mConstraintPositionIterResidualPoolGpu(PxVirtualAllocator(allocatorCallback)),
-		mIsResidualReportingEnabled(isResidualReportingEnabled),
+		mIsResidualReportingEnabled	(sceneFlags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING),
 		mContactErrorPosIter		(NULL),
 		mContactErrorVelIter		(NULL),
 		mArticulationContactErrorVelIter(PxVirtualAllocator(allocatorCallback)),
 		mArticulationContactErrorPosIter(PxVirtualAllocator(allocatorCallback)),
 		mSimStats					(simStats),
 		mContextID					(contextID),
-		mBodyStateDirty(false),
+		mBodyStateDirty				(false),
 		mTotalContactError			()
 		{
 		}
@@ -243,10 +247,9 @@ protected:
 	PxReal						mMaxBiasCoefficient;
 
 	const bool					mEnableStabilization;
-
 	const bool					mUseEnhancedDeterminism;
-
 	const bool					mSolveArticulationContactLast;
+	const bool					mIsSleepingDisabled;
 
 	PxVec3						mGravity;
 	/**
@@ -356,15 +359,15 @@ protected:
 	Dy::ErrorAccumulatorEx mTotalContactError; 
 };
 
-Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
-								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-								IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled);
+Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool, PxvSimStats& simStats,
+								PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
+								IG::SimpleIslandManager& islandManager, PxU64 contextID, PxReal maxBiasCoefficient,
+								PxReal lengthScale, PxSceneFlags sceneFlags);
 
-Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
-									PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-									IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal lengthScale, 
-									bool externalForcesEveryTgsIterationEnabled, bool isResidualReportingEnabled);
+Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool, PxvSimStats& simStats,
+									PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
+									IG::SimpleIslandManager& islandManager, PxU64 contextID,
+									PxReal lengthScale, PxSceneFlags sceneFlags);
 }
 
 }

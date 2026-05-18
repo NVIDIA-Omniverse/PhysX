@@ -6,7 +6,7 @@ description = "Omniverse physics bundle extension."
 repository = ""
 keywords = ["physics", "physx", "vehicle"]
 
-version = "107.3.0-oss.0"
+version = "109.0.10"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -20,29 +20,36 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physics.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physics.stageupdate" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.vehicle" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.demos" = { version = "107.3.0-oss.0", exact = true }
-"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.usdphysics" = { version = "107.3.0-oss.0", exact = true }
-"omni.usdphysics.ui" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.cct" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.commands" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.camera" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.supportui" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.graph" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.telemetry" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.asset_validator" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "109.0.10", exact = true }
+"omni.physics.physx" = { version = "109.0.10", exact = true }
+"omni.physics.stageupdate" = { version = "109.0.10", exact = true }
+"omni.physx.ui" = { version = "109.0.10", exact = true }
+"omni.physx.vehicle" = { version = "109.0.10", exact = true }
+"omni.physx.demos" = { version = "109.0.10", exact = true }
+"omni.kit.property.physx" = { version = "109.0.10", exact = true }
+"omni.usdphysics" = { version = "109.0.10", exact = true }
+"omni.usdphysics.ui" = { version = "109.0.10", exact = true }
+"omni.physx.cct" = { version = "109.0.10", exact = true }
+"omni.physx.commands" = { version = "109.0.10", exact = true }
+"omni.physx.camera" = { version = "109.0.10", exact = true }
+"omni.physx.supportui" = { version = "109.0.10", exact = true }
+"omni.physx.graph" = { version = "109.0.10", exact = true }
+"omni.physx.telemetry" = { version = "109.0.10", exact = true }
+"omni.physx.asset_validator" = { version = "109.0.10", exact = true }
+
+[[test]]
+name = "startup"
+args = [
+    "--no-window",
+    "--/exts/omni.kit.telemetry/skipDeferredStartup=true", # Hang fix for startup tests with a telemetry dep
+    "--/telemetry/enableAnonymousData=false", # Hang fix for startup tests with a telemetry dep
+]
 
 [[test]]
 args = [
     "--no-window",
-    "--/exts/omni.kit.telemetry/skipDeferredStartup=true",
-]
-dependencies = [
+    "--/exts/omni.kit.telemetry/skipDeferredStartup=true", # Hang fix for startup tests with a telemetry dep
+    "--/telemetry/enableAnonymousData=false", # Hang fix for startup tests with a telemetry dep
 ]
 pyCoverageThreshold = 0
 waiver = "This is a bundle extension, it is not expected to have any coverage."

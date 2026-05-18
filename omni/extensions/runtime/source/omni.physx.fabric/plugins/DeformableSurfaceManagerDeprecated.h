@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -26,7 +26,7 @@ namespace physx
 {
 struct IPhysxSimulation;
 
-using PositionCache = std::unordered_map<uint64_t, pxr::VtArray<carb::Float3>>;
+using PositionCache = std::unordered_map<omni::fabric::Path, pxr::VtArray<carb::Float3>>;
 
 struct DeformableSurfaceDataDeprecated
 {
@@ -99,7 +99,7 @@ private:
     omni::fabric::Token mPointsToken;
     omni::fabric::Token mDeformableSurfaceSchemaToken;
 
-    std::unordered_map<omni::fabric::PathC, DeformableSurfaceDataDeprecated> mDeformableSurfaces;
+    std::unordered_map<omni::fabric::Path, DeformableSurfaceDataDeprecated> mDeformableSurfaces;
     std::unordered_map<::physx::PxScene*, DeformableSurfaceSetDeprecated> mDeformableSurfacesSet;
 
     omni::physx::IPhysxSimulation* mPhysxSimulationInterface = nullptr;

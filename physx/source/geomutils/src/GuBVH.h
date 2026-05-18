@@ -22,13 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef GU_BVH_H
 #define GU_BVH_H
-
 
 #include "geometry/PxBVH.h"
 
@@ -40,7 +39,6 @@
 
 namespace physx
 {
-	struct PxBVHInternalData;
 	class PxInputStream;
 
 namespace Gu
@@ -93,12 +91,11 @@ namespace Gu
 		// PT: TODO: revisit these PX_PHYSX_COMMON_API calls. At the end of the day the issue is that things like PxUserAllocated aren't exported.
 		PX_PHYSX_COMMON_API						BVH(MeshFactory* factory);
 		PX_PHYSX_COMMON_API						BVH(MeshFactory* factory, BVHData& data);
-		PX_PHYSX_COMMON_API						BVH(const PxBVHInternalData& data);
 		virtual									~BVH();
 
 		PX_PHYSX_COMMON_API	bool				init(PxU32 nbPrims, AABBTreeBounds* bounds, const void* boundsData, PxU32 stride, BVHBuildStrategy bs, PxU32 nbPrimsPerLeaf, float enlargement);
 							bool				load(PxInputStream& desc);
-							void				release();
+							void				release() PX_OVERRIDE;
 
 		// PxBVH
 		virtual				bool				raycast(const PxVec3& origin, const PxVec3& unitDir, float distance, RaycastCallback& cb, PxGeometryQueryFlags flags)							const	PX_OVERRIDE;
@@ -124,7 +121,6 @@ namespace Gu
 		PX_FORCE_INLINE		const PxU32*		getIndices()	const	{ return mData.mIndices;	}
 		PX_FORCE_INLINE		const BVHData&		getData()		const	{ return mData;				}
 
-							bool				getInternalData(PxBVHInternalData&, bool)	const;
 							bool				updateBoundsInternal(PxU32 localIndex, const PxBounds3& bounds);
 		// PT: alternative implementations directly working on shape data
 							bool				overlap(const ShapeData& shapeData, OverlapCallback& cb, PxGeometryQueryFlags flags)										const;

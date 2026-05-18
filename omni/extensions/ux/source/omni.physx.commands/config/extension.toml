@@ -3,10 +3,10 @@ category = "simulation"
 authors = ["PhysX"]
 title = "PhysX Commands"
 description="Physics commands"
-repository=""
+repository = ""
 keywords = ["physics", "physx", "commands"]
 
-version = "107.3.0-oss.0"
+version = "109.0.10"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -20,7 +20,7 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "109.0.10", exact = true }
 "omni.kit.commands" = {}
 "omni.kit.usd_undo" = {}
 "omni.usd" = {}

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -117,10 +117,17 @@ void SpatialTendonManager::update()
     mFabricEnabled = gSettings->getAsBool(kSettingFabricEnabled);
     if (mFabricEnabled && mFabricSync)
     {
+        omni::fabric::IStageReaderWriter* iStageReaderWriter =
+            carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+        omni::fabric::ISimStageWithHistory* iSimStageWithHistory =
+            carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+        omni::fabric::StageReaderWriterId stageInProgress = iStageReaderWriter->get(mFabricSync->getStageId());
+
         mFabricSync->syncXforms();
         for (const auto& bodyPath : mVisibleBodies)
         {
-            const usdrt::GfMatrix4d matrix = mFabricSync->computeWorldXform(omni::fabric::asInt(bodyPath));
+            const usdrt::GfMatrix4d matrix = mFabricSync->computeWorldXform(
+                omni::fabric::convertToPathType<omni::fabric::Path>(iStageReaderWriter->getFabricId(stageInProgress), bodyPath));
             pxr::GfMatrix4d gfMatrix;
             memcpy(&gfMatrix, &matrix, sizeof(pxr::GfMatrix4d));
             auto iterMat = mBodyMatrices.find(bodyPath);
@@ -1512,7 +1519,15 @@ pxr::GfMatrix4d SpatialTendonManager::getBodyTransform(const pxr::SdfPath& bodyP
 {
     if (mFabricEnabled && mFabricSync)
     {
-        const usdrt::GfMatrix4d matrix = mFabricSync->computeWorldXform(omni::fabric::asInt(bodyPath));
+        omni::fabric::IStageReaderWriter* iStageReaderWriter =
+            carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+        omni::fabric::ISimStageWithHistory* iSimStageWithHistory =
+            carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+        omni::fabric::StageReaderWriterId stageInProgress = iStageReaderWriter->get(mFabricSync->getStageId());
+
+        const usdrt::GfMatrix4d matrix =
+            mFabricSync->computeWorldXform(omni::fabric::convertToPathType<omni::fabric::Path>(
+                iStageReaderWriter->getFabricId(stageInProgress), bodyPath));
         pxr::GfMatrix4d convertedMat;
         memcpy(&convertedMat, &matrix, sizeof(pxr::GfMatrix4d));
         return convertedMat;

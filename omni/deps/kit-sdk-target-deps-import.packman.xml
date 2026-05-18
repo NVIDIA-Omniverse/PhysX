@@ -15,7 +15,7 @@
     <filter include="premake" linkPath="../_build/host-deps/premake" />
   </import>
 
-    <!-- override doctest version ,the kit one is not yet publicly available -->
+  <!-- override doctest version, the kit one is not yet publicly available -->
   <dependency name="doctest">
     <package name="doctest" version="2.4.5+nv1-3" />
   </dependency>

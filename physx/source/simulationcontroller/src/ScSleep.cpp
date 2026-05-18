@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScScene.h"
 #include "ScArticulationSim.h"
 #include "ScBodySim.h"
-#include "ScActorSim.h"
+#include "ScArticulationCore.h"
 #include "DyIslandManager.h"
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -135,7 +135,7 @@ void Sc::DeformableVolumeSim::setActive(bool active, bool /*asPartOfCreation*/)
 namespace
 {
 struct GetRigidSim	{ static PX_FORCE_INLINE BodySim* getSim(const IG::Node& node)			{ return reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(node.mObject) - BodySim::getRigidBodyOffset());		}	};
-struct GetArticSim	{ static PX_FORCE_INLINE ArticulationSim* getSim(const IG::Node& node)	{ return reinterpret_cast<ArticulationSim*>(getObjectFromIG<FeatherstoneArticulation>(node)->getUserData());	}	};
+struct GetArticSim	{ static PX_FORCE_INLINE ArticulationSim* getSim(const IG::Node& node)	{ return static_cast<ArticulationSim*>(getObjectFromIG<FeatherstoneArticulation>(node));	}	};
 #if PX_SUPPORT_GPU_PHYSX
 struct GetDeformableSurfaceSim	{ static PX_FORCE_INLINE DeformableSurfaceSim* getSim(const IG::Node& node)	{ return getObjectFromIG<DeformableSurface>(node)->getSim();	}	};
 struct GetDeformableVolumeSim	{ static PX_FORCE_INLINE DeformableVolumeSim* getSim(const IG::Node& node)	{ return getObjectFromIG<DeformableVolume>(node)->getSim();		}	};
@@ -261,6 +261,9 @@ void Sc::ActorSim::setActive(bool active)
 
 void Sc::Scene::putObjectsToSleep()
 {
+	if(mPublicFlags & PxSceneFlag::eDISABLE_SLEEPING)
+		return;
+
 	PX_PROFILE_ZONE("Sc::Scene::putObjectsToSleep", mContextId);
 
 	//Set to sleep all bodies that were in awake islands that have just been put to sleep.

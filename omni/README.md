@@ -33,10 +33,8 @@ Note: During the pre-build process, dependencies will be automatically downloade
 
 ## Building
 
-Note: If your intention is to build just Omniverse PhysX with default dependencies (you are not following e.g. [Usage with IsaacSim](#usage-with-isaacsim)), then first run `./repo.[bat|sh] source clear` to clear any previous kit-kernel package dependency overrides (.user files) from previous attempts.
-
 Run `./build.[bat|sh]` with the following optional switches:
-* `-x`: Cleans the repository before building. Important: If you have just set up or cleaned up a kit-kernel dependency override with `./repo.[bat|sh] source`, you must always build with `-x` to do a clean rebuild!
+* `-x`: Cleans the repository before building.
 * `-g`: Generates project files and stops.
 * `--devphysx`: Builds with local PhysX SDK binaries present in the `/physx` directory instead of using a prebuilt package. On `Linux`, you must first build the PhysX SDK separately; see the [Building with PhysX SDK](#building-with-physx-sdk) section.
 * `--devschema`: Generates and builds with PhysX USD schema code in the `/omni/schema` directory instead of using a prebuilt package. Make sure to use ``./build.[bat|sh]`` instead of ``./repo.[bat|sh] build`` when using ``--devschema``, otherwise the schema generation process will not trigger!
@@ -48,11 +46,12 @@ See ``./build.[bat|sh] --help`` for more information.
 ### Building with PhysX SDK
 
 * `Linux`: Run `/physx/generate_projects.sh` and choose the linux-carbonite or linux-aarch64-carbonite preset, depending on your platform, to generate Makefiles. Build PhysX SDK with the `checked` configuration. See also `/physx/README.md`. After the PhysX SDK is built, build Omniverse PhysX with the `--devphysx` switch; see the [Building](#building) section.
-* `Windows`: Run `/physx/generate_projects.bat` and choose the vc16win64-carbonite preset to generate a Visual Studio solution. Build PhysX SDK with the `checked` configuration. See also `/physx/README.md`. After the PhysX SDK is built, build Omniverse PhysX with the `--devphysx` switch; see the [Building](#building) section. We also include PhysX SDK Visual Studio project files and build them as part of the Omniverse PhysX build process when the `--devphysx` switch is used.
+* `Windows`: Run `/physx/generate_projects.bat` and choose the vc16win64-carbonite preset to generate a Visual Studio solution. Build PhysX SDK with the `checked` configuration. See also `/physx/README.md`. After the PhysX SDK is built, build Omniverse PhysX with the `--devphysx` switch; see the [Building](#building) section. We also include PhysX SDK Visual Studio project files as part of the Omniverse PhysX build process when the `--devphysx` switch is used.
 
 ## Usage with IsaacSim
 
 * Check out a tag of the IsaacSim repository according to the following mapping of IsaacSim repository tags to PhysX repository tags:
+    * v6.0.0-dev - 109.0-omni-and-physx-5.7.0
     * v5.1.0 - 107.3-omni-and-physx-5.6.1
     * Fallback to the default branch if the tag is not yet available.
 * Run `python ./tools/isaacsim/setup_and_build.py` with the following arguments:
@@ -68,7 +67,6 @@ See ``./build.[bat|sh] --help`` for more information.
     * In the IsaacSim directory:
         * Run `./repo.[bat|sh] source clear` to clear any previous package dependency overrides (.user files).
         * Run `./build.[bat|sh] -g -x` to download all IsaacSim dependencies and clean any previously built files.
-    * In the `omni` folder of the Omniverse PhysX repository, run `./repo.[bat|sh] source link kit-kernel '/path/to/isaacsim/_build/${platform_target}/${config}/kit'` (replace */path/to/isaacsim* with the path to the directory where you cloned the IsaacSim repository). This will ensure that Omniverse PhysX is built with the same KitSDK version as IsaacSim.
     * Now build Omniverse PhysX extensions according to the [Building](#building) section above.
         * Make sure to add `--devphysx` if you want to build with your locally built PhysX SDK binaries in the `/physx` folder. You must first build the PhysX SDK separately; see the [Building with PhysX SDK](#building-with-physx-sdk) section!
         * Make sure to add `--devschema` if you want to build with your local changes to the PhysX schemas in the `/omni/schema` folder.

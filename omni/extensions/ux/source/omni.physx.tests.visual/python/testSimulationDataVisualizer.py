@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.usd
 from omni.physx.scripts import physicsUtils
@@ -86,7 +87,7 @@ class PhysxSimulationDataVisualizerTest(TestCase):
             await self.step(simulation_steps, precise=True, stop_timeline_after=True)
             await self.wait(1)
 
-        result = await self.do_visual_test(img_name=("test_simulation_data_visualizer_" + test_img_suffix), skip_assert=True)
+        result = await self.do_visual_test(img_name=("test_simulation_data_visualizer_" + test_img_suffix), skip_assert=True, use_renderer_capture=True)
 
         await self.wait(10)
 

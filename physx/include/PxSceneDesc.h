@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -293,7 +293,7 @@ struct PxSceneFlag
 		*/
 		eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS = (1 << 16),
 
-		/*
+		/**
 		\brief Enables the direct-GPU API. Raising this flag is only allowed if eENABLE_GPU_DYNAMICS is raised and 
 		PxBroadphaseType::eGPU is used.
 
@@ -305,8 +305,10 @@ struct PxSceneFlag
 		PxDirectGPUAPI::getArticulationData(), PxDirectGPUAPI::copyContactData()), and reading state directly from the actor
 		is not allowed.
 
+		\note This flag requires PxSceneFlag::eDISABLE_SLEEPING to be raised.
+
 		\note This flag is not mutable and must be set in PxSceneDesc at scene creation.
-		\see PxScene::getDirectGPUAPI() PxDirectGPUAPI
+		\see PxScene::getDirectGPUAPI() PxDirectGPUAPI eDISABLE_SLEEPING
 
 		<b>Default</b> false
 		*/
@@ -340,8 +342,10 @@ struct PxSceneFlag
 		\brief Enables the solver residual reporting.
 
 		\note Enabling this flag can have a negative impact on the performance but the impact should be small.
+
+		\deprecated
 		*/
-		eENABLE_SOLVER_RESIDUAL_REPORTING = (1 << 19),
+		PX_DEPRECATED eENABLE_SOLVER_RESIDUAL_REPORTING = (1 << 19),
 
 		/**
 		\brief Reorders articulation contact constraints and articulation joint maximum velocity constraints in the solver.
@@ -369,6 +373,18 @@ struct PxSceneFlag
 		<b>Default</b> false
 		*/
 		eSOLVE_ARTICULATION_CONTACT_LAST = (1 << 20),
+
+		/**
+		\brief Disables all sleeping logic in the scene.
+
+		When this flag is raised, no objects will be put to sleep. They will all be treated by the solver as awake.
+		This is a performance optimization for use cases where sleeping is not desired.
+
+		\note This flag is automatically enabled when PxSceneFlag::eENABLE_DIRECT_GPU_API is set.
+
+		<b>Default</b> false
+		*/
+		eDISABLE_SLEEPING = (1 << 21),
 
 		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 	};

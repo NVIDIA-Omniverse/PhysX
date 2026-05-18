@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -103,16 +103,19 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 			if(c == '?' && strcmp(element, "xml") == 0)
 			{
-				isError = true;
 				if(!iface->processXmlDeclaration(attr, 0, mLineNo))
+				{
+					isError = true;
+					mError = "User callback processXmlDeclaration aborted parsing";
 					return NULL;
+				}
 			}
 			else
 			{
 				if(!iface->processElement(element, 0, attr, mLineNo))
 				{
 					isError = true;
-					mError = "User aborted the parsing process";
+					mError = "User callback processElement aborted parsing";
 					return NULL;
 				}
 
@@ -122,8 +125,23 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 				if(!iface->processClose(close, mStackIndex, isError))
 				{
+					if(isError)
+					{
+						mError = "User callback processClose aborted parsing";
+					}
+
+					// we need to set the read pointer!
+					uint64_t offset = (mReadBufferEnd - scan) - 1;
+					uint64_t readLoc = mLastReadLoc - offset;
+					mFileBuf->seek(readLoc);
+				}
+
+				freePoppedElement();
+				if(isError)
+				{
 					return NULL;
 				}
+
 			}
 
 			if(!slash)
@@ -131,26 +149,34 @@ class MyFastXml : public physx::shdfnd::FastXml
 		}
 		else
 		{
-			scan = skipNextData(scan);
-			char* data = scan; // this is the data portion of the element, only copies memory if we encounter line feeds
+			scan = skipFeed(scan);
+ 			char* data = scan; // this is the data portion of the element, only copies memory if we encounter line feeds
 			char* dest_data = 0;
 			while(*scan && *scan != '<')
 			{
 				if(getCharType(scan) == CT_END_OF_LINE)
 				{
-					if(*scan == '\r')
-						mLineNo++;
-					dest_data = scan;
+					if (!dest_data)
+						dest_data = scan;
+
+					char* after_feed = skipFeed(scan);
 					*dest_data++ = ' '; // replace the linefeed with a space...
-					scan = skipNextData(scan);
+					scan = after_feed;
+
 					while(*scan && *scan != '<')
 					{
 						if(getCharType(scan) == CT_END_OF_LINE)
 						{
-							if(*scan == '\r')
-								mLineNo++;
+							after_feed = skipFeed(scan);
 							*dest_data++ = ' '; // replace the linefeed with a space...
-							scan = skipNextData(scan);
+							scan = after_feed;
+						}
+						else if(*scan == '&')
+						{
+							if(!decodeEntity(scan, dest_data, isError))
+							{
+								return NULL;
+							}
 						}
 						else
 						{
@@ -161,72 +187,18 @@ class MyFastXml : public physx::shdfnd::FastXml
 				}
 				else if('&' == *scan)
 				{
-					dest_data = scan;
+					if(!dest_data)
+						dest_data = scan;
+
 					while(*scan && *scan != '<')
 					{
 						if('&' == *scan)
 						{
-							if(*(scan + 1) && *(scan + 1) == '#' && *(scan + 2))
+							if(!decodeEntity(scan, dest_data, isError))
 							{
-								if(*(scan + 2) == 'x')
-								{
-									// Hexadecimal.
-									if(!*(scan + 3))
-										break;
-
-									char* q = scan + 3;
-									q = strchr(q, ';');
-
-									if(!q || !*q)
-										PX_ASSERT(0);
-
-									--q;
-									char ch = char(*q > '9' ? (tolower(*q) - 'a' + 10) : *q - '0');
-									if(*(--q) != tolower('x'))
-										ch |= char(*q > '9' ? (tolower(*q) - 'a' + 10) : *q - '0') << 4;
-
-									*dest_data++ = ch;
-								}
-								else
-								{
-									// Decimal.
-									if(!*(scan + 2))
-										break;
-
-									const char* q = scan + 2;
-									q = strchr(q, ';');
-
-									if(!q || !*q)
-										PX_ASSERT(0);
-
-									--q;
-									char ch = *q - '0';
-									if(*(--q) != '#')
-										ch |= (*q - '0') * 10;
-
-									*dest_data++ = ch;
-								}
-
-								char* start = scan;
-								char* end = strchr(start, ';');
-								if(end)
-								{
-									*end = 0;
-									scan = end + 1;
-								}
-
-								continue;
+								return NULL;
 							}
-
-							for(int i = 0; i < NUM_ENTITY; ++i)
-							{
-								if(strncmp(entity[i].str, scan, entity[i].strLength) == 0)
-								{
-									*dest_data++ = entity[i].chr;
-									scan += entity[i].strLength;
-									break;
-								}
-							}
+							continue;
 						}
 						else
 						{
@@ -263,7 +235,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 				if(!iface->processElement(element, data, attr, mLineNo))
 				{
 					isError = true;
-					mError = "User aborted the parsing process";
+					mError = "User callback processElement aborted parsing";
 					return NULL;
 				}
 
@@ -285,7 +257,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 						if(!iface->processComment(comment))
 						{
 							isError = true;
-							mError = "User aborted the parsing process";
+							mError = "User callback processComment aborted parsing";
 							return NULL;
 						}
 					}
@@ -317,6 +289,8 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 	char* processClose(char* scan, FastXml::Callback* iface, bool& isError)
 	{
+		PX_ASSERT(!isError);
+
 		const char* start = popElement(), *close = start;
 		if(scan[1] != '>')
 		{
@@ -331,19 +305,27 @@ class MyFastXml : public physx::shdfnd::FastXml
 		{
 			isError = true;
 			mError = "Open and closing tags do not match";
-			return 0;
 		}
 
-		if(!iface->processClose(close, mStackIndex, isError))
+		if(!isError && !iface->processClose(close, mStackIndex, isError))
 		{
+			if(isError)
+			{
+				mError = "User callback processClose aborted parsing";
+			}
+
 			// we need to set the read pointer!
-			uint32_t offset = uint32_t(mReadBufferEnd - scan) - 1;
-			uint32_t readLoc = mLastReadLoc - offset;
+			uint64_t offset = (mReadBufferEnd - scan) - 1;
+			uint64_t readLoc = mLastReadLoc - offset;
 			mFileBuf->seek(readLoc);
+		}
+
+		freePoppedElement();
+		if(isError)
+		{
 			return NULL;
 		}
 		++scan;
-
 		return scan;
 	}
 
@@ -358,16 +340,17 @@ class MyFastXml : public physx::shdfnd::FastXml
 	// if we have finished processing the data we had pending..
 	char* readData(char* scan)
 	{
-		for(uint32_t i = 0; i < (mStackIndex + 1); i++)
+		for(uint32_t i = 0; i < mStackIndex; i++)
 		{
 			if(!mStackAllocated[i])
 			{
 				const char* text = mStack[i];
 				if(text)
 				{
-					uint32_t tlen = uint32_t(strlen(text));
-					mStack[i] = static_cast<const char*>(mCallback->allocate(tlen + 1));
-					PxMemCopy(const_cast<void*>(static_cast<const void*>(mStack[i])), text, tlen + 1);
+					uint64_t tlen = strnlen(text, UINT64_MAX - 1);
+					const char* copy = static_cast<const char*>(mCallback->allocate(tlen + 1));
+					PxMemCopy(const_cast<void*>(static_cast<const void*>(copy)), text, tlen + 1);
+					mStack[i] = copy;
 					mStackAllocated[i] = true;
 				}
 			}
@@ -377,8 +360,8 @@ class MyFastXml : public physx::shdfnd::FastXml
 		{
 			if(scan == NULL)
 			{
-				uint32_t seekLoc = mFileBuf->tell();
-				mReadBufferSize = (mFileBuf->getLength() - seekLoc);
+				uint64_t seekLoc = mFileBuf->tell();
+				mReadBufferSize = mFileBuf->getLength() - seekLoc;
 			}
 			else
 			{
@@ -390,13 +373,13 @@ class MyFastXml : public physx::shdfnd::FastXml
 		{
 			mReadBuffer = static_cast<char*>(mCallback->allocate(mReadBufferSize + 1));
 		}
-		uint32_t offset = 0;
-		uint32_t readLen = mReadBufferSize;
+		uint64_t offset = 0;
+		uint64_t readLen = mReadBufferSize;
 
 		if(scan)
 		{
-			offset = uint32_t(scan - mReadBuffer);
-			uint32_t copyLen = mReadBufferSize - offset;
+			offset = scan - mReadBuffer;
+			uint64_t copyLen = mReadBufferSize - offset;
 			if(copyLen)
 			{
 				PX_ASSERT(scan >= mReadBuffer);
@@ -407,7 +390,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 			offset = copyLen;
 		}
 
-		uint32_t readCount = mFileBuf->read(&mReadBuffer[offset], readLen);
+		uint64_t readCount = mFileBuf->read(&mReadBuffer[offset], readLen);
 
 		while(readCount > 0)
 		{
@@ -427,14 +410,14 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 			if(mOpenCount < MIN_CLOSE_COUNT)
 			{
-				uint32_t oldSize = uint32_t(mReadBufferEnd - mReadBuffer);
+				uint64_t oldSize = mReadBufferEnd - mReadBuffer;
 				mReadBufferSize = mReadBufferSize * 2;
 				char* oldReadBuffer = mReadBuffer;
 				mReadBuffer = static_cast<char*>(mCallback->allocate(mReadBufferSize + 1));
 				PxMemCopy(mReadBuffer, oldReadBuffer, oldSize);
 				mCallback->deallocate(oldReadBuffer);
 				offset = oldSize;
-				uint32_t readSize = mReadBufferSize - oldSize;
+				uint64_t readSize = mReadBufferSize - oldSize;
 				readCount = mFileBuf->read(&mReadBuffer[offset], readSize);
 				if(readCount == 0)
 					break;
@@ -462,7 +445,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 		while(*scan)
 		{
 
-			scan = skipNextData(scan);
+			scan = skipFeed(scan);
 
 			if(*scan == 0)
 				break;
@@ -493,7 +476,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 						scan = comment_end + 3;
 						if(!iface->processComment(comment))
 						{
-							mError = "User aborted the parsing process";
+							mError = "User callback processComment aborted parsing";
 							return false;
 						}
 					}
@@ -507,13 +490,14 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 					// Read DOCTYPE
 					const char* tag = "DOCTYPE";
+                    const int strlen_tag = 7;
 					if(!strstr(scan, tag))
 					{
 						mError = "Invalid DOCTYPE";
 						return false;
 					}
 
-					scan += strlen(tag);
+					scan += strlen_tag;
 
 					// Skip whites
 					while(CT_SOFT == getCharType(scan))
@@ -534,7 +518,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 					if(!iface->processDoctype(rootElement, 0, 0, 0))
 					{
-						mError = "User aborted the parsing process";
+						mError = "User callback processDoctype aborted parsing";
 						return false;
 					}
 
@@ -548,10 +532,6 @@ class MyFastXml : public physx::shdfnd::FastXml
 				scan = processClose(scan, iface, isError);
 				if(!scan)
 				{
-					if(isError)
-					{
-						mError = "User aborted the parsing process";
-					}
 					return !isError;
 				}
 			}
@@ -576,10 +556,6 @@ class MyFastXml : public physx::shdfnd::FastXml
 					scan = processClose(c, element, scan, argc, argv, iface, isError);
 					if(!scan)
 					{
-						if(isError)
-						{
-							mError = "User aborted the parsing process";
-						}
 						return !isError;
 					}
 				}
@@ -595,7 +571,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 					while(*scan)
 					{
-						scan = skipNextData(scan); // advance past any soft seperators (tab or space)
+						scan = skipFeed(scan); // advance past any soft seperators (tab or space)
 
 						if(getCharType(scan) == CT_END_OF_ELEMENT)
 						{
@@ -614,10 +590,6 @@ class MyFastXml : public physx::shdfnd::FastXml
 							scan = processClose(c, element, scan, argc, argv, iface, isError);
 							if(!scan)
 							{
-								if(isError)
-								{
-									mError = "User aborted the parsing process";
-								}
 								return !isError;
 							}
 							break;
@@ -650,7 +622,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 								if(*scan) // if not eof...
 								{
-									scan = skipNextData(scan);
+									scan = skipFeed(scan);
 									if(*scan == '"')
 									{
 										scan++;
@@ -721,14 +693,14 @@ class MyFastXml : public physx::shdfnd::FastXml
 	PX_INLINE void releaseMemory()
 	{
 		mFileBuf = NULL;
-		mCallback->deallocate(mReadBuffer);
-		mReadBuffer = NULL;
-		mStackIndex = 0;
-		mReadBufferEnd = NULL;
-		mOpenCount = 0;
-		mLastReadLoc = 0;
-		mError = NULL;
-		for(uint32_t i = 0; i < (mStackIndex + 1); i++)
+
+		if(mReadBuffer)
+		{
+			mCallback->deallocate(mReadBuffer);
+			mReadBuffer = NULL;
+		}
+
+		for(uint32_t i = 0; i < mStackIndex; i++)
 		{
 			if(mStackAllocated[i])
 			{
@@ -737,6 +709,12 @@ class MyFastXml : public physx::shdfnd::FastXml
 			}
 			mStack[i] = NULL;
 		}
+		mStackIndex = 0;
+
+		mReadBufferEnd = NULL;
+		mOpenCount = 0;
+		mLastReadLoc = 0;
+		mError = NULL;
 	}
 
 	PX_INLINE CharType getCharType(char* scan) const
@@ -759,42 +737,155 @@ class MyFastXml : public physx::shdfnd::FastXml
 		return scan;
 	}
 
-	PX_INLINE char* skipNextData(char* scan)
+	PX_INLINE char* skipFeed(char* scan)
 	{
 		// while we have data, and we encounter soft seperators or line feeds...
 		while(*scan && (getCharType(scan) == CT_SOFT || getCharType(scan) == CT_END_OF_LINE))
 		{
-			if(*scan == '\n')
+			if(*scan == '\r')
+			{
+				if(*(scan + 1) == '\n')
+				{
+					mLineNo++;
+					scan += 2;
+					continue;
+				}
 				mLineNo++;
+				scan++;
+				continue;
+			}
+			if(*scan == '\n')
+			{
+				mLineNo++;
+				scan++;
+				continue;
+			}
 			scan++;
 		}
 		return scan;
 	}
 
+	PX_INLINE bool decodeEntity(char*& scan, char*& dest_data, bool& isError)
+	{
+		PX_ASSERT(*scan == '&');
+		if(!dest_data)
+		{
+			dest_data = scan;
+		}
+
+		// Numeric: &#...;
+		if(*(scan + 1) == '#' && *(scan + 2))
+		{
+			// decide hex vs dec
+			char* p = scan + 2;
+			const bool isHex = (*p == 'x');
+			char* digits = isHex ? (p + 1) : p;
+
+			// find the terminator
+			char* term = strchr(digits, ';');
+			if(!term)
+			{
+				isError = true;
+				mError = "Unterminated numeric entity";
+				return false;
+			}
+
+			// number of digits
+			const int nd = int(term - digits);
+
+			if(nd < 1 || nd > 2)
+			{
+				isError = true;
+				mError = "Unsupported entity length (only 1-2 digits allowed)";
+				return false;
+			}
+
+			auto hexNibble = [](unsigned char c) -> int
+			{
+				if(c >= '0' && c <= '9')
+					return c - '0';
+				c = (unsigned char)tolower(c);
+				if(c >= 'a' && c <= 'f')
+					return c - 'a' + 10;
+				return -1;
+			};
+
+			int val = 0;
+			if(isHex)
+			{
+				for(char* q = digits; q < term; ++q)
+				{
+					int h = hexNibble((unsigned char)*q);
+					if(h < 0)
+					{
+						isError = true;
+						mError = "Invalid hex digit in entity";
+						return false;
+					}
+					val = (val << 4) | h;
+				}
+			}
+			else
+			{
+				for(char* q = digits; q < term; ++q)
+				{
+					if(!(*q >= '0' && *q <= '9'))
+					{
+						isError = true;
+						mError = "Invalid decimal digit in entity";
+						return false;
+					}
+					val = val * 10 + (*q - '0');
+				}
+			}
+
+			*dest_data++ = (char)(unsigned char)val; // single-byte output
+			scan = term + 1;						 // guarantee forward progress
+			return true;
+		}
+
+		// Named: &lt; &gt; &amp; &quot; &apos;
+		for(int i = 0; i < NUM_ENTITY; ++i)
+		{
+			if(strncmp(entity[i].str, scan, entity[i].strLength) == 0)
+			{
+				*dest_data++ = entity[i].chr;
+				scan += entity[i].strLength;
+				return true;
+			}
+		}
+
+		isError = true;
+		mError = "Unknown entity";
+		return false;
+	}
+
 	void pushElement(const char* element)
 	{
 		PX_ASSERT(mStackIndex < uint32_t(MAX_STACK));
-		if(mStackIndex < uint32_t(MAX_STACK))
-		{
-			if(mStackAllocated[mStackIndex])
-			{
-				mCallback->deallocate(const_cast<void*>(static_cast<const void*>(mStack[mStackIndex])));
-				mStackAllocated[mStackIndex] = false;
-			}
-			mStack[mStackIndex++] = element;
-		}
+		PX_ASSERT(!mStackAllocated[mStackIndex]);
+		PX_ASSERT(mStack[mStackIndex] == NULL);
+		mStack[mStackIndex++] = element;
 	}
 
 	const char* popElement()
 	{
 		PX_ASSERT(mStackIndex > 0);
+		const uint32_t top = mStackIndex - 1;
+		const char* s = mStack[top];
+		mStackIndex = top;
+		return s;
+	}
+
+	PX_INLINE void freePoppedElement()
+	{
+		PX_ASSERT(mStackIndex < uint32_t(MAX_STACK));
 		if(mStackAllocated[mStackIndex])
 		{
 			mCallback->deallocate(const_cast<void*>(static_cast<const void*>(mStack[mStackIndex])));
 			mStackAllocated[mStackIndex] = false;
 		}
 		mStack[mStackIndex] = NULL;
-		return mStackIndex ? mStack[--mStackIndex] : NULL;
 	}
 
 	static const int MAX_STACK = 2048;
@@ -806,9 +897,9 @@ class MyFastXml : public physx::shdfnd::FastXml
 	char* mReadBuffer;
 	char* mReadBufferEnd;
 
-	uint32_t mOpenCount;
-	uint32_t mReadBufferSize;
-	uint32_t mLastReadLoc;
+	uint64_t mOpenCount;
+	uint64_t mReadBufferSize;
+	uint64_t mLastReadLoc;
 
 	int32_t mLineNo;
 	const char* mError;

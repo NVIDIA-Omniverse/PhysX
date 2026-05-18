@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -148,6 +148,10 @@ struct TriangleLeafBoundMinMaxTraverser
 			}
 			else
 			{
+				// BUGFIX 5813869: stale cloth-cloth contact managers may reference removed cloths
+				// whose GPU data contains garbage triangle indices. Skip if out of encoding range.
+				if(PxIsClothIndexInvalid(mId0, triangleIndex) || PxIsClothIndexInvalid(mId1, primitiveIndex))
+					return;
 				const PxU32 clothMask0 = PxEncodeClothIndex(mId0, triangleIndex);
 				const PxU32 clothMask1 = PxEncodeClothIndex(mId1, primitiveIndex);
 				const PxU32 clothFullMask0 = PxEncodeClothIndex(mId0, PX_MAX_NB_DEFORMABLE_SURFACE_TRI);
@@ -797,6 +801,10 @@ struct ClothTreeVertexTraverser
 
 		const PxU32 index = globalScanExclusiveSingleWarp(intersect, totalContactCount);
 
+		// BUGFIX 5813869: skip stale pairs with out-of-range indices from removed cloths.
+		if(PxIsClothIndexInvalid(clothId0, vertexIdx) || PxIsClothIndexInvalid(clothId1, primitiveIndex))
+			intersect = false;
+
 		if(intersect & index < contactSize)
 		{
 			PxgFemFemContactInfo contactInfo;
@@ -997,7 +1005,20 @@ struct ClothTreeEdgeTraverser
 		{
 			// Add multiple elements per thread.
 			const PxU32 index = globalScanExclusiveSingleWarp(intersectCount, totalContactCount);
-			if(index < contactSize)
+
+			// Per-thread guard: validCount above is warp-aggregate. Lanes with
+			// intersectCount == 0 skip the writeback for-loop below, but still
+			// call PxEncodeClothIndex above with their input primitiveIndex.
+			// In debug builds that fires the encoder's PX_ASSERT when the input
+			// is the 0xFFFFFFFF empty-leaf sentinel. The release-build effect
+			// is benign (the bogus encoded value lives only in a thread-local
+			// register that the for-loop never persists). Bug 6156209 / OMPE-92966.
+
+			// BUGFIX 5813869: skip stale pairs with out-of-range indices from removed cloths.
+			if(PxIsClothIndexInvalid(clothId0, t0_index) || PxIsClothIndexInvalid(clothId1, primitiveIndex))
+				intersectCount = 0;
+
+			if(index < contactSize && intersectCount)
 			{
 				PxgFemFemContactInfo contactInfo;
 				const PxU32 pairInd0 = PxEncodeClothIndex(clothId0, t0_index);

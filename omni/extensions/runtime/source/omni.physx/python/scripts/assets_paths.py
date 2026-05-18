@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.physx.bindings._physx as pxb
 
@@ -9,7 +10,7 @@ S3_BUCKET = "omniverse-content-staging"
 S3_REGION = "us-west-2"
 S3_PATH = "DoNotDelete/PhysicsDemoAssets/Versioned"
 
-deformable_beta_on = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_on = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 class AssetFolders:
     ANALOG_DIGITAL_CLOCK = "AnalogDigitalClock/1/"
@@ -24,7 +25,7 @@ class AssetFolders:
     LEGO_BUGGY = "LegoBuggy/1/"
     MIXER = "Mixer/1/"
     NUTS_AND_BOLTS = "NutsAndBolts/1/"
-    TEDDY_ON_ICE = "TeddyOnIce/2/" if deformable_beta_on else "TeddyOnIce/1/"
+    TEDDY_ON_ICE = "TeddyOnIce/1/" if deformable_deprecated_on else "TeddyOnIce/2/"
 
 
 def get_server_path(force_ov_path=False, force_s3_path=False):

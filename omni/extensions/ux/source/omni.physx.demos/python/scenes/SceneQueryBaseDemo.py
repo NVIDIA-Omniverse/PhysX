@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import random
 from omni.physx.scripts.physicsUtils import add_rigid_box, add_ground_plane, add_rigid_sphere, add_rigid_capsule, add_rigid_cylinder

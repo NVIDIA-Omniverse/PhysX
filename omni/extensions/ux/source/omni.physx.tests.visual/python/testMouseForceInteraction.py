@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from omni.physxtestsvisual.utils import TestCase
 from omni.physxtests.utils.physicsBase import TestCategory, PhysicsBaseAsyncTestCase
@@ -92,7 +93,7 @@ class PhysxMouseForceInteractionTest(TestCase):
             omni.timeline.get_timeline_interface().pause()
 
             nonlocal all_tests_passed
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mouse_force_interaction_grab",
                 use_distant_light=True,
@@ -130,7 +131,7 @@ class PhysxMouseForceInteractionTest(TestCase):
 
             omni.timeline.get_timeline_interface().pause()
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_mouse_force_interaction_push",
                 use_distant_light=True,

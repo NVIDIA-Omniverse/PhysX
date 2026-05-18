@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -70,10 +70,10 @@ GfMatrix4d computeLocalMatrix(omni::fabric::USDHierarchy& usdHierarchy,
                               omni::fabric::StageReaderWriter& stage,
                               const omni::fabric::Path& path,
                               const GfMatrix4d& worldMatrix,
-                              const omni::fabric::TokenC& worldMatrixToken)
+                              const omni::fabric::Token& worldMatrixToken)
 {
-    omni::fabric::PathC parentPath = usdHierarchy.getParent(path);
-    while (parentPath != omni::fabric::kUninitializedPath)
+    omni::fabric::Path parentPath = usdHierarchy.getParent(path);
+    while (parentPath != omni::fabric::Path())
     {
         const pxr::GfMatrix4d* parentWorldMatrix = stage.getAttributeRd<pxr::GfMatrix4d>(parentPath, worldMatrixToken);
         if (parentWorldMatrix)
@@ -90,19 +90,17 @@ GfMatrix4d computeLocalMatrix(omni::fabric::USDHierarchy& usdHierarchy,
 
 DirectGpuHelper::DirectGpuHelper()
 {
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
+    mRigidBodySchemaToken = omni::fabric::Token::createImmortal("PhysicsRigidBodyAPI");
 
-    mRigidBodySchemaToken = iToken->getHandle("PhysicsRigidBodyAPI");
+    mWorldMatrixToken = omni::fabric::Token::createImmortal(gWorldMatrixTokenString);
+    mLocalMatrixToken = omni::fabric::Token::createImmortal(gLocalMatrixTokenString);
 
-    mWorldMatrixToken = iToken->getHandle(gWorldMatrixTokenString);
-    mLocalMatrixToken = iToken->getHandle(gLocalMatrixTokenString);
+    mLinVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsVelocity.GetText());
+    mAngVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsAngularVelocity.GetText());
 
-    mLinVelToken = iToken->getHandle(UsdPhysicsTokens->physicsVelocity.GetText());
-    mAngVelToken = iToken->getHandle(UsdPhysicsTokens->physicsAngularVelocity.GetText());
-
-    mRigidBodyWorldPositionToken = iToken->getHandle(gRigidBodyWorldPositionTokenString);
-    mRigidBodyWorldOrientationToken = iToken->getHandle(gRigidBodyWorldOrientationTokenString);
-    mRigidBodyWorldScaleToken = iToken->getHandle(gRigidBodyWorldScaleTokenString);
+    mRigidBodyWorldPositionToken = omni::fabric::Token::createImmortal(gRigidBodyWorldPositionTokenString);
+    mRigidBodyWorldOrientationToken = omni::fabric::Token::createImmortal(gRigidBodyWorldOrientationTokenString);
+    mRigidBodyWorldScaleToken = omni::fabric::Token::createImmortal(gRigidBodyWorldScaleTokenString);
 
     using omni::fabric::BaseDataType;
     using omni::fabric::AttributeRole;
@@ -127,6 +125,7 @@ void DirectGpuHelper::attach(unsigned long usdStageId)
     mAttachTimestamp = mPhysxSimulationInterface->getSimulationTimestamp();
     //printf("~!~!~! Attaching at step %u\n", unsigned(mAttachTimestamp));
     mUsdStageId.id = usdStageId;
+    isTopologyConnectivityInitialized = false;
 }
 
 void DirectGpuHelper::detach()
@@ -135,7 +134,7 @@ void DirectGpuHelper::detach()
     *this = DirectGpuHelper();
 }
 
-void DirectGpuHelper::registerRigidBody(const omni::fabric::PathC& primPath, const carb::Float3& scale)
+void DirectGpuHelper::registerRigidBody(const omni::fabric::Path& primPath, const carb::Float3& scale)
 {
     //printf("+++ Registering GPU body %s\n", path.GetText());
 
@@ -475,6 +474,7 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
 // Note: This must be called when the right Cuda context/device is set!
 bool DirectGpuHelper::prepareMappings(omni::fabric::StageReaderWriter& srw)
 {
+    CARB_PROFILE_ZONE(1, "FabricMapper build");
     omni::fabric::FabricId fabricId = srw.getFabricId();
     if (fabricId == omni::fabric::kInvalidFabricId)
     {
@@ -485,63 +485,104 @@ bool DirectGpuHelper::prepareMappings(omni::fabric::StageReaderWriter& srw)
     int deviceId;
     cudaGetDevice(&deviceId);
 
-    CARB_PROFILE_ZONE(1, "FabricMapper build");
-    if (mNumRds > 0)
-    {
-        mFabricMapperRb.clear();
-        mFabricMapperRb.bindFabric(srw.getFabricId());
-        mFabricMapperRb.bindDevice(deviceId);
-        auto getRigidBodyIndex = [&](const RigidBodyData& rb) -> size_t {
-            if (rb.isArticulationLink)
-            {
-                return mNumRds + 1;
-            }
-            return rb.rd.idx;
-        };
-        mFabricMapperRb.build<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mLocalMatrixToken);
-        mFabricMapperRb.buildParent<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mWorldMatrixToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mLinVelToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mAngVelToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Double3>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldPositionToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float4>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldOrientationToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldScaleToken);
-    }
+    auto iFabricConnectivity = carb::getCachedInterface<omni::fabric::IConnectivity>();
+    auto iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
 
-    if (mLinkBufSize > 0)
+    if (mNumRds > 0 || mLinkBufSize > 0)
     {
-        mFabricMapperArticulation.clear();
-        mFabricMapperArticulation.bindFabric(srw.getFabricId());
-        mFabricMapperArticulation.bindDevice(deviceId);
-        auto getArticulationIndex = [&](const RigidBodyData& rb) -> size_t {
-            if (rb.isArticulationLink)
-            {
-                return rb.link.linkOffset;
-            }
-            return mLinkBufSize + 1;
+        using omni::fabric::AttrNameAndType;
+        const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(
+            mTypeAppliedSchema, mRigidBodySchemaToken) };
+        const omni::fabric::set<AttrNameAndType> requiredAny = {
+            AttrNameAndType(mTypeMatrix4d, mLocalMatrixToken),
+            AttrNameAndType(mTypeFloat3, mLinVelToken),
+            AttrNameAndType(mTypeFloat3, mAngVelToken),
+            AttrNameAndType(mTypeDouble3, mRigidBodyWorldPositionToken),
+            AttrNameAndType(mTypeQuat, mRigidBodyWorldOrientationToken),
+            AttrNameAndType(mTypeFloat3, mRigidBodyWorldScaleToken)
         };
-        mFabricMapperArticulation.build<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mLocalMatrixToken);
-        mFabricMapperArticulation.buildParent<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mWorldMatrixToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mLinVelToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mAngVelToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Double3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldPositionToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float4>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldOrientationToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldScaleToken);
-    }
+        omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
 
-    omni::fabric::IFabric* iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
+        const omni::fabric::set<AttrNameAndType> allPrimsRequiredAll = {};
+        const omni::fabric::set<AttrNameAndType> worldMatrixRequiredAny = { AttrNameAndType(mTypeMatrix4d, mWorldMatrixToken) };
+        omni::fabric::PrimBucketList parentsPrimBuckets = srw.findPrims(allPrimsRequiredAll, worldMatrixRequiredAny);
+
+        //cache parents
+        if (iFabricConnectivity->getDataRevision(fabricId) != mFabricConnectivityVersion || !isTopologyConnectivityInitialized)
+        {
+            mParentsMap.clear();
+            omni::fabric::USDHierarchy usdHierarchy(srw.getFabricId());
+            for (auto& rbd : mRigidBodies)
+            {
+                auto parentPath = usdHierarchy.getParent(omni::fabric::Path(rbd.first));
+            
+                // unique
+                auto iter = mParentsMap.find(parentPath);
+                if (iter == mParentsMap.end())
+                {
+                    auto [newiter, inserted] = mParentsMap.insert({parentPath, nullptr});
+                    rbd.second.parentLink = &(*newiter);
+                }
+                else
+                {
+                    rbd.second.parentLink = &(*iter);
+                }
+
+            }
+        }
+
+        if (mNumRds > 0)
+        {
+            mFabricMapperRb.bindFabric(srw.getFabricId());
+            mFabricMapperRb.bindDevice(deviceId);
+            auto getRigidBodyIndex = [&](const RigidBodyData& rb) -> size_t {
+                if (rb.isArticulationLink)
+                {
+                    return mNumRds + 1;
+                }
+                return rb.rd.idx;
+            };
+
+            mFabricMapperRb.build<RigidBodyData, pxr::GfMatrix4d>(mRigidBodies, mNumRds, getRigidBodyIndex, mLocalMatrixToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mLinVelToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mAngVelToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Double3>(mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldPositionToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float4>(mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldOrientationToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldScaleToken, primBuckets);
+            mFabricMapperRb.buildParent<RigidBodyData, pxr::GfMatrix4d>(mRigidBodies, mParentsMap, mNumRds, getRigidBodyIndex, mWorldMatrixToken, parentsPrimBuckets);
+        }
+
+        if (mLinkBufSize > 0)
+        {
+            mFabricMapperArticulation.bindFabric(srw.getFabricId());
+            mFabricMapperArticulation.bindDevice(deviceId);
+            auto getArticulationIndex = [&](const RigidBodyData& rb) -> size_t {
+                if (rb.isArticulationLink)
+                {
+                    return rb.link.linkOffset;
+                }
+                return mLinkBufSize + 1;
+            };
+
+            mFabricMapperArticulation.build<RigidBodyData, pxr::GfMatrix4d>(mRigidBodies, mLinkBufSize, getArticulationIndex, mLocalMatrixToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mLinVelToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mAngVelToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Double3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldPositionToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float4>(mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldOrientationToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldScaleToken, primBuckets);
+            mFabricMapperArticulation.buildParent<RigidBodyData, pxr::GfMatrix4d>(mRigidBodies, mParentsMap, mLinkBufSize, getArticulationIndex, mWorldMatrixToken, parentsPrimBuckets);
+        }
+    }
+    
+#if KIT_SDK_VERSION < 1090002
     mFabricTopologyVersion = iFabric->getTopologyVersion(fabricId);
+#else
+    mFabricTopologyVersion = iFabric->getCounter(fabricId, omni::fabric::Counter::eBucketTopology);
+#endif
+           
+    mFabricConnectivityVersion = iFabricConnectivity->getDataRevision(fabricId);
+    if(!isTopologyConnectivityInitialized)
+        isTopologyConnectivityInitialized = true;
 
     return true;
 }
@@ -795,8 +836,14 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
         int deviceId;
         cudaGetDevice(&deviceId);
 
-        omni::fabric::IFabric* iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
-        if (iFabric->getTopologyVersion(srw.getFabricId()) != mFabricTopologyVersion)
+        auto iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
+        auto iFabricConnectivity = carb::getCachedInterface<omni::fabric::IConnectivity>();
+
+        // NOTE: comment to measure mapping performance in each frame
+#if KIT_SDK_VERSION < 1090002
+        if (iFabric->getTopologyVersion(srw.getFabricId()) != mFabricTopologyVersion ||
+            iFabricConnectivity->getDataRevision(srw.getFabricId()) != mFabricConnectivityVersion ||
+            !isTopologyConnectivityInitialized)
         {
             if (!prepareMappings(srw))
             {
@@ -804,19 +851,31 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
                 return;
             }
         }
+#else
+        if (iFabric->getCounter(srw.getFabricId(), omni::fabric::Counter::eBucketTopology) != mFabricTopologyVersion ||
+            iFabricConnectivity->getDataRevision(srw.getFabricId()) != mFabricConnectivityVersion ||
+            !isTopologyConnectivityInitialized)
+        {
+            if (!prepareMappings(srw))
+            {
+                CARB_LOG_ERROR("Could not re-create Fabric mapping");
+                return;
+            }
+        }
+#endif
 
         // Get a write pointer to Fabric GPU data to dirty them before the GPU update.
-        using omni::fabric::AttrNameAndType_v2;
-        const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(
+        using omni::fabric::AttrNameAndType;
+        const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(
             mTypeAppliedSchema, mRigidBodySchemaToken) };
-        const omni::fabric::set<AttrNameAndType_v2> requiredAny = {
-            AttrNameAndType_v2(mTypeMatrix4d, mWorldMatrixToken),
-            AttrNameAndType_v2(mTypeMatrix4d, mLocalMatrixToken),
-            AttrNameAndType_v2(mTypeFloat3, mLinVelToken),
-            AttrNameAndType_v2(mTypeFloat3, mAngVelToken),
-            AttrNameAndType_v2(mTypeDouble3, mRigidBodyWorldPositionToken),
-            AttrNameAndType_v2(mTypeQuat, mRigidBodyWorldOrientationToken),
-            AttrNameAndType_v2(mTypeFloat3, mRigidBodyWorldScaleToken)
+        const omni::fabric::set<AttrNameAndType> requiredAny = {
+            AttrNameAndType(mTypeMatrix4d, mWorldMatrixToken),
+            AttrNameAndType(mTypeMatrix4d, mLocalMatrixToken),
+            AttrNameAndType(mTypeFloat3, mLinVelToken),
+            AttrNameAndType(mTypeFloat3, mAngVelToken),
+            AttrNameAndType(mTypeDouble3, mRigidBodyWorldPositionToken),
+            AttrNameAndType(mTypeQuat, mRigidBodyWorldOrientationToken),
+            AttrNameAndType(mTypeFloat3, mRigidBodyWorldScaleToken)
         };
         omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
         size_t bucketCount = primBuckets.bucketCount();
@@ -909,16 +968,16 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
 
     //printf("~!~!~! Updating GPU transforms\n");
 
-    using omni::fabric::AttrNameAndType_v2;
+    using omni::fabric::AttrNameAndType;
 
-   const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(mTypeAppliedSchema, mRigidBodySchemaToken) };
-   const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(mTypeMatrix4d, mWorldMatrixToken),
-                                                             AttrNameAndType_v2(mTypeMatrix4d, mLocalMatrixToken),
-                                                             AttrNameAndType_v2(mTypeFloat3, mLinVelToken),
-                                                             AttrNameAndType_v2(mTypeFloat3, mAngVelToken),
-                                                             AttrNameAndType_v2(mTypeDouble3, mRigidBodyWorldPositionToken),
-                                                             AttrNameAndType_v2(mTypeQuat, mRigidBodyWorldOrientationToken),
-                                                             AttrNameAndType_v2(mTypeFloat3, mRigidBodyWorldScaleToken) };
+   const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(mTypeAppliedSchema, mRigidBodySchemaToken) };
+   const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(mTypeMatrix4d, mWorldMatrixToken),
+                                                             AttrNameAndType(mTypeMatrix4d, mLocalMatrixToken),
+                                                             AttrNameAndType(mTypeFloat3, mLinVelToken),
+                                                             AttrNameAndType(mTypeFloat3, mAngVelToken),
+                                                             AttrNameAndType(mTypeDouble3, mRigidBodyWorldPositionToken),
+                                                             AttrNameAndType(mTypeQuat, mRigidBodyWorldOrientationToken),
+                                                             AttrNameAndType(mTypeFloat3, mRigidBodyWorldScaleToken) };
 
     omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
 
@@ -944,7 +1003,7 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
 
         for (size_t j = 0; j < paths.size(); j++)
         {
-            omni::fabric::PathC pathHandle = paths[j];
+            const omni::fabric::Path pathHandle = paths[j];
 
             // get the indexing data for this rigid body
             auto it = mRigidBodies.find(pathHandle);

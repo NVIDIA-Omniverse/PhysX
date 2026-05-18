@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -100,61 +100,6 @@ aos::FloatV SolverExtBody::projectVelocity(const aos::Vec3V& linear, const aos::
 	}
 }
 
-
-PxVec3 SolverExtBody::getLinVel() const
-{
-	if (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-		return mBodyData->linearVelocity;
-	else
-	{
-		const Vec3V linear = mArticulation->getLinkVelocity(mLinkIndex).linear;
-
-		PxVec3 result;
-		V3StoreU(linear, result);
-		/*PxVec3 result;
-		V3StoreU(getVelocity(*mFsData)[mLinkIndex].linear, result);*/
-		return result;
-	}
-}
-
-PxVec3 SolverExtBody::getAngVel() const
-{
-	if(mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-		return mBodyData->angularVelocity;
-	else
-	{
-		const Vec3V angular = mArticulation->getLinkVelocity(mLinkIndex).angular;
-		
-		PxVec3 result;
-		V3StoreU(angular, result);
-		/*PxVec3 result;
-		V3StoreU(getVelocity(*mFsData)[mLinkIndex].angular, result);*/
-		return result;
-	}
-}
-
-aos::Vec3V SolverExtBody::getLinVelV() const
-{
-	if (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-		return V3LoadA(mBodyData->linearVelocity);
-	else
-	{
-		return mArticulation->getLinkVelocity(mLinkIndex).linear;
-	}
-}
-
-
-Vec3V SolverExtBody::getAngVelV() const
-{
-	if (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-		return V3LoadA(mBodyData->angularVelocity);
-	else
-	{
-
-		return mArticulation->getLinkVelocity(mLinkIndex).angular;
-	}
-}
-
 Cm::SpatialVectorV SolverExtBody::getVelocity() const
 {
 	if(mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
@@ -165,6 +110,11 @@ Cm::SpatialVectorV SolverExtBody::getVelocity() const
 
 Cm::SpatialVector createImpulseResponseVector(const PxVec3& linear, const PxVec3& angular, const SolverExtBody& body)
 {
+	// Note: compared to the TGS version of this method, there seems to be no need to check for kinematic or static
+	//       bodies in PGS since the original angular constraint axis is tracked separately (ang0Writeback) and a zero
+	//       inverse inertia matrix will thus not destroy that information (important for reporting applied
+	//       joint/constraint torques, for example).
+
 	if (body.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 	{
 		return Cm::SpatialVector(linear, body.mBodyData->sqrtInvInertia * angular);

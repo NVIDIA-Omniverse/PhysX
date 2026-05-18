@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -189,7 +189,7 @@ public:
         return "PhysXStepper";
     }
 
-    static void customizeVehicleSimulationContext(::physx::vehicle2::PxVehiclePhysXSimulationContext&,
+    static void customizeVehicleSimulationContext(::physx::PxVehiclePhysXSimulationContext&,
                                                   const PhysXActorVehicleBase&,
                                                   PhysXSetup&);
 

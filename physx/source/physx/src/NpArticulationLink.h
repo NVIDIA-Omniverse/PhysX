@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -62,10 +62,10 @@ public:
 // PX_SERIALIZATION
 											NpArticulationLink(PxBaseFlags baseFlags) : NpArticulationLinkT(baseFlags), mChildLinks(PxEmpty)	{}
 				void						preExportDataReset() { NpArticulationLinkT::preExportDataReset(); }
-	virtual		void						exportExtraData(PxSerializationContext& context);
-				void						importExtraData(PxDeserializationContext& context);
-				void						resolveReferences(PxDeserializationContext& context);
-	virtual		void						requiresObjects(PxProcessPxBaseCallback& c);
+	virtual		void						exportExtraData(PxSerializationContext& context) PX_OVERRIDE;
+				void						importExtraData(PxDeserializationContext& context) PX_OVERRIDE;
+				void						resolveReferences(PxDeserializationContext& context) PX_OVERRIDE;
+	virtual		void						requiresObjects(PxProcessPxBaseCallback& c) PX_OVERRIDE;
 	virtual		bool						isSubordinate()  const	 { return true; } 
 	static		NpArticulationLink*			createObject(PxU8*& address, PxDeserializationContext& context);
 //~PX_SERIALIZATION

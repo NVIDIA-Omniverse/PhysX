@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_SOLVER_CORE_H
 #define DY_SOLVER_CORE_H
 
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxThread.h"
 #include "foundation/PxUserAllocated.h"
@@ -190,7 +190,7 @@ struct SolverIslandParams
 
 void solveNoContactsCase(	PxU32 bodyListSize, const PxSolverBody* PX_RESTRICT bodyListStart, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
 							PxU32 articulationListSize, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
-							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, bool residualReportingActive, bool solveArticulationContactLast);
+							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, PxReal articulationBiasCoefficient, bool residualReportingActive, bool solveArticulationContactLast);
 
 void saveMotionVelocities(PxU32 nbBodies, const PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray);
 

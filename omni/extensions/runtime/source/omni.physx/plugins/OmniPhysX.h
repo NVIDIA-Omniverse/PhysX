@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -39,7 +39,6 @@ class FabricBatchData;
 
 class ContactReport;
 class TriggerManager;
-class FabricParticles;
 class PhysXCustomJointManager;
 class PhysXCustomGeometryManager;
 class PhysXPropertyQueryManager;
@@ -79,7 +78,6 @@ struct OmniCachedSettings
     int minFrameRate = 30;
     float jointBodyTransformCheckTolerance = 0.001f;
     bool simulateEmptyScene = false;
-    bool disableSleeping = false;
     bool enableSynchronousKernelLaunches = false;
     bool disableContactProcessing = false;
     bool disableResetOnStop = false;
@@ -168,10 +166,18 @@ public:
     // Get Internal PhysX database, contains records for PhysX and internal pointers
     const internal::InternalPhysXDatabase& getInternalPhysXDatabase() const
     {
+        if (!mInternalPhysXDatabase)
+        {
+            mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase);
+        }
         return *mInternalPhysXDatabase;
     }
     internal::InternalPhysXDatabase& getInternalPhysXDatabase()
     {
+        if (!mInternalPhysXDatabase)
+        {
+            mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase);
+        }
         return *mInternalPhysXDatabase;
     }
 
@@ -715,13 +721,6 @@ public:
         return mCachedSettings;
     }
 
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* getFabricParticles() const
-    {
-        return mFabricParticles;
-    }
-#endif
-
     ///////////////////////////////////////////////////////////////////////////////////////
     // Replicator
     bool registerReplicator(uint64_t stageId, const IReplicatorCallback& callback);
@@ -780,7 +779,8 @@ private:
 
     // PhysX globals
     PhysXSetup mPhysXSetup;
-    internal::InternalPhysXDatabase* mInternalPhysXDatabase{ nullptr }; // database with PhysX <-> internal objects
+    mutable internal::InternalPhysXDatabase* mInternalPhysXDatabase{ nullptr }; // database with PhysX <-> internal
+                                                                               // objects
                                                                         // records
 
     // event streams
@@ -849,9 +849,6 @@ private:
     // Stage update
     PhysXStageUpdate mStageUpdate;
 
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* mFabricParticles{ nullptr };
-#endif
     PhysXCustomJointManager* mCustomJointManager{ nullptr };
     PhysXCustomGeometryManager* mCustomGeometryManager{ nullptr };
     PhysXPropertyQueryManager* mPropertyQueryManager{ nullptr };

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -174,8 +174,21 @@ static PX_INLINE void onShapeDetach(NpActor& ro, NpShape& shape, bool wakeOnLost
 
 }
 
-void NpShapeManager::attachShape(NpShape& shape, PxRigidActor& actor)
+bool NpShapeManager::attachShape(NpShape& shape, PxRigidActor& actor)
 {
+#if PX_CHECKED
+	{
+		// PT: fix for https://github.com/NVIDIA-Omniverse/PhysX/issues/339
+		const PxU32 nbShapes = mShapes.getCount();
+		void*const*	shapes = mShapes.getPtrs();
+		for(PxU32 i=0; i<nbShapes; i++)
+		{
+			if(shapes[i] == &shape)
+				return false;
+		}
+	}
+#endif
+
 	PX_ASSERT(!mPruningStructure);
 
 	PtrTableStorageManager& sm = NpFactory::getInstance().getPtrTableStorageManager();
@@ -202,6 +215,7 @@ void NpShapeManager::attachShape(NpShape& shape, PxRigidActor& actor)
 	shape.onActorAttach(actor);
 
 	shape.setShapeManagerArrayIndex(index);
+	return true;
 }
 
 bool NpShapeManager::detachShape(NpShape& s, PxRigidActor& actor, bool wakeOnLostTouch)

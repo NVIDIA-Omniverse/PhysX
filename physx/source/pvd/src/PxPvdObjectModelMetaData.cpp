@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxPvdObjectModelInternalTypes.h"
 #include "PxPvdObjectModelMetaData.h"
@@ -252,7 +252,7 @@ class StringTableImpl : public StringTable, public PxUserAllocated
 		for(PxHashMap<uint32_t, char*>::Iterator iter = mHandleToStr.getIterator(); !iter.done(); ++iter)
 		{
 			stream << iter->first;
-			uint32_t len = static_cast<uint32_t>(strlen(iter->second) + 1);
+			uint32_t len = static_cast<uint32_t>(strnlen(iter->second, UINT32_MAX - 1) + 1);
 			stream << len;
 			stream.write(reinterpret_cast<uint8_t*>(iter->second), len);
 		}

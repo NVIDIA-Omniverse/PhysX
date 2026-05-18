@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -542,6 +542,48 @@ bool BaseRigidBodyView::setDisableSimulations(const TensorDesc* srcTensor, const
     return true;
 }
 
+bool BaseRigidBodyView::wakeUp(const TensorDesc* indexTensor)
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+
+    const PxU32* indices = nullptr;
+    PxU32 numIndices = 0;
+    if (indexTensor && indexTensor->data)
+    {
+        if (!checkTensorDevice(*indexTensor, -1, "index", __FUNCTION__) ||
+            !checkTensorInt32(*indexTensor, "index", __FUNCTION__))
+        {
+            return false;
+        }
+        indices = static_cast<const PxU32*>(indexTensor->data);
+        numIndices = PxU32(getTensorTotalSize(*indexTensor));
+    }
+    else
+    {
+        indices = mAllIndices.data();
+        numIndices = PxU32(mAllIndices.size());
+    }
+
+    for (PxU32 i = 0; i < numIndices; i++)
+    {
+        PxU32 idx = indices[i];
+        if (idx < mEntries.size())
+        {
+            if (mEntries[idx].type == RigidBodyType::eRigidDynamic)
+            {
+                PxRigidDynamic* dynamicBody = static_cast<PxRigidDynamic*>(mEntries[idx].body);
+                // skip bodies that have the disable simulation flag set
+                if(!dynamicBody->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+                {
+                    dynamicBody->wakeUp();
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 bool BaseRigidBodyView::getMaterialProperties(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -570,6 +612,50 @@ bool BaseRigidBodyView::getMaterialProperties(const TensorDesc* dstTensor) const
             dst[3 * i * mMaxShapes + 3 * j + 2] = material->getRestitution();
         }
 
+    }
+
+    return true;
+}
+
+bool BaseRigidBodyView::getCompliantMaterialProperties(const TensorDesc* dstTensor,
+                                                       const TensorDesc* dstCombineModeTensor) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+    
+    if (!dstTensor || !dstTensor->data)
+    {
+        return false;
+    }
+
+    if (!checkTensorDevice(*dstTensor, -1, "material properties", __FUNCTION__) ||
+        !checkTensorFloat32(*dstTensor, "material properties", __FUNCTION__) ||
+        !checkTensorSizeExact(*dstTensor, getCount() * mMaxShapes * 2u, "material properties", __FUNCTION__))
+    {
+        return false;
+    }
+    if (!checkTensorDevice(*dstCombineModeTensor, -1, "combination properties", __FUNCTION__) ||
+        !checkTensorInt8(*dstCombineModeTensor, "combination properties", __FUNCTION__) ||
+        !checkTensorSizeExact(*dstCombineModeTensor, getCount() * mMaxShapes * 2u, "combination properties", __FUNCTION__))
+    {
+        return false;
+    }
+
+    float* dst = static_cast<float*>(dstTensor->data);
+    uint8_t* dstModes = static_cast<uint8_t*>(dstCombineModeTensor->data);
+    for (PxU32 i = 0; i < mEntries.size(); i++)
+    {
+        for (PxU32 j = 0; j < mEntries[i].numShapes; j++)
+        {
+            PxMaterial* material;
+            mEntries[i].shapes[j]->getMaterials(&material, 1);
+            float restitution = material->getRestitution();
+
+            dst[2 * i * mMaxShapes + 2 * j + 0] =
+                restitution < 0.0f ? -restitution : std::numeric_limits<float>::infinity();
+            dst[2 * i * mMaxShapes + 2 * j + 1] = material->getDamping();
+            dstModes[2 * i * mMaxShapes + 2 * j + 0] = static_cast<uint8_t>(material->getRestitutionCombineMode());
+            dstModes[2 * i * mMaxShapes + 2 * j + 1] = static_cast<uint8_t>(material->getDampingCombineMode());
+        }
     }
 
     return true;
@@ -673,8 +759,10 @@ bool BaseRigidBodyView::setMaterialProperties(const TensorDesc* srcTensor, const
             const float* src = static_cast<const float*>(srcTensor->data) + idx * mMaxShapes * 3;
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
-                PxMaterial* material = mSim->createSharedMaterial(src[j*3], src[j*3+1], src[j*3+2]);
-            
+                PxMaterial* material = mSim->createSharedMaterial(src[j * 3], src[j * 3 + 1], src[j * 3 + 2], 0.0f,
+                                                                  PxCombineMode::eAVERAGE, PxCombineMode::eAVERAGE,
+                                                                  PxCombineMode::eAVERAGE);
+
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
                 extraMats.resize(nMaterials);
@@ -693,6 +781,103 @@ bool BaseRigidBodyView::setMaterialProperties(const TensorDesc* srcTensor, const
                         snprintf(keybuffer, 100, "%.6f", mat->getDynamicFriction());
                         key += std::string(keybuffer) + "_";
                         snprintf(keybuffer, 100, "%.6f", mat->getRestitution());
+                        key += std::string(keybuffer);
+                        mSim->mMaterials.erase(key);
+                        mSim->mUnusedMaterials.insert(mat);
+                    }
+                }
+
+                mEntries[idx].shapes[j]->setMaterials(&material, 1);
+            }
+
+        }
+    }
+
+    return true;
+}
+
+bool BaseRigidBodyView::setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                                       const TensorDesc* srcCombineModeTensor,
+                                                       const TensorDesc* indexTensor) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+    
+    if (!srcTensor || !srcTensor->data)
+    {
+        return false;
+    }
+
+    if (!checkTensorDevice(*srcTensor, -1, "material properties", __FUNCTION__) ||
+        !checkTensorFloat32(*srcTensor, "material properties", __FUNCTION__) ||
+        !checkTensorSizeExact(*srcTensor, getCount() * mMaxShapes * 4u, "material properties", __FUNCTION__))
+    {
+        return false;
+    }
+    if (!checkTensorDevice(*srcCombineModeTensor, -1, "combination modes", __FUNCTION__) ||
+        !checkTensorInt8(*srcCombineModeTensor, "combination modes", __FUNCTION__) ||
+        !checkTensorSizeExact(*srcCombineModeTensor, getCount() * mMaxShapes * 3u, "combination modes", __FUNCTION__))
+    {
+        return false;
+    }
+    const PxU32* indices = nullptr;
+    PxU32 numIndices = 0;
+    if (indexTensor && indexTensor->data)
+    {
+        if (!checkTensorDevice(*indexTensor, -1, "index", __FUNCTION__) ||
+            !checkTensorInt32(*indexTensor, "index", __FUNCTION__))
+        {
+            return false;
+        }
+        indices = static_cast<const PxU32*>(indexTensor->data);
+        numIndices = PxU32(getTensorTotalSize(*indexTensor));
+    }
+    else
+    {
+        indices = mAllIndices.data();
+        numIndices = PxU32(mAllIndices.size());
+    }
+
+    for (PxU32 i = 0; i < numIndices; i++)
+    {
+        PxU32 idx = indices[i];
+        if (idx < mEntries.size())
+        {
+            const float* src = static_cast<const float*>(srcTensor->data) + idx * mMaxShapes * 4;
+            const uint8_t* srcCombineMode = static_cast<const uint8_t*>(srcCombineModeTensor->data) + idx * mMaxShapes * 3;
+            for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
+            {
+                PxMaterial* material =
+                    mSim->createSharedMaterial(src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
+                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 0]),
+                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
+                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]));
+
+                int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
+                std::vector<PxMaterial*> extraMats;
+                extraMats.resize(nMaterials);
+
+                mEntries[idx].shapes[j]->getMaterials(extraMats.data(), (PxU32)extraMats.size(), 0);
+
+                for (auto mat : extraMats)
+                {
+                    mSim->mMaterialsRefCount[mat] -= 1;
+                    if (mSim->mMaterialsRefCount[mat] == 0)
+                    {
+                        std::string key;
+                        char keybuffer[100];
+                        snprintf(keybuffer, 100, "%.6f", mat->getStaticFriction());
+                        key += std::string(keybuffer) + "_";
+                        snprintf(keybuffer, 100, "%.6f", mat->getDynamicFriction());
+                        key += std::string(keybuffer) + "_";
+                        snprintf(keybuffer, 100, "%.6f", mat->getRestitution());
+                        key += std::string(keybuffer) + "_";
+                        snprintf(keybuffer, 100, "%.6f", mat->getDamping());
+                        key += std::string(keybuffer) + "_";
+                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getFrictionCombineMode()));
+                        key += std::string(keybuffer) + "_";
+                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getRestitutionCombineMode()));
+                        key += std::string(keybuffer) + "_";
+                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getDampingCombineMode()));
                         key += std::string(keybuffer);
                         mSim->mMaterials.erase(key);
                         mSim->mUnusedMaterials.insert(mat);

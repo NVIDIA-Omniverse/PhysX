@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -87,14 +87,10 @@ public:
     virtual bool getJacobianShape(uint32_t* numRows, uint32_t* numCols) const = 0;
     virtual bool getJacobians(const TensorDesc* dstTensor) const = 0;
 
-    virtual bool getMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const = 0; // deprecated
-    virtual bool getMassMatrices(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getGeneralizedMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const = 0;
     virtual bool getGeneralizedMassMatrices(const TensorDesc* dstTensor) const = 0;
 
-    virtual bool getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getCoriolisAndCentrifugalCompensationForces(const TensorDesc* dstTensor) const = 0;
-    virtual bool getGeneralizedGravityForces(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getGravityCompensationForces(const TensorDesc* dstTensor) const = 0;
 
     virtual bool getLinkIncomingJointForce(const TensorDesc* dstTensor) const = 0;
@@ -121,10 +117,15 @@ public:
 
     // materials/shapes
     virtual bool getMaterialProperties(const TensorDesc* dstTensor) const = 0;
+    virtual bool getCompliantMaterialProperties(const TensorDesc* dstTensor,
+                                                const TensorDesc* dstCombineModeTensor) const = 0;
     virtual bool getRestOffsets(const TensorDesc* dstTensor) const = 0;
     virtual bool getContactOffsets(const TensorDesc* dstTensor) const = 0;
 
     virtual bool setMaterialProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
+    virtual bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                                const TensorDesc* srcCombineTensor,
+                                                const TensorDesc* indexTensor) const = 0;
     virtual bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
     virtual bool setContactOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
 

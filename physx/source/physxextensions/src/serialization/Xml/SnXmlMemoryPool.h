@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -111,7 +111,7 @@ namespace physx {
 		inline PxU32 GetItemSize() { return sizeof(SMemPoolNode) << TItemSize; }
 	};
 
-	typedef PxU32 TMemAllocSizeType;
+	typedef PxU64 TMemAllocSizeType;
 
 	struct SVariableMemPoolNode : SMemPoolNode
 	{
@@ -166,12 +166,12 @@ namespace physx {
 			return reinterpret_cast< PxU8* >( theMem + 1 );
 		}
 		//Using deallocated memory to hold the pointers to the next amount of memory.
-		PxU8* allocate( PxU32 size )
+		PxU8* allocate( PxU64 size )
 		{
 			//Ensure we can place the size of the memory at the start
 			//of the memory block.
 			//Kai: to reduce the size of hash map, the requested size is aligned to 128 bytes
-			PxU32 theRequestedSize = (size + sizeof(SVariableMemPoolNode) + 127) & ~127;
+			PxU64 theRequestedSize = (size + sizeof(SVariableMemPoolNode) + 127) & ~127;
 
 			TFreeNodeMap::Entry* entry = const_cast<TFreeNodeMap::Entry*>( mFreeNodeMap.find( theRequestedSize ) );
 			if ( NULL != entry )
@@ -274,7 +274,7 @@ namespace physx {
 		{
 		}
 		PxProfileAllocatorWrapper& getWrapper() { return mWrapper; }
-		inline PxU8* allocate( PxU32 inSize )
+		inline PxU8* allocate( PxU64 inSize )
 		{
 			/*
 			if ( inSize <= m0ItemPool.GetItemSize() )
@@ -351,7 +351,7 @@ namespace physx {
 		 *	allocate an object.  Calls constructor on the new memory.
 		 */
 		template<typename TObjectType>
-		inline TObjectType* BatchAllocate(PxU32 inCount )
+		inline TObjectType* BatchAllocate(PxU64 inCount )
 		{
 			TObjectType* retval = reinterpret_cast<TObjectType*>( allocate( sizeof(TObjectType) * inCount ) );
 			return retval;
@@ -362,7 +362,7 @@ namespace physx {
 		 *	This *must* be the concrete type, it cannot be a generic type.
 		 */
 		template<typename TObjectType>
-		inline void BatchDeallocate( TObjectType* inObject, PxU32 inCount )
+		inline void BatchDeallocate( TObjectType* inObject, PxU64 inCount )
 		{
 			PX_UNUSED(inCount);
 			deallocate( reinterpret_cast<PxU8*>(inObject) );

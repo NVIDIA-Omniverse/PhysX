@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -75,9 +75,15 @@ namespace Bp
 	};
 
 	PX_FORCE_INLINE bool	differentPair(const InternalPair& p, PxU32 id0, PxU32 id1)	{ return (id0!=p.getId0()) || (id1!=p.getId1());	}
-	PX_FORCE_INLINE PxU32	hash(PxU32 id0, PxU32 id1)									{ return PxComputeHash( (id0&0xffff)|(id1<<16));	}
-	//PX_FORCE_INLINE PxU32	hash(PxU32 id0, PxU32 id1)									{ return PxComputeHash(PxU64(id0)|(PxU64(id1)<<32)) ;	}
 	PX_FORCE_INLINE void	sort(PxU32& id0, PxU32& id1)								{ if(id0>id1)	PxSwap(id0, id1);					}
+
+	PX_FORCE_INLINE PxU32	hash(PxU32 id0, PxU32 id1)
+	{
+		if(id0<=0xffff && id1<=0xffff)
+			return PxComputeHash((id0)|(id1<<16));
+		else
+			return PxComputeHash(PxU64(id0)|(PxU64(id1)<<32));
+	}
 
 	class PairManagerData
 	{

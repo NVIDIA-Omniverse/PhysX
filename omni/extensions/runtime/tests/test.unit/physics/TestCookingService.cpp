@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -119,7 +119,7 @@ struct CookingServiceTestParameters
             iStageReaderWriter->create(primStageId, 0);
             auto stageReaderWriterId = iStageReaderWriter->get(primStageId);
             auto fabricId = iStageReaderWriter->getFabricId(stageReaderWriterId);
-            std::set<omni::fabric::TokenC> filter = {};
+            std::set<omni::fabric::Token> filter = {};
             iFabricUsd->prefetchPrimToFabric(
                 fabricId, meshPath, usdMesh.GetPrim(), filter, false, true, pxr::UsdTimeCode::Default());
             stage->RemovePrim(meshPath);

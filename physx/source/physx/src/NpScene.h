@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,7 +48,9 @@
 #include "NpSceneQueries.h"
 #include "NpSceneAccessor.h"
 #include "NpPruningStructure.h"
-#include "NpDirectGPUAPI.h"
+#if PX_SUPPORT_GPU_PHYSX
+	#include "NpDirectGPUAPI.h"
+#endif
 
 #if PX_SUPPORT_PVD
 	#include "PxPhysics.h"
@@ -591,7 +593,7 @@ private:
 
 					void							fetchResultsPreContactCallbacks();
 					void							fetchResultsPostContactCallbacks();
-					void							fetchResultsParticleSystem();
+			virtual	void							fetchResultsParticleSystem() PX_OVERRIDE;
 
 					bool							addSpatialTendonInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim);
 					bool							addFixedTendonInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim);
@@ -657,7 +659,7 @@ private:
 					struct SceneCompletion : public Cm::Task
 					{
 						SceneCompletion(PxU64 contextId, PxSync& sync) : Cm::Task(contextId), mSync(sync){}
-						virtual void runInternal() {}
+						virtual void runInternal() PX_OVERRIDE {}
 						//ML: As soon as mSync.set is called, and the scene is shutting down,
 						//the scene may be deleted. That means this running task may also be deleted.
 						//As such, we call mSync.set() inside release() to avoid a crash because the v-table on this
@@ -745,7 +747,9 @@ private:
 					PxArray<MaterialEvent>		mSceneDeformableVolumeMaterialBuffer;
 					PxArray<MaterialEvent>		mScenePBDMaterialBuffer;
 					Sc::Scene					mScene;
+#if PX_SUPPORT_GPU_PHYSX
 					NpDirectGPUAPI*				mDirectGPUAPI;
+#endif
 #if PX_SUPPORT_PVD
 					Vd::PvdSceneClient			mScenePvdClient;
 #endif

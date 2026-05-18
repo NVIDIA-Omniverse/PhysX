@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -72,7 +72,6 @@ PX_FORCE_INLINE bool isD6JointDriveAccessAllowed(PxD6Drive::Enum driveType, PxD6
 {
 	PX_COMPILE_TIME_ASSERT(PxD6Drive::eX < PxD6Drive::eY);
 	PX_COMPILE_TIME_ASSERT(PxD6Drive::eY < PxD6Drive::eZ);
-	PX_COMPILE_TIME_ASSERT(PxD6Drive::eZ < PxD6Drive::eSWING);
 	PX_COMPILE_TIME_ASSERT(PxD6Drive::eZ < PxD6Drive::eTWIST);
 	PX_COMPILE_TIME_ASSERT(PxD6Drive::eZ < PxD6Drive::eSLERP);
 	PX_COMPILE_TIME_ASSERT(PxD6Drive::eZ < PxD6Drive::eSWING1);
@@ -92,10 +91,7 @@ PX_FORCE_INLINE bool isD6JointDriveAccessAllowed(PxD6Drive::Enum driveType, PxD6
 		}
 		else
 		{
-			PX_ASSERT(angDriveConfig == PxD6AngularDriveConfig::eLEGACY);
-
-			if ((driveType != PxD6Drive::eSWING) && (driveType != PxD6Drive::eTWIST) && (driveType != PxD6Drive::eSLERP))
-				return false;
+			return false;
 		}
 	}
 
